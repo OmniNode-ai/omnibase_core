@@ -336,24 +336,6 @@ entries:
   - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
     family: E-LAN
     content_sha1: ea803a56b35536e586e4c507f890c9c7a19d2f27
-  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
-    family: E-LAN
-    content_sha1: 1bc727cba8bf706230d789bdf1ad887d2cab53f8
-  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
-    family: E-LAN
-    content_sha1: 7a5dd747c19371c22c25c34dc8a2dc9158fdcc51
-  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
-    family: E-LAN
-    content_sha1: a1a01e0241c9c59681620ae24991c971e95100c0
-  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
-    family: E-LAN
-    content_sha1: a2f5c82e0c875530c1e045a39c2044899e2a9607
-  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
-    family: E-LAN
-    content_sha1: c311f018523864a5939442740a5d1228ab7e0bd7
-  - path: tests/unit/validation/private_ip/test_handler_private_ip_compute.py
-    family: E-LAN
-    content_sha1: ddaf4d5018d8694c83a6d3bc07265806da299488
   - path: tests/unit/validation/test_receipt_honesty_validator.py
     family: E-LAN
     content_sha1: eebbb28fe53a69c9543ad9da2005cf25f72d077b

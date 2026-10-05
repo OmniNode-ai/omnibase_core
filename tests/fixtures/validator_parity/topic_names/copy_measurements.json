@@ -1,0 +1,170 @@
+{
+  "omnibase_infra": {
+    "--scan-python": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: CORPUS/ast_copy_only/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: CORPUS/ast_copy_only/topics.py:4: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: CORPUS/control_2/topics.py:3: invalid event name 'ev\\tent' in topic 'onex.evt.platform.ev\\tent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/control_4/topics.py:3: invalid event name 'ev\\x0bent' in topic 'onex.evt.platform.ev\\x0bent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/control_5/topics.py:3: invalid event name 'ev\\x0cent' in topic 'onex.evt.platform.ev\\x0cent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/kind/topics.py:3: invalid kind 'events' in topic 'onex.events.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: CORPUS/long/topics.py:3: expected 5 dot-separated segments (onex.{kind}.{producer}.{event}.{version}), got 6: 'onex.evt.platform.event.extra.v1'\nERROR: CORPUS/producer_digit/topics.py:3: unknown producer '1bad' in topic 'onex.evt.1bad.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not '1bad')?\nERROR: CORPUS/producer_double/topics.py:3: unknown producer 'bad--name' in topic 'onex.evt.bad--name.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad--name')?\nERROR: CORPUS/producer_trailing/topics.py:3: unknown producer 'bad-' in topic 'onex.evt.bad-.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad-')?\nERROR: CORPUS/producer_underscore/topics.py:3: invalid producer 'bad_producer' in topic 'onex.evt.bad_producer.event.v1'; must match ^[a-z0-9-]+$ (no underscores)\nERROR: CORPUS/snapshot_unknown/topics.py:3: unknown producer 'omnimarket' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['platform', 'projection']. Did you mean the repo name (e.g. 'omnimarket' not 'omnimarket')?\nERROR: CORPUS/unknown_producer/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: CORPUS/upper/topics.py:3: invalid kind 'EVT' in topic 'onex.EVT.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: CORPUS/version_leading_zero/topics.py:3: invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)\nERROR: CORPUS/version_zero/topics.py:3: invalid version 'v0' in topic 'onex.evt.platform.event.v0'; must be v followed by a positive integer (e.g. v1, v2)\n\nTopic naming lint failed: 16 violation(s) found.\n"
+    },
+    "--scan-contracts": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: CORPUS/nodes/ast_copy_only/contract.yaml: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\n\nTopic naming lint failed: 1 violation(s) found.\n"
+    },
+    "wrapper": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: FIXTURE_ROOT/src/omnibase_infra/nodes/ast_copy_only/contract.yaml: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\n\nTopic naming lint failed: 1 violation(s) found.\nERROR: FIXTURE_ROOT/src/omnibase_infra/ast_copy_only/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: FIXTURE_ROOT/src/omnibase_infra/ast_copy_only/topics.py:4: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: FIXTURE_ROOT/src/omnibase_infra/control_2/topics.py:3: invalid event name 'ev\\tent' in topic 'onex.evt.platform.ev\\tent.v1'; must match ^[a-z0-9._-]+$\nERROR: FIXTURE_ROOT/src/omnibase_infra/control_4/topics.py:3: invalid event name 'ev\\x0bent' in topic 'onex.evt.platform.ev\\x0bent.v1'; must match ^[a-z0-9._-]+$\nERROR: FIXTURE_ROOT/src/omnibase_infra/control_5/topics.py:3: invalid event name 'ev\\x0cent' in topic 'onex.evt.platform.ev\\x0cent.v1'; must match ^[a-z0-9._-]+$\nERROR: FIXTURE_ROOT/src/omnibase_infra/kind/topics.py:3: invalid kind 'events' in topic 'onex.events.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: FIXTURE_ROOT/src/omnibase_infra/long/topics.py:3: expected 5 dot-separated segments (onex.{kind}.{producer}.{event}.{version}), got 6: 'onex.evt.platform.event.extra.v1'\nERROR: FIXTURE_ROOT/src/omnibase_infra/producer_digit/topics.py:3: unknown producer '1bad' in topic 'onex.evt.1bad.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not '1bad')?\nERROR: FIXTURE_ROOT/src/omnibase_infra/producer_double/topics.py:3: unknown producer 'bad--name' in topic 'onex.evt.bad--name.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad--name')?\nERROR: FIXTURE_ROOT/src/omnibase_infra/producer_trailing/topics.py:3: unknown producer 'bad-' in topic 'onex.evt.bad-.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad-')?\nERROR: FIXTURE_ROOT/src/omnibase_infra/producer_underscore/topics.py:3: invalid producer 'bad_producer' in topic 'onex.evt.bad_producer.event.v1'; must match ^[a-z0-9-]+$ (no underscores)\nERROR: FIXTURE_ROOT/src/omnibase_infra/snapshot_unknown/topics.py:3: unknown producer 'omnimarket' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['platform', 'projection']. Did you mean the repo name (e.g. 'omnimarket' not 'omnimarket')?\nERROR: FIXTURE_ROOT/src/omnibase_infra/unknown_producer/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: FIXTURE_ROOT/src/omnibase_infra/upper/topics.py:3: invalid kind 'EVT' in topic 'onex.EVT.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: FIXTURE_ROOT/src/omnibase_infra/version_leading_zero/topics.py:3: invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)\nERROR: FIXTURE_ROOT/src/omnibase_infra/version_zero/topics.py:3: invalid version 'v0' in topic 'onex.evt.platform.event.v0'; must be v followed by a positive integer (e.g. v1, v2)\n\nTopic naming lint failed: 16 violation(s) found.\n"
+    },
+    "linter": "omnibase_infra/scripts/validation/lint_topic_names.py",
+    "wrapper_path": "omnibase_infra/scripts/validation/run_topic_lint.sh",
+    "findings_not_flagged_by_core_node": [
+      {
+        "fixture": "ast_copy_only",
+        "path": "topics.py",
+        "line": 3,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "ast_copy_only",
+        "path": "topics.py",
+        "line": 4,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "snapshot_unknown",
+        "path": "topics.py",
+        "line": 3,
+        "message": "unknown producer 'omnimarket' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['platform', 'projection']. Did you mean the repo name (e.g. 'omnimarket' not 'omnimarket')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "unknown_producer",
+        "path": "topics.py",
+        "line": 3,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "version_leading_zero",
+        "path": "topics.py",
+        "line": 3,
+        "message": "invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "ast_copy_only",
+        "path": "contract.yaml",
+        "line": null,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-contracts"
+      }
+    ]
+  },
+  "omniclaude": {
+    "--scan-python": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: CORPUS/control_2/topics.py:3: invalid event name 'ev\\tent' in topic 'onex.evt.platform.ev\\tent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/control_4/topics.py:3: invalid event name 'ev\\x0bent' in topic 'onex.evt.platform.ev\\x0bent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/control_5/topics.py:3: invalid event name 'ev\\x0cent' in topic 'onex.evt.platform.ev\\x0cent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/kind/topics.py:3: invalid kind 'events' in topic 'onex.events.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: CORPUS/long/topics.py:3: expected 5 dot-separated segments (onex.{kind}.{producer}.{event}.{version}), got 6: 'onex.evt.platform.event.extra.v1'\nERROR: CORPUS/producer_underscore/topics.py:3: invalid producer 'bad_producer' in topic 'onex.evt.bad_producer.event.v1'; must match ^[a-z0-9-]+$ (no underscores)\nERROR: CORPUS/snapshot_unknown/topics.py:3: invalid kind 'snapshot' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: CORPUS/upper/topics.py:3: invalid kind 'EVT' in topic 'onex.EVT.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: CORPUS/valid_snapshot/topics.py:3: invalid kind 'snapshot' in topic 'onex.snapshot.platform.event-one.v2'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: CORPUS/version_leading_zero/topics.py:3: invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)\nERROR: CORPUS/version_zero/topics.py:3: invalid version 'v0' in topic 'onex.evt.platform.event.v0'; must be v followed by a positive integer (e.g. v1, v2)\n\nTopic naming lint failed: 11 violation(s) found.\n"
+    },
+    "--scan-contracts": {
+      "exit_code": 0,
+      "stdout": "OK: no topic naming violations found under CORPUS\n",
+      "stderr": ""
+    },
+    "wrapper": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: src/omniclaude/control_2/topics.py:3: invalid event name 'ev\\tent' in topic 'onex.evt.platform.ev\\tent.v1'; must match ^[a-z0-9._-]+$\nERROR: src/omniclaude/control_4/topics.py:3: invalid event name 'ev\\x0bent' in topic 'onex.evt.platform.ev\\x0bent.v1'; must match ^[a-z0-9._-]+$\nERROR: src/omniclaude/control_5/topics.py:3: invalid event name 'ev\\x0cent' in topic 'onex.evt.platform.ev\\x0cent.v1'; must match ^[a-z0-9._-]+$\nERROR: src/omniclaude/kind/topics.py:3: invalid kind 'events' in topic 'onex.events.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: src/omniclaude/long/topics.py:3: expected 5 dot-separated segments (onex.{kind}.{producer}.{event}.{version}), got 6: 'onex.evt.platform.event.extra.v1'\nERROR: src/omniclaude/producer_underscore/topics.py:3: invalid producer 'bad_producer' in topic 'onex.evt.bad_producer.event.v1'; must match ^[a-z0-9-]+$ (no underscores)\nERROR: src/omniclaude/snapshot_unknown/topics.py:3: invalid kind 'snapshot' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: src/omniclaude/upper/topics.py:3: invalid kind 'EVT' in topic 'onex.EVT.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: src/omniclaude/valid_snapshot/topics.py:3: invalid kind 'snapshot' in topic 'onex.snapshot.platform.event-one.v2'; must be one of ['cmd', 'dlq', 'evt', 'intent']\nERROR: src/omniclaude/version_leading_zero/topics.py:3: invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)\nERROR: src/omniclaude/version_zero/topics.py:3: invalid version 'v0' in topic 'onex.evt.platform.event.v0'; must be v followed by a positive integer (e.g. v1, v2)\n\nTopic naming lint failed: 11 violation(s) found.\n"
+    },
+    "linter": "omniclaude/scripts/validation/lint_topic_names.py",
+    "wrapper_path": "omniclaude/scripts/validation/run_topic_lint.sh",
+    "findings_not_flagged_by_core_node": [
+      {
+        "fixture": "snapshot_unknown",
+        "path": "topics.py",
+        "line": 3,
+        "message": "invalid kind 'snapshot' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent']",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "valid_snapshot",
+        "path": "topics.py",
+        "line": 3,
+        "message": "invalid kind 'snapshot' in topic 'onex.snapshot.platform.event-one.v2'; must be one of ['cmd', 'dlq', 'evt', 'intent']",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "version_leading_zero",
+        "path": "topics.py",
+        "line": 3,
+        "message": "invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)",
+        "mode": "--scan-python"
+      }
+    ]
+  },
+  "omnimarket": {
+    "--scan-python": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: CORPUS/ast_copy_only/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: CORPUS/ast_copy_only/topics.py:4: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: CORPUS/control_2/topics.py:3: invalid event name 'ev\\tent' in topic 'onex.evt.platform.ev\\tent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/control_4/topics.py:3: invalid event name 'ev\\x0bent' in topic 'onex.evt.platform.ev\\x0bent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/control_5/topics.py:3: invalid event name 'ev\\x0cent' in topic 'onex.evt.platform.ev\\x0cent.v1'; must match ^[a-z0-9._-]+$\nERROR: CORPUS/kind/topics.py:3: invalid kind 'events' in topic 'onex.events.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: CORPUS/long/topics.py:3: expected 5 dot-separated segments (onex.{kind}.{producer}.{event}.{version}), got 6: 'onex.evt.platform.event.extra.v1'\nERROR: CORPUS/producer_digit/topics.py:3: unknown producer '1bad' in topic 'onex.evt.1bad.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not '1bad')?\nERROR: CORPUS/producer_double/topics.py:3: unknown producer 'bad--name' in topic 'onex.evt.bad--name.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad--name')?\nERROR: CORPUS/producer_trailing/topics.py:3: unknown producer 'bad-' in topic 'onex.evt.bad-.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad-')?\nERROR: CORPUS/producer_underscore/topics.py:3: invalid producer 'bad_producer' in topic 'onex.evt.bad_producer.event.v1'; must match ^[a-z0-9-]+$ (no underscores)\nERROR: CORPUS/snapshot_unknown/topics.py:3: unknown producer 'omnimarket' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['platform', 'projection']. Did you mean the repo name (e.g. 'omnimarket' not 'omnimarket')?\nERROR: CORPUS/unknown_producer/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: CORPUS/upper/topics.py:3: invalid kind 'EVT' in topic 'onex.EVT.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: CORPUS/version_leading_zero/topics.py:3: invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)\nERROR: CORPUS/version_zero/topics.py:3: invalid version 'v0' in topic 'onex.evt.platform.event.v0'; must be v followed by a positive integer (e.g. v1, v2)\n\nTopic naming lint failed: 16 violation(s) found.\n"
+    },
+    "--scan-contracts": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: CORPUS/nodes/ast_copy_only/contract.yaml: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\n\nTopic naming lint failed: 1 violation(s) found.\n"
+    },
+    "wrapper": {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "ERROR: src/omnimarket/nodes/ast_copy_only/contract.yaml: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\n\nTopic naming lint failed: 1 violation(s) found.\nERROR: src/omnimarket/ast_copy_only/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: src/omnimarket/ast_copy_only/topics.py:4: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: src/omnimarket/control_2/topics.py:3: invalid event name 'ev\\tent' in topic 'onex.evt.platform.ev\\tent.v1'; must match ^[a-z0-9._-]+$\nERROR: src/omnimarket/control_4/topics.py:3: invalid event name 'ev\\x0bent' in topic 'onex.evt.platform.ev\\x0bent.v1'; must match ^[a-z0-9._-]+$\nERROR: src/omnimarket/control_5/topics.py:3: invalid event name 'ev\\x0cent' in topic 'onex.evt.platform.ev\\x0cent.v1'; must match ^[a-z0-9._-]+$\nERROR: src/omnimarket/kind/topics.py:3: invalid kind 'events' in topic 'onex.events.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: src/omnimarket/long/topics.py:3: expected 5 dot-separated segments (onex.{kind}.{producer}.{event}.{version}), got 6: 'onex.evt.platform.event.extra.v1'\nERROR: src/omnimarket/producer_digit/topics.py:3: unknown producer '1bad' in topic 'onex.evt.1bad.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not '1bad')?\nERROR: src/omnimarket/producer_double/topics.py:3: unknown producer 'bad--name' in topic 'onex.evt.bad--name.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad--name')?\nERROR: src/omnimarket/producer_trailing/topics.py:3: unknown producer 'bad-' in topic 'onex.evt.bad-.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'bad-')?\nERROR: src/omnimarket/producer_underscore/topics.py:3: invalid producer 'bad_producer' in topic 'onex.evt.bad_producer.event.v1'; must match ^[a-z0-9-]+$ (no underscores)\nERROR: src/omnimarket/snapshot_unknown/topics.py:3: unknown producer 'omnimarket' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['platform', 'projection']. Did you mean the repo name (e.g. 'omnimarket' not 'omnimarket')?\nERROR: src/omnimarket/unknown_producer/topics.py:3: unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?\nERROR: src/omnimarket/upper/topics.py:3: invalid kind 'EVT' in topic 'onex.EVT.platform.event.v1'; must be one of ['cmd', 'dlq', 'evt', 'intent', 'snapshot']\nERROR: src/omnimarket/version_leading_zero/topics.py:3: invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)\nERROR: src/omnimarket/version_zero/topics.py:3: invalid version 'v0' in topic 'onex.evt.platform.event.v0'; must be v followed by a positive integer (e.g. v1, v2)\n\nTopic naming lint failed: 16 violation(s) found.\n"
+    },
+    "linter": "omnibase_infra/scripts/validation/lint_topic_names.py",
+    "wrapper_path": "omnimarket/scripts/validation/run_topic_lint.sh",
+    "findings_not_flagged_by_core_node": [
+      {
+        "fixture": "ast_copy_only",
+        "path": "topics.py",
+        "line": 3,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "ast_copy_only",
+        "path": "topics.py",
+        "line": 4,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "snapshot_unknown",
+        "path": "topics.py",
+        "line": 3,
+        "message": "unknown producer 'omnimarket' in topic 'onex.snapshot.omnimarket.state.v1'; must be one of ['platform', 'projection']. Did you mean the repo name (e.g. 'omnimarket' not 'omnimarket')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "unknown_producer",
+        "path": "topics.py",
+        "line": 3,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "version_leading_zero",
+        "path": "topics.py",
+        "line": 3,
+        "message": "invalid version 'v01' in topic 'onex.evt.platform.event.v01'; must be v followed by a positive integer (e.g. v1, v2)",
+        "mode": "--scan-python"
+      },
+      {
+        "fixture": "ast_copy_only",
+        "path": "contract.yaml",
+        "line": null,
+        "message": "unknown producer 'unregistered' in topic 'onex.evt.unregistered.event.v1'; must be one of ['deploy', 'github', 'occ', 'omnibase-compat', 'omnibase-infra', 'omniclaude', 'omniintelligence', 'omnimarket', 'omnimemory', 'omninode', 'onex-change-control', 'platform', 'steel-onslaught', 'ui']. Did you mean the repo name (e.g. 'omnimarket' not 'unregistered')?",
+        "mode": "--scan-contracts"
+      }
+    ]
+  }
+}

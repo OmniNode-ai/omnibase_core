@@ -1,0 +1,2472 @@
+{
+  "clean.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "empty.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "warning.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "warning.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module provides utilities.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "warning.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module provides utilities.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "warning.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module provides utilities.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "warning.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module provides utilities.'"
+        }
+      ]
+    }
+  },
+  "separator.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "separator.py",
+          "line": 2,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: '===='"
+        },
+        {
+          "filename": "separator.py",
+          "line": 4,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: 'inline ==== divider'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "separator.py",
+          "line": 2,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: '===='"
+        },
+        {
+          "filename": "separator.py",
+          "line": 4,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: 'inline ==== divider'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "separator.py",
+          "line": 2,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: '===='"
+        },
+        {
+          "filename": "separator.py",
+          "line": 4,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: 'inline ==== divider'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "separator.py",
+          "line": 2,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: '===='"
+        },
+        {
+          "filename": "separator.py",
+          "line": 4,
+          "check": "md_separator",
+          "severity": "WARNING",
+          "message": "Markdown-style separator in docstring: 'inline ==== divider'"
+        }
+      ]
+    }
+  },
+  "syntax.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "syntax.py",
+          "line": 1,
+          "check": "syntax_error",
+          "severity": "ERROR",
+          "message": "Syntax error: '(' was never closed"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "syntax.py",
+          "line": 1,
+          "check": "syntax_error",
+          "severity": "ERROR",
+          "message": "Syntax error: '(' was never closed"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "syntax.py",
+          "line": 1,
+          "check": "syntax_error",
+          "severity": "ERROR",
+          "message": "Syntax error: '(' was never closed"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "syntax.py",
+          "line": 1,
+          "check": "syntax_error",
+          "severity": "ERROR",
+          "message": "Syntax error: '(' was never closed"
+        }
+      ]
+    }
+  },
+  "strings.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "python_steps.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "notes.md": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "notes.md",
+          "line": 2,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 1: Start'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 3,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## step 2 - Finish'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 5,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '### Step 4: Nested'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "notes.md",
+          "line": 2,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 1: Start'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 3,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## step 2 - Finish'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 5,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '### Step 4: Nested'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "notes.md",
+          "line": 2,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 1: Start'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 3,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## step 2 - Finish'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 5,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '### Step 4: Nested'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "notes.md",
+          "line": 2,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 1: Start'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 3,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## step 2 - Finish'"
+        },
+        {
+          "filename": "notes.md",
+          "line": 5,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '### Step 4: Nested'"
+        }
+      ]
+    }
+  },
+  "fences.md": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "fences.md",
+          "line": 8,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 3: indented fences are not recognized'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "fences.md",
+          "line": 8,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 3: indented fences are not recognized'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "fences.md",
+          "line": 8,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 3: indented fences are not recognized'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "fences.md",
+          "line": 8,
+          "check": "step_narration",
+          "severity": "WARNING",
+          "message": "Step narration comment: '## Step 3: indented fences are not recognized'"
+        }
+      ]
+    }
+  },
+  "suppressed.md": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "info.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "info.py",
+          "line": 1,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): '# NOTE:'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "info.py",
+          "line": 1,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): '# NOTE:'"
+        }
+      ]
+    }
+  },
+  "upper_rest.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "upper_rest.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':PARAM x: upper'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "upper_rest.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':PARAM x: upper'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "upper_rest.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':PARAM x: upper'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "upper_rest.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':PARAM x: upper'"
+        }
+      ]
+    }
+  },
+  "async.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "async.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Async.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "async.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Async.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "async.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Async.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "async.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Async.'"
+        }
+      ]
+    }
+  },
+  "class.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "class.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Class.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "class.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Class.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "class.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Class.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "class.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Class.'"
+        }
+      ]
+    }
+  },
+  "nested.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "nested.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Outer.'"
+        },
+        {
+          "filename": "nested.py",
+          "line": 4,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Inner.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "nested.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Outer.'"
+        },
+        {
+          "filename": "nested.py",
+          "line": 4,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Inner.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "nested.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Outer.'"
+        },
+        {
+          "filename": "nested.py",
+          "line": 4,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Inner.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "nested.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Outer.'"
+        },
+        {
+          "filename": "nested.py",
+          "line": 4,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Inner.'"
+        }
+      ]
+    }
+  },
+  "suppressed_def.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "suppressed_previous.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "suppressed_quote.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "suppressed_module.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "not_suppressed.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "not_suppressed.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Visible.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "not_suppressed.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Visible.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "not_suppressed.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Visible.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "not_suppressed.py",
+          "line": 2,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Visible.'"
+        }
+      ]
+    }
+  },
+  "multiline.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "multiline.py",
+          "line": 3,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! First content line.'"
+        },
+        {
+          "filename": "multiline.py",
+          "line": 4,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "multiline.py",
+          "line": 3,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! First content line.'"
+        },
+        {
+          "filename": "multiline.py",
+          "line": 4,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "multiline.py",
+          "line": 3,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! First content line.'"
+        },
+        {
+          "filename": "multiline.py",
+          "line": 4,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "multiline.py",
+          "line": 3,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! First content line.'"
+        },
+        {
+          "filename": "multiline.py",
+          "line": 4,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    }
+  },
+  "ignored.txt": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "triple.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "triple.py",
+          "line": 3,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): '\"\"\" # NOTE:'"
+        },
+        {
+          "filename": "triple.py",
+          "line": 4,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): 'x = \"\"\"one\"\"\" # NOTE:'"
+        },
+        {
+          "filename": "triple.py",
+          "line": 7,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): \"''' # NOTE:\""
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "triple.py",
+          "line": 3,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): '\"\"\" # NOTE:'"
+        },
+        {
+          "filename": "triple.py",
+          "line": 4,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): 'x = \"\"\"one\"\"\" # NOTE:'"
+        },
+        {
+          "filename": "triple.py",
+          "line": 7,
+          "check": "obvious_comment",
+          "severity": "INFO",
+          "message": "Pattern match (obvious_comment): \"''' # NOTE:\""
+        }
+      ]
+    }
+  },
+  "opener_excellent.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_excellent.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_excellent.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_excellent.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_excellent.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Excellent! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_great.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_great.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_great.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_great.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_great.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_sure.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_sure.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_sure.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_sure.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_sure.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Sure! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_certainly.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_certainly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Certainly! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_certainly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Certainly! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_certainly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Certainly! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_certainly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Certainly! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_absolutely.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_absolutely.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Absolutely! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_absolutely.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Absolutely! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_absolutely.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Absolutely! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_absolutely.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Absolutely! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_of_course.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "opener_happy_to.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "opener_i_would_be.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:0": {
+      "exit_code": 0,
+      "findings": []
+    },
+    "1:1": {
+      "exit_code": 0,
+      "findings": []
+    }
+  },
+  "opener_gladly.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_gladly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Gladly! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_gladly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Gladly! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_gladly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Gladly! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_gladly.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Gladly! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_wonderful.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_wonderful.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Wonderful! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_wonderful.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Wonderful! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_wonderful.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Wonderful! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_wonderful.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Wonderful! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_perfect.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_perfect.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Perfect! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_perfect.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Perfect! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_perfect.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Perfect! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_perfect.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Perfect! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_fantastic.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_fantastic.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Fantastic! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_fantastic.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Fantastic! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_fantastic.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Fantastic! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_fantastic.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Fantastic! Welcome.'"
+        }
+      ]
+    }
+  },
+  "opener_awesome.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_awesome.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Awesome! Welcome.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_awesome.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Awesome! Welcome.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_awesome.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Awesome! Welcome.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "opener_awesome.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Awesome! Welcome.'"
+        }
+      ]
+    }
+  },
+  "rest_param.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_param.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_param.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_param.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_param.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param value: input'"
+        }
+      ]
+    }
+  },
+  "rest_type.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_type.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':type value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_type.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':type value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_type.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':type value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_type.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':type value: input'"
+        }
+      ]
+    }
+  },
+  "rest_return.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_return.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':return value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_return.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':return value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_return.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':return value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_return.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':return value: input'"
+        }
+      ]
+    }
+  },
+  "rest_returns.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_returns.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':returns value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_returns.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':returns value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_returns.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':returns value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_returns.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':returns value: input'"
+        }
+      ]
+    }
+  },
+  "rest_rtype.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_rtype.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':rtype value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_rtype.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':rtype value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_rtype.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':rtype value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_rtype.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':rtype value: input'"
+        }
+      ]
+    }
+  },
+  "rest_raise.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raise.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raise value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raise.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raise value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raise.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raise value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raise.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raise value: input'"
+        }
+      ]
+    }
+  },
+  "rest_raises.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raises.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raises value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raises.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raises value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raises.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raises value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_raises.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':raises value: input'"
+        }
+      ]
+    }
+  },
+  "rest_var.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_var.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':var value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_var.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':var value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_var.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':var value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_var.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':var value: input'"
+        }
+      ]
+    }
+  },
+  "rest_ivar.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_ivar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':ivar value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_ivar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':ivar value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_ivar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':ivar value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_ivar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':ivar value: input'"
+        }
+      ]
+    }
+  },
+  "rest_cvar.py": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_cvar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':cvar value: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_cvar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':cvar value: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_cvar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':cvar value: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "rest_cvar.py",
+          "line": 1,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':cvar value: input'"
+        }
+      ]
+    }
+  },
+  "boilerplate_module.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_module.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_module.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_module.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_module.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This module is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_class.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_class.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This class is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_class.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This class is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_class.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This class is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_class.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This class is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_function.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_function.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This function is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_function.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This function is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_function.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This function is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_function.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This function is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_method.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_method.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This method is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_method.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This method is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_method.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This method is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_method.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This method is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_file.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_file.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This file is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_file.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This file is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_file.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This file is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_file.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This file is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_script.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_script.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This script is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_script.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This script is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_script.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This script is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_script.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This script is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_node.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_node.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This node is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_node.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This node is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_node.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This node is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_node.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This node is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_handler.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_handler.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This handler is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_handler.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This handler is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_handler.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This handler is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_handler.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This handler is responsible for work.'"
+        }
+      ]
+    }
+  },
+  "boilerplate_service.py": {
+    "0:0": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_service.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This service is responsible for work.'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 0,
+      "findings": [
+        {
+          "filename": "boilerplate_service.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This service is responsible for work.'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_service.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This service is responsible for work.'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 2,
+      "findings": [
+        {
+          "filename": "boilerplate_service.py",
+          "line": 1,
+          "check": "boilerplate_docstring",
+          "severity": "WARNING",
+          "message": "Boilerplate docstring opener: 'This service is responsible for work.'"
+        }
+      ]
+    }
+  }
+}

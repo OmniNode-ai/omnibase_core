@@ -12,7 +12,7 @@ filesystem I/O at the CLI boundary, never inside the handler.
 Two modes:
 
 * **pre-commit** (explicit filenames): the staged files pre-commit hands us
-  are read directly here — no directory walk needed.
+  are read through the gather EFFECT node — no directory walk needed.
 * **full-tree** (no filenames — CI / manual ``python -m ...``): walks each
   ``--root`` (default ``src``) via the paired ``node_source_file_gather_effect``
   EFFECT node for ``*.py``/``*.yaml``/``*.yml`` files, reproducing the oracle
@@ -40,7 +40,7 @@ Usage::
     python -m omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check
     python -m omnibase_core.nodes.node_no_hardcoded_ip_check_compute.runtime_no_hardcoded_ip_check --root src tests scripts
 
-Exit codes: 0 — ``overall_status == "PASS"``; 1 — FAIL findings present.
+Exit codes: 0 — ``overall_status == "PASS"``; 1 — FAIL/ERROR findings present.
 
 Ticket: OMN-14659 (WS8 — convert-clean generic omniclaude arch validators).
 """
@@ -61,20 +61,31 @@ from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
     ModelSourceFileGatherInput,
 )
+from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_output import (
+    ModelSourceFileGatherOutput,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
+    ModelValidationReportWriteInput,
+)
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
 )
 from omnibase_core.nodes.node_no_hardcoded_ip_check_compute.handler import (
     NodeNoHardcodedIpCheckCompute,
 )
+from omnibase_core.nodes.node_no_hardcoded_ip_check_compute.matcher_hardcoded_ip import (
+    VALIDATOR_ID,
+)
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler import (
+    NodeValidationReportWriteEffect,
 )
 
 __all__ = ["main"]
 
 _DEFAULT_ROOTS: Final[tuple[str, ...]] = ("src",)
-_SCANNED_SUFFIXES: Final[tuple[str, ...]] = (".py", ".yaml", ".yml")
 
 
 def _gather_from_filenames(
@@ -86,18 +97,14 @@ def _gather_from_filenames(
     on existing eligible files are returned as fatal diagnostics so the
     runtime does not report PASS with unscanned source.
     """
-    files: list[ModelSourceFile] = []
-    read_errors: list[str] = []
-    for path in paths:
-        if path.suffix not in _SCANNED_SUFFIXES or not path.is_file():
-            continue
-        try:
-            source = path.read_text(encoding="utf-8")
-        except OSError as exc:
-            read_errors.append(f"{path}: read error: {exc}")
-            continue
-        files.append(ModelSourceFile(path=str(path), source=source))
-    return files, read_errors
+    output = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=".",
+            explicit_paths=[str(path) for path in paths],
+            include_patterns=["**/*.py", "**/*.yaml", "**/*.yml"],
+        )
+    )
+    return _split_gather_output(output)
 
 
 def _gather_from_roots(roots: list[str]) -> tuple[list[ModelSourceFile], list[str]]:
@@ -120,15 +127,24 @@ def _gather_from_roots(roots: list[str]) -> tuple[list[ModelSourceFile], list[st
                 root=root, include_patterns=["**/*.py", "**/*.yaml", "**/*.yml"]
             )
         )
-        read_errors.extend(
-            f"{skipped.path}: {skipped.reason}"
-            for skipped in output.skipped
-            if skipped.reason.startswith(("read error:", "error checking file size:"))
-        )
-        files.extend(
-            ModelSourceFile(path=f.path, source=f.source) for f in output.files
-        )
+        root_files, root_errors = _split_gather_output(output)
+        files.extend(root_files)
+        read_errors.extend(root_errors)
     return files, read_errors
+
+
+def _split_gather_output(
+    output: ModelSourceFileGatherOutput,
+) -> tuple[list[ModelSourceFile], list[str]]:
+    """Separate gathered source from fatal read diagnostics."""
+    read_errors = [
+        f"{skipped.path}: {skipped.reason}"
+        for skipped in output.skipped
+        if skipped.reason.startswith(("read error:", "error checking file size:"))
+    ]
+    return [
+        ModelSourceFile(path=f.path, source=f.source) for f in output.files
+    ], read_errors
 
 
 def _run(files: list[ModelSourceFile]) -> ModelValidationReport:
@@ -138,11 +154,19 @@ def _run(files: list[ModelSourceFile]) -> ModelValidationReport:
     )
 
 
+def _write_report(path: str | None, report: ModelValidationReport) -> None:
+    """Persist the canonical report through the write EFFECT node."""
+    if path is not None:
+        NodeValidationReportWriteEffect().handle(
+            ModelValidationReportWriteInput(report_path=path, report=report)
+        )
+
+
 def main(argv: list[str] | None = None) -> int:
     """CLI entry: pre-commit staged-file mode, or a full-tree walk with no args.
 
     Returns:
-        0 on PASS, 1 on FAIL.
+        0 on PASS, 1 on FAIL/ERROR.
     """
     parser = argparse.ArgumentParser(
         prog="check-no-hardcoded-ip",
@@ -171,14 +195,31 @@ def main(argv: list[str] | None = None) -> int:
             f"(default: {' '.join(_DEFAULT_ROOTS)})"
         ),
     )
+    parser.add_argument(
+        "--report-json",
+        default=None,
+        help="Write the canonical ValidationReport JSON on PASS, FAIL and ERROR.",
+    )
     parsed = parser.parse_args(argv)
 
+    full_tree = not parsed.filenames
     if parsed.filenames:
         files, read_errors = _gather_from_filenames([Path(f) for f in parsed.filenames])
     else:
         files, read_errors = _gather_from_roots(parsed.root)
 
-    if read_errors:
+    if read_errors or (full_tree and not files):
+        runtime_errors = read_errors or [
+            f"zero files scanned under {' '.join(parsed.root)}: a full-tree run that scans "
+            "nothing is ERROR, never PASS"
+        ]
+        error_report = ModelValidationReport.from_runtime_errors(
+            VALIDATOR_ID, tuple(runtime_errors)
+        )
+        _write_report(parsed.report_json, error_report)
+        if not read_errors:
+            sys.stdout.write(f"ERROR: {runtime_errors[0]}\n")
+            return 1
         print(
             f"ERROR: Failed to read {len(read_errors)} file(s):"
         )  # print-ok: CLI output
@@ -187,6 +228,7 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     report = _run(files)
+    _write_report(parsed.report_json, report)
 
     if report.overall_status == "PASS":
         print("OK: No hardcoded internal IPs found")  # print-ok: CLI output

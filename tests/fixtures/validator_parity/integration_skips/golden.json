@@ -1,0 +1,2378 @@
+{
+  "provenance": [
+    {
+      "repo": "omnibase_infra",
+      "file": "scripts/ci/check_integration_skips.py",
+      "git_sha": "ea5585e99f0b871fb2d3684a42c0bafb6436ce78",
+      "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" {args}"
+    },
+    {
+      "repo": "omnimarket",
+      "file": "scripts/ci/check_integration_skips.py",
+      "git_sha": "43700e20870637a2b618fba3d9f5e55e9bfc6497",
+      "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" {args}"
+    }
+  ],
+  "core_tree": {
+    "omnibase_infra": {
+      "exit_code": 2,
+      "stdout": "::error::--junit is required (or use --selftest)\n",
+      "command": "UV_OFFLINE=true uv run --no-sync python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --config /tmp/omn20565-integration_skips/corpus/config.yaml",
+      "junit_files": 0
+    },
+    "omnimarket": {
+      "exit_code": 2,
+      "stdout": "::error::--junit is required (or use --selftest)\n",
+      "command": "UV_OFFLINE=true uv run --no-sync python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --config /tmp/omn20565-integration_skips/corpus/config.yaml",
+      "junit_files": 0
+    }
+  },
+  "cases": [
+    {
+      "name": "absence_strings.xml",
+      "args": [
+        "--junit",
+        "absence_strings.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "absence_strings.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 8,
+              "message": "FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 9,
+              "message": "FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 11,
+              "message": "FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 12,
+              "message": "FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=9 executed=1 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit absence_strings.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "absence_strings.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 8,
+              "message": "FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 9,
+              "message": "FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 11,
+              "message": "FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 12,
+              "message": "FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=9 executed=1 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit absence_strings.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "absence_strings.xml_strict",
+      "args": [
+        "--junit",
+        "absence_strings.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "absence_strings.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 8,
+              "message": "FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 9,
+              "message": "FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 11,
+              "message": "FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 12,
+              "message": "FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=9 executed=1 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit absence_strings.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "absence_strings.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 8,
+              "message": "FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 9,
+              "message": "FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 11,
+              "message": "FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 12,
+              "message": "FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=9 executed=1 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit absence_strings.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "empty.xml",
+      "args": [
+        "--junit",
+        "empty.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit empty.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit empty.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "empty.xml_strict",
+      "args": [
+        "--junit",
+        "empty.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit empty.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit empty.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "entities.xml",
+      "args": [
+        "--junit",
+        "entities.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "entities.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: entity :: Postgres not reachable\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit entities.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "entities.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: entity :: Postgres not reachable\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit entities.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "entities.xml_strict",
+      "args": [
+        "--junit",
+        "entities.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "entities.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: entity :: Postgres not reachable\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit entities.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "entities.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: entity :: Postgres not reachable\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'entity' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Postgres not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit entities.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_0.xml",
+      "args": [
+        "--junit",
+        "harvest_0.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_0.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_0.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_0.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_0.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_0.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_0.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_1.xml",
+      "args": [
+        "--junit",
+        "harvest_1.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_1.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_1.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_1.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_1.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_1.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_1.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_1.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_1.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_1.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_1.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_1.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_1.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_1.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_1.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_10.xml",
+      "args": [
+        "--junit",
+        "harvest_10.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_10.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_10.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres :: POSTGRES_PASSWORD not set — skipping tenant_id column DB proof\n  skip BAD[postgres]: tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres :: no reachable Postgres for tier-distribution DB proof: Connection refused\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_10.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_10.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_10.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres :: POSTGRES_PASSWORD not set — skipping tenant_id column DB proof\n  skip BAD[postgres]: tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres :: no reachable Postgres for tier-distribution DB proof: Connection refused\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_10.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_10.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_10.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_10.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_10.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres :: POSTGRES_PASSWORD not set — skipping tenant_id column DB proof\n  skip BAD[postgres]: tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres :: no reachable Postgres for tier-distribution DB proof: Connection refused\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_10.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_10.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_10.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres :: POSTGRES_PASSWORD not set — skipping tenant_id column DB proof\n  skip BAD[postgres]: tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres :: no reachable Postgres for tier-distribution DB proof: Connection refused\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.test_delegation_savings_tenant_id_column_omn14058::test_delegation_events_upsert_stamps_tenant_id_on_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES_PASSWORD not set — skipping tenant_id column DB proof'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.test_projection_delegation_tier_distribution_omn13662::test_view_classifies_not_tier_routed_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'no reachable Postgres for tier-distribution DB proof: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_10.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_2.xml",
+      "args": [
+        "--junit",
+        "harvest_2.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature :: Some feature requires explicit opt-in\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_2.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature :: Some feature requires explicit opt-in\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_2.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_2.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_2.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_2.xml",
+              "line": 8,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature :: Some feature requires explicit opt-in\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_2.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_2.xml",
+              "line": 8,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature :: Some feature requires explicit opt-in\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_2.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_3.xml",
+      "args": [
+        "--junit",
+        "harvest_3.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-optional: t::kafka :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_3.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-optional: t::kafka :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_3.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_3.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_3.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-optional: t::kafka :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_3.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-optional: t::kafka :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_3.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_4.xml",
+      "args": [
+        "--junit",
+        "harvest_4.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_4.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: t::catalog :: postgres manifest not found in catalog — skipping\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_4.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_4.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: t::catalog :: postgres manifest not found in catalog — skipping\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_4.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_4.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_4.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_4.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: t::catalog :: postgres manifest not found in catalog — skipping\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_4.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_4.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: t::catalog :: postgres manifest not found in catalog — skipping\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::catalog' SKIPPED because provisioned service 'postgres' looked absent — reason: 'postgres manifest not found in catalog — skipping'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_4.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_5.xml",
+      "args": [
+        "--junit",
+        "harvest_5.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: t::weird :: some brand new unrecognised reason nobody classified yet\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_5.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: t::weird :: some brand new unrecognised reason nobody classified yet\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_5.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_5.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_5.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_5.xml",
+              "line": 7,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 't::weird' skipped with an unrecognised reason: 'some brand new unrecognised reason nobody classified yet'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: t::weird :: some brand new unrecognised reason nobody classified yet\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 't::weird' skipped with an unrecognised reason: 'some brand new unrecognised reason nobody classified yet'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_5.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_5.xml",
+              "line": 7,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 't::weird' skipped with an unrecognised reason: 'some brand new unrecognised reason nobody classified yet'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: t::weird :: some brand new unrecognised reason nobody classified yet\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 't::weird' skipped with an unrecognised reason: 'some brand new unrecognised reason nobody classified yet'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_5.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_7.xml",
+      "args": [
+        "--junit",
+        "harvest_7.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_7.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_7.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_7.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_7.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_7.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.integration.event_bus.test_kafka_boundary::test_kafka_roundtrip :: Redpanda broker not reachable at localhost:9092: connection refused\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_7.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_8.xml",
+      "args": [
+        "--junit",
+        "harvest_8.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_8.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_8.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_8.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_8.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_8.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_8.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_8.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_8.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_8.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_8.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_8.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_8.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "harvest_8.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=0 skipped=2 require_executed_min=1\n  skip BAD[postgres]: tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres :: PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables\n  skip BAD[postgres]: tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'tests.integration.runtime.db.test_postgres_repository_runtime_integration::test_execute_select_returns_rows_against_real_postgres' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 'tests.integration.handlers.test_registration_storage_postgres_uuid_cast::test_query_registrations_casts_node_id_uuid' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_8.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "harvest_9.xml",
+      "args": [
+        "--junit",
+        "harvest_9.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.node_llm.test_live_cloud_completion_omn13943::test_live :: live cloud delegation call; set OMN_ALLOW_LIVE_CLOUD_DELEGATION=1 to enable\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_9.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.node_llm.test_live_cloud_completion_omn13943::test_live :: live cloud delegation call; set OMN_ALLOW_LIVE_CLOUD_DELEGATION=1 to enable\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_9.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "harvest_9.xml_strict",
+      "args": [
+        "--junit",
+        "harvest_9.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.node_llm.test_live_cloud_completion_omn13943::test_live :: live cloud delegation call; set OMN_ALLOW_LIVE_CLOUD_DELEGATION=1 to enable\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_9.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=2 skipped=1 require_executed_min=1\n  skip ok-optional: tests.node_llm.test_live_cloud_completion_omn13943::test_live :: live cloud delegation call; set OMN_ALLOW_LIVE_CLOUD_DELEGATION=1 to enable\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_9.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "malformed.xml",
+      "args": [
+        "--junit",
+        "malformed.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not parse JUnit report malformed.xml: no element found: line 2, column 0"
+            }
+          ],
+          "stdout": "::error::could not parse JUnit report malformed.xml: no element found: line 2, column 0\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit malformed.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not parse JUnit report malformed.xml: no element found: line 2, column 0"
+            }
+          ],
+          "stdout": "::error::could not parse JUnit report malformed.xml: no element found: line 2, column 0\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit malformed.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "malformed.xml_strict",
+      "args": [
+        "--junit",
+        "malformed.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not parse JUnit report malformed.xml: no element found: line 2, column 0"
+            }
+          ],
+          "stdout": "::error::could not parse JUnit report malformed.xml: no element found: line 2, column 0\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit malformed.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not parse JUnit report malformed.xml: no element found: line 2, column 0"
+            }
+          ],
+          "stdout": "::error::could not parse JUnit report malformed.xml: no element found: line 2, column 0\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit malformed.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "namespaced.xml",
+      "args": [
+        "--junit",
+        "namespaced.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit namespaced.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit namespaced.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "namespaced.xml_strict",
+      "args": [
+        "--junit",
+        "namespaced.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit namespaced.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=1\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 0 integration test(s) executed (require >= 1). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 0)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit namespaced.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "overlap.xml",
+      "args": [
+        "--junit",
+        "overlap.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "overlap.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: overlap :: POSTGRES not available optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit overlap.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "overlap.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: overlap :: POSTGRES not available optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit overlap.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "overlap.xml_strict",
+      "args": [
+        "--junit",
+        "overlap.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "overlap.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: overlap :: POSTGRES not available optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit overlap.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "overlap.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[postgres]: overlap :: POSTGRES not available optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'postgres' looked absent — reason: 'POSTGRES not available optional token'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit overlap.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "pass.xml",
+      "args": [
+        "--junit",
+        "pass.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=3 skipped=0 require_executed_min=1\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit pass.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=3 skipped=0 require_executed_min=1\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit pass.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "pass.xml_strict",
+      "args": [
+        "--junit",
+        "pass.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=3 skipped=0 require_executed_min=1\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit pass.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=3 executed=3 skipped=0 require_executed_min=1\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit pass.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "reason_edges.xml",
+      "args": [
+        "--junit",
+        "reason_edges.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "reason_edges.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=6 executed=2 skipped=4 require_executed_min=1\n  skip BAD[postgres]: t::text :: PostgreSQL not reachable\n  skip ok-optional: message :: optional token\n  skip ok-unclassified:  :: \n  skip ok-optional: double :: optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit reason_edges.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "reason_edges.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=6 executed=2 skipped=4 require_executed_min=1\n  skip BAD[postgres]: t::text :: PostgreSQL not reachable\n  skip ok-optional: message :: optional token\n  skip ok-unclassified:  :: \n  skip ok-optional: double :: optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit reason_edges.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "reason_edges.xml_strict",
+      "args": [
+        "--junit",
+        "reason_edges.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "reason_edges.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "reason_edges.xml",
+              "line": 7,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test '' skipped with an unrecognised reason: ''. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=6 executed=2 skipped=4 require_executed_min=1\n  skip BAD[postgres]: t::text :: PostgreSQL not reachable\n  skip ok-optional: message :: optional token\n  skip ok-unclassified:  :: \n  skip ok-optional: double :: optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::UNCLASSIFIED-SKIP (strict): integration test '' skipped with an unrecognised reason: ''. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit reason_edges.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "reason_edges.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "reason_edges.xml",
+              "line": 7,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test '' skipped with an unrecognised reason: ''. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=6 executed=2 skipped=4 require_executed_min=1\n  skip BAD[postgres]: t::text :: PostgreSQL not reachable\n  skip ok-optional: message :: optional token\n  skip ok-unclassified:  :: \n  skip ok-optional: double :: optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::text' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::UNCLASSIFIED-SKIP (strict): integration test '' skipped with an unrecognised reason: ''. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit reason_edges.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "unknown.xml",
+      "args": [
+        "--junit",
+        "unknown.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "unknown.xml_strict",
+      "args": [
+        "--junit",
+        "unknown.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "unknown.xml",
+              "line": 5,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "unknown.xml",
+              "line": 5,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "unreadable.xml",
+      "args": [
+        "--junit",
+        "unreadable.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "[Errno 13] Permission denied: 'unreadable.xml'"
+            }
+          ],
+          "stdout": "",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit unreadable.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "[Errno 13] Permission denied: 'unreadable.xml'"
+            }
+          ],
+          "stdout": "",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit unreadable.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "unreadable.xml_strict",
+      "args": [
+        "--junit",
+        "unreadable.xml",
+        "--config",
+        "config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "[Errno 13] Permission denied: 'unreadable.xml'"
+            }
+          ],
+          "stdout": "",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit unreadable.xml --config config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "[Errno 13] Permission denied: 'unreadable.xml'"
+            }
+          ],
+          "stdout": "",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit unreadable.xml --config config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "aggregate",
+      "args": [
+        "--junit",
+        "pass.xml",
+        "absence_strings.xml",
+        "pass.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "absence_strings.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 8,
+              "message": "FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 9,
+              "message": "FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 11,
+              "message": "FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 12,
+              "message": "FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=15 executed=7 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. The merge-gating job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit pass.xml absence_strings.xml pass.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "absence_strings.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 6,
+              "message": "FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 7,
+              "message": "FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 8,
+              "message": "FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 9,
+              "message": "FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 10,
+              "message": "FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 11,
+              "message": "FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            },
+            {
+              "path": "absence_strings.xml",
+              "line": 12,
+              "message": "FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=15 executed=7 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 't::c0' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL integration tests skipped: PostgreSQL configured but not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c1' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c2' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not configured or not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c3' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL not reachable'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c4' SKIPPED because provisioned service 'postgres' looked absent — reason: 'PostgreSQL DSN not available'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c5' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c6' SKIPPED because provisioned service 'postgres' looked absent — reason: 'Database not reachable: Connection refused'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n::error::FALSE-GREEN: integration test 't::c7' SKIPPED because provisioned service 'postgres' looked absent — reason: 'No database URL configured (set OMNIBASE_INFRA_DB_URL)'. This job provisions postgres; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit pass.xml absence_strings.xml pass.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "disabled",
+      "args": [
+        "--junit",
+        "absence_strings.xml",
+        "--config",
+        "disabled.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=9 executed=1 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit absence_strings.xml --config disabled.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=9 executed=1 skipped=8 require_executed_min=1\n  skip BAD[postgres]: t::c0 :: PostgreSQL integration tests skipped: PostgreSQL configured but not reachable\n  skip BAD[postgres]: t::c1 :: PostgreSQL not available (set OMNIBASE_INFRA_DB_URL)\n  skip BAD[postgres]: t::c2 :: PostgreSQL not configured or not reachable\n  skip BAD[postgres]: t::c3 :: PostgreSQL not reachable\n  skip BAD[postgres]: t::c4 :: PostgreSQL DSN not available\n  skip BAD[postgres]: t::c5 :: Database not configured (set OMNIBASE_INFRA_DB_URL or POSTGRES_PASSWORD)\n  skip BAD[postgres]: t::c6 :: Database not reachable: Connection refused\n  skip BAD[postgres]: t::c7 :: No database URL configured (set OMNIBASE_INFRA_DB_URL)\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit absence_strings.xml --config disabled.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "minimum",
+      "args": [
+        "--junit",
+        "unknown.xml",
+        "--config",
+        "minimum.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 1 integration test(s) executed (require >= 2). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=2\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 1 integration test(s) executed (require >= 2). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config minimum.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<reports>",
+              "line": 1,
+              "message": "ZERO/UNDER-COLLECTION: only 1 integration test(s) executed (require >= 2). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)"
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=2\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::ZERO/UNDER-COLLECTION: only 1 integration test(s) executed (require >= 2). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 2)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config minimum.yaml"
+        }
+      }
+    },
+    {
+      "name": "overlap_config",
+      "args": [
+        "--junit",
+        "overlap.xml",
+        "--config",
+        "overlap.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "overlap.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'first' looked absent — reason: 'POSTGRES not available optional token'. The merge-gating job provisions first; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[first]: overlap :: POSTGRES not available optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'first' looked absent — reason: 'POSTGRES not available optional token'. The merge-gating job provisions first; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit overlap.xml --config overlap.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "overlap.xml",
+              "line": 5,
+              "message": "FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'first' looked absent — reason: 'POSTGRES not available optional token'. This job provisions first; this test SHOULD have run. Wire the service env or fix the skip guard."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip BAD[first]: overlap :: POSTGRES not available optional token\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::FALSE-GREEN: integration test 'overlap' SKIPPED because provisioned service 'first' looked absent — reason: 'POSTGRES not available optional token'. This job provisions first; this test SHOULD have run. Wire the service env or fix the skip guard.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit overlap.xml --config overlap.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "strict_no_optional",
+      "args": [
+        "--junit",
+        "harvest_2.xml",
+        "--config",
+        "strict_config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_2.xml",
+              "line": 8,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature :: Some feature requires explicit opt-in\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit harvest_2.xml --config strict_config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "harvest_2.xml",
+              "line": 8,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature :: Some feature requires explicit opt-in\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'tests.integration.registration.e2e.test_runtime_e2e.TestRuntime::test_some_opt_in_feature' skipped with an unrecognised reason: 'Some feature requires explicit opt-in'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit harvest_2.xml --config strict_config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "empty_config",
+      "args": [
+        "--junit",
+        "unknown.xml",
+        "--config",
+        "empty_config.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "unknown.xml",
+              "line": 5,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config empty_config.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "unknown.xml",
+              "line": 5,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config empty_config.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "nullable",
+      "args": [
+        "--junit",
+        "unknown.xml",
+        "--config",
+        "nullable.yaml",
+        "--strict"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "unknown.xml",
+              "line": 5,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config nullable.yaml --strict"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "unknown.xml",
+              "line": 5,
+              "message": "UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns)."
+            }
+          ],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=2 executed=1 skipped=1 require_executed_min=1\n  skip ok-unclassified: unknown :: new reason\n\nGATE FAILED — silent-skip false-green(s) detected:\n::error::UNCLASSIFIED-SKIP (strict): integration test 'unknown' skipped with an unrecognised reason: 'new reason'. Classify it in integration_skip_guard.yaml (required_services vs allowed_optional_skip_patterns).\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit unknown.xml --config nullable.yaml --strict"
+        }
+      }
+    },
+    {
+      "name": "negative_minimum",
+      "args": [
+        "--junit",
+        "empty.xml",
+        "--config",
+        "negative_minimum.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=-1\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit empty.xml --config negative_minimum.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "=== integration silent-skip guard (OMN-14172) ===\ncases=0 executed=0 skipped=0 require_executed_min=-1\n\nGATE PASSED — no missing-service silent-skips; integration tests ran.\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit empty.xml --config negative_minimum.yaml"
+        }
+      }
+    },
+    {
+      "name": "missing",
+      "args": [
+        "--junit",
+        "missing.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "JUnit report not found: missing.xml"
+            }
+          ],
+          "stdout": "::error::JUnit report not found: missing.xml\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit missing.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "JUnit report not found: missing.xml"
+            }
+          ],
+          "stdout": "::error::JUnit report not found: missing.xml\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit missing.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "missing_config",
+      "args": [
+        "--config",
+        "missing.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not load guard config missing.yaml: [Errno 2] No such file or directory: 'missing.yaml'"
+            }
+          ],
+          "stdout": "::error::could not load guard config missing.yaml: [Errno 2] No such file or directory: 'missing.yaml'\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --config missing.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not load guard config missing.yaml: [Errno 2] No such file or directory: 'missing.yaml'"
+            }
+          ],
+          "stdout": "::error::could not load guard config missing.yaml: [Errno 2] No such file or directory: 'missing.yaml'\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --config missing.yaml"
+        }
+      }
+    },
+    {
+      "name": "invalid_regex",
+      "args": [
+        "--junit",
+        "pass.xml",
+        "--config",
+        "invalid_regex.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not load guard config invalid_regex.yaml: unterminated character set at position 0"
+            }
+          ],
+          "stdout": "::error::could not load guard config invalid_regex.yaml: unterminated character set at position 0\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit pass.xml --config invalid_regex.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not load guard config invalid_regex.yaml: unterminated character set at position 0"
+            }
+          ],
+          "stdout": "::error::could not load guard config invalid_regex.yaml: unterminated character set at position 0\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit pass.xml --config invalid_regex.yaml"
+        }
+      }
+    },
+    {
+      "name": "invalid_yaml",
+      "args": [
+        "--junit",
+        "pass.xml",
+        "--config",
+        "invalid_yaml.cfg"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not load guard config invalid_yaml.cfg: while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^"
+            }
+          ],
+          "stdout": "::error::could not load guard config invalid_yaml.cfg: while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit pass.xml --config invalid_yaml.cfg"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not load guard config invalid_yaml.cfg: while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^"
+            }
+          ],
+          "stdout": "::error::could not load guard config invalid_yaml.cfg: while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit pass.xml --config invalid_yaml.cfg"
+        }
+      }
+    },
+    {
+      "name": "no_junit",
+      "args": [
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "--junit is required (or use --selftest)"
+            }
+          ],
+          "stdout": "::error::--junit is required (or use --selftest)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "--junit is required (or use --selftest)"
+            }
+          ],
+          "stdout": "::error::--junit is required (or use --selftest)\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest",
+      "args": [
+        "--selftest",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST PASSED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST PASSED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest_disabled",
+      "args": [
+        "--selftest",
+        "--config",
+        "disabled.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL (case b should be RED): gate did not flag silent skip"
+            },
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL: silent_skip_allowed must be false"
+            }
+          ],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST FAIL (case b should be RED): gate did not flag silent skip\nSELFTEST FAIL: silent_skip_allowed must be false\nSELFTEST FAILED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --config disabled.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL (case b should be RED): gate did not flag silent skip"
+            },
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL: silent_skip_allowed must be false"
+            }
+          ],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST FAIL (case b should be RED): gate did not flag silent skip\nSELFTEST FAIL: silent_skip_allowed must be false\nSELFTEST FAILED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --config disabled.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest_no_required",
+      "args": [
+        "--selftest",
+        "--config",
+        "strict_config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL: config declares no required_services"
+            }
+          ],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (1 violation(s))\nSELFTEST FAIL: config declares no required_services\nSELFTEST FAILED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --config strict_config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL: config declares no required_services"
+            }
+          ],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (1 violation(s))\nSELFTEST FAIL: config declares no required_services\nSELFTEST FAILED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --config strict_config.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest_minimum",
+      "args": [
+        "--selftest",
+        "--config",
+        "minimum.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST PASSED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --config minimum.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST PASSED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --config minimum.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest_pass_case_fails",
+      "args": [
+        "--selftest",
+        "--config",
+        "minimum_three.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL (case a should pass): ['ZERO/UNDER-COLLECTION: only 2 integration test(s) executed (require >= 3). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 3)']"
+            }
+          ],
+          "stdout": "SELFTEST FAIL (case a should pass): ['ZERO/UNDER-COLLECTION: only 2 integration test(s) executed (require >= 3). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 3)']\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST FAILED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --config minimum_three.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL (case a should pass): ['ZERO/UNDER-COLLECTION: only 2 integration test(s) executed (require >= 3). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 3)']"
+            }
+          ],
+          "stdout": "SELFTEST FAIL (case a should pass): ['ZERO/UNDER-COLLECTION: only 2 integration test(s) executed (require >= 3). A marker typo or a broken selector collecting nothing is itself a false-green. (total cases seen: 3)']\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST FAILED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --config minimum_three.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest_ignores_junit",
+      "args": [
+        "--selftest",
+        "--junit",
+        "missing.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST PASSED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --junit missing.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "findings": [],
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (3 violation(s))\nSELFTEST PASSED\n",
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --junit missing.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "malformed_then_missing",
+      "args": [
+        "--junit",
+        "malformed.xml",
+        "missing.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "stdout": "::error::could not parse JUnit report malformed.xml: no element found: line 2, column 0\n",
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not parse JUnit report malformed.xml: no element found: line 2, column 0"
+            }
+          ],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit malformed.xml missing.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "stdout": "::error::could not parse JUnit report malformed.xml: no element found: line 2, column 0\n",
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "could not parse JUnit report malformed.xml: no element found: line 2, column 0"
+            }
+          ],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit malformed.xml missing.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "missing_then_malformed",
+      "args": [
+        "--junit",
+        "missing.xml",
+        "malformed.xml",
+        "--config",
+        "config.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 2,
+          "stdout": "::error::JUnit report not found: missing.xml\n",
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "JUnit report not found: missing.xml"
+            }
+          ],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --junit missing.xml malformed.xml --config config.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 2,
+          "stdout": "::error::JUnit report not found: missing.xml\n",
+          "findings": [
+            {
+              "path": null,
+              "line": null,
+              "message": "JUnit report not found: missing.xml"
+            }
+          ],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --junit missing.xml malformed.xml --config config.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest_infra_specific",
+      "args": [
+        "--selftest",
+        "--config",
+        "infra_selftest.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 0,
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (1 violation(s))\nSELFTEST PASSED\n",
+          "findings": [],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --config infra_selftest.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 1,
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST FAIL (case b should be RED): gate did not flag silent skip\nSELFTEST FAILED\n",
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL (case b should be RED): gate did not flag silent skip"
+            }
+          ],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --config infra_selftest.yaml"
+        }
+      }
+    },
+    {
+      "name": "selftest_market_specific",
+      "args": [
+        "--selftest",
+        "--config",
+        "market_selftest.yaml"
+      ],
+      "oracles": {
+        "omnibase_infra": {
+          "exit_code": 1,
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST FAIL (case b should be RED): gate did not flag silent skip\nSELFTEST FAILED\n",
+          "findings": [
+            {
+              "path": "<selftest>",
+              "line": 1,
+              "message": "SELFTEST FAIL (case b should be RED): gate did not flag silent skip"
+            }
+          ],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnibase_infra/scripts/ci/check_integration_skips.py\" --selftest --config market_selftest.yaml"
+        },
+        "omnimarket": {
+          "exit_code": 0,
+          "stdout": "SELFTEST ok: case (a) provisioned -> PASS\nSELFTEST ok: case (b) silent-skip -> RED (1 violation(s))\nSELFTEST PASSED\n",
+          "findings": [],
+          "command": "cd /tmp/omn20565-integration_skips/corpus && UV_OFFLINE=true uv run --no-sync --project \"$CORE_WORKTREE\" python \"$OMNI_HOME/omnimarket/scripts/ci/check_integration_skips.py\" --selftest --config market_selftest.yaml"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,1335 @@
+{
+  "provenance": {
+    "omnibase_infra": {
+      "repository": "omnibase_infra",
+      "file": "scripts/validation/validate_test_root_collection.py",
+      "git_sha": "ea5585e99f0b871fb2d3684a42c0bafb6436ce78",
+      "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/clean"
+    },
+    "omnibase_compat": {
+      "repository": "omnibase_compat",
+      "file": "scripts/validation/validate_test_root_collection.py",
+      "git_sha": "02ed971093fec768dc1a9f5fe32ef1fe4df69f56",
+      "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/clean"
+    }
+  },
+  "oracle_source": "import json\nimport runpy\nimport sys\nfrom pathlib import Path\n\nscript = Path(sys.argv[1])\nroot = Path(sys.argv[2]).resolve()\nmodule = runpy.run_path(str(script))\nfor name in ('find_violations','check_testpaths_exist','check_uncollected_roots','check_full_suite_invocation','check_collocated_selector_coverage','check_selector_parity'):\n    if name in module:\n        module[name].__defaults__ = (root,)\nsys.path.insert(0,str(root))\ntry:\n    code = module['main']()\nexcept Exception as exc:\n    sys.stderr.write(json.dumps({'type':type(exc).__name__, 'message':str(exc)})+'\\n')\n    code = 1\nsys.exit(code)\n",
+  "cases": {
+    "clean": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/clean",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/clean",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "stray": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/stray",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/widget/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/stray",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/widget/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "missing_declared_root": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_declared_root",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/gone/tests/",
+            "line": 1,
+            "message": "scripts/gone/tests/: listed in pyproject.toml testpaths but is not a directory on disk \u2014 pytest would abort collection with exit 5. Remove the entry or restore the directory."
+          },
+          {
+            "path": "scripts/gone/tests/",
+            "line": 1,
+            "message": "scripts/gone/tests/: collected via pyproject.toml testpaths but no COLLOCATED_TEST_ROOTS entry in scripts/ci/detect_test_paths.py maps any source prefix to it \u2014 a narrowed smart-selection run can never select it (OMN-15410)."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/gone/tests/: listed in pyproject.toml testpaths but is not a directory on disk \u2014 pytest would abort collection with exit 5. Remove the entry or restore the directory.\n  - scripts/gone/tests/: collected via pyproject.toml testpaths but no COLLOCATED_TEST_ROOTS entry in scripts/ci/detect_test_paths.py maps any source prefix to it \u2014 a narrowed smart-selection run can never select it (OMN-15410).\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_declared_root",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/gone/tests/",
+            "line": 1,
+            "message": "scripts/gone/tests/: listed in pyproject.toml testpaths but is not a directory on disk \u2014 pytest would abort collection with exit 5 and redden the whole suite. Remove the entry or restore the directory."
+          },
+          {
+            "path": "scripts/ci/detect_test_paths.py",
+            "line": 1,
+            "message": "scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/'], which differs from pyproject.toml testpaths ['tests/', 'scripts/gone/tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/gone/tests/: listed in pyproject.toml testpaths but is not a directory on disk \u2014 pytest would abort collection with exit 5 and redden the whole suite. Remove the entry or restore the directory.\n  - scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/'], which differs from pyproject.toml testpaths ['tests/', 'scripts/gone/tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed.\n",
+        "exception": null
+      }
+    },
+    "collocated_mapped": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/collocated_mapped",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/collocated_mapped",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "collocated_unmapped": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/collocated_unmapped",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: collected via pyproject.toml testpaths but no COLLOCATED_TEST_ROOTS entry in scripts/ci/detect_test_paths.py maps any source prefix to it \u2014 a narrowed smart-selection run can never select it (OMN-15410)."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/widget/tests/: collected via pyproject.toml testpaths but no COLLOCATED_TEST_ROOTS entry in scripts/ci/detect_test_paths.py maps any source prefix to it \u2014 a narrowed smart-selection run can never select it (OMN-15410).\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/collocated_unmapped",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/ci/detect_test_paths.py",
+            "line": 1,
+            "message": "scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/'], which differs from pyproject.toml testpaths ['tests/', 'scripts/widget/tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/'], which differs from pyproject.toml testpaths ['tests/', 'scripts/widget/tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed.\n",
+        "exception": null
+      }
+    },
+    "mapped_undeclared": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/mapped_undeclared",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: mapped by COLLOCATED_TEST_ROOTS in scripts/ci/detect_test_paths.py but absent from pyproject.toml testpaths \u2014 the selector would hand pytest a path the full suite never collects (OMN-15410)."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/widget/tests/: mapped by COLLOCATED_TEST_ROOTS in scripts/ci/detect_test_paths.py but absent from pyproject.toml testpaths \u2014 the selector would hand pytest a path the full suite never collects (OMN-15410).\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/mapped_undeclared",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/ci/detect_test_paths.py",
+            "line": 1,
+            "message": "scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/', 'scripts/widget/tests/'], which differs from pyproject.toml testpaths ['tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/', 'scripts/widget/tests/'], which differs from pyproject.toml testpaths ['tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed.\n",
+        "exception": null
+      }
+    },
+    "product_and_empty_tests": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/product_and_empty_tests",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/product_and_empty_tests",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "nested_stray": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/nested_stray",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/widget/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/nested_stray",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/widget/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "prefix_boundary": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/prefix_boundary",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "tests_extra/tests/",
+            "line": 1,
+            "message": "tests_extra/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - tests_extra/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/prefix_boundary",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "tests_extra/tests/",
+            "line": 1,
+            "message": "tests_extra/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - tests_extra/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "trailing_slash": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/trailing_slash",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/trailing_slash",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "all_options": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/all_options",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/all_options",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "expressions_and_continuations": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/expressions_and_continuations",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/expressions_and_continuations",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "positional_tests": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/positional_tests",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/positional_tests",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      }
+    },
+    "positional_compat": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/positional_compat",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['src/omnibase_compat/tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['src/omnibase_compat/tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/positional_compat",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['src/omnibase_compat/tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['src/omnibase_compat/tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      }
+    },
+    "no_pytest_token": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/no_pytest_token",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/no_pytest_token",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "shell_suffix": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/shell_suffix",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['&&', 'echo', 'done'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['&&', 'echo', 'done'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/shell_suffix",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['&&', 'echo', 'done'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['&&', 'echo', 'done'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      }
+    },
+    "multiple_pytest_commands": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/multiple_pytest_commands",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['uv', 'run', 'pytest', 'tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['uv', 'run', 'pytest', 'tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15410); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/multiple_pytest_commands",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".github/workflows/ci.yml",
+            "line": 1,
+            "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['uv', 'run', 'pytest', 'tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['uv', 'run', 'pytest', 'tests/'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include.\n",
+        "exception": null
+      }
+    },
+    "empty_testpaths": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/empty_testpaths",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ValueError",
+          "message": "<root>/pyproject.toml declares no [tool.pytest.ini_options] testpaths; bare `pytest` would collect the whole repository (OMN-15410)"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/empty_testpaths",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ValueError",
+          "message": "<root>/pyproject.toml declares no [tool.pytest.ini_options] testpaths; bare `pytest` would collect the whole repository (OMN-15541)"
+        }
+      }
+    },
+    "missing_testpaths": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_testpaths",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ValueError",
+          "message": "<root>/pyproject.toml declares no [tool.pytest.ini_options] testpaths; bare `pytest` would collect the whole repository (OMN-15410)"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_testpaths",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ValueError",
+          "message": "<root>/pyproject.toml declares no [tool.pytest.ini_options] testpaths; bare `pytest` would collect the whole repository (OMN-15541)"
+        }
+      }
+    },
+    "malformed_toml": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/malformed_toml",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "TOMLDecodeError",
+          "message": "Expected ']' at the end of a table declaration (at line 3, column 25)"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/malformed_toml",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "TOMLDecodeError",
+          "message": "Expected ']' at the end of a table declaration (at line 3, column 25)"
+        }
+      }
+    },
+    "missing_workflow": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_workflow",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "FileNotFoundError",
+          "message": ".github/workflows/ci.yml does not exist"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_workflow",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "FileNotFoundError",
+          "message": ".github/workflows/ci.yml does not exist"
+        }
+      }
+    },
+    "missing_pyproject": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_pyproject",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "FileNotFoundError",
+          "message": "<root>/pyproject.toml does not exist; cannot determine collected test roots"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_pyproject",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "FileNotFoundError",
+          "message": "<root>/pyproject.toml does not exist; cannot determine collected test roots"
+        }
+      }
+    },
+    "renamed_step": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/renamed_step",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "LookupError",
+          "message": ".github/workflows/ci.yml has no step named 'Run pytest (full suite)'; the full-suite invocation cannot be verified (OMN-15410)"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/renamed_step",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "LookupError",
+          "message": ".github/workflows/ci.yml has no step named 'Run pytest (full suite)'; the full-suite invocation cannot be verified. Renaming the step does not retire this guard \u2014 update FULL_SUITE_STEP_NAME (OMN-15541)."
+        }
+      }
+    },
+    "malformed_ci": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/malformed_ci",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ParserError",
+          "message": "while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/malformed_ci",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ParserError",
+          "message": "while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^"
+        }
+      }
+    },
+    "nonmapping_ci": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/nonmapping_ci",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "AttributeError",
+          "message": "'list' object has no attribute 'get'"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/nonmapping_ci",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "AttributeError",
+          "message": "'list' object has no attribute 'get'"
+        }
+      }
+    },
+    "unclosed_shell_quote": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/unclosed_shell_quote",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ValueError",
+          "message": "No closing quotation"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/unclosed_shell_quote",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ValueError",
+          "message": "No closing quotation"
+        }
+      }
+    },
+    "missing_selector": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_selector",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ModuleNotFoundError",
+          "message": "No module named 'scripts.ci.detect_test_paths'"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_selector",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ModuleNotFoundError",
+          "message": "No module named 'scripts.ci.detect_test_paths'"
+        }
+      }
+    },
+    "missing_selector_constant": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_selector_constant",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ImportError",
+          "message": "cannot import name 'COLLOCATED_TEST_ROOTS' from 'scripts.ci.detect_test_paths' (<root>/scripts/ci/detect_test_paths.py)"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/missing_selector_constant",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ImportError",
+          "message": "cannot import name '_full_suite' from 'scripts.ci.detect_test_paths' (<root>/scripts/ci/detect_test_paths.py)"
+        }
+      }
+    },
+    "selector_syntax_error": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/selector_syntax_error",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "SyntaxError",
+          "message": "invalid syntax (detect_test_paths.py, line 3)"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/selector_syntax_error",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "SyntaxError",
+          "message": "invalid syntax (detect_test_paths.py, line 3)"
+        }
+      }
+    },
+    "ignored_git": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_git",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_git",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "ignored___pycache__": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored___pycache__",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored___pycache__",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "ignored_venv": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_venv",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_venv",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "ignored_node_modules": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_node_modules",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_node_modules",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "ignored_proof-dependencies": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_proof-dependencies",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_proof-dependencies",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".proof-dependencies/vendor/tests/",
+            "line": 1,
+            "message": ".proof-dependencies/vendor/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - .proof-dependencies/vendor/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "ignored_mypy_cache": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_mypy_cache",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": ".mypy_cache/vendor/tests/",
+            "line": 1,
+            "message": ".mypy_cache/vendor/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - .mypy_cache/vendor/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/ignored_mypy_cache",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "standalone_missing_project": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_missing_project",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but scripts/deploy-agent/pyproject.toml does not exist"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but scripts/deploy-agent/pyproject.toml does not exist\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_missing_project",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_missing_workflow": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_missing_workflow",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml does not exist"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml does not exist\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_missing_workflow",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_unrelated": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_unrelated",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never references scripts/deploy-agent \u2014 it cannot be running those tests"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never references scripts/deploy-agent \u2014 it cannot be running those tests\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_unrelated",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_push_only": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_push_only",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_push_only",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_no_trigger": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_no_trigger",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_no_trigger",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_scalar_pr": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_scalar_pr",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_scalar_pr",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_target_pr": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_target_pr",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_target_pr",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_list_pr": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_list_pr",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_list_pr",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_mapping_pr": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_mapping_pr",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_mapping_pr",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_unreachable_call": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_unreachable_call",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_unreachable_call",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_yaml_caller": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_yaml_caller",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_yaml_caller",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_cycle": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_cycle",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_cycle",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_malformed": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_malformed",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_malformed",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_nonmapping": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_nonmapping",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again"
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/deploy-agent/tests/: registered as a STANDALONE_PROJECT_ROOTS entry but the wiring workflow .github/workflows/deploy-agent-tests.yml never runs on a pull request (no pull_request trigger, and no PR-reachable workflow calls it via uses:) \u2014 the tests are invisible again\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_nonmapping",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "standalone_call_chain": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_call_chain",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_call_chain",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "selector_full_suite_drift": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/selector_full_suite_drift",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/selector_full_suite_drift",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/ci/detect_test_paths.py",
+            "line": 1,
+            "message": "scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/unit/'], which differs from pyproject.toml testpaths ['tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/ci/detect_test_paths.py::_full_suite() returns selected_paths ['tests/unit/'], which differs from pyproject.toml testpaths ['tests/']. The selector must derive its roots from testpaths via collected_test_roots() \u2014 two lists that must agree by convention is the exact defect OMN-15541 removed.\n",
+        "exception": null
+      }
+    },
+    "selector_tests_prefix_missing": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/selector_tests_prefix_missing",
+        "exit_code": 1,
+        "findings": [],
+        "stdout": "",
+        "exception": {
+          "type": "ImportError",
+          "message": "cannot import name 'TESTS_PREFIX' from 'scripts.ci.detect_test_paths' (<root>/scripts/ci/detect_test_paths.py)"
+        }
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/selector_tests_prefix_missing",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "nested_tests_roots": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/nested_tests_roots",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring."
+          },
+          {
+            "path": "scripts/widget/tests/unit/nested/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/unit/nested/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):\n  - scripts/widget/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring.\n  - scripts/widget/tests/unit/nested/tests/: not under any pyproject.toml testpaths root (tests/), not a registered STANDALONE_PROJECT_ROOTS entry, and not in KNOWN_UNCOLLECTED_DEBT \u2014 no pytest invocation in CI can ever run these tests (OMN-15378 class). Add it to testpaths (plus a COLLOCATED_TEST_ROOTS mapping in scripts/ci/detect_test_paths.py if it lives outside tests/), or register it in STANDALONE_PROJECT_ROOTS with real CI wiring.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/nested_tests_roots",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/widget/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          },
+          {
+            "path": "scripts/widget/tests/unit/nested/tests/",
+            "line": 1,
+            "message": "scripts/widget/tests/unit/nested/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/widget/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n  - scripts/widget/tests/unit/nested/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    },
+    "collected_parent_without_tests_name": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/collected_parent_without_tests_name",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/collected_parent_without_tests_name",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "unrelated_project_config_encoding": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/unrelated_project_config_encoding",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/unrelated_project_config_encoding",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is under a pyproject testpaths root, the ci.yml full suite inherits testpaths with no positional path, and the selector's full-suite roots match testpaths.\n",
+        "exception": null
+      }
+    },
+    "standalone_project_config_encoding": {
+      "omnibase_infra": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_project_config_encoding",
+        "exit_code": 0,
+        "findings": [],
+        "stdout": "OK: every tests/ directory is reachable by a wired pytest invocation, the full suite inherits pyproject testpaths, and every collocated root is selector-reachable.\n",
+        "exception": null
+      },
+      "omnibase_compat": {
+        "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" /tmp/omn20565-test_root_collection/standalone_project_config_encoding",
+        "exit_code": 1,
+        "findings": [
+          {
+            "path": "scripts/deploy-agent/tests/",
+            "line": 1,
+            "message": "scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist."
+          }
+        ],
+        "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - scripts/deploy-agent/tests/: contains test_*.py but is not under any pyproject.toml testpaths root (tests/) \u2014 no pytest invocation in this repo can ever run these tests (OMN-15378/OMN-15410/OMN-15541 class). Add it to testpaths. There is deliberately no allowlist.\n",
+        "exception": null
+      }
+    }
+  },
+  "core_tree": {
+    "omnibase_infra": {
+      "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_infra/scripts/validation/validate_test_root_collection.py\" \"$PWD\"",
+      "exit_code": 1,
+      "findings": [],
+      "stdout": "",
+      "exception": {
+        "type": "ImportError",
+        "message": "cannot import name 'COLLOCATED_TEST_ROOTS' from 'scripts.ci.detect_test_paths' (<root>/scripts/ci/detect_test_paths.py)"
+      }
+    },
+    "omnibase_compat": {
+      "command": "UV_CACHE_DIR=/tmp/omn20565-test_root_collection/uv-cache UV_OFFLINE=true uv run --no-sync python /tmp/omn20565-test_root_collection/oracle.py \"$OMNI_HOME/omnibase_compat/scripts/validation/validate_test_root_collection.py\" \"$PWD\"",
+      "exit_code": 1,
+      "findings": [
+        {
+          "path": ".github/workflows/ci.yml",
+          "line": 1,
+          "message": ".github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['tests/', '.test_durations'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include."
+        }
+      ],
+      "stdout": "FAIL: test-collection defect(s) detected (OMN-15541 class):\n  - .github/workflows/ci.yml step 'Run pytest (full suite)' passes positional path(s) ['tests/', '.test_durations'] to pytest, overriding pyproject.toml testpaths. The full suite must pass NO positional path so it inherits every collected root (OMN-15541); use --ignore to exclude, never a positional include.\n",
+      "exception": null
+    }
+  }
+}

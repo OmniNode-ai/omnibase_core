@@ -1,0 +1,1 @@
+<testsuite tests="100"><testcase classname="  tests.pkg.a  " name=" test_one "><skipped/></testcase><testcase classname="pkg.b" name="test_two"><skipped/></testcase></testsuite>

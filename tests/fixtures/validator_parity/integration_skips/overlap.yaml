@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+required_services:
+  first:
+    missing_skip_patterns: ['postgres']
+  second:
+    missing_skip_patterns: ['postgres']
+allowed_optional_skip_patterns: ['postgres']

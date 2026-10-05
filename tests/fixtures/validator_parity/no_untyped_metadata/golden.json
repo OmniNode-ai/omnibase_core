@@ -1,0 +1,137 @@
+{
+  "bad_types.py": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "bad_types.py",
+        "line": 3,
+        "message": "bad_types.py:3: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "bad_types.py",
+        "line": 4,
+        "message": "bad_types.py:4: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "bad_types.py",
+        "line": 5,
+        "message": "bad_types.py:5: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "bad_types.py",
+        "line": 6,
+        "message": "bad_types.py:6: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "bad_types.py",
+        "line": 7,
+        "message": "bad_types.py:7: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      }
+    ]
+  },
+  "typed.py": {
+    "exit_code": 0,
+    "findings": []
+  },
+  "same_line.py": {
+    "exit_code": 0,
+    "findings": []
+  },
+  "other_line.py": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "other_line.py",
+        "line": 4,
+        "message": "other_line.py:4: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "other_line.py",
+        "line": 7,
+        "message": "other_line.py:7: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      }
+    ]
+  },
+  "marker_edges.py": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "marker_edges.py",
+        "line": 3,
+        "message": "marker_edges.py:3: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "marker_edges.py",
+        "line": 4,
+        "message": "marker_edges.py:4: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "marker_edges.py",
+        "line": 5,
+        "message": "marker_edges.py:5: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      }
+    ]
+  },
+  "lexical.py": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "lexical.py",
+        "line": 3,
+        "message": "lexical.py:3: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "lexical.py",
+        "line": 4,
+        "message": "lexical.py:4: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "lexical.py",
+        "line": 5,
+        "message": "lexical.py:5: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "lexical.py",
+        "line": 6,
+        "message": "lexical.py:6: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "lexical.py",
+        "line": 7,
+        "message": "lexical.py:7: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      }
+    ]
+  },
+  "newlines.py": {
+    "exit_code": 1,
+    "findings": [
+      {
+        "path": "newlines.py",
+        "line": 3,
+        "message": "newlines.py:3: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "newlines.py",
+        "line": 4,
+        "message": "newlines.py:4: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      },
+      {
+        "path": "newlines.py",
+        "line": 5,
+        "message": "newlines.py:5: untyped metadata dict \u2014 use TypedDict or add ONEX\u005fEXCLUDE comment"
+      }
+    ]
+  },
+  "empty.py": {
+    "exit_code": 0,
+    "findings": []
+  },
+  "ignored.txt": {
+    "exit_code": 0,
+    "findings": []
+  },
+  "ignored.PY": {
+    "exit_code": 0,
+    "findings": []
+  }
+}

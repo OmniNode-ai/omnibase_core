@@ -131,6 +131,7 @@ def _scan_python_lines(path: str, source: str) -> list[ModelValidationFinding]:
     for lineno, line in enumerate(source.splitlines(), start=1):
         stripped = line.strip()
         skip_line = False
+        scan_text = line
 
         for delim in _TRIPLE_QUOTE_DELIMS:
             count = stripped.count(delim)
@@ -138,7 +139,14 @@ def _scan_python_lines(path: str, source: str) -> list[ModelValidationFinding]:
                 if count >= 1:
                     in_docstring = False
                     docstring_delim = None
-                    skip_line = True
+                    # The docstring ends on this line. Text after the closing
+                    # delimiter is executable code, so it is still scanned
+                    # (core's script flagged it; OMN-20565 parity).
+                    remainder = line[line.find(delim) + len(delim) :]
+                    if remainder.strip() and not remainder.strip().startswith("#"):
+                        scan_text = remainder
+                    else:
+                        skip_line = True
                 break
             if not in_docstring and stripped.startswith(delim):
                 if count == 1:
@@ -156,7 +164,7 @@ def _scan_python_lines(path: str, source: str) -> list[ModelValidationFinding]:
             continue
 
         for pattern in _PYTHON_FALLBACK_PATTERNS:
-            if pattern.search(line):
+            if pattern.search(scan_text):
                 findings.append(_make_finding(path, lineno, line.rstrip()))
                 break
 

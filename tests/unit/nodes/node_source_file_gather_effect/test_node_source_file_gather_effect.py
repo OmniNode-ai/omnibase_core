@@ -518,3 +518,47 @@ def test_explicit_paths_reports_unreadable_file_as_read_error(
     assert [(s.path, s.reason) for s in output.skipped] == [
         (str(unreadable), "read error: permission denied")
     ]
+
+
+# =============================================================================
+# decode_errors (OMN-20565): a file with an undecodable byte is a read error,
+# never an unhandled UnicodeDecodeError, unless the caller asks for replacement.
+# =============================================================================
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_undecodable_file_is_a_read_error_by_default(
+    tmp_path: Path, explicit: bool
+) -> None:
+    bad = tmp_path / "bad.py"
+    bad.write_bytes(b"x = 1\n\xff\n")
+    request = ModelSourceFileGatherInput(
+        root=str(tmp_path),
+        include_patterns=["**/*.py"],
+        explicit_paths=[str(bad)] if explicit else [],
+    )
+
+    output = NodeSourceFileGatherEffect().handle(request)
+
+    assert output.files == []
+    assert len(output.skipped) == 1
+    assert output.skipped[0].reason.startswith("read error: ")
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_decode_errors_replace_gathers_undecodable_file(
+    tmp_path: Path, explicit: bool
+) -> None:
+    bad = tmp_path / "bad.py"
+    bad.write_bytes(b"x = 1\n\xff\n")
+    request = ModelSourceFileGatherInput(
+        root=str(tmp_path),
+        include_patterns=["**/*.py"],
+        explicit_paths=[str(bad)] if explicit else [],
+        decode_errors="replace",
+    )
+
+    output = NodeSourceFileGatherEffect().handle(request)
+
+    assert output.skipped == []
+    assert [f.source for f in output.files] == ["x = 1\n�\n"]

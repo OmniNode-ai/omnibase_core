@@ -1,0 +1,660 @@
+{
+  "exit_code": 1,
+  "stdout": "\u002egithub/example\u002eyml:1:7: [10/8] '10\u002e0\u002e0\u002e1'\n  host: 10\u002e0\u002e0\u002e1\nblocks\u002epy:1:9: [192\u002e168/16] '192\u002e168\u002e86\u002e201'\n  HOST = '192\u002e168\u002e86\u002e201'\nblocks\u002epy:2:9: [10/8] '10\u002e0\u002e0\u002e42'\n  HOST = '10\u002e0\u002e0\u002e42'\nblocks\u002epy:3:9: [172\u002e16/12] '172\u002e16\u002e5\u002e10'\n  HOST = '172\u002e16\u002e5\u002e10'\nblocks\u002epy:4:9: [192\u002e168/16] '192\u002e168\u002e99\u002e250'\n  HOST = '192\u002e168\u002e99\u002e250'\nblocks\u002epy:5:9: [172\u002e16/12] '172\u002e31\u002e255\u002e254'\n  HOST = '172\u002e31\u002e255\u002e254'\nblocks\u002epy:6:9: [10/8] '10\u002e10\u002e10\u002e10'\n  HOST = '10\u002e10\u002e10\u002e10'\nblocks\u002epy:7:9: [10/8] '10\u002e0\u002e0\u002e0'\n  HOST = '10\u002e0\u002e0\u002e0'\nblocks\u002epy:8:9: [10/8] '10\u002e255\u002e255\u002e255'\n  HOST = '10\u002e255\u002e255\u002e255'\nblocks\u002epy:9:9: [172\u002e16/12] '172\u002e16\u002e0\u002e0'\n  HOST = '172\u002e16\u002e0\u002e0'\nblocks\u002epy:10:9: [172\u002e16/12] '172\u002e31\u002e255\u002e255'\n  HOST = '172\u002e31\u002e255\u002e255'\nblocks\u002epy:11:9: [192\u002e168/16] '192\u002e168\u002e0\u002e0'\n  HOST = '192\u002e168\u002e0\u002e0'\nblocks\u002epy:12:9: [192\u002e168/16] '192\u002e168\u002e255\u002e255'\n  HOST = '192\u002e168\u002e255\u002e255'\nboundaries\u002epy:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\u002e5\nboundaries\u002epy:6:1: [10/8] '010\u002e001\u002e002\u002e003'\n  010\u002e001\u002e002\u002e003\nboundaries\u002epy:7:1: [10/8] '10\u002e00\u002e0\u002e01'\n  10\u002e00\u002e0\u002e01\nboundaries\u002epy:8:1: [10/8] '\uff11\uff10\u002e\uff10\u002e\uff10\u002e\uff11'\n  \uff11\uff10\u002e\uff10\u002e\uff10\u002e\uff11\nboundaries\u002epy:13:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nboundaries\u002epy:14:1: [172\u002e16/12] '172\u002e31\u002e0\u002e1'\n  172\u002e31\u002e0\u002e1\ncontexts\u002emd:1:9: [192\u002e168/16] '192\u002e168\u002e86\u002e201'\n  https://192\u002e168\u002e86\u002e201:8000/v1\ncontexts\u002emd:2:3: [10/8] '10\u002e1\u002e2\u002e3'\n    10\u002e1\u002e2\u002e3 172\u002e20\u002e0\u002e1 10\u002e1\u002e2\u002e3\ncontexts\u002emd:2:12: [172\u002e16/12] '172\u002e20\u002e0\u002e1'\n    10\u002e1\u002e2\u002e3 172\u002e20\u002e0\u002e1 10\u002e1\u002e2\u002e3\ncontexts\u002emd:2:23: [10/8] '10\u002e1\u002e2\u002e3'\n    10\u002e1\u002e2\u002e3 172\u002e20\u002e0\u002e1 10\u002e1\u002e2\u002e3\ncontexts\u002emd:3:3: [10/8] '10\u002e2\u002e3\u002e4'\n  # 10\u002e2\u002e3\u002e4\nextension\u002ecfg:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nextension\u002eini:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nextension\u002ejson:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nextension\u002erst:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nextension\u002esh:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nextension\u002etoml:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nextension\u002eyaml:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nextension\u002eyml:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nignored\u002epy:1:2: [10/8] '10\u002e0\u002e0\u002e1'\n  '10\u002e0\u002e0\u002e1'\nline_marker\u002epy:2:2: [192\u002e168/16] '192\u002e168\u002e1\u002e1'\n  '192\u002e168\u002e1\u002e1'\nmarker_edges\u002epy:3:2: [10/8] '10\u002e0\u002e0\u002e1'\n  '10\u002e0\u002e0\u002e1' # ONEX-ALLOW-INTERNAL-IP\nmarker_edges\u002epy:4:2: [10/8] '10\u002e0\u002e0\u002e1'\n  '10\u002e0\u002e0\u002e1' # \u006fnex-allow-internal\nschemas/example_schema\u002eyaml:1:7: [10/8] '10\u002e0\u002e0\u002e1'\n  host: 10\u002e0\u002e0\u002e1\nseparators\u002etxt:1:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nseparators\u002etxt:2:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nseparators\u002etxt:3:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nseparators\u002etxt:4:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nseparators\u002etxt:5:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nseparators\u002etxt:6:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\nseparators\u002etxt:7:1: [10/8] '10\u002e0\u002e0\u002e1'\n  10\u002e0\u002e0\u002e1\n\n44 hardcoded private-IP violation(s)\u002e Resolve the endpoint from the routing authority / contract, or add `# \u006fnex-allow-internal-ip` to suppress an approved fixture\u002e\n",
+  "findings": [
+    {
+      "path": "\u002egithub/example\u002eyml",
+      "line": 1,
+      "message": "\u002egithub/example\u002eyml:1:7: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 1,
+      "message": "blocks\u002epy:1:9: [192\u002e168/16] '192\u002e168\u002e86\u002e201'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 2,
+      "message": "blocks\u002epy:2:9: [10/8] '10\u002e0\u002e0\u002e42'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 3,
+      "message": "blocks\u002epy:3:9: [172\u002e16/12] '172\u002e16\u002e5\u002e10'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 4,
+      "message": "blocks\u002epy:4:9: [192\u002e168/16] '192\u002e168\u002e99\u002e250'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 5,
+      "message": "blocks\u002epy:5:9: [172\u002e16/12] '172\u002e31\u002e255\u002e254'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 6,
+      "message": "blocks\u002epy:6:9: [10/8] '10\u002e10\u002e10\u002e10'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 7,
+      "message": "blocks\u002epy:7:9: [10/8] '10\u002e0\u002e0\u002e0'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 8,
+      "message": "blocks\u002epy:8:9: [10/8] '10\u002e255\u002e255\u002e255'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 9,
+      "message": "blocks\u002epy:9:9: [172\u002e16/12] '172\u002e16\u002e0\u002e0'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 10,
+      "message": "blocks\u002epy:10:9: [172\u002e16/12] '172\u002e31\u002e255\u002e255'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 11,
+      "message": "blocks\u002epy:11:9: [192\u002e168/16] '192\u002e168\u002e0\u002e0'"
+    },
+    {
+      "path": "blocks\u002epy",
+      "line": 12,
+      "message": "blocks\u002epy:12:9: [192\u002e168/16] '192\u002e168\u002e255\u002e255'"
+    },
+    {
+      "path": "boundaries\u002epy",
+      "line": 1,
+      "message": "boundaries\u002epy:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "boundaries\u002epy",
+      "line": 6,
+      "message": "boundaries\u002epy:6:1: [10/8] '010\u002e001\u002e002\u002e003'"
+    },
+    {
+      "path": "boundaries\u002epy",
+      "line": 7,
+      "message": "boundaries\u002epy:7:1: [10/8] '10\u002e00\u002e0\u002e01'"
+    },
+    {
+      "path": "boundaries\u002epy",
+      "line": 8,
+      "message": "boundaries\u002epy:8:1: [10/8] '\uff11\uff10\u002e\uff10\u002e\uff10\u002e\uff11'"
+    },
+    {
+      "path": "boundaries\u002epy",
+      "line": 13,
+      "message": "boundaries\u002epy:13:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "boundaries\u002epy",
+      "line": 14,
+      "message": "boundaries\u002epy:14:1: [172\u002e16/12] '172\u002e31\u002e0\u002e1'"
+    },
+    {
+      "path": "contexts\u002emd",
+      "line": 1,
+      "message": "contexts\u002emd:1:9: [192\u002e168/16] '192\u002e168\u002e86\u002e201'"
+    },
+    {
+      "path": "contexts\u002emd",
+      "line": 2,
+      "message": "contexts\u002emd:2:3: [10/8] '10\u002e1\u002e2\u002e3'"
+    },
+    {
+      "path": "contexts\u002emd",
+      "line": 2,
+      "message": "contexts\u002emd:2:12: [172\u002e16/12] '172\u002e20\u002e0\u002e1'"
+    },
+    {
+      "path": "contexts\u002emd",
+      "line": 2,
+      "message": "contexts\u002emd:2:23: [10/8] '10\u002e1\u002e2\u002e3'"
+    },
+    {
+      "path": "contexts\u002emd",
+      "line": 3,
+      "message": "contexts\u002emd:3:3: [10/8] '10\u002e2\u002e3\u002e4'"
+    },
+    {
+      "path": "extension\u002ecfg",
+      "line": 1,
+      "message": "extension\u002ecfg:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "extension\u002eini",
+      "line": 1,
+      "message": "extension\u002eini:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "extension\u002ejson",
+      "line": 1,
+      "message": "extension\u002ejson:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "extension\u002erst",
+      "line": 1,
+      "message": "extension\u002erst:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "extension\u002esh",
+      "line": 1,
+      "message": "extension\u002esh:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "extension\u002etoml",
+      "line": 1,
+      "message": "extension\u002etoml:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "extension\u002eyaml",
+      "line": 1,
+      "message": "extension\u002eyaml:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "extension\u002eyml",
+      "line": 1,
+      "message": "extension\u002eyml:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "ignored\u002epy",
+      "line": 1,
+      "message": "ignored\u002epy:1:2: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "line_marker\u002epy",
+      "line": 2,
+      "message": "line_marker\u002epy:2:2: [192\u002e168/16] '192\u002e168\u002e1\u002e1'"
+    },
+    {
+      "path": "marker_edges\u002epy",
+      "line": 3,
+      "message": "marker_edges\u002epy:3:2: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "marker_edges\u002epy",
+      "line": 4,
+      "message": "marker_edges\u002epy:4:2: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "schemas/example_schema\u002eyaml",
+      "line": 1,
+      "message": "schemas/example_schema\u002eyaml:1:7: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "separators\u002etxt",
+      "line": 1,
+      "message": "separators\u002etxt:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "separators\u002etxt",
+      "line": 2,
+      "message": "separators\u002etxt:2:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "separators\u002etxt",
+      "line": 3,
+      "message": "separators\u002etxt:3:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "separators\u002etxt",
+      "line": 4,
+      "message": "separators\u002etxt:4:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "separators\u002etxt",
+      "line": 5,
+      "message": "separators\u002etxt:5:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "separators\u002etxt",
+      "line": 6,
+      "message": "separators\u002etxt:6:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    },
+    {
+      "path": "separators\u002etxt",
+      "line": 7,
+      "message": "separators\u002etxt:7:1: [10/8] '10\u002e0\u002e0\u002e1'"
+    }
+  ],
+  "scanner_findings": {
+    "blocks\u002epy": [
+      {
+        "line": 1,
+        "column": 9,
+        "matched_text": "192\u002e168\u002e86\u002e201",
+        "rule_id": "192\u002e168/16",
+        "context": "HOST = '192\u002e168\u002e86\u002e201'",
+        "message": "blocks\u002epy:1:9: [192\u002e168/16] '192\u002e168\u002e86\u002e201'"
+      },
+      {
+        "line": 2,
+        "column": 9,
+        "matched_text": "10\u002e0\u002e0\u002e42",
+        "rule_id": "10/8",
+        "context": "HOST = '10\u002e0\u002e0\u002e42'",
+        "message": "blocks\u002epy:2:9: [10/8] '10\u002e0\u002e0\u002e42'"
+      },
+      {
+        "line": 3,
+        "column": 9,
+        "matched_text": "172\u002e16\u002e5\u002e10",
+        "rule_id": "172\u002e16/12",
+        "context": "HOST = '172\u002e16\u002e5\u002e10'",
+        "message": "blocks\u002epy:3:9: [172\u002e16/12] '172\u002e16\u002e5\u002e10'"
+      },
+      {
+        "line": 4,
+        "column": 9,
+        "matched_text": "192\u002e168\u002e99\u002e250",
+        "rule_id": "192\u002e168/16",
+        "context": "HOST = '192\u002e168\u002e99\u002e250'",
+        "message": "blocks\u002epy:4:9: [192\u002e168/16] '192\u002e168\u002e99\u002e250'"
+      },
+      {
+        "line": 5,
+        "column": 9,
+        "matched_text": "172\u002e31\u002e255\u002e254",
+        "rule_id": "172\u002e16/12",
+        "context": "HOST = '172\u002e31\u002e255\u002e254'",
+        "message": "blocks\u002epy:5:9: [172\u002e16/12] '172\u002e31\u002e255\u002e254'"
+      },
+      {
+        "line": 6,
+        "column": 9,
+        "matched_text": "10\u002e10\u002e10\u002e10",
+        "rule_id": "10/8",
+        "context": "HOST = '10\u002e10\u002e10\u002e10'",
+        "message": "blocks\u002epy:6:9: [10/8] '10\u002e10\u002e10\u002e10'"
+      },
+      {
+        "line": 7,
+        "column": 9,
+        "matched_text": "10\u002e0\u002e0\u002e0",
+        "rule_id": "10/8",
+        "context": "HOST = '10\u002e0\u002e0\u002e0'",
+        "message": "blocks\u002epy:7:9: [10/8] '10\u002e0\u002e0\u002e0'"
+      },
+      {
+        "line": 8,
+        "column": 9,
+        "matched_text": "10\u002e255\u002e255\u002e255",
+        "rule_id": "10/8",
+        "context": "HOST = '10\u002e255\u002e255\u002e255'",
+        "message": "blocks\u002epy:8:9: [10/8] '10\u002e255\u002e255\u002e255'"
+      },
+      {
+        "line": 9,
+        "column": 9,
+        "matched_text": "172\u002e16\u002e0\u002e0",
+        "rule_id": "172\u002e16/12",
+        "context": "HOST = '172\u002e16\u002e0\u002e0'",
+        "message": "blocks\u002epy:9:9: [172\u002e16/12] '172\u002e16\u002e0\u002e0'"
+      },
+      {
+        "line": 10,
+        "column": 9,
+        "matched_text": "172\u002e31\u002e255\u002e255",
+        "rule_id": "172\u002e16/12",
+        "context": "HOST = '172\u002e31\u002e255\u002e255'",
+        "message": "blocks\u002epy:10:9: [172\u002e16/12] '172\u002e31\u002e255\u002e255'"
+      },
+      {
+        "line": 11,
+        "column": 9,
+        "matched_text": "192\u002e168\u002e0\u002e0",
+        "rule_id": "192\u002e168/16",
+        "context": "HOST = '192\u002e168\u002e0\u002e0'",
+        "message": "blocks\u002epy:11:9: [192\u002e168/16] '192\u002e168\u002e0\u002e0'"
+      },
+      {
+        "line": 12,
+        "column": 9,
+        "matched_text": "192\u002e168\u002e255\u002e255",
+        "rule_id": "192\u002e168/16",
+        "context": "HOST = '192\u002e168\u002e255\u002e255'",
+        "message": "blocks\u002epy:12:9: [192\u002e168/16] '192\u002e168\u002e255\u002e255'"
+      }
+    ],
+    "public\u002epy": [],
+    "contexts\u002emd": [
+      {
+        "line": 1,
+        "column": 9,
+        "matched_text": "192\u002e168\u002e86\u002e201",
+        "rule_id": "192\u002e168/16",
+        "context": "https://192\u002e168\u002e86\u002e201:8000/v1",
+        "message": "contexts\u002emd:1:9: [192\u002e168/16] '192\u002e168\u002e86\u002e201'"
+      },
+      {
+        "line": 2,
+        "column": 3,
+        "matched_text": "10\u002e1\u002e2\u002e3",
+        "rule_id": "10/8",
+        "context": "  10\u002e1\u002e2\u002e3 172\u002e20\u002e0\u002e1 10\u002e1\u002e2\u002e3",
+        "message": "contexts\u002emd:2:3: [10/8] '10\u002e1\u002e2\u002e3'"
+      },
+      {
+        "line": 2,
+        "column": 12,
+        "matched_text": "172\u002e20\u002e0\u002e1",
+        "rule_id": "172\u002e16/12",
+        "context": "  10\u002e1\u002e2\u002e3 172\u002e20\u002e0\u002e1 10\u002e1\u002e2\u002e3",
+        "message": "contexts\u002emd:2:12: [172\u002e16/12] '172\u002e20\u002e0\u002e1'"
+      },
+      {
+        "line": 2,
+        "column": 23,
+        "matched_text": "10\u002e1\u002e2\u002e3",
+        "rule_id": "10/8",
+        "context": "  10\u002e1\u002e2\u002e3 172\u002e20\u002e0\u002e1 10\u002e1\u002e2\u002e3",
+        "message": "contexts\u002emd:2:23: [10/8] '10\u002e1\u002e2\u002e3'"
+      },
+      {
+        "line": 3,
+        "column": 3,
+        "matched_text": "10\u002e2\u002e3\u002e4",
+        "rule_id": "10/8",
+        "context": "# 10\u002e2\u002e3\u002e4",
+        "message": "contexts\u002emd:3:3: [10/8] '10\u002e2\u002e3\u002e4'"
+      }
+    ],
+    "line_marker\u002epy": [
+      {
+        "line": 2,
+        "column": 2,
+        "matched_text": "192\u002e168\u002e1\u002e1",
+        "rule_id": "192\u002e168/16",
+        "context": "'192\u002e168\u002e1\u002e1'",
+        "message": "line_marker\u002epy:2:2: [192\u002e168/16] '192\u002e168\u002e1\u002e1'"
+      }
+    ],
+    "file_marker\u002epy": [],
+    "boundaries\u002epy": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1\u002e5",
+        "message": "boundaries\u002epy:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 6,
+        "column": 1,
+        "matched_text": "010\u002e001\u002e002\u002e003",
+        "rule_id": "10/8",
+        "context": "010\u002e001\u002e002\u002e003",
+        "message": "boundaries\u002epy:6:1: [10/8] '010\u002e001\u002e002\u002e003'"
+      },
+      {
+        "line": 7,
+        "column": 1,
+        "matched_text": "10\u002e00\u002e0\u002e01",
+        "rule_id": "10/8",
+        "context": "10\u002e00\u002e0\u002e01",
+        "message": "boundaries\u002epy:7:1: [10/8] '10\u002e00\u002e0\u002e01'"
+      },
+      {
+        "line": 8,
+        "column": 1,
+        "matched_text": "\uff11\uff10\u002e\uff10\u002e\uff10\u002e\uff11",
+        "rule_id": "10/8",
+        "context": "\uff11\uff10\u002e\uff10\u002e\uff10\u002e\uff11",
+        "message": "boundaries\u002epy:8:1: [10/8] '\uff11\uff10\u002e\uff10\u002e\uff10\u002e\uff11'"
+      },
+      {
+        "line": 13,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "boundaries\u002epy:13:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 14,
+        "column": 1,
+        "matched_text": "172\u002e31\u002e0\u002e1",
+        "rule_id": "172\u002e16/12",
+        "context": "172\u002e31\u002e0\u002e1",
+        "message": "boundaries\u002epy:14:1: [172\u002e16/12] '172\u002e31\u002e0\u002e1'"
+      }
+    ],
+    "empty\u002etxt": [],
+    "contract\u002epy": [],
+    "schemas/example_schema\u002eyaml": [
+      {
+        "line": 1,
+        "column": 7,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "host: 10\u002e0\u002e0\u002e1",
+        "message": "schemas/example_schema\u002eyaml:1:7: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "\u002egithub/example\u002eyml": [
+      {
+        "line": 1,
+        "column": 7,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "host: 10\u002e0\u002e0\u002e1",
+        "message": "\u002egithub/example\u002eyml:1:7: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "ignored\u002epy": [
+      {
+        "line": 1,
+        "column": 2,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "'10\u002e0\u002e0\u002e1'",
+        "message": "ignored\u002epy:1:2: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "\u002eonexignore": [],
+    "dist/skip\u002epy": [
+      {
+        "line": 1,
+        "column": 2,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "'10\u002e0\u002e0\u002e1'",
+        "message": "dist/skip\u002epy:1:2: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "evidence/skip\u002etxt": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "evidence/skip\u002etxt:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "unsupported\u002ebin": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "unsupported\u002ebin:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002ejson": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002ejson:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002esh": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002esh:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002etoml": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002etoml:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002erst": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002erst:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002ecfg": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002ecfg:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002eini": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002eini:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002eyml": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002eyml:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "extension\u002eyaml": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "extension\u002eyaml:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "marker_edges\u002epy": [
+      {
+        "line": 3,
+        "column": 2,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "'10\u002e0\u002e0\u002e1' # ONEX-ALLOW-INTERNAL-IP",
+        "message": "marker_edges\u002epy:3:2: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 4,
+        "column": 2,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "'10\u002e0\u002e0\u002e1' # \u006fnex-allow-internal",
+        "message": "marker_edges\u002epy:4:2: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "file_marker_edges\u002epy": [],
+    "separators\u002etxt": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "separators\u002etxt:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 2,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "separators\u002etxt:2:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 3,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "separators\u002etxt:3:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 4,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "separators\u002etxt:4:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 5,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "separators\u002etxt:5:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 6,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "separators\u002etxt:6:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      },
+      {
+        "line": 7,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "separators\u002etxt:7:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ],
+    "uppercase\u002ePY": [
+      {
+        "line": 1,
+        "column": 1,
+        "matched_text": "10\u002e0\u002e0\u002e1",
+        "rule_id": "10/8",
+        "context": "10\u002e0\u002e0\u002e1",
+        "message": "uppercase\u002ePY:1:1: [10/8] '10\u002e0\u002e0\u002e1'"
+      }
+    ]
+  }
+}

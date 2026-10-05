@@ -58,7 +58,7 @@ def test_no_untracked_todos_is_a_local_hook_running_the_in_repo_handler() -> Non
     assert "omnibase_core.handlers.handler_todo_format" in entry
 
 
-def test_no_untyped_metadata_runs_the_in_repo_script() -> None:
+def test_no_untyped_metadata_runs_the_in_repo_node() -> None:
     """Catch duplicate metadata hooks or reuse of the retired console script."""
     matches = _matching_hooks("no-untyped-metadata")
     assert len(matches) == 1
@@ -66,7 +66,7 @@ def test_no_untyped_metadata_runs_the_in_repo_script() -> None:
     assert repo == "local"
     entry = hook["entry"]
     assert isinstance(entry, str)
-    assert "scripts/check_no_untyped_metadata.py" in entry
+    assert "omnibase_core.nodes.node_no_untyped_metadata_check_compute" in entry
     assert "check-no-untyped-metadata" not in entry
 
 

@@ -19,7 +19,6 @@ WORKFLOW_PATH = Path(__file__).resolve().parents[3] / ".github" / "workflows" / 
 STDLIB_ONLY_GUARD_COMMANDS = {
     "exports-validation": "python3 scripts/validation/validate-all-exports.py",
     "node-purity-check": "python3 scripts/check_node_purity.py --verbose",
-    "no-env-fallbacks": "python3 scripts/validate_no_env_fallbacks.py",
     "naming-conventions": "python3 scripts/validate_class_naming.py",
     "pydantic-patterns": (
         "python3 scripts/validation/validate-pydantic-patterns.py $files"
@@ -55,6 +54,8 @@ DEPENDENCY_GUARD_PROFILES = {
     "spdx-headers": ("uv sync --frozen --no-dev", 20),
     "typed-bootstrap-environment-boundary": ("uv sync --frozen --no-dev", 20),
     "duplicate-registry-ids": ("uv sync --frozen", 20),
+    # OMN-20565: the no-env-fallbacks gate is the COMPUTE node, not a stdlib script.
+    "no-env-fallbacks": ("uv sync --frozen", 20),
     "no-noncanonical-lifecycle-classes": ("uv sync --frozen --no-dev", 7),
     "pull-request-workflow-ratchet": ("uv sync --frozen --no-dev", 20),
 }
@@ -95,7 +96,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "9409004bc80f756cb90e51d387dc888fd3a2f62b70d45ea0d87bb32dcbc68389"  # pragma: allowlist secret
     ),
     "no-env-fallbacks": (
-        "e6ee4cb21d27caaba2d3a0514683f4df9ab448d588e7ce107f1c610f4c928cb7"  # pragma: allowlist secret
+        "4d415f97d90287f833debf4ac085aa3b8b42d76c791a77297a7c3a43ace152e9"  # pragma: allowlist secret
     ),
     # OMN-19252: + --exclude-files for config/hardcoded_model_config_baseline.yaml
     # (sha1 line keys are 40-hex digests; Hex High Entropy fires on every one).
@@ -121,7 +122,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     ),
     # OMN-19614: pull_request scans only the PR diff via ci_scan_scope.py.
     "aislop-patterns": (
-        "d5d212ec7b90428a0bd3d89f16a624054d29f32b15cf6e263cf684bf39398726"  # pragma: allowlist secret
+        "20d6bc342ddadb705df3f81c137f059ee75b2f7f1d1291183efe532575c0479b"  # pragma: allowlist secret
     ),
     "doc-content-scan": (
         "1e8c24ae8e37648af73bfabb75575112632b8cd4ac169045d4ac8b5b9664e7cc"  # pragma: allowlist secret
@@ -171,7 +172,6 @@ EXPECTED_FIVE_MINUTE_JOBS = {
     "core-infra-boundary",
     "check-deterministic-skills",
     "node-purity-check",
-    "no-env-fallbacks",
     "version-pin-check",
     "naming-conventions",
     "pydantic-patterns",
@@ -920,7 +920,8 @@ def test_edited_still_triggers_ci_for_ci_summary_re_evaluation() -> None:
         (
             "aislop-patterns",
             {
-                "scripts/validation/check_ai_slop.py",
+                "src/omnibase_core/nodes/node_ai_slop_check_compute/*",
+                "src/omnibase_core/models/nodes/ai_slop_check/*",
                 ".onex/aislop-rules.yaml",
                 "src/omnibase_core/contracts/aislop_default_rules.yaml",
                 "src/omnibase_core/validation/aislop_rule_loader.py",

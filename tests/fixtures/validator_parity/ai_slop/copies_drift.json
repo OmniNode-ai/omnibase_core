@@ -1,0 +1,191 @@
+{
+  "omnibase_spi": {
+    "exit_code": 1,
+    "other_only": [
+      [
+        "opener_happy_to.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'Happy to! Welcome.'"
+      ],
+      [
+        "opener_i_would_be.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'I would be! Welcome.'"
+      ],
+      [
+        "opener_of_course.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'Of course! Welcome.'"
+      ]
+    ],
+    "core_only": [
+      [
+        "info.py",
+        1,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): '# NOTE:'"
+      ],
+      [
+        "triple.py",
+        3,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): '\"\"\" # NOTE:'"
+      ],
+      [
+        "triple.py",
+        4,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): 'x = \"\"\"one\"\"\" # NOTE:'"
+      ],
+      [
+        "triple.py",
+        7,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): \"''' # NOTE:\""
+      ],
+      [
+        "upper_rest.py",
+        1,
+        "rest_docstring",
+        "ERROR",
+        "reST-style docstring marker: ':PARAM x: upper'"
+      ]
+    ]
+  },
+  "omnibase_infra": {
+    "exit_code": 1,
+    "other_only": [
+      [
+        "opener_happy_to.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'Happy to! Welcome.'"
+      ],
+      [
+        "opener_i_would_be.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'I would be! Welcome.'"
+      ],
+      [
+        "opener_of_course.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'Of course! Welcome.'"
+      ]
+    ],
+    "core_only": [
+      [
+        "info.py",
+        1,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): '# NOTE:'"
+      ],
+      [
+        "triple.py",
+        3,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): '\"\"\" # NOTE:'"
+      ],
+      [
+        "triple.py",
+        4,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): 'x = \"\"\"one\"\"\" # NOTE:'"
+      ],
+      [
+        "triple.py",
+        7,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): \"''' # NOTE:\""
+      ],
+      [
+        "upper_rest.py",
+        1,
+        "rest_docstring",
+        "ERROR",
+        "reST-style docstring marker: ':PARAM x: upper'"
+      ]
+    ]
+  },
+  "omniclaude": {
+    "exit_code": 1,
+    "other_only": [
+      [
+        "opener_happy_to.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'Happy to! Welcome.'"
+      ],
+      [
+        "opener_i_would_be.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'I would be! Welcome.'"
+      ],
+      [
+        "opener_of_course.py",
+        1,
+        "sycophancy",
+        "ERROR",
+        "Sycophantic opener: 'Of course! Welcome.'"
+      ]
+    ],
+    "core_only": [
+      [
+        "info.py",
+        1,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): '# NOTE:'"
+      ],
+      [
+        "triple.py",
+        3,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): '\"\"\" # NOTE:'"
+      ],
+      [
+        "triple.py",
+        4,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): 'x = \"\"\"one\"\"\" # NOTE:'"
+      ],
+      [
+        "triple.py",
+        7,
+        "obvious_comment",
+        "INFO",
+        "Pattern match (obvious_comment): \"''' # NOTE:\""
+      ],
+      [
+        "upper_rest.py",
+        1,
+        "rest_docstring",
+        "ERROR",
+        "reST-style docstring marker: ':PARAM x: upper'"
+      ]
+    ]
+  }
+}

@@ -1,0 +1,235 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+cases:
+  - name: ahead
+    version: 0.46.0
+    tags:
+      - v0.45.0
+  - name: equal
+    version: 0.45.0
+    tags:
+      - v0.45.0
+  - name: behind
+    version: 0.44.0
+    tags:
+      - v0.45.0
+  - name: docs_only
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --changed-file
+      - docs/foo.md
+      - --changed-file
+      - tests/test_x.py
+      - --changed-file
+      - .github/workflows/ci.yml
+  - name: src_changed
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --changed-file
+      - src/package/foo.py
+  - name: prefix_edge
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --changed-file
+      - src_like/foo.py
+      - --changed-file
+      - ./src/foo.py
+  - name: no_tags
+    version: 0.1.0
+    tags: []
+  - name: invalid_tags
+    version: 0.1.0
+    tags:
+      - not-a-version
+      - release-bogus
+  - name: highest_tag
+    version: 1.2.9
+    tags:
+      - not-a-version
+      - v1.2.8
+      - 1.2.10
+      - v1.2.9
+  - name: prerelease
+    version: 1.2.0rc1
+    tags:
+      - v1.2.0
+  - name: normalization
+    version: v1.2
+    tags:
+      - 1.1.9
+  - name: malformed
+    version: banana
+    tags:
+      - v0.1.0
+  - name: empty_version
+    version: ''
+    tags: []
+  - name: missing_version
+    tags: []
+  - name: explicit_override
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - missing-ref
+      - --changed-file
+      - docs/foo.md
+  - name: stdin_src
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --changed-file
+      - '-'
+    stdin: "\n src/example.py \n"
+  - name: stdin_docs
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --changed-file
+      - '-'
+    stdin: "\n docs/example.md \n"
+  - name: stdin_empty
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --changed-file
+      - '-'
+    stdin: "\n"
+  - name: docs_commit
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - base
+    topology: docs_commit
+  - name: pending_staged
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - base
+    topology: pending_staged
+  - name: pending_unstaged
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - base
+    topology: pending_unstaged
+  - name: stale_base
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - base
+    topology: stale_base
+  - name: unreachable_peer
+    version: 2.0.0
+    tags:
+      - v1.0.0
+    topology: peer
+  - name: reachable_equal
+    version: 1.0.0
+    tags:
+      - v1.0.0
+    topology: peer
+  - name: reachable_behind
+    version: 0.9.0
+    tags:
+      - v1.0.0
+    topology: peer
+  - name: empty_merged_fallback
+    version: 1.0.0
+    tags: []
+    topology: peer_only
+  - name: shallow_fallback
+    version: 1.0.0
+    tags:
+      - v1.0.0
+      - v9.0.0
+    topology: shallow
+  - name: tagless_patch
+    version: 0.1.1
+    tags: []
+  - name: tagless_bundle
+    version: 0.1.0
+    tags: []
+    topology: bundle
+  - name: tagless_shallow
+    version: 0.1.0
+    tags: []
+    topology: shallow
+  - name: missing_base_ahead
+    version: 0.46.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - missing-ref
+  - name: missing_base_equal
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - missing-ref
+  - name: disconnected_base
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - base
+    topology: disconnected_base
+  - name: quoted_path
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - base
+    topology: quoted_path
+  - name: empty_diff
+    version: 0.45.0
+    tags:
+      - v0.45.0
+    args:
+      - --base
+      - base
+  - name: zero_version
+    version: 0
+    tags: []
+  - name: numeric_version
+    version: 1.2
+    tags:
+      - v1.1
+  - name: boolean_version
+    version: true
+    tags: []
+  - name: list_version
+    version:
+      - banana
+    tags: []
+  - name: empty_list_version
+    version: []
+    tags: []
+  - name: invalid_toml
+    tags: []
+    source: "[broken\n"

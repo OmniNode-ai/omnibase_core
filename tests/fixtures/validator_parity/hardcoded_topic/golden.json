@@ -1,0 +1,360 @@
+{
+  "exit_code": 1,
+  "findings": [
+    {
+      "path": ".github/included.py",
+      "line": 1,
+      "message_parts": [
+        ".github/included.py:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": ".pytest_cache/included.py",
+      "line": 1,
+      "message_parts": [
+        ".pytest_cache/included.py:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": ".ruff_cache/included.py",
+      "line": 1,
+      "message_parts": [
+        ".ruff_cache/included.py:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "comment.py",
+      "line": 1,
+      "message_parts": [
+        "comment.py:1: [",
+        ".a.b.c] # T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "deep.py",
+      "line": 1,
+      "message_parts": [
+        "deep.py:1: [",
+        ".runtime.node.deploy.requested] T = \"",
+        ".runtime.node.deploy.requested\""
+      ]
+    },
+    {
+      "path": "digits.py",
+      "line": 1,
+      "message_parts": [
+        "digits.py:1: [",
+        ".1.b2.3] T = \"",
+        ".1.b2.3\""
+      ]
+    },
+    {
+      "path": "docstring.py",
+      "line": 2,
+      "message_parts": [
+        "docstring.py:2: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "domain.py",
+      "line": 1,
+      "message_parts": [
+        "domain.py:1: [",
+        ".review.verdict.posted] T = \"",
+        ".review.verdict.posted\""
+      ]
+    },
+    {
+      "path": "duplicate_order.py",
+      "line": 2,
+      "message_parts": [
+        "duplicate_order.py:2: [",
+        ".a.b.c] A = \"",
+        ".a.b.c\"; B = '",
+        ".a.b.c'"
+      ]
+    },
+    {
+      "path": "duplicate_order.py",
+      "line": 2,
+      "message_parts": [
+        "duplicate_order.py:2: [",
+        ".a.b.c] A = \"",
+        ".a.b.c\"; B = '",
+        ".a.b.c'"
+      ]
+    },
+    {
+      "path": "duplicate_order.py",
+      "line": 3,
+      "message_parts": [
+        "duplicate_order.py:3: [",
+        ".d.e.f] C = \"",
+        ".d.e.f\""
+      ]
+    },
+    {
+      "path": "env/included.py",
+      "line": 1,
+      "message_parts": [
+        "env/included.py:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.cfg",
+      "line": 1,
+      "message_parts": [
+        "extension.cfg:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.ini",
+      "line": 1,
+      "message_parts": [
+        "extension.ini:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.json",
+      "line": 1,
+      "message_parts": [
+        "extension.json:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.md",
+      "line": 1,
+      "message_parts": [
+        "extension.md:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.rst",
+      "line": 1,
+      "message_parts": [
+        "extension.rst:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.sh",
+      "line": 1,
+      "message_parts": [
+        "extension.sh:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.toml",
+      "line": 1,
+      "message_parts": [
+        "extension.toml:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.txt",
+      "line": 1,
+      "message_parts": [
+        "extension.txt:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.yaml",
+      "line": 1,
+      "message_parts": [
+        "extension.yaml:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "extension.yml",
+      "line": 1,
+      "message_parts": [
+        "extension.yml:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "generation.py",
+      "line": 1,
+      "message_parts": [
+        "generation.py:1: [",
+        ".generation.benchmark.completed] T = \"",
+        ".generation.benchmark.completed\""
+      ]
+    },
+    {
+      "path": "handler_inline.py",
+      "line": 1,
+      "message_parts": [
+        "handler_inline.py:1: [",
+        ".cmd.x.v1] T = \"",
+        ".cmd.x.v1\""
+      ]
+    },
+    {
+      "path": "invalid_utf8.py",
+      "line": 1,
+      "message_parts": [
+        "invalid_utf8.py:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\"\ufffd"
+      ]
+    },
+    {
+      "path": "line_marker.py",
+      "line": 2,
+      "message_parts": [
+        "line_marker.py:2: [",
+        ".a.b.c] B = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "marker_string.py",
+      "line": 2,
+      "message_parts": [
+        "marker_string.py:2: [",
+        ".a.b.c] B = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "market_annotation.py",
+      "line": 1,
+      "message_parts": [
+        "market_annotation.py:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\" # ",
+        "-topic-allow: example"
+      ]
+    },
+    {
+      "path": "market_annotation_cmd.py",
+      "line": 1,
+      "message_parts": [
+        "market_annotation_cmd.py:1: [",
+        ".cmd.x.v1] T = \"",
+        ".cmd.x.v1\" # ",
+        "-topic-allow: reason"
+      ]
+    },
+    {
+      "path": "model_inline.py",
+      "line": 1,
+      "message_parts": [
+        "model_inline.py:1: [",
+        ".cmd.x.v1] T = \"",
+        ".cmd.x.v1\""
+      ]
+    },
+    {
+      "path": "prefix_probe.py",
+      "line": 1,
+      "message_parts": [
+        "prefix_probe.py:1: [",
+        ".evt.x.v1] T.startswith(\"",
+        ".evt.x.v1\")"
+      ]
+    },
+    {
+      "path": "publish.py",
+      "line": 1,
+      "message_parts": [
+        "publish.py:1: [",
+        ".delegation.attempt.started] await bus.publish(\"",
+        ".delegation.attempt.started\", env)"
+      ]
+    },
+    {
+      "path": "raw_string.py",
+      "line": 1,
+      "message_parts": [
+        "raw_string.py:1: [",
+        ".a.b.c] T = r\"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "schemas/included.py",
+      "line": 1,
+      "message_parts": [
+        "schemas/included.py:1: [",
+        ".a.b.c] T = \"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "single.py",
+      "line": 1,
+      "message_parts": [
+        "single.py:1: [",
+        ".aislop.sweep.completed] T = '",
+        ".aislop.sweep.completed'"
+      ]
+    },
+    {
+      "path": "static_fstring.py",
+      "line": 1,
+      "message_parts": [
+        "static_fstring.py:1: [",
+        ".a.b.c] T = f\"",
+        ".a.b.c\""
+      ]
+    },
+    {
+      "path": "test_inline.py",
+      "line": 1,
+      "message_parts": [
+        "test_inline.py:1: [",
+        ".cmd.x.v1] T = \"",
+        ".cmd.x.v1\""
+      ]
+    },
+    {
+      "path": "topics.py",
+      "line": 1,
+      "message_parts": [
+        "topics.py:1: [",
+        ".cmd.x.v1] T = \"",
+        ".cmd.x.v1\""
+      ]
+    },
+    {
+      "path": "triple_quote.py",
+      "line": 1,
+      "message_parts": [
+        "triple_quote.py:1: [",
+        ".a.b.c] T = \"\"\"",
+        ".a.b.c\"\"\""
+      ]
+    }
+  ]
+}

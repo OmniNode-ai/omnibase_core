@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+metadata: dict[str, Any] # {marker_word}
+metadata: dict[str, Any] # onex_exclude: reason
+metadata: dict[str, Any] # {marker_word} : reason
+metadata: dict[str, Any]; x = "{exemption}"
+# {exemption}; metadata: dict[str, Any]

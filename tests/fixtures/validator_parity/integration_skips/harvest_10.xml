@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+
+<testsuites><testsuite name="pytest" tests="2" skipped="2">
+ <testcase classname="tests.test_delegation_savings_tenant_id_column_omn14058"
+   name="test_delegation_events_upsert_stamps_tenant_id_on_real_postgres" time="0.0">
+   <skipped type="pytest.skip" message="POSTGRES_PASSWORD not set — skipping tenant_id column DB proof"/>
+ </testcase>
+ <testcase classname="tests.test_projection_delegation_tier_distribution_omn13662"
+   name="test_view_classifies_not_tier_routed_against_real_postgres" time="0.0">
+   <skipped type="pytest.skip" message="no reachable Postgres for tier-distribution DB proof: Connection refused"/>
+ </testcase>
+</testsuite></testsuites>

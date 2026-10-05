@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+
+<testsuites><testsuite name="pytest" tests="2" skipped="1">
+ <testcase classname="tests.integration.registration.e2e.test_runtime_e2e.TestRuntime"
+   name="test_runs" time="0.1"/>
+ <testcase classname="tests.integration.registration.e2e.test_runtime_e2e.TestRuntime"
+   name="test_some_opt_in_feature">
+   <skipped type="pytest.skip" message="Some feature requires explicit opt-in"/>
+ </testcase>
+</testsuite></testsuites>

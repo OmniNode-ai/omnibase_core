@@ -1,0 +1,62 @@
+{
+  "hardcoded_differences": [
+    {
+      "input": "contexts\u002emd",
+      "private_count": 5,
+      "hardcoded_count": 3,
+      "private_only": [],
+      "hardcoded_only": []
+    },
+    {
+      "input": "file_marker\u002epy",
+      "private_count": 0,
+      "hardcoded_count": 2,
+      "private_only": [],
+      "hardcoded_only": [
+        "file_marker\u002epy:1",
+        "file_marker\u002epy:3"
+      ]
+    },
+    {
+      "input": "boundaries\u002epy",
+      "private_count": 6,
+      "hardcoded_count": 2,
+      "private_only": [
+        "boundaries\u002epy:1",
+        "boundaries\u002epy:6",
+        "boundaries\u002epy:7",
+        "boundaries\u002epy:8"
+      ],
+      "hardcoded_only": []
+    },
+    {
+      "input": "file_marker_edges\u002epy",
+      "private_count": 0,
+      "hardcoded_count": 2,
+      "private_only": [],
+      "hardcoded_only": [
+        "file_marker_edges\u002epy:1",
+        "file_marker_edges\u002epy:3"
+      ]
+    }
+  ],
+  "downstream_exit_code": 1,
+  "downstream_extra_lines": [
+    "boundaries\u002epy:2:5\u002e10\u002e0\u002e0\u002e1",
+    "boundaries\u002epy:3:x10\u002e0\u002e0\u002e1",
+    "boundaries\u002epy:4:10\u002e0\u002e0\u002e1x",
+    "boundaries\u002epy:5:_10\u002e0\u002e0\u002e1",
+    "boundaries\u002epy:9:10\u002e1\u002e",
+    "boundaries\u002epy:10:192\u002e168\u002e",
+    "boundaries\u002epy:11:172\u002e16\u002e",
+    "boundaries\u002epy:12:10\u002e0\u002e999\u002e1",
+    "dist/skip\u002epy:1:'10\u002e0\u002e0\u002e1'",
+    "file_marker\u002epy:1:'10\u002e0\u002e0\u002e1'",
+    "file_marker\u002epy:3:'192\u002e168\u002e1\u002e1'",
+    "file_marker_edges\u002epy:1:'10\u002e0\u002e0\u002e1'",
+    "file_marker_edges\u002epy:3:'10\u002e0\u002e0\u002e1'",
+    "public\u002epy:8:'210\u002e0\u002e0\u002e1'",
+    "public\u002epy:10:'10\u002e0\u002e999\u002e1'",
+    "public\u002epy:11:'10\u002e0\u002e0\u002e256'"
+  ]
+}

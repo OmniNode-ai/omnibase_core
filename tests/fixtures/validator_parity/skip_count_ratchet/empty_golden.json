@@ -1,0 +1,12 @@
+{
+  "args": [
+    "--baseline",
+    "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "--suite",
+    "fixture/count",
+    "--junit",
+    "tests/fixtures/validator_parity/skip_count_ratchet/empty.xml"
+  ],
+  "exit_code": 0,
+  "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 0 unique skipped / 0 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — skip count 0 is below the baseline of 2. Lower `max_skips` to 0 in config/skip_count_baseline.yaml.\n"
+}

@@ -29,7 +29,17 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SCRIPT = REPO_ROOT / "scripts" / "ci" / "skip_count_ratchet.py"
+NODE_MODULE = (
+    "omnibase_core.nodes.node_skip_count_ratchet_check_compute"
+    ".runtime_skip_count_ratchet_check"
+)
+NODE_PACKAGE = (
+    REPO_ROOT
+    / "src"
+    / "omnibase_core"
+    / "nodes"
+    / "node_skip_count_ratchet_check_compute"
+)
 BASELINE = REPO_ROOT / "config" / "skip_count_baseline.yaml"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 CI_SUMMARY_GATE = REPO_ROOT / "scripts" / "ci" / "ci_summary_gate.py"
@@ -51,7 +61,7 @@ pytestmark = pytest.mark.unit
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
+        [sys.executable, "-m", NODE_MODULE, *args],
         capture_output=True,
         text=True,
         cwd=REPO_ROOT,
@@ -238,7 +248,9 @@ def test_ac4_ratchet_job_carries_no_continue_on_error() -> None:
     # setting in prose -- a comment naming it reads as a hit to the same probe
     # that is supposed to prove its absence.
     block = _job_block()
-    assert "skip_count_ratchet.py" in block, "positive control: the block was located"
+    assert "runtime_skip_count_ratchet_check" in block, (
+        "positive control: the block was located"
+    )
     assert "continue-on-error" not in block
 
 
@@ -363,7 +375,9 @@ def test_ac6_no_environment_variable_lowers_the_verdict() -> None:
         "ENABLE_SKIP_COUNT_RATCHET",
         "SKIP_RATCHET_OVERRIDE",
     )
-    source = SCRIPT.read_text(encoding="utf-8")
+    source = "\n".join(
+        path.read_text(encoding="utf-8") for path in sorted(NODE_PACKAGE.glob("*.py"))
+    )
     assert "os.environ" not in source and "getenv" not in source, (
         "the gate must read no environment variable at all"
     )
@@ -408,7 +422,7 @@ def test_selftest_mode_passes_and_is_what_the_pre_commit_hook_runs() -> None:
     result = _run("--selftest")
     assert result.returncode == 0, result.stdout + result.stderr
     hook_config = (REPO_ROOT / ".pre-commit-config.yaml").read_text(encoding="utf-8")
-    assert "skip_count_ratchet.py --selftest" in hook_config
+    assert "runtime_skip_count_ratchet_check --selftest" in hook_config
 
 
 def _toggle_prefix(node_id: str) -> str:

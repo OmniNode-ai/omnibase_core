@@ -1,0 +1,150 @@
+{
+  "valid_evt": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.event-one.v2'\n"
+  },
+  "valid_cmd": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.cmd.platform.event-one.v2'\n"
+  },
+  "valid_dlq": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.dlq.platform.event-one.v2'\n"
+  },
+  "valid_intent": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.intent.platform.event-one.v2'\n"
+  },
+  "valid_snapshot": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.snapshot.platform.event-one.v2'\n"
+  },
+  "env_template": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = '{env}.onex.evt.platform.event.v1'\n"
+  },
+  "flat": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'agent-actions'\n"
+  },
+  "flat_digits": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'agent-123'\n"
+  },
+  "flat_upper": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'Agent'\n"
+  },
+  "empty": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = ''\n"
+  },
+  "space_empty": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = '   '\n"
+  },
+  "upper": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.EVT.platform.event.v1'\n"
+  },
+  "short": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform'\n"
+  },
+  "long": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.event.extra.v1'\n"
+  },
+  "wrong_prefix": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'other.evt.platform.event.v1'\n"
+  },
+  "kind": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.events.platform.event.v1'\n"
+  },
+  "producer_underscore": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.bad_producer.event.v1'\n"
+  },
+  "producer_digit": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.1bad.event.v1'\n"
+  },
+  "producer_trailing": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.bad-.event.v1'\n"
+  },
+  "producer_double": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.bad--name.event.v1'\n"
+  },
+  "event_underscore": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.bad_event.v1'\n"
+  },
+  "event_digit": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.1bad.v1'\n"
+  },
+  "event_double": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.bad--event.v1'\n"
+  },
+  "event_trailing": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.bad-.v1'\n"
+  },
+  "version_zero": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.event.v0'\n"
+  },
+  "version_missing_v": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.event.1'\n"
+  },
+  "version_negative": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.event.v-1'\n"
+  },
+  "version_leading_zero": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.platform.event.v01'\n"
+  },
+  "edge_spaces": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = ' onex.evt.platform.event.v1 '\n"
+  },
+  "unknown_producer": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.evt.unregistered.event.v1'\n"
+  },
+  "snapshot_unknown": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'onex.snapshot.omnimarket.state.v1'\n"
+  },
+  "env_dev": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'dev.onex.evt.platform.event.v1'\n"
+  },
+  "env_staging": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'staging.onex.evt.platform.event.v1'\n"
+  },
+  "env_prod": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'prod.onex.evt.platform.event.v1'\n"
+  },
+  "env_test": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'test.onex.evt.platform.event.v1'\n"
+  },
+  "env_local": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = 'local.onex.evt.platform.event.v1'\n"
+  },
+  "control_0": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = \"onex.evt.platform.ev\nent.v1\"\n"
+  },
+  "control_1": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = \"onex.evt.platform.ev\rent.v1\"\n"
+  },
+  "control_2": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = \"onex.evt.platform.ev\tent.v1\"\n"
+  },
+  "control_3": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = \"onex.evt.platform.ev\u0000ent.v1\"\n"
+  },
+  "control_4": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = \"onex.evt.platform.ev\u000bent.v1\"\n"
+  },
+  "control_5": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_CASE = \"onex.evt.platform.ev\fent.v1\"\n"
+  },
+  "extraction": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nSUFFIX_A = \"agent-actions\"\n    TOPIC_B: \"agent-actions\"\nTOPIC_C: str = \"agent-actions\"\nOTHER = \"agent-actions\"\nTOPIC_EMPTY = \"\"\nTOPIC_F = f\"agent-actions\"\n# TOPIC_COMMENT = \"agent-actions\"\nTOPIC_NEWLINE =\n \"agent-actions\"\nTOPIC_MISMATCH = 'agent-actions\"\n"
+  },
+  "typescript": {
+    "topics.ts": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nexport const TOPIC_A = \"agent-actions\"\nexport const SUFFIX_B = \"onex.evt.platform.event.v1\"\nconst TOPIC_PRIVATE = \"agent-actions\"\nexport const TOPIC_TYPED: string = \"agent-actions\"\n"
+  },
+  "ignored": {
+    "plain.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_BAD = \"agent-actions\"\n",
+    "topics.yaml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_BAD: agent-actions\n",
+    "topics.txt": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_BAD = \"agent-actions\"\n"
+  },
+  "ast_copy_only": {
+    "topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nOTHER = \"onex.evt.unregistered.event.v1\"\nTOPIC_TYPED: str = \"onex.evt.unregistered.event.v1\"\n",
+    "contract.yaml": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nevent_bus:\n  publish_topics:\n    - onex.evt.unregistered.event.v1\n"
+  },
+  "discovery": {
+    ".venv/topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_BAD = \"agent-actions\"\n",
+    "schemas/topics.py": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_BAD = \"agent-actions\"\n",
+    ".github/topics.ts": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nexport const TOPIC_BAD = \"agent-actions\"\n",
+    "topics.PY": "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\nTOPIC_BAD = \"agent-actions\"\n"
+  },
+  "empty_tree": {}
+}

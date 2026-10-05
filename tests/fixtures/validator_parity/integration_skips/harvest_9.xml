@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+
+<testsuites><testsuite name="pytest" tests="3" skipped="1">
+ <testcase classname="tests.test_delegation_savings_tenant_id_column_omn14058"
+   name="test_delegation_events_upsert_stamps_tenant_id_on_real_postgres" time="0.1"/>
+ <testcase classname="tests.test_projection_delegation_tier_distribution_omn13662"
+   name="test_view_classifies_not_tier_routed_against_real_postgres" time="0.1"/>
+ <testcase classname="tests.node_llm.test_live_cloud_completion_omn13943" name="test_live">
+   <skipped type="pytest.skip" message="live cloud delegation call; set OMN_ALLOW_LIVE_CLOUD_DELEGATION=1 to enable"/>
+ </testcase>
+</testsuite></testsuites>

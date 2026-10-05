@@ -1,0 +1,632 @@
+{
+  "all_patterns": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "all_patterns.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\"\nall_patterns.txt:1:21: [macOS volume mount] '\u002fVolumes\u002fDISK\u002f'\n  A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\"\nall_patterns.txt:1:37: [Linux user home] '\u002fhome\u002f_runner\u002f'\n  A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\"\nall_patterns.txt:1:53: [Windows user path] 'C:\u002fUsers\u002f'\n  A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\"\nall_patterns.txt:1:55: [macOS user home] '\u002fUsers\u002fbob\u002f'\n  A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\"\nall_patterns.txt:1:68: [Windows user path] 'c:\\\\users\\\\'\n  A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\"\n\n6 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "all_patterns.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\nall_patterns.txt:1:21: [macOS volume mount] '\u002fVolumes\u002fDISK\u002f'\nall_patterns.txt:1:37: [Linux user home] '\u002fhome\u002f_runner\u002f'\nall_patterns.txt:1:53: [Windows user path] 'C:\u002fUsers\u002f'\nall_patterns.txt:1:55: [macOS user home] '\u002fUsers\u002fbob\u002f'\nall_patterns.txt:1:68: [Windows user path] 'c:\\\\users\\\\'\n"
+    },
+    "findings": [
+      {
+        "path": "all_patterns.txt",
+        "line": 1,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "all_patterns.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\""
+      },
+      {
+        "path": "all_patterns.txt",
+        "line": 1,
+        "column": 21,
+        "rule": "macOS volume mount",
+        "message": "all_patterns.txt:1:21: [macOS volume mount] '\u002fVolumes\u002fDISK\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\""
+      },
+      {
+        "path": "all_patterns.txt",
+        "line": 1,
+        "column": 37,
+        "rule": "Linux user home",
+        "message": "all_patterns.txt:1:37: [Linux user home] '\u002fhome\u002f_runner\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\""
+      },
+      {
+        "path": "all_patterns.txt",
+        "line": 1,
+        "column": 53,
+        "rule": "Windows user path",
+        "message": "all_patterns.txt:1:53: [Windows user path] 'C:\u002fUsers\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\""
+      },
+      {
+        "path": "all_patterns.txt",
+        "line": 1,
+        "column": 55,
+        "rule": "macOS user home",
+        "message": "all_patterns.txt:1:55: [macOS user home] '\u002fUsers\u002fbob\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\""
+      },
+      {
+        "path": "all_patterns.txt",
+        "line": 1,
+        "column": 68,
+        "rule": "Windows user path",
+        "message": "all_patterns.txt:1:68: [Windows user path] 'c:\\\\users\\\\'",
+        "context": "A = \"\u002fUsers\u002falice\u002fa \u002fVolumes\u002fDISK\u002fb \u002fhome\u002f_runner\u002fc C:\u002fUsers\u002fbob\u002fd c:\\users\\bob\\e\""
+      }
+    ]
+  },
+  "repeated_order": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "repeated_order.txt:1:6: [Linux user home] '\u002fhome\u002fbob\u002f'\n  Z = \"\u002fhome\u002fbob\u002fb \u002fUsers\u002falice\u002fa \u002fUsers\u002falice\u002fa\"\nrepeated_order.txt:1:18: [macOS user home] '\u002fUsers\u002falice\u002f'\n  Z = \"\u002fhome\u002fbob\u002fb \u002fUsers\u002falice\u002fa \u002fUsers\u002falice\u002fa\"\nrepeated_order.txt:1:33: [macOS user home] '\u002fUsers\u002falice\u002f'\n  Z = \"\u002fhome\u002fbob\u002fb \u002fUsers\u002falice\u002fa \u002fUsers\u002falice\u002fa\"\nrepeated_order.txt:2:6: [macOS volume mount] '\u002fVolumes\u002fDisk.1-_\u002f'\n  A = \"\u002fVolumes\u002fDisk.1-_\u002fb\"\n\n4 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "repeated_order.txt:1:6: [Linux user home] '\u002fhome\u002fbob\u002f'\nrepeated_order.txt:1:18: [macOS user home] '\u002fUsers\u002falice\u002f'\nrepeated_order.txt:1:33: [macOS user home] '\u002fUsers\u002falice\u002f'\nrepeated_order.txt:2:6: [macOS volume mount] '\u002fVolumes\u002fDisk.1-_\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "repeated_order.txt",
+        "line": 1,
+        "column": 6,
+        "rule": "Linux user home",
+        "message": "repeated_order.txt:1:6: [Linux user home] '\u002fhome\u002fbob\u002f'",
+        "context": "Z = \"\u002fhome\u002fbob\u002fb \u002fUsers\u002falice\u002fa \u002fUsers\u002falice\u002fa\""
+      },
+      {
+        "path": "repeated_order.txt",
+        "line": 1,
+        "column": 18,
+        "rule": "macOS user home",
+        "message": "repeated_order.txt:1:18: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "Z = \"\u002fhome\u002fbob\u002fb \u002fUsers\u002falice\u002fa \u002fUsers\u002falice\u002fa\""
+      },
+      {
+        "path": "repeated_order.txt",
+        "line": 1,
+        "column": 33,
+        "rule": "macOS user home",
+        "message": "repeated_order.txt:1:33: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "Z = \"\u002fhome\u002fbob\u002fb \u002fUsers\u002falice\u002fa \u002fUsers\u002falice\u002fa\""
+      },
+      {
+        "path": "repeated_order.txt",
+        "line": 2,
+        "column": 6,
+        "rule": "macOS volume mount",
+        "message": "repeated_order.txt:2:6: [macOS volume mount] '\u002fVolumes\u002fDisk.1-_\u002f'",
+        "context": "A = \"\u002fVolumes\u002fDisk.1-_\u002fb\""
+      }
+    ]
+  },
+  "identifier_edges": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "identifier_edges.txt:1:2: [macOS user home] '\u002fUsers\u002f_a.b-c_\u002f'\n  \"\u002fUsers\u002f_a.b-c_\u002fx \u002fhome\u002fa\u002fx \u002fVolumes\u002fA\u002fx\"\nidentifier_edges.txt:1:19: [Linux user home] '\u002fhome\u002fa\u002f'\n  \"\u002fUsers\u002f_a.b-c_\u002fx \u002fhome\u002fa\u002fx \u002fVolumes\u002fA\u002fx\"\nidentifier_edges.txt:1:29: [macOS volume mount] '\u002fVolumes\u002fA\u002f'\n  \"\u002fUsers\u002f_a.b-c_\u002fx \u002fhome\u002fa\u002fx \u002fVolumes\u002fA\u002fx\"\n\n3 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "identifier_edges.txt:1:2: [macOS user home] '\u002fUsers\u002f_a.b-c_\u002f'\nidentifier_edges.txt:1:19: [Linux user home] '\u002fhome\u002fa\u002f'\nidentifier_edges.txt:1:29: [macOS volume mount] '\u002fVolumes\u002fA\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "identifier_edges.txt",
+        "line": 1,
+        "column": 2,
+        "rule": "macOS user home",
+        "message": "identifier_edges.txt:1:2: [macOS user home] '\u002fUsers\u002f_a.b-c_\u002f'",
+        "context": "\"\u002fUsers\u002f_a.b-c_\u002fx \u002fhome\u002fa\u002fx \u002fVolumes\u002fA\u002fx\""
+      },
+      {
+        "path": "identifier_edges.txt",
+        "line": 1,
+        "column": 19,
+        "rule": "Linux user home",
+        "message": "identifier_edges.txt:1:19: [Linux user home] '\u002fhome\u002fa\u002f'",
+        "context": "\"\u002fUsers\u002f_a.b-c_\u002fx \u002fhome\u002fa\u002fx \u002fVolumes\u002fA\u002fx\""
+      },
+      {
+        "path": "identifier_edges.txt",
+        "line": 1,
+        "column": 29,
+        "rule": "macOS volume mount",
+        "message": "identifier_edges.txt:1:29: [macOS volume mount] '\u002fVolumes\u002fA\u002f'",
+        "context": "\"\u002fUsers\u002f_a.b-c_\u002fx \u002fhome\u002fa\u002fx \u002fVolumes\u002fA\u002fx\""
+      }
+    ]
+  },
+  "near_misses": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "near_misses.txt:5:4: [macOS user home] '\u002fUsers\u002fbob\u002f'\n  \"D:\u002fUsers\u002fbob\u002f C:\u002fUSERS\u002fbob\u002f c:\u002fusers\u002fbob\u002f\"\nnear_misses.txt:5:30: [Windows user path] 'c:\u002fusers\u002f'\n  \"D:\u002fUsers\u002fbob\u002f C:\u002fUSERS\u002fbob\u002f c:\u002fusers\u002fbob\u002f\"\n\n2 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "near_misses.txt:5:4: [macOS user home] '\u002fUsers\u002fbob\u002f'\nnear_misses.txt:5:30: [Windows user path] 'c:\u002fusers\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "near_misses.txt",
+        "line": 5,
+        "column": 4,
+        "rule": "macOS user home",
+        "message": "near_misses.txt:5:4: [macOS user home] '\u002fUsers\u002fbob\u002f'",
+        "context": "\"D:\u002fUsers\u002fbob\u002f C:\u002fUSERS\u002fbob\u002f c:\u002fusers\u002fbob\u002f\""
+      },
+      {
+        "path": "near_misses.txt",
+        "line": 5,
+        "column": 30,
+        "rule": "Windows user path",
+        "message": "near_misses.txt:5:30: [Windows user path] 'c:\u002fusers\u002f'",
+        "context": "\"D:\u002fUsers\u002fbob\u002f C:\u002fUSERS\u002fbob\u002f c:\u002fusers\u002fbob\u002f\""
+      }
+    ]
+  },
+  "comment_suppression": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "comment_suppression.txt:4:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  C = \"\u002fUsers\u002falice\u002fz\" \u0023 local-path-OK\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "comment_suppression.txt:4:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "comment_suppression.txt",
+        "line": 4,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "comment_suppression.txt:4:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "C = \"\u002fUsers\u002falice\u002fz\" \u0023 local-path-OK"
+      }
+    ]
+  },
+  "marker_in_string": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "marker_in_string.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  A = \"\u002fUsers\u002falice\u002flocal-path-ok\"\nmarker_in_string.txt:2:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  B = \"\u002fUsers\u002falice\u002fproject\u0023 local-path-ok\"\nmarker_in_string.txt:3:29: [Linux user home] '\u002fhome\u002fbob\u002f'\n  C = \"\u0023 local-path-ok\"; D = \"\u002fhome\u002fbob\u002fz\"\n\n3 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "marker_in_string.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\nmarker_in_string.txt:2:6: [macOS user home] '\u002fUsers\u002falice\u002f'\nmarker_in_string.txt:3:29: [Linux user home] '\u002fhome\u002fbob\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "marker_in_string.txt",
+        "line": 1,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "marker_in_string.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002flocal-path-ok\""
+      },
+      {
+        "path": "marker_in_string.txt",
+        "line": 2,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "marker_in_string.txt:2:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "B = \"\u002fUsers\u002falice\u002fproject\u0023 local-path-ok\""
+      },
+      {
+        "path": "marker_in_string.txt",
+        "line": 3,
+        "column": 29,
+        "rule": "Linux user home",
+        "message": "marker_in_string.txt:3:29: [Linux user home] '\u002fhome\u002fbob\u002f'",
+        "context": "C = \"\u0023 local-path-ok\"; D = \"\u002fhome\u002fbob\u002fz\""
+      }
+    ]
+  },
+  "quoted_hash_then_comment": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "quoted_hash_then_comment.txt:2:31: [Linux user home] '\u002fhome\u002fbob\u002f'\n  A = \"\\\"\u0023 local-path-ok\"; D = \"\u002fhome\u002fbob\u002fz\"\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "quoted_hash_then_comment.txt:2:31: [Linux user home] '\u002fhome\u002fbob\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "quoted_hash_then_comment.txt",
+        "line": 2,
+        "column": 31,
+        "rule": "Linux user home",
+        "message": "quoted_hash_then_comment.txt:2:31: [Linux user home] '\u002fhome\u002fbob\u002f'",
+        "context": "A = \"\\\"\u0023 local-path-ok\"; D = \"\u002fhome\u002fbob\u002fz\""
+      }
+    ]
+  },
+  "token_errors": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "token_errors.txt:1:4: [macOS user home] '\u002fUsers\u002falice\u002f'\n  \"\"\"\u002fUsers\u002falice\u002fx \u0023 local-path-ok\ntoken_errors.txt:2:4: [Linux user home] '\u002fhome\u002fbob\u002f'\n  ( \"\u002fhome\u002fbob\u002fx\"\ntoken_errors.txt:4:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  A = \"\u002fUsers\u002falice\u002fx \u0023 local-path-ok\n\n3 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "token_errors.txt:1:4: [macOS user home] '\u002fUsers\u002falice\u002f'\ntoken_errors.txt:2:4: [Linux user home] '\u002fhome\u002fbob\u002f'\ntoken_errors.txt:4:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "token_errors.txt",
+        "line": 1,
+        "column": 4,
+        "rule": "macOS user home",
+        "message": "token_errors.txt:1:4: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "\"\"\"\u002fUsers\u002falice\u002fx \u0023 local-path-ok"
+      },
+      {
+        "path": "token_errors.txt",
+        "line": 2,
+        "column": 4,
+        "rule": "Linux user home",
+        "message": "token_errors.txt:2:4: [Linux user home] '\u002fhome\u002fbob\u002f'",
+        "context": "( \"\u002fhome\u002fbob\u002fx\""
+      },
+      {
+        "path": "token_errors.txt",
+        "line": 4,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "token_errors.txt:4:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fx \u0023 local-path-ok"
+      }
+    ]
+  },
+  "unicode_whitespace": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "unicode_whitespace.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  \u03c0 = \"\u002fUsers\u002falice\u002fx\"\nunicode_whitespace.txt:3:2: [Linux user home] '\u002fhome\u002fbob\u002f'\n  \"\u002fhome\u002fbob\u002fx\"\nunicode_whitespace.txt:4:2: [macOS volume mount] '\u002fVolumes\u002fDisk\u002f'\n  \"\u002fVolumes\u002fDisk\u002fy\"\n\n3 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "unicode_whitespace.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\nunicode_whitespace.txt:3:2: [Linux user home] '\u002fhome\u002fbob\u002f'\nunicode_whitespace.txt:4:2: [macOS volume mount] '\u002fVolumes\u002fDisk\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "unicode_whitespace.txt",
+        "line": 1,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "unicode_whitespace.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "\u03c0 = \"\u002fUsers\u002falice\u002fx\""
+      },
+      {
+        "path": "unicode_whitespace.txt",
+        "line": 3,
+        "column": 2,
+        "rule": "Linux user home",
+        "message": "unicode_whitespace.txt:3:2: [Linux user home] '\u002fhome\u002fbob\u002f'",
+        "context": "\"\u002fhome\u002fbob\u002fx\""
+      },
+      {
+        "path": "unicode_whitespace.txt",
+        "line": 4,
+        "column": 2,
+        "rule": "macOS volume mount",
+        "message": "unicode_whitespace.txt:4:2: [macOS volume mount] '\u002fVolumes\u002fDisk\u002f'",
+        "context": "\"\u002fVolumes\u002fDisk\u002fy\""
+      }
+    ]
+  },
+  "comment_and_docstring": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "comment_and_docstring.txt:1:18: [macOS user home] '\u002fUsers\u002falice\u002f'\n  \u0023 Documentation: \u002fUsers\u002falice\u002fx\ncomment_and_docstring.txt:2:8: [Linux user home] '\u002fhome\u002fbob\u002f'\n  \"\"\"See \u002fhome\u002fbob\u002fx\"\"\"\n\n2 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "comment_and_docstring.txt:1:18: [macOS user home] '\u002fUsers\u002falice\u002f'\ncomment_and_docstring.txt:2:8: [Linux user home] '\u002fhome\u002fbob\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "comment_and_docstring.txt",
+        "line": 1,
+        "column": 18,
+        "rule": "macOS user home",
+        "message": "comment_and_docstring.txt:1:18: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "\u0023 Documentation: \u002fUsers\u002falice\u002fx"
+      },
+      {
+        "path": "comment_and_docstring.txt",
+        "line": 2,
+        "column": 8,
+        "rule": "Linux user home",
+        "message": "comment_and_docstring.txt:2:8: [Linux user home] '\u002fhome\u002fbob\u002f'",
+        "context": "\"\"\"See \u002fhome\u002fbob\u002fx\"\"\""
+      }
+    ]
+  },
+  "empty": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "clean": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_violation_lines_0": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "legacy_violation_lines_0.txt:1:2: [macOS user home] '\u002fUsers\u002falice\u002f'\n  \"\u002fUsers\u002falice\u002fCode\u002fproject\"  \u0023 comment\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "legacy_violation_lines_0.txt:1:2: [macOS user home] '\u002fUsers\u002falice\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "legacy_violation_lines_0.txt",
+        "line": 1,
+        "column": 2,
+        "rule": "macOS user home",
+        "message": "legacy_violation_lines_0.txt:1:2: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "\"\u002fUsers\u002falice\u002fCode\u002fproject\"  \u0023 comment"
+      }
+    ]
+  },
+  "legacy_violation_lines_1": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "legacy_violation_lines_1.txt:1:7: [macOS volume mount] '\u002fVolumes\u002fDISK\u002f'\n  Path(\"\u002fVolumes\u002fDISK\u002fCode\u002fworktrees\")\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "legacy_violation_lines_1.txt:1:7: [macOS volume mount] '\u002fVolumes\u002fDISK\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "legacy_violation_lines_1.txt",
+        "line": 1,
+        "column": 7,
+        "rule": "macOS volume mount",
+        "message": "legacy_violation_lines_1.txt:1:7: [macOS volume mount] '\u002fVolumes\u002fDISK\u002f'",
+        "context": "Path(\"\u002fVolumes\u002fDISK\u002fCode\u002fworktrees\")"
+      }
+    ]
+  },
+  "legacy_violation_lines_2": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "legacy_violation_lines_2.txt:1:10: [Linux user home] '\u002fhome\u002frunner\u002f'\n  CACHE = \"\u002fhome\u002frunner\u002f.cache\u002fonex\"\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "legacy_violation_lines_2.txt:1:10: [Linux user home] '\u002fhome\u002frunner\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "legacy_violation_lines_2.txt",
+        "line": 1,
+        "column": 10,
+        "rule": "Linux user home",
+        "message": "legacy_violation_lines_2.txt:1:10: [Linux user home] '\u002fhome\u002frunner\u002f'",
+        "context": "CACHE = \"\u002fhome\u002frunner\u002f.cache\u002fonex\""
+      }
+    ]
+  },
+  "legacy_violation_lines_3": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "legacy_violation_lines_3.txt:1:8: [Windows user path] 'C:\\\\Users\\\\'\n  WIN = \"C:\\Users\\bob\\Documents\"\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "legacy_violation_lines_3.txt:1:8: [Windows user path] 'C:\\\\Users\\\\'\n"
+    },
+    "findings": [
+      {
+        "path": "legacy_violation_lines_3.txt",
+        "line": 1,
+        "column": 8,
+        "rule": "Windows user path",
+        "message": "legacy_violation_lines_3.txt:1:8: [Windows user path] 'C:\\\\Users\\\\'",
+        "context": "WIN = \"C:\\Users\\bob\\Documents\""
+      }
+    ]
+  },
+  "legacy_violation_lines_4": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "legacy_violation_lines_4.txt:1:8: [Windows user path] 'c:\u002fUsers\u002f'\n  WIN = \"c:\u002fUsers\u002fbob\u002fDocuments\"\nlegacy_violation_lines_4.txt:1:10: [macOS user home] '\u002fUsers\u002fbob\u002f'\n  WIN = \"c:\u002fUsers\u002fbob\u002fDocuments\"\n\n2 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "legacy_violation_lines_4.txt:1:8: [Windows user path] 'c:\u002fUsers\u002f'\nlegacy_violation_lines_4.txt:1:10: [macOS user home] '\u002fUsers\u002fbob\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "legacy_violation_lines_4.txt",
+        "line": 1,
+        "column": 8,
+        "rule": "Windows user path",
+        "message": "legacy_violation_lines_4.txt:1:8: [Windows user path] 'c:\u002fUsers\u002f'",
+        "context": "WIN = \"c:\u002fUsers\u002fbob\u002fDocuments\""
+      },
+      {
+        "path": "legacy_violation_lines_4.txt",
+        "line": 1,
+        "column": 10,
+        "rule": "macOS user home",
+        "message": "legacy_violation_lines_4.txt:1:10: [macOS user home] '\u002fUsers\u002fbob\u002f'",
+        "context": "WIN = \"c:\u002fUsers\u002fbob\u002fDocuments\""
+      }
+    ]
+  },
+  "legacy_violation_lines_5": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "legacy_violation_lines_5.txt:1:24: [macOS user home] '\u002fUsers\u002fdev\u002f'\n  subprocess.run([\"cp\", \"\u002fUsers\u002fdev\u002ffile\", \"d\"])\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "legacy_violation_lines_5.txt:1:24: [macOS user home] '\u002fUsers\u002fdev\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "legacy_violation_lines_5.txt",
+        "line": 1,
+        "column": 24,
+        "rule": "macOS user home",
+        "message": "legacy_violation_lines_5.txt:1:24: [macOS user home] '\u002fUsers\u002fdev\u002f'",
+        "context": "subprocess.run([\"cp\", \"\u002fUsers\u002fdev\u002ffile\", \"d\"])"
+      }
+    ]
+  },
+  "legacy_violation_lines_6": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "legacy_violation_lines_6.txt:2:6: [macOS user home] '\u002fUsers\u002fci\u002f'\n  B = \"\u002fUsers\u002fci\u002fworkspace\u002frepo\"\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "legacy_violation_lines_6.txt:2:6: [macOS user home] '\u002fUsers\u002fci\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "legacy_violation_lines_6.txt",
+        "line": 2,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "legacy_violation_lines_6.txt:2:6: [macOS user home] '\u002fUsers\u002fci\u002f'",
+        "context": "B = \"\u002fUsers\u002fci\u002fworkspace\u002frepo\""
+      }
+    ]
+  },
+  "legacy_clean_lines_0": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_clean_lines_1": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_clean_lines_2": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_clean_lines_3": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_clean_lines_4": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_clean_lines_5": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_clean_lines_6": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "legacy_clean_lines_7": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "escaped_quotes": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "escaped_quotes.txt:1:33: [macOS user home] '\u002fUsers\u002falice\u002f'\n  A = \"\\\\\\\"\u0023 local-path-ok\"; B = \"\u002fUsers\u002falice\u002fx\"\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "escaped_quotes.txt:1:33: [macOS user home] '\u002fUsers\u002falice\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "escaped_quotes.txt",
+        "line": 1,
+        "column": 33,
+        "rule": "macOS user home",
+        "message": "escaped_quotes.txt:1:33: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "A = \"\\\\\\\"\u0023 local-path-ok\"; B = \"\u002fUsers\u002falice\u002fx\""
+      }
+    ]
+  },
+  "comment_after_unclosed_single_quote": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "comment_after_unclosed_single_quote.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  A = '\u002fUsers\u002falice\u002fx \u0023 local-path-ok\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "comment_after_unclosed_single_quote.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "comment_after_unclosed_single_quote.txt",
+        "line": 1,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "comment_after_unclosed_single_quote.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "A = '\u002fUsers\u002falice\u002fx \u0023 local-path-ok"
+      }
+    ]
+  },
+  "string_before_unclosed_triple_quote": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "string_before_unclosed_triple_quote.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  A = \"\u002fUsers\u002falice\u002fx\"; B = \"\"\" \u0023 local-path-ok\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "string_before_unclosed_triple_quote.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "string_before_unclosed_triple_quote.txt",
+        "line": 1,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "string_before_unclosed_triple_quote.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fx\"; B = \"\"\" \u0023 local-path-ok"
+      }
+    ]
+  },
+  "comment_after_line_continuation": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "comment_after_line_continuation.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n  A = \"\u002fUsers\u002falice\u002fx\" \\ \u0023 local-path-ok\n\n1 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "comment_after_line_continuation.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "comment_after_line_continuation.txt",
+        "line": 1,
+        "column": 6,
+        "rule": "macOS user home",
+        "message": "comment_after_line_continuation.txt:1:6: [macOS user home] '\u002fUsers\u002falice\u002f'",
+        "context": "A = \"\u002fUsers\u002falice\u002fx\" \\ \u0023 local-path-ok"
+      }
+    ]
+  },
+  "all_suppressed": {
+    "exit_code": 0,
+    "output": {
+      "verbose": "No local path violations found.\n",
+      "quiet": ""
+    },
+    "findings": []
+  },
+  "uppercase_identifiers": {
+    "exit_code": 1,
+    "output": {
+      "verbose": "uppercase_identifiers.txt:1:2: [macOS user home] '\u002fUsers\u002fAlice\u002f'\n  \"\u002fUsers\u002fAlice\u002fX \u002fhome\u002fUbuntu\u002fx \u002fVolumes\u002fPRO-G40\u002fx\"\nuppercase_identifiers.txt:1:17: [Linux user home] '\u002fhome\u002fUbuntu\u002f'\n  \"\u002fUsers\u002fAlice\u002fX \u002fhome\u002fUbuntu\u002fx \u002fVolumes\u002fPRO-G40\u002fx\"\nuppercase_identifiers.txt:1:32: [macOS volume mount] '\u002fVolumes\u002fPRO-G40\u002f'\n  \"\u002fUsers\u002fAlice\u002fX \u002fhome\u002fUbuntu\u002fx \u002fVolumes\u002fPRO-G40\u002fx\"\n\n3 local path violation(s). Remove hardcoded paths or add `\u0023 local-path-ok` to suppress.\n",
+      "quiet": "uppercase_identifiers.txt:1:2: [macOS user home] '\u002fUsers\u002fAlice\u002f'\nuppercase_identifiers.txt:1:17: [Linux user home] '\u002fhome\u002fUbuntu\u002f'\nuppercase_identifiers.txt:1:32: [macOS volume mount] '\u002fVolumes\u002fPRO-G40\u002f'\n"
+    },
+    "findings": [
+      {
+        "path": "uppercase_identifiers.txt",
+        "line": 1,
+        "column": 2,
+        "rule": "macOS user home",
+        "message": "uppercase_identifiers.txt:1:2: [macOS user home] '\u002fUsers\u002fAlice\u002f'",
+        "context": "\"\u002fUsers\u002fAlice\u002fX \u002fhome\u002fUbuntu\u002fx \u002fVolumes\u002fPRO-G40\u002fx\""
+      },
+      {
+        "path": "uppercase_identifiers.txt",
+        "line": 1,
+        "column": 17,
+        "rule": "Linux user home",
+        "message": "uppercase_identifiers.txt:1:17: [Linux user home] '\u002fhome\u002fUbuntu\u002f'",
+        "context": "\"\u002fUsers\u002fAlice\u002fX \u002fhome\u002fUbuntu\u002fx \u002fVolumes\u002fPRO-G40\u002fx\""
+      },
+      {
+        "path": "uppercase_identifiers.txt",
+        "line": 1,
+        "column": 32,
+        "rule": "macOS volume mount",
+        "message": "uppercase_identifiers.txt:1:32: [macOS volume mount] '\u002fVolumes\u002fPRO-G40\u002f'",
+        "context": "\"\u002fUsers\u002fAlice\u002fX \u002fhome\u002fUbuntu\u002fx \u002fVolumes\u002fPRO-G40\u002fx\""
+      }
+    ]
+  }
+}

@@ -181,11 +181,12 @@ repos:
       # SYNC with ci.yml job 'skip-count-ratchet' (Operating Rule #5).
       - id: skip-count-ratchet
         name: Skip-count baseline ratchet selftest (OMN-18790)
-        entry: uv run python scripts/ci/skip_count_ratchet.py --selftest
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_skip_count_ratchet_check_compute.runtime_skip_count_ratchet_check
+          --selftest
         language: system
         pass_filenames: false
         files: >-
-          ^(scripts/ci/skip_count_ratchet\.py|config/skip_count_baseline\.yaml|tests/ci/test_skip_count_ratchet_omn18790\.py|\.github/workflows/ci\.yml)$
+          ^(src/omnibase_core/(nodes/node_skip_count_ratchet_check_compute/|models/nodes/skip_count_ratchet_check/).*|config/skip_count_baseline\.yaml|tests/ci/test_skip_count_ratchet_omn18790\.py|\.github/workflows/ci\.yml)$
         stages: [pre-commit]
 
       # Async-fixture decorator gate (OMN-17319) -- fail-closed, whole-tree, sub-second.
@@ -831,17 +832,12 @@ repos:
         pass_filenames: true
         require_serial: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/skip_count_ratchet\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/canonical_file_shape\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/canonical_file_shape\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
         stages: [pre-commit]
         # validate_string_versions.py: validation script that must load YAML to validate it (OMN-4402)
         # canonical_file_shape.py (OMN-17427): reads the target repo's .pre-commit-config.yaml to find the
         # --baseline path its check-direct-model-call hook declares; that is a third-party-shaped config,
         # not an ONEX contract, so a Pydantic contract model does not apply.
-        # scripts/ci/skip_count_ratchet.py (OMN-18790): vendored from omnibase_infra
-        # (canonical source, OMN-18776) unmodified — it parses config/skip_count_baseline.yaml,
-        # a CI baseline file, not an ONEX contract, so Pydantic contract-model
-        # validation does not apply. A local model here would fork the upstream
-        # file and break re-copy, which is the whole vendoring convention.
         # required-check-skip-guard/*.py (OMN-14863): vendored from omniclaude
         # (canonical source) unmodified — these parse GitHub Actions workflow
         # YAML into an internal job/if-expression model, not ONEX contract
@@ -969,7 +965,8 @@ repos:
       - id: check-ai-slop
         name: Check for AI-slop patterns
         language: system
-        entry: uv run python scripts/validation/check_ai_slop.py --strict
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_ai_slop_check_compute.runtime_ai_slop_check
+          --strict
         types_or: [python, markdown]
         pass_filenames: true
         require_serial: true
@@ -1043,18 +1040,6 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-        stages: [pre-commit]
-
-      # OMN-10741: Unified localhost/hardcoded-endpoint fallback validator
-      # Covers all 6 pattern types from OMN-10658 enforcement sweep.
-      # Annotation: add  # fallback-ok: <reason>  to exempt a justified line.
-      - id: no-env-fallbacks
-        name: No localhost/hardcoded-endpoint fallbacks (OMN-10741)
-        entry: uv run python scripts/validate_no_env_fallbacks.py
-        language: system
-        pass_filenames: true
-        require_serial: true
-        types_or: [python, shell]
         stages: [pre-commit]
 
       # OMN-10817: Except-log-no-reraise (silent swallow) detector
@@ -1170,7 +1155,7 @@ repos:
         # - validator_node_purity.py: Rule enum + violation model + private AST visitor tightly coupled to validator — same pattern as checker_enum_governance.py (OMN-13283)
         # - local_paths/models.py + private_ip/models.py: tightly-coupled scan-input/finding/result model triad for one COMPUTE validator — same precedent as the validator model families above (OMN-13293/OMN-13294)
         # - validator_receipt_honesty.py: Rule enum (EnumHonestyRule) + violation dataclass (HonestyViolation) + small file-scan result wrapper (ReceiptFinding) tightly coupled to this one honesty validator — same pattern as validator_node_purity.py / checker_enum_governance.py (OMN-15940)
-        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/validation/local_paths/models\.py$|src/omnibase_core/validation/private_ip/models\.py$|src/omnibase_core/validation/validator_transport_import\.py$|src/omnibase_core/validation/validator_node_purity\.py$|src/omnibase_core/validation/validator_receipt_honesty\.py$|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/validation/checker_normalization_symmetry\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/validation/cross_repo/scanners/scanner_import_graph\.py$|src/omnibase_core/models/validation/model_rule_configs\.py$|src/omnibase_core/protocols/|src/omnibase_core/models/contracts/model_cli_contribution\.py$|src/omnibase_core/navigation/model_contract_graph\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_input\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_output\.py$|src/omnibase_core/navigation/model_backward_chaining\.py$|src/omnibase_core/models/events/model_github_pr_status_event\.py$|src/omnibase_core/models/validation/model_validation_report\.py$|src/omnibase_core/services/service_contract_validator\.py$|src/omnibase_core/validation/validator_local_paths\.py$|src/omnibase_core/navigation/model_graph_boundary\.py$|src/omnibase_core/services/service_protocol_auditor\.py$|src/omnibase_core/contracts/contract_loader\.py$|src/omnibase_core/navigation/model_action_set\.py$|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/validation/scripts/validate_string_versions\.py$|src/omnibase_core/validation/scripts/timeout_utils\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/scripts/validate_markdown_links\.py$|src/omnibase_core/runtime/runtime_local\.py$|src/omnibase_core/runtime/runtime_dispatch\.py$|src/omnibase_core/runtime/runtime_dual_sink\.py$)
+        exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/validation/validator_transport_import\.py$|src/omnibase_core/validation/validator_node_purity\.py$|src/omnibase_core/validation/validator_receipt_honesty\.py$|src/omnibase_core/utils/util_singleton_holders\.py$|src/omnibase_core/models/core/model_action_config_value\.py$|src/omnibase_core/models/configuration/model_node_config_value\.py$|src/omnibase_core/mixins/mixin_event_bus\.py$|src/omnibase_core/mixins/mixin_health_check\.py$|src/omnibase_core/validation/checker_enum_governance\.py$|src/omnibase_core/validation/checker_normalization_symmetry\.py$|src/omnibase_core/types/typed_dict_demo\.py$|src/omnibase_core/validation/cross_repo/scanners/scanner_import_graph\.py$|src/omnibase_core/models/validation/model_rule_configs\.py$|src/omnibase_core/protocols/|src/omnibase_core/models/contracts/model_cli_contribution\.py$|src/omnibase_core/navigation/model_contract_graph\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_input\.py$|src/omnibase_core/models/nodes/contract_resolve/model_contract_resolve_output\.py$|src/omnibase_core/navigation/model_backward_chaining\.py$|src/omnibase_core/models/events/model_github_pr_status_event\.py$|src/omnibase_core/models/validation/model_validation_report\.py$|src/omnibase_core/services/service_contract_validator\.py$|src/omnibase_core/validation/validator_local_paths\.py$|src/omnibase_core/navigation/model_graph_boundary\.py$|src/omnibase_core/services/service_protocol_auditor\.py$|src/omnibase_core/contracts/contract_loader\.py$|src/omnibase_core/navigation/model_action_set\.py$|src/omnibase_core/models/ticket/model_ticket_context_bundle\.py$|src/omnibase_core/validation/scripts/validate_string_versions\.py$|src/omnibase_core/validation/scripts/timeout_utils\.py$|src/omnibase_core/models/epic/model_epic_state\.py$|src/omnibase_core/runtime/runtime_local\.py$|src/omnibase_core/runtime/runtime_dispatch\.py$|src/omnibase_core/runtime/runtime_dual_sink\.py$)
         stages: [pre-commit]
 
       - id: validate-enum-model-imports
@@ -1330,7 +1315,7 @@ repos:
       # --no-verify. Suppress legitimate lines with: # local-path-ok
       - id: check-local-paths-compute
         name: No hardcoded local/machine-specific paths — COMPUTE/bus (OMN-13293)
-        entry: uv run python -m omnibase_core.validation.local_paths.runtime_local_paths
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_local_paths_check_compute.runtime_local_paths_check
         language: system
         types: [text]
         # OMN-17159: scripts/hooks/prepush_dispatch.sh is a VENDORED, byte-identical
@@ -1348,7 +1333,6 @@ repos:
             archived/|
             archive/|
             tests/fixtures/|
-            tests/unit/validation/local_paths/test_handler_local_paths_compute\.py$|
             tests/unit/validation/test_validator_local_paths\.py$|
             tests/unit/validation/test_checker_enum_member_casing\.py$|
             tests/unit/validation/test_checker_literal_duplication\.py$|
@@ -1370,7 +1354,7 @@ repos:
       # whose subject IS IP literals with: # onex-allow-file-internal-ip
       - id: check-private-ip-compute
         name: No hardcoded private-IP literals — COMPUTE/bus (OMN-13294)
-        entry: uv run python -m omnibase_core.validation.private_ip.runtime_private_ip
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_private_ip_check_compute.runtime_private_ip_check
         language: system
         types: [text]
         # Tests legitimately exercise IP-handling with example private IPs as test
@@ -1559,7 +1543,7 @@ repos:
       # whose subject IS topic literals with: # onex-allow-file-topic-literal
       - id: check-hardcoded-topic-compute
         name: No hardcoded onex.* topic literals — COMPUTE/bus (OMN-13294)
-        entry: uv run python -m omnibase_core.validation.hardcoded_topic.runtime_hardcoded_topic
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_hardcoded_topic_check_compute.runtime_hardcoded_topic_check
         language: system
         types: [text]
         # The gate targets src/ (where a pasted topic literal is real contract
@@ -1707,14 +1691,16 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
-      # No localhost/hardcoded-endpoint fallback defaults (OMN-14659). Scoped to
-      # src/ only, matching the check-no-utcnow precedent above — this repo's src/
-      # tree is currently clean against this check (verified 2026-07-16).
+      # No localhost/hardcoded-endpoint fallback defaults (OMN-14659). Scope is
+      # every Python and shell file: OMN-20565 retired the script hook
+      # (scripts/validate_no_env_fallbacks.py) that covered the whole tree, and
+      # this node, which skips tests directories itself, took over its scope.
+      # Annotation: add  # fallback-ok: <reason>  to exempt a justified line.
       - id: check-no-env-fallbacks
         name: No Localhost/Hardcoded-Endpoint Fallbacks (OMN-14659)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check
         language: system
-        files: ^src/.*\.(py|sh|bash)$
+        types_or: [python, shell]
         pass_filenames: true
         require_serial: true
         stages: [pre-commit]
@@ -1953,15 +1939,31 @@ repos:
       # version string. omnibase_core is a published PyPI package; if src/ changes
       # but project.version is NOT bumped past the latest published tag, two code
       # states ship under one wheel version (the OMN-13402/OMN-13405 crash). Port
-      # of the omnibase_infra release-identity gate (OMN-13412). The script does
+      # of the omnibase_infra release-identity gate (OMN-13412), now the
+      # node_release_identity_check_compute COMPUTE node (OMN-20565). Its runtime does
       # its own diff/tag resolution; pass_filenames=false because it inspects the
       # whole worktree, not a per-file list.
       - id: check-release-identity
         name: No code merged onto a published version without a bump (OMN-13411)
-        entry: uv run python scripts/check_release_identity.py --base origin/dev
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_release_identity_check_compute.runtime_release_identity_check
+          --base origin/dev
         language: system
         files: ^(src/.*\.py|pyproject\.toml)$
         pass_filenames: false
+        stages: [pre-commit]
+
+      # Pre-commit interpreter-resolution gate (OMN-20565). Rejects a bare
+      # interpreter in a local hook or in a script a hook references, as the
+      # node_precommit_interpreter_check_compute COMPUTE node. Core had no such
+      # gate; omnibase_infra and omnimarket ran their own copies of the script this
+      # node replaces. Whole-config check, so pass_filenames is false.
+      - id: precommit-interpreter-resolution
+        name: Pre-commit interpreter-resolution gate (OMN-20565)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_precommit_interpreter_check_compute.runtime_precommit_interpreter_check
+        language: system
+        files: ^(\.pre-commit-config\.yaml|scripts/.*\.(sh|py)|\.pre-commit-hooks/.*\.sh)$
+        pass_filenames: false
+        require_serial: true
         stages: [pre-commit]
 
       # Enum Governance Validation (OMN-1313)
@@ -2106,13 +2108,13 @@ repos:
         stages: [pre-commit]
 
       # OMN-5063: Block untyped metadata dict fields
-      # Runs this repository's own scripts/check_no_untyped_metadata.py (OMN-20068,
-      # OCC retirement S8); it was the onex_change_control console script of the
-      # same name, which came from the onex-change-control dependency pin.
+      # Runs this repository's own COMPUTE node (OMN-20565; OMN-20068, OCC
+      # retirement S8, moved the check in-repo as scripts/check_no_untyped_metadata.py,
+      # and it was the onex_change_control console script of the same name before).
       - id: no-untyped-metadata
         name: No untyped metadata dict fields
         language: system
-        entry: uv run python scripts/check_no_untyped_metadata.py
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_untyped_metadata_check_compute.runtime_no_untyped_metadata_check
         require_serial: true
         types: [python]
         exclude: ^tests/|^examples/|^scripts/

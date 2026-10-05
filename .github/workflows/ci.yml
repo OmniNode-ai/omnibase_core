@@ -1108,7 +1108,7 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    timeout-minutes: 5
+    timeout-minutes: 20
 
     steps:
       - name: Checkout code
@@ -1119,8 +1119,33 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+          save-cache: false
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      # The same COMPUTE node backs the check-no-env-fallbacks pre-commit hook
+      # (OMN-20565 replaced scripts/validate_no_env_fallbacks.py). Scope is every
+      # tracked Python and shell file, the scope the script's hook ran at.
       - name: Run no-env-fallbacks validator
-        run: python3 scripts/validate_no_env_fallbacks.py
+        run: |
+          git ls-files '*.py' '*.sh' '*.bash' | xargs env -u PYTHONPATH uv run python -m \
+            omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check \
+            --report-json no-env-fallbacks-report.json
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: no-env-fallbacks-report
+          path: no-env-fallbacks-report.json
+          if-no-files-found: ignore
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Baseline security scan using detect-secrets (OMN-2226)
@@ -1598,7 +1623,7 @@ jobs:
   # branch protection. This copy runs the same strict scan and feeds
   # quality-gate so a real AI-slop violation turns the required rollup red.
   # OMN-19614: on pull_request it scans only the PR's changed files (the full
-  # tree took 130 s on the quality-gate critical path); check_ai_slop.py judges
+  # tree took 130 s on the quality-gate critical path); the ai-slop check judges
   # each file on its own. The merge_group / no-diff exit-0 hole stays closed:
   # every non-pull_request event, an unresolvable base, and a change to the
   # checker, its rules, the rule loader or models, the lockfile, pyproject or
@@ -1650,7 +1675,8 @@ jobs:
           python3 scripts/ci/ci_scan_scope.py \
             --event "$EVENT_NAME" \
             --pr-head-sha "$PR_HEAD_SHA" \
-            --force-full 'scripts/validation/check_ai_slop.py' \
+            --force-full 'src/omnibase_core/nodes/node_ai_slop_check_compute/*' \
+            --force-full 'src/omnibase_core/models/nodes/ai_slop_check/*' \
             --force-full '.onex/aislop-rules.yaml' \
             --force-full 'src/omnibase_core/contracts/aislop_default_rules.yaml' \
             --force-full 'src/omnibase_core/validation/aislop_rule_loader.py' \
@@ -1672,7 +1698,7 @@ jobs:
             exit 0
           fi
           # shellcheck disable=SC2086
-          .venv/bin/python scripts/validation/check_ai_slop.py --strict $files
+          .venv/bin/python -m omnibase_core.nodes.node_ai_slop_check_compute.runtime_ai_slop_check --strict $files
 
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Doc-Content Scan (OMN-13572: wire doc_content_scan as a required gate)
@@ -2113,7 +2139,7 @@ jobs:
 
       - name: Run validator unit tests
         run: |
-          uv run pytest tests/unit/validation/hardcoded_topic/ -v
+          uv run pytest tests/unit/nodes/node_hardcoded_topic_check_compute/ -v
 
       # Self-scan omnibase_core src/ for hardcoded onex.* topic literals. Lands
       # REPORT-ONLY (--report-only) — ported unchanged from the retired
@@ -2123,7 +2149,7 @@ jobs:
       # hook (same handler, so verdicts cannot drift).
       - name: Self-scan omnibase_core src/ (report mode — baseline burn-down pending)
         run: |
-          uv run python -m omnibase_core.validation.hardcoded_topic.runtime_hardcoded_topic \
+          uv run python -m omnibase_core.nodes.node_hardcoded_topic_check_compute.runtime_hardcoded_topic_check \
             --report-only src/omnibase_core/
 
   # Shape-gate independence guard (OMN-20298). Every shape-gate failure in the
@@ -3117,7 +3143,7 @@ jobs:
 
       - name: Run release-identity unit tests
         run: |
-          uv run pytest tests/scripts/test_check_release_identity.py -v
+          uv run pytest tests/unit/nodes/node_release_identity_check_compute -v
 
       - name: No code merged onto a published version without a bump
         env:
@@ -3126,7 +3152,7 @@ jobs:
           set -euo pipefail
           BASE="${BASE_REF}"
           git fetch --quiet origin "${BASE}" || true
-          uv run python scripts/check_release_identity.py --base "origin/${BASE}"
+          uv run python -m omnibase_core.nodes.node_release_identity_check_compute.runtime_release_identity_check --base "origin/${BASE}"
 
   # Migrated from validator-todo-marker.yml (OMN-14877, OMN-14430 fast-follow).
   # Scans only the files the PR/merge changed (mirrors the pre-commit hook's
@@ -4550,6 +4576,10 @@ jobs:
       # matching nothing), and a gate that treated it as "nothing to check"
       # would be the very false-green this closes. Every step here is blocking,
       # by construction and by test.
+      - name: Install dependencies
+        if: steps.decide.outputs.ratchet == 'true'
+        run: uv sync --frozen
+
       - name: Enforce the skip-count baseline (OMN-18790)
         if: steps.decide.outputs.ratchet == 'true'
         env:
@@ -4573,8 +4603,8 @@ jobs:
               status=1
             else
               echo "Reading ${#int_reports[@]} integration JUnit report(s)."
-              uv run --no-project --with 'pyyaml>=6.0.2,<7.0.0' \
-                python scripts/ci/skip_count_ratchet.py \
+              uv run --frozen python -m \
+                omnibase_core.nodes.node_skip_count_ratchet_check_compute.runtime_skip_count_ratchet_check \
                 --suite omnibase_core/tests-integration \
                 --junit "${int_reports[@]}" || status=1
             fi
@@ -4590,8 +4620,8 @@ jobs:
               status=1
             else
               echo "Reading ${#unit_reports[@]} unit JUnit report(s)."
-              uv run --no-project --with 'pyyaml>=6.0.2,<7.0.0' \
-                python scripts/ci/skip_count_ratchet.py \
+              uv run --frozen python -m \
+                omnibase_core.nodes.node_skip_count_ratchet_check_compute.runtime_skip_count_ratchet_check \
                 --suite omnibase_core/test-parallel \
                 --junit "${unit_reports[@]}" || status=1
             fi

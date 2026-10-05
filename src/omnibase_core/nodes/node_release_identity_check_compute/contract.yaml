@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_release_identity_check_compute
+node_id: node_release_identity_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Validates the declared package version against published releases using typed repository facts. Preserves
+  core's release-identity messages, exemptions and version-ahead invariant. No I/O.
+input_model: omnibase_core.models.nodes.release_identity_check.model_release_identity_check_input.ModelReleaseIdentityCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeReleaseIdentityCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

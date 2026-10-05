@@ -1,0 +1,1262 @@
+[
+  {
+    "label": "nodeids-at",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-at-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-at-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "nodeids-grown",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-grown-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-grown-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 1,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 3 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n::error::r / j: the skipped set GREW by 1 test(s) (delta +1; 3 observed against a baseline of 2). These tests are collected and never executed, and are not in config/skip_count_baseline.yaml:\n    + pkg.c::test_new\n  Either make the test run, or record it in the baseline with its provenance and say in the PR why it may never execute.\n",
+    "findings": [
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "::error::r / j: the skipped set GREW by 1 test(s) (delta +1; 3 observed against a baseline of 2). These tests are collected and never executed, and are not in config/skip_count_baseline.yaml:"
+      },
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "    + pkg.c::test_new"
+      }
+    ]
+  },
+  {
+    "label": "nodeids-lower",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-lower-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-lower-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 1 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — a full-width run skipped 1, below the baseline of 2. Lower `max_skips` to 1 in config/skip_count_baseline.yaml and drop these 1 id(s):\n    - pkg.b::test_two\n",
+    "findings": []
+  },
+  {
+    "label": "nodeids-narrow",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-narrow-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-narrow-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 1 unique skipped / 40 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — narrowed selection: the impacted-test selector collected 40 of the baseline's 100, so 1 of 2 baseline skips were observed. Not a ratchet candidate; the lower number is the selector, not progress.\n",
+    "findings": []
+  },
+  {
+    "label": "nodeids-narrow-grown",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-narrow-grown-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-narrow-grown-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 1,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 2 unique skipped / 40 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n::error::r / j: the skipped set GREW by 1 test(s) (delta +1; 2 observed against a baseline of 2). These tests are collected and never executed, and are not in config/skip_count_baseline.yaml:\n    + pkg.c::test_new\n  Either make the test run, or record it in the baseline with its provenance and say in the PR why it may never execute.\n",
+    "findings": [
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "::error::r / j: the skipped set GREW by 1 test(s) (delta +1; 2 observed against a baseline of 2). These tests are collected and never executed, and are not in config/skip_count_baseline.yaml:"
+      },
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "    + pkg.c::test_new"
+      }
+    ]
+  },
+  {
+    "label": "nodeids-prefix",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-prefix-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-prefix-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "nodeids-duplicates",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-duplicates-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-duplicates-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "nodeids-zero-skips",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-zero-skips-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-zero-skips-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 0 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — a full-width run skipped 0, below the baseline of 2. Lower `max_skips` to 0 in config/skip_count_baseline.yaml and drop these 2 id(s):\n    - pkg.a::test_one\n    - pkg.b::test_two\n",
+    "findings": []
+  },
+  {
+    "label": "nodeids-split",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-split-0.xml",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-split-1.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-split-0.xml",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-split-1.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 2 unique skipped / 100 collected, across 2 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "count-at",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-at-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-at-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "count-grown",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-grown-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-grown-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 1,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 3 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n::error::r / j: skip count 3 exceeds the baseline 2 (delta +1).\n    + pkg.c::test_new\n",
+    "findings": [
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "::error::r / j: skip count 3 exceeds the baseline 2 (delta +1)."
+      },
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "    + pkg.c::test_new"
+      }
+    ]
+  },
+  {
+    "label": "count-lower",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-lower-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-lower-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 1 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — skip count 1 is below the baseline of 2. Lower `max_skips` to 1 in config/skip_count_baseline.yaml.\n",
+    "findings": []
+  },
+  {
+    "label": "count-narrow",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-narrow-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-narrow-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 1 unique skipped / 40 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — skip count 1 is below the baseline of 2. Lower `max_skips` to 1 in config/skip_count_baseline.yaml.\n",
+    "findings": []
+  },
+  {
+    "label": "count-narrow-grown",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-narrow-grown-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-narrow-grown-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 40 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "count-prefix",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-prefix-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-prefix-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "count-duplicates",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-duplicates-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-duplicates-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "count-zero-skips",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-zero-skips-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-zero-skips-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 0 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — skip count 0 is below the baseline of 2. Lower `max_skips` to 0 in config/skip_count_baseline.yaml.\n",
+    "findings": []
+  },
+  {
+    "label": "count-split",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-split-0.xml",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-split-1.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-split-0.xml",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-split-1.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 100 collected, across 2 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "observed",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/observed-0.xml",
+      "--print-observed"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/observed-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": false,
+    "exit_code": 0,
+    "stdout": "suites:\n  fixture/nodeids:\n    baseline_collected: 100\n    max_skips: 2\n    node_ids:\n    - pkg.a::test_one\n    - pkg.b::test_two\n\n",
+    "findings": []
+  },
+  {
+    "label": "nameless",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nameless-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nameless-0.xml"
+    ],
+    "suite": "fixture/count",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/count\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "retired-more",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/large.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/retired-more-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/large.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/retired-more-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 0 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 30 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — a full-width run skipped 0, below the baseline of 30. Lower `max_skips` to 0 in config/skip_count_baseline.yaml and drop these 30 id(s):\n    - pkg.z::test_0\n    - pkg.z::test_1\n    - pkg.z::test_10\n    - pkg.z::test_11\n    - pkg.z::test_12\n    - pkg.z::test_13\n    - pkg.z::test_14\n    - pkg.z::test_15\n    - pkg.z::test_16\n    - pkg.z::test_17\n    - pkg.z::test_18\n    - pkg.z::test_19\n    - pkg.z::test_2\n    - pkg.z::test_20\n    - pkg.z::test_21\n    - pkg.z::test_22\n    - pkg.z::test_23\n    - pkg.z::test_24\n    - pkg.z::test_25\n    - pkg.z::test_26\n    - pkg.z::test_27\n    - pkg.z::test_28\n    - pkg.z::test_29\n    - pkg.z::test_3\n    - pkg.z::test_4\n    ... and 5 more\n",
+    "findings": []
+  },
+  {
+    "label": "no-provenance",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-provenance.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-provenance-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/no-provenance.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-provenance-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids' carries no provenance block. A baseline number with no recorded measurement is a claim, not a measurement.\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids' carries no provenance block. A baseline number with no recorded measurement is a claim, not a measurement."
+      }
+    ]
+  },
+  {
+    "label": "no-measured",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-measured.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-measured-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/no-measured.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-measured-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': provenance.measured_at is missing or empty\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': provenance.measured_at is missing or empty"
+      }
+    ]
+  },
+  {
+    "label": "no-command",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-command.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-command-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/no-command.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-command-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': provenance.measurement_command is missing or empty\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': provenance.measurement_command is missing or empty"
+      }
+    ]
+  },
+  {
+    "label": "no-runs",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-runs.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-runs-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/no-runs.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-runs-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': provenance.source_runs is missing or empty\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': provenance.source_runs is missing or empty"
+      }
+    ]
+  },
+  {
+    "label": "mode",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/mode.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/mode-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/mode.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/mode-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': mode must be one of ('count', 'nodeids'), got 'bad'\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': mode must be one of ('count', 'nodeids'), got 'bad'"
+      }
+    ]
+  },
+  {
+    "label": "ids-type",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/ids-type.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/ids-type-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/ids-type.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/ids-type-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': node_ids must be a list\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': node_ids must be a list"
+      }
+    ]
+  },
+  {
+    "label": "ids-empty",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/ids-empty.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/ids-empty-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/ids-empty.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/ids-empty-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': mode `nodeids` needs a recorded node_ids set\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': mode `nodeids` needs a recorded node_ids set"
+      }
+    ]
+  },
+  {
+    "label": "integers",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/integers.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/integers-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/integers.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/integers-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': max_skips and baseline_collected must both be integers\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': max_skips and baseline_collected must both be integers"
+      }
+    ]
+  },
+  {
+    "label": "integer-missing",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/integer-missing.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/integer-missing-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/integer-missing.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/integer-missing-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': max_skips and baseline_collected must both be integers\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': max_skips and baseline_collected must both be integers"
+      }
+    ]
+  },
+  {
+    "label": "disagree",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/disagree.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/disagree-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/disagree.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/disagree-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': max_skips (3) disagrees with the recorded node_ids set (2 unique). The two must be written together or the count half of the report lies.\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': max_skips (3) disagrees with the recorded node_ids set (2 unique). The two must be written together or the count half of the report lies."
+      }
+    ]
+  },
+  {
+    "label": "repo",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/repo.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/repo-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/repo.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/repo-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': both `repo` and `job` are required\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': both `repo` and `job` are required"
+      }
+    ]
+  },
+  {
+    "label": "job",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/job.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/job-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/job.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/job-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': both `repo` and `job` are required\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': both `repo` and `job` are required"
+      }
+    ]
+  },
+  {
+    "label": "not-mapping",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/not-mapping.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/not-mapping-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/not-mapping.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/not-mapping-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): baseline file is not a mapping: tests/fixtures/validator_parity/skip_count_ratchet/not-mapping.yaml\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): baseline file is not a mapping: tests/fixtures/validator_parity/skip_count_ratchet/not-mapping.yaml"
+      }
+    ]
+  },
+  {
+    "label": "no-suites",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-suites.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-suites-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/no-suites.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/no-suites-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): baseline file declares no `suites` mapping: tests/fixtures/validator_parity/skip_count_ratchet/no-suites.yaml\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): baseline file declares no `suites` mapping: tests/fixtures/validator_parity/skip_count_ratchet/no-suites.yaml"
+      }
+    ]
+  },
+  {
+    "label": "yaml-error",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/yaml-error.cfg",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/yaml-error-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/yaml-error.cfg",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/yaml-error-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): baseline file is not parsable YAML: while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): baseline file is not parsable YAML: while parsing a flow node\nexpected the node content, but found '<stream end>'\n  in \"<unicode string>\", line 4, column 1:\n    \n    ^"
+      }
+    ]
+  },
+  {
+    "label": "unregistered",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/missing",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/unregistered-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/unregistered-0.xml"
+    ],
+    "suite": "fixture/missing",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/missing' is not registered in tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml. Registered suites: fixture/count, fixture/nodeids\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/missing' is not registered in tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml. Registered suites: fixture/count, fixture/nodeids"
+      }
+    ]
+  },
+  {
+    "label": "missing-baseline",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/absent.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/missing-recorded-0.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/absent.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/missing-recorded-0.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): baseline file not found: tests/fixtures/validator_parity/skip_count_ratchet/absent.yaml\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): baseline file not found: tests/fixtures/validator_parity/skip_count_ratchet/absent.yaml"
+      }
+    ]
+  },
+  {
+    "label": "xml-error",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/xml-error.xml"
+    ],
+    "decision": false,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): JUnit report is not parsable XML: tests/fixtures/validator_parity/skip_count_ratchet/xml-error.xml: no element found: line 2, column 0\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): JUnit report is not parsable XML: tests/fixtures/validator_parity/skip_count_ratchet/xml-error.xml: no element found: line 2, column 0"
+      }
+    ]
+  },
+  {
+    "label": "tests-integer",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/tests-integer.xml"
+    ],
+    "decision": false,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): tests/fixtures/validator_parity/skip_count_ratchet/tests-integer.xml: testsuite/@tests is not an integer\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): tests/fixtures/validator_parity/skip_count_ratchet/tests-integer.xml: testsuite/@tests is not an integer"
+      }
+    ]
+  },
+  {
+    "label": "missing-suite",
+    "args": [],
+    "decision": false,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): --suite is required\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): --suite is required"
+      }
+    ]
+  },
+  {
+    "label": "no-reports",
+    "args": [
+      "--suite",
+      "fixture/count"
+    ],
+    "decision": false,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): no JUnit reports named; refusing to report a verdict\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): no JUnit reports named; refusing to report a verdict"
+      }
+    ]
+  },
+  {
+    "label": "absent-report",
+    "args": [
+      "--suite",
+      "fixture/count",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/absent.xml"
+    ],
+    "decision": false,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): JUnit report not found: tests/fixtures/validator_parity/skip_count_ratchet/absent.xml\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): JUnit report not found: tests/fixtures/validator_parity/skip_count_ratchet/absent.xml"
+      }
+    ]
+  },
+  {
+    "label": "selftest",
+    "args": [
+      "--selftest"
+    ],
+    "decision": false,
+    "exit_code": 0,
+    "stdout": "skip-count-ratchet selftest OK: 6 verdict cases, 3 fail-closed cases, 2 shipped baseline suite(s) validated.\n",
+    "findings": []
+  },
+  {
+    "label": "count-no-ids",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-no-ids.yaml",
+      "--suite",
+      "fixture/suite",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-no-ids.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/count-no-ids.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-no-ids.xml"
+    ],
+    "suite": "fixture/suite",
+    "decision": true,
+    "exit_code": 1,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/suite\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 3 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n::error::r / j: skip count 3 exceeds the baseline 2 (delta +1).\n",
+    "findings": [
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/count-no-ids.yaml",
+        "line": 1,
+        "message": "::error::r / j: skip count 3 exceeds the baseline 2 (delta +1)."
+      }
+    ]
+  },
+  {
+    "label": "prefixed-recorded",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/prefixed-recorded.yaml",
+      "--suite",
+      "fixture/suite",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/prefixed-recorded.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/prefixed-recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/prefixed-recorded.xml"
+    ],
+    "suite": "fixture/suite",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/suite\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "count-string-integers",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-string-integers.yaml",
+      "--suite",
+      "fixture/suite",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-string-integers.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/count-string-integers.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-string-integers.xml"
+    ],
+    "suite": "fixture/suite",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/suite\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "count-float-integers",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-float-integers.yaml",
+      "--suite",
+      "fixture/suite",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-float-integers.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/count-float-integers.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/count-float-integers.xml"
+    ],
+    "suite": "fixture/suite",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/suite\n  repo          : r\n  job           : j\n  mode          : count\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "double-prefix",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/double-prefix.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/double-prefix.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 1,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 1 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n::error::r / j: the skipped set GREW by 1 test(s) (delta +1; 1 observed against a baseline of 2). These tests are collected and never executed, and are not in config/skip_count_baseline.yaml:\n    + tests.pkg.a::test_one\n  Either make the test run, or record it in the baseline with its provenance and say in the PR why it may never execute.\n",
+    "findings": [
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "::error::r / j: the skipped set GREW by 1 test(s) (delta +1; 1 observed against a baseline of 2). These tests are collected and never executed, and are not in config/skip_count_baseline.yaml:"
+      },
+      {
+        "path": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+        "line": 1,
+        "message": "    + tests.pkg.a::test_one"
+      }
+    ]
+  },
+  {
+    "label": "whitespace",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/whitespace.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/whitespace.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 2 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — at baseline (2 of 2).\n",
+    "findings": []
+  },
+  {
+    "label": "nested",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nested.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/nested.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 1 unique skipped / 100 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  RATCHET CANDIDATE — a full-width run skipped 1, below the baseline of 2. Lower `max_skips` to 1 in config/skip_count_baseline.yaml and drop these 1 id(s):\n    - pkg.b::test_two\n",
+    "findings": []
+  },
+  {
+    "label": "missing-tests",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/missing-tests.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/missing-tests.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 0 unique skipped / 0 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — narrowed selection: the impacted-test selector collected 0 of the baseline's 100, so 0 of 2 baseline skips were observed. Not a ratchet candidate; the lower number is the selector, not progress.\n",
+    "findings": []
+  },
+  {
+    "label": "zero-collected-nonempty",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/zero-collected-nonempty.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/zero-collected-nonempty.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 0 unique skipped / 0 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — narrowed selection: the impacted-test selector collected 0 of the baseline's 100, so 0 of 2 baseline skips were observed. Not a ratchet candidate; the lower number is the selector, not progress.\n",
+    "findings": []
+  },
+  {
+    "label": "empty-tests",
+    "args": [
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+      "--suite",
+      "fixture/nodeids",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/empty-tests.xml"
+    ],
+    "baseline": "tests/fixtures/validator_parity/skip_count_ratchet/recorded.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/empty-tests.xml"
+    ],
+    "suite": "fixture/nodeids",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — fixture/nodeids\n  repo          : r\n  job           : j\n  mode          : nodeids\n  observed      : 0 unique skipped / 0 collected, across 1 JUnit report(s)\n  baseline      : 2 unique skipped / 100 collected\n================================================================\n  PASS — narrowed selection: the impacted-test selector collected 0 of the baseline's 100, so 0 of 2 baseline skips were observed. Not a ratchet candidate; the lower number is the selector, not progress.\n",
+    "findings": []
+  },
+  {
+    "label": "invalid-mode-read-error",
+    "args": [
+      "--suite",
+      "fixture/nodeids",
+      "--baseline",
+      "tests/fixtures/validator_parity/skip_count_ratchet/invalid-mode-read-error.yaml",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/nodeids-at-0.xml"
+    ],
+    "decision": false,
+    "exit_code": 2,
+    "stdout": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': mode must be one of ('count', 'nodeids'), got 'read error:'\n",
+    "findings": [
+      {
+        "path": "",
+        "line": 0,
+        "message": "::error::skip-count-ratchet input error (fail-closed): suite 'fixture/nodeids': mode must be one of ('count', 'nodeids'), got 'read error:'"
+      }
+    ]
+  },
+  {
+    "label": "live-repository-unit",
+    "args": [
+      "--suite",
+      "omnibase_core/test-parallel",
+      "--baseline",
+      "config/skip_count_baseline.yaml",
+      "--junit",
+      "tests/fixtures/validator_parity/skip_count_ratchet/repository/live-unit/junit.xml"
+    ],
+    "baseline": "config/skip_count_baseline.yaml",
+    "reports": [
+      "tests/fixtures/validator_parity/skip_count_ratchet/repository/live-unit/junit.xml"
+    ],
+    "suite": "omnibase_core/test-parallel",
+    "decision": true,
+    "exit_code": 0,
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — omnibase_core/test-parallel\n  repo          : omnibase_core\n  job           : Tests (Split n/m)\n  mode          : nodeids\n  observed      : 0 unique skipped / 7 collected, across 1 JUnit report(s)\n  baseline      : 60 unique skipped / 45557 collected\n================================================================\n  PASS — narrowed selection: the impacted-test selector collected 7 of the baseline's 45557, so 0 of 60 baseline skips were observed. Not a ratchet candidate; the lower number is the selector, not progress.\n",
+    "findings": []
+  }
+]

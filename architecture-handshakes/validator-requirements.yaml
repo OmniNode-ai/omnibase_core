@@ -95,7 +95,7 @@ required_validators:
       event bus (in-memory pre-commit, Kafka in CI). Suppress a line with
       `# onex-allow-internal-ip`; suppress a doc-heavy file whose subject is IP
       literals with `# onex-allow-file-internal-ip`.
-    central_source: "omnibase_core.validation.private_ip.runtime_private_ip"
+    central_source: "omnibase_core.nodes.node_private_ip_check_compute.runtime_private_ip_check"
     pre_commit: required
     ci_workflow: required
     required_check_on_main: "validate-private-ip / validate"

@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_hardcoded_topic_check_compute
+node_id: node_hardcoded_topic_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Scan supplied source texts for quoted hardcoded topic literals, preserving the original hardcoded_topic
+  scanner's matching and suppression semantics.
+input_model: omnibase_core.models.nodes.hardcoded_topic_check.model_hardcoded_topic_check_input.ModelHardcodedTopicCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeHardcodedTopicCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

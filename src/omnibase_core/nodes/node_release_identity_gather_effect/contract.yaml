@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_release_identity_gather_effect
+node_id: node_release_identity_gather_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Reads pyproject through the source-file gather EFFECT and collects Git tag, ancestry and diff facts
+  for the release-identity COMPUTE node.
+input_model: omnibase_core.models.nodes.release_identity_check.model_release_identity_gather_input.ModelReleaseIdentityGatherInput
+output_model: omnibase_core.models.nodes.release_identity_check.model_release_identity_check_input.ModelReleaseIdentityCheckInput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeReleaseIdentityGatherEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000

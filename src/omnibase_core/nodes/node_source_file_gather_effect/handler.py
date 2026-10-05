@@ -120,9 +120,11 @@ class NodeSourceFileGatherEffect:
                 continue
 
             try:
-                source = file_path.read_text(encoding="utf-8")
+                source = file_path.read_text(
+                    encoding="utf-8", errors=request.decode_errors
+                )
                 size_bytes = file_path.stat().st_size
-            except OSError as exc:
+            except (OSError, UnicodeDecodeError) as exc:
                 skipped.append(
                     ModelSkippedSourceFile(
                         path=str(file_path), reason=f"read error: {exc}"
@@ -171,9 +173,11 @@ class NodeSourceFileGatherEffect:
                 )
                 continue
             try:
-                source = file_path.read_text(encoding="utf-8")
+                source = file_path.read_text(
+                    encoding="utf-8", errors=request.decode_errors
+                )
                 size_bytes = file_path.stat().st_size
-            except OSError as exc:
+            except (OSError, UnicodeDecodeError) as exc:
                 skipped.append(
                     ModelSkippedSourceFile(path=raw, reason=f"read error: {exc}")
                 )

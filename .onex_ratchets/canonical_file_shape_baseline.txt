@@ -40,9 +40,7 @@ scripts/check_dep_provenance.py
 scripts/check_forbidden_patterns.sh
 scripts/check_hook_bits_drift.py
 scripts/check_no_env_files.sh
-scripts/check_no_untyped_metadata.py
 scripts/check_node_purity.py
-scripts/check_release_identity.py
 scripts/check_transport_imports.py
 scripts/ci/__init__.py
 scripts/ci/adequacy_receipt.py
@@ -75,7 +73,6 @@ scripts/ci/rsd_provenance_stamp_baseline.py
 scripts/ci/run_contract_compliance_with_evidence.py
 scripts/ci/shadow_metrics_append.py
 scripts/ci/shadow_premise_replay.py
-scripts/ci/skip_count_ratchet.py
 scripts/ci/test_selection_closure.py
 scripts/ci/test_selection_loader.py
 scripts/ci/test_selection_models.py
@@ -116,11 +113,9 @@ scripts/validate-no-transport-imports.sh
 scripts/validate-pr-tickets.sh
 scripts/validate_class_naming.py
 scripts/validate_deterministic_skill_routing.py
-scripts/validate_no_env_fallbacks.py
 scripts/validate_no_transport_imports.py
 scripts/validation/audit_optional.py
 scripts/validation/audit_protocol_duplicates.py
-scripts/validation/check_ai_slop.py
 scripts/validation/check_error_raising.py
 scripts/validation/check_no_fallbacks.py
 scripts/validation/check_no_print_statements.py
@@ -550,7 +545,6 @@ src/omnibase_core/runtime/transport/runtime_in_memory_broker.py
 src/omnibase_core/runtime/transport/runtime_in_memory_transport.py
 src/omnibase_core/runtime/transport/runtime_transport_conformance.py
 src/omnibase_core/scripts/__init__.py
-src/omnibase_core/scripts/validate_markdown_links.py
 src/omnibase_core/services/__init__.py
 src/omnibase_core/services/diff/__init__.py
 src/omnibase_core/services/diff/service_diff_file_store.py
@@ -962,14 +956,6 @@ src/omnibase_core/validation/hardcoded_model_config/__init__.py
 src/omnibase_core/validation/hardcoded_model_config/handler.py
 src/omnibase_core/validation/hardcoded_model_config/models.py
 src/omnibase_core/validation/hardcoded_model_config/runtime_hardcoded_model_config.py
-src/omnibase_core/validation/hardcoded_topic/__init__.py
-src/omnibase_core/validation/hardcoded_topic/handler.py
-src/omnibase_core/validation/hardcoded_topic/models.py
-src/omnibase_core/validation/hardcoded_topic/runtime_hardcoded_topic.py
-src/omnibase_core/validation/local_paths/__init__.py
-src/omnibase_core/validation/local_paths/handler.py
-src/omnibase_core/validation/local_paths/models.py
-src/omnibase_core/validation/local_paths/runtime_local_paths.py
 src/omnibase_core/validation/localhost_url/__init__.py
 src/omnibase_core/validation/localhost_url/handler.py
 src/omnibase_core/validation/localhost_url/models.py
@@ -986,10 +972,6 @@ src/omnibase_core/validation/pin_hygiene/__init__.py
 src/omnibase_core/validation/pin_hygiene/handler.py
 src/omnibase_core/validation/pin_hygiene/models.py
 src/omnibase_core/validation/pin_hygiene/runtime_pin_hygiene.py
-src/omnibase_core/validation/private_ip/__init__.py
-src/omnibase_core/validation/private_ip/handler.py
-src/omnibase_core/validation/private_ip/models.py
-src/omnibase_core/validation/private_ip/runtime_private_ip.py
 src/omnibase_core/validation/protocol_goal_admission_provider.py
 src/omnibase_core/validation/protocol_goal_work_ledger_key_provider.py
 src/omnibase_core/validation/pydantic_module_index.py
@@ -1007,7 +989,6 @@ src/omnibase_core/validation/scripts/timeout_error.py
 src/omnibase_core/validation/scripts/timeout_utils.py
 src/omnibase_core/validation/scripts/unix_signal_timeout.py
 src/omnibase_core/validation/scripts/validate_string_versions.py
-src/omnibase_core/validation/scripts/validate_topic_names.py
 src/omnibase_core/validation/scripts/validation_violation.py
 src/omnibase_core/validation/todo_marker/__init__.py
 src/omnibase_core/validation/todo_marker/handler.py

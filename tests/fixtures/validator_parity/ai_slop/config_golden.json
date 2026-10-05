@@ -1,0 +1,1378 @@
+{
+  "config_00": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_01": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "WARNING",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "WARNING",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "WARNING",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "WARNING",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_02": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_03": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_04": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_05": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_06": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_07": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_08": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_09": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_10": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_11": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_12": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_13": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_14": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_15": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_16": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  },
+  "config_17": {
+    "0:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "0:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:0": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    },
+    "1:1": {
+      "exit_code": 1,
+      "findings": [
+        {
+          "filename": "source.py",
+          "line": 1,
+          "check": "sycophancy",
+          "severity": "ERROR",
+          "message": "Sycophantic opener: 'Great! Welcome.'"
+        },
+        {
+          "filename": "source.py",
+          "line": 2,
+          "check": "rest_docstring",
+          "severity": "ERROR",
+          "message": "reST-style docstring marker: ':param x: input'"
+        }
+      ]
+    }
+  }
+}

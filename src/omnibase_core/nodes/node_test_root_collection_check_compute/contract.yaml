@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_test_root_collection_check_compute
+node_id: node_test_root_collection_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Validate discovered test roots, PR-reachable standalone wiring, full-suite pytest invocation and collocated
+  selector coverage using inline typed facts.
+input_model: omnibase_core.models.nodes.test_root_collection_check.model_test_root_collection_check_input.ModelTestRootCollectionCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeTestRootCollectionCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

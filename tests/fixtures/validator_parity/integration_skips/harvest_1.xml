@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+
+<testsuites><testsuite name="pytest" tests="2" skipped="2">
+ <testcase classname="tests.integration.runtime.db.test_postgres_repository_runtime_integration"
+   name="test_execute_select_returns_rows_against_real_postgres" time="0.0">
+   <skipped type="pytest.skip" message="PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables"/>
+ </testcase>
+ <testcase classname="tests.integration.handlers.test_registration_storage_postgres_uuid_cast"
+   name="test_query_registrations_casts_node_id_uuid" time="0.0">
+   <skipped type="pytest.skip" message="PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)"/>
+ </testcase>
+</testsuite></testsuites>

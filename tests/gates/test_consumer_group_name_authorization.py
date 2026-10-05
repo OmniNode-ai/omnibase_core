@@ -106,16 +106,15 @@ _MUST_BE_UNAUTHORIZED = (
 
 _SAMPLE_CORRELATION_ID = UUID("9f2c0000-0000-4000-8000-000000000000")
 
-# The eight validation runtimes bind their consumer groups at MODULE level, so the
-# env-parametrized tests below must reload them to observe a managed environment.
+# The validation runtimes that still run over the bus bind their consumer groups at
+# MODULE level, so the env-parametrized tests below must reload them to observe a
+# managed environment. The hardcoded_topic, local_paths and private_ip runners were
+# replaced by pure check-compute nodes (OMN-20565) and bind no consumer group.
 _VALIDATOR_RUNTIME_SLUGS = (
     "doc_content_scan",
-    "hardcoded_topic",
-    "local_paths",
     "localhost_url",
     "no_faked_boundary",
     "pin_hygiene",
-    "private_ip",
     "todo_marker",
 )
 
@@ -159,7 +158,7 @@ def _python_sources() -> Iterator[Path]:
 def _module_level_string_bindings(tree: ast.Module) -> dict[str, ast.expr]:
     """Map module-level names bound to a string literal or f-string.
 
-    Without this, the eight validation runtimes escape the scan: they bind
+    Without this, the bus validation runtimes escape the scan: they bind
     ``_RUNNER_GROUP: Final[str] = "validator-x-runner"`` at module level and then pass
     ``group_id=_RUNNER_GROUP``, so the keyword's value is a ``Name``, not a literal.
     """

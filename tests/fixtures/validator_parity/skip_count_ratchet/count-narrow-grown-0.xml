@@ -1,0 +1,1 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="0" skipped="2" tests="40" time="1.0"><testcase classname="pkg.a" name="test_one"><skipped message='synthetic'/></testcase><testcase classname="pkg.c" name="test_new"><skipped message='synthetic'/></testcase></testsuite></testsuites>

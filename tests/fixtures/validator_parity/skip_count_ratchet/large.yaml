@@ -1,0 +1,48 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+suites:
+  fixture/nodeids:
+    baseline_collected: 100
+    job: j
+    max_skips: 30
+    mode: nodeids
+    node_ids:
+      - pkg.z::test_0
+      - pkg.z::test_1
+      - pkg.z::test_2
+      - pkg.z::test_3
+      - pkg.z::test_4
+      - pkg.z::test_5
+      - pkg.z::test_6
+      - pkg.z::test_7
+      - pkg.z::test_8
+      - pkg.z::test_9
+      - pkg.z::test_10
+      - pkg.z::test_11
+      - pkg.z::test_12
+      - pkg.z::test_13
+      - pkg.z::test_14
+      - pkg.z::test_15
+      - pkg.z::test_16
+      - pkg.z::test_17
+      - pkg.z::test_18
+      - pkg.z::test_19
+      - pkg.z::test_20
+      - pkg.z::test_21
+      - pkg.z::test_22
+      - pkg.z::test_23
+      - pkg.z::test_24
+      - pkg.z::test_25
+      - pkg.z::test_26
+      - pkg.z::test_27
+      - pkg.z::test_28
+      - pkg.z::test_29
+    provenance:
+      measured_at: '2026-09-18'
+      measurement_command: selftest
+      source_runs:
+        - selftest
+    repo: r

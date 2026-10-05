@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+require_executed_min: 0
+required_services:
+  postgres:
+    missing_skip_patterns: ['PostgreSQL not available']

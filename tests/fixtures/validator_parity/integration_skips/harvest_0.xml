@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPDX-FileCopyrightText: 2025 OmniNode.ai Inc. -->
+<!-- SPDX-License-Identifier: MIT -->
+
+<testsuites><testsuite name="pytest" tests="3" skipped="1">
+ <testcase classname="tests.integration.runtime.db.test_postgres_repository_runtime_integration"
+   name="test_execute_select_returns_rows_against_real_postgres" time="0.1"/>
+ <testcase classname="tests.integration.handlers.test_registration_storage_postgres_uuid_cast"
+   name="test_query_registrations_casts_node_id_uuid" time="0.1"/>
+ <testcase classname="tests.integration.event_bus.test_kafka_boundary" name="test_kafka_roundtrip">
+   <skipped type="pytest.skip" message="Redpanda broker not reachable at localhost:9092: connection refused"/>
+ </testcase>
+</testsuite></testsuites>
