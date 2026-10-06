@@ -1,0 +1,16 @@
+{
+  "bare.txt": "zz-synthetic-tenant-1\n",
+  "embedded.txt": "tenant_zz-synthetic-tenant-1_v2\n",
+  "url.txt": "https://host.test/zz-synthetic-tenant-1/events\n",
+  "path.txt": "/tenants/zz-synthetic-tenant-1/config\n",
+  "upper.txt": "ZZ-SYNTHETIC-TENANT-1\n",
+  "allowed.txt": "zz-synthetic-tenant-1 # onex-allow-exposed-identifier OMN-20565 reason=\"historical narrative\"\n",
+  "bare_annotation.txt": "zz-synthetic-tenant-1 # onex-allow-exposed-identifier\n",
+  "overlap.txt": "zz-synthetic-tenant-1\n",
+  "clean.txt": "unrelated synthetic data\n",
+  "node_modules/hit.txt": "zz-synthetic-tenant-1\n",
+  "build/hit.txt": "zz-synthetic-tenant-1\n",
+  "image.PNG": "zz-synthetic-tenant-1\n",
+  "binary.txt": "\u0000zz-synthetic-tenant-1\n",
+  "long.txt": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxzz-synthetic-tenant-1\n"
+}

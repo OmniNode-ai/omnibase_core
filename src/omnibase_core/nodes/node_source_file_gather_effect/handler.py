@@ -120,9 +120,15 @@ class NodeSourceFileGatherEffect:
                 continue
 
             try:
-                source = file_path.read_text(
-                    encoding="utf-8", errors=request.decode_errors
-                )
+                if request.decode_errors == "surrogateescape":
+                    with file_path.open(
+                        encoding="utf-8", errors="surrogateescape", newline=""
+                    ) as stream:
+                        source = stream.read()
+                else:
+                    source = file_path.read_text(
+                        encoding="utf-8", errors=request.decode_errors
+                    )
                 size_bytes = file_path.stat().st_size
             except (OSError, UnicodeDecodeError) as exc:
                 skipped.append(
@@ -173,9 +179,15 @@ class NodeSourceFileGatherEffect:
                 )
                 continue
             try:
-                source = file_path.read_text(
-                    encoding="utf-8", errors=request.decode_errors
-                )
+                if request.decode_errors == "surrogateescape":
+                    with file_path.open(
+                        encoding="utf-8", errors="surrogateescape", newline=""
+                    ) as stream:
+                        source = stream.read()
+                else:
+                    source = file_path.read_text(
+                        encoding="utf-8", errors=request.decode_errors
+                    )
                 size_bytes = file_path.stat().st_size
             except (OSError, UnicodeDecodeError) as exc:
                 skipped.append(

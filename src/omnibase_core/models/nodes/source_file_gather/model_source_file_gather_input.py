@@ -50,6 +50,8 @@ class ModelSourceFileGatherInput(BaseModel):
         decode_errors: ``strict`` (default) reports a file with an undecodable
             byte as a ``read error`` skip; ``replace`` reads it with U+FFFD for
             each bad byte, the way a line scanner that must see every file does.
+            ``surrogateescape`` transports original bytes losslessly, preserving
+            newlines for validators with byte-position-sensitive binary checks.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -64,4 +66,6 @@ class ModelSourceFileGatherInput(BaseModel):
     max_file_size: int = Field(default=5 * 1024 * 1024, ge=0)
     source_only: bool = Field(default=False)
     explicit_paths: list[str] = Field(default_factory=list)
-    decode_errors: Literal["strict", "replace"] = Field(default="strict")
+    decode_errors: Literal["strict", "replace", "surrogateescape"] = Field(
+        default="strict"
+    )

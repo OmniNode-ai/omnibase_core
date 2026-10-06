@@ -1,0 +1,9 @@
+[
+  ["# onex-allow-exposed-identifier OMN-20565 reason=\"history\"", 0],
+  ["# onex-allow-exposed-identifier", 1],
+  ["# onex-allow-exposed-identifier OMN-20565", 1],
+  ["# onex-allow-exposed-identifier reason=\"history\"", 1],
+  ["# onex-allow-exposed-identifier OMN-20565 reason=\"\"", 1],
+  ["# onex-allow-file OMN-20565 reason=\"history\"", 1],
+  ["# onex-allow-internal-ip OMN-20565 reason=\"history\"", 1]
+]
