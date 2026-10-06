@@ -1,3 +1,14 @@
+## v0.47.36 (2026-10-06)
+
+### Release
+- Cut omnibase-core from dev at 0.47.36 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.35.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.35
+- feat: move EnumDelegationFailureClass to core, add typed failure_class to inference response (#1892)
+- feat: SPDX header check converted to a canonical check-compute node (#1891)
+
 ## v0.47.35 (2026-10-05)
 
 ### Release
