@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+---
+name: node_exposed_identifiers_check_compute
+node_id: node_exposed_identifiers_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Checks inline sources against a caller-supplied salted hash denylist without exposing matched values.
+input_model: omnibase_core.models.nodes.exposed_identifiers_check.model_exposed_identifiers_check_input.ModelExposedIdentifiersCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeExposedIdentifiersCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

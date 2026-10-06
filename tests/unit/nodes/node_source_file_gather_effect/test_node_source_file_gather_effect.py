@@ -562,3 +562,21 @@ def test_decode_errors_replace_gathers_undecodable_file(
 
     assert output.skipped == []
     assert [f.source for f in output.files] == ["x = 1\n�\n"]
+
+
+@pytest.mark.parametrize("explicit", [False, True])
+def test_lossless_transport_preserves_bytes_and_newlines(
+    tmp_path: Path, explicit: bool
+) -> None:
+    source = tmp_path / "bytes.py"
+    raw = b"x = 1\r\n\xff\n\0"
+    source.write_bytes(raw)
+    output = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=str(tmp_path),
+            explicit_paths=[str(source)] if explicit else [],
+            decode_errors="surrogateescape",
+        )
+    )
+    assert output.skipped == []
+    assert output.files[0].source.encode("utf-8", errors="surrogateescape") == raw

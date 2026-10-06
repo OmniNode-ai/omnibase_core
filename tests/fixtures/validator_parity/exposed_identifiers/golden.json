@@ -1,0 +1,12 @@
+{
+  "findings": [
+    "bare.txt:1:1: denylisted test-fixture (entry=synthetic-0 ticket=OMN-20565 match_len=21) -- value withheld by design",
+    "embedded.txt:1:8: denylisted test-fixture (entry=synthetic-0 ticket=OMN-20565 match_len=21) -- value withheld by design",
+    "url.txt:1:19: denylisted test-fixture (entry=synthetic-0 ticket=OMN-20565 match_len=21) -- value withheld by design",
+    "path.txt:1:10: denylisted test-fixture (entry=synthetic-0 ticket=OMN-20565 match_len=21) -- value withheld by design",
+    "upper.txt:1:1: denylisted test-fixture (entry=synthetic-0 ticket=OMN-20565 match_len=21) -- value withheld by design",
+    "bare_annotation.txt:1:1: denylisted test-fixture (entry=synthetic-0 ticket=OMN-20565 match_len=21) -- value withheld by design",
+    "overlap.txt:1:1: denylisted test-fixture (entry=synthetic-0 ticket=OMN-20565 match_len=21) -- value withheld by design"
+  ],
+  "exit_code": 1
+}

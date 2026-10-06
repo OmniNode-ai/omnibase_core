@@ -958,6 +958,19 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: exposed-identifier-gate
+  name: Exposed identifier gate
+  description: >
+    Check source files against a caller-supplied salted hash denylist without printing matched values.
+    Runs as a canonical COMPUTE node (node_exposed_identifiers_check_compute, OMN-20565), with Git enumeration
+    and source reads through EFFECT nodes. Requires --denylist PATH; supports --report-json.
+  language: python
+  entry: python -m omnibase_core.nodes.node_exposed_identifiers_check_compute.runtime_exposed_identifiers_check
+  types: [file]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: precommit-interpreter-resolution
   name: Pre-commit interpreter-resolution gate
   description: >
