@@ -58,11 +58,11 @@ from .model_shape_validation_result import ModelShapeValidationResult
 
 # Topic suffix validation models (OMN-1537)
 from .model_topic_suffix_parts import (
-    TOPIC_KIND_CMD,
-    TOPIC_KIND_DLQ,
-    TOPIC_KIND_EVT,
-    TOPIC_KIND_INTENT,
-    TOPIC_KIND_SNAPSHOT,
+    KIND_ABBR_CMD,
+    KIND_ABBR_DLQ,
+    KIND_ABBR_EVT,
+    KIND_ABBR_INTENT,
+    KIND_ABBR_SNAPSHOT,
     VALID_TOPIC_KINDS,
     ModelTopicSuffixParts,
 )
@@ -125,11 +125,11 @@ __all__ = [
     # Topic suffix validation models (OMN-1537)
     "ModelTopicSuffixParts",
     "ModelTopicValidationResult",
-    "TOPIC_KIND_CMD",
-    "TOPIC_KIND_DLQ",
-    "TOPIC_KIND_EVT",
-    "TOPIC_KIND_INTENT",
-    "TOPIC_KIND_SNAPSHOT",
+    "KIND_ABBR_CMD",
+    "KIND_ABBR_DLQ",
+    "KIND_ABBR_EVT",
+    "KIND_ABBR_INTENT",
+    "KIND_ABBR_SNAPSHOT",
     "VALID_TOPIC_KINDS",
     # Workflow validation models (OMN-176)
     "ModelCycleDetectionResult",

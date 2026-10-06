@@ -29,7 +29,7 @@ from omnibase_core.models.dashboard.model_action_gate_policy import (
     ModelActionGatePolicy,
 )
 from omnibase_core.models.ticket.model_gate import ModelGate
-from omnibase_core.models.validation.model_topic_suffix_parts import TOPIC_KIND_CMD
+from omnibase_core.models.validation.model_topic_suffix_parts import KIND_ABBR_CMD
 from omnibase_core.utils.util_topic_suffix import check_topic_suffix
 
 __all__ = ["ModelActionContract"]
@@ -86,7 +86,7 @@ class ModelActionContract(BaseModel):
 
         Reuses the canonical ``validate_topic_suffix`` validator rather than
         embedding a topic literal, and requires the parsed kind token to be a
-        command (``TOPIC_KIND_CMD``) — events/intents/snapshots are rejected.
+        command (``KIND_ABBR_CMD``) — events/intents/snapshots are rejected.
         """
         result = check_topic_suffix(value)
         if not result.is_valid or result.kind is None:
@@ -94,9 +94,9 @@ class ModelActionContract(BaseModel):
                 f"command_topic {value!r} is not a valid ONEX topic suffix: "
                 f"{result.error}"
             )
-        if result.kind != TOPIC_KIND_CMD:
+        if result.kind != KIND_ABBR_CMD:
             raise ValueError(
                 f"command_topic {value!r} has kind {result.kind!r}; "
-                f"UI actions emit command topics only (kind={TOPIC_KIND_CMD!r})."
+                f"UI actions emit command topics only (kind={KIND_ABBR_CMD!r})."
             )
         return value
