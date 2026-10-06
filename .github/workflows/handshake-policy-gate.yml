@@ -10,7 +10,7 @@ name: Handshake Policy Gate
 # required-context flip is a separate, staged decision.
 #
 # Deliberately NOT triggered on `pull_request`: this job needs
-# POLICY_GATE_TOKEN (a cross-repo PAT), and this repo's OMNI_RUNNER_SELECTOR_V1
+# the onexbot App signing secrets, and this repo's OMNI_RUNNER_SELECTOR_V1
 # convention (see ci.yml) routes every `pull_request`-triggered job to the
 # public ubuntu-latest runner regardless of fork status, withholding trusted
 # secrets by design. Adding `pull_request` here would make this job
@@ -57,21 +57,29 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v7
 
-      - name: Validate POLICY_GATE_TOKEN
-        env:
-          GH_TOKEN: ${{ secrets.POLICY_GATE_TOKEN }}
-        run: |
-          if [ -z "${GH_TOKEN}" ]; then
-            echo "::error::POLICY_GATE_TOKEN secret is not configured. Add a fine-grained PAT with Actions:Read scope to the repo secrets."
-            exit 1
-          fi
+      - name: Mint onexbot app token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ONEXBOT_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_APP_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          # Keep this scope aligned with architecture-handshakes/repos.conf.
+          # The App installation needs Actions: read on all eight repos.
+          repositories: |
+            omnibase_core
+            omnibase_infra
+            omnibase_spi
+            omniclaude
+            omnidash
+            omniintelligence
+            omnimemory
+            omninode_infra
 
       - name: Run policy gate check
         env:
-          # POLICY_GATE_TOKEN: fine-grained PAT scoped to OmniNode-ai org
-          # with Actions:Read on private repos. GITHUB_TOKEN cannot read
-          # workflow runs from private repos in the same org.
-          GH_TOKEN: ${{ secrets.POLICY_GATE_TOKEN }}
+          # The App token can read workflow runs across the scoped private repos.
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
             bash architecture-handshakes/check-policy-gate.sh
