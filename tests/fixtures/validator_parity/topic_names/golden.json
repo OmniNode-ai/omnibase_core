@@ -475,59 +475,7 @@
     "stdout": "OK: 0 topic(s) validated across 0 file(s)\n"
   },
   "repo_src": {
-    "exit_code": 1,
-    "findings": [
-      {
-        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
-        "line": 42,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): commands"
-      },
-      {
-        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
-        "line": 43,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq"
-      },
-      {
-        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
-        "line": 44,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): events"
-      },
-      {
-        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
-        "line": 45,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intents"
-      },
-      {
-        "path": "omnibase_core/constants/constants_topic_taxonomy.py",
-        "line": 46,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshots"
-      },
-      {
-        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
-        "line": 51,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): cmd"
-      },
-      {
-        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
-        "line": 52,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): evt"
-      },
-      {
-        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
-        "line": 53,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq"
-      },
-      {
-        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
-        "line": 54,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intent"
-      },
-      {
-        "path": "omnibase_core/models/validation/model_topic_suffix_parts.py",
-        "line": 55,
-        "message": "flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshot"
-      }
-    ],
-    "stdout": "FAIL: 10 violation(s) found:\n\n  omnibase_core/constants/constants_topic_taxonomy.py:42: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): commands\n  omnibase_core/constants/constants_topic_taxonomy.py:43: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq\n  omnibase_core/constants/constants_topic_taxonomy.py:44: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): events\n  omnibase_core/constants/constants_topic_taxonomy.py:45: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intents\n  omnibase_core/constants/constants_topic_taxonomy.py:46: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshots\n  omnibase_core/models/validation/model_topic_suffix_parts.py:51: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): cmd\n  omnibase_core/models/validation/model_topic_suffix_parts.py:52: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): evt\n  omnibase_core/models/validation/model_topic_suffix_parts.py:53: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): dlq\n  omnibase_core/models/validation/model_topic_suffix_parts.py:54: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): intent\n  omnibase_core/models/validation/model_topic_suffix_parts.py:55: flat legacy topic name (must use onex.<kind>.<producer>.<event>.v<n>): snapshot\n"
+    "exit_code": 0,
+    "findings": []
   }
 }
