@@ -16,9 +16,11 @@ from omnibase_core.models.validation import (
     ModelNodeHomeRatchetRequest,
     ModelNodeHomeRatchetResult,
 )
+from omnibase_core.models.validation.model_node_home_ratchet_request import (
+    NODE_HOME_BASELINE,
+)
 from omnibase_core.nodes.node_node_home_check_compute import handler as ratchet
 from omnibase_core.nodes.node_node_home_check_compute.handler import (
-    NODE_HOME_BASELINE,
     NodeNodeHomeCheckCompute,
 )
 from omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check import (
@@ -285,26 +287,93 @@ def test_no_exception_mechanism_cli_rejects_override(repo: Path, argument: str) 
     assert exc.value.code == 2
 
 
-def test_no_exception_mechanism_write_baseline_once(repo: Path) -> None:
+def test_no_exception_mechanism_print_baseline_once(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     _plant(repo)
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "pre-existing node without baseline")
-    (repo / ".onex_ratchets").mkdir(exist_ok=True)
-    args = ["--repo-root", str(repo), "--write-baseline"]
+    args = ["--repo-root", str(repo), "--print-baseline"]
     assert main(args) == 0
-    assert (repo / NODE_HOME_BASELINE).read_text() == render_baseline([NODE])
+    assert not (repo / NODE_HOME_BASELINE).exists()
+    assert capsys.readouterr().out == render_baseline([NODE])
+    _write(repo, NODE_HOME_BASELINE, render_baseline([NODE]))
+    _git(repo, "add", "-A")
     assert main(args) == 2
     assert _check(repo).findings == ()
 
 
-def test_no_exception_mechanism_write_refuses_committed_deleted_baseline(
+def test_no_exception_mechanism_print_refuses_committed_deleted_baseline(
     repo: Path,
 ) -> None:
     _commit_baseline(repo)
     (repo / NODE_HOME_BASELINE).unlink()
     _git(repo, "add", "-A")
-    assert main(["--repo-root", str(repo), "--write-baseline"]) == 2
+    assert main(["--repo-root", str(repo), "--print-baseline"]) == 2
     assert not (repo / NODE_HOME_BASELINE).exists()
+
+
+def test_no_exception_mechanism_print_ignores_unindexed_baseline(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _plant(repo)
+    _git(repo, "add", "-A")
+    _write(repo, NODE_HOME_BASELINE, "untracked contents\n")
+    assert main(["--repo-root", str(repo), "--print-baseline"]) == 0
+    assert capsys.readouterr().out == render_baseline([NODE])
+    assert (repo / NODE_HOME_BASELINE).read_text() == "untracked contents\n"
+
+
+def test_print_baseline_without_head(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _git(tmp_path, "init", "-q")
+    _plant(tmp_path)
+    _git(tmp_path, "add", "-A")
+    assert main(["--repo-root", str(tmp_path), "--print-baseline"]) == 0
+    assert capsys.readouterr().out == render_baseline([NODE])
+    assert not (tmp_path / NODE_HOME_BASELINE).exists()
+
+
+@pytest.mark.parametrize(
+    "project",
+    [
+        'project = "invalid"',
+        '[project]\nentry-points = "invalid"',
+        '[project.entry-points]\n"onex.nodes" = "invalid"',
+    ],
+)
+def test_invalid_entry_point_tables_exit_two(
+    repo: Path, project: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _write(repo, "pyproject.toml", project)
+    _git(repo, "add", "-A")
+    assert main(["--repo-root", str(repo)]) == 2
+    assert "must be a table" in capsys.readouterr().err
+
+
+def test_unmerged_index_exits_two(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    result = subprocess.run(
+        ["git", "hash-object", "-w", "--stdin"],
+        cwd=repo,
+        input=b"conflict\n",
+        capture_output=True,
+        check=True,
+        env=scrub_git_location_env(),
+    )
+    object_id = result.stdout.strip().decode()
+    subprocess.run(
+        ["git", "update-index", "--index-info"],
+        cwd=repo,
+        input=f"100644 {object_id} 1\tconflict.py\n".encode(),
+        capture_output=True,
+        check=True,
+        env=scrub_git_location_env(),
+    )
+    assert main(["--repo-root", str(repo)]) == 2
+    assert "resolve unmerged index entries" in capsys.readouterr().err
 
 
 def test_no_exception_mechanism_omnimarket_is_checked_like_any_repo(repo: Path) -> None:
@@ -435,13 +504,13 @@ def test_baseline_only_shrinks_deleted_baseline_refused(
     assert main(["--repo-root", str(repo)]) == 1
 
 
-def test_no_exception_mechanism_write_refuses_indexed_deleted_baseline(
+def test_no_exception_mechanism_print_refuses_indexed_deleted_baseline(
     repo: Path,
 ) -> None:
     _write(repo, NODE_HOME_BASELINE, render_baseline([]))
     _git(repo, "add", "-A")
     (repo / NODE_HOME_BASELINE).unlink()
-    assert main(["--repo-root", str(repo), "--write-baseline"]) == 2
+    assert main(["--repo-root", str(repo), "--print-baseline"]) == 2
     assert not (repo / NODE_HOME_BASELINE).exists()
 
 

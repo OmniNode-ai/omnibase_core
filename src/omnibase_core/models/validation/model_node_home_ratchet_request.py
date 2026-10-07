@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+NODE_HOME_BASELINE = ".onex_ratchets/node_home_baseline.txt"
+
 
 class ModelNodeHomeRatchetRequest(BaseModel):
     """Indexed node inputs, base inventory, baselines and entry-point names."""
@@ -33,4 +35,4 @@ class ModelNodeHomeRatchetRequest(BaseModel):
     )
 
 
-__all__ = ["ModelNodeHomeRatchetRequest"]
+__all__ = ["NODE_HOME_BASELINE", "ModelNodeHomeRatchetRequest"]

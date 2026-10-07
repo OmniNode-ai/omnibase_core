@@ -8,7 +8,9 @@ node_type: effect
 node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 description: >
-  Enumerates repository-relative Git paths and records missing-ref fallback to all files.
+  Enumerates repository-relative Git paths and records missing-ref fallback to all files. Optional snapshot
+  mode lists tracked index or revision paths, reads selected blobs, and reports revision existence and
+  unmerged index entries without fallback.
 input_model: omnibase_core.models.nodes.git_file_listing.model_git_file_listing_input.ModelGitFileListingInput
 output_model: omnibase_core.models.nodes.git_file_listing.model_git_file_listing_output.ModelGitFileListingOutput
 handler_routing:

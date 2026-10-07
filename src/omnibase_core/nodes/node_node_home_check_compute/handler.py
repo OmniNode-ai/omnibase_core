@@ -12,13 +12,13 @@ from omnibase_core.models.validation.model_node_home_ratchet_finding import (
     ModelNodeHomeRatchetFinding,
 )
 from omnibase_core.models.validation.model_node_home_ratchet_request import (
+    NODE_HOME_BASELINE,
     ModelNodeHomeRatchetRequest,
 )
 from omnibase_core.models.validation.model_node_home_ratchet_result import (
     ModelNodeHomeRatchetResult,
 )
 
-NODE_HOME_BASELINE = ".onex_ratchets/node_home_baseline.txt"
 _IGNORED_COMPONENTS = frozenset(
     {"tests", "test", "fixtures", "examples", "__pycache__", "docs"}
 )
