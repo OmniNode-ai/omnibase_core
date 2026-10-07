@@ -929,6 +929,17 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-required-context-producers
+  name: Required context producers (OMN-19037)
+  description: Refuse missing required-context producers and unticketed retirement against the base manifest.
+  language: python
+  entry: python -m omnibase_core.nodes.node_required_context_producer_check_compute.runtime_required_context_producer_check
+  args: [--root, .]
+  files: ^\.github/(workflows/.*\.ya?ml|required-checks\.yaml)$
+  pass_filenames: false
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-release-identity
   name: No code merged onto a published version without a bump (OMN-13411)
   description: >

@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_required_context_producer_gather_effect
+node_id: node_required_context_producer_gather_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Reads head manifest and workflow files from disk and the optional base manifest through read-only git
+  show. Missing head inputs fail closed (OMN-19037).
+input_model: omnibase_core.models.nodes.required_context_producer_check.model_required_context_producer_gather_input.ModelRequiredContextProducerGatherInput
+output_model: omnibase_core.models.nodes.required_context_producer_check.model_required_context_producer_check_input.ModelRequiredContextProducerCheckInput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeRequiredContextProducerGatherEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000

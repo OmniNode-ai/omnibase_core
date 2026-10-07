@@ -424,6 +424,17 @@ repos:
         files: '^\.github/(workflows/.*\.ya?ml|required-checks\.yaml)$'
         stages: [pre-commit]
 
+      # OMN-19037: protect base REQUIRED contexts even when the PR deletes their manifest rows.
+      - id: check-required-context-producers
+        name: Required context producers (OMN-19037)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_required_context_producer_check_compute.runtime_required_context_producer_check
+          --base origin/dev
+        language: system
+        files: '^\.github/(workflows/.*\.ya?ml|required-checks\.yaml)$'
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
       # Substrate Gate: env silent fallback (OMN-wire-validators)
       # Baseline: 38 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
       # Annotate justified bootstrap cases with: # substrate-allow: bootstrap-fallback

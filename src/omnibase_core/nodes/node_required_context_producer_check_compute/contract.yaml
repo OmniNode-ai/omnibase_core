@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_required_context_producer_check_compute
+node_id: node_required_context_producer_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Protects required check contexts by comparing base and head manifests against head workflow job producers.
+  Rejects missing producers and removals without ticketed retirement. No I/O (OMN-19037).
+input_model: omnibase_core.models.nodes.required_context_producer_check.model_required_context_producer_check_input.ModelRequiredContextProducerCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeRequiredContextProducerCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

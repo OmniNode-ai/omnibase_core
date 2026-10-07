@@ -3154,6 +3154,49 @@ jobs:
           git fetch --quiet origin "${BASE}" || true
           uv run python -m omnibase_core.nodes.node_release_identity_check_compute.runtime_release_identity_check --base "origin/${BASE}"
 
+  # OMN-19037: protect base required contexts against deleted workflows, jobs, and manifest rows.
+  required-context-producer-validator:
+    name: Required Context Producer Validator
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run required-context producer unit tests
+        run: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute -n 0 -q
+
+      - name: Refuse removal of required context producers
+        env:
+          BASE_REF: ${{ github.event.pull_request.base.ref || 'dev' }}
+        run: |
+          set -euo pipefail
+          BASE="${BASE_REF}"
+          git fetch --quiet origin "${BASE}" || true
+          uv run python -m omnibase_core.nodes.node_required_context_producer_check_compute.runtime_required_context_producer_check --base "origin/${BASE}"
+
   # Migrated from validator-todo-marker.yml (OMN-14877, OMN-14430 fast-follow).
   # Scans only the files the PR/merge changed (mirrors the pre-commit hook's
   # STAGED-only semantics); needs full history to diff against the base.
