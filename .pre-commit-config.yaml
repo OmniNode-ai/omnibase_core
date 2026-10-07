@@ -2276,7 +2276,7 @@ repos:
   # OMN-19677: the debt baseline itself is a shrink-only contract. The same
   # immutable omniclaude commit supplies this hook and the required CI job.
   - repo: https://github.com/OmniNode-ai/omniclaude
-    rev: 966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0  # pragma: allowlist secret
+    rev: 3faefdcd5750b05f69d2efcb8cf200bc359483c3  # pragma: allowlist secret
     hooks:
       - id: anti-growth-baseline
         require_serial: true
