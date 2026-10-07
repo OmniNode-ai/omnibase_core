@@ -316,9 +316,8 @@ def test_delete_baseline_cannot_rebootstrap_existing_base(repo: Path) -> None:
     adopt(repo)
     baseline = repo / DEFAULT_BASELINE
     baseline.unlink()
-    assert main(["--root", str(repo), "--write-baseline"]) == 1
-    assert not baseline.exists()
-    assert main(["--root", str(repo), "--write-baseline", "--bootstrap"]) == 0
+    assert "baseline-deleted" in rules(repo)
+    assert main(["--root", str(repo), "--write-baseline"]) == 0
     assert baseline.exists()
     write(repo, "src/example/other.py", "import example.nodes.node_x.handler")
     git(repo, "add", "src/example/other.py")
@@ -453,3 +452,54 @@ def test_empty_adoption_still_requires_flag(repo: Path) -> None:
     assert "baseline-bootstrap-unflagged" in rules(repo, "--write-baseline")
     assert not (repo / DEFAULT_BASELINE).exists()
     assert main(["--root", str(repo), "--write-baseline", "--bootstrap"]) == 0
+
+
+@pytest.mark.parametrize("bootstrap", [False, True])
+def test_deleted_baseline_with_zero_edges_fails(repo: Path, bootstrap: bool) -> None:
+    adopt(repo)
+    write(repo, "src/example/client.py", "")
+    baseline = repo / DEFAULT_BASELINE
+    baseline.unlink()
+    args = ("--bootstrap",) if bootstrap else ()
+    assert rules(repo, *args) == {"baseline-deleted"}
+    report = json.loads((repo / "report.json").read_text())
+    assert report["overall_status"] == "FAIL"
+    assert report["findings"][0]["message"] == (
+        "The baseline is kept, with an empty edges list when every "
+        "edge is retired; it is never deleted after adoption."
+    )
+    assert not baseline.exists()
+    assert main(["--root", str(repo), "--write-baseline", *args]) == 0
+    assert baseline.is_file()
+    assert parse_baseline(baseline.read_text(), DEFAULT_BASELINE) == ()
+    assert main(["--root", str(repo), *args]) == 0
+
+
+@pytest.mark.parametrize("bootstrap", [False, True])
+def test_empty_list_baseline_with_zero_edges_passes(
+    repo: Path, bootstrap: bool
+) -> None:
+    adopt(repo)
+    write(repo, "src/example/client.py", "")
+    baseline = write(repo, DEFAULT_BASELINE, render_baseline(()))
+    args = ["--bootstrap"] if bootstrap else []
+    assert main(["--root", str(repo), *args]) == 0
+    assert baseline.is_file()
+    assert parse_baseline(baseline.read_text(), DEFAULT_BASELINE) == ()
+
+
+@pytest.mark.parametrize("bootstrap", [False, True])
+def test_empty_base_baseline_cannot_grow(repo: Path, bootstrap: bool) -> None:
+    write(repo, "src/example/client.py", "")
+    adopt(repo)
+    write(repo, "src/example/client.py", "import example.nodes.node_x.handler")
+    baseline = write(
+        repo,
+        DEFAULT_BASELINE,
+        render_baseline(("example.client -> example.nodes.node_x.handler:",)),
+    )
+    current = baseline.read_text()
+    args = ("--bootstrap",) if bootstrap else ()
+    assert rules(repo, *args) == {"baseline-growth"}
+    assert rules(repo, "--write-baseline", *args) == {"baseline-growth"}
+    assert baseline.read_text() == current

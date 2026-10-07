@@ -44,6 +44,19 @@ class NodeBoundaryImportCheckCompute:
                 )
             )
         baseline_error = request.baseline_error or request.base_baseline_error
+        if request.base_baseline_present and not request.baseline_present:
+            findings.append(
+                ModelValidationFindingEmbed(
+                    validator_id=VALIDATOR_ID,
+                    severity="FAIL",
+                    rule_id="baseline-deleted",
+                    location=request.baseline_path,
+                    message=(
+                        "The baseline is kept, with an empty edges list when every "
+                        "edge is retired; it is never deleted after adoption."
+                    ),
+                )
+            )
         if baseline_error is None:
             try:
                 ModelBoundaryImportBaseline(

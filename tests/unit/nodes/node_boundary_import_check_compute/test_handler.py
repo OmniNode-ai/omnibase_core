@@ -251,6 +251,7 @@ def test_new_stale_and_baselined_findings() -> None:
     baselined = request.model_copy(
         update={
             "baseline_edges": (edge.identity,),
+            "baseline_present": True,
             "base_baseline_present": True,
             "base_baseline_edges": (edge.identity,),
         }

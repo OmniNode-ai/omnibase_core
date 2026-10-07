@@ -889,9 +889,11 @@
     BLOCKING. Detect symbol-level node boundary edges (importer -> target:name), including tracked Python
     imports, entire module-path string constants and scalar YAML values under src/<pkg>. Baseline .onex_ratchets/node_boundary_import_baseline.yaml
     (or --baseline) only shrinks against --base REV (default HEAD; CI passes the merge base). Adoption
-    with no base baseline requires --bootstrap. New edges, stale entries and added baseline symbols fail;
-    --write-baseline refuses growth against both current and base state. Move shared models to core/compat,
-    protocols to spi/core, or invoke nodes through contracts on the bus. No allowlist or suppression marker.
+    with no base baseline requires --bootstrap. New edges, stale entries and added baseline symbols fail.
+    After adoption the baseline must be retained with an empty edges list when every edge is retired,
+    and --bootstrap has no effect when the base has a baseline. --write-baseline refuses growth against
+    both current and base state. Move shared models to core/compat, protocols to spi/core, or invoke nodes
+    through contracts on the bus. No allowlist or suppression marker.
   language: python
   entry: python -m omnibase_core.nodes.node_boundary_import_check_compute.runtime_node_boundary_import_check
   pass_filenames: false

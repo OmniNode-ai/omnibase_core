@@ -98,11 +98,9 @@ def main(argv: list[str] | None = None) -> int:
                     "Refusing baseline growth; new edges:\n"
                     + "".join(f"  {edge}\n" for edge in sorted(added))
                 )
-            elif (
-                not request.base_baseline_present or not request.baseline_present
-            ) and not request.bootstrap:
+            elif not request.base_baseline_present and not request.bootstrap:
                 sys.stderr.write(
-                    "Refusing baseline adoption: missing current or base baseline; pass --bootstrap.\n"
+                    "Refusing baseline adoption: missing base baseline; pass --bootstrap.\n"
                 )
                 report = ModelValidationReport.from_findings(
                     findings=report.findings
@@ -112,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
                             severity="FAIL",
                             rule_id="baseline-bootstrap-unflagged",
                             location=request.baseline_path,
-                            message="Writing an absent current or base baseline requires --bootstrap.",
+                            message="Writing with no base baseline requires --bootstrap.",
                         ),
                     ),
                     request=ModelValidationRequestRef(profile="default"),
