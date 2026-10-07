@@ -39,29 +39,29 @@ See Also:
     - ModelTopicValidationResult: Result model for suffix validation
 """
 
-# Cross-reference: For semantic topic type constants (TOPIC_TYPE_COMMANDS, etc.),
+# Cross-reference: For semantic topic type constants (TAXONOMY_TYPE_COMMANDS, etc.),
 # see omnibase_core.constants.constants_topic_taxonomy.
-# This module defines TOPIC_KIND_* tokens used in topic suffix strings,
-# while constants_topic_taxonomy defines TOPIC_TYPE_* semantic values.
+# This module defines KIND_ABBR_* tokens used in topic suffix strings,
+# while constants_topic_taxonomy defines TAXONOMY_TYPE_* semantic values.
 
 from pydantic import BaseModel, ConfigDict, Field
 
 # Topic kind tokens used in ONEX naming convention (short forms)
 # These are the abbreviated tokens used in topic suffixes, not the full type names
-TOPIC_KIND_CMD = "cmd"
-TOPIC_KIND_EVT = "evt"
-TOPIC_KIND_DLQ = "dlq"
-TOPIC_KIND_INTENT = "intent"
-TOPIC_KIND_SNAPSHOT = "snapshot"
+KIND_ABBR_CMD = "cmd"
+KIND_ABBR_EVT = "evt"
+KIND_ABBR_DLQ = "dlq"
+KIND_ABBR_INTENT = "intent"
+KIND_ABBR_SNAPSHOT = "snapshot"
 
 # Valid topic kind tokens for validation
 VALID_TOPIC_KINDS: frozenset[str] = frozenset(
     {
-        TOPIC_KIND_CMD,
-        TOPIC_KIND_DLQ,
-        TOPIC_KIND_EVT,
-        TOPIC_KIND_INTENT,
-        TOPIC_KIND_SNAPSHOT,
+        KIND_ABBR_CMD,
+        KIND_ABBR_DLQ,
+        KIND_ABBR_EVT,
+        KIND_ABBR_INTENT,
+        KIND_ABBR_SNAPSHOT,
     }
 )
 
@@ -125,10 +125,10 @@ class ModelTopicSuffixParts(BaseModel):
 
 __all__ = [
     "ModelTopicSuffixParts",
-    "TOPIC_KIND_CMD",
-    "TOPIC_KIND_DLQ",
-    "TOPIC_KIND_EVT",
-    "TOPIC_KIND_INTENT",
-    "TOPIC_KIND_SNAPSHOT",
+    "KIND_ABBR_CMD",
+    "KIND_ABBR_DLQ",
+    "KIND_ABBR_EVT",
+    "KIND_ABBR_INTENT",
+    "KIND_ABBR_SNAPSHOT",
     "VALID_TOPIC_KINDS",
 ]

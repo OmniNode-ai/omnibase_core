@@ -17,7 +17,7 @@ Example:
     from omnibase_core.constants import (
         TOPIC_REGISTRATION_EVENTS,
         TOPIC_RUNTIME_INTENTS,
-        TOPIC_TYPE_EVENTS,
+        TAXONOMY_TYPE_EVENTS,
         topic_name,
     )
     from omnibase_core.enums.enum_node_kind import EnumNodeKind
@@ -48,7 +48,7 @@ Example:
         ModelRuntimeReadyEvent,
     )
 
-    custom_domain_topic = topic_name("my-service", TOPIC_TYPE_EVENTS)
+    custom_domain_topic = topic_name("my-service", TAXONOMY_TYPE_EVENTS)
     # Creates "onex.my-service.events"
 
     runtime_payload = ModelRuntimeReadyEvent(

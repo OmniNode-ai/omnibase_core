@@ -1563,6 +1563,21 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-20565 (row 11): topic-names gate over core's own source tree. Runs the
+      # canonical COMPUTE node (node_topic_names_check_compute) on filenames, so an
+      # empty or unreadable gather is a runtime ERROR. Tests are excluded because
+      # their subject is deliberately malformed or flat topic literals.
+      - id: topic-names-check-core
+        name: Topic names check (core tree, OMN-20565)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_topic_names_check_compute.runtime_topic_names_check
+        language: system
+        types: [file]
+        files: '(^|/)[^/]*topic[^/]*\.(py|ts)$'
+        exclude: ^(tests/|archived?/|docs/)
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # OMN-13572: doc-content scan — block local-environment traces (LAN IPs,
       # .201/.200 host shorthand, personal /Users//home/ paths, ssh user@host,
       # personal e-mail) and Linear OMN-<digits> ticket references in
