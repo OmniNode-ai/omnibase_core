@@ -98,10 +98,10 @@ from pathlib import Path, PurePosixPath
 
 import yaml
 
-from omnibase_core.handlers.handler_node_home_ratchet import NODE_HOME_BASELINE
 from omnibase_core.models.validation.model_canonical_file_shape_finding import (
     ModelCanonicalFileShapeFinding,
 )
+from omnibase_core.nodes.node_node_home_check_compute.handler import NODE_HOME_BASELINE
 
 DEFAULT_BASELINE = ".onex_ratchets/canonical_file_shape_baseline.txt"
 TICKET = "OMN-20304"

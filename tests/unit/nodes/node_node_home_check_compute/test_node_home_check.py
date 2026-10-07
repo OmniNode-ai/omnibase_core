@@ -11,22 +11,26 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.handlers import handler_node_home_ratchet as ratchet
-from omnibase_core.handlers.handler_node_home_ratchet import (
-    NODE_HOME_BASELINE,
-    handle,
-    main,
-    read_request,
-    render_baseline,
-)
 from omnibase_core.models.validation import (
     ModelNodeHomeRatchetFinding,
     ModelNodeHomeRatchetRequest,
     ModelNodeHomeRatchetResult,
 )
+from omnibase_core.nodes.node_node_home_check_compute import handler as ratchet
+from omnibase_core.nodes.node_node_home_check_compute.handler import (
+    NODE_HOME_BASELINE,
+    NodeNodeHomeCheckCompute,
+)
+from omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check import (
+    main,
+    read_request,
+    render_baseline,
+)
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 pytestmark = pytest.mark.unit
+
+handle = NodeNodeHomeCheckCompute().handle
 
 NODE = "src/pkg/nodes/node_zz"
 OLD_NODE = "src/pkg/nodes/node_old"
@@ -357,15 +361,16 @@ def test_request_and_result_models_are_frozen_and_forbid_extra() -> None:
 
 
 def test_this_repository_tree_passes_written_baseline() -> None:
-    root = Path(ratchet.__file__).resolve().parents[3]
-    request = read_request(root)
-    # The initial inventory is an unstaged new file while this change is being
-    # developed. Supply that written baseline to the pure handler explicitly.
+    root = Path(ratchet.__file__).resolve().parents[4]
+    request = read_request(root, base=None)
+    # Activation is a follow-up. Model that follow-up's base snapshot and
+    # baseline in memory; no repository baseline file is required here.
+    directories = handle(request).node_directories
     request = request.model_copy(
         update={
-            "head_baseline_text": (root / NODE_HOME_BASELINE).read_text(
-                encoding="utf-8"
-            )
+            "head_baseline_text": render_baseline(directories),
+            "base_node_directories": frozenset(directories),
+            "base_entry_points": request.head_entry_points,
         }
     )
     result = handle(request)
