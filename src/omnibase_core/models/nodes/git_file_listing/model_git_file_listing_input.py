@@ -10,9 +10,9 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ModelGitFileListingInput(BaseModel):
-    """Select all tracked/untracked files or changes against an explicit ref."""
+    """Select tracked files, tracked/untracked files, or changes against a ref."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
     root: Path
-    scope: Literal["all", "diff"] = "all"
+    scope: Literal["all", "diff", "tracked"] = "all"
     base_ref: str = "origin/dev"

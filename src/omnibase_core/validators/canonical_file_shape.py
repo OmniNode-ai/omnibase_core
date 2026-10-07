@@ -39,13 +39,14 @@ This ratchet looks at every tracked file in the repository and refuses:
     a changed code or config file carrying more suppression comments than at
     the base revision.
 
-One declared file is not an exception: the shrink-only list a gate requires.
-The direct-model-call gate (OMN-20295) keeps one per repository, and the
-repository declares its path in its own ``.pre-commit-config.yaml`` as the
-``--baseline`` argument of the ``check-direct-model-call`` hook taken from
-omnibase_core. That file is read from the head revision, and the gate itself
-enforces that its list only shrinks. A baseline-named file nothing declares is
-still refused.
+A declared shrink-only gate baseline is not an exception. The
+``check-direct-model-call`` (OMN-20295) and ``check-node-boundary-imports``
+(OMN-17427) hooks declare paths via ``--baseline`` in the repository's own
+``.pre-commit-config.yaml``. Only hooks taken from omnibase_core count; local
+hooks do not. The node-boundary hook without ``--baseline`` declares
+``.onex_ratchets/node_boundary_import_baseline.yaml``. The configuration is read
+from the head revision, and each gate enforces that its list only shrinks. A
+baseline-named file nothing declares is still refused.
 
 Renames. A baselined file may be renamed (``git diff -M`` from base to head,
 default similarity, so a rename plus an edit counts). The renamed path inherits
@@ -101,7 +102,8 @@ from omnibase_core.models.validation.model_canonical_file_shape_finding import (
 DEFAULT_BASELINE = ".onex_ratchets/canonical_file_shape_baseline.txt"
 TICKET = "OMN-20304"
 PRE_COMMIT_CONFIG = ".pre-commit-config.yaml"
-GATE_HOOK_ID = "check-direct-model-call"
+GATE_HOOK_IDS = ("check-direct-model-call", "check-node-boundary-imports")
+NODE_BOUNDARY_BASELINE = ".onex_ratchets/node_boundary_import_baseline.yaml"
 GATE_REPO_URL = re.compile(r"omnibase_core(\.git)?/?$")
 INDEX = ":"
 # Wall-clock ceiling for one cat-file run so a stall fails loud instead of hanging the hook.
@@ -307,7 +309,7 @@ def is_canonical_location(path: str) -> bool:
 
 
 def declared_gate_baselines(text: str | None) -> frozenset[str]:
-    """Paths a ``check-direct-model-call`` hook names with ``--baseline``.
+    """Paths declared by core-provided shrink-only gate hooks.
 
     Read from a ``.pre-commit-config.yaml``. Only the hook that the
     omnibase_core repository provides counts; a local hook of the same id does
@@ -328,14 +330,20 @@ def declared_gate_baselines(text: str | None) -> frozenset[str]:
         ):
             continue
         for hook in entry.get("hooks") or []:
-            if not isinstance(hook, dict) or hook.get("id") != GATE_HOOK_ID:
+            if not isinstance(hook, dict) or hook.get("id") not in GATE_HOOK_IDS:
                 continue
             args = [str(a) for a in hook.get("args") or []]
+            has_baseline_arg = False
             for i, arg in enumerate(args):
-                if arg == "--baseline" and i + 1 < len(args):
-                    declared.add(args[i + 1])
+                if arg == "--baseline":
+                    has_baseline_arg = True
+                    if i + 1 < len(args):
+                        declared.add(args[i + 1])
                 elif arg.startswith("--baseline="):
+                    has_baseline_arg = True
                     declared.add(arg.split("=", 1)[1])
+            if hook.get("id") == "check-node-boundary-imports" and not has_baseline_arg:
+                declared.add(NODE_BOUNDARY_BASELINE)
     return frozenset(PurePosixPath(p).as_posix() for p in declared)
 
 
