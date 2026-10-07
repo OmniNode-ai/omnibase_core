@@ -361,6 +361,67 @@ def test_declared_gate_baselines_forms() -> None:
     assert declared_gate_baselines(text) == frozenset({"x/y.yaml"})
 
 
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ("", ".onex_ratchets/node_boundary_import_baseline.yaml"),
+        ("        args: [--baseline, custom/edges.yaml]\n", "custom/edges.yaml"),
+        ("        args: ['--baseline=custom/edges.yaml']\n", "custom/edges.yaml"),
+    ],
+)
+def test_node_boundary_baseline_declarations(
+    repo: Path, args: str, expected: str
+) -> None:
+    config = (
+        "repos:\n"
+        "  - repo: https://github.com/OmniNode-ai/omnibase_core.git\n"
+        "    hooks:\n"
+        "      - id: check-node-boundary-imports\n" + args
+    )
+    assert declared_gate_baselines(config) == frozenset({expected})
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, expected, "schema_version: 1\ngate: OMN-17427\nedges: []\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_local_node_boundary_declaration_refused(repo: Path) -> None:
+    config = (
+        "repos:\n  - repo: local\n    hooks:\n      - id: check-node-boundary-imports\n"
+    )
+    assert declared_gate_baselines(config) == frozenset()
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, ".onex_ratchets/node_boundary_import_baseline.yaml", "edges: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_both_gate_declarations_and_no_direct_model_default() -> None:
+    config = (
+        "repos:\n"
+        "  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
+        "    hooks:\n"
+        "      - id: check-node-boundary-imports\n"
+        "      - id: check-direct-model-call\n"
+        "        args: [--baseline, direct.yaml]\n"
+        "      - id: check-direct-model-call\n"
+    )
+    assert declared_gate_baselines(config) == frozenset(
+        {
+            ".onex_ratchets/node_boundary_import_baseline.yaml",
+            "direct.yaml",
+        }
+    )
+
+
+def test_incomplete_boundary_baseline_argument_does_not_declare_default() -> None:
+    config = (
+        "repos:\n  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
+        "    hooks:\n      - id: check-node-boundary-imports\n        args: [--baseline]\n"
+    )
+    assert declared_gate_baselines(config) == frozenset()
+
+
 def test_exception_entry_growth_refused(repo: Path) -> None:
     _write(repo, "config/topic_allowlist.yaml", "- a\n- b\n- c\n")
     _stage(repo)

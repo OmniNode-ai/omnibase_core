@@ -883,6 +883,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-node-boundary-imports
+  name: Node-boundary import gate (OMN-17427)
+  description: >
+    BLOCKING. Detect imports across node package boundaries and foreign registry private APIs in every
+    tracked Python importer. Pre-existing edges live in the consumer's shrink-only baseline at .onex_ratchets/node_boundary_import_baseline.yaml
+    (or the path passed with --baseline); new edges and stale entries fail. Move shared models to core/compat,
+    protocols to spi/core, or invoke the other node through its contract on the bus. No allowlist and
+    no suppression marker.
+  language: python
+  entry: python -m omnibase_core.nodes.node_boundary_import_check_compute.runtime_node_boundary_import_check
+  pass_filenames: false
+  always_run: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: no-untyped-metadata
   name: No untyped metadata dict fields
   description: >

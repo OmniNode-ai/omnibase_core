@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_boundary_import_check_compute
+node_id: node_boundary_import_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Pure AST boundary extraction and shrink-only baseline comparison with canonical validation findings.
+input_model: omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_input.ModelBoundaryImportCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeBoundaryImportCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

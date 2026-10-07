@@ -57,7 +57,11 @@ class NodeGitFileListingEffect:
         command = (
             ["diff", "--name-only", "-z", f"{request.base_ref}...HEAD"]
             if request.scope == "diff" and not fallback
-            else ["ls-files", "-coz", "--exclude-standard"]
+            else (
+                ["ls-files", "-z"]
+                if request.scope == "tracked"
+                else ["ls-files", "-coz", "--exclude-standard"]
+            )
         )
         try:
             output = subprocess.run(
