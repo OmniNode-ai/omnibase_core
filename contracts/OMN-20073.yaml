@@ -73,6 +73,8 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k shadow_input_defaults_to_false
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
   - id: dod-omn-20073-ac2
     description: The verify tests assert that the job runs in shadow caller mode and exempts itself before
       reading the pull request.
@@ -82,6 +84,8 @@ dod_evidence:
         check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k "verify_runs_as_a_reported_noop_in_shadow_caller_mode
           or verify_noop_exempts_without_reading_the_pull_request"
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
   - id: dod-omn-20073-ac3
     description: The workflow test asserts step-level continue-on-error for every dod-verify step except
       Summarise in shadow mode.
@@ -90,6 +94,8 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k every_dod_verify_step_but_the_summary_absorbs_a_refusal_in_shadow
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
   - id: dod-omn-20073-ac4
     description: The refusal test asserts that later dependent steps are guarded by the same-repository
       and ticket resolution outcomes.
@@ -98,6 +104,8 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k a_refusal_stops_the_steps_that_depend_on_it
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
   - id: dod-omn-20073-ac5
     description: The summary tests assert Shadow verdict fields and exit 0 for a planted disagreement,
       a refusal, a clean agreement and a dependency bot.
@@ -108,3 +116,5 @@ dod_evidence:
           or a_refusal_names_the_first_refused_step_and_still_passes or a_clean_agreement_is_recorded
           or a_dependency_bot_is_recorded_as_exempt"
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
