@@ -2324,7 +2324,9 @@ jobs:
             omnibase_core.validation.validator_receipt_runtime_identity \
             --receipts-dir .
 
-  # Canonical-file-shape ratchet (OMN-20304). Operator ruling 2026-10-01: no new
+  # Canonical-file-shape (OMN-20304) and node-home (OMN-20702) ratchets.
+  # New nodes outside omnimarket are refused; existing node baselines only shrink.
+  # Operator ruling 2026-10-01: no new
   # scripts, plugins or exceptions in any repository. Refuses a new code file
   # outside src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/
   # and docs/, new imperative lines in a SKILL.md, and any new baseline,
@@ -2368,6 +2370,27 @@ jobs:
       - name: Run ratchet unit tests
         run: uv run pytest tests/unit/validators/test_canonical_file_shape.py -v
 
+      - name: Run node-home ratchet unit tests
+        run: uv run pytest tests/unit/handlers/test_handler_node_home_ratchet.py -v
+
+      - name: Node-home positive control (planted node refused)
+        run: |
+          set -eu
+          canary=src/omnibase_core/nodes/node_zz_canary_planted
+          mkdir -p "$canary/handlers"
+          printf 'name: node_zz_canary_planted\n' > "$canary/contract.yaml"
+          printf '# planted node handler\n' > "$canary/handlers/__init__.py"
+          git add "$canary"
+          status=0
+          uv run python -m omnibase_core.handlers.handler_node_home_ratchet || status=$?
+          git rm -q --cached -r "$canary"
+          rm -r "$canary"
+          if [ "$status" -ne 1 ]; then
+            echo "POSITIVE CONTROL FAILED: expected a node finding, got exit $status"
+            exit 1
+          fi
+          echo "positive control: planted node refused"
+
       - name: Positive control (planted bad sample refused, clean sample accepted)
         run: |
           set -u
@@ -2389,6 +2412,7 @@ jobs:
           rm tests/zz_canary_clean.py
 
       - name: Refuse new non-canonical files and new exceptions
+        id: canonical-shape
         env:
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           MQ_BASE: ${{ github.event.merge_group.base_sha }}
@@ -2398,11 +2422,32 @@ jobs:
           base="${PR_BASE:-${MQ_BASE:-${PUSH_BEFORE:-}}}"
           if [ -n "$base" ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
             base="$(git merge-base "$base" HEAD)"
+            echo "merge_base=$base" >> "$GITHUB_OUTPUT"
             uv run python -m omnibase_core.validators.canonical_file_shape --base "$base" --head HEAD
           else
             echo "no base revision on this event; checking the tree against the baseline only"
             uv run python -m omnibase_core.validators.canonical_file_shape --head HEAD
           fi
+
+      - name: Refuse new nodes outside omnimarket
+        env:
+          MERGE_BASE: ${{ steps.canonical-shape.outputs.merge_base }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -eu
+          if [ -z "$MERGE_BASE" ]; then
+            case "$EVENT_NAME" in
+              pull_request|merge_group)
+                echo "::error::No merge base resolved for $EVENT_NAME; refusing to skip node-home growth checks"
+                exit 1
+                ;;
+              *)
+                echo "::notice::No merge base resolved for $EVENT_NAME; checking node homes against HEAD"
+                MERGE_BASE=HEAD
+                ;;
+            esac
+          fi
+          uv run python -m omnibase_core.handlers.handler_node_home_ratchet --base "$MERGE_BASE"
 
   # Migrated from validator-banned-compose-vars.yml (OMN-14877, OMN-14430
   # fast-follow). NOTE: this validator had NO pre-commit hook in omnibase_core

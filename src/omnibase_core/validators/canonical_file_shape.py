@@ -47,6 +47,9 @@ hooks do not. The node-boundary hook without ``--baseline`` declares
 ``.onex_ratchets/node_boundary_import_baseline.yaml``. The configuration is read
 from the head revision, and each gate enforces that its list only shrinks. A
 baseline-named file nothing declares is still refused.
+The node-home gate (OMN-20702) has a fixed baseline path,
+admitted in every repository without a declaration; that gate enforces its own
+shrink-only list of node directories.
 
 Renames. A baselined file may be renamed (``git diff -M`` from base to head,
 default similarity, so a rename plus an edit counts). The renamed path inherits
@@ -95,6 +98,7 @@ from pathlib import Path, PurePosixPath
 
 import yaml
 
+from omnibase_core.handlers.handler_node_home_ratchet import NODE_HOME_BASELINE
 from omnibase_core.models.validation.model_canonical_file_shape_finding import (
     ModelCanonicalFileShapeFinding,
 )
@@ -350,7 +354,7 @@ def declared_gate_baselines(text: str | None) -> frozenset[str]:
 def is_exception_file(
     path: str, baseline_path: str, declared: frozenset[str] = frozenset()
 ) -> bool:
-    if path == baseline_path or path in declared:
+    if path in {baseline_path, NODE_HOME_BASELINE} or path in declared:
         return False
     suffix = _suffix(path)
     if suffix in CODE_EXTENSIONS or suffix in PROSE_EXTENSIONS:
