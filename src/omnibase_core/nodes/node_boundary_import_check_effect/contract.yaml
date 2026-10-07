@@ -7,7 +7,8 @@ node_type: effect
 node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 description: >
-  Gather tracked Python/YAML source, candidate baseline and git show base revision baseline; persist baseline and edge artifacts.
+  Gather tracked Python/YAML source, candidate baseline and git show base revision baseline; persist baseline
+  and edge artifacts.
 input_model: omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_request.ModelBoundaryImportCheckRequest
 output_model: omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_input.ModelBoundaryImportCheckInput
 handler_routing:
