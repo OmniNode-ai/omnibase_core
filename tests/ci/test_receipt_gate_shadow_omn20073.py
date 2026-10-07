@@ -238,7 +238,7 @@ def test_verify_noop_exempts_without_reading_the_pull_request(tmp_path: Path) ->
         "CALLER_EVIDENCE_MODE": "true",
     }
     script = exempt["run"].replace("${{ github.repository }}", "o/r")
-    result = subprocess.run(  # noqa: S603 - fixed argv, test-controlled env
+    result = subprocess.run(
         [shutil.which("bash") or "bash", "-e", "-c", script],
         env=env,
         capture_output=True,
