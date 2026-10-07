@@ -1,0 +1,68 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Repo Evidence Gate caller (OMN-20074, OCC retirement OR.6) verifies
+# omnibase_core's own contracts/<OMN-N>.yaml at the PR head through this
+# repository's receipt-gate reusable with evidence-source: caller.
+# This is the path omnimarket proved as the canary (OMN-20070, OMN-20072).
+#
+# Why pull_request_target: GitHub reads the workflow definition from the BASE
+# branch, so a pull request that edits this file or the reusable's pin does not
+# change which definition runs on it. The pull request's own code is only ever
+# checked out as data by the reusable, which refuses fork heads.
+#
+# dev and main are the integration branches. The activity types cover new heads,
+# reopened and ready PRs, and edits to the ticket citation or base branch.
+# Per-PR concurrency cancels superseded runs so the latest event gets a verdict.
+# Read-only contents and pull-requests permissions are all this caller needs;
+# checkout and verification belong to the reusable, with no caller secrets.
+# The full-SHA pin makes the reusable immutable; verifier-version pins the
+# released verifier used to read the caller's contracts.
+#
+# The job id is the context prefix: repo-evidence / dod-verify carries the
+# verdict, so do not add a job name. The reusable also reports a skipped
+# repo-evidence / verify job in this mode (the OCC path, switched off by the
+# input); only repo-evidence / dod-verify carries a verdict.
+#
+# The reusable is pinned by full SHA to the same commit omnimarket's caller
+# pins (omnibase_core#1886). It is not called as
+# ./.github/workflows/receipt-gate.yml. A pull request that edits
+# receipt-gate.yml in this repository does not change the definition that
+# judges it.
+#
+# S5 shadow count (OMN-20074): compare-with-occ is "true" so every run records
+# this head's new-path verdict beside OCC's occ-preflight / eligibility verdict
+# on the same head. repo-evidence / dod-verify is NOT a required context here
+# yet. Every OCC context stays required. Making it required, and then removing
+# the OCC contexts (S6), are separate rulings that wait for this repository's
+# own S5 bar. The S6 change sets compare-with-occ back to "false".
+#
+# PR-workflow budget (architecture-handshakes/pull-request-workflow-budget.yaml,
+# OMN-14907): this file takes the slot of call-occ-preflight.yml, retired in
+# the same change. That file was a duplicate producer of the required
+# occ-preflight / eligibility context; call-receipt-gate.yml's occ-preflight
+# job still produces it on every pull request into main or dev and on
+# merge_group. The budget stays 30.
+
+name: Repo Evidence Gate
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited, ready_for_review]
+    branches: [dev, main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  repo-evidence:
+    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@39ad8e5c88f607aed6a035a3241c96ed36d547a0 # OMN-20543: immutable full-SHA pin, the squash commit of omnibase_core#1886 on that repo's dev branch. Over omnibase_core#1884 (the dependency-bot and pin-only writer-app exemption, OMN-20073), the dod-verify job gives every bound test a Postgres service, the PG16 server tools and INTEGRATION_POSTGRES_*, at the head and in the merge-base control, so a database test is bound with the default scope instead of local_done_gate.
+    with:
+      evidence-source: caller
+      verifier-version: 0.4.294
+      compare-with-occ: "true"

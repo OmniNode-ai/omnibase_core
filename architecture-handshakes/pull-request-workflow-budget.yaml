@@ -59,9 +59,9 @@ budget: 30
 allowlisted_workflows:
   - auto-merge.yml
   - auto-tag-on-merge.yml
-  - call-occ-preflight.yml
   - call-receipt-gate.yml
   - call-reject-skip.yml
+  - call-repo-evidence-gate.yml
   - canonical-inference-gate.yml
   - check-db-ownership.yml
   - check-handshake.yml
@@ -183,3 +183,4 @@ metadata:
     - OMN-16359  # call-occ-companion-effect.yml waiver permanently closed: caller lives in ci.yml, standalone file deleted
     - OMN-16589  # kb-doc-gate.yml waiver permanently closed by folding the caller into ci.yml
     - OMN-14160  # call-occ-autobind.yml waiver -- the fan-out destination the 2026-07-24 pass skipped
+    - OMN-20074  # call-repo-evidence-gate.yml took the slot of the retired call-occ-preflight.yml (a duplicate producer of occ-preflight / eligibility)
