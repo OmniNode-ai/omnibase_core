@@ -779,19 +779,6 @@ gates:
       == 'success' && ...` -- vector-2 (ungated job-level if referencing needs.*), same shape as 'Zone
       Filter (docs-only check)' below. skip_semantics: neutral_ok pending triage in OMN-14864."
 
-  - name: "call-reject-skip-token / occ-preflight / eligibility"
-    mode: REQUIRED
-    branch: dev
-    producer_kind: cross_repo
-    caller_workflow: call-reject-skip.yml
-    caller_job: call-reject-skip-token
-    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@main"
-    skip_semantics: never
-    rationale: "Second required context produced by the same caller job as 'call-reject-skip-token / scan
-      / reject-skip-gate-token' above (the omniclaude-hosted reusable's own internal occ-preflight job,
-      3-level composed context: caller job id / reusable's occ-preflight job id / occ-preflight.yml's
-      'eligibility' job name). Live required status check on omnibase_core dev branch protection."
-
   - name: "lint (shadow)"
     mode: REQUIRED
     branch: dev

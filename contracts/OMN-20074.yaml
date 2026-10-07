@@ -1,0 +1,60 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20074
+title: Prepare omnibase_core's skip-token and repo-evidence callers for the S6 cut-over
+summary: Pin the skip-token reusable without its nested change-control preflight, remove that context
+  from the required-checks manifest and CI Summary audit, and turn off the repo-evidence OCC comparison.
+  This preparation lands with the S6 dev branch-protection change and not before (plan S6, OMN-20068).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20074
+    statement: Prepare the callers and declared checks for the S6 cut-over while retaining the standalone
+      preflight declaration and a verifier release that supports rollback.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the skip-token caller pins the omniclaude reusable that runs the token scan with
+          no nested change-control preflight (omniclaude#2540), and the required-checks manifest and the
+          CI Summary audit stop naming the nested preflight context, while the standalone occ-preflight
+          / eligibility context stays declared -- falsifier: uv run pytest tests/ci/test_reject_skip_caller_without_preflight_omn20074.py
+          -q'
+      - id: AC2
+        statement: 'AC2: the repo-evidence caller passes compare-with-occ "false" once dev branch protection
+          requires no OCC context, and verifier-version stays a release that ships the classifier for
+          a rollback -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q -k
+          s6_cutover'
+evidence_requirements:
+  - kind: tests
+    description: The skip-token caller pins the preflight-free reusable and the manifest and CI Summary
+      audit drop the nested context while preserving the scan and standalone preflight declarations.
+    command: uv run pytest tests/ci/test_reject_skip_caller_without_preflight_omn20074.py -q
+  - kind: tests
+    description: The repo-evidence caller turns the OCC comparison off and retains the classifier for
+      rollback.
+    command: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q -k s6_cutover
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20074-ac1
+    description: The caller pin, manifest and CI Summary audit tests fail against the original files and
+      pass with the S6 preparation.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_reject_skip_caller_without_preflight_omn20074.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20074-ac2
+    description: The S6 cut-over test fails with compare-with-occ "true" and passes with "false" while
+      verifier-version retains the classifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q -k s6_cutover
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2

@@ -952,7 +952,6 @@ DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("call-receipt-gate.yml", "verify"): ("verify / verify",),
     ("call-reject-skip.yml", "call-reject-skip-token"): (
         "call-reject-skip-token / scan / reject-skip-gate-token",
-        "call-reject-skip-token / occ-preflight / eligibility",
     ),
 }
 

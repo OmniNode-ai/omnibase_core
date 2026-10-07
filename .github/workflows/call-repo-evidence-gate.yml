@@ -30,12 +30,15 @@
 # receipt-gate.yml in this repository does not change the definition that
 # judges it.
 #
-# S5 shadow count (OMN-20074): compare-with-occ is "true" so every run records
-# this head's new-path verdict beside OCC's occ-preflight / eligibility verdict
-# on the same head. repo-evidence / dod-verify is NOT a required context here
-# yet. Every OCC context stays required. Making it required, and then removing
-# the OCC contexts (S6), are separate rulings that wait for this repository's
-# own S5 bar. The S6 change sets compare-with-occ back to "false".
+# OMN-20074 (S5 shadow count, then the S6 cut-over): during S5 compare-with-occ
+# was "true" so every run classified this head's new-path verdict against OCC's
+# occ-preflight / eligibility verdict on the same head. At the S6 cut-over
+# repo-evidence / dod-verify is required on dev and dev branch protection no
+# longer requires an OCC context, so compare-with-occ is "false": the difference
+# step would otherwise wait for an OCC verdict and fail closed without one.
+# verifier-version stays a release that ships the classifier (node_dod_verify
+# occ-difference, omnimarket#3277), so a rollback turns the step back on with
+# this one input.
 #
 # PR-workflow budget (architecture-handshakes/pull-request-workflow-budget.yaml,
 # OMN-14907): this file takes the slot of call-occ-preflight.yml, retired in
@@ -65,4 +68,4 @@ jobs:
     with:
       evidence-source: caller
       verifier-version: 0.4.294
-      compare-with-occ: "true"
+      compare-with-occ: "false"
