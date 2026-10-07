@@ -227,6 +227,56 @@ def test_completed_unusable_content_cannot_claim_quality_acceptance() -> None:
         )
 
 
+@pytest.mark.parametrize("content", ["", " ", "\n\t"])
+@pytest.mark.parametrize(
+    "terminal_type", [ModelDelegationResult, ModelDelegationCompleted]
+)
+def test_empty_final_content_cannot_be_declared_usable(
+    content: str, terminal_type: type[ModelDelegationResult]
+) -> None:
+    """An accepted score cannot turn an absent deliverable into usable content."""
+    with pytest.raises(
+        ValidationError, match="usable content verdict requires nonblank"
+    ):
+        terminal_type.model_validate(
+            {
+                "correlation_id": uuid4(),
+                "task_type": "document",
+                "model_used": "provider/model",
+                "endpoint_url": "https://example.invalid/v1",
+                "content": content,
+                "operational_outcome": EnumDelegationOperationalOutcome.COMPLETED,
+                "content_verdict": EnumDelegationContentVerdict.USABLE,
+                "quality_passed": True,
+                "quality_score": 1.0,
+                "latency_ms": 0,
+                "fallback_to_claude": False,
+            }
+        )
+
+
+def test_artifact_only_completion_round_trips_as_usable() -> None:
+    """A final artifact needs no explanatory prose to qualify as usable."""
+    content = '{"answer": 42}'
+    terminal = ModelDelegationCompleted.model_validate(
+        _terminal(
+            operational_outcome=EnumDelegationOperationalOutcome.COMPLETED,
+            content_verdict=EnumDelegationContentVerdict.USABLE,
+            content=content,
+            quality_passed=True,
+            quality_score=1.0,
+            terminal_failure_cause=None,
+        ).model_dump()
+    )
+
+    restored = ModelDelegationCompleted.model_validate_json(terminal.model_dump_json())
+
+    assert restored.content == content
+    assert restored.operational_outcome is EnumDelegationOperationalOutcome.COMPLETED
+    assert restored.content_verdict is EnumDelegationContentVerdict.USABLE
+    assert restored.quality_score == 1.0
+
+
 @pytest.mark.parametrize(
     ("outcome", "verdict"),
     [
