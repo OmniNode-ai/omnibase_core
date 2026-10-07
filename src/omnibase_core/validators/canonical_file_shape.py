@@ -101,8 +101,9 @@ import yaml
 from omnibase_core.models.validation.model_canonical_file_shape_finding import (
     ModelCanonicalFileShapeFinding,
 )
-from omnibase_core.nodes.node_node_home_check_compute.handler import NODE_HOME_BASELINE
 
+# Mirrors NODE_HOME_BASELINE in nodes/node_node_home_check_compute/handler.py; validators must not import nodes.
+NODE_HOME_BASELINE = ".onex_ratchets/node_home_baseline.txt"
 DEFAULT_BASELINE = ".onex_ratchets/canonical_file_shape_baseline.txt"
 TICKET = "OMN-20304"
 PRE_COMMIT_CONFIG = ".pre-commit-config.yaml"
@@ -110,6 +111,8 @@ GATE_HOOK_IDS = ("check-direct-model-call", "check-node-boundary-imports")
 NODE_BOUNDARY_BASELINE = ".onex_ratchets/node_boundary_import_baseline.yaml"
 GATE_REPO_URL = re.compile(r"omnibase_core(\.git)?/?$")
 INDEX = ":"
+# Failure type of a git run, for callers that must not import subprocess themselves.
+GitCommandError = subprocess.SubprocessError
 # Wall-clock ceiling for one cat-file run so a stall fails loud instead of hanging the hook.
 CAT_FILE_TIMEOUT_S = 300
 
