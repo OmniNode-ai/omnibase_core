@@ -1414,6 +1414,7 @@ jobs:
             contract="$head_tree/contracts/$ticket.yaml"
             if [ ! -f "$contract" ]; then
               echo "::error::pull request cites $ticket but carries no contracts/$ticket.yaml"
+              echo "::notice::Include contracts/$ticket.yaml at this PR head; a later companion merge cannot supply evidence for this head."
               exit 1
             fi
             result="$RUNNER_TEMP/dod/head-$ticket.json"
@@ -1515,6 +1516,7 @@ jobs:
             # With a named fix, the reverted product change is what must make the bound tests fail.
             if [ -z "$fix" ] && [ "$test_paths" -eq 0 ]; then
               echo "::error::no test-side change: the bound tests cannot be shown to fail at $label"
+              echo "::notice::For an already-merged fix, add a commit trailer 'Binds-Merged-Fix: OMN-<n> <full 40-character sha>' naming the merged product fix for each cited ticket. Its subject must cite the ticket and its product changes must revert cleanly at the merge base; the bound tests must fail with that fix reverted."
               exit 1
             fi
           }
