@@ -12,12 +12,13 @@ from __future__ import annotations
 import argparse
 import ast
 import re
-import subprocess
 import sys
 import tomllib
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path, PurePosixPath
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_node_home_ratchet_request import (
     ModelNodeHomeRatchetRequest,
 )
@@ -26,6 +27,11 @@ from omnibase_core.nodes.node_node_home_check_compute.handler import (
     NodeNodeHomeCheckCompute,
     _eligible,
     _node_directories,
+)
+from omnibase_core.validators.canonical_file_shape import (
+    INDEX,
+    GitCommandError,
+    GitRepo,
 )
 
 _NODE_CLASS = re.compile(r"^Node[A-Z]\w*$")
@@ -80,7 +86,10 @@ def _entry_points(blob: bytes | None) -> frozenset[str]:
     for key in ("project", "entry-points", "onex.nodes"):
         value = table.get(key, {})
         if not isinstance(value, dict):
-            raise ValueError(f"pyproject.toml {key} must be a table")
+            raise ModelOnexError(
+                message=f"pyproject.toml {key} must be a table",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         table = value
     return frozenset(table)
 
@@ -89,14 +98,13 @@ def read_request(
     repo_root: Path, base: str | None = "HEAD"
 ) -> ModelNodeHomeRatchetRequest:
     """Gather indexed and base-revision node inventories and registrations."""
-    # Reuse the established batched git adapter. Its module imports our fixed
-    # baseline constant, so load it only at the CLI boundary, never in handle.
-    from omnibase_core.validators.canonical_file_shape import INDEX, GitRepo
-
     repo = GitRepo(root=repo_root)
     repo.run("rev-parse", "--show-toplevel")
     if repo.run("ls-files", "-u"):
-        raise ValueError("resolve unmerged index entries before checking node homes")
+        raise ModelOnexError(
+            message="resolve unmerged index entries before checking node homes",
+            error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+        )
     paths = frozenset(repo.list_files(INDEX))
     blobs = repo.read_blobs(
         INDEX, [*_python_paths(paths), NODE_HOME_BASELINE, "pyproject.toml"]
@@ -106,7 +114,10 @@ def read_request(
     base_entry_points: frozenset[str] = frozenset()
     if base is not None:
         if not repo.has_revision(base):
-            raise ValueError(f"base revision does not exist: {base}")
+            raise ModelOnexError(
+                message=f"base revision does not exist: {base}",
+                error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+            )
         base_blobs = repo.read_blobs(base, [NODE_HOME_BASELINE, "pyproject.toml"])
         base_blob = base_blobs[NODE_HOME_BASELINE]
         base_entry_points = _entry_points(base_blobs["pyproject.toml"])
@@ -154,9 +165,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 or request.head_baseline_text is not None
                 or committed_baseline is not None
             ):
-                raise ValueError(f"{NODE_HOME_BASELINE} exists; it can only shrink")
+                raise ModelOnexError(
+                    message=f"{NODE_HOME_BASELINE} exists; it can only shrink",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
             directories = NodeNodeHomeCheckCompute().handle(request).node_directories
-            baseline.parent.mkdir(parents=True, exist_ok=True)
             with baseline.open("x", encoding="utf-8") as stream:
                 stream.write(render_baseline(directories))
             sys.stdout.write(
@@ -164,7 +177,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             return 0
         result = NodeNodeHomeCheckCompute().handle(request)
-    except (OSError, ValueError, SyntaxError, subprocess.SubprocessError) as exc:
+    except (OSError, ValueError, SyntaxError, ModelOnexError, GitCommandError) as exc:
         sys.stderr.write(f"node-home ratchet: {exc}\n")
         return 2
     for finding in result.findings:

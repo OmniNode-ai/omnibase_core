@@ -289,6 +289,7 @@ def test_no_exception_mechanism_write_baseline_once(repo: Path) -> None:
     _plant(repo)
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "pre-existing node without baseline")
+    (repo / ".onex_ratchets").mkdir(exist_ok=True)
     args = ["--repo-root", str(repo), "--write-baseline"]
     assert main(args) == 0
     assert (repo / NODE_HOME_BASELINE).read_text() == render_baseline([NODE])
