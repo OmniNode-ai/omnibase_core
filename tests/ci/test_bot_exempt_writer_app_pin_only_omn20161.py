@@ -129,6 +129,9 @@ def _run(
         "PR_EVENT_AUTHOR": author,
         "MERGE_GROUP_HEAD_REF": merge_group_head_ref,
         "GH_REPO": "o/r",
+        # OMN-20073: the verify job's no-op switch for shadow caller-evidence
+        # mode; off here, because these cases are the OCC path's own.
+        "CALLER_EVIDENCE_MODE": "false",
     }
     declared = step.get("env", {})
     assert set(declared) <= set(values), f"unmodelled step env: {set(declared)}"
