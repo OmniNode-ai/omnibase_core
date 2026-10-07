@@ -1,0 +1,41 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-18996
+title: Reject blank usable delegation terminal content
+summary: The Core terminal wire models reject empty or whitespace-only final content when the content
+  verdict is usable, while preserving nonblank usable content through a JSON round trip. This contract
+  covers the Core source slice in PR 1904, without asserting Market emission or runtime acceptance.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched: [envelopes]
+requirements:
+  - id: req-omn18996-usable-content
+    statement: A usable content verdict requires a nonblank final deliverable.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: ModelDelegationResult and ModelDelegationCompleted reject empty and whitespace-only
+          usable content, and nonblank usable content survives a completed terminal JSON round trip unchanged
+          -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
+          -q -k "empty_final_content_cannot_be_declared_usable or artifact_only_completion_round_trips_as_usable"'
+evidence_requirements:
+  - kind: tests
+    description: Six rejection cases exercise both terminal models with empty, space-only and newline/tab
+      content, and a positive control preserves nonblank final content and its usable verdict.
+    command: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
+      -q -k "empty_final_content_cannot_be_declared_usable or artifact_only_completion_round_trips_as_usable"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn18996-usable-content
+    description: Blank usable final content is rejected by both terminal models, and nonblank usable content
+      survives JSON serialization unchanged.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
+          -q -k "empty_final_content_cannot_be_declared_usable or artifact_only_completion_round_trips_as_usable"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
