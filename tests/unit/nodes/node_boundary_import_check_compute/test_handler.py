@@ -481,3 +481,13 @@ def test_malformed_yaml_is_error() -> None:
     )
     assert report.overall_status == "ERROR"
     assert any(finding.rule_id == "unparseable-file" for finding in report.findings)
+
+
+def test_render_baseline_keeps_each_long_entry_on_one_line() -> None:
+    from omnibase_core.nodes.node_boundary_import_check_compute.analyzer import (
+        render_baseline,
+    )
+
+    edge = "a." + "x" * 200 + " -> pkg.nodes.node_y.models.model_z:ModelZ"
+    rendered = render_baseline((edge,))
+    assert f"- {edge}\n" in rendered

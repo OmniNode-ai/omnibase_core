@@ -379,12 +379,17 @@ def parse_baseline(source: str, path: str) -> tuple[str, ...]:
 
 
 def render_baseline(edges: tuple[str, ...]) -> str:
-    """Render the required sorted YAML document, including SPDX headers."""
+    """Render the required sorted YAML document, including SPDX headers.
+
+    One entry per line, never wrapped, so retiring an edge deletes one line.
+    """
     document = ModelBoundaryImportBaseline(
         schema_version=2, gate="OMN-17427", edges=sorted(set(edges))
     )
     return (
         "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n"
         "# SPDX-License-Identifier: MIT\n"
-        + yaml.safe_dump(document.model_dump(mode="json"), sort_keys=False)
+        + yaml.safe_dump(
+            document.model_dump(mode="json"), sort_keys=False, width=1_000_000
+        )
     )
