@@ -160,7 +160,7 @@ jobs:
   # reports for a `uses:` job; renaming either half breaks the registration.
   route:
     name: Runner Route (OMN-18031)
-    uses: OmniNode-ai/omniclaude/.github/workflows/route-runner-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55
+    uses: OmniNode-ai/omniclaude/.github/workflows/route-runner-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
     with:
       workflow_path: .github/workflows/ci.yml
     secrets:
@@ -179,7 +179,7 @@ jobs:
     concurrency:
       group: OCC Companion Effect Publisher-${{ github.event.pull_request.number || github.ref }}
       cancel-in-progress: true
-    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
+    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
     # pragma: allowlist secret -- `secrets: inherit` is GHA syntax, not a secret.
     secrets: inherit
     with:
@@ -198,7 +198,7 @@ jobs:
   # reusable checks its validator out at `github.job_workflow_sha`.
   kb-doc-gate:
     if: github.event_name == 'pull_request' && github.base_ref == 'dev'
-    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55
+    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
     with:
       mode: diff
     permissions:
@@ -253,7 +253,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Judge wheel content parity
-        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@6f670788566b13ceec90daba0978b2d12bbf054f
+        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@147c9a4a7b816d94088e730fe2a665c0c2a0eaee
         with:
           package: omnibase_core
 
@@ -3291,7 +3291,7 @@ jobs:
   # frozen baseline count down (it may never grow).
   pydantic-extra-forbid-baseline-oneway:
     name: Pydantic extra="forbid" Baseline One-way (OMN-19677)
-    uses: OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@3faefdcd5750b05f69d2efcb8cf200bc359483c3
+    uses: OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
     with:
       baseline-path: src/omnibase_core/validators/extra_forbid_baseline.yaml
       parser: yaml-list:violations
@@ -3514,7 +3514,7 @@ jobs:
   # diverge, and advancing the gate is those two lines changed together.
   secrets-baseline-wiring:
     name: secrets-baseline-wiring
-    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@1618db6e272da6ca4288c784906ea62ed7491a55
+    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
 
   quality-gate:
     name: Quality Gate
