@@ -536,14 +536,6 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
-      # OMN-20702: new ONEX nodes belong in omnimarket; core's existing nodes
-      # live in a shrink-only baseline, created once with --write-baseline.
-      - id: check-node-home
-        name: Node-home ratchet (OMN-20702)
-        entry: uv run python -m omnibase_core.handlers.handler_node_home_ratchet
-        language: system
-        pass_filenames: false
-        always_run: true
       # OMN-20298: a shape-gate detector job must run on every PR, whatever the
       # change-control preflight says. Zero baseline, no allowlist.
       - id: check-shape-gate-independence

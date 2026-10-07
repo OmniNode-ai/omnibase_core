@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_node_home_ratchet import NODE_HOME_BASELINE
+from omnibase_core.nodes.node_node_home_check_compute.handler import NODE_HOME_BASELINE
 from omnibase_core.validators import canonical_file_shape
 from omnibase_core.validators.canonical_file_shape import (
     DEFAULT_BASELINE,
