@@ -4,12 +4,15 @@
 """Paired EFFECT boundary: tracked inventory, source reads and artifact writes.
 
 Git listing, content reads and report persistence reuse the existing canonical
-effects. No existing write effect accepts arbitrary baseline YAML or edge JSON;
+effects. ``git show REV:<path>`` reads historical baseline state; an absent
+file is distinct from an invalid revision or malformed schema. No existing
+write effect accepts arbitrary baseline YAML or edge JSON;
 ``write_artifact`` owns those writes here, outside the pure COMPUTE package.
 """
 
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -54,6 +57,7 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 
 class NodeBoundaryImportCheckEffect:
@@ -95,7 +99,7 @@ class NodeBoundaryImportCheckEffect:
                     and path.parent.name == "nodes"
                 ):
                     nodes.update(node_directories(f"{relative}/__init__.py", packages))
-        selected = sorted({path for path in paths if eligible_importer(path)})
+        selected = sorted({path for path in paths if eligible_importer(path, packages)})
         files: tuple[ModelBoundaryImportSourceFile, ...] = ()
         read_errors: tuple[str, ...] = ()
         if selected:
@@ -103,7 +107,7 @@ class NodeBoundaryImportCheckEffect:
                 ModelSourceFileGatherInput(
                     root=str(root),
                     explicit_paths=[str(root / path) for path in selected],
-                    include_patterns=["*.py"],
+                    include_patterns=["*.py", "*.yaml", "*.yml"],
                 )
             )
             files = tuple(
@@ -139,6 +143,67 @@ class NodeBoundaryImportCheckEffect:
                     )
                 except (ValueError, yaml.YAMLError, ModelOnexError) as exc:
                     baseline_error = str(exc)
+        base_baseline: tuple[str, ...] = ()
+        base_present = False
+        base_error: str | None = None
+        relative_baseline = baseline_path.relative_to(root).as_posix()
+        env = scrub_git_location_env()
+        revision = subprocess.run(
+            [
+                "git",
+                "-C",
+                str(root),
+                "rev-parse",
+                "--verify",
+                "--end-of-options",
+                f"{request.base}^{{commit}}",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
+        )
+        if revision.returncode:
+            read_errors += (
+                f"Invalid base revision {request.base}: {revision.stderr.strip()}",
+            )
+        else:
+            historical = subprocess.run(
+                ["git", "-C", str(root), "show", f"{request.base}:{relative_baseline}"],
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+            if historical.returncode:
+                inventory = subprocess.run(
+                    [
+                        "git",
+                        "-C",
+                        str(root),
+                        "ls-tree",
+                        "-z",
+                        revision.stdout.strip(),
+                        "--",
+                        relative_baseline,
+                    ],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                    env=env,
+                )
+                if inventory.returncode or inventory.stdout:
+                    read_errors += (
+                        f"Cannot read base baseline: {historical.stderr.strip()}",
+                    )
+            else:
+                base_present = True
+                try:
+                    base_baseline = parse_baseline(
+                        historical.stdout, f"{request.base}:{relative_baseline}"
+                    )
+                except (ValueError, yaml.YAMLError, ModelOnexError) as exc:
+                    base_error = f"{request.base}:{relative_baseline}: {exc}"
         return ModelBoundaryImportCheckInput(
             files=files,
             repo_packages=packages,
@@ -148,6 +213,11 @@ class NodeBoundaryImportCheckEffect:
             baseline_edges=baseline,
             baseline_present=present,
             baseline_error=baseline_error,
+            base=request.base,
+            bootstrap=request.bootstrap,
+            base_baseline_edges=base_baseline,
+            base_baseline_present=base_present,
+            base_baseline_error=base_error,
             read_errors=read_errors,
         )
 

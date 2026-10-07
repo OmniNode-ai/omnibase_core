@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class ModelBoundaryImportSourceFile(BaseModel):
-    """Repository-relative POSIX path and Python source."""
+    """Repository-relative POSIX path and Python or YAML source."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 

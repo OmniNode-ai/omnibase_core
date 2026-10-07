@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure def-B node-boundary import gate; the edge baseline only shrinks."""
+"""Pure symbol boundary ratchet against candidate and Git base baseline state."""
 
 from omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_baseline import (
     ModelBoundaryImportBaseline,
@@ -22,14 +22,17 @@ from omnibase_core.nodes.node_boundary_import_check_compute.analyzer import (
 
 
 class NodeBoundaryImportCheckCompute:
-    """Compare observed boundary edges with explicit baseline strings, no I/O."""
+    """Reject new symbols, stale entries and baseline growth without I/O."""
 
     def handle(self, request: ModelBoundaryImportCheckInput) -> ModelValidationReport:
         """Emit canonical FAIL/ERROR findings via the shared precedence engine."""
         edges, parse_errors = extract_edges(request)
         findings = list(parse_errors)
         errors = list(request.read_errors)
-        if not any(eligible_importer(file.path) for file in request.files):
+        if not any(
+            eligible_importer(file.path, request.repo_packages)
+            for file in request.files
+        ):
             errors.append("zero files scanned: an empty scan is ERROR")
         for error in errors:
             findings.append(
@@ -40,13 +43,18 @@ class NodeBoundaryImportCheckCompute:
                     message=error,
                 )
             )
-        baseline_error = request.baseline_error
+        baseline_error = request.baseline_error or request.base_baseline_error
         if baseline_error is None:
             try:
                 ModelBoundaryImportBaseline(
-                    schema_version=1,
+                    schema_version=2,
                     gate="OMN-17427",
                     edges=list(request.baseline_edges),
+                )
+                ModelBoundaryImportBaseline(
+                    schema_version=2,
+                    gate="OMN-17427",
+                    edges=list(request.base_baseline_edges),
                 )
             except ValueError as exc:
                 baseline_error = str(exc)
@@ -63,6 +71,27 @@ class NodeBoundaryImportCheckCompute:
         else:
             observed = {edge.identity for edge in edges}
             baseline = set(request.baseline_edges)
+            if request.base_baseline_present:
+                for identity in sorted(baseline - set(request.base_baseline_edges)):
+                    findings.append(
+                        ModelValidationFindingEmbed(
+                            validator_id=VALIDATOR_ID,
+                            severity="FAIL",
+                            rule_id="baseline-growth",
+                            location=request.baseline_path,
+                            message=f"{identity}: new since {request.base}; the baseline only shrinks.",
+                        )
+                    )
+            elif (request.baseline_present or baseline) and not request.bootstrap:
+                findings.append(
+                    ModelValidationFindingEmbed(
+                        validator_id=VALIDATOR_ID,
+                        severity="FAIL",
+                        rule_id="baseline-bootstrap-unflagged",
+                        location=request.baseline_path,
+                        message=f"No base baseline at {request.base}; adoption requires --bootstrap.",
+                    )
+                )
             for edge in edges:
                 if edge.identity not in baseline:
                     findings.append(

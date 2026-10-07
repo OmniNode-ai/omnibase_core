@@ -16,7 +16,8 @@ class ModelBoundaryImportCheckInput(BaseModel):
     Directory and module inventories may be supplied by the EFFECT node to
     include packages whose contents are not eligible importers. Pure callers
     can omit them: directories and modules are then inferred from file paths.
-    Runtime read and baseline errors travel as data and become ERROR findings.
+    Candidate and Git base baseline state travel as data; adoption requires
+    explicit bootstrap when the base has no baseline. Read errors become ERROR.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -29,4 +30,9 @@ class ModelBoundaryImportCheckInput(BaseModel):
     baseline_edges: tuple[str, ...] = ()
     baseline_present: bool = False
     baseline_error: str | None = None
+    base: str = "HEAD"
+    bootstrap: bool = False
+    base_baseline_edges: tuple[str, ...] = ()
+    base_baseline_present: bool = False
+    base_baseline_error: str | None = None
     read_errors: tuple[str, ...] = ()

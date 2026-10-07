@@ -11,5 +11,7 @@ class ModelBoundaryImportCheckRequest(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
+    base: str = "HEAD"
+    bootstrap: bool = False
     root: str = "."
     baseline_path: str = ".onex_ratchets/node_boundary_import_baseline.yaml"
