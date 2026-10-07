@@ -297,8 +297,36 @@ def test_contract_only_binding_without_a_trailer_is_refused(tmp_path: Path) -> N
         "::error::no test-side change: the bound tests cannot be shown to fail at the merge base"
         in prepare.stdout
     )
+    assert (
+        "For an already-merged fix, add a commit trailer "
+        "'Binds-Merged-Fix: OMN-<n> <full 40-character sha>'" in prepare.stdout
+    )
     assert control is None
     assert not (repo.dod_dir / "base-OMN-1.control.txt").exists()
+
+
+def test_missing_contract_names_the_caller_repair_before_running_tests(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path)
+    completed = subprocess.run(
+        ["bash", "-c", _script("Verify the contract at the PR head")],
+        env=repo.env,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert completed.returncode == 1, completed.stdout + completed.stderr
+    assert "pull request cites OMN-1 but carries no contracts/OMN-1.yaml" in (
+        completed.stdout
+    )
+    assert (
+        "Include contracts/OMN-1.yaml at this PR head; "
+        "a later companion merge cannot supply evidence for this head."
+        in completed.stdout
+    )
+    assert not (repo.dod_dir / "head-OMN-1.json").exists()
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
