@@ -1,0 +1,33 @@
+{
+  "ticket": "OMN-19615",
+  "record": "config/test_durations.json",
+  "kind": "partial_seed",
+  "recorded_on": "2026-10-08",
+  "host": "h202",
+  "base_commit": "bd5430b4b3",
+  "working_tree_changes": ["OMN-19615 workflow regression tests"],
+  "python_version": "3.13.15",
+  "pytest_split_version": "0.11.0",
+  "measured_test_count": 2496,
+  "duration_phases": ["setup", "call", "teardown"],
+  "measurement_command": "uv run pytest tests/ --ignore=tests/integration --splits 40 --group {group} -n 1 --reruns 0 --store-durations --durations-path {separate_initially_absent_record} --junitxml={junit_path} -q",
+  "measurements": [
+    {
+      "group": 7,
+      "passed": 1238,
+      "failed": 20,
+      "collection_skipped": 4,
+      "wall_seconds": 181.08,
+      "excluded_failed_measurements": 20,
+      "failure_cause": "Sandbox Git discovery: test_omn18920_message_delivery_context.py and test_onex_state_disposable_gitignore.py"
+    },
+    {
+      "group": 23,
+      "passed": 1258,
+      "failed": 0,
+      "collection_skipped": 4,
+      "wall_seconds": 120.92,
+      "excluded_failed_measurements": 0
+    }
+  ]
+}
