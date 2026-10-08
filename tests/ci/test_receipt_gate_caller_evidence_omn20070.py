@@ -107,6 +107,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "Set up Python 3.13",
         "Install uv",
         "Install the pinned verifier",
+        "Derive the OCC writer app's dependency-pin-only verdict at the head (OMN-17427)",
         PG_TOOLS_STEP,
         PG_ENV_STEP,
         HEAD_STEP,
@@ -237,7 +238,8 @@ def test_occ_difference_runs_after_refusal_with_only_the_existing_read_token() -
     step = _step(DIFFERENCE_STEP)
     assert step["if"] == (
         "${{ !cancelled() && steps.bot_exempt.outputs.exempt != 'true' "
-        "&& inputs.compare-with-occ == 'true' }}"
+        "&& inputs.compare-with-occ == 'true' "
+        "&& steps.writer_pin_only.outputs.exempt != 'true' }}"
     )
     assert step["env"] == {
         "GH_TOKEN": "${{ github.token }}",
@@ -624,7 +626,8 @@ def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
         assert _step(name)["if"] == (
             "steps.bot_exempt.outputs.exempt != 'true' "
             "&& steps.same_repo.outcome != 'failure' "
-            "&& steps.tickets.outcome != 'failure'"
+            "&& steps.tickets.outcome != 'failure' "
+            "&& steps.writer_pin_only.outputs.exempt != 'true'"
         )
         assert "set -euo pipefail" in _step(name)["run"]
     tools = _step(PG_TOOLS_STEP)["run"]
