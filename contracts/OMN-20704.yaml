@@ -1,0 +1,53 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20704
+title: The route job calls the omnimarket route-runner reusable workflow
+summary: The route job in .github/workflows/ci.yml calls the route-runner reusable workflow hosted in
+  omnimarket at a full-sha pin instead of the omniclaude copy. The job id and the check name are unchanged.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20704
+    statement: The route job in ci.yml must call the omnimarket route-runner reusable workflow and no
+      longer reference the omniclaude copy.
+    acceptance:
+      - id: AC1
+        statement: "AC1: ci.yml calls OmniNode-ai/omnimarket/.github/workflows/route-runner-reusable.yml
+          at commit 01a0d1b3e7d7ba1a09012f9af245ba29afa000b5. -- falsifier: grep -F OmniNode-ai/omnimarket/.github/workflows/route-runner-reusable.yml@01a0d1b3e7d7ba1a09012f9af245ba29afa000b5
+          .github/workflows/ci.yml"
+      - id: AC2
+        statement: "AC2: ci.yml no longer references the omniclaude route-runner-reusable.yml. -- falsifier:
+          ! grep -F omniclaude/.github/workflows/route-runner-reusable.yml .github/workflows/ci.yml"
+evidence_requirements:
+  - kind: tests
+    description: ci.yml calls the omnimarket route-runner reusable workflow at the pinned commit.
+    command: grep -F OmniNode-ai/omnimarket/.github/workflows/route-runner-reusable.yml@01a0d1b3e7d7ba1a09012f9af245ba29afa000b5
+      .github/workflows/ci.yml
+  - kind: tests
+    description: ci.yml has no reference to the omniclaude route-runner reusable workflow.
+    command: "! grep -F omniclaude/.github/workflows/route-runner-reusable.yml .github/workflows/ci.yml"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20704-ac1
+    description: ci.yml calls the omnimarket route-runner reusable workflow at the pinned commit.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -F OmniNode-ai/omnimarket/.github/workflows/route-runner-reusable.yml@01a0d1b3e7d7ba1a09012f9af245ba29afa000b5
+          .github/workflows/ci.yml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20704-ac2
+    description: ci.yml has no reference to the omniclaude route-runner reusable workflow.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "! grep -F omniclaude/.github/workflows/route-runner-reusable.yml .github/workflows/ci.yml"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
