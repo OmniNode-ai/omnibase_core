@@ -74,6 +74,18 @@ def test_caller_compares_with_occ_for_the_s5_shadow_count() -> None:
         "verifier-version must ship node_dod_verify occ-difference "
         f"(>= {'.'.join(map(str, _DIFFERENCE_CLASSIFIER_FLOOR))})"
     )
+    assert version >= (0, 4, 305), (
+        "verifier-version must ship omnimarket#3563 "
+        "(node_dod_verify names contract_in_another_repo, omnimarket v0.4.305), "
+        "the verifier half of the receipt-gate pin"
+    )
+
+
+def test_caller_pins_the_contract_home_reusable() -> None:
+    job = yaml.safe_load(CALLER_PATH.read_text(encoding="utf-8"))["jobs"][
+        "repo-evidence"
+    ]
+    assert job["uses"].endswith("@81b34fe91f995e75acd65694e81ecf2c385456a4")
 
 
 def test_every_repo_contract_binds_every_criterion() -> None:
