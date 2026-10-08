@@ -39,6 +39,8 @@ Verdict model (mirrors ci_summary_gate exit codes)
   (non-PR event; trusted dependency-bot author, mirroring occ-preflight's
   OMN-13762 exemption; or the OCC writer app when the producer's head-SHA-bound
   outcome is the dependency-pin-only verdict, OMN-20161).
+  A merged companion resolved from the OCC side by title also passes when
+  the Evidence-Source stamp is absent (OMN-18338).
 * ``PENDING`` (2) — evidence may still become durable without a new commit:
   Evidence-Source not yet PATCHed onto the body by occ-autobind, companion
   still OPEN (auto-merge in flight), or a transient API error. The runner
@@ -197,6 +199,36 @@ class GhFetcher:
             return None
         return data if isinstance(data, list) else None
 
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]] | None:
+        """OMN-18338: title candidates, or ``None`` when the read itself failed."""
+        basename = repo.rsplit("/", 1)[-1]
+        raw = self._run(
+            [
+                "gh",
+                "pr",
+                "list",
+                "--repo",
+                occ_repo,
+                "--state",
+                "merged",
+                "--search",
+                f'"OCC companion for {basename}#{pr_number}" in:title',
+                "--json",
+                "number,title,state,mergeCommit",
+                "--limit",
+                "50",
+            ]
+        )
+        if raw is None:
+            return None
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        return data if isinstance(data, list) else None
+
     def compare_status(self, repo: str, base: str, head_sha: str) -> str | None:
         """``identical``/``behind`` ⇒ ``head_sha`` is an ancestor of ``base``."""
         raw = self._run(
@@ -215,6 +247,34 @@ def parse_evidence_source(body: str) -> str | None:
     """First ``Evidence-Source:`` value in the PR body, or ``None``."""
     match = EVIDENCE_SOURCE_RE.search(body or "")
     return match.group(1).strip() if match else None
+
+
+def select_merged_companion(
+    candidates: list[dict[str, object]], repo: str, pr_number: str
+) -> tuple[str | None, str]:
+    """OMN-18338: resolve one distinct merged companion, failing closed on ties."""
+    basename = repo.rsplit("/", 1)[-1]
+    title_re = re.compile(
+        rf"OCC companion for (?:[\w.-]+/)?{re.escape(basename)}"
+        rf"#{re.escape(pr_number)}(?!\d)",
+        re.IGNORECASE,
+    )
+    numbers: set[int] = set()
+    for candidate in candidates:
+        if str(candidate.get("state") or "").upper() != "MERGED":
+            continue
+        if not title_re.search(str(candidate.get("title") or "")):
+            continue
+        number = candidate.get("number")
+        if isinstance(number, int):
+            numbers.add(number)
+    if not numbers:
+        return None, "no merged companion"
+    if len(numbers) > 1:
+        refs = ", ".join(f"OCC#{number}" for number in sorted(numbers))
+        return None, f"ambiguous merged companions: {refs}"
+    ref = f"OCC#{next(iter(numbers))}"
+    return ref, f"merged companion {ref} resolved from the change-control record"
 
 
 def read_autobind_outcome(
@@ -406,6 +466,17 @@ def evaluate_once(
         evidence_source = evidence_source_override
         head_sha = ""
 
+    resolved_from_record = False
+    if not evidence_source and evidence_source_override is None:
+        # OMN-18338: a whole-body edit can drop the stamp after minting. Resolve
+        # from OCC before consulting the producer, then re-read the PR below.
+        candidates = fetcher.merged_companion_candidates(occ_repo, repo, pr_number)
+        if candidates is not None:
+            evidence_source, _detail = select_merged_companion(
+                candidates, repo, pr_number
+            )
+            resolved_from_record = evidence_source is not None
+
     if not evidence_source:
         # OMN-18069: before deciding this is "still in flight", ask the producer.
         # On 2026-09-09 the autobind effect consumed 37 commands and minted
@@ -445,10 +516,16 @@ def evaluate_once(
             merge_oid = ""
             if isinstance(merge_commit, dict):
                 merge_oid = str(merge_commit.get("oid") or "")
+            suffix = (
+                "; companion resolved from the change-control record because the "
+                "PR body carried no Evidence-Source line (OMN-18338)"
+                if resolved_from_record
+                else ""
+            )
             return Verdict(
                 EXIT_PASS,
                 f"companion OCC#{occ_pr} is MERGED (merge commit {merge_oid or 'unknown'}) "
-                "— evidence is durable",
+                f"— evidence is durable{suffix}",
             )
         if state == "OPEN":
             return Verdict(

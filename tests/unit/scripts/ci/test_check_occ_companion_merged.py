@@ -15,7 +15,10 @@ These tests pin the fail-closed verdict table:
 * companion CLOSED unmerged   → FAIL immediately (the incident state)
 * SHA ancestor of dev/main    → PASS
 * SHA not an ancestor         → FAIL (OMN-15216 strandable pre-merge pin)
-* missing Evidence-Source     → PENDING (autobind mint may be in flight)
+* missing Evidence-Source with a unique merged companion by title
+                              → PASS (OMN-18338)
+* missing Evidence-Source without a resolved companion
+                              → PENDING (autobind mint may be in flight)
 * missing Evidence-Source AND the producer reported ERROR on this head
                               → FAIL immediately, naming the reason (OMN-18069)
 * malformed Evidence-Source   → FAIL
@@ -35,11 +38,13 @@ from scripts.ci.check_occ_companion_merged import (
     EXIT_FAIL,
     EXIT_PASS,
     EXIT_PENDING,
+    GhFetcher,
     evaluate_once,
     main,
     parse_evidence_source,
     read_autobind_outcome,
     resolve_pr_number,
+    select_merged_companion,
 )
 
 pytestmark = pytest.mark.unit
@@ -57,6 +62,8 @@ class FakeFetcher:
         prs: dict[tuple[str, str], dict[str, object] | None] | None = None,
         compare: dict[tuple[str, str], str | None] | None = None,
         check_runs: dict[tuple[str, str], list[dict[str, object]] | None] | None = None,
+        candidates: dict[tuple[str, str, str], list[dict[str, object]] | None]
+        | None = None,
     ) -> None:
         self._prs = prs or {}
         self._compare = compare or {}
@@ -64,6 +71,8 @@ class FakeFetcher:
         # ordinary case; `None` = "the read itself failed", which must be a
         # distinct input because the gate may never treat one as the other.
         self._check_runs = check_runs or {}
+        self._candidates = candidates or {}
+        self.candidate_reads: list[tuple[str, str, str]] = []
 
     def pr_view(self, repo: str, number: str, fields: str) -> dict[str, object] | None:
         return self._prs.get((repo, str(number)))
@@ -73,6 +82,13 @@ class FakeFetcher:
 
     def check_runs(self, repo: str, head_sha: str) -> list[dict[str, object]] | None:
         return self._check_runs.get((repo, head_sha), [])
+
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]] | None:
+        key = (occ_repo, repo, pr_number)
+        self.candidate_reads.append(key)
+        return self._candidates.get(key, [])
 
 
 def _product_pr(
@@ -161,6 +177,243 @@ class TestCompanionPrVerdicts:
             }
         )
         assert _evaluate(fetcher).code == EXIT_PENDING
+
+
+class TestCompanionResolvedFromRecord:
+    """OMN-18338 — lost stamps cannot hide uniquely bound merged evidence."""
+
+    @staticmethod
+    def _candidate(
+        *,
+        number: int = 7001,
+        title: str = (
+            "evidence(OMN-18338): OCC companion for OmniNode-ai/omnibase_core#2500"
+        ),
+        state: str = "MERGED",
+    ) -> dict[str, object]:
+        return {"number": number, "title": title, "state": state}
+
+    def _fetcher(
+        self,
+        candidates: list[dict[str, object]] | None,
+        *,
+        body: str = "description lost its stamp",
+        companion_state: dict[str, object] | None = None,
+    ) -> FakeFetcher:
+        return FakeFetcher(
+            prs={
+                (PRODUCT_REPO, "2500"): _product_pr(body),
+                (OCC_REPO, "7001"): companion_state,
+            },
+            candidates={(OCC_REPO, PRODUCT_REPO, "2500"): candidates},
+        )
+
+    def test_unique_merged_companion_without_stamp_passes(self) -> None:
+        fetcher = self._fetcher(
+            [self._candidate()],
+            companion_state={"state": "MERGED", "mergeCommit": {"oid": "abc123"}},
+        )
+        verdict = _evaluate(fetcher)
+        assert verdict.code == EXIT_PASS
+        assert "OCC#7001" in verdict.reason
+        assert "abc123" in verdict.reason
+        assert "resolved from the change-control record" in verdict.reason
+        assert "no Evidence-Source line" in verdict.reason
+        assert "OMN-18338" in verdict.reason
+        assert fetcher.candidate_reads == [(OCC_REPO, PRODUCT_REPO, "2500")]
+
+    @pytest.mark.parametrize(
+        "candidates",
+        [
+            [
+                _candidate(title="OCC companion for omnibase_core#25000"),
+                _candidate(number=7002, title="OCC companion for omnibase_core#250"),
+            ],
+            [_candidate(state="OPEN")],
+            [_candidate(), _candidate(number=7002)],
+            None,
+            [],
+        ],
+        ids=["number-traps", "open", "ambiguous", "unreadable", "absent"],
+    )
+    def test_unresolved_companion_keeps_existing_pending_verdict(
+        self, candidates: list[dict[str, object]] | None
+    ) -> None:
+        fetcher = self._fetcher(
+            candidates,
+            companion_state={"state": "MERGED", "mergeCommit": {"oid": "abc123"}},
+        )
+        verdict = _evaluate(fetcher)
+        assert verdict.code == EXIT_PENDING
+        assert verdict.reason == (
+            f"{PRODUCT_REPO}#2500 body has no 'Evidence-Source:' line yet "
+            "(occ-autobind mint may still be in flight)"
+        )
+
+    @pytest.mark.parametrize("has_companion", [True, False])
+    def test_record_resolution_precedes_terminal_autobind_error(
+        self, has_companion: bool
+    ) -> None:
+        outcomes = TestAutobindOutcomeShortCircuit()
+        fetcher = FakeFetcher(
+            prs={
+                (PRODUCT_REPO, "2500"): _product_pr("no stamp", head_sha=outcomes.HEAD),
+                (OCC_REPO, "7001"): {
+                    "state": "MERGED",
+                    "mergeCommit": {"oid": "abc123"},
+                },
+            },
+            check_runs={
+                (PRODUCT_REPO, outcomes.HEAD): [outcomes._outcome_run("ERROR")]
+            },
+            candidates={
+                (OCC_REPO, PRODUCT_REPO, "2500"): (
+                    [self._candidate()] if has_companion else []
+                )
+            },
+        )
+        verdict = _evaluate(fetcher)
+        if has_companion:
+            assert verdict.code == EXIT_PASS
+            assert "resolved from the change-control record" in verdict.reason
+        else:
+            assert verdict.code == EXIT_FAIL
+            assert outcomes.REASON in verdict.reason
+            assert "OMN-18069" in verdict.reason
+
+    def test_present_stamp_wins_without_lookup(self) -> None:
+        fetcher = FakeFetcher(
+            prs={
+                (PRODUCT_REPO, "2500"): _product_pr("Evidence-Source: OCC#5032"),
+                (OCC_REPO, "5032"): {"state": "OPEN", "mergeCommit": None},
+                (OCC_REPO, "7001"): {"state": "MERGED"},
+            },
+            candidates={(OCC_REPO, PRODUCT_REPO, "2500"): [self._candidate()]},
+        )
+        verdict = _evaluate(fetcher)
+        assert verdict.code == EXIT_PENDING
+        assert "OCC#5032" in verdict.reason
+        assert fetcher.candidate_reads == []
+
+    @pytest.mark.parametrize("override", ["", "OCC#7001"])
+    def test_override_never_looks_up_candidates(self, override: str) -> None:
+        fetcher = self._fetcher(
+            [self._candidate()], companion_state={"state": "MERGED"}
+        )
+        verdict = _evaluate(fetcher, evidence_source_override=override)
+        assert verdict.code == (EXIT_PASS if override else EXIT_PENDING)
+        assert "resolved from the change-control record" not in verdict.reason
+        assert fetcher.candidate_reads == []
+
+    @pytest.mark.parametrize(
+        ("state", "expected"),
+        [(None, EXIT_PENDING), ("OPEN", EXIT_PENDING), ("CLOSED", EXIT_FAIL)],
+    )
+    def test_candidate_state_is_rechecked_through_pr_view(
+        self, state: str | None, expected: int
+    ) -> None:
+        fetcher = self._fetcher(
+            [self._candidate()],
+            companion_state={"state": state} if state else None,
+        )
+        verdict = _evaluate(fetcher)
+        assert verdict.code == expected
+        assert "7001" in verdict.reason
+        assert "resolved from the change-control record" not in verdict.reason
+
+    @pytest.mark.parametrize(
+        ("title", "expected"),
+        [
+            (
+                "hand-authored OCC companion for omnibase_core#2500 pin bump",
+                "OCC#7001",
+            ),
+            ("OCC companion for omninode_infra#2500", None),
+            ("EVIDENCE: occ COMPANION FOR omninode-AI/OMNIBASE_CORE#2500", "OCC#7001"),
+        ],
+        ids=["bare-name", "wrong-repo", "case-insensitive"],
+    )
+    def test_title_selection(self, title: str, expected: str | None) -> None:
+        ref, detail = select_merged_companion(
+            [self._candidate(title=title, state="merged")], PRODUCT_REPO, "2500"
+        )
+        assert ref == expected
+        if expected is None:
+            assert detail == "no merged companion"
+
+    def test_duplicate_records_are_one_distinct_companion(self) -> None:
+        ref, _detail = select_merged_companion(
+            [self._candidate(), self._candidate()], PRODUCT_REPO, "2500"
+        )
+        assert ref == "OCC#7001"
+
+    def test_ambiguous_detail_names_both_numbers(self) -> None:
+        ref, detail = select_merged_companion(
+            [self._candidate(), self._candidate(number=7002)], PRODUCT_REPO, "2500"
+        )
+        assert ref is None
+        assert "ambiguous" in detail
+        assert "7001" in detail
+        assert "7002" in detail
+
+    def test_short_number_search_does_not_match_longer_number(self) -> None:
+        assert select_merged_companion([self._candidate()], PRODUCT_REPO, "25") == (
+            None,
+            "no merged companion",
+        )
+
+
+class TestMergedCompanionCandidates:
+    """OMN-18338 — fixed argv and failed reads remain distinct from absence."""
+
+    @pytest.mark.parametrize(
+        ("raw", "expected"),
+        [
+            (
+                '[{"number": 7001, "title": "t", "state": "MERGED"}]',
+                [{"number": 7001, "title": "t", "state": "MERGED"}],
+            ),
+            ("[]", []),
+            (None, None),
+            ("{}", None),
+            ("null", None),
+            ("invalid json", None),
+        ],
+    )
+    def test_fixed_argv_and_read_result(
+        self,
+        monkeypatch: pytest.MonkeyPatch,
+        raw: str | None,
+        expected: list[dict[str, object]] | None,
+    ) -> None:
+        calls: list[list[str]] = []
+
+        def fake_run(self: GhFetcher, argv: list[str]) -> str | None:
+            calls.append(argv)
+            return raw
+
+        monkeypatch.setattr(GhFetcher, "_run", fake_run)
+        assert (
+            GhFetcher().merged_companion_candidates(OCC_REPO, PRODUCT_REPO, "2500")
+            == expected
+        )
+        assert calls == [
+            [
+                "gh",
+                "pr",
+                "list",
+                "--repo",
+                OCC_REPO,
+                "--state",
+                "merged",
+                "--search",
+                '"OCC companion for omnibase_core#2500" in:title',
+                "--json",
+                "number,title,state,mergeCommit",
+                "--limit",
+                "50",
+            ]
+        ]
 
 
 class TestShaVerdicts:
