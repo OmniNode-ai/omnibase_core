@@ -9,7 +9,8 @@ from datetime import UTC, datetime
 
 import pytest
 
-from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
+from omnibase_core.enums.enum_execution_locus_kind import EnumExecutionLocusKind
+from omnibase_core.enums.enum_package_source_kind import EnumPackageSourceKind
 from omnibase_core.models.evidence_bundle.model_artifact_entry import (
     ModelArtifactEntry,
 )
@@ -18,6 +19,9 @@ from omnibase_core.models.evidence_bundle.model_artifact_manifest import (
 )
 from omnibase_core.models.evidence_bundle.model_contract_snapshot import (
     ModelContractSnapshot,
+)
+from omnibase_core.models.evidence_bundle.model_evidence_verifier_check import (
+    ModelEvidenceVerifierCheck,
 )
 from omnibase_core.models.evidence_bundle.model_evidence_verifier_result import (
     ModelEvidenceVerifierResult,
@@ -28,6 +32,8 @@ from omnibase_core.models.evidence_bundle.model_standard_evidence_bundle import 
 from omnibase_core.models.evidence_bundle.model_standard_run_manifest import (
     ModelStandardRunManifest,
 )
+from omnibase_core.models.runtime.model_package_identity import ModelPackageIdentity
+from omnibase_core.models.runtime.model_runtime_identity import ModelRuntimeIdentity
 
 _NOW = datetime(2025, 1, 1, 12, 0, 0, tzinfo=UTC)
 _CID = "test-correlation-id-001"
@@ -64,9 +70,26 @@ def _make_contract_snapshot() -> ModelContractSnapshot:
 def _make_verifier_result() -> ModelEvidenceVerifierResult:
     return ModelEvidenceVerifierResult(
         correlation_id=_CID,
-        status=EnumReceiptStatus.PASS,
-        verifier="ci-verifier",
-        checks=({"check": "artifact_present", "result": "pass"},),
+        verifier=ModelRuntimeIdentity(
+            host="test-host",
+            locus_kind=EnumExecutionLocusKind.CONTAINER,
+            execution_locus="ci-verifier-container",
+            interpreter="/usr/bin/python3",
+            packages={
+                "omnibase-core": ModelPackageIdentity(
+                    name="omnibase-core",
+                    version="1.0.0",
+                    source=EnumPackageSourceKind.VCS,
+                    commit="a" * 40,
+                )
+            },
+            stamped_at=_NOW,
+        ),
+        checks=(
+            ModelEvidenceVerifierCheck(
+                name="artifact_present", ok=True, evidence="Read artifact"
+            ),
+        ),
     )
 
 

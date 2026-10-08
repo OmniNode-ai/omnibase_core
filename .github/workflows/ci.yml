@@ -296,6 +296,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
+      # OMN-18785: executed model falsifiers ride Code Quality, which is
+      # unconditional and required by Quality Gate and CI Summary.
+      - name: Evidence verifier model invariants (OMN-18785)
+        run: uv run --frozen pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -n 0 --reruns 0
+
       - name: Check ruff formatting
         run: uv run ruff format --check src/ tests/
 

@@ -12,6 +12,9 @@ from omnibase_core.models.evidence_bundle.model_artifact_manifest import (
 from omnibase_core.models.evidence_bundle.model_contract_snapshot import (
     ModelContractSnapshot,
 )
+from omnibase_core.models.evidence_bundle.model_evidence_verifier_check import (
+    ModelEvidenceVerifierCheck,
+)
 from omnibase_core.models.evidence_bundle.model_evidence_verifier_result import (
     ModelEvidenceVerifierResult,
 )
@@ -26,6 +29,7 @@ __all__ = [
     "ModelArtifactEntry",
     "ModelArtifactManifest",
     "ModelContractSnapshot",
+    "ModelEvidenceVerifierCheck",
     "ModelEvidenceVerifierResult",
     "ModelStandardEvidenceBundle",
     "ModelStandardRunManifest",
