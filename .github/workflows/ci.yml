@@ -160,7 +160,7 @@ jobs:
   # reports for a `uses:` job; renaming either half breaks the registration.
   route:
     name: Runner Route (OMN-18031)
-    uses: OmniNode-ai/omniclaude/.github/workflows/route-runner-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
+    uses: OmniNode-ai/omnimarket/.github/workflows/route-runner-reusable.yml@01a0d1b3e7d7ba1a09012f9af245ba29afa000b5
     with:
       workflow_path: .github/workflows/ci.yml
     secrets:
