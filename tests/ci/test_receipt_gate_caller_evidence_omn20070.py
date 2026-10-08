@@ -107,7 +107,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "Set up Python 3.13",
         "Install uv",
         "Install the pinned verifier",
-        "Derive the OCC writer app's dependency-pin-only verdict at the head (OMN-17427)",
+        "Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)",
         PG_TOOLS_STEP,
         PG_ENV_STEP,
         HEAD_STEP,

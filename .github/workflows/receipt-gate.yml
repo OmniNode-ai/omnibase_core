@@ -1367,13 +1367,12 @@ jobs:
           echo "DOD_VERIFY_PY=$DOD_VERIFY_PY" >> "$GITHUB_ENV"
           "$DOD_VERIFY_PY" -c "import omnimarket.nodes.node_dod_verify"
 
-      # OMN-17427: S6 retirement removed the caller's OCC producer trigger
-      # (omnimarket#3513), so writer bumps no longer have an autobind outcome.
-      # Run the producer's own classifier in-job over the exact head SHA's git
-      # diff against its merge base, never over PR body text. A new head re-runs
-      # this verdict. It can only ADD the writer app's pin-only exemption, the
-      # same rule OMN-20161 already admits; every failure is not-exempt.
-      - name: Derive the OCC writer app's dependency-pin-only verdict at the head (OMN-17427)
+      # OMN-17427, OMN-20074: derive the writer app's verdict from the exact
+      # head's git diff against its merge base, using the pinned verifier.
+      # Admit dependency-pin-only first, then release cuts with root changelog
+      # additions, one new heading matching project.version, and optional pins.
+      # Every failure is not-exempt; PR title/body never supply this verdict.
+      - name: Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)
         id: writer_pin_only
         continue-on-error: ${{ inputs.shadow == 'true' }}
         if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true'
@@ -1384,7 +1383,7 @@ jobs:
         run: |
           set -euo pipefail
           exempt=false
-          reason="could not derive the dependency-pin-only verdict"
+          reason="could not derive the dependency-pin-only or release-cut verdict"
           derive_pin_only() {
             head_tree="$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT"
             reason="merge base is unresolvable"
@@ -1397,7 +1396,11 @@ jobs:
             git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA" > "$probe_dir/paths" || return 1
             manifest_count=0
             manifest=""
+            changelog_changed=false
             while IFS= read -r -d '' path; do
+              if [ "$path" = CHANGELOG.md ]; then
+                changelog_changed=true
+              fi
               if [ "${path##*/}" = pyproject.toml ]; then
                 manifest_count=$((manifest_count + 1))
                 manifest="$path"
@@ -1421,38 +1424,131 @@ jobs:
                 fi
               done
             fi
+            if [ "$changelog_changed" = true ]; then
+              for blob in changelog-head changelog-base release-project-head; do
+                sha="$HEAD_SHA"
+                path=CHANGELOG.md
+                if [ "$blob" = changelog-base ]; then
+                  sha="$MB"
+                elif [ "$blob" = release-project-head ]; then
+                  path=pyproject.toml
+                fi
+                reason="could not read the $blob blob"
+                git -C "$head_tree" ls-tree -z "$sha" -- "$path" > "$probe_dir/tree-$blob" || return 1
+                # An absent blob stays absent on disk and becomes None.
+                if [ -s "$probe_dir/tree-$blob" ]; then
+                  git -C "$head_tree" show "$sha:$path" > "$probe_dir/$blob" || return 1
+                fi
+              done
+            fi
             reason="the pinned verifier Python is missing"
             [ -n "${DOD_VERIFY_PY:-}" ] && [ -x "$DOD_VERIFY_PY" ] || return 1
             reason="the pinned classifier failed"
-            (cd "$RUNNER_TEMP" && "$DOD_VERIFY_PY" -I - "$probe_dir/paths" "$probe_dir/pyproject-head" "$probe_dir/pyproject-base" <<'PY'
+            (cd "$RUNNER_TEMP" && "$DOD_VERIFY_PY" -I - "$probe_dir/paths" "$probe_dir/pyproject-head" "$probe_dir/pyproject-base" "$probe_dir/changelog-head" "$probe_dir/changelog-base" "$probe_dir/release-project-head" <<'PY'
+          import difflib
           import json
+          import re
           import sys
+          import tomllib
           from pathlib import Path
 
-          from omnimarket.occ_content_probe import classify_dependency_pin_only
-
-          paths_file, head_file, base_file = map(Path, sys.argv[1:])
-          raw_paths = paths_file.read_bytes()
-          paths = [path.decode("utf-8") for path in raw_paths.split(b"\0") if path]
-          pin_only, reason = classify_dependency_pin_only(
-              paths,
-              pyproject_head=head_file.read_text(encoding="utf-8") if head_file.exists() else None,
-              pyproject_base=base_file.read_text(encoding="utf-8") if base_file.exists() else None,
+          from omnimarket.occ_content_probe import (
+              classify_dependency_pin_only,
+              is_release_artifact_only_diff,
           )
-          print(json.dumps({"pin_only": pin_only, "reason": reason}))
+
+          def read_optional(path):
+              return path.read_text(encoding="utf-8") if path.exists() else None
+
+          def classify_release_cut(paths, pyproject_head, pyproject_base,
+                                   changelog_head_file, changelog_base_file, project_file):
+              if paths.count("CHANGELOG.md") != 1:
+                  return False, "release cut requires root CHANGELOG.md"
+              if not is_release_artifact_only_diff(paths):
+                  return False, "release cut is not a release-artifact-only diff"
+              if any(path not in {"CHANGELOG.md", "pyproject.toml", "uv.lock"} for path in paths):
+                  return False, "release cut contains a path outside the root release allowlist"
+              manifests = [path for path in paths if path in {"pyproject.toml", "uv.lock"}]
+              if manifests:
+                  pin_only, reason = classify_dependency_pin_only(
+                      manifests, pyproject_head=pyproject_head, pyproject_base=pyproject_base,
+                  )
+                  if not pin_only:
+                      return False, f"release cut manifests are not dependency-pin-only: {reason}"
+              changelog_head = read_optional(changelog_head_file)
+              if changelog_head is None:
+                  return False, "release cut CHANGELOG.md is unreadable at the head"
+              base = (read_optional(changelog_base_file) or "").splitlines(keepends=True)
+              head = changelog_head.splitlines(keepends=True)
+              inserted = []
+              for tag, _, _, head_start, head_end in difflib.SequenceMatcher(
+                  None, base, head, autojunk=False,
+              ).get_opcodes():
+                  if tag not in {"equal", "insert"}:
+                      return False, "release cut rewrites or deletes an existing changelog line"
+                  if tag == "insert":
+                      inserted.extend(head[head_start:head_end])
+              headings = [line.rstrip("\r\n") for line in inserted if line.startswith("## ")]
+              if len(headings) != 1:
+                  return False, "release cut requires exactly one inserted ## heading"
+              heading = re.fullmatch(r"## v(\d+\.\d+\.\d+) \((\d{4}-\d{2}-\d{2})\)", headings[0])
+              if heading is None:
+                  return False, "release cut heading must match ## v<version> (<date>)"
+              first = next((line.rstrip("\r\n") for line in inserted if line.strip()), None)
+              if first != headings[0]:
+                  return False, "release cut heading is not the first non-blank inserted line"
+              project = read_optional(project_file)
+              if project is None:
+                  return False, "release cut root pyproject.toml is unreadable at the head"
+              try:
+                  version = tomllib.loads(project).get("project", {}).get("version")
+              except (tomllib.TOMLDecodeError, AttributeError):
+                  return False, "release cut root pyproject.toml does not parse at the head"
+              if version != heading.group(1):
+                  return False, "release cut heading version does not match head project.version"
+              if any(line.startswith(f"## v{version} ") for line in base):
+                  return False, "release cut version already has a heading at the merge base"
+              return True, f"release cut adds changelog version {version} with optional dependency pins"
+
+          def classify():
+              paths_file, head_file, base_file, changelog_head, changelog_base, project_file = map(Path, sys.argv[1:])
+              raw_paths = paths_file.read_bytes()
+              paths = [path.decode("utf-8") for path in raw_paths.split(b"\0") if path]
+              pyproject_head, pyproject_base = read_optional(head_file), read_optional(base_file)
+              pin_only, pin_reason = classify_dependency_pin_only(
+                  paths, pyproject_head=pyproject_head, pyproject_base=pyproject_base,
+              )
+              if pin_only:
+                  return {"exempt": True, "kind": "dependency_pin_only", "reason": pin_reason}
+              release_cut, reason = classify_release_cut(
+                  paths, pyproject_head, pyproject_base, changelog_head, changelog_base, project_file,
+              )
+              return {"exempt": release_cut, "kind": "release_cut" if release_cut else "none",
+                      "reason": reason if release_cut else f"{reason}; dependency-pin-only: {pin_reason}"}
+
+          try:
+              verdict = classify()
+          except Exception as exc:
+              verdict = {"exempt": False, "kind": "none", "reason": f"the pinned classifier failed: {exc}"}
+          print(json.dumps(verdict))
           PY
             ) > "$probe_dir/verdict.json" || return 1
             reason="the pinned classifier output is not one valid JSON verdict"
-            jq -s -e 'length == 1 and (.[0] | type == "object" and (.pin_only | type == "boolean") and (.reason | type == "string"))' "$probe_dir/verdict.json" > /dev/null 2>&1 || return 1
+            jq -s -e 'length == 1 and (.[0] | type == "object" and (.exempt | type == "boolean") and (.kind == "dependency_pin_only" or .kind == "release_cut" or .kind == "none") and (.exempt == (.kind != "none")) and (.reason | type == "string"))' "$probe_dir/verdict.json" > /dev/null 2>&1 || return 1
             reason="$(jq -r '.reason' "$probe_dir/verdict.json")" || return 1
-            pin_only="$(jq -r '.pin_only' "$probe_dir/verdict.json")" || return 1
-            [ "$pin_only" = true ] || return 1
+            kind="$(jq -r '.kind' "$probe_dir/verdict.json")" || return 1
+            derived_exempt="$(jq -r '.exempt' "$probe_dir/verdict.json")" || return 1
+            [ "$derived_exempt" = true ] || return 1
           }
           # Every operation in the function is guarded: a failed computation
           # leaves the single output false and lets the existing gate continue.
           if derive_pin_only; then
             exempt=true
-            echo "::notice::OCC writer app authored a dependency-pin-only change at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by the pinned verifier's classify_dependency_pin_only: ${reason}; OMN-17427). The OCC autobind outcome this exemption used to read is no longer produced for caller-evidence repositories; the evidence gate is not applicable."
+            if [ "$kind" = dependency_pin_only ]; then
+              echo "::notice::OCC writer app authored a dependency-pin-only change at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by the pinned verifier's classify_dependency_pin_only: ${reason}; OMN-17427). The OCC autobind outcome this exemption used to read is no longer produced for caller-evidence repositories; the evidence gate is not applicable."
+            else
+              echo "::notice::OCC writer app authored a release cut at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB}: ${reason}; OMN-20074); the evidence gate is not applicable."
+            fi
           else
             echo "::notice::OCC writer app is not exempt: ${reason} (OMN-17427); the evidence gate continues."
           fi
