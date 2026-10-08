@@ -1,0 +1,40 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17864
+title: CI Summary recovery polling respects its deadline
+summary: The CI Summary workflow bounds paginated GitHub API reads and retry sleeps by the remaining deadline
+  budget, fails closed when that budget expires, and preserves the producer event when deciding whether
+  a newer workflow run can supersede a red check.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17864-bounded-recovery
+    statement: CI Summary must allow eligible replacement producers and transient API failures to recover
+      while rejecting unrelated events and failing closed at its configured deadline.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: executing the shipped Bash poller and real gate CLI proves replacement recovery,
+          unrelated-event rejection, bounded sustained holds, bounded unreadable inputs, transient API
+          recovery, and API reads bounded by the remaining budget. -- falsifier: uv run pytest tests/ci/test_ci_summary_l4_wait_omn20522.py
+          -q -o addopts=""'
+evidence_requirements:
+  - kind: tests
+    description: Execute the shipped poller and gate CLI with API and clock adapters, including deadline
+      failures and successful recovery controls.
+    command: uv run pytest tests/ci/test_ci_summary_l4_wait_omn20522.py -q -o addopts=""
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-17864-bounded-recovery
+    description: The poller execution regressions prove deadline enforcement and producer-event filtering;
+      the same test command fails with the pre-fix workflow.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ci_summary_l4_wait_omn20522.py -q -o addopts=""
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1

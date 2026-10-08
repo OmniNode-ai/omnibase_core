@@ -42,6 +42,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from datetime import UTC, datetime
@@ -586,6 +587,12 @@ class TestPollerExecutionOmn17864:
         bin_path = tmp_path / "bin"
         bin_path.mkdir()
         (bin_path / "python3").symlink_to(sys.executable)
+        # Keep real tools visible when installed outside the platform default
+        # PATH (for example, Homebrew on macOS), without exposing the real gh.
+        for tool in ("jq", "timeout"):
+            executable = shutil.which(tool)
+            assert executable is not None, f"poller execution requires {tool}"
+            (bin_path / tool).symlink_to(executable)
         (tmp_path / "scripts").symlink_to(REPO_ROOT / "scripts")
         (tmp_path / "clock").write_text("0\n", encoding="utf-8")
         (tmp_path / "poll").write_text("0\n", encoding="utf-8")
