@@ -852,6 +852,17 @@
   entry: python -m omnibase_core.validators.canonical_file_shape
   pass_filenames: false
   always_run: true
+- id: check-node-home
+  name: Node-home ratchet (OMN-20702)
+  description: >
+    Runs as a canonical COMPUTE node. BLOCKING; a new ONEX node directory outside omnimarket is refused;
+    pre-existing nodes live in the shrink-only .onex_ratchets/node_home_baseline.txt, created once with
+    --write-baseline; no allowlist, no suppression; omnimarket, the home for nodes, does not install this
+    hook.
+  language: python
+  entry: python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check
+  pass_filenames: false
+  always_run: true
 - id: check-shape-gate-independence
   name: Shape-gate detectors never depend on the OCC preflight (OMN-20298)
   description: >

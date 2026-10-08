@@ -42,6 +42,9 @@ from .model_execution_shape_validation import ModelExecutionShapeValidation
 from .model_isolated_step_result import ModelIsolatedStepResult
 from .model_lint_statistics import ModelLintStatistics
 from .model_migration_conflict_union import ModelMigrationConflictUnion
+from .model_node_home_ratchet_finding import ModelNodeHomeRatchetFinding
+from .model_node_home_ratchet_request import ModelNodeHomeRatchetRequest
+from .model_node_home_ratchet_result import ModelNodeHomeRatchetResult
 from .model_rule_configs import (
     ModelRuleAsyncPolicyConfig,
     ModelRuleConfigBase,
@@ -111,6 +114,10 @@ __all__ = [
     "ModelViolationWaiver",
     # Event destination model (OMN-1151)
     "ModelEventDestination",
+    # Node-home ratchet models (OMN-20702)
+    "ModelNodeHomeRatchetFinding",
+    "ModelNodeHomeRatchetRequest",
+    "ModelNodeHomeRatchetResult",
     # Pydantic models (safe to import)
     "ModelLintStatistics",
     "ModelMigrationConflictUnion",

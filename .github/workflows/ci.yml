@@ -2324,6 +2324,8 @@ jobs:
             omnibase_core.validation.validator_receipt_runtime_identity \
             --receipts-dir .
 
+  # Node-home check (OMN-20702) is built here and activated in this repository
+  # by the follow-up change.
   # Canonical-file-shape ratchet (OMN-20304). Operator ruling 2026-10-01: no new
   # scripts, plugins or exceptions in any repository. Refuses a new code file
   # outside src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/
@@ -2367,6 +2369,9 @@ jobs:
 
       - name: Run ratchet unit tests
         run: uv run pytest tests/unit/validators/test_canonical_file_shape.py -v
+
+      - name: Run node-home ratchet unit tests
+        run: uv run pytest tests/unit/nodes/node_node_home_check_compute -v
 
       - name: Positive control (planted bad sample refused, clean sample accepted)
         run: |

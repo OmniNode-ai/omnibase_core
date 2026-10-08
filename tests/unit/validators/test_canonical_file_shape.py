@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.nodes.node_node_home_check_compute.handler import NODE_HOME_BASELINE
 from omnibase_core.validators import canonical_file_shape
 from omnibase_core.validators.canonical_file_shape import (
     DEFAULT_BASELINE,
@@ -303,6 +304,29 @@ def _gate_config(
         "      - id: check-direct-model-call\n"
         f"        args: [--repo, r, --baseline, {baseline}, --base, HEAD]\n"
     )
+
+
+def test_node_home_fixed_baseline_accepted(repo: Path) -> None:
+    _write(repo, NODE_HOME_BASELINE, "src/pkg/nodes/node_x\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_node_home_other_new_baseline_refused(repo: Path) -> None:
+    _write(
+        repo, ".onex_ratchets/other_node_home_baseline.txt", "src/pkg/nodes/node_x\n"
+    )
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_node_home_baseline_growth_is_owned_by_node_home_gate(repo: Path) -> None:
+    _write(repo, NODE_HOME_BASELINE, "src/pkg/nodes/node_x\n")
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "node baseline")
+    _write(repo, NODE_HOME_BASELINE, "src/pkg/nodes/node_x\nsrc/pkg/nodes/node_y\n")
+    _stage(repo)
+    assert _rules(repo) == []
 
 
 def test_gate_declared_baseline_accepted(repo: Path) -> None:

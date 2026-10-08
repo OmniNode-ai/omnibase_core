@@ -1,0 +1,122 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20702
+title: The node-home ratchet refuses new ONEX nodes outside omnimarket
+summary: A canonical COMPUTE node checks the tracked tree against a baseline of node directories and refuses
+  new nodes, baseline growth, stale entries and new onex.nodes entry points. Activation in omnibase_core
+  is a follow-up change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20702
+    statement: omnibase_core must carry a node-home check that refuses new ONEX node directories outside
+      omnimarket.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the node-home check lives in the canonical COMPUTE node node_node_home_check_compute
+          and refuses a new node directory (contract, handlers or class) that is not in the baseline,
+          nested directories included, while the baselined tree passes. -- falsifier: uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -q -k refuses_new_node"
+      - id: AC2
+        statement: "AC2: the baseline only shrinks: growth, stale entries, renames, a deleted baseline
+          and a bootstrap entry that was not a node directory at the base revision are refused. -- falsifier:
+          uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py -q -k baseline_only_shrinks"
+      - id: AC3
+        statement: "AC3: there is no exception mechanism: the CLI rejects override arguments, the baseline
+          is written once, and omnimarket is checked like any repository. -- falsifier: uv run pytest
+          tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py -q -k no_exception_mechanism"
+      - id: AC4
+        statement: "AC4: the canonical file shape validator admits the node-home gate's fixed baseline
+          path and refuses any other new baseline. -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py
+          -q -k node_home"
+      - id: AC5
+        statement: "AC5: the request and result models are frozen and forbid extra fields, and this repository's
+          tree passes against its written baseline. -- falsifier: uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -q -k \"request_and_result_models_are_frozen_and_forbid_extra or this_repository_tree_passes_written_baseline\""
+evidence_requirements:
+  - kind: tests
+    description: "the node-home check lives in the canonical COMPUTE node node_node_home_check_compute
+      and refuses a new node directory (contract, handlers or class) that is not in the baseline, nested
+      directories included, while the baselined tree passes."
+    command: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py -q -k
+      refuses_new_node"
+  - kind: tests
+    description: "the baseline only shrinks: growth, stale entries, renames, a deleted baseline and a
+      bootstrap entry that was not a node directory at the base revision are refused."
+    command: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py -q -k
+      baseline_only_shrinks"
+  - kind: tests
+    description: "there is no exception mechanism: the CLI rejects override arguments, the baseline is
+      written once, and omnimarket is checked like any repository."
+    command: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py -q -k
+      no_exception_mechanism"
+  - kind: tests
+    description: "the canonical file shape validator admits the node-home gate's fixed baseline path and
+      refuses any other new baseline."
+    command: "uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k node_home"
+  - kind: tests
+    description: "the request and result models are frozen and forbid extra fields, and this repository's
+      tree passes against its written baseline."
+    command: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py -q -k
+      \"request_and_result_models_are_frozen_and_forbid_extra or this_repository_tree_passes_written_baseline\""
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20702-ac1
+    description: "the node-home check lives in the canonical COMPUTE node node_node_home_check_compute
+      and refuses a new node directory (contract, handlers or class) that is not in the baseline, nested
+      directories included, while the baselined tree passes."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -q -k refuses_new_node"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20702-ac2
+    description: "the baseline only shrinks: growth, stale entries, renames, a deleted baseline and a
+      bootstrap entry that was not a node directory at the base revision are refused."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -q -k baseline_only_shrinks"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-20702-ac3
+    description: "there is no exception mechanism: the CLI rejects override arguments, the baseline is
+      written once, and omnimarket is checked like any repository."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -q -k no_exception_mechanism"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn-20702-ac4
+    description: "the canonical file shape validator admits the node-home gate's fixed baseline path and
+      refuses any other new baseline."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k node_home"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn-20702-ac5
+    description: "the request and result models are frozen and forbid extra fields, and this repository's
+      tree passes against its written baseline."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -q -k \"request_and_result_models_are_frozen_and_forbid_extra or this_repository_tree_passes_written_baseline\""
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
