@@ -4,7 +4,9 @@ ticket_id: OMN-20074
 title: In caller evidence mode the shared receipt gate's verify job reports a success no-op, never skipped
 summary: With evidence-source caller, shadow or not, verify has no job-level condition and runs as a reported
   success no-op. The bot_exempt step writes exempt=true and emits one notice with the reason before reading
-  the pull request; every later step is gated on the exemption. Shadow governs only dod-verify.
+  the pull request; every later step is gated on the exemption. Shadow governs only dod-verify. With compare-with-occ
+  true, a missing PR-head contract names its home in another repository for the OCC difference without
+  changing the head step's refusal.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -18,11 +20,25 @@ requirements:
           step exits 0, writes only exempt=true and emits exactly one notice with the no-op reason before
           reading the pull request. -- falsifier: uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py
           -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason'
+  - id: req-omn20074-contract-home
+    statement: When compare-with-occ is true and the PR head lacks its cited contract, probe other product
+      repositories before onex_change_control and write the first home for contract_in_another_repo classification,
+      preserving the original error, notice and exit 1.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the missing-contract path writes the first available home, prioritizes product
+          repositories over OCC, skips the caller, writes nothing when absent, and never probes with compare-with-occ
+          false; occ-difference still reads the same dod directory. -- falsifier: uv run pytest tests/ci/test_receipt_gate_contract_home_omn20074.py
+          -q -p no:randomly'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
       mode is a success no-op with one notice line, without reading the pull request.
     command: uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason
+  - kind: tests
+    description: Execute the head step with fake GitHub API responses to prove contract-home precedence,
+      absent and disabled behavior, and the unchanged refusal.
+    command: uv run pytest tests/ci/test_receipt_gate_contract_home_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -38,3 +54,12 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
+  - id: dod-omn-20074-ac2
+    description: The workflow tests prove contract-home discovery and the unchanged missing-contract refusal.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_contract_home_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2

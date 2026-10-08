@@ -20,6 +20,9 @@
 #                   (default: 0.4.280; must be numeric MAJOR.MINOR.PATCH).
 #   compare-with-occ: "true" during the pilot, when dod-verify is required
 #                   beside OCC's contexts; "false" otherwise (default: "false").
+#                   With "true", the dod-verify head step also names a
+#                   missing contract's home for the difference step
+#                   (OMN-20074).
 #   shadow:         "true" while a repository counts this gate's verdict beside
 #                   OCC's without enforcing it (OMN-20073, OCC retirement S5);
 #                   "false" otherwise (default: "false"). Governs only
@@ -1551,6 +1554,9 @@ jobs:
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          COMPARE_WITH_OCC: ${{ inputs.compare-with-occ }}
+          CONTRACT_HOME_REPOSITORIES: "omnibase_core omnibase_infra omniclaude omnimarket omnidash onex_change_control"
           # CI checks the exact subject commit, detached from a moving upstream.
           DOD_VERIFY_ALLOW_STALE_PRODUCT_CLONE: "1"
         run: |
@@ -1562,6 +1568,20 @@ jobs:
             contract="$head_tree/contracts/$ticket.yaml"
             if [ ! -f "$contract" ]; then
               echo "::error::pull request cites $ticket but carries no contracts/$ticket.yaml"
+              # OMN-20074: rulings 2026-10-08T09:57:41Z and 2026-10-08T14:59:17Z;
+              # probe product repositories before onex_change_control; the refusal stands.
+              if [ "${COMPARE_WITH_OCC:-false}" = "true" ]; then
+                for home in $CONTRACT_HOME_REPOSITORIES; do
+                  if [ "$home" = "$REPO_SHORT" ]; then
+                    continue
+                  fi
+                  if gh api "repos/$REPO_OWNER/$home/contents/contracts/$ticket.yaml" --silent 2>/dev/null; then
+                    printf '%s\n' "$REPO_OWNER/$home" > "$RUNNER_TEMP/dod/contract-home-$ticket.txt"
+                    echo "::notice::contracts/$ticket.yaml is on the default branch of $REPO_OWNER/$home; the OCC difference reports contract_in_another_repo"
+                    break
+                  fi
+                done
+              fi
               echo "::notice::Include contracts/$ticket.yaml at this PR head; a later companion merge cannot supply evidence for this head."
               exit 1
             fi
