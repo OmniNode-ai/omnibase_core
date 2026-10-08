@@ -75,6 +75,11 @@ class FakeFetcher(gate.GhFetcher):
         self.check_run_shas.append(head_sha)
         return self._check_runs  # type: ignore[return-value]  # NOTE(OMN-20161): test double
 
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]] | None:
+        return []
+
 
 def _eval(fetcher: FakeFetcher) -> gate.Verdict:
     return gate.evaluate_once(
