@@ -1474,7 +1474,7 @@ jobs:
               echo "::error::pull request cites $ticket but carries no contracts/$ticket.yaml"
               # OMN-20074: rulings 2026-10-08T09:57:41Z and 2026-10-08T14:59:17Z;
               # probe product repositories before onex_change_control; the refusal stands.
-              if [ "$COMPARE_WITH_OCC" = "true" ]; then
+              if [ "${COMPARE_WITH_OCC:-false}" = "true" ]; then
                 for home in $CONTRACT_HOME_REPOSITORIES; do
                   if [ "$home" = "$REPO_SHORT" ]; then
                     continue
