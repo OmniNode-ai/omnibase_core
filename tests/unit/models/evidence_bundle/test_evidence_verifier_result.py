@@ -11,8 +11,8 @@ from itertools import permutations
 import pytest
 from pydantic import ValidationError
 
+import omnibase_core.models.evidence_bundle as evidence_bundle
 from omnibase_core.models.evidence_bundle import (
-    ModelEvidenceVerifierCheck,
     ModelEvidenceVerifierResult,
     ModelStandardEvidenceBundle,
     ModelStandardRunManifest,
@@ -232,7 +232,7 @@ def test_bundle_constructs_and_round_trips_with_typed_verifier_result() -> None:
 def test_verdict_and_typed_checks_are_frozen() -> None:
     result = ModelEvidenceVerifierResult.model_validate(_payload(_check()))
     with pytest.raises(ValidationError, match="frozen"):
-        result.status = "FAIL"
+        setattr(result, "status", "FAIL")
     with pytest.raises(ValidationError, match="frozen"):
         result.checks[0].ok = False
 
@@ -256,7 +256,9 @@ def test_verifier_requires_existing_runtime_identity_fields(field: str) -> None:
 
 
 def test_typed_checks_construct_through_the_package_export() -> None:
-    check = ModelEvidenceVerifierCheck(
+    check_type = getattr(evidence_bundle, "ModelEvidenceVerifierCheck", None)
+    assert check_type is not None
+    check = check_type(
         name="artifact_presence", ok=True, evidence="Read the artifact manifest"
     )
     result = ModelEvidenceVerifierResult(
