@@ -1231,6 +1231,7 @@ jobs:
           # ("dependabot[bot]"). Keep in sync with
           # validator_receipt_gate.DEPENDENCY_BOT_AUTHORS.
           exempt="false"
+          writer_app="false"
           case "$author_login" in
             "dependabot[bot]"|"app/dependabot"|"dependabot"|"renovate[bot]"|"app/renovate"|"renovate")
               exempt="true"
@@ -1256,6 +1257,8 @@ jobs:
                    --pr-number "$resolved_pr_num"; then
                 exempt="true"
                 echo "::notice::OCC writer app '${author_login}' authored a dependency-pin-only change (producer outcome bound to this head SHA, OMN-20161); the evidence gate is not applicable."
+              else
+                writer_app="true"
               fi
               ;;
           esac
@@ -1264,6 +1267,7 @@ jobs:
             echo "::notice::Receipt-gate exemption (OMN-13762): PR authored by trusted dependency bot '${author_login}'. Dependency-bump PRs carry no Linear ticket or OCC receipt; the evidence gate is not applicable. Receipt-evidence steps are skipped; the job still reports success."
           fi
           echo "exempt=${exempt}" >> "$GITHUB_OUTPUT"
+          echo "writer_app=${writer_app}" >> "$GITHUB_OUTPUT"
 
       - name: Refuse anything but a same-repository pull request
         id: same_repo
@@ -1360,6 +1364,98 @@ jobs:
           echo "DOD_VERIFY_PY=$DOD_VERIFY_PY" >> "$GITHUB_ENV"
           "$DOD_VERIFY_PY" -c "import omnimarket.nodes.node_dod_verify"
 
+      # OMN-17427: S6 retirement removed the caller's OCC producer trigger
+      # (omnimarket#3513), so writer bumps no longer have an autobind outcome.
+      # Run the producer's own classifier in-job over the exact head SHA's git
+      # diff against its merge base, never over PR body text. A new head re-runs
+      # this verdict. It can only ADD the writer app's pin-only exemption, the
+      # same rule OMN-20161 already admits; every failure is not-exempt.
+      - name: Derive the OCC writer app's dependency-pin-only verdict at the head (OMN-17427)
+        id: writer_pin_only
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true'
+        env:
+          REPO_SHORT: ${{ github.event.repository.name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          exempt=false
+          reason="could not derive the dependency-pin-only verdict"
+          derive_pin_only() {
+            head_tree="$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT"
+            reason="merge base is unresolvable"
+            MB="$(git -C "$head_tree" merge-base "$BASE_SHA" "$HEAD_SHA")" || return 1
+            [ -n "$MB" ] || return 1
+            reason="could not prepare classifier input files"
+            mkdir -p "$RUNNER_TEMP/dod" || return 1
+            probe_dir="$(mktemp -d "$RUNNER_TEMP/dod/writer-pin-only.XXXXXX")" || return 1
+            reason="could not read the head's changed paths"
+            git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA" > "$probe_dir/paths" || return 1
+            manifest_count=0
+            manifest=""
+            while IFS= read -r -d '' path; do
+              if [ "${path##*/}" = pyproject.toml ]; then
+                manifest_count=$((manifest_count + 1))
+                manifest="$path"
+              fi
+            done < "$probe_dir/paths" || return 1
+            if [ "$manifest_count" -gt 1 ]; then
+              reason="more than one dependency manifest changed"
+              return 1
+            fi
+            if [ "$manifest_count" -eq 1 ]; then
+              for side in head base; do
+                sha="$HEAD_SHA"
+                if [ "$side" = base ]; then
+                  sha="$MB"
+                fi
+                reason="could not read the $side dependency manifest"
+                git -C "$head_tree" ls-tree -z "$sha" -- "$manifest" > "$probe_dir/tree-$side" || return 1
+                # An absent side stays absent on disk and is passed as None.
+                if [ -s "$probe_dir/tree-$side" ]; then
+                  git -C "$head_tree" show "$sha:$manifest" > "$probe_dir/pyproject-$side" || return 1
+                fi
+              done
+            fi
+            reason="the pinned verifier Python is missing"
+            [ -n "${DOD_VERIFY_PY:-}" ] && [ -x "$DOD_VERIFY_PY" ] || return 1
+            reason="the pinned classifier failed"
+            (cd "$RUNNER_TEMP" && "$DOD_VERIFY_PY" -I - "$probe_dir/paths" "$probe_dir/pyproject-head" "$probe_dir/pyproject-base" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          from omnimarket.occ_content_probe import classify_dependency_pin_only
+
+          paths_file, head_file, base_file = map(Path, sys.argv[1:])
+          raw_paths = paths_file.read_bytes()
+          paths = [path.decode("utf-8") for path in raw_paths.split(b"\0") if path]
+          pin_only, reason = classify_dependency_pin_only(
+              paths,
+              pyproject_head=head_file.read_text(encoding="utf-8") if head_file.exists() else None,
+              pyproject_base=base_file.read_text(encoding="utf-8") if base_file.exists() else None,
+          )
+          print(json.dumps({"pin_only": pin_only, "reason": reason}))
+          PY
+            ) > "$probe_dir/verdict.json" || return 1
+            reason="the pinned classifier output is not one valid JSON verdict"
+            jq -s -e 'length == 1 and (.[0] | type == "object" and (.pin_only | type == "boolean") and (.reason | type == "string"))' "$probe_dir/verdict.json" > /dev/null 2>&1 || return 1
+            reason="$(jq -r '.reason' "$probe_dir/verdict.json")" || return 1
+            pin_only="$(jq -r '.pin_only' "$probe_dir/verdict.json")" || return 1
+            [ "$pin_only" = true ] || return 1
+          }
+          # Every operation in the function is guarded: a failed computation
+          # leaves the single output false and lets the existing gate continue.
+          if derive_pin_only; then
+            exempt=true
+            echo "::notice::OCC writer app authored a dependency-pin-only change at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by the pinned verifier's classify_dependency_pin_only: ${reason}; OMN-17427). The OCC autobind outcome this exemption used to read is no longer produced for caller-evidence repositories; the evidence gate is not applicable."
+          else
+            echo "::notice::OCC writer app is not exempt: ${reason} (OMN-17427); the evidence gate continues."
+          fi
+          echo "exempt=${exempt}" >> "$GITHUB_OUTPUT"
+          exit 0
+
       # OMN-20543: a test that starts its own native cluster (initdb into a
       # temporary directory) needs the PG16 server tools on PATH. Fail here,
       # before any verdict, when they are missing: a database test that cannot
@@ -1367,7 +1463,7 @@ jobs:
       - name: Provide the PostgreSQL 16 server tools
         id: pg_tools
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
         run: |
           set -euo pipefail
           pg16_bin=/usr/lib/postgresql/16/bin
@@ -1395,7 +1491,7 @@ jobs:
       - name: Export the Postgres service to the bound tests
         id: pg_env
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
         run: |
@@ -1451,7 +1547,7 @@ jobs:
       - name: Verify the contract at the PR head
         id: head_verify
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -1491,7 +1587,7 @@ jobs:
       - name: Prepare the merge base with the pull request's test side laid over it
         id: merge_base
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -1642,7 +1738,7 @@ jobs:
       - name: Must-fail control at the merge base
         id: base_control
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -1821,7 +1917,7 @@ jobs:
       - name: Difference against OCC's verdict for the same head
         id: occ_difference
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: ${{ !cancelled() && steps.bot_exempt.outputs.exempt != 'true' && inputs.compare-with-occ == 'true' }}
+        if: ${{ !cancelled() && steps.bot_exempt.outputs.exempt != 'true' && inputs.compare-with-occ == 'true' && steps.writer_pin_only.outputs.exempt != 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -1917,7 +2013,7 @@ jobs:
             {
               new_path=verified
               refused_step=none
-              for step_id in occ_probe_checkout bot_exempt same_repo tickets head_checkout setup_python install_uv verifier pg_tools pg_env head_verify merge_base base_control; do
+              for step_id in occ_probe_checkout bot_exempt same_repo tickets head_checkout setup_python install_uv verifier writer_pin_only pg_tools pg_env head_verify merge_base base_control; do
                 if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
                   new_path=refused
                   refused_step="$step_id"
@@ -1925,6 +2021,9 @@ jobs:
                 fi
               done
               if [ "$(jq -r '.bot_exempt.outputs.exempt // empty' <<< "$STEPS_JSON")" = true ]; then
+                new_path=exempt
+              fi
+              if [ "$(jq -r '.writer_pin_only.outputs.exempt // empty' <<< "$STEPS_JSON")" = true ]; then
                 new_path=exempt
               fi
               occ_difference=not_run
@@ -1937,5 +2036,7 @@ jobs:
               printf '%s\n\n' "$verdict_line" >> "$GITHUB_STEP_SUMMARY"
               echo "::notice title=repo-evidence shadow verdict::$verdict_line"
             } || true
+          elif [ "$(jq -r '.writer_pin_only.outputs.exempt // empty' <<< "$STEPS_JSON")" = true ]; then
+            printf '%s\n' 'Writer-app dependency-pin-only exemption: derived at the head (OMN-17427)' >> "$GITHUB_STEP_SUMMARY"
           fi
           exit 0
