@@ -1,0 +1,91 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-18338
+title: Resolve OCC companion from the change-control record
+summary: The occ-companion-merged gate resolves a unique merged companion by its product PR title when
+  the product body has no Evidence-Source line. This contract binds the behavior implemented in PR 1910;
+  receipt-gate.yml and occ_preflight_wait.py remain outside this change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn18338
+    statement: A missing description stamp must not hide a unique merged OCC companion, while unresolved
+      records preserve the existing refusal behavior and explicit citations preserve precedence.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: A stamp-less PR with one merged companion passes, including when the autobind
+          producer reports ERROR. -- falsifier: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py
+          -q -k "test_unique_merged_companion_without_stamp_passes or test_record_resolution_precedes_terminal_autobind_error"'
+      - id: AC2
+        statement: 'AC2: Absent, open, ambiguous, unreadable and number-prefix candidates preserve the
+          existing pending verdict and reason. -- falsifier: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py
+          -q -k test_unresolved_companion_keeps_existing_pending_verdict'
+      - id: AC3
+        statement: 'AC3: Lookup reads merged OCC records and selects exact product repository and PR title
+          matches, treating duplicate records as one companion. -- falsifier: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py
+          -q -k "TestMergedCompanionCandidates or test_title_selection or test_duplicate_records_are_one_distinct_companion
+          or test_ambiguous_detail_names_both_numbers or test_short_number_search_does_not_match_longer_number"'
+      - id: AC4
+        statement: 'AC4: A present stamp retains precedence and an explicit override never invokes record
+          lookup. -- falsifier: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py
+          -q -k "test_present_stamp_wins_without_lookup or test_override_never_looks_up_candidates"'
+      - id: AC5
+        statement: 'AC5: A resolved candidate is re-read through the existing companion verdict path;
+          unreadable, open and closed states never produce PASS. -- falsifier: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py
+          -q -k test_candidate_state_is_rechecked_through_pr_view'
+evidence_requirements:
+  - kind: tests
+    description: Existing gate tests exercise merged-record resolution, refusal, lookup matching, precedence
+      and state revalidation with deterministic fetchers.
+    command: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py tests/ci/test_check_occ_companion_merged_writer_exempt_omn20161.py
+      tests/ci/test_occ_preflight_wait_cli_no_companion_required_omn18882.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn18338-ac1
+    description: Unique merged record resolution precedes terminal autobind errors.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py -q -k "test_unique_merged_companion_without_stamp_passes
+          or test_record_resolution_precedes_terminal_autobind_error"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn18338-ac2
+    description: Unresolved companions retain the existing pending verdict and reason.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py -q -k test_unresolved_companion_keeps_existing_pending_verdict
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn18338-ac3
+    description: Merged-record lookup and exact title selection reject ambiguous and unrelated records.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py -q -k "TestMergedCompanionCandidates
+          or test_title_selection or test_duplicate_records_are_one_distinct_companion or test_ambiguous_detail_names_both_numbers
+          or test_short_number_search_does_not_match_longer_number"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn18338-ac4
+    description: Existing stamps and explicit overrides retain precedence without record lookup.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py -q -k "test_present_stamp_wins_without_lookup
+          or test_override_never_looks_up_candidates"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn18338-ac5
+    description: Companion state is revalidated through the existing PR read before a passing verdict.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py -q -k test_candidate_state_is_rechecked_through_pr_view
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
