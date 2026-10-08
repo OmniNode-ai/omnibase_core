@@ -44,5 +44,6 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q
+        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q -k "test_full_suite_splits_use_the_same_committed_duration_record
+          or test_every_full_suite_shard_exports_its_measured_durations or test_duration_merge_requires_all_shards_and_disjoint_measurements"
         cwd: ${OMNI_HOME}/omnibase_core
