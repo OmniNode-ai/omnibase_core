@@ -41,6 +41,9 @@ WHAT IS RECONSTRUCTED, AND WHAT IS NOT
 from __future__ import annotations
 
 import json
+import os
+import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -542,7 +545,7 @@ class TestPollerStepShape:
         deadline_branch = script.split('-ge "${deadline}"')[1].split("fi\n")[0]
         assert "exit 1" in deadline_branch
         assert "2) : ;;" in script
-        assert 'sleep "${POLL_INTERVAL_SECONDS}"' in script
+        assert 'sleep "${sleep_seconds}"' in script
 
     def test_omn_l4_wait_the_deadline_still_converts_sustained_pending(self) -> None:
         # Gate level: a held row stays PENDING (exit 2) on every poll, and only
@@ -561,3 +564,166 @@ class TestPollerStepShape:
             )
             assert code == gate.EXIT_PENDING
         assert EXTERNAL_FAILURE_SUPERSESSION_GRACE_S == 1200  # window untouched
+
+
+class TestPollerExecutionOmn17864:
+    """Execute the shipped bash poller and real CLI, with API/clock adapters.
+
+    The API adapter applies the workflow's actual jq projection. This catches
+    omitted producer facts that tests calling evaluate() directly cannot see.
+    The clock advances on sleep so deadline tests take seconds, not 130 minutes.
+    """
+
+    def _execute(
+        self,
+        tmp_path: Path,
+        snapshots: list[tuple[list[dict[str, object]], list[dict[str, object]]]],
+        *,
+        failed_endpoint: str = "",
+        recover_fetch: bool = False,
+        stall_fetch: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
+        bin_path = tmp_path / "bin"
+        bin_path.mkdir()
+        (bin_path / "python3").symlink_to(sys.executable)
+        (tmp_path / "scripts").symlink_to(REPO_ROOT / "scripts")
+        (tmp_path / "clock").write_text("0\n", encoding="utf-8")
+        (tmp_path / "poll").write_text("0\n", encoding="utf-8")
+        for index, (rows, runs) in enumerate(snapshots):
+            for name, key, data in (
+                ("jobs", "jobs", _all_green_jobs()),
+                ("checks", "check_runs", rows),
+                ("runs", "workflow_runs", runs),
+            ):
+                (tmp_path / f"{index}-{name}.json").write_text(
+                    json.dumps({key: data}),
+                    encoding="utf-8",
+                )
+        gh = bin_path / "gh"
+        gh.write_text(
+            """#!/bin/bash
+set -eu
+poll=$(cat "$TEST_ROOT/poll")
+case "$*" in
+  *'/jobs?'*) endpoint=jobs ;;
+  *'/check-runs?'*) endpoint=checks ;;
+  *'/actions/runs?'*) endpoint=runs ;;
+  *) exit 99 ;;
+esac
+echo "$endpoint" >> "$TEST_ROOT/fetches"
+if [ "$endpoint" = "$TEST_FAILED_ENDPOINT" ]; then
+  if [ "$TEST_STALL_FETCH" = 1 ]; then
+    echo 60 > "$TEST_ROOT/clock"
+    sleep 2
+  elif [ "$TEST_RECOVER_FETCH" = 0 ] || [ "$poll" = 0 ]; then
+    exit 1
+  fi
+fi
+last=$((TEST_SNAPSHOT_COUNT - 1))
+if [ "$poll" -gt "$last" ]; then poll=$last; fi
+jq "${!#}" "$TEST_ROOT/$poll-$endpoint.json"
+""",
+            encoding="utf-8",
+        )
+        gh.chmod(0o755)
+        prefix = """
+date() { cat "$TEST_ROOT/clock"; }
+sleep() {
+  local elapsed poll
+  elapsed=$(cat "$TEST_ROOT/clock")
+  poll=$(cat "$TEST_ROOT/poll")
+  echo "$((elapsed + $1))" > "$TEST_ROOT/clock"
+  echo "$((poll + 1))" > "$TEST_ROOT/poll"
+}
+"""
+        if stall_fetch:
+            # The deadline is computed before this clock advance.
+            script = _poller_script().replace(
+                "attempt=0", 'attempt=0\necho 59 > "$TEST_ROOT/clock"'
+            )
+        else:
+            script = _poller_script()
+        return subprocess.run(
+            ["bash", "-e", "-c", prefix + script],
+            cwd=tmp_path,
+            env={
+                "PATH": str(bin_path) + os.pathsep + os.defpath,
+                "TEST_ROOT": str(tmp_path),
+                "TEST_SNAPSHOT_COUNT": str(len(snapshots)),
+                "TEST_FAILED_ENDPOINT": failed_endpoint,
+                "TEST_RECOVER_FETCH": str(int(recover_fetch)),
+                "TEST_STALL_FETCH": str(int(stall_fetch)),
+                "GH_REPO": "o/r",
+                "RUN_ID": "123",
+                "RUN_ATTEMPT": "1",
+                "COMMIT_SHA": "c" * 40,
+                "EVENT_NAME": "pull_request",
+                "DEADLINE_MINUTES": "1",
+                "POLL_INTERVAL_SECONDS": "45",
+            },
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
+
+    def test_body_repair_replacement_is_polled_to_success(self, tmp_path: Path) -> None:
+        pending = (
+            [_stale("failure"), _green(ADVISORY)],
+            [_run(100, status="completed"), _run(101)],
+        )
+        repaired = (
+            [_green(DB), _stale("failure"), _green(ADVISORY)],
+            [_run(100, status="completed"), _run(101, status="completed")],
+        )
+        result = self._execute(tmp_path, [pending, repaired])
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "CI Summary verdict: PENDING" in result.stdout
+        assert "CI Summary verdict: SUCCESS" in result.stdout
+
+    def test_a_different_event_cannot_hold_a_stable_red(self, tmp_path: Path) -> None:
+        rows = [_stale("failure"), _green(ADVISORY)]
+        runs = [_run(100, status="completed"), _run(101, event="push")]
+        result = self._execute(tmp_path, [(rows, runs)])
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "CI Summary verdict: FAILURE" in result.stdout
+        assert "CI Summary verdict: PENDING" not in result.stdout
+
+    def test_sustained_preflight_hold_fails_at_the_deadline(
+        self, tmp_path: Path
+    ) -> None:
+        rows = [_stale("failure"), _green(ADVISORY)]
+        runs = [_run(100, status="completed"), _run(101)]
+        result = self._execute(tmp_path, [(rows, runs)])
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "poll deadline" in result.stdout
+        assert (tmp_path / "clock").read_text().strip() == "60"
+
+    @pytest.mark.parametrize("endpoint", ["jobs", "checks"])
+    def test_unreadable_inputs_fail_at_the_deadline(
+        self, tmp_path: Path, endpoint: str
+    ) -> None:
+        result = self._execute(tmp_path, [([], [])], failed_endpoint=endpoint)
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "poll deadline" in result.stdout
+        assert (tmp_path / "clock").read_text().strip() == "60"
+
+    def test_transient_api_failure_recovers(self, tmp_path: Path) -> None:
+        result = self._execute(
+            tmp_path,
+            [([_green(DB), _green(ADVISORY)], [])],
+            failed_endpoint="checks",
+            recover_fetch=True,
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert "gh api fetch failed" in result.stdout
+        assert "CI Summary verdict: SUCCESS" in result.stdout
+
+    def test_api_fetch_cannot_outlast_the_remaining_budget(
+        self, tmp_path: Path
+    ) -> None:
+        result = self._execute(
+            tmp_path, [([], [])], failed_endpoint="jobs", stall_fetch=True
+        )
+        assert result.returncode == 1, result.stdout + result.stderr
+        assert "poll deadline" in result.stdout
