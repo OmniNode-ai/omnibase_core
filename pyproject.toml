@@ -179,6 +179,8 @@ node_no_env_fallbacks_check_compute = "omnibase_core.nodes.node_no_env_fallbacks
 node_no_raw_sqlite3_check_compute = "omnibase_core.nodes.node_no_raw_sqlite3_check_compute"
 node_no_io_outside_effects_check_compute = "omnibase_core.nodes.node_no_io_outside_effects_check_compute"
 node_test_selector_compute = "omnibase_core.nodes.node_test_selector_compute"
+node_required_context_producer_check_compute = "omnibase_core.nodes.node_required_context_producer_check_compute"
+node_required_context_producer_gather_effect = "omnibase_core.nodes.node_required_context_producer_gather_effect"
 
 [project.optional-dependencies]
 spi = ["omnibase-spi>=0.20.2"]
@@ -445,6 +447,7 @@ ignore = [
 "src/omnibase_core/validation/doc_content_scan/runtime_doc_content_scan.py" = ["T201"]
 # OMN-14656: CLI runner for the no-utcnow-check COMPUTE node prints findings.
 "src/omnibase_core/nodes/node_no_utcnow_check_compute/runtime_no_utcnow_check.py" = ["T201"]
+"src/omnibase_core/nodes/node_required_context_producer_check_compute/runtime_required_context_producer_check.py" = ["T201"]  # OMN-19037: CLI report rendering
 # OMN-14659: CLI runners for the WS8 convert_now COMPUTE nodes print findings.
 "src/omnibase_core/nodes/node_no_hardcoded_ip_check_compute/runtime_no_hardcoded_ip_check.py" = ["T201"]
 "src/omnibase_core/nodes/node_no_direct_kafka_producer_check_compute/runtime_no_direct_kafka_producer_check.py" = ["T201"]
