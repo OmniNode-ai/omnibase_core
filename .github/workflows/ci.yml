@@ -4151,14 +4151,6 @@ jobs:
           "$dest/yamlfmt" -version
           echo "$dest" >> "$GITHUB_PATH"
 
-      - name: Restore test durations cache
-        uses: actions/cache/restore@v6
-        with:
-          path: .test_durations
-          key: test-durations-${{ github.sha }}
-          restore-keys: |
-            test-durations-
-
       - name: Run pytest (smart selection)
         if: vars.ENABLE_SMART_TESTS == 'true' && needs.detect-changes.outputs.is_full_suite == 'false'
         env:
@@ -4185,6 +4177,8 @@ jobs:
             --ignore=tests/integration \
             --splits ${{ needs.detect-changes.outputs.split_count }} \
             --group ${{ matrix.split }} \
+            --splitting-algorithm least_duration \
+            --durations-path config/test_durations.json \
             -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
             --timeout-method=signal \
@@ -4207,23 +4201,30 @@ jobs:
             --ignore=tests/integration \
             --splits 40 \
             --group ${{ matrix.split }} \
+            --splitting-algorithm least_duration \
             --store-durations \
-            --durations-path .test_durations \
+            --clean-durations \
+            --durations-path config/test_durations.json \
             -n "$PYTEST_XDIST_WORKERS" \
             --timeout=60 \
             --timeout-method=signal \
             --tb=short \
             --junitxml=junit-${{ matrix.split }}.xml
 
-      - name: Save test durations (full suite only, split 1)
-        if: |
-          needs.detect-changes.outputs.is_full_suite == 'true' &&
-          matrix.split == 1 &&
+      # OMN-19615: every runner reads the same committed record. A mutable
+      # cache can give different shards different assignments and omit tests.
+      # --clean-durations exports only this shard's measurements, so a merge
+      # cannot overwrite another shard's fresh timing with an inherited one.
+      - name: Upload test durations
+        if: >-
           success()
-        uses: actions/cache/save@v6
+          && (vars.ENABLE_SMART_TESTS != 'true' || needs.detect-changes.outputs.is_full_suite == 'true')
+        uses: actions/upload-artifact@v7
         with:
-          path: .test_durations
-          key: test-durations-${{ github.sha }}
+          name: test-durations-${{ matrix.split }}
+          path: config/test_durations.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Upload test results
         if: always()
@@ -4265,6 +4266,48 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 1
+
+      - name: Download full-suite durations
+        if: needs.test-parallel.result == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          pattern: test-durations-*
+          path: duration-artifacts
+
+      - name: Merge full-suite durations
+        if: needs.test-parallel.result == 'success'
+        run: |
+          python3 - <<'PY'
+          import json
+          import math
+          from pathlib import Path
+
+          root = Path("duration-artifacts")
+          expected = {f"test-durations-{i}" for i in range(1, 41)}
+          assert {p.name for p in root.iterdir()} == expected, "need all 40 duration shards"
+          merged = {}
+          for name in sorted(expected):
+              timings = json.loads((root / name / "test_durations.json").read_text())
+              assert isinstance(timings, dict) and timings, f"empty duration shard: {name}"
+              assert not merged.keys() & timings.keys(), f"duplicate test IDs: {name}"
+              assert all(
+                  isinstance(nodeid, str) and nodeid
+                  and type(seconds) in (int, float) and math.isfinite(seconds) and seconds >= 0
+                  for nodeid, seconds in timings.items()
+              ), f"invalid duration record: {name}"
+              merged.update(timings)
+          Path("test_durations.json").write_text(json.dumps(merged, sort_keys=True, indent=2) + "\n")
+          print(f"Merged {len(merged)} measured test durations from all 40 shards")
+          PY
+
+      - name: Upload merged duration record
+        if: needs.test-parallel.result == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: merged-test-durations
+          path: test_durations.json
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
