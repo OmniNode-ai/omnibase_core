@@ -20,11 +20,11 @@ import warnings
 import pytest
 
 from omnibase_core.models.validation.model_topic_suffix_parts import (
-    TOPIC_KIND_CMD,
-    TOPIC_KIND_DLQ,
-    TOPIC_KIND_EVT,
-    TOPIC_KIND_INTENT,
-    TOPIC_KIND_SNAPSHOT,
+    KIND_ABBR_CMD,
+    KIND_ABBR_DLQ,
+    KIND_ABBR_EVT,
+    KIND_ABBR_INTENT,
+    KIND_ABBR_SNAPSHOT,
     VALID_TOPIC_KINDS,
     ModelTopicSuffixParts,
 )
@@ -77,11 +77,11 @@ class TestConstants:
 
     def test_topic_kind_constants(self) -> None:
         """Test that topic kind constants have correct values."""
-        assert TOPIC_KIND_CMD == "cmd"
-        assert TOPIC_KIND_EVT == "evt"
-        assert TOPIC_KIND_DLQ == "dlq"
-        assert TOPIC_KIND_INTENT == "intent"
-        assert TOPIC_KIND_SNAPSHOT == "snapshot"
+        assert KIND_ABBR_CMD == "cmd"
+        assert KIND_ABBR_EVT == "evt"
+        assert KIND_ABBR_DLQ == "dlq"
+        assert KIND_ABBR_INTENT == "intent"
+        assert KIND_ABBR_SNAPSHOT == "snapshot"
 
 
 # =============================================================================
@@ -121,21 +121,21 @@ class TestKindsSynchronization:
         )
 
     def test_topic_kind_constants_match_valid_topic_kinds(self) -> None:
-        """Verify individual TOPIC_KIND_* constants are in VALID_TOPIC_KINDS.
+        """Verify individual KIND_ABBR_* constants are in VALID_TOPIC_KINDS.
 
-        Ensures that the individual named constants (TOPIC_KIND_CMD, etc.)
+        Ensures that the individual named constants (KIND_ABBR_CMD, etc.)
         are all members of the VALID_TOPIC_KINDS set.
         """
         individual_constants = {
-            TOPIC_KIND_CMD,
-            TOPIC_KIND_EVT,
-            TOPIC_KIND_DLQ,
-            TOPIC_KIND_INTENT,
-            TOPIC_KIND_SNAPSHOT,
+            KIND_ABBR_CMD,
+            KIND_ABBR_EVT,
+            KIND_ABBR_DLQ,
+            KIND_ABBR_INTENT,
+            KIND_ABBR_SNAPSHOT,
         }
 
         assert individual_constants == VALID_TOPIC_KINDS, (
-            f"Individual TOPIC_KIND_* constants don't match VALID_TOPIC_KINDS!\n"
+            f"Individual KIND_ABBR_* constants don't match VALID_TOPIC_KINDS!\n"
             f"Individual constants: {sorted(individual_constants)}\n"
             f"VALID_TOPIC_KINDS: {sorted(VALID_TOPIC_KINDS)}\n"
             f"Missing from VALID_TOPIC_KINDS: {individual_constants - VALID_TOPIC_KINDS}\n"

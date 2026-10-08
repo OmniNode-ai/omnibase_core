@@ -507,6 +507,12 @@ class ModelDelegationResult(BaseModel):
                 msg = "evaluated content requires quality_score"
                 raise ValueError(msg)
             if (
+                self.content_verdict is EnumDelegationContentVerdict.USABLE
+                and not self.content.strip()
+            ):
+                msg = "usable content verdict requires nonblank final content"
+                raise ValueError(msg)
+            if (
                 self.operational_outcome
                 is EnumDelegationOperationalOutcome.SCHEMA_REJECTED
             ):

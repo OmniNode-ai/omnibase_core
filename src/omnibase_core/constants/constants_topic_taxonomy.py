@@ -23,10 +23,10 @@ Thread Safety:
     The topic_name() function is pure and thread-safe.
 
 Cross-reference:
-    For topic kind tokens used in suffix validation (TOPIC_KIND_CMD, etc.),
+    For topic kind tokens used in suffix validation (KIND_ABBR_CMD, etc.),
     see omnibase_core.models.validation.model_topic_suffix_parts.
-    This module defines TOPIC_TYPE_* semantic values (e.g., "commands"),
-    while model_topic_suffix_parts defines TOPIC_KIND_* tokens (e.g., "cmd").
+    This module defines TAXONOMY_TYPE_* semantic values (e.g., "commands"),
+    while model_topic_suffix_parts defines KIND_ABBR_* tokens (e.g., "cmd").
 """
 
 from __future__ import annotations
@@ -39,20 +39,20 @@ if TYPE_CHECKING:
     from omnibase_core.enums.enum_topic_taxonomy import EnumTopicType
 
 # Topic Type Suffixes (semantic values used internally)
-TOPIC_TYPE_COMMANDS = "commands"
-TOPIC_TYPE_DLQ = "dlq"
-TOPIC_TYPE_EVENTS = "events"
-TOPIC_TYPE_INTENTS = "intents"
-TOPIC_TYPE_SNAPSHOTS = "snapshots"
+TAXONOMY_TYPE_COMMANDS = "commands"
+TAXONOMY_TYPE_DLQ = "dlq"
+TAXONOMY_TYPE_EVENTS = "events"
+TAXONOMY_TYPE_INTENTS = "intents"
+TAXONOMY_TYPE_SNAPSHOTS = "snapshots"
 
 # Valid topic types set for validation
 _VALID_TOPIC_TYPES = frozenset(
     {
-        TOPIC_TYPE_COMMANDS,
-        TOPIC_TYPE_DLQ,
-        TOPIC_TYPE_EVENTS,
-        TOPIC_TYPE_INTENTS,
-        TOPIC_TYPE_SNAPSHOTS,
+        TAXONOMY_TYPE_COMMANDS,
+        TAXONOMY_TYPE_DLQ,
+        TAXONOMY_TYPE_EVENTS,
+        TAXONOMY_TYPE_INTENTS,
+        TAXONOMY_TYPE_SNAPSHOTS,
     }
 )
 
@@ -199,24 +199,24 @@ def topic_name(domain: str, topic_type: str) -> str:
 
 
 # Registration Domain Topics
-TOPIC_REGISTRATION_COMMANDS = topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_COMMANDS)
-TOPIC_REGISTRATION_EVENTS = topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_EVENTS)
-TOPIC_REGISTRATION_INTENTS = topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_INTENTS)
-TOPIC_REGISTRATION_SNAPSHOTS = topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_SNAPSHOTS)
+TOPIC_REGISTRATION_COMMANDS = topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_COMMANDS)
+TOPIC_REGISTRATION_EVENTS = topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_EVENTS)
+TOPIC_REGISTRATION_INTENTS = topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_INTENTS)
+TOPIC_REGISTRATION_SNAPSHOTS = topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_SNAPSHOTS)
 
 # Discovery Domain Topics
-TOPIC_DISCOVERY_COMMANDS = topic_name(DOMAIN_DISCOVERY, TOPIC_TYPE_COMMANDS)
-TOPIC_DISCOVERY_EVENTS = topic_name(DOMAIN_DISCOVERY, TOPIC_TYPE_EVENTS)
-TOPIC_DISCOVERY_INTENTS = topic_name(DOMAIN_DISCOVERY, TOPIC_TYPE_INTENTS)
+TOPIC_DISCOVERY_COMMANDS = topic_name(DOMAIN_DISCOVERY, TAXONOMY_TYPE_COMMANDS)
+TOPIC_DISCOVERY_EVENTS = topic_name(DOMAIN_DISCOVERY, TAXONOMY_TYPE_EVENTS)
+TOPIC_DISCOVERY_INTENTS = topic_name(DOMAIN_DISCOVERY, TAXONOMY_TYPE_INTENTS)
 
 # Runtime Domain Topics
-TOPIC_RUNTIME_COMMANDS = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_COMMANDS)
-TOPIC_RUNTIME_EVENTS = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_EVENTS)
-TOPIC_RUNTIME_INTENTS = topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS)
+TOPIC_RUNTIME_COMMANDS = topic_name(DOMAIN_RUNTIME, TAXONOMY_TYPE_COMMANDS)
+TOPIC_RUNTIME_EVENTS = topic_name(DOMAIN_RUNTIME, TAXONOMY_TYPE_EVENTS)
+TOPIC_RUNTIME_INTENTS = topic_name(DOMAIN_RUNTIME, TAXONOMY_TYPE_INTENTS)
 
 # Metrics Domain Topics
-TOPIC_METRICS_EVENTS = topic_name(DOMAIN_METRICS, TOPIC_TYPE_EVENTS)
-TOPIC_METRICS_INTENTS = topic_name(DOMAIN_METRICS, TOPIC_TYPE_INTENTS)
+TOPIC_METRICS_EVENTS = topic_name(DOMAIN_METRICS, TAXONOMY_TYPE_EVENTS)
+TOPIC_METRICS_INTENTS = topic_name(DOMAIN_METRICS, TAXONOMY_TYPE_INTENTS)
 
 # Cleanup Policy Defaults
 CLEANUP_POLICY_EVENTS = "delete"
@@ -250,11 +250,11 @@ PLATFORM_BASELINE_TOPIC_SUFFIXES: tuple[str, ...] = (
 
 __all__ = [
     # Type suffixes
-    "TOPIC_TYPE_COMMANDS",
-    "TOPIC_TYPE_DLQ",
-    "TOPIC_TYPE_EVENTS",
-    "TOPIC_TYPE_INTENTS",
-    "TOPIC_TYPE_SNAPSHOTS",
+    "TAXONOMY_TYPE_COMMANDS",
+    "TAXONOMY_TYPE_DLQ",
+    "TAXONOMY_TYPE_EVENTS",
+    "TAXONOMY_TYPE_INTENTS",
+    "TAXONOMY_TYPE_SNAPSHOTS",
     # Token mapping accessors (lazy-loaded to avoid circular imports)
     "get_token_to_topic_type",
     "get_topic_type_to_token",

@@ -829,18 +829,18 @@ gates:
 
   - name: "occ-preflight / eligibility"
     mode: REQUIRED
-    producer_kind: cross_repo
-    caller_workflow: call-occ-preflight.yml
-    caller_job: occ-preflight
-    cross_repo_ref: "OmniNode-ai/omnibase_core/.github/workflows/occ-preflight.yml@main"
+    producer_kind: local
+    workflow: call-receipt-gate.yml
+    job_path: ["occ-preflight", "eligibility"]
     skip_semantics: never
     rationale: "Live required status check on BOTH omnibase_core dev and main branch protection (verified
-      2026-07-25) -- no branch: tag, per schema-v3 convention. call-occ-preflight.yml's pull_request trigger
-      targets branches: [main, dev, hotfix/**]. Note: this repo's local _workflow_model.py copy still
-      carries the omniclaude-specific _SELF_REPO_USES_RE (unmodified from the omniclaude canonical source),
-      so this cross-repo ref to omnibase_core's OWN occ-preflight.yml is resolved as a genuine cross-repo
-      ref rather than a self-repo local resolution -- functionally equivalent (still walks the caller
-      side), but flagged here as a pre-existing minor drift, not introduced or fixed by this PR."
+      2026-07-25) -- no branch: tag, per schema-v3 convention. OMN-20074 retired call-occ-preflight.yml,
+      which produced this same context from occ-preflight.yml@main on [main, dev, hotfix/**] pull requests.
+      call-receipt-gate.yml's occ-preflight job calls the same reusable with no job-level `if:` on every
+      pull_request into main or dev (a superset of the retired file's activity types, adding edited) and
+      on merge_group, so the context still materializes on every pull request that branch protection judges.
+      Several other workflows here (receipt-honesty.yml, check-handshake.yml, check-db-ownership.yml and
+      more) also carry an occ-preflight job that posts this same context name."
 
   - name: "product-readiness / evaluate"
     mode: REQUIRED

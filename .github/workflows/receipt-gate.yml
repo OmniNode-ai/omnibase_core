@@ -18,6 +18,17 @@
 #                   (default: 0.4.280; must be numeric MAJOR.MINOR.PATCH).
 #   compare-with-occ: "true" during the pilot, when dod-verify is required
 #                   beside OCC's contexts; "false" otherwise (default: "false").
+#   shadow:         "true" while a repository counts this gate's verdict beside
+#                   OCC's without enforcing it (OMN-20073, OCC retirement S5);
+#                   "false" otherwise (default: "false"). With evidence-source
+#                   caller, every job concludes success whatever the verdict:
+#                   `verify` is a reported no-op instead of a skipped job, and
+#                   `dod-verify` records its verdict (the first refused step,
+#                   the OCC difference outcome and reason) as one `Shadow
+#                   verdict:` job-summary line and one notice annotation, then
+#                   passes. A repository whose own sweep refuses any
+#                   non-success check-run (omniclaude's CI Summary L5) cannot
+#                   carry a skipped or red context, shadow or not.
 #   occ-context:    check run name carrying OCC's verdict
 #                   (default: "occ-preflight / eligibility").
 #   occ-wait-seconds: bounded wait for OCC's verdict on the same PR head
@@ -68,6 +79,11 @@ on:
         type: string
         required: false
         default: "false"
+      shadow:
+        description: "Record the caller-evidence verdict without enforcing it while a repository counts it beside OCC's (S5): true or false."
+        type: string
+        required: false
+        default: "false"
       occ-context:
         description: Check run name carrying OCC's verdict on the same PR head.
         type: string
@@ -106,7 +122,10 @@ permissions:
 jobs:
   verify:
     name: verify
-    if: inputs.evidence-source != 'caller'
+    # OMN-20073: in shadow caller-evidence mode this job runs as a reported
+    # no-op (the bot-exemption step below sets exempt, every later step is
+    # gated on it) so its check-run concludes success rather than skipped.
+    if: inputs.evidence-source != 'caller' || inputs.shadow == 'true'
     # OMN-18205: the untrusted test is the FORK test, and only the fork test.
     # This selector sent EVERY pull-request event to the public class,
     # same-repo ones included, so every repository consuming this reusable had
@@ -138,6 +157,7 @@ jobs:
       ACTIONS_RUNTIME_URL: ""
     steps:
       - name: Check out PR head
+        if: inputs.evidence-source != 'caller'
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -145,6 +165,7 @@ jobs:
 
       - name: Resolve receipt gate branch policy
         id: branch_policy
+        if: inputs.evidence-source != 'caller'
         env:
           REQUESTED_POLICY_MODE: ${{ inputs.branch-policy-mode }}
           PR_TARGET_BRANCH: ${{ github.event.pull_request.base.ref }}
@@ -196,7 +217,7 @@ jobs:
       # different ref): actions/checkout CLEANS the path it is given, so a
       # shared leaf lets one gate wipe another's checkout mid-run.
       - name: Check out omnibase_core (for occ_preflight_wait.py)
-        if: github.repository != 'OmniNode-ai/onex_change_control' && ! hashFiles('scripts/ci/occ_preflight_wait.py')
+        if: inputs.evidence-source != 'caller' && github.repository != 'OmniNode-ai/onex_change_control' && ! hashFiles('scripts/ci/occ_preflight_wait.py')
         uses: actions/checkout@v7
         with:
           repository: OmniNode-ai/omnibase_core
@@ -229,8 +250,18 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          CALLER_EVIDENCE_MODE: ${{ inputs.evidence-source == 'caller' }}
         run: |
           set -euo pipefail
+
+          # OMN-20073: shadow caller-evidence mode runs this job only so its
+          # check-run concludes success instead of skipped. dod-verify carries
+          # the verdict; every step below is gated on exempt != 'true'.
+          if [ "${CALLER_EVIDENCE_MODE:-}" = "true" ]; then
+            echo "::notice::verify does not apply in caller-evidence mode; repo-evidence / dod-verify carries the verdict."
+            echo "exempt=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           # Resolve the PR number for both pull_request and merge_group events.
           if [ -n "${PR_NUMBER:-}" ]; then
@@ -1135,6 +1166,8 @@ jobs:
       # different ref): actions/checkout CLEANS the path it is given, so a
       # shared leaf lets one gate wipe another's checkout mid-run.
       - name: Check out omnibase_core (for occ_preflight_wait.py)
+        id: occ_probe_checkout
+        continue-on-error: ${{ inputs.shadow == 'true' }}
         if: github.repository != 'OmniNode-ai/onex_change_control' && ! hashFiles('scripts/ci/occ_preflight_wait.py')
         uses: actions/checkout@v7
         with:
@@ -1161,6 +1194,7 @@ jobs:
       # The probe needs occ_preflight_wait.py, so its early "Check out
       # omnibase_core" step runs BEFORE this one.
       - name: Detect dependency-bot author (receipt-gate exemption)
+        continue-on-error: ${{ inputs.shadow == 'true' }}
         id: bot_exempt
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1232,6 +1266,8 @@ jobs:
           echo "exempt=${exempt}" >> "$GITHUB_OUTPUT"
 
       - name: Refuse anything but a same-repository pull request
+        id: same_repo
+        continue-on-error: ${{ inputs.shadow == 'true' }}
         if: steps.bot_exempt.outputs.exempt != 'true'
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -1260,7 +1296,9 @@ jobs:
           fi
 
       - name: Resolve the cited tickets
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: tickets
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
@@ -1279,7 +1317,9 @@ jobs:
           done < "$RUNNER_TEMP/dod/tickets.txt"
 
       - name: Check out the pull request head
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: head_checkout
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         uses: actions/checkout@v7
         with:
           repository: ${{ github.repository }}
@@ -1289,17 +1329,23 @@ jobs:
           path: .dod-verify/head_home/${{ github.event.repository.name }}
 
       - name: Set up Python 3.13
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: setup_python
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         uses: actions/setup-python@v7
         with:
           python-version: "3.13"
 
       - name: Install uv
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: install_uv
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         uses: astral-sh/setup-uv@v7
 
       - name: Install the pinned verifier
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: verifier
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         env:
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
         run: |
@@ -1319,7 +1365,9 @@ jobs:
       # before any verdict, when they are missing: a database test that cannot
       # start its database is a control that did not run, never a pass.
       - name: Provide the PostgreSQL 16 server tools
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: pg_tools
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         run: |
           set -euo pipefail
           pg16_bin=/usr/lib/postgresql/16/bin
@@ -1345,7 +1393,9 @@ jobs:
       # host is resolved the way the caller's test job resolves it, so this
       # holds on GitHub-hosted and self-hosted runners alike.
       - name: Export the Postgres service to the bound tests
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: pg_env
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
         run: |
@@ -1399,7 +1449,9 @@ jobs:
           echo "Postgres service for the bound tests: host=${host} port=${POSTGRES_PORT}"
 
       - name: Verify the contract at the PR head
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: head_verify
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -1437,7 +1489,9 @@ jobs:
           done < "$RUNNER_TEMP/dod/tickets.txt"
 
       - name: Prepare the merge base with the pull request's test side laid over it
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: merge_base
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -1586,7 +1640,9 @@ jobs:
 
       # OMN-20070: unchanged carried evidence is exempt; each PR must bind its own evidence.
       - name: Must-fail control at the merge base
-        if: steps.bot_exempt.outputs.exempt != 'true'
+        id: base_control
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -1763,6 +1819,8 @@ jobs:
       # token. A private caller would need checks: read; an unreadable verdict
       # fails closed as not_compared.
       - name: Difference against OCC's verdict for the same head
+        id: occ_difference
+        continue-on-error: ${{ inputs.shadow == 'true' }}
         if: ${{ !cancelled() && steps.bot_exempt.outputs.exempt != 'true' && inputs.compare-with-occ == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -1822,11 +1880,22 @@ jobs:
           "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify occ-difference \
             "${difference_args[@]}" | tee "$RUNNER_TEMP/dod/occ-difference.json"
 
+      # OMN-20073: in shadow mode every refusing step above has
+      # continue-on-error, so this job concludes success whatever the verdict
+      # and the verdict is recorded here as data: one `Shadow verdict:` summary
+      # line and one notice annotation (readable through the check-run's
+      # annotations API without opening the log). new_path is verified,
+      # refused (refused_step names the first step that failed, in run order,
+      # excluding the OCC difference) or exempt (a dependency bot); occ_difference
+      # is the node's outcome/reason_code, not_compared/unavailable when the
+      # difference step failed without writing a verdict, or not_run.
       - name: Summarise
         if: always()
         env:
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SHADOW: ${{ inputs.shadow }}
+          STEPS_JSON: ${{ toJSON(steps) }}
         run: |
           # Best-effort summary, including when an earlier step failed.
           {
@@ -1844,4 +1913,29 @@ jobs:
               done < "$RUNNER_TEMP/dod/tickets.txt"
             fi
           } >> "$GITHUB_STEP_SUMMARY" || true
+          if [ "$SHADOW" = "true" ]; then
+            {
+              new_path=verified
+              refused_step=none
+              for step_id in occ_probe_checkout bot_exempt same_repo tickets head_checkout setup_python install_uv verifier pg_tools pg_env head_verify merge_base base_control; do
+                if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
+                  new_path=refused
+                  refused_step="$step_id"
+                  break
+                fi
+              done
+              if [ "$(jq -r '.bot_exempt.outputs.exempt // empty' <<< "$STEPS_JSON")" = true ]; then
+                new_path=exempt
+              fi
+              occ_difference=not_run
+              if [ -f "$RUNNER_TEMP/dod/occ-difference.json" ]; then
+                occ_difference="$(jq -r '"\(.outcome)/\(.reason_code // "none")"' "$RUNNER_TEMP/dod/occ-difference.json")"
+              elif [ "$(jq -r '.occ_difference.outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
+                occ_difference=not_compared/unavailable
+              fi
+              verdict_line="Shadow verdict: head=$HEAD_SHA new_path=$new_path refused_step=$refused_step occ_difference=$occ_difference"
+              printf '%s\n\n' "$verdict_line" >> "$GITHUB_STEP_SUMMARY"
+              echo "::notice title=repo-evidence shadow verdict::$verdict_line"
+            } || true
+          fi
           exit 0

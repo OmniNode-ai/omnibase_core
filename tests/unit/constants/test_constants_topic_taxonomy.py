@@ -33,6 +33,11 @@ from omnibase_core.constants import (
     RETENTION_MS_EVENTS,
     RETENTION_MS_INTENTS,
     RETENTION_MS_SNAPSHOTS,
+    TAXONOMY_TYPE_COMMANDS,
+    TAXONOMY_TYPE_DLQ,
+    TAXONOMY_TYPE_EVENTS,
+    TAXONOMY_TYPE_INTENTS,
+    TAXONOMY_TYPE_SNAPSHOTS,
     TOPIC_DISCOVERY_COMMANDS,
     TOPIC_DISCOVERY_EVENTS,
     TOPIC_DISCOVERY_INTENTS,
@@ -43,11 +48,6 @@ from omnibase_core.constants import (
     TOPIC_RUNTIME_COMMANDS,
     TOPIC_RUNTIME_EVENTS,
     TOPIC_RUNTIME_INTENTS,
-    TOPIC_TYPE_COMMANDS,
-    TOPIC_TYPE_DLQ,
-    TOPIC_TYPE_EVENTS,
-    TOPIC_TYPE_INTENTS,
-    TOPIC_TYPE_SNAPSHOTS,
     topic_name,
 )
 from omnibase_core.constants.constants_topic_taxonomy import (
@@ -188,49 +188,49 @@ class TestTopicTypeSuffixConstants:
     """Test cases for topic type suffix constants."""
 
     def test_topic_type_commands_value(self):
-        """Test TOPIC_TYPE_COMMANDS constant value."""
-        assert TOPIC_TYPE_COMMANDS == "commands"
+        """Test TAXONOMY_TYPE_COMMANDS constant value."""
+        assert TAXONOMY_TYPE_COMMANDS == "commands"
 
     def test_topic_type_dlq_value(self):
-        """Test TOPIC_TYPE_DLQ constant value."""
-        assert TOPIC_TYPE_DLQ == "dlq"
+        """Test TAXONOMY_TYPE_DLQ constant value."""
+        assert TAXONOMY_TYPE_DLQ == "dlq"
 
     def test_topic_type_events_value(self):
-        """Test TOPIC_TYPE_EVENTS constant value."""
-        assert TOPIC_TYPE_EVENTS == "events"
+        """Test TAXONOMY_TYPE_EVENTS constant value."""
+        assert TAXONOMY_TYPE_EVENTS == "events"
 
     def test_topic_type_intents_value(self):
-        """Test TOPIC_TYPE_INTENTS constant value."""
-        assert TOPIC_TYPE_INTENTS == "intents"
+        """Test TAXONOMY_TYPE_INTENTS constant value."""
+        assert TAXONOMY_TYPE_INTENTS == "intents"
 
     def test_topic_type_snapshots_value(self):
-        """Test TOPIC_TYPE_SNAPSHOTS constant value."""
-        assert TOPIC_TYPE_SNAPSHOTS == "snapshots"
+        """Test TAXONOMY_TYPE_SNAPSHOTS constant value."""
+        assert TAXONOMY_TYPE_SNAPSHOTS == "snapshots"
 
     def test_topic_types_are_strings(self):
         """Test that all topic type constants are strings."""
-        assert isinstance(TOPIC_TYPE_COMMANDS, str)
-        assert isinstance(TOPIC_TYPE_DLQ, str)
-        assert isinstance(TOPIC_TYPE_EVENTS, str)
-        assert isinstance(TOPIC_TYPE_INTENTS, str)
-        assert isinstance(TOPIC_TYPE_SNAPSHOTS, str)
+        assert isinstance(TAXONOMY_TYPE_COMMANDS, str)
+        assert isinstance(TAXONOMY_TYPE_DLQ, str)
+        assert isinstance(TAXONOMY_TYPE_EVENTS, str)
+        assert isinstance(TAXONOMY_TYPE_INTENTS, str)
+        assert isinstance(TAXONOMY_TYPE_SNAPSHOTS, str)
 
     def test_topic_types_are_lowercase(self):
         """Test that all topic type constants are lowercase."""
-        assert TOPIC_TYPE_COMMANDS.islower()
-        assert TOPIC_TYPE_DLQ.islower()
-        assert TOPIC_TYPE_EVENTS.islower()
-        assert TOPIC_TYPE_INTENTS.islower()
-        assert TOPIC_TYPE_SNAPSHOTS.islower()
+        assert TAXONOMY_TYPE_COMMANDS.islower()
+        assert TAXONOMY_TYPE_DLQ.islower()
+        assert TAXONOMY_TYPE_EVENTS.islower()
+        assert TAXONOMY_TYPE_INTENTS.islower()
+        assert TAXONOMY_TYPE_SNAPSHOTS.islower()
 
     def test_topic_types_unique(self):
         """Test that all topic type constants have unique values."""
         types = [
-            TOPIC_TYPE_COMMANDS,
-            TOPIC_TYPE_DLQ,
-            TOPIC_TYPE_EVENTS,
-            TOPIC_TYPE_INTENTS,
-            TOPIC_TYPE_SNAPSHOTS,
+            TAXONOMY_TYPE_COMMANDS,
+            TAXONOMY_TYPE_DLQ,
+            TAXONOMY_TYPE_EVENTS,
+            TAXONOMY_TYPE_INTENTS,
+            TAXONOMY_TYPE_SNAPSHOTS,
         ]
         assert len(types) == len(set(types))
 
@@ -310,19 +310,19 @@ class TestRegistrationDomainTopics:
     def test_registration_topics_use_topic_name(self):
         """Test that registration topics are equivalent to topic_name() output."""
         assert (
-            topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_COMMANDS)
+            topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_COMMANDS)
             == TOPIC_REGISTRATION_COMMANDS
         )
         assert (
-            topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_EVENTS)
+            topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_EVENTS)
             == TOPIC_REGISTRATION_EVENTS
         )
         assert (
-            topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_INTENTS)
+            topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_INTENTS)
             == TOPIC_REGISTRATION_INTENTS
         )
         assert (
-            topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_SNAPSHOTS)
+            topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_SNAPSHOTS)
             == TOPIC_REGISTRATION_SNAPSHOTS
         )
 
@@ -346,12 +346,15 @@ class TestDiscoveryDomainTopics:
     def test_discovery_topics_use_topic_name(self):
         """Test that discovery topics are equivalent to topic_name() output."""
         assert (
-            topic_name(DOMAIN_DISCOVERY, TOPIC_TYPE_COMMANDS)
+            topic_name(DOMAIN_DISCOVERY, TAXONOMY_TYPE_COMMANDS)
             == TOPIC_DISCOVERY_COMMANDS
         )
-        assert topic_name(DOMAIN_DISCOVERY, TOPIC_TYPE_EVENTS) == TOPIC_DISCOVERY_EVENTS
         assert (
-            topic_name(DOMAIN_DISCOVERY, TOPIC_TYPE_INTENTS) == TOPIC_DISCOVERY_INTENTS
+            topic_name(DOMAIN_DISCOVERY, TAXONOMY_TYPE_EVENTS) == TOPIC_DISCOVERY_EVENTS
+        )
+        assert (
+            topic_name(DOMAIN_DISCOVERY, TAXONOMY_TYPE_INTENTS)
+            == TOPIC_DISCOVERY_INTENTS
         )
 
 
@@ -373,9 +376,13 @@ class TestRuntimeDomainTopics:
 
     def test_runtime_topics_use_topic_name(self):
         """Test that runtime topics are equivalent to topic_name() output."""
-        assert topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_COMMANDS) == TOPIC_RUNTIME_COMMANDS
-        assert topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_EVENTS) == TOPIC_RUNTIME_EVENTS
-        assert topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS) == TOPIC_RUNTIME_INTENTS
+        assert (
+            topic_name(DOMAIN_RUNTIME, TAXONOMY_TYPE_COMMANDS) == TOPIC_RUNTIME_COMMANDS
+        )
+        assert topic_name(DOMAIN_RUNTIME, TAXONOMY_TYPE_EVENTS) == TOPIC_RUNTIME_EVENTS
+        assert (
+            topic_name(DOMAIN_RUNTIME, TAXONOMY_TYPE_INTENTS) == TOPIC_RUNTIME_INTENTS
+        )
 
 
 @pytest.mark.unit
@@ -572,19 +579,19 @@ class TestTopicNamingConvention:
         parts = TOPIC_REGISTRATION_EVENTS.split(".")
         assert parts[0] == "onex"
         assert parts[1] == DOMAIN_REGISTRATION
-        assert parts[2] == TOPIC_TYPE_EVENTS
+        assert parts[2] == TAXONOMY_TYPE_EVENTS
 
         # Check discovery domain topics
         parts = TOPIC_DISCOVERY_COMMANDS.split(".")
         assert parts[0] == "onex"
         assert parts[1] == DOMAIN_DISCOVERY
-        assert parts[2] == TOPIC_TYPE_COMMANDS
+        assert parts[2] == TAXONOMY_TYPE_COMMANDS
 
         # Check runtime domain topics
         parts = TOPIC_RUNTIME_INTENTS.split(".")
         assert parts[0] == "onex"
         assert parts[1] == DOMAIN_RUNTIME
-        assert parts[2] == TOPIC_TYPE_INTENTS
+        assert parts[2] == TAXONOMY_TYPE_INTENTS
 
 
 @pytest.mark.unit
@@ -667,23 +674,27 @@ class TestTopicNameFunctionWithConstants:
 
     def test_topic_name_with_type_constants(self):
         """Test topic_name() using type constants."""
-        assert topic_name("test", TOPIC_TYPE_EVENTS) == "onex.test.events"
-        assert topic_name("test", TOPIC_TYPE_COMMANDS) == "onex.test.commands"
-        assert topic_name("test", TOPIC_TYPE_INTENTS) == "onex.test.intents"
-        assert topic_name("test", TOPIC_TYPE_SNAPSHOTS) == "onex.test.snapshots"
+        assert topic_name("test", TAXONOMY_TYPE_EVENTS) == "onex.test.events"
+        assert topic_name("test", TAXONOMY_TYPE_COMMANDS) == "onex.test.commands"
+        assert topic_name("test", TAXONOMY_TYPE_INTENTS) == "onex.test.intents"
+        assert topic_name("test", TAXONOMY_TYPE_SNAPSHOTS) == "onex.test.snapshots"
 
     def test_topic_name_with_both_constants(self):
         """Test topic_name() using both domain and type constants."""
         assert (
-            topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_EVENTS)
+            topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_EVENTS)
             == TOPIC_REGISTRATION_EVENTS
         )
         assert (
-            topic_name(DOMAIN_REGISTRATION, TOPIC_TYPE_COMMANDS)
+            topic_name(DOMAIN_REGISTRATION, TAXONOMY_TYPE_COMMANDS)
             == TOPIC_REGISTRATION_COMMANDS
         )
-        assert topic_name(DOMAIN_DISCOVERY, TOPIC_TYPE_EVENTS) == TOPIC_DISCOVERY_EVENTS
-        assert topic_name(DOMAIN_RUNTIME, TOPIC_TYPE_INTENTS) == TOPIC_RUNTIME_INTENTS
+        assert (
+            topic_name(DOMAIN_DISCOVERY, TAXONOMY_TYPE_EVENTS) == TOPIC_DISCOVERY_EVENTS
+        )
+        assert (
+            topic_name(DOMAIN_RUNTIME, TAXONOMY_TYPE_INTENTS) == TOPIC_RUNTIME_INTENTS
+        )
 
 
 @pytest.mark.unit
@@ -715,11 +726,11 @@ class TestModuleExports:
 
         all_exports = constants_topic_taxonomy.__all__
 
-        assert "TOPIC_TYPE_COMMANDS" in all_exports
-        assert "TOPIC_TYPE_DLQ" in all_exports
-        assert "TOPIC_TYPE_EVENTS" in all_exports
-        assert "TOPIC_TYPE_INTENTS" in all_exports
-        assert "TOPIC_TYPE_SNAPSHOTS" in all_exports
+        assert "TAXONOMY_TYPE_COMMANDS" in all_exports
+        assert "TAXONOMY_TYPE_DLQ" in all_exports
+        assert "TAXONOMY_TYPE_EVENTS" in all_exports
+        assert "TAXONOMY_TYPE_INTENTS" in all_exports
+        assert "TAXONOMY_TYPE_SNAPSHOTS" in all_exports
 
     def test_all_domains_exported(self):
         """Test that all domain constants are exported."""

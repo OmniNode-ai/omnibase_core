@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_boundary_import_check_effect
+node_id: node_boundary_import_check_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Gather tracked Python/YAML source, candidate baseline and git show base revision baseline; persist baseline
+  and edge artifacts.
+input_model: omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_request.ModelBoundaryImportCheckRequest
+output_model: omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_input.ModelBoundaryImportCheckInput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeBoundaryImportCheckEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000

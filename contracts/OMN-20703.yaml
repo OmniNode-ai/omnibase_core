@@ -1,0 +1,142 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20703
+title: 'Node-boundary import gate: a shrink-only check refuses any new import that crosses a node boundary'
+summary: Core ships node_boundary_import_check_compute/effect and the pre-commit hook check-node-boundary-imports;
+  it fails on a new boundary edge, on baseline growth against the base revision, and on a deleted baseline,
+  and canonical-file-shape treats the hook's declared baseline as a gate list.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20703
+    statement: The node-boundary import gate must refuse new boundary edges and baseline growth while
+      enforcing baseline adoption, tracked-file scope, and canonical gate declarations.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a new boundary-crossing edge not in the baseline fails as new-boundary-edge,
+          and a baseline entry no longer seen fails as stale. -- falsifier: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_handler.py
+          -q -k "test_new_stale_and_baselined_findings or test_fixture_pairs"'
+      - id: AC2
+        statement: 'AC2: edge identity is one edge per imported symbol (importer -> target:name), with
+          declared YAML and whole-string module paths counted. -- falsifier: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_handler.py
+          -q -k "test_symbol_identities_and_exception_precedence or test_declared_and_dynamic_references"'
+      - id: AC3
+        statement: 'AC3: the baseline is shrink-only against the base revision: --write-baseline refuses
+          growth and a hand-added baseline entry fails. -- falsifier: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py
+          -q -k "test_create_shrink_and_growth_refusal or test_manual_baseline_addition_and_replacement_fail"'
+      - id: AC4
+        statement: 'AC4: deleting an adopted baseline fails and cannot re-bootstrap; adoption with no
+          base baseline needs --bootstrap. -- falsifier: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py
+          -q -k "test_delete_baseline_cannot_rebootstrap_existing_base or test_no_base_baseline_requires_explicit_bootstrap
+          or test_deleted_baseline_with_zero_edges_fails"'
+      - id: AC5
+        statement: 'AC5: only git-tracked files are scanned, test and build paths are excluded, and zero
+          files scanned is an error. -- falsifier: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py
+          -q -k "test_tracked_only_and_excluded_paths or test_zero_files_error"'
+      - id: AC6
+        statement: 'AC6: canonical-file-shape accepts the check-node-boundary-imports baseline declared
+          by the core hook and refuses a local declaration. -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py
+          -q -k "test_node_boundary_baseline_declarations or test_local_node_boundary_declaration_refused
+          or test_both_gate_declarations_and_no_direct_model_default"'
+evidence_requirements:
+  - kind: tests
+    description: The handler tests assert that new boundary edges and stale baseline entries fail.
+    command: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_handler.py -q -k "test_new_stale_and_baselined_findings
+      or test_fixture_pairs"
+  - kind: tests
+    description: The handler tests assert per-symbol edge identities and count declared YAML and whole-string
+      module paths.
+    command: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_handler.py -q -k "test_symbol_identities_and_exception_precedence
+      or test_declared_and_dynamic_references"
+  - kind: tests
+    description: The runtime tests assert that baseline writes refuse growth and hand-added baseline entries
+      fail against the base revision.
+    command: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py -q -k "test_create_shrink_and_growth_refusal
+      or test_manual_baseline_addition_and_replacement_fail"
+  - kind: tests
+    description: The runtime tests assert that deleting an adopted baseline fails without re-bootstrap
+      and adoption without a base baseline requires explicit bootstrap.
+    command: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py -q -k "test_delete_baseline_cannot_rebootstrap_existing_base
+      or test_no_base_baseline_requires_explicit_bootstrap or test_deleted_baseline_with_zero_edges_fails"
+  - kind: tests
+    description: The runtime tests assert tracked-file scanning, test and build path exclusions, and failure
+      when zero files are scanned.
+    command: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py -q -k "test_tracked_only_and_excluded_paths
+      or test_zero_files_error"
+  - kind: tests
+    description: The canonical-file-shape tests accept the baseline declared by the core hook and refuse
+      a local node-boundary declaration.
+    command: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k "test_node_boundary_baseline_declarations
+      or test_local_node_boundary_declaration_refused or test_both_gate_declarations_and_no_direct_model_default"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20703-ac1
+    description: The handler tests assert that new boundary edges and stale baseline entries fail.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_handler.py
+          -q -k "test_new_stale_and_baselined_findings or test_fixture_pairs"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20703-ac2
+    description: The handler tests assert per-symbol edge identities and count declared YAML and whole-string
+      module paths.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_handler.py
+          -q -k "test_symbol_identities_and_exception_precedence or test_declared_and_dynamic_references"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-20703-ac3
+    description: The runtime tests assert that baseline writes refuse growth and hand-added baseline entries
+      fail against the base revision.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py
+          -q -k "test_create_shrink_and_growth_refusal or test_manual_baseline_addition_and_replacement_fail"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn-20703-ac4
+    description: The runtime tests assert that deleting an adopted baseline fails without re-bootstrap
+      and adoption without a base baseline requires explicit bootstrap.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py
+          -q -k "test_delete_baseline_cannot_rebootstrap_existing_base or test_no_base_baseline_requires_explicit_bootstrap
+          or test_deleted_baseline_with_zero_edges_fails"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn-20703-ac5
+    description: The runtime tests assert tracked-file scanning, test and build path exclusions, and failure
+      when zero files are scanned.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py
+          -q -k "test_tracked_only_and_excluded_paths or test_zero_files_error"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn-20703-ac6
+    description: The canonical-file-shape tests accept the baseline declared by the core hook and refuse
+      a local node-boundary declaration.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k "test_node_boundary_baseline_declarations
+          or test_local_node_boundary_declaration_refused or test_both_gate_declarations_and_no_direct_model_default"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6

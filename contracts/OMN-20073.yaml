@@ -1,0 +1,120 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20073
+title: The shared receipt gate has a shadow input, so a repository that refuses any non-success check-run
+  can carry the S5 caller
+summary: With evidence-source caller and shadow "true", the receipt gate's verify job runs as a reported
+  no-op, every dod-verify step but Summarise absorbs a refusal, a refused head stops the steps that depend
+  on it, and Summarise records one Shadow verdict line. The default stays "false", so every existing caller
+  is unchanged.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20073
+    statement: The shared receipt gate must support shadow caller mode while preserving enforcing mode
+      for existing callers.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the shadow input exists and defaults to "false", so existing callers keep enforcing
+          mode. -- falsifier: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k shadow_input_defaults_to_false'
+      - id: AC2
+        statement: 'AC2: in shadow caller mode verify runs as a reported no-op that exempts itself before
+          reading the pull request, so its check-run concludes success rather than skipped. -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k "verify_runs_as_a_reported_noop_in_shadow_caller_mode
+          or verify_noop_exempts_without_reading_the_pull_request"'
+      - id: AC3
+        statement: 'AC3: in shadow mode every dod-verify step except Summarise carries step-level continue-on-error,
+          so the job concludes success whatever the verdict. -- falsifier: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py
+          -q -k every_dod_verify_step_but_the_summary_absorbs_a_refusal_in_shadow'
+      - id: AC4
+        statement: 'AC4: a refusal at the same-repository check or at the ticket resolution stops every
+          later step that depends on it, so a refused fork head is never checked out or run. -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k a_refusal_stops_the_steps_that_depend_on_it'
+      - id: AC5
+        statement: 'AC5: Summarise records one Shadow verdict line (head, new_path, refused_step, occ_difference)
+          and exits 0 for a planted disagreement, a refusal, a clean agreement and a dependency bot. --
+          falsifier: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k "a_planted_disagreement_is_recorded_and_the_job_still_passes
+          or a_refusal_names_the_first_refused_step_and_still_passes or a_clean_agreement_is_recorded
+          or a_dependency_bot_is_recorded_as_exempt"'
+evidence_requirements:
+  - kind: tests
+    description: The workflow input test asserts that shadow is optional, has string type, and defaults
+      to "false".
+    command: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k shadow_input_defaults_to_false
+  - kind: tests
+    description: The verify tests assert that the job runs in shadow caller mode and exempts itself before
+      reading the pull request.
+    command: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k "verify_runs_as_a_reported_noop_in_shadow_caller_mode
+      or verify_noop_exempts_without_reading_the_pull_request"
+  - kind: tests
+    description: The workflow test asserts step-level continue-on-error for every dod-verify step except
+      Summarise in shadow mode.
+    command: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k every_dod_verify_step_but_the_summary_absorbs_a_refusal_in_shadow
+  - kind: tests
+    description: The refusal test asserts that later dependent steps are guarded by the same-repository
+      and ticket resolution outcomes.
+    command: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k a_refusal_stops_the_steps_that_depend_on_it
+  - kind: tests
+    description: The summary tests assert Shadow verdict fields and exit 0 for a planted disagreement,
+      a refusal, a clean agreement and a dependency bot.
+    command: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k "a_planted_disagreement_is_recorded_and_the_job_still_passes
+      or a_refusal_names_the_first_refused_step_and_still_passes or a_clean_agreement_is_recorded or a_dependency_bot_is_recorded_as_exempt"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20073-ac1
+    description: The workflow input test asserts that shadow is optional, has string type, and defaults
+      to "false".
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k shadow_input_defaults_to_false
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20073-ac2
+    description: The verify tests assert that the job runs in shadow caller mode and exempts itself before
+      reading the pull request.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k "verify_runs_as_a_reported_noop_in_shadow_caller_mode
+          or verify_noop_exempts_without_reading_the_pull_request"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-20073-ac3
+    description: The workflow test asserts step-level continue-on-error for every dod-verify step except
+      Summarise in shadow mode.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k every_dod_verify_step_but_the_summary_absorbs_a_refusal_in_shadow
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn-20073-ac4
+    description: The refusal test asserts that later dependent steps are guarded by the same-repository
+      and ticket resolution outcomes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k a_refusal_stops_the_steps_that_depend_on_it
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn-20073-ac5
+    description: The summary tests assert Shadow verdict fields and exit 0 for a planted disagreement,
+      a refusal, a clean agreement and a dependency bot.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_shadow_omn20073.py -q -k "a_planted_disagreement_is_recorded_and_the_job_still_passes
+          or a_refusal_names_the_first_refused_step_and_still_passes or a_clean_agreement_is_recorded
+          or a_dependency_bot_is_recorded_as_exempt"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
