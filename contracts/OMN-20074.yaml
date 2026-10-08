@@ -1,0 +1,40 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20074
+title: In caller evidence mode the shared receipt gate's verify job reports a success no-op, never skipped
+summary: With evidence-source caller, shadow or not, verify has no job-level condition and runs as a reported
+  success no-op. The bot_exempt step writes exempt=true and emits one notice with the reason before reading
+  the pull request; every later step is gated on the exemption. Shadow governs only dod-verify.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20074
+    statement: The shared receipt gate's verify job must report a success no-op in caller evidence mode,
+      including enforcing mode, rather than a skipped check-run.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: verify has no job-level condition, and in enforcing caller mode its bot_exempt
+          step exits 0, writes only exempt=true and emits exactly one notice with the no-op reason before
+          reading the pull request. -- falsifier: uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py
+          -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason'
+evidence_requirements:
+  - kind: tests
+    description: The workflow test asserts that verify has no job-level condition and that enforcing caller
+      mode is a success no-op with one notice line, without reading the pull request.
+    command: uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20074-ac1
+    description: The workflow test asserts that verify has no job-level condition and that enforcing caller
+      mode is a success no-op with one notice line, without reading the pull request.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1

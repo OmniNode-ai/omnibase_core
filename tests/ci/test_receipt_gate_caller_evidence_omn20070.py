@@ -72,9 +72,8 @@ def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
 
 def test_jobs_select_evidence_source_and_preserve_occ_steps() -> None:
     verify = _workflow()["jobs"]["verify"]
-    assert verify["if"] == (
-        "inputs.evidence-source != 'caller' || inputs.shadow == 'true'"
-    )
+    # OMN-20074: verify runs in every mode; caller mode makes it a no-op.
+    assert "if" not in verify
     names = {step.get("name") for step in verify["steps"]}
     assert {
         "Resolve Evidence-Source",

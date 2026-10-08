@@ -14,21 +14,22 @@
 #   evidence-source: occ (default) or caller. `caller` reads
 #                   contracts/<OMN-N>.yaml from the caller's own checkout at
 #                   the PR head and runs no OCC checkout.
+#                   `verify` always reports a success no-op in caller mode,
+#                   regardless of shadow (OMN-20074).
 #   verifier-version: pinned omnimarket PyPI release for caller mode
 #                   (default: 0.4.280; must be numeric MAJOR.MINOR.PATCH).
 #   compare-with-occ: "true" during the pilot, when dod-verify is required
 #                   beside OCC's contexts; "false" otherwise (default: "false").
 #   shadow:         "true" while a repository counts this gate's verdict beside
 #                   OCC's without enforcing it (OMN-20073, OCC retirement S5);
-#                   "false" otherwise (default: "false"). With evidence-source
-#                   caller, every job concludes success whatever the verdict:
-#                   `verify` is a reported no-op instead of a skipped job, and
-#                   `dod-verify` records its verdict (the first refused step,
-#                   the OCC difference outcome and reason) as one `Shadow
-#                   verdict:` job-summary line and one notice annotation, then
-#                   passes. A repository whose own sweep refuses any
-#                   non-success check-run (omniclaude's CI Summary L5) cannot
-#                   carry a skipped or red context, shadow or not.
+#                   "false" otherwise (default: "false"). Governs only
+#                   `dod-verify` in caller mode: with "true", it records its
+#                   verdict (the first refused step, the OCC difference
+#                   outcome and reason) as one `Shadow verdict:` job-summary
+#                   line and one notice annotation, then passes. A
+#                   repository whose own sweep refuses any non-success
+#                   check-run (omniclaude's CI Summary L5) cannot carry a
+#                   skipped or red context, shadow or not.
 #   occ-context:    check run name carrying OCC's verdict
 #                   (default: "occ-preflight / eligibility").
 #   occ-wait-seconds: bounded wait for OCC's verdict on the same PR head
@@ -122,10 +123,9 @@ permissions:
 jobs:
   verify:
     name: verify
-    # OMN-20073: in shadow caller-evidence mode this job runs as a reported
-    # no-op (the bot-exemption step below sets exempt, every later step is
-    # gated on it) so its check-run concludes success rather than skipped.
-    if: inputs.evidence-source != 'caller' || inputs.shadow == 'true'
+    # OMN-20074: in caller-evidence mode, shadow or not, this job reports a
+    # no-op so its check-run concludes success rather than skipped. bot_exempt
+    # sets exempt and every later step is gated on it.
     # OMN-18205: the untrusted test is the FORK test, and only the fork test.
     # This selector sent EVERY pull-request event to the public class,
     # same-repo ones included, so every repository consuming this reusable had
@@ -254,9 +254,9 @@ jobs:
         run: |
           set -euo pipefail
 
-          # OMN-20073: shadow caller-evidence mode runs this job only so its
-          # check-run concludes success instead of skipped. dod-verify carries
-          # the verdict; every step below is gated on exempt != 'true'.
+          # OMN-20074: caller-evidence mode (shadow or not) runs this job only
+          # so its check-run concludes success instead of skipped. dod-verify
+          # carries the verdict; every step below is gated on exempt != 'true'.
           if [ "${CALLER_EVIDENCE_MODE:-}" = "true" ]; then
             echo "::notice::verify does not apply in caller-evidence mode; repo-evidence / dod-verify carries the verdict."
             echo "exempt=true" >> "$GITHUB_OUTPUT"

@@ -48,7 +48,7 @@ def test_shadow_input_defaults_to_false() -> None:
 
 def test_verify_runs_as_a_reported_noop_in_shadow_caller_mode() -> None:
     job = _workflow()["jobs"]["verify"]
-    assert job["if"] == "inputs.evidence-source != 'caller' || inputs.shadow == 'true'"
+    assert "if" not in job
     by_name = {step["name"]: step for step in job["steps"]}
     # The three steps before the exemption probe touch the pull request or a
     # checkout, so each must be off in caller mode.
