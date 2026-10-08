@@ -8,8 +8,10 @@
 #
 # Why pull_request_target: GitHub reads the workflow definition from the BASE
 # branch, so a pull request that edits this file or the reusable's pin does not
-# change which definition runs on it. The pull request's own code is only ever
-# checked out as data by the reusable, which refuses fork heads.
+# change which definition runs on it. The reusable refuses fork heads before
+# any checkout. For a same-repository head it runs the cited contract's checks
+# (its bound tests) at the head and at the merge base on the trusted runner
+# fleet; the definition that runs them is still the base branch's.
 #
 # dev and main are the integration branches. The activity types cover new heads,
 # reopened and ready PRs, and edits to the ticket citation or base branch.
@@ -24,8 +26,10 @@
 # repo-evidence / verify job in this mode (the OCC path, switched off by the
 # input); only repo-evidence / dod-verify carries a verdict.
 #
-# The reusable is pinned by full SHA to the same commit omnimarket's caller
-# pins (omnibase_core#1886). It is not called as
+# The reusable is pinned by full SHA to omnibase_core#1912's squash commit.
+# verifier-version 0.4.305 is the first omnimarket release carrying
+# omnimarket#3563 (node_dod_verify names contract_in_another_repo), the verifier
+# half of #1912. It is not called as
 # ./.github/workflows/receipt-gate.yml. A pull request that edits
 # receipt-gate.yml in this repository does not change the definition that
 # judges it.
@@ -61,8 +65,8 @@ permissions:
 
 jobs:
   repo-evidence:
-    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@39ad8e5c88f607aed6a035a3241c96ed36d547a0 # OMN-20543: immutable full-SHA pin, the squash commit of omnibase_core#1886 on that repo's dev branch. Over omnibase_core#1884 (the dependency-bot and pin-only writer-app exemption, OMN-20073), the dod-verify job gives every bound test a Postgres service, the PG16 server tools and INTEGRATION_POSTGRES_*, at the head and in the merge-base control, so a database test is bound with the default scope instead of local_done_gate.
+    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@81b34fe91f995e75acd65694e81ecf2c385456a4 # OMN-20074: immutable full-SHA pin, the squash commit of omnibase_core#1912 on dev (with compare-with-occ "true", a PR head that lacks its cited contract names the contract's home in another repository, so the difference reports contract_in_another_repo; also carries omnibase_core#1911, the in-job writer-app pin-only verdict)
     with:
       evidence-source: caller
-      verifier-version: 0.4.294
+      verifier-version: 0.4.305
       compare-with-occ: "true"

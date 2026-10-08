@@ -30,6 +30,14 @@ requirements:
           repositories over OCC, skips the caller, writes nothing when absent, and never probes with compare-with-occ
           false; occ-difference still reads the same dod directory. -- falsifier: uv run pytest tests/ci/test_receipt_gate_contract_home_omn20074.py
           -q -p no:randomly'
+  - id: req-omn20074-caller-repin
+    statement: The Repo Evidence Gate caller must pin the contract-home reusable and its matching verifier
+      release while keeping the S5 shadow comparison enabled.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: the Repo Evidence Gate caller pins receipt-gate.yml at omnibase_core#1912''s squash
+          commit and verifier-version at or above omnimarket v0.4.305, keeping compare-with-occ "true".
+          -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -39,6 +47,10 @@ evidence_requirements:
     description: Execute the head step with fake GitHub API responses to prove contract-home precedence,
       absent and disabled behavior, and the unchanged refusal.
     command: uv run pytest tests/ci/test_receipt_gate_contract_home_omn20074.py -q -p no:randomly
+  - kind: tests
+    description: The caller tests prove the immutable contract-home reusable pin, the matching verifier
+      release floor, and the enabled S5 shadow comparison.
+    command: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q
 emergency_bypass:
   enabled: false
   justification: ''
@@ -63,3 +75,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
+  - id: dod-omn-20074-ac3
+    description: The caller tests prove the immutable contract-home reusable pin, the matching verifier
+      release floor, and the enabled S5 shadow comparison.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
