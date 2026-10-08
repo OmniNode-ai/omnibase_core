@@ -1,0 +1,48 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19615
+title: Balance core test shards from committed durations
+summary: Every full-suite and smart-selection test shard splits with pytest-split least_duration over
+  the committed config/test_durations.json; shards export fresh measurements and Shadow Selection Compare
+  merges them. Contract binds the behavior implemented in PR 1916.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19615
+    statement: The slowest shard sets the critical path of every core PR, so shard assignment must read
+      one committed duration record instead of a mutable runner-local cache.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: The spread between the fastest and slowest test-parallel shard on a full core
+          PR run falls below 300 s from the 1039 s baseline. -- falsifier: gh api repos/OmniNode-ai/omnibase_core/actions/runs/<run>/jobs
+          durations of the test-parallel matrix, max minus min'
+      - id: AC2
+        statement: 'AC2: The split assignment reads a committed duration record and a test missing from
+          the record still lands in exactly one shard. -- falsifier: uv run pytest tests/unit/validation/test_ci_workflow_shape.py
+          -q -k test_committed_durations_assign_an_unrecorded_test_exactly_once'
+evidence_requirements:
+  - kind: tests
+    description: Workflow-shape tests cover the shared duration record, the per-shard export, the unrecorded-test
+      assignment and the merge of shard records.
+    command: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19615-ac2
+    description: A test missing from the committed record lands in exactly one of 40 shards.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q -k test_committed_durations_assign_an_unrecorded_test_exactly_once
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn19615-workflow-shape
+    description: Full-suite shards share one committed record, export durations and merge completely.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
