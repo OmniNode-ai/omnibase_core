@@ -1,0 +1,124 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-18785
+title: Derive evidence verifier verdicts from typed checks
+summary: ModelEvidenceVerifierResult derives its verdict from typed checks and records the verifier as
+  ModelRuntimeIdentity. Existing verifier and bundle tests provide executable evidence for the changed
+  contract.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn18785
+    statement: Evidence verifier verdicts must follow typed check outcomes and carry runtime verifier
+      identity.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: Caller-supplied status and display-string verifier identities are refused; verifier
+          identity requires runtime provenance fields. -- falsifier: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k ''status_is_never_an_input or display_string_is_not_a_verifier_identity or verifier_requires_existing_runtime_identity_fields'''
+      - id: AC2
+        statement: 'AC2: Checks require typed fields, nonempty text and strict booleans, and refuse contradictory
+          or caller-supplied outcomes. -- falsifier: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k ''checks_require_typed_fields or check_text_is_nonempty or check_booleans_are_strict or
+          passing_check_cannot_be_indeterminate or check_rejects_untyped_or_caller_supplied_outcomes'''
+      - id: AC3
+        statement: 'AC3: Empty check collections and duplicate check names are refused. -- falsifier:
+          uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -k ''zero_checks_cannot_produce_a_pass
+          or duplicate_check_names_are_refused'''
+      - id: AC4
+        statement: 'AC4: Check outcomes and aggregate PASS, FAIL and INDETERMINATE verdicts are derived
+          and aggregation is order independent. -- falsifier: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k ''verdict_and_check_outcome_are_derived or aggregation_is_order_independent'''
+      - id: AC5
+        statement: 'AC5: Typed verifier results round trip in evidence bundles, remain frozen, expose
+          derived status as read only, and construct through package exports. -- falsifier: uv run pytest
+          tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -k ''bundle_constructs_and_round_trips_with_typed_verifier_result
+          or verdict_and_typed_checks_are_frozen or schema_marks_derived_status_read_only or typed_checks_construct_through_the_package_export'''
+evidence_requirements:
+  - kind: tests
+    description: Caller-supplied status and display-string verifier identities are refused; verifier identity
+      requires runtime provenance fields.
+    command: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -k 'status_is_never_an_input
+      or display_string_is_not_a_verifier_identity or verifier_requires_existing_runtime_identity_fields'
+  - kind: tests
+    description: Checks require typed fields, nonempty text and strict booleans, and refuse contradictory
+      or caller-supplied outcomes.
+    command: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -k 'checks_require_typed_fields
+      or check_text_is_nonempty or check_booleans_are_strict or passing_check_cannot_be_indeterminate
+      or check_rejects_untyped_or_caller_supplied_outcomes'
+  - kind: tests
+    description: Empty check collections and duplicate check names are refused.
+    command: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -k 'zero_checks_cannot_produce_a_pass
+      or duplicate_check_names_are_refused'
+  - kind: tests
+    description: Check outcomes and aggregate PASS, FAIL and INDETERMINATE verdicts are derived and aggregation
+      is order independent.
+    command: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -k 'verdict_and_check_outcome_are_derived
+      or aggregation_is_order_independent'
+  - kind: tests
+    description: Typed verifier results round trip in evidence bundles, remain frozen, expose derived
+      status as read only, and construct through package exports.
+    command: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -k 'bundle_constructs_and_round_trips_with_typed_verifier_result
+      or verdict_and_typed_checks_are_frozen or schema_marks_derived_status_read_only or typed_checks_construct_through_the_package_export'
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-18785-ac1
+    description: Caller-supplied status and display-string verifier identities are refused; verifier identity
+      requires runtime provenance fields.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k 'status_is_never_an_input or display_string_is_not_a_verifier_identity or verifier_requires_existing_runtime_identity_fields'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-18785-ac2
+    description: Checks require typed fields, nonempty text and strict booleans, and refuse contradictory
+      or caller-supplied outcomes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k 'checks_require_typed_fields or check_text_is_nonempty or check_booleans_are_strict or
+          passing_check_cannot_be_indeterminate or check_rejects_untyped_or_caller_supplied_outcomes'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-18785-ac3
+    description: Empty check collections and duplicate check names are refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k 'zero_checks_cannot_produce_a_pass or duplicate_check_names_are_refused'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn-18785-ac4
+    description: Check outcomes and aggregate PASS, FAIL and INDETERMINATE verdicts are derived and aggregation
+      is order independent.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k 'verdict_and_check_outcome_are_derived or aggregation_is_order_independent'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn-18785-ac5
+    description: Typed verifier results round trip in evidence bundles, remain frozen, expose derived
+      status as read only, and construct through package exports.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -k 'bundle_constructs_and_round_trips_with_typed_verifier_result or verdict_and_typed_checks_are_frozen
+          or schema_marks_derived_status_read_only or typed_checks_construct_through_the_package_export'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5

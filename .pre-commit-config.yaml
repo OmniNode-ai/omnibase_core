@@ -69,6 +69,16 @@ repos:
   # Note: ruff replaces both black and isort (10-100x faster)
   - repo: local
     hooks:
+      - id: evidence-verifier-model-invariants
+        name: Evidence verifier model invariants (OMN-18785)
+        entry: uv run --frozen pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py
+          -q -n 0 --reruns 0
+        language: system
+        files: ^(src/omnibase_core/(models/(evidence_bundle|runtime)/|enums/enum_evidence_verification_status\.py)|tests/unit/models/evidence_bundle/|\.pre-commit-config\.yaml$|\.github/workflows/ci\.yml$)
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
       - id: ruff-format
         name: ruff format (staged Python files)
         entry: uv run ruff format --force-exclude
