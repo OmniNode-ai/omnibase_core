@@ -35,9 +35,9 @@ requirements:
       release while keeping the S5 shadow comparison enabled.
     acceptance:
       - id: AC3
-        statement: 'AC3: the Repo Evidence Gate caller pins receipt-gate.yml at omnibase_core#1912''s squash
-          commit and verifier-version at or above omnimarket v0.4.305, keeping compare-with-occ "true".
-          -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q'
+        statement: 'AC3: the Repo Evidence Gate caller pins receipt-gate.yml at omnibase_core#1912''s
+          squash commit and verifier-version at or above omnimarket v0.4.305, keeping compare-with-occ
+          "true". -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
