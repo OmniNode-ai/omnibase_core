@@ -1,0 +1,75 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19037
+title: A pull request that removes a required-context producer fails by naming the context
+summary: The required-context producer gate compares the head workflow files and required-checks manifest
+  against the base, and fails with producer_missing or required_context_dropped naming the specific context.
+  Unresolvable base, unparseable YAML, a missing manifest and zero workflow files exit 2, never a pass.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19037
+    statement: A head that removes a required-context producer, or drops a protected base row, must fail
+      the gate and name the context.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a base-protected row removed or left without a producer fails with the matching
+          rule code. -- falsifier: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_runtime_required_context_producer_check.py
+          -q -k test_base_protection'
+      - id: AC2
+        statement: 'AC2: an unresolvable base and every parse or location error exit 2 and never pass.
+          -- falsifier: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_runtime_required_context_producer_check.py
+          -q -k "test_unresolvable_base_is_an_error_never_a_pass or test_errors_fail_closed"'
+      - id: AC3
+        statement: 'AC3: the handler resolves caller and nested job contexts and is deterministic. --
+          falsifier: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_node_required_context_producer_check_compute.py
+          -q -k "test_caller_and_nested_job_resolution or test_handler_is_deterministic"'
+evidence_requirements:
+  - kind: tests
+    description: The runtime tests assert base-protected rows fail with the matching rule code.
+    command: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_runtime_required_context_producer_check.py
+      -q -k test_base_protection
+  - kind: tests
+    description: The runtime tests assert errors exit 2 and never pass.
+    command: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_runtime_required_context_producer_check.py
+      -q -k "test_unresolvable_base_is_an_error_never_a_pass or test_errors_fail_closed"
+  - kind: tests
+    description: The handler tests assert caller and nested job resolution and determinism.
+    command: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_node_required_context_producer_check_compute.py
+      -q -k "test_caller_and_nested_job_resolution or test_handler_is_deterministic"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-19037-ac1
+    description: The runtime tests assert base-protected rows fail with the matching rule code.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_runtime_required_context_producer_check.py
+          -q -k test_base_protection
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-19037-ac2
+    description: The runtime tests assert errors exit 2 and never pass.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_runtime_required_context_producer_check.py
+          -q -k "test_unresolvable_base_is_an_error_never_a_pass or test_errors_fail_closed"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-19037-ac3
+    description: The handler tests assert caller and nested job resolution and determinism.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_required_context_producer_check_compute/test_node_required_context_producer_check_compute.py
+          -q -k "test_caller_and_nested_job_resolution or test_handler_is_deterministic"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
