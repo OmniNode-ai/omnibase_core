@@ -28,25 +28,22 @@ requirements:
           selection the evidence resolver makes. -- falsifier: uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
           -q -k test_push_selects_the_latest_merged_pr_like_the_resolver"
   - id: req-omn17427-writer-pin-only-in-job
-    statement: The caller-evidence job must derive the OCC writer app dependency-pin-only exemption
-      with the pinned producer classifier at the exact head and fail closed on every error.
+    statement: The caller-evidence job must derive the OCC writer app dependency-pin-only exemption with
+      the pinned producer classifier at the exact head and fail closed on every error.
     acceptance:
       - id: AC4
-        statement: "AC4: The caller-evidence job exempts an OCC writer app version bump using the
-          pinned producer classifier over the exact head diff against the merge base.
-          -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py
-          -q -k test_writer_pin_only_step_exempts_a_version_bump"
+        statement: "AC4: The caller-evidence job exempts an OCC writer app version bump using the pinned
+          producer classifier over the exact head diff against the merge base. -- falsifier: uv run pytest
+          tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_exempts_a_version_bump"
       - id: AC5
-        statement: "AC5: Every broken or missing pinned verifier leaves the writer app not-exempt,
-          emits exactly one false output and exits successfully so the existing evidence gate
-          continues.
-          -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py
-          -q -k test_writer_pin_only_step_fails_closed_on_a_broken_verifier"
+        statement: "AC5: Every broken or missing pinned verifier leaves the writer app not-exempt, emits
+          exactly one false output and exits successfully so the existing evidence gate continues. --
+          falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k
+          test_writer_pin_only_step_fails_closed_on_a_broken_verifier"
       - id: AC6
-        statement: "AC6: Only an unproven writer app reaches the in-job classifier after verifier
-          installation, and its exemption gates every later evidence step in dod-verify alone.
-          -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py
-          -q -k test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
+        statement: "AC6: Only an unproven writer app reaches the in-job classifier after verifier installation,
+          and its exemption gates every later evidence step in dod-verify alone. -- falsifier: uv run
+          pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
 evidence_requirements:
   - kind: tests
     description: "on push the step classifies the commit's merged pull request with the dependency-bot
@@ -65,20 +62,17 @@ evidence_requirements:
     command: "uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
       -q -k test_push_selects_the_latest_merged_pr_like_the_resolver"
   - kind: tests
-    description: "The caller-evidence job exempts an OCC writer app version bump using the pinned
-      producer classifier over the exact head diff against the merge base."
-    command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k
-      test_writer_pin_only_step_exempts_a_version_bump"
+    description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
+      classifier over the exact head diff against the merge base."
+    command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_exempts_a_version_bump"
   - kind: tests
-    description: "Every broken or missing pinned verifier leaves the writer app not-exempt, emits
-      exactly one false output and exits successfully so the existing evidence gate continues."
-    command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k
-      test_writer_pin_only_step_fails_closed_on_a_broken_verifier"
+    description: "Every broken or missing pinned verifier leaves the writer app not-exempt, emits exactly
+      one false output and exits successfully so the existing evidence gate continues."
+    command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_fails_closed_on_a_broken_verifier"
   - kind: tests
-    description: "Only an unproven writer app reaches the in-job classifier after verifier
-      installation, and its exemption gates every later evidence step in dod-verify alone."
-    command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k
-      test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
+    description: "Only an unproven writer app reaches the in-job classifier after verifier installation,
+      and its exemption gates every later evidence step in dod-verify alone."
+    command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -119,35 +113,35 @@ dod_evidence:
     binds_ac:
       - AC3
   - id: dod-omn-17427-writer-pin-only-exempts-bump
-    description: "The caller-evidence job exempts an OCC writer app version bump using the pinned
-      producer classifier over the exact head diff against the merge base."
+    description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
+      classifier over the exact head diff against the merge base."
     source: manual
     checks:
       - check_type: test_passes
-        check_value: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q
-          -k test_writer_pin_only_step_exempts_a_version_bump"
+        check_value: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k
+          test_writer_pin_only_step_exempts_a_version_bump"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC4
   - id: dod-omn-17427-writer-pin-only-fails-closed
-    description: "Every broken or missing pinned verifier leaves the writer app not-exempt, emits
-      exactly one false output and exits successfully so the existing evidence gate continues."
+    description: "Every broken or missing pinned verifier leaves the writer app not-exempt, emits exactly
+      one false output and exits successfully so the existing evidence gate continues."
     source: manual
     checks:
       - check_type: test_passes
-        check_value: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q
-          -k test_writer_pin_only_step_fails_closed_on_a_broken_verifier"
+        check_value: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k
+          test_writer_pin_only_step_fails_closed_on_a_broken_verifier"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5
   - id: dod-omn-17427-writer-pin-only-gates-evidence
-    description: "Only an unproven writer app reaches the in-job classifier after verifier
-      installation, and its exemption gates every later evidence step in dod-verify alone."
+    description: "Only an unproven writer app reaches the in-job classifier after verifier installation,
+      and its exemption gates every later evidence step in dod-verify alone."
     source: manual
     checks:
       - check_type: test_passes
-        check_value: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q
-          -k test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
+        check_value: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k
+          test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
