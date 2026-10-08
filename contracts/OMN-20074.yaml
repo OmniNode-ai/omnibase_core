@@ -38,6 +38,17 @@ requirements:
         statement: 'AC3: the Repo Evidence Gate caller pins receipt-gate.yml at omnibase_core#1912''s
           squash commit and verifier-version at or above omnimarket v0.4.305, keeping compare-with-occ
           "true". -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q'
+  - id: req-omn20074-writer-release-cut
+    statement: The dod-verify writer_pin_only step must derive the OCC writer-app release-cut exemption
+      from the head's git diff against its merge base and fail closed for every other release shape.
+    acceptance:
+      - id: AC4
+        statement: 'AC4: for an OCC writer-app pull request, the dod-verify writer_pin_only step derives
+          exempt=true for a release cut (root CHANGELOG.md additions only whose single new "## v<version>
+          (<date>)" heading equals the head project.version, optionally with pin-only pyproject.toml/uv.lock)
+          and exempt=false for any other path, a rewritten or deleted changelog line, a heading/version
+          mismatch or an already-released version. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_release_cut_omn20074.py
+          -q'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -51,6 +62,10 @@ evidence_requirements:
     description: The caller tests prove the immutable contract-home reusable pin, the matching verifier
       release floor, and the enabled S5 shadow comparison.
     command: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q
+  - kind: tests
+    description: Execute the writer-app verdict against git objects to prove release-cut shapes and fail-closed
+      controls for paths, changelog edits, heading versions, and already-released versions.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_release_cut_omn20074.py -q
 emergency_bypass:
   enabled: false
   justification: ''
@@ -85,3 +100,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
+  - id: dod-omn-20074-ac4
+    description: The workflow tests prove the git-derived writer-app release-cut exemption and fail-closed
+      refusal controls.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_release_cut_omn20074.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
