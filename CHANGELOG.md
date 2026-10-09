@@ -1,3 +1,15 @@
+## v0.47.37 (2026-10-09)
+
+### Release
+- Cut omnibase-core from dev at 0.47.37 by the scheduled release train.
+- 3 release-relevant commit(s) merged since v0.47.36.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.36
+- fix: validate complete contract documents (#1920)
+- fix: reject quality-rule evidence without a final response (#1919)
+- perf: lazy-load omnibase_core package inits for RuntimeLocal and the in-memory bus (#1918)
+
 ## v0.47.36 (2026-10-06)
 
 ### Release
