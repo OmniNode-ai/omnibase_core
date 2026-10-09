@@ -59,6 +59,11 @@ contract_version:
   patch: 0
 node_name: TestNode
 node_type: COMPUTE_GENERIC
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
 tool_specification:
   main_tool_class: TestToolClass
 """,
@@ -106,6 +111,11 @@ contract_version:
   patch: 0
 node_name: TestNode{i}
 node_type: COMPUTE_GENERIC
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {{}}
 tool_specification:
   main_tool_class: TestToolClass{i}
 """,
@@ -533,6 +543,11 @@ contract_version:
   patch: 0
 node_name: ModifiedNode
 node_type: EFFECT_GENERIC
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
 tool_specification:
   main_tool_class: ModifiedClass
 """,
@@ -696,6 +711,11 @@ contract_version:
   patch: {i}
 node_name: TestNode{i}
 node_type: COMPUTE_GENERIC
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {{}}
 tool_specification:
   main_tool_class: TestToolClass{i}
 """,
@@ -746,6 +766,11 @@ contract_version:
   patch: 0
 node_name: LargeNode
 node_type: COMPUTE_GENERIC
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {{}}
 tool_specification:
   main_tool_class: LargeToolClass
 metadata:
@@ -788,6 +813,11 @@ contract_version:
   patch: 0
 node_name: {node_type_str}Node
 node_type: {node_type_str}
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {{}}
 tool_specification:
   main_tool_class: {node_type_str}ToolClass
 """,
@@ -840,7 +870,14 @@ tool_specification:
         valid = tmp_path / "valid.yaml"
         valid.write_text(
             """
+contract_version: {major: 1, minor: 0, patch: 0}
 node_name: ValidNode
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: ValidClass
 """,
@@ -876,6 +913,12 @@ contract_version:
   minor: {minor}
   patch: {patch_ver}
 node_name: Node{i}
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {{}}
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: ToolClass{i}
 """,
@@ -897,7 +940,14 @@ tool_specification:
         valid = tmp_path / "valid.yaml"
         valid.write_text(
             """
+contract_version: {major: 1, minor: 0, patch: 0}
 node_name: ValidNode
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: ValidClass
 """,

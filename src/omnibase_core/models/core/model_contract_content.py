@@ -34,8 +34,14 @@ from omnibase_core.models.contracts.model_workflow_config import ModelWorkflowCo
 from omnibase_core.models.contracts.subcontracts.model_aggregation_subcontract import (
     ModelAggregationSubcontract,
 )
+from omnibase_core.models.contracts.subcontracts.model_event_bus_subcontract import (
+    ModelEventBusSubcontract,
+)
 from omnibase_core.models.contracts.subcontracts.model_event_type_subcontract import (
     ModelEventTypeSubcontract,
+)
+from omnibase_core.models.contracts.subcontracts.model_handler_routing_subcontract import (
+    ModelHandlerRoutingSubcontract,
 )
 from omnibase_core.models.contracts.subcontracts.model_observability_subcontract import (
     ModelObservabilitySubcontract,
@@ -93,6 +99,21 @@ class ModelContractContent(BaseModel):
         default=...,
         description="Contract definitions section",
     )
+
+    event_bus: ModelEventBusSubcontract | None = Field(
+        default=None,
+        description="Declared publish, subscribe and dead-letter topics",
+    )
+    handler_routing: ModelHandlerRoutingSubcontract | None = Field(
+        default=None,
+        description="Declared handler bindings and routing strategy",
+    )
+
+    @field_validator("node_type", mode="before")
+    @classmethod
+    def normalize_node_type(cls, value: object) -> object:
+        """Retain case-insensitive enum spelling without defaulting invalid types."""
+        return value.upper() if isinstance(value, str) else value
 
     # === OPTIONAL COMMON FIELDS ===
     contract_name: str | None = Field(default=None, description="Contract name")
@@ -270,34 +291,3 @@ class ModelContractContent(BaseModel):
         default=None,
         description="Original dependencies (deprecated) - use strongly typed dependencies",
     )
-
-    @field_validator("dependencies", mode="before")
-    @classmethod
-    def convert_dependency_dicts(
-        cls, v: object
-    ) -> list[ModelContractDependency] | None:
-        """Convert dict dependencies to ModelContractDependency instances.
-
-        This prevents Pydantic re-validation issues in parallel execution by
-        ensuring all dependencies are properly instantiated before field validation.
-
-        Args:
-            v: Dependencies value (list of dicts, ModelContractDependency, or None)
-
-        Returns:
-            List of ModelContractDependency instances or None
-        """
-        if v is None:
-            return None
-        if not isinstance(v, list):
-            return None
-
-        result: list[ModelContractDependency] = []
-        for item in v:
-            if isinstance(item, dict):
-                # Convert dict to ModelContractDependency (triggers its field validators)
-                result.append(ModelContractDependency.model_validate(item))
-            elif isinstance(item, ModelContractDependency):
-                # Already a ModelContractDependency instance
-                result.append(item)
-        return result
