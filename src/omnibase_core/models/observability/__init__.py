@@ -25,28 +25,40 @@ Envelope Validation Metrics:
     - ModelEnvelopeValidationSummary: Combined timing and failure snapshot
 """
 
-from omnibase_core.models.observability.model_counter_emission import (
-    ModelCounterEmission,
-)
-from omnibase_core.models.observability.model_envelope_validation_failure_metrics import (
-    ModelEnvelopeValidationFailureMetrics,
-)
-from omnibase_core.models.observability.model_envelope_validation_summary import (
-    ModelEnvelopeValidationSummary,
-)
-from omnibase_core.models.observability.model_envelope_validation_timing_metrics import (
-    ModelEnvelopeValidationTimingMetrics,
-)
-from omnibase_core.models.observability.model_gauge_emission import ModelGaugeEmission
-from omnibase_core.models.observability.model_histogram_observation import (
-    ModelHistogramObservation,
-)
-from omnibase_core.models.observability.model_label_validation_result import (
-    ModelLabelValidationResult,
-)
-from omnibase_core.models.observability.model_label_violation import ModelLabelViolation
-from omnibase_core.models.observability.model_log_emission import ModelLogEmission
-from omnibase_core.models.observability.model_metrics_policy import ModelMetricsPolicy
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.observability.model_counter_emission import (
+        ModelCounterEmission,
+    )
+    from omnibase_core.models.observability.model_envelope_validation_failure_metrics import (
+        ModelEnvelopeValidationFailureMetrics,
+    )
+    from omnibase_core.models.observability.model_envelope_validation_summary import (
+        ModelEnvelopeValidationSummary,
+    )
+    from omnibase_core.models.observability.model_envelope_validation_timing_metrics import (
+        ModelEnvelopeValidationTimingMetrics,
+    )
+    from omnibase_core.models.observability.model_gauge_emission import (
+        ModelGaugeEmission,
+    )
+    from omnibase_core.models.observability.model_histogram_observation import (
+        ModelHistogramObservation,
+    )
+    from omnibase_core.models.observability.model_label_validation_result import (
+        ModelLabelValidationResult,
+    )
+    from omnibase_core.models.observability.model_label_violation import (
+        ModelLabelViolation,
+    )
+    from omnibase_core.models.observability.model_log_emission import ModelLogEmission
+    from omnibase_core.models.observability.model_metrics_policy import (
+        ModelMetricsPolicy,
+    )
 
 __all__ = [
     # Metrics emission
@@ -64,3 +76,66 @@ __all__ = [
     "ModelEnvelopeValidationFailureMetrics",
     "ModelEnvelopeValidationSummary",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelCounterEmission": (
+        "omnibase_core.models.observability.model_counter_emission",
+        "ModelCounterEmission",
+    ),
+    "ModelEnvelopeValidationFailureMetrics": (
+        "omnibase_core.models.observability.model_envelope_validation_failure_metrics",
+        "ModelEnvelopeValidationFailureMetrics",
+    ),
+    "ModelEnvelopeValidationSummary": (
+        "omnibase_core.models.observability.model_envelope_validation_summary",
+        "ModelEnvelopeValidationSummary",
+    ),
+    "ModelEnvelopeValidationTimingMetrics": (
+        "omnibase_core.models.observability.model_envelope_validation_timing_metrics",
+        "ModelEnvelopeValidationTimingMetrics",
+    ),
+    "ModelGaugeEmission": (
+        "omnibase_core.models.observability.model_gauge_emission",
+        "ModelGaugeEmission",
+    ),
+    "ModelHistogramObservation": (
+        "omnibase_core.models.observability.model_histogram_observation",
+        "ModelHistogramObservation",
+    ),
+    "ModelLabelValidationResult": (
+        "omnibase_core.models.observability.model_label_validation_result",
+        "ModelLabelValidationResult",
+    ),
+    "ModelLabelViolation": (
+        "omnibase_core.models.observability.model_label_violation",
+        "ModelLabelViolation",
+    ),
+    "ModelLogEmission": (
+        "omnibase_core.models.observability.model_log_emission",
+        "ModelLogEmission",
+    ),
+    "ModelMetricsPolicy": (
+        "omnibase_core.models.observability.model_metrics_policy",
+        "ModelMetricsPolicy",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

@@ -17,42 +17,48 @@ Design Principles:
 
 from __future__ import annotations
 
-from omnibase_core.protocols.types.protocol_action import ProtocolAction
+import importlib
+from typing import TYPE_CHECKING
 
-# Node Protocols (OMN-662)
-from omnibase_core.protocols.types.protocol_compute import ProtocolCompute
-from omnibase_core.protocols.types.protocol_configurable import ProtocolConfigurable
-from omnibase_core.protocols.types.protocol_effect import ProtocolEffect
-from omnibase_core.protocols.types.protocol_executable import ProtocolExecutable
-from omnibase_core.protocols.types.protocol_identifiable import ProtocolIdentifiable
-from omnibase_core.protocols.types.protocol_log_emitter import ProtocolLogEmitter
-from omnibase_core.protocols.types.protocol_metadata import ProtocolMetadata
-from omnibase_core.protocols.types.protocol_metadata_provider import (
-    ProtocolMetadataProvider,
-)
-from omnibase_core.protocols.types.protocol_nameable import ProtocolNameable
-from omnibase_core.protocols.types.protocol_node_metadata import ProtocolNodeMetadata
-from omnibase_core.protocols.types.protocol_node_metadata_block import (
-    ProtocolNodeMetadataBlock,
-)
-from omnibase_core.protocols.types.protocol_node_result import ProtocolNodeResult
-from omnibase_core.protocols.types.protocol_orchestrator import ProtocolOrchestrator
-from omnibase_core.protocols.types.protocol_schema_value import ProtocolSchemaValue
-from omnibase_core.protocols.types.protocol_serializable import ProtocolSerializable
-from omnibase_core.protocols.types.protocol_service_instance import (
-    ProtocolServiceInstance,
-)
-from omnibase_core.protocols.types.protocol_service_metadata import (
-    ProtocolServiceMetadata,
-)
-from omnibase_core.protocols.types.protocol_state import ProtocolState
-from omnibase_core.protocols.types.protocol_supported_metadata_type import (
-    ProtocolSupportedMetadataType,
-)
-from omnibase_core.protocols.types.protocol_validatable import ProtocolValidatable
-from omnibase_core.protocols.types.protocol_workflow_reducer import (
-    ProtocolWorkflowReducer,
-)
+if TYPE_CHECKING:
+    from omnibase_core.protocols.types.protocol_action import ProtocolAction
+
+    # Node Protocols (OMN-662)
+    from omnibase_core.protocols.types.protocol_compute import ProtocolCompute
+    from omnibase_core.protocols.types.protocol_configurable import ProtocolConfigurable
+    from omnibase_core.protocols.types.protocol_effect import ProtocolEffect
+    from omnibase_core.protocols.types.protocol_executable import ProtocolExecutable
+    from omnibase_core.protocols.types.protocol_identifiable import ProtocolIdentifiable
+    from omnibase_core.protocols.types.protocol_log_emitter import ProtocolLogEmitter
+    from omnibase_core.protocols.types.protocol_metadata import ProtocolMetadata
+    from omnibase_core.protocols.types.protocol_metadata_provider import (
+        ProtocolMetadataProvider,
+    )
+    from omnibase_core.protocols.types.protocol_nameable import ProtocolNameable
+    from omnibase_core.protocols.types.protocol_node_metadata import (
+        ProtocolNodeMetadata,
+    )
+    from omnibase_core.protocols.types.protocol_node_metadata_block import (
+        ProtocolNodeMetadataBlock,
+    )
+    from omnibase_core.protocols.types.protocol_node_result import ProtocolNodeResult
+    from omnibase_core.protocols.types.protocol_orchestrator import ProtocolOrchestrator
+    from omnibase_core.protocols.types.protocol_schema_value import ProtocolSchemaValue
+    from omnibase_core.protocols.types.protocol_serializable import ProtocolSerializable
+    from omnibase_core.protocols.types.protocol_service_instance import (
+        ProtocolServiceInstance,
+    )
+    from omnibase_core.protocols.types.protocol_service_metadata import (
+        ProtocolServiceMetadata,
+    )
+    from omnibase_core.protocols.types.protocol_state import ProtocolState
+    from omnibase_core.protocols.types.protocol_supported_metadata_type import (
+        ProtocolSupportedMetadataType,
+    )
+    from omnibase_core.protocols.types.protocol_validatable import ProtocolValidatable
+    from omnibase_core.protocols.types.protocol_workflow_reducer import (
+        ProtocolWorkflowReducer,
+    )
 
 __all__ = [
     # Marker Protocols
@@ -86,3 +92,111 @@ __all__ = [
     "ProtocolServiceInstance",
     "ProtocolServiceMetadata",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ProtocolAction": (
+        "omnibase_core.protocols.types.protocol_action",
+        "ProtocolAction",
+    ),
+    "ProtocolCompute": (
+        "omnibase_core.protocols.types.protocol_compute",
+        "ProtocolCompute",
+    ),
+    "ProtocolConfigurable": (
+        "omnibase_core.protocols.types.protocol_configurable",
+        "ProtocolConfigurable",
+    ),
+    "ProtocolEffect": (
+        "omnibase_core.protocols.types.protocol_effect",
+        "ProtocolEffect",
+    ),
+    "ProtocolExecutable": (
+        "omnibase_core.protocols.types.protocol_executable",
+        "ProtocolExecutable",
+    ),
+    "ProtocolIdentifiable": (
+        "omnibase_core.protocols.types.protocol_identifiable",
+        "ProtocolIdentifiable",
+    ),
+    "ProtocolLogEmitter": (
+        "omnibase_core.protocols.types.protocol_log_emitter",
+        "ProtocolLogEmitter",
+    ),
+    "ProtocolMetadata": (
+        "omnibase_core.protocols.types.protocol_metadata",
+        "ProtocolMetadata",
+    ),
+    "ProtocolMetadataProvider": (
+        "omnibase_core.protocols.types.protocol_metadata_provider",
+        "ProtocolMetadataProvider",
+    ),
+    "ProtocolNameable": (
+        "omnibase_core.protocols.types.protocol_nameable",
+        "ProtocolNameable",
+    ),
+    "ProtocolNodeMetadata": (
+        "omnibase_core.protocols.types.protocol_node_metadata",
+        "ProtocolNodeMetadata",
+    ),
+    "ProtocolNodeMetadataBlock": (
+        "omnibase_core.protocols.types.protocol_node_metadata_block",
+        "ProtocolNodeMetadataBlock",
+    ),
+    "ProtocolNodeResult": (
+        "omnibase_core.protocols.types.protocol_node_result",
+        "ProtocolNodeResult",
+    ),
+    "ProtocolOrchestrator": (
+        "omnibase_core.protocols.types.protocol_orchestrator",
+        "ProtocolOrchestrator",
+    ),
+    "ProtocolSchemaValue": (
+        "omnibase_core.protocols.types.protocol_schema_value",
+        "ProtocolSchemaValue",
+    ),
+    "ProtocolSerializable": (
+        "omnibase_core.protocols.types.protocol_serializable",
+        "ProtocolSerializable",
+    ),
+    "ProtocolServiceInstance": (
+        "omnibase_core.protocols.types.protocol_service_instance",
+        "ProtocolServiceInstance",
+    ),
+    "ProtocolServiceMetadata": (
+        "omnibase_core.protocols.types.protocol_service_metadata",
+        "ProtocolServiceMetadata",
+    ),
+    "ProtocolState": ("omnibase_core.protocols.types.protocol_state", "ProtocolState"),
+    "ProtocolSupportedMetadataType": (
+        "omnibase_core.protocols.types.protocol_supported_metadata_type",
+        "ProtocolSupportedMetadataType",
+    ),
+    "ProtocolValidatable": (
+        "omnibase_core.protocols.types.protocol_validatable",
+        "ProtocolValidatable",
+    ),
+    "ProtocolWorkflowReducer": (
+        "omnibase_core.protocols.types.protocol_workflow_reducer",
+        "ProtocolWorkflowReducer",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

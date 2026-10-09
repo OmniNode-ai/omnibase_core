@@ -42,15 +42,23 @@ Example:
     Added overlay stacking models (OMN-2757)
 """
 
-from omnibase_core.models.merge.model_conflict_resolution_result import (
-    ModelConflictResolutionResult,
-)
-from omnibase_core.models.merge.model_geometric_conflict_details import (
-    ModelGeometricConflictDetails,
-)
-from omnibase_core.models.merge.model_merge_conflict import ModelMergeConflict
-from omnibase_core.models.merge.model_overlay_ref import ModelOverlayRef
-from omnibase_core.models.merge.model_overlay_stack_entry import ModelOverlayStackEntry
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.merge.model_conflict_resolution_result import (
+        ModelConflictResolutionResult,
+    )
+    from omnibase_core.models.merge.model_geometric_conflict_details import (
+        ModelGeometricConflictDetails,
+    )
+    from omnibase_core.models.merge.model_merge_conflict import ModelMergeConflict
+    from omnibase_core.models.merge.model_overlay_ref import ModelOverlayRef
+    from omnibase_core.models.merge.model_overlay_stack_entry import (
+        ModelOverlayStackEntry,
+    )
 
 __all__ = [
     "ModelConflictResolutionResult",
@@ -59,3 +67,46 @@ __all__ = [
     "ModelOverlayRef",
     "ModelOverlayStackEntry",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelConflictResolutionResult": (
+        "omnibase_core.models.merge.model_conflict_resolution_result",
+        "ModelConflictResolutionResult",
+    ),
+    "ModelGeometricConflictDetails": (
+        "omnibase_core.models.merge.model_geometric_conflict_details",
+        "ModelGeometricConflictDetails",
+    ),
+    "ModelMergeConflict": (
+        "omnibase_core.models.merge.model_merge_conflict",
+        "ModelMergeConflict",
+    ),
+    "ModelOverlayRef": (
+        "omnibase_core.models.merge.model_overlay_ref",
+        "ModelOverlayRef",
+    ),
+    "ModelOverlayStackEntry": (
+        "omnibase_core.models.merge.model_overlay_stack_entry",
+        "ModelOverlayStackEntry",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

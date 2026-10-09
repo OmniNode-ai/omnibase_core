@@ -18,24 +18,30 @@ validation-event ``ModelContractRef`` in
 identifier collision.
 """
 
-from omnibase_core.models.contract_graph.model_contract_graph_contract_ref import (
-    ModelContractGraphContractRef,
-)
-from omnibase_core.models.contract_graph.model_contract_graph_edge import (
-    ModelContractGraphEdge,
-)
-from omnibase_core.models.contract_graph.model_contract_graph_ir import (
-    ModelContractGraphIr,
-)
-from omnibase_core.models.contract_graph.model_contract_graph_node import (
-    ModelContractGraphNode,
-)
-from omnibase_core.models.contract_graph.model_contract_graph_protocol import (
-    ModelContractGraphProtocol,
-)
-from omnibase_core.models.contract_graph.model_contract_graph_source_set import (
-    ModelContractGraphSourceSet,
-)
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.contract_graph.model_contract_graph_contract_ref import (
+        ModelContractGraphContractRef,
+    )
+    from omnibase_core.models.contract_graph.model_contract_graph_edge import (
+        ModelContractGraphEdge,
+    )
+    from omnibase_core.models.contract_graph.model_contract_graph_ir import (
+        ModelContractGraphIr,
+    )
+    from omnibase_core.models.contract_graph.model_contract_graph_node import (
+        ModelContractGraphNode,
+    )
+    from omnibase_core.models.contract_graph.model_contract_graph_protocol import (
+        ModelContractGraphProtocol,
+    )
+    from omnibase_core.models.contract_graph.model_contract_graph_source_set import (
+        ModelContractGraphSourceSet,
+    )
 
 __all__: tuple[str, ...] = (
     "ModelContractGraphIr",
@@ -45,3 +51,50 @@ __all__: tuple[str, ...] = (
     "ModelContractGraphContractRef",
     "ModelContractGraphSourceSet",
 )
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelContractGraphContractRef": (
+        "omnibase_core.models.contract_graph.model_contract_graph_contract_ref",
+        "ModelContractGraphContractRef",
+    ),
+    "ModelContractGraphEdge": (
+        "omnibase_core.models.contract_graph.model_contract_graph_edge",
+        "ModelContractGraphEdge",
+    ),
+    "ModelContractGraphIr": (
+        "omnibase_core.models.contract_graph.model_contract_graph_ir",
+        "ModelContractGraphIr",
+    ),
+    "ModelContractGraphNode": (
+        "omnibase_core.models.contract_graph.model_contract_graph_node",
+        "ModelContractGraphNode",
+    ),
+    "ModelContractGraphProtocol": (
+        "omnibase_core.models.contract_graph.model_contract_graph_protocol",
+        "ModelContractGraphProtocol",
+    ),
+    "ModelContractGraphSourceSet": (
+        "omnibase_core.models.contract_graph.model_contract_graph_source_set",
+        "ModelContractGraphSourceSet",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

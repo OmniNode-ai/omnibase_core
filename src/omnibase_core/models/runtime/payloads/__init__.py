@@ -41,28 +41,34 @@ See Also:
     - omnibase_core.models.runtime.model_runtime_directive: ModelRuntimeDirective
 """
 
+from __future__ import annotations
+
 # Split payload files
-from omnibase_core.models.runtime.payloads.model_cancel_execution_payload import (
-    ModelCancelExecutionPayload,
-)
-from omnibase_core.models.runtime.payloads.model_delay_until_payload import (
-    ModelDelayUntilPayload,
-)
-from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
-    ModelDirectivePayloadBase,
-)
-from omnibase_core.models.runtime.payloads.model_directive_payload_union import (
-    ModelDirectivePayload,
-)
-from omnibase_core.models.runtime.payloads.model_enqueue_handler_payload import (
-    ModelEnqueueHandlerPayload,
-)
-from omnibase_core.models.runtime.payloads.model_retry_with_backoff_payload import (
-    ModelRetryWithBackoffPayload,
-)
-from omnibase_core.models.runtime.payloads.model_schedule_effect_payload import (
-    ModelScheduleEffectPayload,
-)
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.runtime.payloads.model_cancel_execution_payload import (
+        ModelCancelExecutionPayload,
+    )
+    from omnibase_core.models.runtime.payloads.model_delay_until_payload import (
+        ModelDelayUntilPayload,
+    )
+    from omnibase_core.models.runtime.payloads.model_directive_payload_base import (
+        ModelDirectivePayloadBase,
+    )
+    from omnibase_core.models.runtime.payloads.model_directive_payload_union import (
+        ModelDirectivePayload,
+    )
+    from omnibase_core.models.runtime.payloads.model_enqueue_handler_payload import (
+        ModelEnqueueHandlerPayload,
+    )
+    from omnibase_core.models.runtime.payloads.model_retry_with_backoff_payload import (
+        ModelRetryWithBackoffPayload,
+    )
+    from omnibase_core.models.runtime.payloads.model_schedule_effect_payload import (
+        ModelScheduleEffectPayload,
+    )
 
 __all__ = [
     # Base
@@ -76,3 +82,54 @@ __all__ = [
     # Union Type
     "ModelDirectivePayload",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelCancelExecutionPayload": (
+        "omnibase_core.models.runtime.payloads.model_cancel_execution_payload",
+        "ModelCancelExecutionPayload",
+    ),
+    "ModelDelayUntilPayload": (
+        "omnibase_core.models.runtime.payloads.model_delay_until_payload",
+        "ModelDelayUntilPayload",
+    ),
+    "ModelDirectivePayloadBase": (
+        "omnibase_core.models.runtime.payloads.model_directive_payload_base",
+        "ModelDirectivePayloadBase",
+    ),
+    "ModelDirectivePayload": (
+        "omnibase_core.models.runtime.payloads.model_directive_payload_union",
+        "ModelDirectivePayload",
+    ),
+    "ModelEnqueueHandlerPayload": (
+        "omnibase_core.models.runtime.payloads.model_enqueue_handler_payload",
+        "ModelEnqueueHandlerPayload",
+    ),
+    "ModelRetryWithBackoffPayload": (
+        "omnibase_core.models.runtime.payloads.model_retry_with_backoff_payload",
+        "ModelRetryWithBackoffPayload",
+    ),
+    "ModelScheduleEffectPayload": (
+        "omnibase_core.models.runtime.payloads.model_schedule_effect_payload",
+        "ModelScheduleEffectPayload",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

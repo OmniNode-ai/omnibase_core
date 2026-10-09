@@ -18,18 +18,24 @@ Event Type Constants:
     NODE_HEARTBEAT_EVENT: see TOPIC_NODE_HEARTBEAT_EVENT in constants_event_types
 """
 
-from omnibase_core.models.events.contract_registration.model_contract_deregistered_event import (
-    CONTRACT_DEREGISTERED_EVENT,
-    ModelContractDeregisteredEvent,
-)
-from omnibase_core.models.events.contract_registration.model_contract_registered_event import (
-    CONTRACT_REGISTERED_EVENT,
-    ModelContractRegisteredEvent,
-)
-from omnibase_core.models.events.contract_registration.model_node_heartbeat_event import (
-    NODE_HEARTBEAT_EVENT,
-    ModelNodeHeartbeatEvent,
-)
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.events.contract_registration.model_contract_deregistered_event import (
+        CONTRACT_DEREGISTERED_EVENT,
+        ModelContractDeregisteredEvent,
+    )
+    from omnibase_core.models.events.contract_registration.model_contract_registered_event import (
+        CONTRACT_REGISTERED_EVENT,
+        ModelContractRegisteredEvent,
+    )
+    from omnibase_core.models.events.contract_registration.model_node_heartbeat_event import (
+        NODE_HEARTBEAT_EVENT,
+        ModelNodeHeartbeatEvent,
+    )
 
 __all__ = [
     # Event type constants
@@ -41,3 +47,50 @@ __all__ = [
     "ModelContractRegisteredEvent",
     "ModelNodeHeartbeatEvent",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "CONTRACT_DEREGISTERED_EVENT": (
+        "omnibase_core.models.events.contract_registration.model_contract_deregistered_event",
+        "CONTRACT_DEREGISTERED_EVENT",
+    ),
+    "ModelContractDeregisteredEvent": (
+        "omnibase_core.models.events.contract_registration.model_contract_deregistered_event",
+        "ModelContractDeregisteredEvent",
+    ),
+    "CONTRACT_REGISTERED_EVENT": (
+        "omnibase_core.models.events.contract_registration.model_contract_registered_event",
+        "CONTRACT_REGISTERED_EVENT",
+    ),
+    "ModelContractRegisteredEvent": (
+        "omnibase_core.models.events.contract_registration.model_contract_registered_event",
+        "ModelContractRegisteredEvent",
+    ),
+    "NODE_HEARTBEAT_EVENT": (
+        "omnibase_core.models.events.contract_registration.model_node_heartbeat_event",
+        "NODE_HEARTBEAT_EVENT",
+    ),
+    "ModelNodeHeartbeatEvent": (
+        "omnibase_core.models.events.contract_registration.model_node_heartbeat_event",
+        "ModelNodeHeartbeatEvent",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

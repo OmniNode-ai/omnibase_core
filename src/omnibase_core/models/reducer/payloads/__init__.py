@@ -58,66 +58,76 @@ See Also:
     omnibase_core.nodes.NodeEffect: Effect node implementation
 """
 
+from __future__ import annotations
+
 # Base class
 # Event payloads
-from omnibase_core.models.reducer.payloads.model_event_payloads import (
-    ModelPayloadEmitEvent,
-)
+import importlib
+from typing import TYPE_CHECKING
 
-# Extension payloads
-from omnibase_core.models.reducer.payloads.model_extension_payloads import (
-    ModelPayloadExtension,
-)
-from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
-    ModelIntentPayloadBase,
-)
+if TYPE_CHECKING:
+    from omnibase_core.models.reducer.payloads.model_event_payloads import (
+        ModelPayloadEmitEvent,
+    )
 
-# Notification payloads
-from omnibase_core.models.reducer.payloads.model_notification_payloads import (
-    ModelPayloadNotify,
-)
+    # Extension payloads
+    from omnibase_core.models.reducer.payloads.model_extension_payloads import (
+        ModelPayloadExtension,
+    )
+    from omnibase_core.models.reducer.payloads.model_intent_payload_base import (
+        ModelIntentPayloadBase,
+    )
 
-# FSM payloads (split files)
-from omnibase_core.models.reducer.payloads.model_payload_fsm_completed import (
-    ModelPayloadFSMCompleted,
-)
-from omnibase_core.models.reducer.payloads.model_payload_fsm_state_action import (
-    ModelPayloadFSMStateAction,
-)
-from omnibase_core.models.reducer.payloads.model_payload_fsm_transition_action import (
-    ModelPayloadFSMTransitionAction,
-)
+    # Notification payloads
+    from omnibase_core.models.reducer.payloads.model_notification_payloads import (
+        ModelPayloadNotify,
+    )
 
-# I/O payloads (split files)
-from omnibase_core.models.reducer.payloads.model_payload_http import ModelPayloadHTTP
+    # FSM payloads (split files)
+    from omnibase_core.models.reducer.payloads.model_payload_fsm_completed import (
+        ModelPayloadFSMCompleted,
+    )
+    from omnibase_core.models.reducer.payloads.model_payload_fsm_state_action import (
+        ModelPayloadFSMStateAction,
+    )
+    from omnibase_core.models.reducer.payloads.model_payload_fsm_transition_action import (
+        ModelPayloadFSMTransitionAction,
+    )
 
-# Logging payloads (split files)
-from omnibase_core.models.reducer.payloads.model_payload_log_event import (
-    ModelPayloadLogEvent,
-)
-from omnibase_core.models.reducer.payloads.model_payload_metric import (
-    ModelPayloadMetric,
-)
+    # I/O payloads (split files)
+    from omnibase_core.models.reducer.payloads.model_payload_http import (
+        ModelPayloadHTTP,
+    )
 
-# Persistence payloads (split files)
-from omnibase_core.models.reducer.payloads.model_payload_persist_result import (
-    ModelPayloadPersistResult,
-)
-from omnibase_core.models.reducer.payloads.model_payload_persist_state import (
-    ModelPayloadPersistState,
-)
+    # Logging payloads (split files)
+    from omnibase_core.models.reducer.payloads.model_payload_log_event import (
+        ModelPayloadLogEvent,
+    )
+    from omnibase_core.models.reducer.payloads.model_payload_metric import (
+        ModelPayloadMetric,
+    )
 
-# Projection payloads
-from omnibase_core.models.reducer.payloads.model_payload_projection_intent import (
-    ModelPayloadProjectionIntent,
-)
-from omnibase_core.models.reducer.payloads.model_payload_write import ModelPayloadWrite
+    # Persistence payloads (split files)
+    from omnibase_core.models.reducer.payloads.model_payload_persist_result import (
+        ModelPayloadPersistResult,
+    )
+    from omnibase_core.models.reducer.payloads.model_payload_persist_state import (
+        ModelPayloadPersistState,
+    )
 
-# Protocol for structural typing
-from omnibase_core.models.reducer.payloads.model_protocol_intent_payload import (
-    IntentPayloadList,
-    ProtocolIntentPayload,
-)
+    # Projection payloads
+    from omnibase_core.models.reducer.payloads.model_payload_projection_intent import (
+        ModelPayloadProjectionIntent,
+    )
+    from omnibase_core.models.reducer.payloads.model_payload_write import (
+        ModelPayloadWrite,
+    )
+
+    # Protocol for structural typing
+    from omnibase_core.models.reducer.payloads.model_protocol_intent_payload import (
+        IntentPayloadList,
+        ProtocolIntentPayload,
+    )
 
 # Public API - listed immediately after imports per Python convention
 __all__ = [
@@ -148,3 +158,90 @@ __all__ = [
     # Extension payloads
     "ModelPayloadExtension",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelPayloadEmitEvent": (
+        "omnibase_core.models.reducer.payloads.model_event_payloads",
+        "ModelPayloadEmitEvent",
+    ),
+    "ModelPayloadExtension": (
+        "omnibase_core.models.reducer.payloads.model_extension_payloads",
+        "ModelPayloadExtension",
+    ),
+    "ModelIntentPayloadBase": (
+        "omnibase_core.models.reducer.payloads.model_intent_payload_base",
+        "ModelIntentPayloadBase",
+    ),
+    "ModelPayloadNotify": (
+        "omnibase_core.models.reducer.payloads.model_notification_payloads",
+        "ModelPayloadNotify",
+    ),
+    "ModelPayloadFSMCompleted": (
+        "omnibase_core.models.reducer.payloads.model_payload_fsm_completed",
+        "ModelPayloadFSMCompleted",
+    ),
+    "ModelPayloadFSMStateAction": (
+        "omnibase_core.models.reducer.payloads.model_payload_fsm_state_action",
+        "ModelPayloadFSMStateAction",
+    ),
+    "ModelPayloadFSMTransitionAction": (
+        "omnibase_core.models.reducer.payloads.model_payload_fsm_transition_action",
+        "ModelPayloadFSMTransitionAction",
+    ),
+    "ModelPayloadHTTP": (
+        "omnibase_core.models.reducer.payloads.model_payload_http",
+        "ModelPayloadHTTP",
+    ),
+    "ModelPayloadLogEvent": (
+        "omnibase_core.models.reducer.payloads.model_payload_log_event",
+        "ModelPayloadLogEvent",
+    ),
+    "ModelPayloadMetric": (
+        "omnibase_core.models.reducer.payloads.model_payload_metric",
+        "ModelPayloadMetric",
+    ),
+    "ModelPayloadPersistResult": (
+        "omnibase_core.models.reducer.payloads.model_payload_persist_result",
+        "ModelPayloadPersistResult",
+    ),
+    "ModelPayloadPersistState": (
+        "omnibase_core.models.reducer.payloads.model_payload_persist_state",
+        "ModelPayloadPersistState",
+    ),
+    "ModelPayloadProjectionIntent": (
+        "omnibase_core.models.reducer.payloads.model_payload_projection_intent",
+        "ModelPayloadProjectionIntent",
+    ),
+    "ModelPayloadWrite": (
+        "omnibase_core.models.reducer.payloads.model_payload_write",
+        "ModelPayloadWrite",
+    ),
+    "IntentPayloadList": (
+        "omnibase_core.models.reducer.payloads.model_protocol_intent_payload",
+        "IntentPayloadList",
+    ),
+    "ProtocolIntentPayload": (
+        "omnibase_core.models.reducer.payloads.model_protocol_intent_payload",
+        "ProtocolIntentPayload",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

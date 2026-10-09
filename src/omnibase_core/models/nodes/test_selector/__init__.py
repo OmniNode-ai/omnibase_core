@@ -14,20 +14,26 @@ modules re-export these names until the CI/pre-push swap follow-up
 Parent epic: OMN-2362 (Generic Validator Node Architecture / WS8).
 """
 
-from omnibase_core.enums.enum_full_suite_reason import EnumFullSuiteReason
-from omnibase_core.models.nodes.test_selector.model_adjacency_map import (
-    ModelAdjacencyEntry,
-    ModelAdjacencyMap,
-    ModelThresholds,
-)
-from omnibase_core.models.nodes.test_selector.model_test_selection import (
-    ModelTestSelection,
-    ModuleName,
-    TestPath,
-)
-from omnibase_core.models.nodes.test_selector.model_test_selection_request import (
-    ModelTestSelectionRequest,
-)
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.enums.enum_full_suite_reason import EnumFullSuiteReason
+    from omnibase_core.models.nodes.test_selector.model_adjacency_map import (
+        ModelAdjacencyEntry,
+        ModelAdjacencyMap,
+        ModelThresholds,
+    )
+    from omnibase_core.models.nodes.test_selector.model_test_selection import (
+        ModelTestSelection,
+        ModuleName,
+        TestPath,
+    )
+    from omnibase_core.models.nodes.test_selector.model_test_selection_request import (
+        ModelTestSelectionRequest,
+    )
 
 __all__ = [
     "EnumFullSuiteReason",
@@ -39,3 +45,58 @@ __all__ = [
     "ModuleName",
     "TestPath",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "EnumFullSuiteReason": (
+        "omnibase_core.enums.enum_full_suite_reason",
+        "EnumFullSuiteReason",
+    ),
+    "ModelAdjacencyEntry": (
+        "omnibase_core.models.nodes.test_selector.model_adjacency_map",
+        "ModelAdjacencyEntry",
+    ),
+    "ModelAdjacencyMap": (
+        "omnibase_core.models.nodes.test_selector.model_adjacency_map",
+        "ModelAdjacencyMap",
+    ),
+    "ModelThresholds": (
+        "omnibase_core.models.nodes.test_selector.model_adjacency_map",
+        "ModelThresholds",
+    ),
+    "ModelTestSelection": (
+        "omnibase_core.models.nodes.test_selector.model_test_selection",
+        "ModelTestSelection",
+    ),
+    "ModuleName": (
+        "omnibase_core.models.nodes.test_selector.model_test_selection",
+        "ModuleName",
+    ),
+    "TestPath": (
+        "omnibase_core.models.nodes.test_selector.model_test_selection",
+        "TestPath",
+    ),
+    "ModelTestSelectionRequest": (
+        "omnibase_core.models.nodes.test_selector.model_test_selection_request",
+        "ModelTestSelectionRequest",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

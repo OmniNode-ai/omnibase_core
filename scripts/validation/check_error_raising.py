@@ -110,6 +110,18 @@ class ErrorRaisingDetector(ast.NodeVisitor):
         self.in_exception_handler = False
         self.current_function_decorators: set[str] = set()
         self.function_decorator_stack: list[set[str]] = []
+        self.module_getattr_ids: set[int] = set()
+        self.in_module_getattr = False
+        self.module_getattr_stack: list[bool] = []
+
+    def visit_Module(self, node: ast.Module) -> None:
+        """Record module-level ``__getattr__`` functions (PEP 562)."""
+        self.module_getattr_ids = {
+            id(stmt)
+            for stmt in node.body
+            if isinstance(stmt, ast.FunctionDef) and stmt.name == "__getattr__"
+        }
+        self.generic_visit(node)
 
     def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
         """Track when we're in an exception handler (catching is OK)."""
@@ -126,12 +138,15 @@ class ErrorRaisingDetector(ast.NodeVisitor):
         # Save current decorators and push new ones
         self.function_decorator_stack.append(self.current_function_decorators)
         self.current_function_decorators = decorators
+        self.module_getattr_stack.append(self.in_module_getattr)
+        self.in_module_getattr = id(node) in self.module_getattr_ids
 
         # Visit function body
         self.generic_visit(node)
 
         # Restore previous decorators
         self.current_function_decorators = self.function_decorator_stack.pop()
+        self.in_module_getattr = self.module_getattr_stack.pop()
 
     def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
         """Track async function decorators as we enter functions."""
@@ -139,8 +154,11 @@ class ErrorRaisingDetector(ast.NodeVisitor):
         decorators = self._extract_decorator_names(node.decorator_list)
         self.function_decorator_stack.append(self.current_function_decorators)
         self.current_function_decorators = decorators
+        self.module_getattr_stack.append(self.in_module_getattr)
+        self.in_module_getattr = False
         self.generic_visit(node)
         self.current_function_decorators = self.function_decorator_stack.pop()
+        self.in_module_getattr = self.module_getattr_stack.pop()
 
     def _extract_decorator_names(self, decorator_list: list[ast.expr]) -> set[str]:
         """Extract decorator names from a decorator list."""
@@ -228,6 +246,15 @@ class ErrorRaisingDetector(ast.NodeVisitor):
             self._is_inside_pydantic_validator()
             and exception_name in self.PYDANTIC_ALLOWED_EXCEPTIONS
         ):
+            self.generic_visit(node)
+            return
+
+        # PEP 562 MODULE __getattr__ EXCEPTION (OMN-17427):
+        # A module-level __getattr__ must raise AttributeError; hasattr,
+        # getattr with a default and ``from pkg import x`` treat no other
+        # exception type as "attribute absent". Nested functions and class
+        # __getattr__ methods are not exempt.
+        if self.in_module_getattr and exception_name == "AttributeError":
             self.generic_visit(node)
             return
 

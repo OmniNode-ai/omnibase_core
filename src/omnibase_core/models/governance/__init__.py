@@ -3,143 +3,157 @@
 
 """Governance models for the ONEX platform."""
 
-from omnibase_core.models.governance.model_canary_tier import ModelCanaryTier
-from omnibase_core.models.governance.model_canary_tier_assignments import (
-    ModelCanaryTierAssignments,
-)
-from omnibase_core.models.governance.model_contract_dependency_input import (
-    ModelContractDependencyInput,
-)
-from omnibase_core.models.governance.model_contract_dependency_output import (
-    ModelContractDependencyOutput,
-)
-from omnibase_core.models.governance.model_contract_drift_input import (
-    ModelContractDriftInput,
-)
-from omnibase_core.models.governance.model_contract_drift_output import (
-    ModelContractDriftOutput,
-)
-from omnibase_core.models.governance.model_contract_entry import ModelContractEntry
-from omnibase_core.models.governance.model_contract_overlap_edge import (
-    ModelContractOverlapEdge,
-)
-from omnibase_core.models.governance.model_day_close import ModelDayClose
-from omnibase_core.models.governance.model_day_close_actual_repo import (
-    ModelDayCloseActualRepo,
-)
-from omnibase_core.models.governance.model_day_close_drift_detected import (
-    ModelDayCloseDriftDetected,
-)
-from omnibase_core.models.governance.model_day_close_invariants_checked import (
-    ModelDayCloseInvariantsChecked,
-)
-from omnibase_core.models.governance.model_day_close_plan_item import (
-    ModelDayClosePlanItem,
-)
-from omnibase_core.models.governance.model_day_close_pr import ModelDayClosePR
-from omnibase_core.models.governance.model_day_close_process_change import (
-    ModelDayCloseProcessChange,
-)
-from omnibase_core.models.governance.model_day_close_risk import ModelDayCloseRisk
-from omnibase_core.models.governance.model_day_open import ModelDayOpen
-from omnibase_core.models.governance.model_day_open_finding import ModelDayOpenFinding
-from omnibase_core.models.governance.model_day_open_infra_service import (
-    ModelDayOpenInfraService,
-)
-from omnibase_core.models.governance.model_day_open_probe_result import (
-    ModelDayOpenProbeResult,
-)
-from omnibase_core.models.governance.model_day_open_repo_sync_entry import (
-    ModelDayOpenRepoSyncEntry,
-)
-from omnibase_core.models.governance.model_db_boundary_exception import (
-    ModelDbBoundaryException,
-)
-from omnibase_core.models.governance.model_db_boundary_exceptions_registry import (
-    ModelDbBoundaryExceptionsRegistry,
-)
-from omnibase_core.models.governance.model_db_table_ref import ModelDbTableRef
-from omnibase_core.models.governance.model_delegation_health import (
-    ModelDelegationHealth,
-)
-from omnibase_core.models.governance.model_dependency_history import (
-    ModelDependencyHistory,
-)
-from omnibase_core.models.governance.model_dependency_snapshot import (
-    ModelDependencySnapshot,
-)
-from omnibase_core.models.governance.model_dependency_wave import ModelDependencyWave
-from omnibase_core.models.governance.model_doc_cross_ref_check import (
-    ModelDocCrossRefCheck,
-)
-from omnibase_core.models.governance.model_doc_freshness_result import (
-    ModelDocFreshnessResult,
-)
-from omnibase_core.models.governance.model_doc_freshness_sweep_report import (
-    ModelDocFreshnessSweepReport,
-)
-from omnibase_core.models.governance.model_doc_reference import ModelDocReference
-from omnibase_core.models.governance.model_dod_sweep import ModelDodSweepResult
-from omnibase_core.models.governance.model_dod_sweep_check_result import (
-    ModelDodSweepCheckResult,
-)
-from omnibase_core.models.governance.model_dod_sweep_ticket_result import (
-    ModelDodSweepTicketResult,
-)
-from omnibase_core.models.governance.model_dogfood_regression import (
-    ModelDogfoodRegression,
-)
-from omnibase_core.models.governance.model_dogfood_scorecard import (
-    ModelDogfoodScorecard,
-)
-from omnibase_core.models.governance.model_drift_history import ModelDriftHistory
-from omnibase_core.models.governance.model_endpoint_health import ModelEndpointHealth
-from omnibase_core.models.governance.model_field_change import ModelFieldChange
-from omnibase_core.models.governance.model_golden_chain_health import (
-    ModelGoldenChainHealth,
-)
-from omnibase_core.models.governance.model_handler_compliance_result import (
-    ModelHandlerComplianceResult,
-)
-from omnibase_core.models.governance.model_hotspot_topic import ModelHotspotTopic
-from omnibase_core.models.governance.model_infrastructure_health import (
-    ModelInfrastructureHealth,
-)
-from omnibase_core.models.governance.model_integration_probe_result import (
-    ModelIntegrationProbeResult,
-)
-from omnibase_core.models.governance.model_integration_record import (
-    ModelIntegrationRecord,
-)
-from omnibase_core.models.governance.model_migration_spec import ModelMigrationSpec
-from omnibase_core.models.governance.model_migration_validation_result import (
-    ModelMigrationValidationResult,
-)
-from omnibase_core.models.governance.model_readiness_dimension import (
-    ModelReadinessDimension,
-)
-from omnibase_core.models.governance.model_repo_doc_summary import ModelRepoDocSummary
-from omnibase_core.models.governance.model_wire_ci_gate import ModelWireCiGate
-from omnibase_core.models.governance.model_wire_collapsed_field import (
-    ModelWireCollapsedField,
-)
-from omnibase_core.models.governance.model_wire_consumer import ModelWireConsumer
-from omnibase_core.models.governance.model_wire_field_constraints import (
-    ModelWireFieldConstraints,
-)
-from omnibase_core.models.governance.model_wire_optional_field import (
-    ModelWireOptionalField,
-)
-from omnibase_core.models.governance.model_wire_producer import ModelWireProducer
-from omnibase_core.models.governance.model_wire_renamed_field import (
-    ModelWireRenamedField,
-)
-from omnibase_core.models.governance.model_wire_required_field import (
-    ModelWireRequiredField,
-)
-from omnibase_core.models.governance.model_wire_schema_contract import (
-    ModelWireSchemaContract,
-)
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.governance.model_canary_tier import ModelCanaryTier
+    from omnibase_core.models.governance.model_canary_tier_assignments import (
+        ModelCanaryTierAssignments,
+    )
+    from omnibase_core.models.governance.model_contract_dependency_input import (
+        ModelContractDependencyInput,
+    )
+    from omnibase_core.models.governance.model_contract_dependency_output import (
+        ModelContractDependencyOutput,
+    )
+    from omnibase_core.models.governance.model_contract_drift_input import (
+        ModelContractDriftInput,
+    )
+    from omnibase_core.models.governance.model_contract_drift_output import (
+        ModelContractDriftOutput,
+    )
+    from omnibase_core.models.governance.model_contract_entry import ModelContractEntry
+    from omnibase_core.models.governance.model_contract_overlap_edge import (
+        ModelContractOverlapEdge,
+    )
+    from omnibase_core.models.governance.model_day_close import ModelDayClose
+    from omnibase_core.models.governance.model_day_close_actual_repo import (
+        ModelDayCloseActualRepo,
+    )
+    from omnibase_core.models.governance.model_day_close_drift_detected import (
+        ModelDayCloseDriftDetected,
+    )
+    from omnibase_core.models.governance.model_day_close_invariants_checked import (
+        ModelDayCloseInvariantsChecked,
+    )
+    from omnibase_core.models.governance.model_day_close_plan_item import (
+        ModelDayClosePlanItem,
+    )
+    from omnibase_core.models.governance.model_day_close_pr import ModelDayClosePR
+    from omnibase_core.models.governance.model_day_close_process_change import (
+        ModelDayCloseProcessChange,
+    )
+    from omnibase_core.models.governance.model_day_close_risk import ModelDayCloseRisk
+    from omnibase_core.models.governance.model_day_open import ModelDayOpen
+    from omnibase_core.models.governance.model_day_open_finding import (
+        ModelDayOpenFinding,
+    )
+    from omnibase_core.models.governance.model_day_open_infra_service import (
+        ModelDayOpenInfraService,
+    )
+    from omnibase_core.models.governance.model_day_open_probe_result import (
+        ModelDayOpenProbeResult,
+    )
+    from omnibase_core.models.governance.model_day_open_repo_sync_entry import (
+        ModelDayOpenRepoSyncEntry,
+    )
+    from omnibase_core.models.governance.model_db_boundary_exception import (
+        ModelDbBoundaryException,
+    )
+    from omnibase_core.models.governance.model_db_boundary_exceptions_registry import (
+        ModelDbBoundaryExceptionsRegistry,
+    )
+    from omnibase_core.models.governance.model_db_table_ref import ModelDbTableRef
+    from omnibase_core.models.governance.model_delegation_health import (
+        ModelDelegationHealth,
+    )
+    from omnibase_core.models.governance.model_dependency_history import (
+        ModelDependencyHistory,
+    )
+    from omnibase_core.models.governance.model_dependency_snapshot import (
+        ModelDependencySnapshot,
+    )
+    from omnibase_core.models.governance.model_dependency_wave import (
+        ModelDependencyWave,
+    )
+    from omnibase_core.models.governance.model_doc_cross_ref_check import (
+        ModelDocCrossRefCheck,
+    )
+    from omnibase_core.models.governance.model_doc_freshness_result import (
+        ModelDocFreshnessResult,
+    )
+    from omnibase_core.models.governance.model_doc_freshness_sweep_report import (
+        ModelDocFreshnessSweepReport,
+    )
+    from omnibase_core.models.governance.model_doc_reference import ModelDocReference
+    from omnibase_core.models.governance.model_dod_sweep import ModelDodSweepResult
+    from omnibase_core.models.governance.model_dod_sweep_check_result import (
+        ModelDodSweepCheckResult,
+    )
+    from omnibase_core.models.governance.model_dod_sweep_ticket_result import (
+        ModelDodSweepTicketResult,
+    )
+    from omnibase_core.models.governance.model_dogfood_regression import (
+        ModelDogfoodRegression,
+    )
+    from omnibase_core.models.governance.model_dogfood_scorecard import (
+        ModelDogfoodScorecard,
+    )
+    from omnibase_core.models.governance.model_drift_history import ModelDriftHistory
+    from omnibase_core.models.governance.model_endpoint_health import (
+        ModelEndpointHealth,
+    )
+    from omnibase_core.models.governance.model_field_change import ModelFieldChange
+    from omnibase_core.models.governance.model_golden_chain_health import (
+        ModelGoldenChainHealth,
+    )
+    from omnibase_core.models.governance.model_handler_compliance_result import (
+        ModelHandlerComplianceResult,
+    )
+    from omnibase_core.models.governance.model_hotspot_topic import ModelHotspotTopic
+    from omnibase_core.models.governance.model_infrastructure_health import (
+        ModelInfrastructureHealth,
+    )
+    from omnibase_core.models.governance.model_integration_probe_result import (
+        ModelIntegrationProbeResult,
+    )
+    from omnibase_core.models.governance.model_integration_record import (
+        ModelIntegrationRecord,
+    )
+    from omnibase_core.models.governance.model_migration_spec import ModelMigrationSpec
+    from omnibase_core.models.governance.model_migration_validation_result import (
+        ModelMigrationValidationResult,
+    )
+    from omnibase_core.models.governance.model_readiness_dimension import (
+        ModelReadinessDimension,
+    )
+    from omnibase_core.models.governance.model_repo_doc_summary import (
+        ModelRepoDocSummary,
+    )
+    from omnibase_core.models.governance.model_wire_ci_gate import ModelWireCiGate
+    from omnibase_core.models.governance.model_wire_collapsed_field import (
+        ModelWireCollapsedField,
+    )
+    from omnibase_core.models.governance.model_wire_consumer import ModelWireConsumer
+    from omnibase_core.models.governance.model_wire_field_constraints import (
+        ModelWireFieldConstraints,
+    )
+    from omnibase_core.models.governance.model_wire_optional_field import (
+        ModelWireOptionalField,
+    )
+    from omnibase_core.models.governance.model_wire_producer import ModelWireProducer
+    from omnibase_core.models.governance.model_wire_renamed_field import (
+        ModelWireRenamedField,
+    )
+    from omnibase_core.models.governance.model_wire_required_field import (
+        ModelWireRequiredField,
+    )
+    from omnibase_core.models.governance.model_wire_schema_contract import (
+        ModelWireSchemaContract,
+    )
 
 __all__ = [
     "ModelCanaryTier",
@@ -202,3 +216,259 @@ __all__ = [
     "ModelWireRequiredField",
     "ModelWireSchemaContract",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelCanaryTier": (
+        "omnibase_core.models.governance.model_canary_tier",
+        "ModelCanaryTier",
+    ),
+    "ModelCanaryTierAssignments": (
+        "omnibase_core.models.governance.model_canary_tier_assignments",
+        "ModelCanaryTierAssignments",
+    ),
+    "ModelContractDependencyInput": (
+        "omnibase_core.models.governance.model_contract_dependency_input",
+        "ModelContractDependencyInput",
+    ),
+    "ModelContractDependencyOutput": (
+        "omnibase_core.models.governance.model_contract_dependency_output",
+        "ModelContractDependencyOutput",
+    ),
+    "ModelContractDriftInput": (
+        "omnibase_core.models.governance.model_contract_drift_input",
+        "ModelContractDriftInput",
+    ),
+    "ModelContractDriftOutput": (
+        "omnibase_core.models.governance.model_contract_drift_output",
+        "ModelContractDriftOutput",
+    ),
+    "ModelContractEntry": (
+        "omnibase_core.models.governance.model_contract_entry",
+        "ModelContractEntry",
+    ),
+    "ModelContractOverlapEdge": (
+        "omnibase_core.models.governance.model_contract_overlap_edge",
+        "ModelContractOverlapEdge",
+    ),
+    "ModelDayClose": (
+        "omnibase_core.models.governance.model_day_close",
+        "ModelDayClose",
+    ),
+    "ModelDayCloseActualRepo": (
+        "omnibase_core.models.governance.model_day_close_actual_repo",
+        "ModelDayCloseActualRepo",
+    ),
+    "ModelDayCloseDriftDetected": (
+        "omnibase_core.models.governance.model_day_close_drift_detected",
+        "ModelDayCloseDriftDetected",
+    ),
+    "ModelDayCloseInvariantsChecked": (
+        "omnibase_core.models.governance.model_day_close_invariants_checked",
+        "ModelDayCloseInvariantsChecked",
+    ),
+    "ModelDayClosePlanItem": (
+        "omnibase_core.models.governance.model_day_close_plan_item",
+        "ModelDayClosePlanItem",
+    ),
+    "ModelDayClosePR": (
+        "omnibase_core.models.governance.model_day_close_pr",
+        "ModelDayClosePR",
+    ),
+    "ModelDayCloseProcessChange": (
+        "omnibase_core.models.governance.model_day_close_process_change",
+        "ModelDayCloseProcessChange",
+    ),
+    "ModelDayCloseRisk": (
+        "omnibase_core.models.governance.model_day_close_risk",
+        "ModelDayCloseRisk",
+    ),
+    "ModelDayOpen": ("omnibase_core.models.governance.model_day_open", "ModelDayOpen"),
+    "ModelDayOpenFinding": (
+        "omnibase_core.models.governance.model_day_open_finding",
+        "ModelDayOpenFinding",
+    ),
+    "ModelDayOpenInfraService": (
+        "omnibase_core.models.governance.model_day_open_infra_service",
+        "ModelDayOpenInfraService",
+    ),
+    "ModelDayOpenProbeResult": (
+        "omnibase_core.models.governance.model_day_open_probe_result",
+        "ModelDayOpenProbeResult",
+    ),
+    "ModelDayOpenRepoSyncEntry": (
+        "omnibase_core.models.governance.model_day_open_repo_sync_entry",
+        "ModelDayOpenRepoSyncEntry",
+    ),
+    "ModelDbBoundaryException": (
+        "omnibase_core.models.governance.model_db_boundary_exception",
+        "ModelDbBoundaryException",
+    ),
+    "ModelDbBoundaryExceptionsRegistry": (
+        "omnibase_core.models.governance.model_db_boundary_exceptions_registry",
+        "ModelDbBoundaryExceptionsRegistry",
+    ),
+    "ModelDbTableRef": (
+        "omnibase_core.models.governance.model_db_table_ref",
+        "ModelDbTableRef",
+    ),
+    "ModelDelegationHealth": (
+        "omnibase_core.models.governance.model_delegation_health",
+        "ModelDelegationHealth",
+    ),
+    "ModelDependencyHistory": (
+        "omnibase_core.models.governance.model_dependency_history",
+        "ModelDependencyHistory",
+    ),
+    "ModelDependencySnapshot": (
+        "omnibase_core.models.governance.model_dependency_snapshot",
+        "ModelDependencySnapshot",
+    ),
+    "ModelDependencyWave": (
+        "omnibase_core.models.governance.model_dependency_wave",
+        "ModelDependencyWave",
+    ),
+    "ModelDocCrossRefCheck": (
+        "omnibase_core.models.governance.model_doc_cross_ref_check",
+        "ModelDocCrossRefCheck",
+    ),
+    "ModelDocFreshnessResult": (
+        "omnibase_core.models.governance.model_doc_freshness_result",
+        "ModelDocFreshnessResult",
+    ),
+    "ModelDocFreshnessSweepReport": (
+        "omnibase_core.models.governance.model_doc_freshness_sweep_report",
+        "ModelDocFreshnessSweepReport",
+    ),
+    "ModelDocReference": (
+        "omnibase_core.models.governance.model_doc_reference",
+        "ModelDocReference",
+    ),
+    "ModelDodSweepResult": (
+        "omnibase_core.models.governance.model_dod_sweep",
+        "ModelDodSweepResult",
+    ),
+    "ModelDodSweepCheckResult": (
+        "omnibase_core.models.governance.model_dod_sweep_check_result",
+        "ModelDodSweepCheckResult",
+    ),
+    "ModelDodSweepTicketResult": (
+        "omnibase_core.models.governance.model_dod_sweep_ticket_result",
+        "ModelDodSweepTicketResult",
+    ),
+    "ModelDogfoodRegression": (
+        "omnibase_core.models.governance.model_dogfood_regression",
+        "ModelDogfoodRegression",
+    ),
+    "ModelDogfoodScorecard": (
+        "omnibase_core.models.governance.model_dogfood_scorecard",
+        "ModelDogfoodScorecard",
+    ),
+    "ModelDriftHistory": (
+        "omnibase_core.models.governance.model_drift_history",
+        "ModelDriftHistory",
+    ),
+    "ModelEndpointHealth": (
+        "omnibase_core.models.governance.model_endpoint_health",
+        "ModelEndpointHealth",
+    ),
+    "ModelFieldChange": (
+        "omnibase_core.models.governance.model_field_change",
+        "ModelFieldChange",
+    ),
+    "ModelGoldenChainHealth": (
+        "omnibase_core.models.governance.model_golden_chain_health",
+        "ModelGoldenChainHealth",
+    ),
+    "ModelHandlerComplianceResult": (
+        "omnibase_core.models.governance.model_handler_compliance_result",
+        "ModelHandlerComplianceResult",
+    ),
+    "ModelHotspotTopic": (
+        "omnibase_core.models.governance.model_hotspot_topic",
+        "ModelHotspotTopic",
+    ),
+    "ModelInfrastructureHealth": (
+        "omnibase_core.models.governance.model_infrastructure_health",
+        "ModelInfrastructureHealth",
+    ),
+    "ModelIntegrationProbeResult": (
+        "omnibase_core.models.governance.model_integration_probe_result",
+        "ModelIntegrationProbeResult",
+    ),
+    "ModelIntegrationRecord": (
+        "omnibase_core.models.governance.model_integration_record",
+        "ModelIntegrationRecord",
+    ),
+    "ModelMigrationSpec": (
+        "omnibase_core.models.governance.model_migration_spec",
+        "ModelMigrationSpec",
+    ),
+    "ModelMigrationValidationResult": (
+        "omnibase_core.models.governance.model_migration_validation_result",
+        "ModelMigrationValidationResult",
+    ),
+    "ModelReadinessDimension": (
+        "omnibase_core.models.governance.model_readiness_dimension",
+        "ModelReadinessDimension",
+    ),
+    "ModelRepoDocSummary": (
+        "omnibase_core.models.governance.model_repo_doc_summary",
+        "ModelRepoDocSummary",
+    ),
+    "ModelWireCiGate": (
+        "omnibase_core.models.governance.model_wire_ci_gate",
+        "ModelWireCiGate",
+    ),
+    "ModelWireCollapsedField": (
+        "omnibase_core.models.governance.model_wire_collapsed_field",
+        "ModelWireCollapsedField",
+    ),
+    "ModelWireConsumer": (
+        "omnibase_core.models.governance.model_wire_consumer",
+        "ModelWireConsumer",
+    ),
+    "ModelWireFieldConstraints": (
+        "omnibase_core.models.governance.model_wire_field_constraints",
+        "ModelWireFieldConstraints",
+    ),
+    "ModelWireOptionalField": (
+        "omnibase_core.models.governance.model_wire_optional_field",
+        "ModelWireOptionalField",
+    ),
+    "ModelWireProducer": (
+        "omnibase_core.models.governance.model_wire_producer",
+        "ModelWireProducer",
+    ),
+    "ModelWireRenamedField": (
+        "omnibase_core.models.governance.model_wire_renamed_field",
+        "ModelWireRenamedField",
+    ),
+    "ModelWireRequiredField": (
+        "omnibase_core.models.governance.model_wire_required_field",
+        "ModelWireRequiredField",
+    ),
+    "ModelWireSchemaContract": (
+        "omnibase_core.models.governance.model_wire_schema_contract",
+        "ModelWireSchemaContract",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

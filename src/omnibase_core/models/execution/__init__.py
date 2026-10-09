@@ -47,21 +47,27 @@ Example:
     Added resolution models (OMN-1106)
 """
 
-from omnibase_core.models.execution.model_constraint_satisfaction import (
-    ModelConstraintSatisfaction,
-)
-from omnibase_core.models.execution.model_execution_conflict import (
-    ModelExecutionConflict,
-)
-from omnibase_core.models.execution.model_execution_plan import ModelExecutionPlan
-from omnibase_core.models.execution.model_phase_entry import ModelPhaseEntry
-from omnibase_core.models.execution.model_phase_step import ModelPhaseStep
-from omnibase_core.models.execution.model_resolution_metadata import (
-    ModelResolutionMetadata,
-)
-from omnibase_core.models.execution.model_tie_breaker_decision import (
-    ModelTieBreakerDecision,
-)
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.execution.model_constraint_satisfaction import (
+        ModelConstraintSatisfaction,
+    )
+    from omnibase_core.models.execution.model_execution_conflict import (
+        ModelExecutionConflict,
+    )
+    from omnibase_core.models.execution.model_execution_plan import ModelExecutionPlan
+    from omnibase_core.models.execution.model_phase_entry import ModelPhaseEntry
+    from omnibase_core.models.execution.model_phase_step import ModelPhaseStep
+    from omnibase_core.models.execution.model_resolution_metadata import (
+        ModelResolutionMetadata,
+    )
+    from omnibase_core.models.execution.model_tie_breaker_decision import (
+        ModelTieBreakerDecision,
+    )
 
 __all__ = [
     # Core models (OMN-1108)
@@ -74,3 +80,54 @@ __all__ = [
     "ModelTieBreakerDecision",
     "ModelExecutionConflict",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelConstraintSatisfaction": (
+        "omnibase_core.models.execution.model_constraint_satisfaction",
+        "ModelConstraintSatisfaction",
+    ),
+    "ModelExecutionConflict": (
+        "omnibase_core.models.execution.model_execution_conflict",
+        "ModelExecutionConflict",
+    ),
+    "ModelExecutionPlan": (
+        "omnibase_core.models.execution.model_execution_plan",
+        "ModelExecutionPlan",
+    ),
+    "ModelPhaseEntry": (
+        "omnibase_core.models.execution.model_phase_entry",
+        "ModelPhaseEntry",
+    ),
+    "ModelPhaseStep": (
+        "omnibase_core.models.execution.model_phase_step",
+        "ModelPhaseStep",
+    ),
+    "ModelResolutionMetadata": (
+        "omnibase_core.models.execution.model_resolution_metadata",
+        "ModelResolutionMetadata",
+    ),
+    "ModelTieBreakerDecision": (
+        "omnibase_core.models.execution.model_tie_breaker_decision",
+        "ModelTieBreakerDecision",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

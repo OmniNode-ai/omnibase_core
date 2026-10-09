@@ -22,14 +22,20 @@ Union Types:
     - ModelTransformationConfig: Discriminated union of all transformation configs
 """
 
-from .model_mapping_config import ModelMappingConfig
-from .model_transform_case_config import ModelTransformCaseConfig
-from .model_transform_json_path_config import ModelTransformJsonPathConfig
-from .model_transform_regex_config import ModelTransformRegexConfig
-from .model_transform_trim_config import ModelTransformTrimConfig
-from .model_transform_unicode_config import ModelTransformUnicodeConfig
-from .model_types import ModelTransformationConfig
-from .model_validation_step_config import ModelValidationStepConfig
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .model_mapping_config import ModelMappingConfig
+    from .model_transform_case_config import ModelTransformCaseConfig
+    from .model_transform_json_path_config import ModelTransformJsonPathConfig
+    from .model_transform_regex_config import ModelTransformRegexConfig
+    from .model_transform_trim_config import ModelTransformTrimConfig
+    from .model_transform_unicode_config import ModelTransformUnicodeConfig
+    from .model_types import ModelTransformationConfig
+    from .model_validation_step_config import ModelValidationStepConfig
 
 __all__ = [
     "ModelTransformRegexConfig",
@@ -41,3 +47,58 @@ __all__ = [
     "ModelValidationStepConfig",
     "ModelTransformationConfig",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelMappingConfig": (
+        "omnibase_core.models.transformations.model_mapping_config",
+        "ModelMappingConfig",
+    ),
+    "ModelTransformCaseConfig": (
+        "omnibase_core.models.transformations.model_transform_case_config",
+        "ModelTransformCaseConfig",
+    ),
+    "ModelTransformJsonPathConfig": (
+        "omnibase_core.models.transformations.model_transform_json_path_config",
+        "ModelTransformJsonPathConfig",
+    ),
+    "ModelTransformRegexConfig": (
+        "omnibase_core.models.transformations.model_transform_regex_config",
+        "ModelTransformRegexConfig",
+    ),
+    "ModelTransformTrimConfig": (
+        "omnibase_core.models.transformations.model_transform_trim_config",
+        "ModelTransformTrimConfig",
+    ),
+    "ModelTransformUnicodeConfig": (
+        "omnibase_core.models.transformations.model_transform_unicode_config",
+        "ModelTransformUnicodeConfig",
+    ),
+    "ModelTransformationConfig": (
+        "omnibase_core.models.transformations.model_types",
+        "ModelTransformationConfig",
+    ),
+    "ModelValidationStepConfig": (
+        "omnibase_core.models.transformations.model_validation_step_config",
+        "ModelValidationStepConfig",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

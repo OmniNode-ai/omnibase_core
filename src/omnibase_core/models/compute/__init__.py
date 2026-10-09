@@ -60,21 +60,27 @@ See Also:
     - docs/guides/node-building/03_COMPUTE_NODE_TUTORIAL.md: Compute node tutorial
 """
 
-from omnibase_core.models.compute.model_compute_context import ModelComputeContext
-from omnibase_core.models.compute.model_compute_execution_context import (
-    ModelComputeExecutionContext,
-)
-from omnibase_core.models.compute.model_compute_input import ModelComputeInput
-from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
-from omnibase_core.models.compute.model_compute_pipeline_result import (
-    ModelComputePipelineResult,
-)
-from omnibase_core.models.compute.model_compute_step_metadata import (
-    ModelComputeStepMetadata,
-)
-from omnibase_core.models.compute.model_compute_step_result import (
-    ModelComputeStepResult,
-)
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.compute.model_compute_context import ModelComputeContext
+    from omnibase_core.models.compute.model_compute_execution_context import (
+        ModelComputeExecutionContext,
+    )
+    from omnibase_core.models.compute.model_compute_input import ModelComputeInput
+    from omnibase_core.models.compute.model_compute_output import ModelComputeOutput
+    from omnibase_core.models.compute.model_compute_pipeline_result import (
+        ModelComputePipelineResult,
+    )
+    from omnibase_core.models.compute.model_compute_step_metadata import (
+        ModelComputeStepMetadata,
+    )
+    from omnibase_core.models.compute.model_compute_step_result import (
+        ModelComputeStepResult,
+    )
 
 __all__ = [
     "ModelComputeContext",
@@ -85,3 +91,54 @@ __all__ = [
     "ModelComputeStepResult",
     "ModelComputePipelineResult",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelComputeContext": (
+        "omnibase_core.models.compute.model_compute_context",
+        "ModelComputeContext",
+    ),
+    "ModelComputeExecutionContext": (
+        "omnibase_core.models.compute.model_compute_execution_context",
+        "ModelComputeExecutionContext",
+    ),
+    "ModelComputeInput": (
+        "omnibase_core.models.compute.model_compute_input",
+        "ModelComputeInput",
+    ),
+    "ModelComputeOutput": (
+        "omnibase_core.models.compute.model_compute_output",
+        "ModelComputeOutput",
+    ),
+    "ModelComputePipelineResult": (
+        "omnibase_core.models.compute.model_compute_pipeline_result",
+        "ModelComputePipelineResult",
+    ),
+    "ModelComputeStepMetadata": (
+        "omnibase_core.models.compute.model_compute_step_metadata",
+        "ModelComputeStepMetadata",
+    ),
+    "ModelComputeStepResult": (
+        "omnibase_core.models.compute.model_compute_step_result",
+        "ModelComputeStepResult",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

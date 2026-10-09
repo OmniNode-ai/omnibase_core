@@ -15,19 +15,28 @@ from their respective packages:
     - ModelWorkflowParameters: from omnibase_core.models.operations import ModelWorkflowParameters
 """
 
-from .model_custom_field_definition import ModelCustomFieldDefinition
-from .model_execution_priority import ModelExecutionPriority
-from .model_external_service_config import ModelExternalServiceConfig
-from .model_network_config import ModelNetworkConfig
-from .model_node_service_config import ModelNodeServiceConfig
-from .model_node_weights import ModelNodeWeights
-from .model_retry_strategy import ModelRetryStrategy
-from .model_routing_preferences import ModelRoutingPreferences
-from .model_service_configuration import EnumFallbackStrategyType, ModelFallbackStrategy
-from .model_service_configuration_single import ModelServiceConfiguration
-from .model_service_health import ModelServiceHealth
-from .model_service_registry_config import ModelServiceRegistryConfig
-from .model_service_type import ModelServiceType
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .model_custom_field_definition import ModelCustomFieldDefinition
+    from .model_execution_priority import ModelExecutionPriority
+    from .model_external_service_config import ModelExternalServiceConfig
+    from .model_network_config import ModelNetworkConfig
+    from .model_node_service_config import ModelNodeServiceConfig
+    from .model_node_weights import ModelNodeWeights
+    from .model_retry_strategy import ModelRetryStrategy
+    from .model_routing_preferences import ModelRoutingPreferences
+    from .model_service_configuration import (
+        EnumFallbackStrategyType,
+        ModelFallbackStrategy,
+    )
+    from .model_service_configuration_single import ModelServiceConfiguration
+    from .model_service_health import ModelServiceHealth
+    from .model_service_registry_config import ModelServiceRegistryConfig
+    from .model_service_type import ModelServiceType
 
 # NOTE: Models have been reorganized (2025-11-13):
 # Phase 1:
@@ -84,3 +93,82 @@ __all__ = [
     "ModelServiceRegistryConfig",
     "ModelServiceType",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelCustomFieldDefinition": (
+        "omnibase_core.models.services.model_custom_field_definition",
+        "ModelCustomFieldDefinition",
+    ),
+    "ModelExecutionPriority": (
+        "omnibase_core.models.services.model_execution_priority",
+        "ModelExecutionPriority",
+    ),
+    "ModelExternalServiceConfig": (
+        "omnibase_core.models.services.model_external_service_config",
+        "ModelExternalServiceConfig",
+    ),
+    "ModelNetworkConfig": (
+        "omnibase_core.models.services.model_network_config",
+        "ModelNetworkConfig",
+    ),
+    "ModelNodeServiceConfig": (
+        "omnibase_core.models.services.model_node_service_config",
+        "ModelNodeServiceConfig",
+    ),
+    "ModelNodeWeights": (
+        "omnibase_core.models.services.model_node_weights",
+        "ModelNodeWeights",
+    ),
+    "ModelRetryStrategy": (
+        "omnibase_core.models.services.model_retry_strategy",
+        "ModelRetryStrategy",
+    ),
+    "ModelRoutingPreferences": (
+        "omnibase_core.models.services.model_routing_preferences",
+        "ModelRoutingPreferences",
+    ),
+    "EnumFallbackStrategyType": (
+        "omnibase_core.models.services.model_service_configuration",
+        "EnumFallbackStrategyType",
+    ),
+    "ModelFallbackStrategy": (
+        "omnibase_core.models.services.model_service_configuration",
+        "ModelFallbackStrategy",
+    ),
+    "ModelServiceConfiguration": (
+        "omnibase_core.models.services.model_service_configuration_single",
+        "ModelServiceConfiguration",
+    ),
+    "ModelServiceHealth": (
+        "omnibase_core.models.services.model_service_health",
+        "ModelServiceHealth",
+    ),
+    "ModelServiceRegistryConfig": (
+        "omnibase_core.models.services.model_service_registry_config",
+        "ModelServiceRegistryConfig",
+    ),
+    "ModelServiceType": (
+        "omnibase_core.models.services.model_service_type",
+        "ModelServiceType",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

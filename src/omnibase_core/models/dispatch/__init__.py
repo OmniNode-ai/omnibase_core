@@ -91,78 +91,88 @@ See Also:
     omnibase_core.models.events.ModelEventEnvelope: Event wrapper with routing info
 """
 
-from omnibase_core.enums.enum_dispatch_lifecycle_emitter import (
-    EnumDispatchLifecycleEmitter,
-)
-from omnibase_core.enums.enum_dispatch_lifecycle_state import (
-    EnumDispatchLifecycleState,
-)
-from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
-from omnibase_core.enums.enum_dispatch_verdict import EnumDispatchVerdict
-from omnibase_core.errors.error_lifecycle_emitter import LifecycleEmitterError
-from omnibase_core.errors.error_lifecycle_transition import (
-    LifecycleTransitionError,
-)
-from omnibase_core.models.dispatch.model_dispatch_bus_command import (
-    ModelDispatchBusCommand,
-)
-from omnibase_core.models.dispatch.model_dispatch_bus_route import (
-    ModelDispatchBusRoute,
-)
-from omnibase_core.models.dispatch.model_dispatch_bus_terminal_result import (
-    ModelDispatchBusTerminalResult,
-)
-from omnibase_core.models.dispatch.model_dispatch_claim import (
-    ModelDispatchClaim,
-    compute_blocker_id,
-)
-from omnibase_core.models.dispatch.model_dispatch_eval_result import (
-    ModelDispatchEvalResult,
-)
-from omnibase_core.models.dispatch.model_dispatch_lifecycle_event import (
-    ModelDispatchLifecycleEvent,
-)
-from omnibase_core.models.dispatch.model_dispatch_metadata import ModelDispatchMetadata
-from omnibase_core.models.dispatch.model_dispatch_outputs import ModelDispatchOutputs
-from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
-from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
-from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
-from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
-from omnibase_core.models.dispatch.model_handler_registration import (
-    ModelHandlerRegistration,
-)
-from omnibase_core.models.dispatch.model_lifecycle_chain import (
-    DEFAULT_HEARTBEAT_REQUIRED_SECONDS,
-    HEARTBEAT_REQUIRED_ENV_VAR,
-    ModelLifecycleChain,
-)
-from omnibase_core.models.dispatch.model_message_delivery_context import (
-    ModelMessageDeliveryContext,
-)
-from omnibase_core.models.dispatch.model_model_call_record import ModelCallRecord
-from omnibase_core.models.dispatch.model_skill_result import (
-    SKILL_RESULT_SCHEMA_VERSION,
-    ModelSkillResult,
-)
-from omnibase_core.models.dispatch.model_topic_parser import (
-    EnumTopicStandard,
-    ModelParsedTopic,
-    ModelTopicParser,
-)
-from omnibase_core.models.dispatch.report import (
-    ROLE_TO_MODEL,
-    DispatchReport,
-    EnumDispatchReportImplementerVerdict,
-    EnumDispatchReportLanderVerdict,
-    EnumDispatchReportRole,
-    EnumDispatchReportScoutVerdict,
-    EnumDispatchReportVerifierVerdict,
-    ModelDispatchReportBase,
-    ModelDispatchReportImplementer,
-    ModelDispatchReportLander,
-    ModelDispatchReportScout,
-    ModelDispatchReportVerifier,
-)
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.enums.enum_dispatch_lifecycle_emitter import (
+        EnumDispatchLifecycleEmitter,
+    )
+    from omnibase_core.enums.enum_dispatch_lifecycle_state import (
+        EnumDispatchLifecycleState,
+    )
+    from omnibase_core.enums.enum_dispatch_status import EnumDispatchStatus
+    from omnibase_core.enums.enum_dispatch_verdict import EnumDispatchVerdict
+    from omnibase_core.errors.error_lifecycle_emitter import LifecycleEmitterError
+    from omnibase_core.errors.error_lifecycle_transition import (
+        LifecycleTransitionError,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_bus_command import (
+        ModelDispatchBusCommand,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_bus_route import (
+        ModelDispatchBusRoute,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_bus_terminal_result import (
+        ModelDispatchBusTerminalResult,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_claim import (
+        ModelDispatchClaim,
+        compute_blocker_id,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_eval_result import (
+        ModelDispatchEvalResult,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_lifecycle_event import (
+        ModelDispatchLifecycleEvent,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_metadata import (
+        ModelDispatchMetadata,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_outputs import (
+        ModelDispatchOutputs,
+    )
+    from omnibase_core.models.dispatch.model_dispatch_result import ModelDispatchResult
+    from omnibase_core.models.dispatch.model_dispatch_route import ModelDispatchRoute
+    from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
+    from omnibase_core.models.dispatch.model_handler_ref import ModelHandlerRef
+    from omnibase_core.models.dispatch.model_handler_registration import (
+        ModelHandlerRegistration,
+    )
+    from omnibase_core.models.dispatch.model_lifecycle_chain import (
+        DEFAULT_HEARTBEAT_REQUIRED_SECONDS,
+        HEARTBEAT_REQUIRED_ENV_VAR,
+        ModelLifecycleChain,
+    )
+    from omnibase_core.models.dispatch.model_message_delivery_context import (
+        ModelMessageDeliveryContext,
+    )
+    from omnibase_core.models.dispatch.model_model_call_record import ModelCallRecord
+    from omnibase_core.models.dispatch.model_skill_result import (
+        SKILL_RESULT_SCHEMA_VERSION,
+        ModelSkillResult,
+    )
+    from omnibase_core.models.dispatch.model_topic_parser import (
+        EnumTopicStandard,
+        ModelParsedTopic,
+        ModelTopicParser,
+    )
+    from omnibase_core.models.dispatch.report import (
+        ROLE_TO_MODEL,
+        DispatchReport,
+        EnumDispatchReportImplementerVerdict,
+        EnumDispatchReportLanderVerdict,
+        EnumDispatchReportRole,
+        EnumDispatchReportScoutVerdict,
+        EnumDispatchReportVerifierVerdict,
+        ModelDispatchReportBase,
+        ModelDispatchReportImplementer,
+        ModelDispatchReportLander,
+        ModelDispatchReportScout,
+        ModelDispatchReportVerifier,
+    )
 
 __all__ = [
     # Constants
@@ -213,3 +223,188 @@ __all__ = [
     # Functions
     "compute_blocker_id",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "EnumDispatchLifecycleEmitter": (
+        "omnibase_core.enums.enum_dispatch_lifecycle_emitter",
+        "EnumDispatchLifecycleEmitter",
+    ),
+    "EnumDispatchLifecycleState": (
+        "omnibase_core.enums.enum_dispatch_lifecycle_state",
+        "EnumDispatchLifecycleState",
+    ),
+    "EnumDispatchStatus": (
+        "omnibase_core.enums.enum_dispatch_status",
+        "EnumDispatchStatus",
+    ),
+    "EnumDispatchVerdict": (
+        "omnibase_core.enums.enum_dispatch_verdict",
+        "EnumDispatchVerdict",
+    ),
+    "LifecycleEmitterError": (
+        "omnibase_core.errors.error_lifecycle_emitter",
+        "LifecycleEmitterError",
+    ),
+    "LifecycleTransitionError": (
+        "omnibase_core.errors.error_lifecycle_transition",
+        "LifecycleTransitionError",
+    ),
+    "ModelDispatchBusCommand": (
+        "omnibase_core.models.dispatch.model_dispatch_bus_command",
+        "ModelDispatchBusCommand",
+    ),
+    "ModelDispatchBusRoute": (
+        "omnibase_core.models.dispatch.model_dispatch_bus_route",
+        "ModelDispatchBusRoute",
+    ),
+    "ModelDispatchBusTerminalResult": (
+        "omnibase_core.models.dispatch.model_dispatch_bus_terminal_result",
+        "ModelDispatchBusTerminalResult",
+    ),
+    "ModelDispatchClaim": (
+        "omnibase_core.models.dispatch.model_dispatch_claim",
+        "ModelDispatchClaim",
+    ),
+    "compute_blocker_id": (
+        "omnibase_core.models.dispatch.model_dispatch_claim",
+        "compute_blocker_id",
+    ),
+    "ModelDispatchEvalResult": (
+        "omnibase_core.models.dispatch.model_dispatch_eval_result",
+        "ModelDispatchEvalResult",
+    ),
+    "ModelDispatchLifecycleEvent": (
+        "omnibase_core.models.dispatch.model_dispatch_lifecycle_event",
+        "ModelDispatchLifecycleEvent",
+    ),
+    "ModelDispatchMetadata": (
+        "omnibase_core.models.dispatch.model_dispatch_metadata",
+        "ModelDispatchMetadata",
+    ),
+    "ModelDispatchOutputs": (
+        "omnibase_core.models.dispatch.model_dispatch_outputs",
+        "ModelDispatchOutputs",
+    ),
+    "ModelDispatchResult": (
+        "omnibase_core.models.dispatch.model_dispatch_result",
+        "ModelDispatchResult",
+    ),
+    "ModelDispatchRoute": (
+        "omnibase_core.models.dispatch.model_dispatch_route",
+        "ModelDispatchRoute",
+    ),
+    "ModelHandlerOutput": (
+        "omnibase_core.models.dispatch.model_handler_output",
+        "ModelHandlerOutput",
+    ),
+    "ModelHandlerRef": (
+        "omnibase_core.models.dispatch.model_handler_ref",
+        "ModelHandlerRef",
+    ),
+    "ModelHandlerRegistration": (
+        "omnibase_core.models.dispatch.model_handler_registration",
+        "ModelHandlerRegistration",
+    ),
+    "DEFAULT_HEARTBEAT_REQUIRED_SECONDS": (
+        "omnibase_core.models.dispatch.model_lifecycle_chain",
+        "DEFAULT_HEARTBEAT_REQUIRED_SECONDS",
+    ),
+    "HEARTBEAT_REQUIRED_ENV_VAR": (
+        "omnibase_core.models.dispatch.model_lifecycle_chain",
+        "HEARTBEAT_REQUIRED_ENV_VAR",
+    ),
+    "ModelLifecycleChain": (
+        "omnibase_core.models.dispatch.model_lifecycle_chain",
+        "ModelLifecycleChain",
+    ),
+    "ModelMessageDeliveryContext": (
+        "omnibase_core.models.dispatch.model_message_delivery_context",
+        "ModelMessageDeliveryContext",
+    ),
+    "ModelCallRecord": (
+        "omnibase_core.models.dispatch.model_model_call_record",
+        "ModelCallRecord",
+    ),
+    "SKILL_RESULT_SCHEMA_VERSION": (
+        "omnibase_core.models.dispatch.model_skill_result",
+        "SKILL_RESULT_SCHEMA_VERSION",
+    ),
+    "ModelSkillResult": (
+        "omnibase_core.models.dispatch.model_skill_result",
+        "ModelSkillResult",
+    ),
+    "EnumTopicStandard": (
+        "omnibase_core.models.dispatch.model_topic_parser",
+        "EnumTopicStandard",
+    ),
+    "ModelParsedTopic": (
+        "omnibase_core.models.dispatch.model_topic_parser",
+        "ModelParsedTopic",
+    ),
+    "ModelTopicParser": (
+        "omnibase_core.models.dispatch.model_topic_parser",
+        "ModelTopicParser",
+    ),
+    "ROLE_TO_MODEL": ("omnibase_core.models.dispatch.report", "ROLE_TO_MODEL"),
+    "DispatchReport": ("omnibase_core.models.dispatch.report", "DispatchReport"),
+    "EnumDispatchReportImplementerVerdict": (
+        "omnibase_core.models.dispatch.report",
+        "EnumDispatchReportImplementerVerdict",
+    ),
+    "EnumDispatchReportLanderVerdict": (
+        "omnibase_core.models.dispatch.report",
+        "EnumDispatchReportLanderVerdict",
+    ),
+    "EnumDispatchReportRole": (
+        "omnibase_core.models.dispatch.report",
+        "EnumDispatchReportRole",
+    ),
+    "EnumDispatchReportScoutVerdict": (
+        "omnibase_core.models.dispatch.report",
+        "EnumDispatchReportScoutVerdict",
+    ),
+    "EnumDispatchReportVerifierVerdict": (
+        "omnibase_core.models.dispatch.report",
+        "EnumDispatchReportVerifierVerdict",
+    ),
+    "ModelDispatchReportBase": (
+        "omnibase_core.models.dispatch.report",
+        "ModelDispatchReportBase",
+    ),
+    "ModelDispatchReportImplementer": (
+        "omnibase_core.models.dispatch.report",
+        "ModelDispatchReportImplementer",
+    ),
+    "ModelDispatchReportLander": (
+        "omnibase_core.models.dispatch.report",
+        "ModelDispatchReportLander",
+    ),
+    "ModelDispatchReportScout": (
+        "omnibase_core.models.dispatch.report",
+        "ModelDispatchReportScout",
+    ),
+    "ModelDispatchReportVerifier": (
+        "omnibase_core.models.dispatch.report",
+        "ModelDispatchReportVerifier",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

@@ -2,15 +2,23 @@
 # SPDX-License-Identifier: MIT
 """ADR extraction domain models (OMN-10691)."""
 
-from omnibase_core.models.adr.model_adr_draft import ModelADRDraft
-from omnibase_core.models.adr.model_adr_extraction_metadata import (
-    ModelADRExtractionMetadata,
-)
-from omnibase_core.models.adr.model_canary_result import ModelCanaryResult
-from omnibase_core.models.adr.model_decision_extraction import ModelDecisionExtraction
-from omnibase_core.models.adr.model_document_segment import ModelDocumentSegment
-from omnibase_core.models.adr.model_extraction_score import ModelExtractionScore
-from omnibase_core.models.adr.model_llm_call_evidence import ModelLLMCallEvidence
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.adr.model_adr_draft import ModelADRDraft
+    from omnibase_core.models.adr.model_adr_extraction_metadata import (
+        ModelADRExtractionMetadata,
+    )
+    from omnibase_core.models.adr.model_canary_result import ModelCanaryResult
+    from omnibase_core.models.adr.model_decision_extraction import (
+        ModelDecisionExtraction,
+    )
+    from omnibase_core.models.adr.model_document_segment import ModelDocumentSegment
+    from omnibase_core.models.adr.model_extraction_score import ModelExtractionScore
+    from omnibase_core.models.adr.model_llm_call_evidence import ModelLLMCallEvidence
 
 __all__ = [
     "ModelADRDraft",
@@ -21,3 +29,51 @@ __all__ = [
     "ModelExtractionScore",
     "ModelLLMCallEvidence",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelADRDraft": ("omnibase_core.models.adr.model_adr_draft", "ModelADRDraft"),
+    "ModelADRExtractionMetadata": (
+        "omnibase_core.models.adr.model_adr_extraction_metadata",
+        "ModelADRExtractionMetadata",
+    ),
+    "ModelCanaryResult": (
+        "omnibase_core.models.adr.model_canary_result",
+        "ModelCanaryResult",
+    ),
+    "ModelDecisionExtraction": (
+        "omnibase_core.models.adr.model_decision_extraction",
+        "ModelDecisionExtraction",
+    ),
+    "ModelDocumentSegment": (
+        "omnibase_core.models.adr.model_document_segment",
+        "ModelDocumentSegment",
+    ),
+    "ModelExtractionScore": (
+        "omnibase_core.models.adr.model_extraction_score",
+        "ModelExtractionScore",
+    ),
+    "ModelLLMCallEvidence": (
+        "omnibase_core.models.adr.model_llm_call_evidence",
+        "ModelLLMCallEvidence",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

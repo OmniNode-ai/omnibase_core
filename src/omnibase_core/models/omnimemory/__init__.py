@@ -63,22 +63,32 @@ Example:
     (OMN-1238, OMN-1241, OMN-1242, OMN-1243, OMN-1244, OMN-1245)
 """
 
-from omnibase_core.models.omnimemory.model_claude_code_prompt_record import (
-    ModelClaudeCodePromptRecord,
-)
-from omnibase_core.models.omnimemory.model_claude_code_session_snapshot import (
-    ModelClaudeCodeSessionSnapshot,
-)
-from omnibase_core.models.omnimemory.model_claude_code_tool_record import (
-    ModelClaudeCodeToolRecord,
-)
-from omnibase_core.models.omnimemory.model_cost_entry import ModelCostEntry
-from omnibase_core.models.omnimemory.model_cost_ledger import ModelCostLedger
-from omnibase_core.models.omnimemory.model_decision_record import ModelDecisionRecord
-from omnibase_core.models.omnimemory.model_failure_record import ModelFailureRecord
-from omnibase_core.models.omnimemory.model_memory_diff import ModelMemoryDiff
-from omnibase_core.models.omnimemory.model_memory_snapshot import ModelMemorySnapshot
-from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
+from __future__ import annotations
+
+import importlib
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.omnimemory.model_claude_code_prompt_record import (
+        ModelClaudeCodePromptRecord,
+    )
+    from omnibase_core.models.omnimemory.model_claude_code_session_snapshot import (
+        ModelClaudeCodeSessionSnapshot,
+    )
+    from omnibase_core.models.omnimemory.model_claude_code_tool_record import (
+        ModelClaudeCodeToolRecord,
+    )
+    from omnibase_core.models.omnimemory.model_cost_entry import ModelCostEntry
+    from omnibase_core.models.omnimemory.model_cost_ledger import ModelCostLedger
+    from omnibase_core.models.omnimemory.model_decision_record import (
+        ModelDecisionRecord,
+    )
+    from omnibase_core.models.omnimemory.model_failure_record import ModelFailureRecord
+    from omnibase_core.models.omnimemory.model_memory_diff import ModelMemoryDiff
+    from omnibase_core.models.omnimemory.model_memory_snapshot import (
+        ModelMemorySnapshot,
+    )
+    from omnibase_core.models.omnimemory.model_subject_ref import ModelSubjectRef
 
 __all__ = [
     "ModelClaudeCodePromptRecord",
@@ -92,3 +102,66 @@ __all__ = [
     "ModelMemorySnapshot",
     "ModelSubjectRef",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelClaudeCodePromptRecord": (
+        "omnibase_core.models.omnimemory.model_claude_code_prompt_record",
+        "ModelClaudeCodePromptRecord",
+    ),
+    "ModelClaudeCodeSessionSnapshot": (
+        "omnibase_core.models.omnimemory.model_claude_code_session_snapshot",
+        "ModelClaudeCodeSessionSnapshot",
+    ),
+    "ModelClaudeCodeToolRecord": (
+        "omnibase_core.models.omnimemory.model_claude_code_tool_record",
+        "ModelClaudeCodeToolRecord",
+    ),
+    "ModelCostEntry": (
+        "omnibase_core.models.omnimemory.model_cost_entry",
+        "ModelCostEntry",
+    ),
+    "ModelCostLedger": (
+        "omnibase_core.models.omnimemory.model_cost_ledger",
+        "ModelCostLedger",
+    ),
+    "ModelDecisionRecord": (
+        "omnibase_core.models.omnimemory.model_decision_record",
+        "ModelDecisionRecord",
+    ),
+    "ModelFailureRecord": (
+        "omnibase_core.models.omnimemory.model_failure_record",
+        "ModelFailureRecord",
+    ),
+    "ModelMemoryDiff": (
+        "omnibase_core.models.omnimemory.model_memory_diff",
+        "ModelMemoryDiff",
+    ),
+    "ModelMemorySnapshot": (
+        "omnibase_core.models.omnimemory.model_memory_snapshot",
+        "ModelMemorySnapshot",
+    ),
+    "ModelSubjectRef": (
+        "omnibase_core.models.omnimemory.model_subject_ref",
+        "ModelSubjectRef",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})
