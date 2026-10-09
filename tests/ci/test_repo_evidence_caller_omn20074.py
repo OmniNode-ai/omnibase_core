@@ -85,7 +85,8 @@ def test_caller_pins_the_contract_home_reusable() -> None:
     job = yaml.safe_load(CALLER_PATH.read_text(encoding="utf-8"))["jobs"][
         "repo-evidence"
     ]
-    assert job["uses"].endswith("@81b34fe91f995e75acd65694e81ecf2c385456a4")
+    # omnibase_core#1914's squash commit; it carries #1912's contract-home marker.
+    assert job["uses"].endswith("@fb0c6c2117d5868a398b0920cd0048d0824415b1")
 
 
 def test_every_repo_contract_binds_every_criterion() -> None:
