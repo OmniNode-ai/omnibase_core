@@ -170,3 +170,53 @@ def test_lazy_package_exports_resolve(package_name: str) -> None:
         assert hasattr(package, name), f"{package_name}.__all__ names missing {name}"
     assert set(table) <= set(dir(package))
     assert not hasattr(package, "no_such_attribute_omn17427")
+
+
+# An eager package __init__ loaded its submodules as a side effect, so
+# ``import pkg`` followed by ``pkg.submodule.Name`` worked without importing
+# ``pkg.submodule``. The lazy __getattr__ keeps that working by importing the
+# submodule on first attribute access. Run in a fresh interpreter so that no
+# other test has already imported the submodule (which would bind the
+# attribute and make the check pass vacuously).
+SUBMODULE_ATTRIBUTE_PROBE = """
+import importlib, json, pkgutil, sys
+results = []
+for package_name in json.loads(sys.argv[1]):
+    package = importlib.import_module(package_name)
+    for info in pkgutil.iter_modules(package.__path__):
+        full = f"{package_name}.{info.name}"
+        if full in sys.modules or info.name in package._LAZY_IMPORTS:
+            continue
+        try:
+            value = getattr(package, info.name)
+        except AttributeError:
+            results.append([full, "missing"])
+        else:
+            results.append([full, "ok" if value is sys.modules.get(full) else "other"])
+        break
+print(json.dumps(results))
+"""
+
+
+@pytest.mark.unit
+def test_lazy_package_submodules_resolve_as_attributes() -> None:
+    completed = subprocess.run(
+        [sys.executable, "-c", SUBMODULE_ATTRIBUTE_PROBE, json.dumps(LAZY_PACKAGES)],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=120,
+    )
+    assert completed.returncode == 0, completed.stderr
+    results: list[list[str]] = json.loads(completed.stdout.strip().splitlines()[-1])
+    # Positive control: the probe reached a not-yet-imported submodule.
+    assert results
+    not_ok = [entry for entry in results if entry[1] != "ok"]
+    assert not_ok == []
+
+
+@pytest.mark.unit
+def test_lazy_package_does_not_import_non_identifier_attribute_names() -> None:
+    package = importlib.import_module("omnibase_core.event_bus")
+    assert not hasattr(package, "event_bus_inmemory.EventBusInmemory")
+    assert not hasattr(package, "__no_such_dunder_omn17427__")

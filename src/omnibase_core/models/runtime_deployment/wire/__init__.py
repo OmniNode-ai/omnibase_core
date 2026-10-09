@@ -12,7 +12,7 @@ deployment/OCC nodes import. ``EnumRuntimeLane`` is canonically defined in
 
 from __future__ import annotations
 
-import importlib
+import importlib.util
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -56,6 +56,14 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
 def __getattr__(name: str) -> object:
     target = _LAZY_IMPORTS.get(name)
     if target is None:
+        # A submodule that the old eager __init__ loaded as a side effect
+        # stays reachable as ``package.submodule``: import it on first access.
+        if (
+            name.isidentifier()
+            and not name.startswith("__")
+            and importlib.util.find_spec(f"{__name__}.{name}") is not None
+        ):
+            return importlib.import_module(f"{__name__}.{name}")
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
     module = importlib.import_module(target[0])
     value = module if target[1] is None else getattr(module, target[1])

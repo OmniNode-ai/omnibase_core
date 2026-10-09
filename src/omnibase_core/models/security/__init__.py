@@ -17,7 +17,7 @@ to help users migrate to the new names.
 
 from __future__ import annotations
 
-import importlib
+import importlib.util
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -246,6 +246,14 @@ def __getattr__(name: str) -> object:
 
         return UtilSecurity
 
+    # A submodule that the old eager __init__ loaded as a side effect
+    # stays reachable as ``package.submodule``: import it on first access.
+    if (
+        name.isidentifier()
+        and not name.startswith("__")
+        and importlib.util.find_spec(f"{__name__}.{name}") is not None
+    ):
+        return importlib.import_module(f"{__name__}.{name}")
     raise AttributeError(  # error-ok: required for __getattr__ protocol
         f"module {__name__!r} has no attribute {name!r}"
     )
