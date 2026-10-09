@@ -5,9 +5,10 @@
 
 import io
 import json
-import re
+import tomllib
 
 import pytest
+from packaging.version import InvalidVersion, Version
 
 from omnibase_core.models.nodes.release_identity_check.model_release_identity_gather_input import (
     ModelReleaseIdentityGatherInput,
@@ -69,36 +70,76 @@ def test_parity_golden(case, tmp_path, monkeypatch, capsys):
     assert report_rows(report.model_dump_json(), root) == expected["findings"]
 
 
-def _mask_tag_state(stdout: str) -> str:
-    """Mask the one line that reads live tag state and the live pyproject version.
-
-    The repository golden is recorded against a checkout carrying tags; a CI
-    checkout without them reports "no published tag yet", and every dev bump
-    moves the version. The findings, status and exit code stay exact.
-    """
-    return re.sub(r"^OK: .*published.*$", "OK: <tag-state>", stdout, flags=re.M)
-
-
+@pytest.mark.parametrize("published", ["live", "equal"])
 @pytest.mark.parametrize("base", [None, "origin/dev"])
-def test_parity_repository_full_tree(base, tmp_path, capsys):
+def test_parity_repository_full_tree(base, published, tmp_path, capsys, monkeypatch):
+    """Check the live tree without assuming its version is ahead of its tags.
+
+    Fixed repositories above retain exact golden output. This checkout may be
+    a release commit or a PR merge onto one, so its expected verdict must account
+    for its version, reachable tags and source diff. The equal-tag variant keeps
+    that CI regression covered even in a checkout with older or missing tags.
+    """
+    version = Version(
+        tomllib.loads((REPO / "pyproject.toml").read_text())["project"]["version"]
+    )
+    if published == "equal":
+        original = NodeReleaseIdentityGatherEffect._stdout
+
+        def published_version(self, root, *args):
+            if args[0] == "tag":
+                return f"v{version}"
+            return original(self, root, *args)
+
+        monkeypatch.setattr(
+            NodeReleaseIdentityGatherEffect, "_stdout", published_version
+        )
     destination = tmp_path / "report.json"
     facts = NodeReleaseIdentityGatherEffect().handle(
         ModelReleaseIdentityGatherInput(repo_root=str(REPO), base=base)
     )
     assert len(facts.files) > 0
-    expected = json.loads((CORPUS / "golden.json").read_text())["repository"][
-        base or "default"
-    ]
+    assert not facts.runtime_errors
+    assert facts.pyproject_version_raw == str(version)
+    versions = []
+    for tag in facts.published_tags:
+        try:
+            versions.append(Version(tag.removeprefix("v")))
+        except InvalidVersion:
+            continue
+    latest = max(versions, default=None)
+    source_changed = facts.changed_files is None or any(
+        path.startswith("src/") for path in facts.changed_files
+    )
+    violation = latest is not None and source_changed and version <= latest
+    expected_rows = []
+    expected_message = ""
+    if violation:
+        expected_message = (
+            "FAIL: packaged source changed but pyproject version "
+            f"{version} is NOT ahead of the latest published version "
+            f"{latest} (OMN-13411 release-identity gate)."
+        )
+        expected_rows.append(
+            {
+                "path": "pyproject.toml",
+                "line": 1,
+                "message": expected_message,
+            }
+        )
     report = NodeReleaseIdentityCheckCompute().handle(facts)
-    assert report_rows(report.model_dump_json(), REPO) == expected["findings"]
-    assert report.overall_status == expected["status"]
+    assert report_rows(report.model_dump_json(), REPO) == expected_rows
+    assert report.overall_status == ("FAIL" if violation else "PASS")
     args = ["--root", str(REPO), "--report-json", str(destination)]
     if base:
         args.extend(["--base", base])
-    assert main(args) == expected["exit_code"]
+    assert main(args) == int(violation)
     output = capsys.readouterr()
-    assert _mask_tag_state(output.out.replace(str(REPO), "<root>")) == _mask_tag_state(
-        expected["stdout"]
-    )
-    assert output.err.replace(str(REPO), "<root>") == expected["stderr"]
-    assert report_rows(destination.read_text(), REPO) == expected["findings"]
+    if violation:
+        assert output.out == ""
+        assert output.err.startswith(expected_message + "\n")
+        assert report.findings[0].rule_id == "version_not_ahead"
+    else:
+        assert output.out.startswith("OK: ")
+        assert output.err == ""
+    assert report_rows(destination.read_text(), REPO) == expected_rows
