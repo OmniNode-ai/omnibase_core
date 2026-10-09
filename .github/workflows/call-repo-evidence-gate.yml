@@ -26,7 +26,8 @@
 # repo-evidence / verify job in this mode (the OCC path, switched off by the
 # input); only repo-evidence / dod-verify carries a verdict.
 #
-# The reusable is pinned by full SHA to omnibase_core#1912's squash commit.
+# The reusable is pinned by full SHA to omnibase_core#1914's squash commit on dev,
+# which carries #1912's contract-home marker and caller-mode verify no-op.
 # verifier-version 0.4.305 is the first omnimarket release carrying
 # omnimarket#3563 (node_dod_verify names contract_in_another_repo), the verifier
 # half of #1912. It is not called as
@@ -65,7 +66,7 @@ permissions:
 
 jobs:
   repo-evidence:
-    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@81b34fe91f995e75acd65694e81ecf2c385456a4 # OMN-20074: immutable full-SHA pin, the squash commit of omnibase_core#1912 on dev (with compare-with-occ "true", a PR head that lacks its cited contract names the contract's home in another repository, so the difference reports contract_in_another_repo; also carries omnibase_core#1911, the in-job writer-app pin-only verdict)
+    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@fb0c6c2117d5868a398b0920cd0048d0824415b1 # OMN-20074: immutable full-SHA pin, the squash commit of omnibase_core#1914 on dev (carries #1912's contract-home marker and caller-mode verify no-op, #1911's in-job pin-only verdict, and adds the OCC writer app's release-cut exemption)
     with:
       evidence-source: caller
       verifier-version: 0.4.305
