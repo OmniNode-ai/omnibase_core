@@ -205,28 +205,36 @@ omnibase_core.enums.enum_handler_capability : Handler capabilities
 .. versionadded:: 0.4.0
 """
 
-from omnibase_core.models.handlers.model_handler_artifact_ref import (
-    ModelHandlerArtifactRef,
-)
-from omnibase_core.models.handlers.model_handler_descriptor import (
-    ModelHandlerDescriptor,
-)
-from omnibase_core.models.handlers.model_handler_packaging import ModelHandlerPackaging
-from omnibase_core.models.handlers.model_handler_state import ModelHandlerState
-from omnibase_core.models.handlers.model_handler_type_metadata import (
-    ModelHandlerTypeMetadata,
-    get_handler_type_metadata,
-)
-from omnibase_core.models.handlers.model_identifier import ModelIdentifier
-from omnibase_core.models.handlers.model_packaging_metadata_ref import (
-    ModelPackagingMetadataRef,
-)
-from omnibase_core.models.handlers.model_sandbox_requirements import (
-    ModelSandboxRequirements,
-)
-from omnibase_core.models.handlers.model_security_metadata_ref import (
-    ModelSecurityMetadataRef,
-)
+from __future__ import annotations
+
+import importlib.util
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.handlers.model_handler_artifact_ref import (
+        ModelHandlerArtifactRef,
+    )
+    from omnibase_core.models.handlers.model_handler_descriptor import (
+        ModelHandlerDescriptor,
+    )
+    from omnibase_core.models.handlers.model_handler_packaging import (
+        ModelHandlerPackaging,
+    )
+    from omnibase_core.models.handlers.model_handler_state import ModelHandlerState
+    from omnibase_core.models.handlers.model_handler_type_metadata import (
+        ModelHandlerTypeMetadata,
+        get_handler_type_metadata,
+    )
+    from omnibase_core.models.handlers.model_identifier import ModelIdentifier
+    from omnibase_core.models.handlers.model_packaging_metadata_ref import (
+        ModelPackagingMetadataRef,
+    )
+    from omnibase_core.models.handlers.model_sandbox_requirements import (
+        ModelSandboxRequirements,
+    )
+    from omnibase_core.models.handlers.model_security_metadata_ref import (
+        ModelSecurityMetadataRef,
+    )
 
 __all__ = [
     "ModelHandlerState",
@@ -240,3 +248,74 @@ __all__ = [
     "ModelSecurityMetadataRef",
     "get_handler_type_metadata",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelHandlerArtifactRef": (
+        "omnibase_core.models.handlers.model_handler_artifact_ref",
+        "ModelHandlerArtifactRef",
+    ),
+    "ModelHandlerDescriptor": (
+        "omnibase_core.models.handlers.model_handler_descriptor",
+        "ModelHandlerDescriptor",
+    ),
+    "ModelHandlerPackaging": (
+        "omnibase_core.models.handlers.model_handler_packaging",
+        "ModelHandlerPackaging",
+    ),
+    "ModelHandlerState": (
+        "omnibase_core.models.handlers.model_handler_state",
+        "ModelHandlerState",
+    ),
+    "ModelHandlerTypeMetadata": (
+        "omnibase_core.models.handlers.model_handler_type_metadata",
+        "ModelHandlerTypeMetadata",
+    ),
+    "get_handler_type_metadata": (
+        "omnibase_core.models.handlers.model_handler_type_metadata",
+        "get_handler_type_metadata",
+    ),
+    "ModelIdentifier": (
+        "omnibase_core.models.handlers.model_identifier",
+        "ModelIdentifier",
+    ),
+    "ModelPackagingMetadataRef": (
+        "omnibase_core.models.handlers.model_packaging_metadata_ref",
+        "ModelPackagingMetadataRef",
+    ),
+    "ModelSandboxRequirements": (
+        "omnibase_core.models.handlers.model_sandbox_requirements",
+        "ModelSandboxRequirements",
+    ),
+    "ModelSecurityMetadataRef": (
+        "omnibase_core.models.handlers.model_security_metadata_ref",
+        "ModelSecurityMetadataRef",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        # A submodule that the old eager __init__ loaded as a side effect
+        # stays reachable as ``package.submodule``: import it on first access.
+        if (
+            name.isidentifier()
+            and not name.startswith("__")
+            and importlib.util.find_spec(f"{__name__}.{name}") is not None
+        ):
+            return importlib.import_module(f"{__name__}.{name}")
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

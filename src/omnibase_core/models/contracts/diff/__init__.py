@@ -54,16 +54,24 @@ See Also:
     - docs/architecture/CONTRACT_DIFFING.md: Architecture documentation
 """
 
-from omnibase_core.models.contracts.diff.model_contract_diff import ModelContractDiff
-from omnibase_core.models.contracts.diff.model_contract_field_diff import (
-    ModelContractFieldDiff,
-)
-from omnibase_core.models.contracts.diff.model_contract_list_diff import (
-    ModelContractListDiff,
-)
-from omnibase_core.models.contracts.diff.model_diff_configuration import (
-    ModelDiffConfiguration,
-)
+from __future__ import annotations
+
+import importlib.util
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.contracts.diff.model_contract_diff import (
+        ModelContractDiff,
+    )
+    from omnibase_core.models.contracts.diff.model_contract_field_diff import (
+        ModelContractFieldDiff,
+    )
+    from omnibase_core.models.contracts.diff.model_contract_list_diff import (
+        ModelContractListDiff,
+    )
+    from omnibase_core.models.contracts.diff.model_diff_configuration import (
+        ModelDiffConfiguration,
+    )
 
 __all__ = [
     # Configuration
@@ -75,3 +83,50 @@ __all__ = [
     # Complete diff result
     "ModelContractDiff",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelContractDiff": (
+        "omnibase_core.models.contracts.diff.model_contract_diff",
+        "ModelContractDiff",
+    ),
+    "ModelContractFieldDiff": (
+        "omnibase_core.models.contracts.diff.model_contract_field_diff",
+        "ModelContractFieldDiff",
+    ),
+    "ModelContractListDiff": (
+        "omnibase_core.models.contracts.diff.model_contract_list_diff",
+        "ModelContractListDiff",
+    ),
+    "ModelDiffConfiguration": (
+        "omnibase_core.models.contracts.diff.model_diff_configuration",
+        "ModelDiffConfiguration",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        # A submodule that the old eager __init__ loaded as a side effect
+        # stays reachable as ``package.submodule``: import it on first access.
+        if (
+            name.isidentifier()
+            and not name.startswith("__")
+            and importlib.util.find_spec(f"{__name__}.{name}") is not None
+        ):
+            return importlib.import_module(f"{__name__}.{name}")
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

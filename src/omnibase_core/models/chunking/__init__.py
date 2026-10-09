@@ -3,13 +3,21 @@
 
 """Chunking models for transport-level envelope splitting and reassembly."""
 
-from omnibase_core.models.chunking.model_chunk_metadata import ModelChunkMetadata
-from omnibase_core.models.chunking.model_chunk_policy import ModelChunkPolicy
-from omnibase_core.models.chunking.model_chunk_series_failed import (
-    EnumChunkFailureReason,
-    ModelChunkSeriesFailed,
-)
-from omnibase_core.models.chunking.model_chunked_envelope import ModelChunkedEnvelope
+from __future__ import annotations
+
+import importlib.util
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.chunking.model_chunk_metadata import ModelChunkMetadata
+    from omnibase_core.models.chunking.model_chunk_policy import ModelChunkPolicy
+    from omnibase_core.models.chunking.model_chunk_series_failed import (
+        EnumChunkFailureReason,
+        ModelChunkSeriesFailed,
+    )
+    from omnibase_core.models.chunking.model_chunked_envelope import (
+        ModelChunkedEnvelope,
+    )
 
 __all__ = [
     "ModelChunkMetadata",
@@ -18,3 +26,54 @@ __all__ = [
     "ModelChunkSeriesFailed",
     "EnumChunkFailureReason",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelChunkMetadata": (
+        "omnibase_core.models.chunking.model_chunk_metadata",
+        "ModelChunkMetadata",
+    ),
+    "ModelChunkPolicy": (
+        "omnibase_core.models.chunking.model_chunk_policy",
+        "ModelChunkPolicy",
+    ),
+    "EnumChunkFailureReason": (
+        "omnibase_core.models.chunking.model_chunk_series_failed",
+        "EnumChunkFailureReason",
+    ),
+    "ModelChunkSeriesFailed": (
+        "omnibase_core.models.chunking.model_chunk_series_failed",
+        "ModelChunkSeriesFailed",
+    ),
+    "ModelChunkedEnvelope": (
+        "omnibase_core.models.chunking.model_chunked_envelope",
+        "ModelChunkedEnvelope",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        # A submodule that the old eager __init__ loaded as a side effect
+        # stays reachable as ``package.submodule``: import it on first access.
+        if (
+            name.isidentifier()
+            and not name.startswith("__")
+            and importlib.util.find_spec(f"{__name__}.{name}") is not None
+        ):
+            return importlib.import_module(f"{__name__}.{name}")
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

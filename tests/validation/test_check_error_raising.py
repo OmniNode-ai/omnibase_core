@@ -489,3 +489,67 @@ def process():
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+class TestModuleGetattrAttributeError:
+    """PEP 562: a module-level ``__getattr__`` must raise AttributeError (OMN-17427).
+
+    ``hasattr``, ``getattr(module, name, default)`` and ``from pkg import x``
+    only treat AttributeError as "attribute absent"; any other exception type,
+    ModelOnexError included, breaks them. The protocol mandates the type, the
+    same way Pydantic mandates ValueError in validators.
+    """
+
+    @staticmethod
+    def _violations(code: str) -> list[dict[str, object]]:
+        detector = ErrorRaisingDetector("test.py", code.splitlines())
+        detector.visit(ast.parse(code))
+        return detector.violations
+
+    def test_allows_attribute_error_in_module_getattr(self):
+        code = """
+_LAZY = {"X": "pkg.mod"}
+
+def __getattr__(name: str) -> object:
+    if name not in _LAZY:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    return _LAZY[name]
+"""
+        assert self._violations(code) == []
+
+    def test_still_detects_other_exceptions_in_module_getattr(self):
+        code = """
+def __getattr__(name: str) -> object:
+    raise ValueError(name)
+"""
+        violations = self._violations(code)
+        assert len(violations) == 1
+        assert violations[0]["exception"] == "ValueError"
+
+    def test_still_detects_attribute_error_in_regular_function(self):
+        code = """
+def lookup(name: str) -> object:
+    raise AttributeError(name)
+"""
+        violations = self._violations(code)
+        assert len(violations) == 1
+        assert violations[0]["exception"] == "AttributeError"
+
+    def test_still_detects_attribute_error_nested_in_module_getattr(self):
+        code = """
+def __getattr__(name: str) -> object:
+    def helper() -> object:
+        raise AttributeError(name)
+    return helper()
+"""
+        violations = self._violations(code)
+        assert len(violations) == 1
+
+    def test_still_detects_attribute_error_in_class_getattr(self):
+        code = """
+class Proxy:
+    def __getattr__(self, name: str) -> object:
+        raise AttributeError(name)
+"""
+        violations = self._violations(code)
+        assert len(violations) == 1

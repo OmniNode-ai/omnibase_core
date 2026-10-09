@@ -80,24 +80,30 @@ See Also:
     Initial implementation as part of OMN-1776 cross-repo orchestrator.
 """
 
-from omnibase_core.models.events.validation.model_validation_event_base import (
-    ModelValidationEventBase,
-)
-from omnibase_core.models.events.validation.model_validation_run_completed_event import (
-    VALIDATION_RUN_COMPLETED_EVENT,
-    ModelValidationRunCompletedEvent,
-)
-from omnibase_core.models.events.validation.model_validation_run_started_event import (
-    VALIDATION_RUN_STARTED_EVENT,
-    ModelValidationRunStartedEvent,
-)
-from omnibase_core.models.events.validation.model_validation_violations_batch_event import (
-    VALIDATION_VIOLATIONS_BATCH_EVENT,
-    ModelValidationViolationsBatchEvent,
-)
-from omnibase_core.models.events.validation.model_violation_record import (
-    ModelViolationRecord,
-)
+from __future__ import annotations
+
+import importlib.util
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.events.validation.model_validation_event_base import (
+        ModelValidationEventBase,
+    )
+    from omnibase_core.models.events.validation.model_validation_run_completed_event import (
+        VALIDATION_RUN_COMPLETED_EVENT,
+        ModelValidationRunCompletedEvent,
+    )
+    from omnibase_core.models.events.validation.model_validation_run_started_event import (
+        VALIDATION_RUN_STARTED_EVENT,
+        ModelValidationRunStartedEvent,
+    )
+    from omnibase_core.models.events.validation.model_validation_violations_batch_event import (
+        VALIDATION_VIOLATIONS_BATCH_EVENT,
+        ModelValidationViolationsBatchEvent,
+    )
+    from omnibase_core.models.events.validation.model_violation_record import (
+        ModelViolationRecord,
+    )
 
 __all__ = [
     # Base model
@@ -113,3 +119,66 @@ __all__ = [
     "VALIDATION_VIOLATIONS_BATCH_EVENT",
     "VALIDATION_RUN_COMPLETED_EVENT",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelValidationEventBase": (
+        "omnibase_core.models.events.validation.model_validation_event_base",
+        "ModelValidationEventBase",
+    ),
+    "VALIDATION_RUN_COMPLETED_EVENT": (
+        "omnibase_core.models.events.validation.model_validation_run_completed_event",
+        "VALIDATION_RUN_COMPLETED_EVENT",
+    ),
+    "ModelValidationRunCompletedEvent": (
+        "omnibase_core.models.events.validation.model_validation_run_completed_event",
+        "ModelValidationRunCompletedEvent",
+    ),
+    "VALIDATION_RUN_STARTED_EVENT": (
+        "omnibase_core.models.events.validation.model_validation_run_started_event",
+        "VALIDATION_RUN_STARTED_EVENT",
+    ),
+    "ModelValidationRunStartedEvent": (
+        "omnibase_core.models.events.validation.model_validation_run_started_event",
+        "ModelValidationRunStartedEvent",
+    ),
+    "VALIDATION_VIOLATIONS_BATCH_EVENT": (
+        "omnibase_core.models.events.validation.model_validation_violations_batch_event",
+        "VALIDATION_VIOLATIONS_BATCH_EVENT",
+    ),
+    "ModelValidationViolationsBatchEvent": (
+        "omnibase_core.models.events.validation.model_validation_violations_batch_event",
+        "ModelValidationViolationsBatchEvent",
+    ),
+    "ModelViolationRecord": (
+        "omnibase_core.models.events.validation.model_violation_record",
+        "ModelViolationRecord",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        # A submodule that the old eager __init__ loaded as a side effect
+        # stays reachable as ``package.submodule``: import it on first access.
+        if (
+            name.isidentifier()
+            and not name.startswith("__")
+            and importlib.util.find_spec(f"{__name__}.{name}") is not None
+        ):
+            return importlib.import_module(f"{__name__}.{name}")
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})

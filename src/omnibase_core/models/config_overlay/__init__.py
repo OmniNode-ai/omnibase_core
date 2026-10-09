@@ -17,77 +17,83 @@ no lane.
 record the state read from a deployment surface and any read failure.
 """
 
-from omnibase_core.models.config_overlay.model_broker_extra_grant import (
-    ModelBrokerExtraGrant,
-)
-from omnibase_core.models.config_overlay.model_broker_principal_declaration import (
-    ModelBrokerPrincipalDeclaration,
-)
-from omnibase_core.models.config_overlay.model_broker_principal_grants_overlay import (
-    ModelBrokerPrincipalGrantsOverlay,
-)
-from omnibase_core.models.config_overlay.model_config_overlay_document import (
-    ModelConfigOverlayDocument,
-)
-from omnibase_core.models.config_overlay.model_config_overlay_scope import (
-    ModelConfigOverlayScope,
-)
-from omnibase_core.models.config_overlay.model_declared_state_observation import (
-    ModelDeclaredStateObservation,
-)
-from omnibase_core.models.config_overlay.model_embedding_endpoint_overlay import (
-    ModelEmbeddingEndpointOverlay,
-)
-from omnibase_core.models.config_overlay.model_host_declaration import (
-    ModelHostDeclaration,
-)
-from omnibase_core.models.config_overlay.model_host_network_interface_setting import (
-    ModelHostNetworkInterfaceSetting,
-)
-from omnibase_core.models.config_overlay.model_host_settings_overlay import (
-    ModelHostSettingsOverlay,
-)
-from omnibase_core.models.config_overlay.model_host_systemd_drop_in import (
-    ModelHostSystemdDropIn,
-)
-from omnibase_core.models.config_overlay.model_host_systemd_unit import (
-    ModelHostSystemdUnit,
-)
-from omnibase_core.models.config_overlay.model_lane_one_shot_job import (
-    ModelLaneOneShotJob,
-)
-from omnibase_core.models.config_overlay.model_lane_service_declaration import (
-    ModelLaneServiceDeclaration,
-)
-from omnibase_core.models.config_overlay.model_lane_services_overlay import (
-    ModelLaneServicesOverlay,
-)
-from omnibase_core.models.config_overlay.model_llm_catalog_entry import (
-    ModelLlmCatalogEntry,
-)
-from omnibase_core.models.config_overlay.model_llm_catalog_overlay import (
-    ModelLlmCatalogOverlay,
-)
-from omnibase_core.models.config_overlay.model_llm_compute_cost_entry import (
-    ModelLlmComputeCostEntry,
-)
-from omnibase_core.models.config_overlay.model_llm_pricing_entry import (
-    ModelLlmPricingEntry,
-)
-from omnibase_core.models.config_overlay.model_llm_pricing_evidence import (
-    ModelLlmPricingEvidence,
-)
-from omnibase_core.models.config_overlay.model_llm_pricing_overlay import (
-    ModelLlmPricingOverlay,
-)
-from omnibase_core.models.config_overlay.model_llm_runner_cost_policy import (
-    ModelLlmRunnerCostPolicy,
-)
-from omnibase_core.models.config_overlay.model_runtime_lane_declaration import (
-    RUNTIME_LANE_ENV_VAR,
-    RUNTIME_LANE_SCHEMA_VERSION,
-    ModelRuntimeLaneDeclaration,
-)
+from __future__ import annotations
+
+import importlib.util
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from omnibase_core.models.config_overlay.model_broker_extra_grant import (
+        ModelBrokerExtraGrant,
+    )
+    from omnibase_core.models.config_overlay.model_broker_principal_declaration import (
+        ModelBrokerPrincipalDeclaration,
+    )
+    from omnibase_core.models.config_overlay.model_broker_principal_grants_overlay import (
+        ModelBrokerPrincipalGrantsOverlay,
+    )
+    from omnibase_core.models.config_overlay.model_config_overlay_document import (
+        ModelConfigOverlayDocument,
+    )
+    from omnibase_core.models.config_overlay.model_config_overlay_scope import (
+        ModelConfigOverlayScope,
+    )
+    from omnibase_core.models.config_overlay.model_declared_state_observation import (
+        ModelDeclaredStateObservation,
+    )
+    from omnibase_core.models.config_overlay.model_embedding_endpoint_overlay import (
+        ModelEmbeddingEndpointOverlay,
+    )
+    from omnibase_core.models.config_overlay.model_host_declaration import (
+        ModelHostDeclaration,
+    )
+    from omnibase_core.models.config_overlay.model_host_network_interface_setting import (
+        ModelHostNetworkInterfaceSetting,
+    )
+    from omnibase_core.models.config_overlay.model_host_settings_overlay import (
+        ModelHostSettingsOverlay,
+    )
+    from omnibase_core.models.config_overlay.model_host_systemd_drop_in import (
+        ModelHostSystemdDropIn,
+    )
+    from omnibase_core.models.config_overlay.model_host_systemd_unit import (
+        ModelHostSystemdUnit,
+    )
+    from omnibase_core.models.config_overlay.model_lane_one_shot_job import (
+        ModelLaneOneShotJob,
+    )
+    from omnibase_core.models.config_overlay.model_lane_service_declaration import (
+        ModelLaneServiceDeclaration,
+    )
+    from omnibase_core.models.config_overlay.model_lane_services_overlay import (
+        ModelLaneServicesOverlay,
+    )
+    from omnibase_core.models.config_overlay.model_llm_catalog_entry import (
+        ModelLlmCatalogEntry,
+    )
+    from omnibase_core.models.config_overlay.model_llm_catalog_overlay import (
+        ModelLlmCatalogOverlay,
+    )
+    from omnibase_core.models.config_overlay.model_llm_compute_cost_entry import (
+        ModelLlmComputeCostEntry,
+    )
+    from omnibase_core.models.config_overlay.model_llm_pricing_entry import (
+        ModelLlmPricingEntry,
+    )
+    from omnibase_core.models.config_overlay.model_llm_pricing_evidence import (
+        ModelLlmPricingEvidence,
+    )
+    from omnibase_core.models.config_overlay.model_llm_pricing_overlay import (
+        ModelLlmPricingOverlay,
+    )
+    from omnibase_core.models.config_overlay.model_llm_runner_cost_policy import (
+        ModelLlmRunnerCostPolicy,
+    )
+    from omnibase_core.models.config_overlay.model_runtime_lane_declaration import (
+        RUNTIME_LANE_ENV_VAR,
+        RUNTIME_LANE_SCHEMA_VERSION,
+        ModelRuntimeLaneDeclaration,
+    )
 
 __all__ = [
     "RUNTIME_LANE_ENV_VAR",
@@ -116,3 +122,134 @@ __all__ = [
     "ModelLlmRunnerCostPolicy",
     "ModelRuntimeLaneDeclaration",
 ]
+
+
+# PEP 562 lazy re-exports (OMN-17427). Importing this package used to import
+# every module re-exported above, and Python runs a package's __init__ before
+# any of its submodules, so even one leaf import paid for the whole subtree.
+# Names now load on first access; ``from <package> import Name`` and
+# ``<package>.Name`` behave as before.
+_LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelBrokerExtraGrant": (
+        "omnibase_core.models.config_overlay.model_broker_extra_grant",
+        "ModelBrokerExtraGrant",
+    ),
+    "ModelBrokerPrincipalDeclaration": (
+        "omnibase_core.models.config_overlay.model_broker_principal_declaration",
+        "ModelBrokerPrincipalDeclaration",
+    ),
+    "ModelBrokerPrincipalGrantsOverlay": (
+        "omnibase_core.models.config_overlay.model_broker_principal_grants_overlay",
+        "ModelBrokerPrincipalGrantsOverlay",
+    ),
+    "ModelConfigOverlayDocument": (
+        "omnibase_core.models.config_overlay.model_config_overlay_document",
+        "ModelConfigOverlayDocument",
+    ),
+    "ModelConfigOverlayScope": (
+        "omnibase_core.models.config_overlay.model_config_overlay_scope",
+        "ModelConfigOverlayScope",
+    ),
+    "ModelDeclaredStateObservation": (
+        "omnibase_core.models.config_overlay.model_declared_state_observation",
+        "ModelDeclaredStateObservation",
+    ),
+    "ModelEmbeddingEndpointOverlay": (
+        "omnibase_core.models.config_overlay.model_embedding_endpoint_overlay",
+        "ModelEmbeddingEndpointOverlay",
+    ),
+    "ModelHostDeclaration": (
+        "omnibase_core.models.config_overlay.model_host_declaration",
+        "ModelHostDeclaration",
+    ),
+    "ModelHostNetworkInterfaceSetting": (
+        "omnibase_core.models.config_overlay.model_host_network_interface_setting",
+        "ModelHostNetworkInterfaceSetting",
+    ),
+    "ModelHostSettingsOverlay": (
+        "omnibase_core.models.config_overlay.model_host_settings_overlay",
+        "ModelHostSettingsOverlay",
+    ),
+    "ModelHostSystemdDropIn": (
+        "omnibase_core.models.config_overlay.model_host_systemd_drop_in",
+        "ModelHostSystemdDropIn",
+    ),
+    "ModelHostSystemdUnit": (
+        "omnibase_core.models.config_overlay.model_host_systemd_unit",
+        "ModelHostSystemdUnit",
+    ),
+    "ModelLaneOneShotJob": (
+        "omnibase_core.models.config_overlay.model_lane_one_shot_job",
+        "ModelLaneOneShotJob",
+    ),
+    "ModelLaneServiceDeclaration": (
+        "omnibase_core.models.config_overlay.model_lane_service_declaration",
+        "ModelLaneServiceDeclaration",
+    ),
+    "ModelLaneServicesOverlay": (
+        "omnibase_core.models.config_overlay.model_lane_services_overlay",
+        "ModelLaneServicesOverlay",
+    ),
+    "ModelLlmCatalogEntry": (
+        "omnibase_core.models.config_overlay.model_llm_catalog_entry",
+        "ModelLlmCatalogEntry",
+    ),
+    "ModelLlmCatalogOverlay": (
+        "omnibase_core.models.config_overlay.model_llm_catalog_overlay",
+        "ModelLlmCatalogOverlay",
+    ),
+    "ModelLlmComputeCostEntry": (
+        "omnibase_core.models.config_overlay.model_llm_compute_cost_entry",
+        "ModelLlmComputeCostEntry",
+    ),
+    "ModelLlmPricingEntry": (
+        "omnibase_core.models.config_overlay.model_llm_pricing_entry",
+        "ModelLlmPricingEntry",
+    ),
+    "ModelLlmPricingEvidence": (
+        "omnibase_core.models.config_overlay.model_llm_pricing_evidence",
+        "ModelLlmPricingEvidence",
+    ),
+    "ModelLlmPricingOverlay": (
+        "omnibase_core.models.config_overlay.model_llm_pricing_overlay",
+        "ModelLlmPricingOverlay",
+    ),
+    "ModelLlmRunnerCostPolicy": (
+        "omnibase_core.models.config_overlay.model_llm_runner_cost_policy",
+        "ModelLlmRunnerCostPolicy",
+    ),
+    "RUNTIME_LANE_ENV_VAR": (
+        "omnibase_core.models.config_overlay.model_runtime_lane_declaration",
+        "RUNTIME_LANE_ENV_VAR",
+    ),
+    "RUNTIME_LANE_SCHEMA_VERSION": (
+        "omnibase_core.models.config_overlay.model_runtime_lane_declaration",
+        "RUNTIME_LANE_SCHEMA_VERSION",
+    ),
+    "ModelRuntimeLaneDeclaration": (
+        "omnibase_core.models.config_overlay.model_runtime_lane_declaration",
+        "ModelRuntimeLaneDeclaration",
+    ),
+}
+
+
+def __getattr__(name: str) -> object:
+    target = _LAZY_IMPORTS.get(name)
+    if target is None:
+        # A submodule that the old eager __init__ loaded as a side effect
+        # stays reachable as ``package.submodule``: import it on first access.
+        if (
+            name.isidentifier()
+            and not name.startswith("__")
+            and importlib.util.find_spec(f"{__name__}.{name}") is not None
+        ):
+            return importlib.import_module(f"{__name__}.{name}")
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    module = importlib.import_module(target[0])
+    value = module if target[1] is None else getattr(module, target[1])
+    globals()[name] = value
+    return value
+
+
+def __dir__() -> list[str]:
+    return sorted({*globals(), *_LAZY_IMPORTS})
