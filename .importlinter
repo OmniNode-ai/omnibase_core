@@ -1,7 +1,7 @@
 # import-linter contract — intra-core dependency-layering oracle (OMN-14216)
 #
 # Encodes the DIRECTION of imports between omnibase_core's architectural
-# sub-packages, per ADR-001, ADR-005, and https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-dependency-inversion.md.
+# sub-packages, per ADR-001, ADR-005, and https://github.com/OmniNode-ai/knowledge_base/blob/main/architecture/onex-dependency-inversion.md.
 # This is the enforcement oracle every later decoupling change verifies against:
 # a new illegal back-edge fails `lint-imports`; the current known back-edges are
 # frozen below as an explicit, annotated allowlist to be burned down under the

@@ -75,14 +75,14 @@ KNOWN_REPOS = {
     # OMN-13579: ungoverned public repos onboarded
     "omnibase",
     "omnicursor",
-    "knowledge-base",
+    "knowledge_base",
 }
 
 # Ungoverned public repos onboarded in OMN-13579.
 NEW_ONBOARDED_REPOS = {
     "omnibase",
     "omnicursor",
-    "knowledge-base",
+    "knowledge_base",
 }
 
 
@@ -290,7 +290,7 @@ def test_doc_content_scan_applies_to_all_omn13579_doc_repos(
     other two silently unprotected.
     """
     doc_repos = {
-        "knowledge-base",
+        "knowledge_base",
         "omnibase",
         "omnicursor",
     }

@@ -102,10 +102,10 @@ added only when the contract cannot express the behavior.
 
 Start here, in the knowledge base:
 
-- [Quick Start](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/omnibase-core-quick-start.md)
-- [First Node Tutorial](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/omnibase-core-first-node.md)
-- [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)
-- [ONEX Four-Node Architecture](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md)
+- [Quick Start](https://github.com/OmniNode-ai/knowledge_base/blob/main/guides/omnibase-core-quick-start.md)
+- [First Node Tutorial](https://github.com/OmniNode-ai/knowledge_base/blob/main/guides/omnibase-core-first-node.md)
+- [Node Building Guide](https://github.com/OmniNode-ai/knowledge_base/blob/main/guides/onex-node-building-overview.md)
+- [ONEX Four-Node Architecture](https://github.com/OmniNode-ai/knowledge_base/blob/main/architecture/onex-four-node-architecture.md)
 
 ## Track 3: Extend Validation Or Runtime Internals
 
@@ -128,7 +128,7 @@ uv run validate-string-versions src
 ```
 
 For ownership, downstream-consumer guidance, and cross-repo usage, see
-[Validation Ownership](https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/omnibase-core-validation-ownership.md).
+[Validation Ownership](https://github.com/OmniNode-ai/knowledge_base/blob/main/reference/omnibase-core-validation-ownership.md).
 
 ## Documentation
 
@@ -141,13 +141,13 @@ request that reintroduces markdown outside the allowed set.
 
 High-signal entrypoints:
 
-- [Architecture Overview](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/omnibase-core-overview.md)
-- [ONEX Four-Node Architecture](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md)
-- [Contract System](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-contract-system.md)
-- [Handler Contract Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-handler-contracts.md)
-- [Validation Framework](https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/omnibase-core-validation-framework.md)
-- [Validation Ownership](https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/omnibase-core-validation-ownership.md)
-- [Decision records](https://github.com/OmniNode-ai/knowledge-base/blob/main/adrs)
+- [Architecture Overview](https://github.com/OmniNode-ai/knowledge_base/blob/main/architecture/omnibase-core-overview.md)
+- [ONEX Four-Node Architecture](https://github.com/OmniNode-ai/knowledge_base/blob/main/architecture/onex-four-node-architecture.md)
+- [Contract System](https://github.com/OmniNode-ai/knowledge_base/blob/main/architecture/onex-contract-system.md)
+- [Handler Contract Guide](https://github.com/OmniNode-ai/knowledge_base/blob/main/guides/onex-handler-contracts.md)
+- [Validation Framework](https://github.com/OmniNode-ai/knowledge_base/blob/main/reference/omnibase-core-validation-framework.md)
+- [Validation Ownership](https://github.com/OmniNode-ai/knowledge_base/blob/main/reference/omnibase-core-validation-ownership.md)
+- [Decision records](https://github.com/OmniNode-ai/knowledge_base/blob/main/adrs)
 - [Contributing](.github/CONTRIBUTING.md)
 - [Security](SECURITY.md)
 

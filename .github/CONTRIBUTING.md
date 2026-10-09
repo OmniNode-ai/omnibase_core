@@ -25,8 +25,8 @@ Thank you for your interest in contributing to omnibase_core! This document prov
 ### First Steps
 
 1. **Read the documentation**:
-   - [ONEX Architecture](https://github.com/OmniNode-ai/knowledge-base/blob/main/architecture/onex-four-node-architecture.md)
-   - [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)
+   - [ONEX Architecture](https://github.com/OmniNode-ai/knowledge_base/blob/main/architecture/onex-four-node-architecture.md)
+   - [Node Building Guide](https://github.com/OmniNode-ai/knowledge_base/blob/main/guides/onex-node-building-overview.md)
    - [CLAUDE.md](../CLAUDE.md) for coding standards and rules
 
 2. **Explore the codebase**:
@@ -363,8 +363,8 @@ Brief description of changes
 
 ### Resources
 
-- [Documentation](https://github.com/OmniNode-ai/knowledge-base) — the OmniNode knowledge base is this repository's documentation home
-- [Node Building Guide](https://github.com/OmniNode-ai/knowledge-base/blob/main/guides/onex-node-building-overview.md)
+- [Documentation](https://github.com/OmniNode-ai/knowledge_base) — the OmniNode knowledge base is this repository's documentation home
+- [Node Building Guide](https://github.com/OmniNode-ai/knowledge_base/blob/main/guides/onex-node-building-overview.md)
 - [GitHub Issues](https://github.com/OmniNode-ai/omnibase_core/issues)
 
 ### Questions

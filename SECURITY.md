@@ -35,4 +35,4 @@ uv run onex-validate-links --verbose
 ```
 
 For the broader validator map, see
-[Validation Ownership](https://github.com/OmniNode-ai/knowledge-base/blob/main/reference/omnibase-core-validation-ownership.md).
+[Validation Ownership](https://github.com/OmniNode-ai/knowledge_base/blob/main/reference/omnibase-core-validation-ownership.md).
