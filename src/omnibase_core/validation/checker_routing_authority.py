@@ -642,6 +642,12 @@ def _build_provider_endpoint_shape_audit(
         endpoint_url_is_cli = endpoint_url_text.lower().startswith(inp.cli_url_prefix)
         tier_is_cli = tier in inp.cli_agent_tiers
         is_cli_backend = any((backend_id_is_cli, endpoint_url_is_cli, tier_is_cli))
+        # OMN-20287: INV-064 as amended by decision D1 (RULING
+        # 2026-10-05T22:27:48Z) admits a declared harness backend -- Codex, GLM
+        # through Claude Code, Claude Code -- run by the coding-agent invoke
+        # effect, never by a cli:// endpoint. It is internal surface and house
+        # tenant only (INV-068) and carries no endpoint at all.
+        is_harness_backend = backend.get("kind") == "harness"
 
         backend_violations: list[str] = []
         if is_cli_backend:
@@ -649,6 +655,23 @@ def _build_provider_endpoint_shape_audit(
                 f"backend_id={backend_id!r} tier={tier!r}: shelled-CLI backends "
                 "are forbidden (OMN-13215)"
             )
+        elif is_harness_backend:
+            if backend.get("surface") != "internal":
+                backend_violations.append(
+                    f"backend_id={backend_id!r}: a harness backend must declare "
+                    "surface: internal (INV-064 as amended, INV-068)"
+                )
+            if backend.get("tenant_scope") != "house":
+                backend_violations.append(
+                    f"backend_id={backend_id!r}: a harness backend must declare "
+                    "tenant_scope: house (INV-064 as amended, INV-068)"
+                )
+            if has_endpoint_url or has_endpoint_url_env:
+                backend_violations.append(
+                    f"backend_id={backend_id!r}: a harness backend carries no "
+                    "endpoint_url or endpoint_url_env; the coding-agent effect "
+                    "runs it"
+                )
         elif has_endpoint_url_env:
             if endpoint_url is not None:
                 backend_violations.append(
