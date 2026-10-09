@@ -570,6 +570,16 @@ repos:
         language: system
         pass_filenames: false
         always_run: true
+      # OMN-20702: node-home ratchet. A new ONEX node directory, or a new
+      # onex.nodes entry point, outside omnimarket is refused against the
+      # shrink-only .onex_ratchets/node_home_baseline.txt. No allowlist, no
+      # suppression; the baseline only shrinks.
+      - id: check-node-home
+        name: Node-home ratchet (OMN-20702)
+        entry: uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check
+        language: system
+        pass_filenames: false
+        always_run: true
       # OMN-20298: a shape-gate detector job must run on every PR, whatever the
       # change-control preflight says. Zero baseline, no allowlist.
       - id: check-shape-gate-independence
