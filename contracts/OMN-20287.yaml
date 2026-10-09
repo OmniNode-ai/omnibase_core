@@ -1,0 +1,39 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20287
+title: Routing-authority audit admits declared harness backends
+summary: The provider endpoint shape audit in checker_routing_authority.py admits a backend that declares
+  kind harness only when it also declares surface internal and tenant_scope house and carries no endpoint_url
+  and no endpoint_url_env; shelled-CLI backends (cli- ids, cli:// urls, the cli_agents tier) stay forbidden.
+  Contract binds the behavior implemented in the omnibase_core harness-backend PR.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20287-harness-backend-audit
+    statement: Codex, GLM through Claude Code and Claude Code may be delegation backends only as internal,
+      house-only harness backends, so the routing-authority audit must admit exactly that declaration
+      and refuse any harness declaration that names another surface or tenant, or carries an endpoint.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: A harness backend declaring surface internal, tenant_scope house and no endpoint
+          passes the shape audit, and each forged variant (other surface, other tenant, endpoint_url,
+          endpoint_url_env, cli- id, cli_agents tier) fails it. -- falsifier: uv run pytest tests/validation/test_validator_routing_authority.py
+          -q -k "harness_backend"'
+evidence_requirements:
+  - kind: tests
+    description: Shape-audit tests cover the admitted harness declaration and six forged variants.
+    command: uv run pytest tests/validation/test_validator_routing_authority.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20287-ac1-harness-backend-audit
+    description: The declared harness backend passes the shape audit and every forged variant fails it.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/validation/test_validator_routing_authority.py -q -k "harness_backend"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
