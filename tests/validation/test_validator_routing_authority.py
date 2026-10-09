@@ -429,6 +429,63 @@ def test_shape_audit_static_backend_missing_url_fails() -> None:
     assert any("absent/empty" in v for v in violations), violations
 
 
+_HARNESS_BIFROST = """\
+backends:
+  - backend_id: "harness-claude-sonnet"
+    kind: "harness"
+    harness: "claude"
+    surface: "internal"
+    tenant_scope: "house"
+    tier: "harness"
+    model_name: "claude-sonnet-5-5"
+"""
+
+
+@pytest.mark.unit
+def test_shape_audit_declared_harness_backend_passes() -> None:
+    """OMN-20287: an internal, house-only harness backend needs no endpoint."""
+    h = _make_handler()
+    inp = _minimal_inp(bifrost_config_content=_HARNESS_BIFROST)
+    result = h.check(inp)
+    assert result.shape_ok, result.provider_endpoint_shape_audit["violations"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("old", "new", "expected"),
+    [
+        ('surface: "internal"', 'surface: "any"', "surface: internal"),
+        ('tenant_scope: "house"', 'tenant_scope: "any"', "tenant_scope: house"),
+        (
+            'tier: "harness"',
+            'tier: "harness"\n    endpoint_url: "https://api.example.com/v1/chat/completions"',
+            "carries no endpoint_url",
+        ),
+        (
+            'tier: "harness"',
+            'tier: "harness"\n    endpoint_url_env: "HARNESS_URL"',
+            "carries no endpoint_url",
+        ),
+        (
+            'backend_id: "harness-claude-sonnet"',
+            'backend_id: "cli-claude"',
+            "shelled-CLI",
+        ),
+        ('tier: "harness"', 'tier: "cli_agents"', "shelled-CLI"),
+    ],
+)
+def test_shape_audit_forged_harness_backend_fails(
+    old: str, new: str, expected: str
+) -> None:
+    """OMN-20287: the harness admission is declared, never a cli:// shape."""
+    h = _make_handler()
+    inp = _minimal_inp(bifrost_config_content=_HARNESS_BIFROST.replace(old, new))
+    result = h.check(inp)
+    assert not result.shape_ok
+    violations = result.provider_endpoint_shape_audit["violations"]
+    assert any(expected in v for v in violations), violations
+
+
 @pytest.mark.unit
 def test_shape_audit_empty_bifrost_content_skips() -> None:
     """Empty bifrost content skips the shape audit (no-op, clean)."""
