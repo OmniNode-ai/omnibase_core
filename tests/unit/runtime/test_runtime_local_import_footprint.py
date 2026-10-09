@@ -13,9 +13,12 @@ importing one leaf module dragged in ``models.core``, ``models.contracts``,
 Those package ``__init__`` files now resolve their re-exports lazily (PEP 562
 module ``__getattr__``). These tests pin:
 
-1. The import footprint: a fresh interpreter that imports ``RuntimeLocal`` and
-   ``EventBusInmemory`` does not load the heavy model and mixin trees. Asserted
-   on the module set, which is deterministic; wall time is not asserted.
+1. The import footprint: a fresh interpreter that imports ``RuntimeLocal``, its
+   event-driven ``LocalRuntimeBusAdapter`` and ``EventBusInmemory`` loads none of
+   the leaf modules that dominated the old import tree, and stays inside a
+   module-count budget (2,088 ``omnibase_core`` modules before, 549 after).
+   Asserted on the module set, which is deterministic; wall time is not
+   asserted.
 2. The public surface: every name a lazy package ``__init__`` exports still
    resolves to the same object its defining module holds, ``__all__`` names
    resolve, and ``dir()`` lists them.
@@ -25,6 +28,7 @@ from __future__ import annotations
 
 import ast
 import importlib
+import importlib.util
 import json
 import subprocess
 import sys
@@ -36,22 +40,34 @@ import omnibase_core
 
 PACKAGE_ROOT = Path(omnibase_core.__file__).parent
 
-# Subtrees the RuntimeLocal + in-memory bus import used to drag in through
-# eager package __init__ re-exports. None of them is needed to construct the
-# runtime or the bus.
+# Leaf modules that dominated the RuntimeLocal + in-memory bus import tree when
+# package __init__ files re-exported eagerly. None of them is needed to
+# construct or run the runtime or the bus. (The lazy package __init__ modules
+# themselves, such as ``omnibase_core.models.core``, are cheap and may load.)
 HEAVY_MODULES = (
-    "omnibase_core.mixins",
-    "omnibase_core.models.contracts",
-    "omnibase_core.models.core",
-    "omnibase_core.models.discovery",
-    "omnibase_core.models.events",
-    "omnibase_core.models.health",
-    "omnibase_core.models.services",
-    "omnibase_core.models.validation",
+    "omnibase_core.mixins.mixin_canonical_serialization",
+    "omnibase_core.mixins.mixin_node_type_validator",
+    "omnibase_core.models.contracts.model_algorithm_config",
+    "omnibase_core.models.core.model_contract_content",
+    "omnibase_core.models.core.model_node_base",
+    "omnibase_core.models.core.model_node_metadata",
+    "omnibase_core.models.discovery.model_introspection_response_event",
+    "omnibase_core.models.events.model_event_publish_intent",
+    "omnibase_core.models.health.model_health_check",
+    "omnibase_core.models.security.model_secret_config",
+    "omnibase_core.models.services.model_external_service_config",
+    "omnibase_core.models.validation.model_cross_repo_validation_orchestrator_result",
 )
 
+# 549 measured on 2026-10-09 (2,088 before the lazy package __init__ files).
+MODULE_BUDGET = 700
+
+# RuntimeLocal imports LocalRuntimeBusAdapter on first use of the
+# event-driven (handler_routing) path, which is the path a node contract such
+# as omniclaude's node_git_effect takes.
 HOOK_IMPORT = (
     "from omnibase_core.runtime.runtime_local import RuntimeLocal\n"
+    "from omnibase_core.runtime.runtime_local_adapter import LocalRuntimeBusAdapter\n"
     "from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory\n"
 )
 
@@ -76,30 +92,39 @@ def _modules_after(source: str) -> list[str]:
 
 
 @pytest.mark.unit
+def test_heavy_module_names_still_exist() -> None:
+    """A renamed sentinel would make the footprint assertion pass vacuously."""
+    missing = [name for name in HEAVY_MODULES if importlib.util.find_spec(name) is None]
+    assert missing == []
+
+
+@pytest.mark.unit
 def test_runtime_local_and_inmemory_bus_do_not_load_heavy_trees() -> None:
     loaded = set(_modules_after(HOOK_IMPORT))
 
     # Positive control: the probe sees the modules the import did load.
     assert "omnibase_core.runtime.runtime_local" in loaded
+    assert "omnibase_core.runtime.runtime_local_adapter" in loaded
     assert "omnibase_core.event_bus.event_bus_inmemory" in loaded
 
-    dragged = sorted(
-        name
-        for name in loaded
-        for heavy in HEAVY_MODULES
-        if name == heavy or name.startswith(heavy + ".")
-    )
+    dragged = sorted(set(HEAVY_MODULES) & loaded)
     assert dragged == [], (
-        "importing RuntimeLocal and EventBusInmemory loaded heavy subtrees "
-        f"({len(loaded)} omnibase_core modules in all): {dragged[:20]}"
+        "importing RuntimeLocal and EventBusInmemory loaded heavy modules "
+        f"({len(loaded)} omnibase_core modules in all): {dragged}"
+    )
+    assert len(loaded) <= MODULE_BUDGET, (
+        f"importing RuntimeLocal and EventBusInmemory loaded {len(loaded)} "
+        f"omnibase_core modules, over the budget of {MODULE_BUDGET}"
     )
 
 
 @pytest.mark.unit
 def test_footprint_probe_detects_a_heavy_import() -> None:
-    """Positive control: the probe reports a heavy package when it is loaded."""
-    loaded = set(_modules_after("import omnibase_core.models.core\n"))
-    assert "omnibase_core.models.core" in loaded
+    """Positive control: the probe reports a heavy module when it is loaded."""
+    loaded = set(_modules_after("import omnibase_core.models.core.model_node_base\n"))
+    assert "omnibase_core.models.core.model_node_base" in loaded
+    assert set(HEAVY_MODULES) & loaded
+    assert len(loaded) > MODULE_BUDGET
 
 
 def _lazy_package_names() -> list[str]:
