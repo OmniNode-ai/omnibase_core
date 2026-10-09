@@ -86,6 +86,102 @@ def test_quota_terminal_is_not_model_content_failure() -> None:
     assert "quality_score" not in dumped
 
 
+_NO_RESPONSE_OUTCOMES = (
+    EnumDelegationOperationalOutcome.PROVIDER_QUOTA,
+    EnumDelegationOperationalOutcome.PROVIDER_UNAVAILABLE,
+    EnumDelegationOperationalOutcome.TIMEOUT,
+    EnumDelegationOperationalOutcome.CANCELLED,
+    EnumDelegationOperationalOutcome.BOUNDARY_FAILURE,
+    EnumDelegationOperationalOutcome.INFERENCE_FAILED,
+)
+
+
+@pytest.mark.parametrize("outcome", _NO_RESPONSE_OUTCOMES)
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("failed_acceptance_criteria", ("artifact_only",)),
+        (
+            "rule_evaluations",
+            (
+                {
+                    "rule": "artifact_only",
+                    "enforcement": "blocking",
+                    "passed": False,
+                    "detail": "preamble present",
+                },
+            ),
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "terminal_type", [ModelDelegationResult, ModelDelegationFailed]
+)
+def test_no_response_terminal_rejects_final_quality_rule_evidence(
+    outcome: EnumDelegationOperationalOutcome,
+    field: str,
+    value: object,
+    terminal_type: type[ModelDelegationResult],
+) -> None:
+    """A prior gate verdict cannot be attributed to an absent final response."""
+    payload = _terminal(
+        operational_outcome=outcome,
+        terminal_failure_cause=(
+            EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+            if outcome is EnumDelegationOperationalOutcome.PROVIDER_QUOTA
+            else None
+        ),
+    ).model_dump(mode="json")
+    payload[field] = value
+
+    with pytest.raises(
+        ValidationError, match="no-response outcome cannot carry quality-rule evidence"
+    ):
+        terminal_type.model_validate(payload)
+
+
+@pytest.mark.parametrize("outcome", _NO_RESPONSE_OUTCOMES)
+def test_no_response_terminal_preserves_historical_quality_rule_evidence(
+    outcome: EnumDelegationOperationalOutcome,
+) -> None:
+    """The wire round trip retains gate evidence under the attempt it evaluated."""
+    history = (
+        {
+            "tier_name": "local",
+            "model_used": "local/model",
+            "quality_score": 0.8,
+            "failed_acceptance_criteria": ["artifact_only"],
+            "rule_evaluations": [
+                {
+                    "rule": "artifact_only",
+                    "enforcement": "blocking",
+                    "passed": False,
+                    "detail": "preamble present",
+                }
+            ],
+        },
+    )
+    terminal = ModelDelegationFailed.model_validate(
+        _terminal(
+            operational_outcome=outcome,
+            terminal_failure_cause=(
+                EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED
+                if outcome is EnumDelegationOperationalOutcome.PROVIDER_QUOTA
+                else None
+            ),
+            escalation_history=history,
+        ).model_dump()
+    )
+
+    restored = ModelDelegationFailed.model_validate_json(terminal.model_dump_json())
+
+    assert restored.escalation_history == history
+    assert restored.content_verdict is EnumDelegationContentVerdict.NOT_APPLICABLE
+    assert restored.quality_score is None
+    assert restored.failed_acceptance_criteria == ()
+    assert restored.rule_evaluations == ()
+
+
 def test_final_content_verdict_does_not_rewrite_attempt_history() -> None:
     """Missing final content does not erase prior-attempt evidence."""
     terminal = _terminal(

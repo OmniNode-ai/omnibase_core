@@ -476,6 +476,9 @@ class ModelDelegationResult(BaseModel):
                 if self.required_quality_bar is not None:
                     msg = "no-response outcome cannot carry quality bar"
                     raise ValueError(msg)
+                if self.failed_acceptance_criteria or self.rule_evaluations:
+                    msg = "no-response outcome cannot carry quality-rule evidence"
+                    raise ValueError(msg)
             if (
                 self.operational_outcome
                 is EnumDelegationOperationalOutcome.PROVIDER_QUOTA
