@@ -108,8 +108,10 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     # (sha1 line keys are 40-hex digests; Hex High Entropy fires on every one).
     # OMN-19614: pull_request scans only the PR diff via ci_scan_scope.py
     # (checkout fetch-depth 2, a scope step, xargs reads the scoped list).
+    # OMN-19612: the hook runs under `xargs -n 100 -P "$(nproc)"`, so a full-tree
+    # scan no longer holds the quality gate (and the 40 test shards) for minutes.
     "detect-secrets": (
-        "a3ad1bf255aa8ceab051193d9d46972b12a97fe50fe5b24e3fe59927e8365883"  # pragma: allowlist secret
+        "2c509f50622476c3c9278fbcac8dcb899b565ab5c0fd61e54cb89972a55c1d00"  # pragma: allowlist secret
     ),
     "sdk-boundary-check": (
         "30800b3a56c20e4c0d8b0365b17cb847f6c8149264aa03a8fe8e254136fc6cba"  # pragma: allowlist secret
