@@ -17,12 +17,22 @@ requirements:
           usable content, and nonblank usable content survives a completed terminal JSON round trip unchanged
           -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
           -q -k "empty_final_content_cannot_be_declared_usable or artifact_only_completion_round_trips_as_usable"'
+      - id: AC2
+        statement: 'AC2: ModelDelegationResult and ModelDelegationFailed reject top-level failed_acceptance_criteria
+          and rule_evaluations for the six no-response outcomes, while historical quality evidence in
+          escalation_history survives a JSON round trip -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
+          -q -k "no_response_terminal_rejects_final_quality_rule_evidence or no_response_terminal_preserves_historical_quality_rule_evidence"'
 evidence_requirements:
   - kind: tests
     description: Six rejection cases exercise both terminal models with empty, space-only and newline/tab
       content, and a positive control preserves nonblank final content and its usable verdict.
     command: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
       -q -k "empty_final_content_cannot_be_declared_usable or artifact_only_completion_round_trips_as_usable"
+  - kind: tests
+    description: Twenty-four rejection cases exercise both terminal models for the six no-response outcomes,
+      and six positive cases retain historical quality evidence in escalation_history through JSON.
+    command: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
+      -q -k "no_response_terminal_rejects_final_quality_rule_evidence or no_response_terminal_preserves_historical_quality_rule_evidence"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -39,3 +49,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
+  - id: dod-omn18996-no-response-quality-evidence
+    description: No-response terminal outcomes reject final quality-rule evidence, and historical attempt
+      evidence in escalation_history survives serialization.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_omn18928_terminal_outcome_content.py
+          -q -k "no_response_terminal_rejects_final_quality_rule_evidence or no_response_terminal_preserves_historical_quality_rule_evidence"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
