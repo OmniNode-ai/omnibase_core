@@ -69,6 +69,19 @@ repos:
   # Note: ruff replaces both black and isort (10-100x faster)
   - repo: local
     hooks:
+      # OMN-19612: the Detect Secrets step fans the scan out over the runner's
+      # cores. These tests run the step's own shell with a stub hook, so a file
+      # dropped from the fan-out or a failing chunk that no longer fails the step
+      # is caught here and in the unit suite CI runs.
+      - id: detect-secrets-fan-out
+        name: Detect Secrets scan fans out without dropping a file (OMN-19612)
+        entry: uv run --frozen pytest tests/unit/validation/test_detect_secrets_parallel_omn19612.py -q
+          -n 0 --reruns 0
+        language: system
+        files: ^(\.github/workflows/ci\.yml|tests/unit/validation/test_detect_secrets_parallel_omn19612\.py|\.pre-commit-config\.yaml)$
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
       - id: evidence-verifier-model-invariants
         name: Evidence verifier model invariants (OMN-18785)
         entry: uv run --frozen pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py

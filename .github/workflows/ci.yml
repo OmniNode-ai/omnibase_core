@@ -1245,8 +1245,17 @@ jobs:
           # live-verification result must not silently remove a finding
           # (fail-closed). Never remove this flag without re-proving the
           # miss is fixed another way.
+          #
+          # OMN-19612: the hook checks each file on its own, so the scan is
+          # fanned out over the runner's cores (-n 100 files per invocation, -P
+          # one per core). A full-tree scan is what a pull request that edits
+          # this workflow, the baseline or the scope helper runs, and it took
+          # 218-285 s serially (run 36315033330: 285 s), the last quality-gate
+          # need to finish while 40 test shards waited. xargs exits 123 when any
+          # invocation exits non-zero, so one new secret in any chunk still
+          # fails the job; the scan covers the same files with the same flags.
           set +e
-          xargs -0 -r detect-secrets-hook \
+          xargs -0 -r -n 100 -P "$(nproc)" detect-secrets-hook \
             --no-verify \
             --baseline .secrets.baseline \
             --exclude-files 'uv\.lock' \

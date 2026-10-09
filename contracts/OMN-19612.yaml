@@ -1,0 +1,39 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19612
+title: Detect Secrets scans in parallel so a full-tree scan stops gating the test fan-out
+summary: The Detect Secrets step runs detect-secrets-hook under xargs -n 100 -P with one process per core,
+  so a pull request that edits the workflow, the secrets baseline or the scope helper no longer holds
+  Quality Gate, Detect Changes and the 40 test shards behind a serial full-tree scan. Same files, same
+  flags, same failure on any new secret.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-detect-secrets-fan-out
+    statement: The Detect Secrets scan must cover every listed file exactly once, keep the --no-verify
+      and --baseline flags, and fail the step when any chunk reports a new secret.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the Detect Secrets step scans every listed file exactly once across its parallel
+          chunks and fails when a planted secret sits in any chunk. -- falsifier: env -u PYTHONPATH uv
+          run pytest tests/unit/validation/test_detect_secrets_parallel_omn19612.py -q'
+evidence_requirements:
+  - kind: tests
+    description: The fan-out tests pass at the head and fail at the merge base.
+    command: env -u PYTHONPATH uv run pytest tests/unit/validation/test_detect_secrets_parallel_omn19612.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-detect-secrets-fan-out-ac1
+    description: Every listed file is scanned exactly once and a planted secret in any chunk fails the
+      step.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_detect_secrets_parallel_omn19612.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
