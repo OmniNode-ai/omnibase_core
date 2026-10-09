@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 """
 ContractLoader for ONEX Tool Generation Pattern Standardization.
@@ -60,20 +59,13 @@ from pydantic import ValidationError as PydanticValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel as LogLevel
-from omnibase_core.enums.enum_node_type import EnumNodeType
 from omnibase_core.logging.logging_structured import (
     emit_log_event_sync as emit_log_event,
 )
 from omnibase_core.models.core.model_contract_cache import ModelContractCache
 from omnibase_core.models.core.model_contract_content import ModelContractContent
-from omnibase_core.models.core.model_contract_definitions import (
-    ModelContractDefinitions,
-)
-from omnibase_core.models.core.model_contract_dependency import ModelContractDependency
 from omnibase_core.models.core.model_contract_loader import ModelContractLoader
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
-from omnibase_core.models.core.model_tool_specification import ModelToolSpecification
-from omnibase_core.models.core.model_yaml_schema_object import ModelYamlSchemaObject
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
 
 
@@ -218,7 +210,7 @@ class UtilContractLoader:
 
             # Load and validate YAML using Pydantic model
             yaml_model = load_and_validate_yaml_model(file_path, ModelGenericYaml)
-            content = yaml_model.model_dump()
+            content = yaml_model.model_dump(exclude_unset=True)
 
             # Parse and cache if enabled
             if self.state.cache_enabled:
@@ -294,143 +286,16 @@ class UtilContractLoader:
                     },
                 )
 
-            # Parse contract version
-            version_data = raw_content.get("contract_version", {})
-            if not isinstance(version_data, dict):
-                version_data = {}
-            contract_version = ModelSemVer(
-                major=int(version_data.get("major", 1)),
-                minor=int(version_data.get("minor", 0)),
-                patch=int(version_data.get("patch", 0)),
-            )
-
-            # Parse tool specification
-            tool_spec_data = raw_content.get("tool_specification", {})
-            if not isinstance(tool_spec_data, dict):
-                tool_spec_data = {}
-            tool_specification = ModelToolSpecification(
-                main_tool_class=str(
-                    tool_spec_data.get("main_tool_class", "DefaultToolNode"),
-                ),
-            )
-
-            # Parse input/output state (simplified for now)
-            input_state = ModelYamlSchemaObject(
-                object_type="object",
-                description="Input state schema",
-            )
-
-            output_state = ModelYamlSchemaObject(
-                object_type="object",
-                description="Output state schema",
-            )
-
-            # Parse definitions section (optional)
-            definitions = ModelContractDefinitions()
-
-            # Parse dependencies section (optional, for Phase 0 pattern)
-            # Construct ModelContractDependency objects from raw dicts for type safety
-            dependencies: list[ModelContractDependency] | None = None
-            if "dependencies" in raw_content:
-                deps_data = raw_content["dependencies"]
-                if isinstance(deps_data, list):
-                    dependencies = []
-                    for index, dep_item in enumerate(deps_data):
-                        if isinstance(dep_item, dict):
-                            # Construct typed ModelContractDependency from dict
-                            dep = ModelContractDependency.model_validate(dep_item)
-                            dependencies.append(dep)
-                        else:
-                            emit_log_event(
-                                LogLevel.WARNING,
-                                f"Skipping non-dict dependency item at index {index}: {type(dep_item).__name__}",
-                                context={
-                                    "contract_path": str(contract_path),
-                                    "item_type": type(dep_item).__name__,
-                                    "index": index,
-                                    "item_repr": repr(dep_item)[:100],
-                                },
-                            )
-
-            # Parse node type (default to COMPUTE_GENERIC if not specified)
-            # No legacy fallback - invalid enum values must fail fast
-            node_type_str = raw_content.get("node_type", "COMPUTE_GENERIC")
-            if isinstance(node_type_str, str):
-                node_type_upper = node_type_str.upper()
-                try:
-                    node_type = EnumNodeType(node_type_upper)
-                except ValueError as e:
-                    valid_values = [v.value for v in EnumNodeType]
-                    raise ModelOnexError(
-                        error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                        message=f"Invalid node_type '{node_type_str}'. Valid values are: {valid_values}",
-                        context={
-                            "contract_path": str(contract_path),
-                            "invalid_value": node_type_str,
-                            "valid_values": valid_values,
-                        },
-                    ) from e
-            else:
-                node_type = EnumNodeType.COMPUTE_GENERIC
-
-            # Create contract content
-            return ModelContractContent(
-                contract_version=contract_version,
-                node_name=str(raw_content.get("node_name", "")),
-                node_type=node_type,
-                tool_specification=tool_specification,
-                input_state=input_state,
-                output_state=output_state,
-                definitions=definitions,
-                dependencies=dependencies,
-                contract_name=None,
-                description=None,
-                name=None,
-                version=None,
-                node_version=None,
-                input_model=None,
-                output_model=None,
-                main_tool_class=None,
-                actions=None,
-                primary_actions=None,
-                validation_rules=None,
-                infrastructure=None,
-                infrastructure_services=None,
-                service_configuration=None,
-                service_resolution=None,
-                performance=None,
-                aggregation=None,
-                state_management=None,
-                reduction_operations=None,
-                streaming=None,
-                conflict_resolution=None,
-                memory_management=None,
-                state_transitions=None,
-                routing=None,
-                workflow_registry=None,
-                io_operations=None,
-                interface=None,
-                metadata=None,
-                capabilities=None,
-                configuration=None,
-                algorithm=None,
-                caching=None,
-                error_handling=None,
-                observability=None,
-                event_type=None,
-                contract_driven=None,
-                protocol_based=None,
-                strong_typing=None,
-                zero_any_types=None,
-                subcontracts=None,
-                original_dependencies=None,
-            )
+            return ModelContractContent.model_validate(raw_content)
 
         except PydanticValidationError as e:
-            # Pydantic model validation errors
+            field_errors = "; ".join(
+                f"{'.'.join(str(part) for part in error['loc'])}: {error['msg']}"
+                for error in e.errors(include_url=False, include_input=False)
+            )
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
-                message=f"Contract schema validation failed: {e!s}",
+                message=f"Contract schema validation failed: {field_errors}",
                 context={"contract_path": str(contract_path)},
             ) from e
         except (TypeError, ValueError) as e:
@@ -445,19 +310,8 @@ class UtilContractLoader:
         self,
         content: ModelContractContent,
     ) -> dict[str, object]:
-        """Convert ModelContractContent back to dict[str, Any]for current standards."""
-        return {
-            "contract_version": {
-                "major": content.contract_version.major,
-                "minor": content.contract_version.minor,
-                "patch": content.contract_version.patch,
-            },
-            "node_name": content.node_name,
-            "node_type": str(content.node_type),
-            "tool_specification": {
-                "main_tool_class": content.tool_specification.main_tool_class,
-            },
-        }
+        """Serialize every declared field for a lossless parsed-cache round trip."""
+        return content.model_dump(mode="json", exclude_unset=True)
 
     def _validate_contract_structure(
         self,

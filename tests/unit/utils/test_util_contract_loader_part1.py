@@ -45,6 +45,14 @@ from omnibase_core.utils.util_contract_loader import UtilContractLoader
 
 # ===== Test Fixtures =====
 
+REQUIRED_CONTRACT_FIELDS = {
+    "contract_version": {"major": 1, "minor": 0, "patch": 0},
+    "node_type": "COMPUTE_GENERIC",
+    "input_state": {"object_type": "object"},
+    "output_state": {"object_type": "object"},
+    "definitions": {},
+}
+
 
 @pytest.fixture
 def valid_contract_yaml(tmp_path: Path) -> Path:
@@ -58,6 +66,11 @@ contract_version:
   patch: 0
 node_name: TestNode
 node_type: COMPUTE_GENERIC
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
 tool_specification:
   main_tool_class: TestToolClass
 """,
@@ -91,6 +104,11 @@ contract_version:
   patch: 3
 node_name: ComplexNode
 node_type: EFFECT_GENERIC
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
 tool_specification:
   main_tool_class: ComplexToolClass
 dependencies:
@@ -100,9 +118,6 @@ dependencies:
   - name: DependencyTwo
     type: utility
     version: "2.1.0"
-actions:
-  - action_name: process
-    description: Process data
 primary_actions:
   - process
   - validate
@@ -127,7 +142,14 @@ def malformed_yaml(tmp_path: Path) -> Path:
     contract_file = tmp_path / "malformed.yaml"
     contract_file.write_text(
         """
+contract_version: {major: 1, minor: 0, patch: 0}
 node_name: TestNode
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: TestClass
   invalid_indent: bad
@@ -226,16 +248,9 @@ class TestLoadContract:
     def test_load_minimal_contract(
         self, contract_loader: UtilContractLoader, minimal_contract_yaml: Path
     ) -> None:
-        """Test loading minimal contract with defaults."""
-        result = contract_loader.load_contract(minimal_contract_yaml)
-
-        assert result.node_name == "MinimalNode"
-        assert result.tool_specification.main_tool_class == "MinimalToolClass"
-        # Should use defaults
-        assert result.contract_version.major == 1
-        assert result.contract_version.minor == 0
-        assert result.contract_version.patch == 0
-        assert result.node_type == EnumNodeType.COMPUTE_GENERIC  # Default
+        """Incomplete documents name the required fields instead of defaulting."""
+        with pytest.raises(ModelOnexError, match="contract_version"):
+            contract_loader.load_contract(minimal_contract_yaml)
 
     def test_load_complex_contract(
         self, contract_loader: UtilContractLoader, complex_contract_yaml: Path
@@ -373,7 +388,14 @@ class TestLoadContractFile:
         time.sleep(0.01)  # Ensure mtime changes
         valid_contract_yaml.write_text(
             """
+contract_version: {major: 1, minor: 0, patch: 0}
 node_name: ModifiedNode
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: ModifiedClass
 """,
@@ -418,7 +440,14 @@ tool_specification:
         unicode_file = tmp_path / "unicode.yaml"
         unicode_file.write_text(
             """
+contract_version: {major: 1, minor: 0, patch: 0}
 node_name: 日本語ノード
+input_state:
+  object_type: object
+output_state:
+  object_type: object
+definitions: {}
+node_type: COMPUTE_GENERIC
 tool_specification:
   main_tool_class: TestClass
 """,
@@ -442,6 +471,7 @@ class TestParseContractContent:
     ) -> None:
         """Test parsing minimal contract content."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "node_name": "TestNode",
             "tool_specification": {"main_tool_class": "TestClass"},
         }
@@ -451,7 +481,7 @@ class TestParseContractContent:
         assert isinstance(result, ModelContractContent)
         assert result.node_name == "TestNode"
         assert result.tool_specification.main_tool_class == "TestClass"
-        # Defaults should be applied
+        # Required fields are declared by the fixture
         assert result.contract_version.major == 1
         assert result.contract_version.minor == 0
         assert result.contract_version.patch == 0
@@ -461,6 +491,7 @@ class TestParseContractContent:
     ) -> None:
         """Test parsing contract with explicit version."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "contract_version": {"major": 2, "minor": 3, "patch": 4},
             "node_name": "TestNode",
             "tool_specification": {"main_tool_class": "TestClass"},
@@ -477,6 +508,7 @@ class TestParseContractContent:
     ) -> None:
         """Test parsing contract with node type."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "node_name": "TestNode",
             "node_type": "EFFECT_GENERIC",
             "tool_specification": {"main_tool_class": "TestClass"},
@@ -491,6 +523,7 @@ class TestParseContractContent:
     ) -> None:
         """Test parsing contract with lowercase node type."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "node_name": "TestNode",
             "node_type": "reducer_generic",
             "tool_specification": {"main_tool_class": "TestClass"},
@@ -506,6 +539,7 @@ class TestParseContractContent:
     ) -> None:
         """Test parsing contract with dependencies."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "node_name": "TestNode",
             "tool_specification": {"main_tool_class": "TestClass"},
             "dependencies": [
@@ -524,57 +558,53 @@ class TestParseContractContent:
     ) -> None:
         """Test parsing contract with invalid version type."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "contract_version": "invalid",  # Should be dict
             "node_name": "TestNode",
             "tool_specification": {"main_tool_class": "TestClass"},
         }
 
-        result = contract_loader._parse_contract_content(raw_content, tmp_path)
-
-        # Should use defaults when invalid type
-        assert result.contract_version.major == 1
+        with pytest.raises(ModelOnexError, match="contract_version"):
+            contract_loader._parse_contract_content(raw_content, tmp_path)
 
     def test_parse_contract_missing_node_name(
         self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract without node_name."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "tool_specification": {"main_tool_class": "TestClass"},
         }
 
-        result = contract_loader._parse_contract_content(raw_content, tmp_path)
-
-        # Should not raise during parse, validation happens later
-        assert result.node_name == ""
+        with pytest.raises(ModelOnexError, match="node_name"):
+            contract_loader._parse_contract_content(raw_content, tmp_path)
 
     def test_parse_contract_invalid_tool_spec_type(
         self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with invalid tool specification type."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "node_name": "TestNode",
             "tool_specification": "invalid",  # Should be dict
         }
 
-        result = contract_loader._parse_contract_content(raw_content, tmp_path)
-
-        # Should use default
-        assert result.tool_specification.main_tool_class == "DefaultToolNode"
+        with pytest.raises(ModelOnexError, match="tool_specification"):
+            contract_loader._parse_contract_content(raw_content, tmp_path)
 
     def test_parse_contract_with_non_dict_dependencies(
         self, contract_loader: UtilContractLoader, tmp_path: Path
     ) -> None:
         """Test parsing contract with string dependencies list."""
         raw_content = {
+            **REQUIRED_CONTRACT_FIELDS,
             "node_name": "TestNode",
             "tool_specification": {"main_tool_class": "TestClass"},
             "dependencies": ["dep1", "dep2"],  # Strings instead of dicts
         }
 
-        result = contract_loader._parse_contract_content(raw_content, tmp_path)
-
-        # Should handle gracefully
-        assert result.dependencies is None or isinstance(result.dependencies, list)
+        with pytest.raises(ModelOnexError, match="dependencies"):
+            contract_loader._parse_contract_content(raw_content, tmp_path)
 
 
 # ===== _convert_contract_content_to_dict Tests =====
