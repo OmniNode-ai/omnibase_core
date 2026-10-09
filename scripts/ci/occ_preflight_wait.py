@@ -86,6 +86,15 @@ list yields ``None``, which leaves every existing branch exactly as it was.
 Evidence written by another repo's runtime must never be able to fail this
 gate on its own.
 
+Companion-side binding (OMN-18338)
+----------------------------------
+The existing merged-companion gate owns the binding resolver. This poller and
+receipt-gate's ``--resolve-evidence-source`` probe share it: one uniquely merged
+record naming the product PR wins over an absent or conflicting body citation.
+With no matching record the legacy citation path is unchanged. Ambiguous,
+unreadable or capped lookups never grant a pass. No product description is
+rewritten; only the poll's local decision input uses the resolved reference.
+
 The third consumer (OMN-18882)
 ------------------------------
 ``.github/workflows/receipt-gate.yml`` is a third gate in the same family and
@@ -189,8 +198,18 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
+from pathlib import Path
 from typing import Final, Protocol
 from urllib.parse import quote
+
+# Direct-script workflow calls also load the existing gate by its package name.
+if not __package__:
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+
+from scripts.ci.check_occ_companion_merged import (
+    GhFetcher,
+    resolve_evidence_source_from_record,
+)
 
 EXIT_OK: Final[int] = 0
 EXIT_ERROR: Final[int] = 1
@@ -921,6 +940,10 @@ class ModelDurableTipResolution:
 class GhPort(Protocol):
     """The live GitHub reads this poll needs."""
 
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]] | None: ...
+
     def read_pr_body(self, *, repo: str, pr_number: str) -> str | None: ...
 
     def read_companion(
@@ -942,7 +965,7 @@ class GhPort(Protocol):
     def tip_contains_sha(self, *, occ_repo: str, tip: str, sha: str) -> bool: ...
 
 
-class GhCli:
+class GhCli(GhFetcher):
     """:class:`GhPort` backed by the ``gh`` binary."""
 
     def _run(self, argv: list[str]) -> str | None:
@@ -1153,7 +1176,16 @@ def _resolve_facts(
     if pr_body is None:
         return None, None, EnumAncestryRead.NOT_ANCESTOR, "", _AUTOBIND_NOT_CONSULTED
 
-    stamp = parse_evidence_source(pr_body)
+    try:
+        stamp = resolve_evidence_source_from_record(
+            client, occ_repo=occ_repo, repo=repo, pr_number=pr_number, body=pr_body
+        )
+    except ValueError as exc:
+        print(f"::warning::{exc}", file=sys.stderr)
+        return None, None, EnumAncestryRead.NOT_ANCESTOR, "", _AUTOBIND_NOT_CONSULTED
+    if stamp is not None and stamp != parse_evidence_source(pr_body):
+        # Local decision input only: never PATCH the product description.
+        pr_body = f"Evidence-Source: {stamp}\n"
     if stamp is None:
         # Read the producer outcome ONLY on the branch that can consult it
         # (OMN-18848), so a PR that already carries a stamp pays no extra API
@@ -1305,6 +1337,11 @@ def _build_parser() -> argparse.ArgumentParser:
         default=DEFAULT_NO_COMPANION_POLL_INTERVAL_SECONDS,
         help="Seconds between --check-no-companion-required polls.",
     )
+    parser.add_argument(
+        "--resolve-evidence-source",
+        action="store_true",
+        help="Resolve companion-side binding for receipt-gate; print the reference only.",
+    )
     # OMN-18647. Off unless the caller asks for it, so the one pinned canary
     # caller is the only caller whose behaviour moves. NOT a bypass and NOT a
     # kill switch: it can only ever shorten a wait that was going to fail, and
@@ -1329,6 +1366,25 @@ def main(argv: list[str] | None = None, *, gh: GhPort | None = None) -> int:
         return EXIT_ERROR
 
     client: GhPort = gh if gh is not None else GhCli()
+
+    if args.resolve_evidence_source:
+        body = client.read_pr_body(repo=args.repo, pr_number=args.pr_number)
+        if body is None:
+            print("PR body unreadable (retryable)", file=sys.stderr)
+            return EXIT_ERROR
+        try:
+            source = resolve_evidence_source_from_record(
+                client,
+                occ_repo=args.occ_repo,
+                repo=args.repo,
+                pr_number=args.pr_number,
+                body=body,
+            )
+        except ValueError as exc:
+            print(str(exc), file=sys.stderr)
+            return EXIT_ERROR
+        print(source or "")
+        return EXIT_OK
 
     if args.check_no_companion_required:
         # OMN-18882: the probe the Receipt Gate drives. OMN-19164 made it a

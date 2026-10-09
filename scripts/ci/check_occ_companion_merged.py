@@ -67,7 +67,9 @@ import re
 import subprocess  # fixed argv, no shell, trusted gh binary
 import sys
 import time
+from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import Protocol
 
 OCC_REPO_DEFAULT = "OmniNode-ai/onex_change_control"
 
@@ -214,9 +216,9 @@ class GhFetcher:
                 "--state",
                 "merged",
                 "--search",
-                f'"OCC companion for {basename}#{pr_number}" in:title',
+                f'"{basename}" "{pr_number}" in:title,body',
                 "--json",
-                "number,title,state,mergeCommit",
+                "number,title,body,state,mergeCommit",
                 "--limit",
                 "50",
             ]
@@ -250,20 +252,40 @@ def parse_evidence_source(body: str) -> str | None:
 
 
 def select_merged_companion(
-    candidates: list[dict[str, object]], repo: str, pr_number: str
+    candidates: Sequence[object], repo: str, pr_number: str
 ) -> tuple[str | None, str]:
     """OMN-18338: resolve one distinct merged companion, failing closed on ties."""
     basename = repo.rsplit("/", 1)[-1]
     title_re = re.compile(
-        rf"OCC companion for (?:[\w.-]+/)?{re.escape(basename)}"
+        rf"OCC companion for (?:{re.escape(repo.rsplit('/', 1)[0])}/)?{re.escape(basename)}"
         rf"#{re.escape(pr_number)}(?!\d)",
         re.IGNORECASE,
     )
+    product_url_re = re.compile(
+        rf"^Product PR:\s+https://github\.com/{re.escape(repo)}/pull/{re.escape(pr_number)}"
+        r"(?![\w/])",
+        re.IGNORECASE | re.MULTILINE,
+    )
+    batch_title_re = re.compile(
+        rf"OCC batch window for {re.escape(repo)}$", re.IGNORECASE
+    )
+    batch_member_re = re.compile(
+        rf"^- {re.escape(repo)}#{re.escape(pr_number)}\s*$", re.MULTILINE
+    )
     numbers: set[int] = set()
     for candidate in candidates:
+        if not isinstance(candidate, dict):
+            continue
         if str(candidate.get("state") or "").upper() != "MERGED":
             continue
-        if not title_re.search(str(candidate.get("title") or "")):
+        if not (
+            title_re.search(str(candidate.get("title") or ""))
+            or product_url_re.search(str(candidate.get("body") or ""))
+            or (
+                batch_title_re.search(str(candidate.get("title") or ""))
+                and batch_member_re.search(str(candidate.get("body") or ""))
+            )
+        ):
             continue
         number = candidate.get("number")
         if isinstance(number, int):
@@ -277,8 +299,35 @@ def select_merged_companion(
     return ref, f"merged companion {ref} resolved from the change-control record"
 
 
+class MergedCompanionPort(Protocol):
+    """The shared binding resolver needs only a companion-side read."""
+
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]] | None: ...
+
+
+def resolve_evidence_source_from_record(
+    fetcher: MergedCompanionPort, *, occ_repo: str, repo: str, pr_number: str, body: str
+) -> str | None:
+    """OMN-18338: companion-side binding wins; a legacy citation is a fallback.
+
+    Unreadable and ambiguous records never license trusting a conflicting body.
+    The caller either retries or fails closed on ValueError.
+    """
+    candidates = fetcher.merged_companion_candidates(occ_repo, repo, pr_number)
+    if candidates is None:
+        raise ValueError("merged companion records unreadable (retryable)")
+    if len(candidates) >= 50:
+        raise ValueError("merged companion lookup reached its result limit (retryable)")
+    ref, detail = select_merged_companion(candidates, repo, pr_number)
+    if detail.startswith("ambiguous"):
+        raise ValueError(detail)
+    return ref or parse_evidence_source(body)
+
+
 def read_autobind_outcome(
-    check_runs: list[dict[str, object]],
+    check_runs: Sequence[object],
 ) -> tuple[str, str] | None:
     """Return ``(outcome, reason)`` from the newest autobind outcome check-run.
 
@@ -461,21 +510,28 @@ def evaluate_once(
                 "companion is owed (OMN-20161)",
             )
 
-        evidence_source = parse_evidence_source(str(pr_data.get("body") or ""))
+        pr_body = str(pr_data.get("body") or "")
+        evidence_source = parse_evidence_source(pr_body)
     else:
         evidence_source = evidence_source_override
         head_sha = ""
 
     resolved_from_record = False
-    if not evidence_source and evidence_source_override is None:
-        # OMN-18338: a whole-body edit can drop the stamp after minting. Resolve
-        # from OCC before consulting the producer, then re-read the PR below.
-        candidates = fetcher.merged_companion_candidates(occ_repo, repo, pr_number)
-        if candidates is not None:
-            evidence_source, _detail = select_merged_companion(
-                candidates, repo, pr_number
+    if evidence_source_override is None:
+        body_source = evidence_source
+        try:
+            evidence_source = resolve_evidence_source_from_record(
+                fetcher,
+                occ_repo=occ_repo,
+                repo=repo,
+                pr_number=pr_number,
+                body=pr_body,
             )
-            resolved_from_record = evidence_source is not None
+        except ValueError as exc:
+            return Verdict(EXIT_PENDING, str(exc))
+        resolved_from_record = (
+            evidence_source is not None and evidence_source != body_source
+        )
 
     if not evidence_source:
         # OMN-18069: before deciding this is "still in flight", ask the producer.
@@ -518,7 +574,7 @@ def evaluate_once(
                 merge_oid = str(merge_commit.get("oid") or "")
             suffix = (
                 "; companion resolved from the change-control record because the "
-                "PR body carried no Evidence-Source line (OMN-18338)"
+                "PR body citation was absent or different (OMN-18338)"
                 if resolved_from_record
                 else ""
             )

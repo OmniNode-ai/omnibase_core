@@ -218,7 +218,7 @@ class TestCompanionResolvedFromRecord:
         assert "OCC#7001" in verdict.reason
         assert "abc123" in verdict.reason
         assert "resolved from the change-control record" in verdict.reason
-        assert "no Evidence-Source line" in verdict.reason
+        assert "citation was absent or different" in verdict.reason
         assert "OMN-18338" in verdict.reason
         assert fetcher.candidate_reads == [(OCC_REPO, PRODUCT_REPO, "2500")]
 
@@ -245,10 +245,18 @@ class TestCompanionResolvedFromRecord:
         )
         verdict = _evaluate(fetcher)
         assert verdict.code == EXIT_PENDING
-        assert verdict.reason == (
-            f"{PRODUCT_REPO}#2500 body has no 'Evidence-Source:' line yet "
-            "(occ-autobind mint may still be in flight)"
-        )
+        if candidates is None:
+            assert "unreadable" in verdict.reason
+        elif len(candidates) == 2 and all(
+            c.get("state") == "MERGED" and "#2500" in str(c.get("title"))
+            for c in candidates
+        ):
+            assert "ambiguous" in verdict.reason
+        else:
+            assert verdict.reason == (
+                f"{PRODUCT_REPO}#2500 body has no 'Evidence-Source:' line yet "
+                "(occ-autobind mint may still be in flight)"
+            )
 
     @pytest.mark.parametrize("has_companion", [True, False])
     def test_record_resolution_precedes_terminal_autobind_error(
@@ -281,7 +289,7 @@ class TestCompanionResolvedFromRecord:
             assert outcomes.REASON in verdict.reason
             assert "OMN-18069" in verdict.reason
 
-    def test_present_stamp_wins_without_lookup(self) -> None:
+    def test_matching_record_wins_over_present_stamp(self) -> None:
         fetcher = FakeFetcher(
             prs={
                 (PRODUCT_REPO, "2500"): _product_pr("Evidence-Source: OCC#5032"),
@@ -291,9 +299,9 @@ class TestCompanionResolvedFromRecord:
             candidates={(OCC_REPO, PRODUCT_REPO, "2500"): [self._candidate()]},
         )
         verdict = _evaluate(fetcher)
-        assert verdict.code == EXIT_PENDING
-        assert "OCC#5032" in verdict.reason
-        assert fetcher.candidate_reads == []
+        assert verdict.code == EXIT_PASS
+        assert "OCC#7001" in verdict.reason
+        assert fetcher.candidate_reads == [(OCC_REPO, PRODUCT_REPO, "2500")]
 
     @pytest.mark.parametrize("override", ["", "OCC#7001"])
     def test_override_never_looks_up_candidates(self, override: str) -> None:
@@ -407,9 +415,9 @@ class TestMergedCompanionCandidates:
                 "--state",
                 "merged",
                 "--search",
-                '"OCC companion for omnibase_core#2500" in:title',
+                '"omnibase_core" "2500" in:title,body',
                 "--json",
-                "number,title,state,mergeCommit",
+                "number,title,body,state,mergeCommit",
                 "--limit",
                 "50",
             ]

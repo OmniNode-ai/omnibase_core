@@ -56,6 +56,11 @@ class _FakeGh:
         self.tip_reads: list[str] = []
         self.compares: list[tuple[str, str]] = []
 
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]]:
+        return []
+
     def read_pr_body(self, *, repo: str, pr_number: str) -> str | None:
         return self.body
 
