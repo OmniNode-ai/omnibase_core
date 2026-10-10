@@ -1,0 +1,95 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Verbatim fleet files (origin/dev at source_rev) replayed against the decisions of
+# onex_change_control rev 8d7e85bc00e7 check-hardcoded-topics. expected_violation_lines is that
+# script's own output for source_path (as pre-commit passes it: repo-relative).
+- id: positive-control-py
+  repo: omnimarket
+  source_path: src/omnimarket/nodes/node_code_embedding_effect/handlers/handler_code_embedding_effect.py
+  source_rev: 7fa221c775edf84712baa3ee1a2395939029a7c6
+  expected_violation_lines:
+    - 45
+    - 46
+- id: fail-yaml
+  repo: omnibase_core
+  source_path: src/omnibase_core/schemas/cli_contribution.v1.example.yaml
+  source_rev: 7077b5138abd8f94d218ef1983aae562d202d0f7
+  expected_violation_lines:
+    - 48
+    - 69
+    - 87
+- id: fail-ts
+  repo: omnidash
+  source_path: shared/types/renderer-capability.ts
+  source_rev: b8c2463a562b94b63d725915f318fc8a3b47df87
+  expected_violation_lines:
+    - 87
+- id: fail-many-py
+  repo: omnibase_core
+  source_path: src/omnibase_core/constants/constants_event_types.py
+  source_rev: 7077b5138abd8f94d218ef1983aae562d202d0f7
+  expected_violation_lines:
+    - 51
+    - 52
+    - 53
+    - 57
+    - 58
+    - 59
+    - 64
+    - 65
+    - 68
+    - 71
+    - 72
+    - 74
+    - 81
+    - 84
+    - 92
+    - 95
+    - 104
+    - 107
+    - 116
+    - 119
+    - 130
+    - 133
+    - 143
+    - 146
+    - 160
+    - 163
+    - 174
+    - 177
+- id: pass-clean-py
+  repo: omnibase_core
+  source_path: src/omnibase_core/nodes/node_hardcoded_topic_check_compute/handler.py
+  source_rev: 7077b5138abd8f94d218ef1983aae562d202d0f7
+  expected_violation_lines: []
+- id: skip-docstring
+  repo: omniclaude
+  source_path: src/omniclaude/hooks/contracts/contract_hook_prompt_submitted.py
+  source_rev: dc1a8721ce01ca50a9aa35d148b4001160f343fc
+  expected_violation_lines: []
+- id: skip-comment-line
+  repo: omnibase_spi
+  source_path: src/omnibase_spi/protocols/event_bus/protocol_kafka_adapter.py
+  source_rev: 9c145fb2836636598c0088aaff38f653cc4ac0c5
+  expected_violation_lines: []
+- id: skip-template-docstring-state
+  repo: omnimarket
+  source_path: scripts/generate_node.py
+  source_rev: 7fa221c775edf84712baa3ee1a2395939029a7c6
+  expected_violation_lines: []
+- id: skip-test-file
+  repo: omnimarket
+  source_path: src/omnimarket/nodes/node_code_enrichment_effect/tests/test_handler_code_enrichment_effect.py
+  source_rev: 7fa221c775edf84712baa3ee1a2395939029a7c6
+  expected_violation_lines: []
+- id: skip-approved-basename-py
+  repo: omnimarket
+  source_path: src/omnimarket/events/topics.py
+  source_rev: 7fa221c775edf84712baa3ee1a2395939029a7c6
+  expected_violation_lines: []
+- id: skip-approved-basename-yaml
+  repo: omnidash
+  source_path: contract.yaml
+  source_rev: b8c2463a562b94b63d725915f318fc8a3b47df87
+  expected_violation_lines: []

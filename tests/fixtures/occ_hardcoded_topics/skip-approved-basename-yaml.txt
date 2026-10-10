@@ -1,0 +1,241 @@
+# OMN-10756: Canonical data-source contract for omnidash.
+# This file is the source of truth for data-source selection defaults.
+# Env vars are limited to secret values and temporary local mode overrides.
+# Runtime endpoint authority belongs in contract.yaml or contract.local.yaml.
+#
+# Run `npm run generate:config` after editing to regenerate src/config/generated/data-source-defaults.ts.
+
+data_source:
+  # Default data source mode.
+  # Values: sqlite | postgres | file | http
+  # - sqlite: reads from local delegation.sqlite via the Express bridge (standalone installs only)
+  # - postgres: reads from Postgres projections through a contract-declared secret ref
+  # - file: reads from ./fixtures/ directory (zero-infra dev mode)
+  # - http: reads via HTTP from data_source_url
+  #
+  # OMN-10976: default flipped from sqlite to postgres.
+  # OMN-14642: default flipped from postgres to http. The Express bridge must
+  # NOT hold a direct RDS/Postgres connection (operator position 2026-07-15) —
+  # projection reads route through the projection-api HTTP service (which owns
+  # the DB) via `url` below / OMNIDASH_BRIDGE_URL. Set OMNIDASH_DATA_SOURCE=postgres
+  # (with a contract.local.yaml postgres_database_url_secret_ref) to restore the
+  # reversible direct-DB path, or =sqlite for standalone installs without
+  # Kafka/Postgres.
+  # DEPLOY-TIME DEPENDENCY: http mode requires the projection-api base URL set in
+  # a deployment overlay (contract.local.yaml data_source.url or
+  # OMNIDASH_BRIDGE_URL); the base contract intentionally carries no network
+  # target, so an unconfigured http mode fails loudly rather than reading nowhere.
+  default: http
+
+  # Projection-api base URL. Server-side (http mode) the Express bridge proxies
+  # GET /projection/:topic to `<url>/projection/:topic`; client-side sqlite/http
+  # modes also read from here. Empty in the base contract — a deployment overlay
+  # (contract.local.yaml) or OMNIDASH_BRIDGE_URL must set the in-cluster
+  # projection-api origin before http mode can serve reads.
+  url: ""
+
+  # OMN-12969: ws_url removed. The dashboard previously opened a `/ws` invalidation
+  # socket, but the deployed projection backend (FastAPI projection-api) serves
+  # HTTP + an advisory SSE hint only and never registered a `/ws` route, so the
+  # browser upgrade was rejected (403). Live updates are poll-driven via
+  # useProjectionQuery. Reintroduction is guarded by local/no-projection-websocket.
+
+  # Default SQLite DB path (used by server/routes.ts in sqlite mode only).
+  # Tilde is expanded to $HOME by the server at runtime.
+  sqlite_db_path: "~/.omninode/delegation/delegation.sqlite"
+
+  # Secret reference for the Postgres projection DB URL. OMN-14642: emptied so
+  # the deployed default (http mode) carries NO RDS/Postgres credential in the
+  # Express bridge. Only the reversible `postgres` mode reads it; set it in
+  # contract.local.yaml or a deployment overlay to re-enable the direct-DB path,
+  # for example:
+  # postgres_database_url_secret_ref: "env:OMNIDASH_ANALYTICS_DB_URL"
+  postgres_database_url_secret_ref: ""
+
+  # OMN-18159: the tenant this dashboard reads TENANT-SCOPED exposures as.
+  #
+  # Operator ruling, 2026-09-11: the delegation widgets read as an explicitly
+  # configured tenant -- the same house-tenant shape the projection API own
+  # operator status page takes -- sent as a tenant query parameter and gated on
+  # the server GET /projections metadata, never on a topic list copied into
+  # omnidash. The signed-in-viewer shape is deferred until the dashboard carries
+  # identity.
+  #
+  # DELIBERATELY EMPTY in the base contract, and it must stay empty. There is no
+  # correct default tenant: a value here would answer 200 with somebody rows to
+  # a dashboard nobody configured, which is indistinguishable from a correctly
+  # scoped answer. Unset means every tenant-scoped exposure refuses with
+  # tenant_context_unresolved and says which configuration is missing. Set it in
+  # a deployment overlay (contract.local.yaml) or VITE_PROJECTION_TENANT_ID.
+  projection_tenant_id: ""
+
+runtime_edge:
+  # Generic contract-driven runtime HTTP edge. OmniDash never owns broker
+  # credentials, IAM signing, topic resolution, correlation, or consumers.
+  # A deployment overlay or OMNIDASH_RUNTIME_EDGE_URL supplies the lane target.
+  url: ""
+  timeout_ms: "300000"
+
+renderer_capability:
+  # OMN-13131 (W-cap): the omnidash server declares the WEB renderer's capability
+  # surface onto onex.cmd.ui.renderer-capability-declared.v1 on startup and on
+  # this heartbeat interval. The W5 reducer (node_renderer_capability_projection)
+  # folds each declaration into the heartbeat-backed Renderer Capability Registry
+  # projection; when the heartbeat lapses past the reducer's TTL the row flips to
+  # is_degraded. Keep the interval comfortably under the reducer TTL.
+  #
+  # heartbeat_enabled: when false, the server does not declare capability (e.g.
+  #   standalone installs with no runtime edge). Disabled automatically when
+  #   runtime_edge.url is empty.
+  # heartbeat_interval_ms: re-publish cadence in milliseconds (default 30s).
+  heartbeat_enabled: true
+  heartbeat_interval_ms: "30000"
+
+onboarding:
+  # OMN-10875: self-service tenant onboarding surface (server/onboarding/).
+  #
+  # enabled: master switch. Ships "false" — the onboarding endpoints return
+  #   503 and no provisioner/verifier is constructed. Flipping to "true"
+  #   requires auth.issuer_url (the routes verify bearer tokens themselves)
+  #   and postgres_database_url_secret_ref below.
+  # keycloak_apply_mode:
+  #   - plan (default): NEVER mutates the live realm. The provision endpoint
+  #     returns the exact Keycloak admin steps it would run as a typed
+  #     apply-plan — live realm mutation stays operator-gated.
+  #   - execute: performs the admin-API calls with the confidential
+  #     service-account client below. Only for deployments where the operator
+  #     has explicitly enabled live applies.
+  # keycloak_admin_base_url: realm admin REST base, e.g.
+  #   "https://auth.omninode.ai/admin/realms/omninode" (execute mode only).
+  # keycloak_admin_client_id / keycloak_admin_client_secret_ref: confidential
+  #   client with the manage-users service-account role; the secret is an env
+  #   secret ref (e.g. "env:OMNIDASH_ONBOARDING_KC_SECRET"), never a literal.
+  # postgres_database_url_secret_ref: WRITER-role connection for the tenants
+  #   registry (db/migrations/0002_tenant_onboarding.sql), distinct from the
+  #   read-only projection path. Same "env:NAME" secret-ref scheme as
+  #   data_source.postgres_database_url_secret_ref.
+  enabled: "false"
+  keycloak_apply_mode: "plan"
+  keycloak_admin_base_url: ""
+  keycloak_admin_client_id: ""
+  keycloak_admin_client_secret_ref: ""
+  postgres_database_url_secret_ref: ""
+
+auth:
+  # OMN-13824 / OMN-1636: multi-tenant auth gate for the Express bridge.
+  #
+  # tenant_mode:
+  #   - disabled (default): pass-through — preserves single-tenant behavior;
+  #     Postgres reads run unscoped exactly as before.
+  #   - required: every request must carry a Keycloak-issued bearer token whose
+  #     tenant claim is non-empty. The verified tenant id is threaded through
+  #     AsyncLocalStorage into the Postgres reader, which scopes each read with
+  #     `SET LOCAL app.tenant_id` — the GUC the RLS policies key on
+  #     (db/migrations/0001_tenant_rls.sql).
+  #
+  # issuer_url: OIDC issuer (Keycloak realm URL). Keep lane-specific issuers in
+  #   contract.local.yaml or a deployment overlay, e.g.
+  #   issuer_url: "https://auth.omninode.ai/realms/omninode"
+  # audience: expected `aud` claim; empty disables the audience check.
+  # tenant_claim: token claim carrying the tenant id. deploy/keycloak/ defines
+  #   the client scope that mints `tenant_id` from the user attribute.
+  #
+  # Env overrides (lane tuning only): OMNIDASH_TENANT_AUTH_MODE,
+  # OMNIDASH_OIDC_ISSUER_URL, OMNIDASH_OIDC_AUDIENCE, OMNIDASH_TENANT_CLAIM.
+  tenant_mode: "disabled"
+  issuer_url: ""
+  audience: ""
+  tenant_claim: "tenant_id"
+
+command_topics:
+  # OMN-14974: action-specific commands go through the generic runtime edge.
+  # Topic: onex.cmd.omnimarket.delegate-skill.v1
+  # Payload: ModelDelegateSkillRequest
+  # Env override: OMNIDASH_RUNTIME_EDGE_URL
+  - topic: "onex.cmd.omnimarket.delegate-skill.v1"
+    handler_node: "node_delegate_skill_orchestrator"
+    source_contract: "omnimarket/src/omnimarket/nodes/node_delegate_skill_orchestrator/contract.yaml"
+    ingress: "/api/delegation/trigger"
+    description: >
+      Initiates a skill delegation run. The Express bridge generates a correlation_id,
+      invokes the typed command through the runtime edge, and returns the terminal
+      result with the correlation_id. The correlation_id surfaces in
+      both DelegationControlPlane (pending run indicator) and TraceExplorer.
+    response:
+      correlation_id: string
+      accepted: boolean
+      completed: boolean
+  - topic: "onex.cmd.omnimarket.node-generation-requested.v1"
+    handler_node: "node_generation_consumer"
+    source_contract: "omnimarket/src/omnimarket/nodes/node_generation_consumer/contract.yaml"
+    ingress: "/api/sea/generate"
+    description: >
+      Starts node generation through the same generic runtime edge. The runtime
+      owns the managed-MSK transport and returns the contract terminal result.
+    response:
+      correlation_id: string
+      accepted: boolean
+      completed: boolean
+
+projection_api:
+  snapshots:
+    - topic: "onex.snapshot.projection.mcp-tools.v1"
+      table: "node_service_registry"
+      source_contract: "omnimarket/src/omnimarket/nodes/node_projection_registration/contract.yaml"
+      description: >
+        Active MCP tool registrations projected from node_service_registry metadata.
+      columns:
+        - "service_name AS name"
+        - "metadata.description AS description"
+        - "created_at AS registeredAt"
+        - "health_status AS status"
+        - "metadata.modelId AS modelId"
+        - "metadata.correlationId AS correlationId"
+      filters:
+        - "is_active = true"
+        - "service_type in (mcp, mcp_tool, mcp-tools) OR metadata declares mcp_tool_name/tool_name/kind=mcp_tool"
+      order_by: "created_at DESC"
+      freshness_column: "updated_at"
+      limit: 500
+    - topic: "onex.evt.omnimarket.node-generation-completed.v1"
+      table: "generation_events"
+      source_contract: "omnimarket/src/omnimarket/nodes/node_generation_consumer/contract.yaml"
+      description: >
+        Canonical node-generation completion artifacts projected from
+        generation_events for correlated workflow inspection.
+      columns:
+        - "id"
+        - "correlation_id"
+        - "task_description"
+        - "provider"
+        - "model_id"
+        - "endpoint_class"
+        - "attempt_count"
+        - "total_latency_e2e_ms"
+        - "contract_passed"
+        - "cost_inference_usd"
+        - "contract_yaml"
+        - "handler_source"
+        - "timestamp"
+        - "created_at"
+      order_by: "created_at DESC"
+      freshness_column: "created_at"
+      limit: 500
+    - topic: "onex.snapshot.projection.live-events.v1"
+      table: "live_events"
+      source_contract: "omnimarket/src/omnimarket/nodes/node_projection_live_events/contract.yaml"
+      description: >
+        Unified operator event stream projected from platform lifecycle,
+        delegation, and node-generation commands and outcomes.
+      columns:
+        - "event_id AS id"
+        - "type"
+        - "timestamp"
+        - "source"
+        - "topic"
+        - "summary"
+        - "payload"
+        - "correlation_id"
+      order_by: "created_at DESC"
+      freshness_column: "created_at"
+      limit: 500
