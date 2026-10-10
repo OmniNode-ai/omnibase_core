@@ -89,3 +89,12 @@ dod_evidence:
         check_value: uv run pytest tests/unit/scripts/ci/test_check_occ_companion_merged.py -q -k test_candidate_state_is_rechecked_through_pr_view
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC5]
+  - id: dod-omn18338-pr1926-companion-side-binding
+    description: PR 1926 replays companion records through both gates and the receipt workflow, including
+      missing or incorrect citations, batch records, and ambiguous or unreadable records.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_companion_side_binding_omn18338.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1, AC2, AC3, AC5]
