@@ -216,6 +216,17 @@ requirements:
           module with types python, ts and javascript, the types the onex_change_control hook declared
           -- falsifier: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
           -k bare_feature_flag fails at the merge base'
+  - id: req-omn20074-security-scan-repoint
+    statement: The security-scan caller in omnibase_core must call the in-repo CodeQL reusable workflow
+      instead of the onex_change_control copy, with the same inputs and caller job name, so the required
+      context CodeQL / CodeQL Analysis (python) does not change.
+    acceptance:
+      - id: AC40
+        statement: 'AC40: the codeql job of .github/workflows/security-scan.yml uses ./.github/workflows/codeql-reusable.yml
+          with language python and query_suite security-and-quality, the caller job name CodeQL and the
+          unchanged permissions, so the composed context stays "CodeQL / CodeQL Analysis (python)", and
+          the file references onex_change_control nowhere -- falsifier: uv run pytest tests/ci/test_codeql_reusable_omn20074.py
+          -q -p no:randomly -k security_scan fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -310,6 +321,9 @@ evidence_requirements:
     description: The exported hook declaration runs the handler under the same hook id with the types
       the onex_change_control hook declared.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k bare_feature_flag
+    description: The security-scan caller uses the in-repo CodeQL reusable with unchanged inputs, permissions
+      and composed context, and names onex_change_control nowhere.
+    command: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly -k security_scan
 emergency_bypass:
   enabled: false
   justification: ''
@@ -532,3 +546,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC21
+  - id: dod-omn-20074-ac40
+    description: The security-scan caller uses the in-repo CodeQL reusable with unchanged inputs, permissions
+      and composed context, and names onex_change_control nowhere.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly -k security_scan
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC40
