@@ -62,6 +62,18 @@ requirements:
           with any non-workflow path, a workflow change outside the pin, an added or deleted workflow,
           or a verifier without the classifier. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_workflow_pin_omn20074.py
           -q -p no:randomly'
+  - id: req-omn20074-writer-plugin-version
+    statement: The dod-verify writer_pin_only step must derive the OCC writer-app exemption for a diff
+      of .claude-plugin manifests alone through the pinned verifier's classify_plugin_manifest_version_only
+      over head and base git blobs, and fail closed for every other plugin manifest diff.
+    acceptance:
+      - id: AC6
+        statement: 'AC6: for an OCC writer-app pull request whose whole diff is .claude-plugin plugin.json
+          and marketplace.json files, the dod-verify writer_pin_only step derives exempt=true from git
+          objects through classify_plugin_manifest_version_only, and derives exempt=false for an edit
+          outside the version keys, an added or deleted manifest, a mixed diff that never reaches the
+          classifier, and a verifier without the classifier -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_plugin_version_omn20074.py
+          -q fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -85,6 +97,11 @@ evidence_requirements:
       checkout pin exemption and its fail-closed controls for mixed paths, edits outside the pin, added
       or deleted workflows, and an older verifier.
     command: uv run pytest tests/ci/test_receipt_gate_writer_workflow_pin_omn20074.py -q -p no:randomly
+  - kind: tests
+    description: Execute the writer-app verdict against git objects to prove the plugin manifest version
+      exemption and its fail-closed controls for edits outside the version keys, added or deleted manifests,
+      mixed paths, and an older verifier.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_plugin_version_omn20074.py -q
 emergency_bypass:
   enabled: false
   justification: ''
@@ -140,3 +157,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5
+  - id: dod-omn-20074-ac6
+    description: The workflow tests prove the git-derived writer-app plugin manifest version exemption
+      and its fail-closed refusal controls.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_plugin_version_omn20074.py -q -p
+          no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
