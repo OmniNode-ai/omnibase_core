@@ -216,6 +216,23 @@ requirements:
           module with types python, ts and javascript, the types the onex_change_control hook declared
           -- falsifier: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
           -k bare_feature_flag fails at the merge base'
+  - id: req-omn20074-contract-validation-in-tree
+    statement: The omnibase_core contract-validation workflow must validate the branch ticket's contract
+      with this repository's in-tree ModelTicketContract and name no onex_change_control repository, keeping
+      the required context contract-validation and its skip semantics.
+    acceptance:
+      - id: AC41
+        statement: 'AC41: .github/workflows/contract-validation.yml names no onex_change_control repository
+          or validate-yaml, checks out only the calling repository, validates with the in-tree ModelTicketContract
+          run through uv and not a published omnibase-core pin, and keeps the workflow name, the job name
+          contract-validation and the skip semantics -- falsifier: uv run pytest tests/ci/test_contract_validation_in_tree_omn20074.py
+          -q -p no:randomly -k "change_control or checks_out_only or in_tree_model or required_context
+          or skips_without" fails at the merge base'
+      - id: AC42
+        statement: 'AC42: the validator the workflow runs exits 0 on contracts/OMN-20074.yaml and exits
+          1 with an error annotation on a planted contract carrying an unknown top-level field and on
+          a malformed YAML file -- falsifier: uv run pytest tests/ci/test_contract_validation_in_tree_omn20074.py
+          -q -p no:randomly -k "extracted_validator" fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -310,6 +327,16 @@ evidence_requirements:
     description: The exported hook declaration runs the handler under the same hook id with the types
       the onex_change_control hook declared.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k bare_feature_flag
+    description: The workflow tests prove contract-validation names no onex_change_control repository,
+      checks out only the calling repository, validates with the in-tree ModelTicketContract and keeps
+      its context name and skip semantics, with a detector positive control.
+    command: uv run pytest tests/ci/test_contract_validation_in_tree_omn20074.py -q -p no:randomly -k
+      "change_control or checks_out_only or in_tree_model or required_context or skips_without"
+  - kind: tests
+    description: The extracted validator passes the repository's own OMN-20074 contract and fails a planted
+      invalid contract and a malformed YAML file.
+    command: uv run pytest tests/ci/test_contract_validation_in_tree_omn20074.py -q -p no:randomly -k
+      extracted_validator
 emergency_bypass:
   enabled: false
   justification: ''
@@ -532,3 +559,26 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC21
+  - id: dod-omn-20074-ac41
+    description: The workflow tests prove contract-validation names no onex_change_control repository,
+      checks out only the calling repository, validates with the in-tree ModelTicketContract and keeps
+      its context name and skip semantics.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_contract_validation_in_tree_omn20074.py -q -p no:randomly
+          -k "change_control or checks_out_only or in_tree_model or required_context or skips_without"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC41
+  - id: dod-omn-20074-ac42
+    description: The workflow tests run the extracted validator on the repository's own OMN-20074 contract
+      and on a planted invalid contract and a malformed YAML file.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_contract_validation_in_tree_omn20074.py -q -p no:randomly
+          -k extracted_validator
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC42
