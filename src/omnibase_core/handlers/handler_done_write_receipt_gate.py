@@ -406,8 +406,9 @@ def is_ac_heading(line: str) -> bool:
 def acceptance_criteria_items(description: str) -> list[str]:
     """Items listed under an acceptance-criteria heading in ``description``.
 
-    The section runs from the heading to the next markdown heading (or the end
-    of the body). A non-``#`` heading -- a bold pseudo-heading, say -- does not
+    Each section runs from its heading to the next markdown heading (or the
+    end of the body); later acceptance headings reopen the scan. A
+    non-``#`` heading -- a bold pseudo-heading, say -- does not
     close the section, so the count can be an OVER-count. That direction is
     deliberate: over-counting holds a flip, under-counting releases one.
 
@@ -445,7 +446,8 @@ def acceptance_criteria_items(description: str) -> list[str]:
         if not in_section:
             continue
         if is_markdown_heading(line) and _saw_ac_heading:
-            break
+            in_section = False
+            continue
         list_match = LIST_ITEM_RE.match(line)
         if list_match:
             text = TASK_MARKER_RE.sub("", list_match.group(1)).strip()
