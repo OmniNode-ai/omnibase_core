@@ -1,0 +1,11 @@
+name: node_publish_effect
+node_type: EFFECT_GENERIC
+event_bus:
+  publish_topics:
+    - topic: onex.evt.fixture.published.v1
+handler_routing:
+  handlers:
+    - handler:
+        name: HandlerPublish
+        module: fixturepkg.nodes.node_publish_effect.handlers.handler_publish
+      operation: run

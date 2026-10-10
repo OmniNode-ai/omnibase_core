@@ -1,0 +1,8 @@
+name: node_planted_control_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_planted_control
+        module: omniintelligence.nodes.node_planted_control_compute.handlers.handler_planted_control
+      operation: run

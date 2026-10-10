@@ -1,0 +1,6 @@
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 1
+Compliant: 1
+Allowlisted: 0
+New violations: 0

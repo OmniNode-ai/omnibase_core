@@ -1,0 +1,9 @@
+"""Uses a database session and an HTTP call without declaring either."""
+import httpx
+
+
+class HandlerDbHttp:
+    def handle(self, request):
+        request.session.execute("select 1")
+        QdrantClient()
+        return httpx.get("http://example.invalid")

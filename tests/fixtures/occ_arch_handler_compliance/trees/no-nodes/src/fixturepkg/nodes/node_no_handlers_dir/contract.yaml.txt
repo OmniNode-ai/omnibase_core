@@ -1,0 +1,2 @@
+name: node_no_handlers_dir
+node_type: COMPUTE_GENERIC

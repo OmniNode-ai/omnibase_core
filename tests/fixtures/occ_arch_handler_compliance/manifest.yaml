@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Replay cases for the arch-handler-contract-compliance validator.
+# expected/<id>.stdout.txt and expected_exit are the output and exit code of
+# onex_change_control validators/arch_handler_contract_compliance.py at
+# 9a8956cef4b3910ba862a482910be92bb7b34d96, run as
+# `python -m ... --repo-root . [--allowlist-path allowlist.yaml] [flags]` in a directory
+# materialised from trees/<tree>/ (each file name loses its .txt suffix).
+# trees/omniintelligence-subset holds verbatim files of seven omniintelligence nodes at
+# 9e4e646cfa1d0f13cf5661e946d71d721458124d; allowlists/omniintelligence.yaml.txt is that
+# repository's arch-handler-contract-compliance-allowlist.yaml at the same revision.
+- id: pass-compliant
+  trees: [pass-compliant]
+  expected_exit: 0
+- id: fail-hardcoded-topic
+  trees: [fail-hardcoded-topic]
+  expected_exit: 1
+- id: fail-hardcoded-topic-debt-listed
+  trees: [fail-hardcoded-topic]
+  allowlist: fixturepkg-fail-topic
+  expected_exit: 0
+- id: fail-hardcoded-topic-debt-file-absent
+  trees: [fail-hardcoded-topic]
+  allowlist: absent
+  expected_exit: 1
+- id: fail-undeclared-transport
+  trees: [fail-undeclared-transport]
+  expected_exit: 1
+- id: fail-undeclared-transport-json
+  trees: [fail-undeclared-transport]
+  flags: [--json]
+  expected_exit: 1
+- id: fail-missing-routing
+  trees: [fail-missing-routing]
+  expected_exit: 1
+- id: fail-logic-in-node
+  trees: [fail-logic-in-node]
+  expected_exit: 1
+- id: missing-contract
+  trees: [missing-contract]
+  expected_exit: 0
+- id: no-nodes
+  trees: [no-nodes]
+  expected_exit: 0
+- id: effect-kafka-inferred
+  trees: [effect-kafka-inferred]
+  expected_exit: 1
+- id: syntax-error-handler
+  trees: [syntax-error-handler]
+  expected_exit: 1
+- id: reachability-json
+  trees: [reachability]
+  flags: [--json]
+  expected_exit: 1
+- id: fail-hardcoded-topic-generate-debt-list
+  trees: [fail-hardcoded-topic]
+  flags: [--generate-allowlist]
+  expected_exit: 0
+- id: omniintelligence-subset
+  trees: [omniintelligence-subset]
+  allowlist: omniintelligence
+  expected_exit: 1
+- id: omniintelligence-subset-json
+  trees: [omniintelligence-subset]
+  allowlist: omniintelligence
+  flags: [--json]
+  expected_exit: 1
+- id: omniintelligence-subset-new-entries-listed
+  trees: [omniintelligence-subset]
+  allowlist: omniintelligence-plus-new
+  expected_exit: 0
+- id: omniintelligence-subset-positive-control
+  trees: [omniintelligence-subset, positive-control]
+  allowlist: omniintelligence-plus-new
+  expected_exit: 1

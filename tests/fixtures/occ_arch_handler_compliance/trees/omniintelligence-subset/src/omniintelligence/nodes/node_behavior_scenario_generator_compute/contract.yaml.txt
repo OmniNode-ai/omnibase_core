@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 OmniNode Team
+#
+# ONEX Node Contract
+# Node: NodeBehaviorScenarioGeneratorCompute
+
+name: "node_behavior_scenario_generator_compute"
+version: "1.0.0"
+contract_version: {major: 1, minor: 0, patch: 0}
+contract_name: "behavior_scenario_generator_compute"
+node_name: "behavior_scenario_generator_compute"
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "COMPUTE_GENERIC"
+status: "active"
+description: >
+  Pure compute node that generates adversarial evaluation scenarios from a BehaviorSpec. Delegates LLM
+  calls to an injected llm_caller callable (no direct HTTP). Returns exactly n ModelEvalScenario objects
+  with spec_id and failure_mode propagated from the input spec.
+input_model:
+  name: "ModelBehaviorSpec"
+  module: "omniintelligence.nodes.node_bloom_eval_orchestrator.models"
+  description: "Behavior specification defining the failure mode and scenario prompt template."
+output_model:
+  name: "list[ModelEvalScenario]"
+  module: "omniintelligence.nodes.node_bloom_eval_orchestrator.models"
+  description: "Exactly n ModelEvalScenario objects generated from the spec."
+handler_routing:
+  routing_strategy: "operation_match"
+  entry_point:
+    function: "handle_scenario_generation"
+    module: "omniintelligence.nodes.node_behavior_scenario_generator_compute.handlers.handler_scenario_generator"
+    type: "async"
+    description: "Generate n adversarial scenarios from a BehaviorSpec via injected llm_caller."
+  handlers:
+    - operation: "generate_scenarios"
+      handler:
+        function: "handle_scenario_generation"
+        module: "omniintelligence.nodes.node_behavior_scenario_generator_compute.handlers.handler_scenario_generator"
+        type: "async"
+      description: "Generate exactly n ModelEvalScenario objects from spec"
+      actions:
+        - "call llm_caller(spec.scenario_prompt_template, n) to obtain n raw text strings"
+        - "construct ModelEvalScenario per text with spec_id and failure_mode from spec"
+        - "return list of n scenarios"
+  default_handler:
+    function: "handle_scenario_generation"
+    module: "omniintelligence.nodes.node_behavior_scenario_generator_compute.handlers.handler_scenario_generator"
+    type: "async"
+    description: "Default to generate_scenarios operation"
+io_operations:
+  - operation: "generate_scenarios"
+    description: "Generate exactly n adversarial evaluation scenarios from a BehaviorSpec"
+    input_fields:
+      - spec
+      - n
+      - llm_caller
+    output_fields:
+      - scenarios (list[ModelEvalScenario])
+error_handling:
+  retry_policy:
+    max_retries: 0
+    description: "Pure compute node — retries delegated to caller"
+idempotency:
+  enabled: false
+  description: "LLM generation is non-deterministic by design"
+health_check:
+  enabled: false
+  description: "Pure compute node — no health check needed"
+metadata:
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-03-08"
+  updated: "2026-03-08"
+  tags:
+    - compute
+    - bloom-eval
+    - scenario-generation
+    - pure-function
+  references:
+    - ticket: "OMN-4022"
+      url: "https://linear.app/omninode/issue/OMN-4022"
+      description: "Implement ScenarioGenerator handler + NodeBehaviorScenarioGeneratorCompute"

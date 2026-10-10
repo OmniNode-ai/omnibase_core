@@ -1,0 +1,10 @@
+name: node_declared_db_compute
+node_type: COMPUTE_GENERIC
+metadata:
+  transport_type: database
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_declared_db
+        module: fixturepkg.nodes.node_declared_db_compute.handlers.handler_declared_db
+      operation: run

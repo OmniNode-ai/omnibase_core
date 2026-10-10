@@ -173,6 +173,27 @@ requirements:
           context resolves to "CodeQL / CodeQL Analysis (python)", pins every action by full sha and references
           onex_change_control nowhere -- falsifier: uv run pytest tests/ci/test_codeql_reusable_omn20074.py
           -q fails at the merge base'
+  - id: req-omn20074-arch-handler-compliance
+    statement: The decisions of the onex_change_control arch_handler_contract_compliance validator must
+      be reproduced by an omnibase_core handler that a consumer runs as a module with the same flags and
+      exit codes, so a repository can enforce handler contract compliance without onex_change_control.
+    acceptance:
+      - id: AC18
+        statement: 'AC18: HandlerArchHandlerContractCompliance reproduces the stdout and exit code of
+          the onex_change_control validator (rev 9a8956cef4b3) on verbatim omniintelligence nodes and
+          constructed nodes, with a pass and a fail for each of the hardcoded-topic, undeclared-transport,
+          missing-handler-routing and logic-in-node rule classes, the missing-contract, no-nodes, EFFECT
+          Kafka inference and unparseable-handler cases, the allowlist, --json and --generate-allowlist
+          outputs, and a planted positive control the handler flags -- falsifier: uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py
+          -q -p no:randomly -k "replays_occ_output or covers_pass_and_fail or positive_control_is_flagged"
+          fails at the merge base'
+      - id: AC19
+        statement: 'AC19: python -m omnibase_core.handlers.handler_arch_handler_contract_compliance takes
+          --repo-root and --allowlist-path as the consumer workflow passes them, exits 1 when a handler
+          has a violation that is not allowlisted and 0 otherwise, and exits 2 without --repo-root; the
+          handler is pure over explicit node sources and reads nothing from the filesystem -- falsifier:
+          uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py -q -p no:randomly
+          -k "invoked_as_module or missing_repo_root or reads_nothing or models" fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -247,6 +268,17 @@ evidence_requirements:
     description: The workflow tests prove the CodeQL reusable's inputs, job name, permissions, composed
       context, sha-pinned actions and the absence of any onex_change_control reference.
     command: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly
+  - kind: tests
+    description: Replay the stdout and exit code of the pinned onex_change_control validator on verbatim
+      omniintelligence nodes and constructed nodes, with a pass and a fail per rule class and a planted
+      positive control.
+    command: uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py -q -p
+      no:randomly -k "replays_occ_output or covers_pass_and_fail or positive_control_is_flagged"
+  - kind: tests
+    description: The handler runs as a module with the consumer's flags and exit codes and decides over
+      explicit sources without reading the filesystem.
+    command: uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py -q -p
+      no:randomly -k "invoked_as_module or missing_repo_root or reads_nothing or models"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -427,3 +459,25 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC17
+  - id: dod-omn-20074-ac18
+    description: The handler tests replay the onex_change_control validator's stdout and exit code on
+      verbatim omniintelligence nodes and constructed nodes, with a positive control.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py
+          -q -p no:randomly -k "replays_occ_output or covers_pass_and_fail or positive_control_is_flagged"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC18
+  - id: dod-omn-20074-ac19
+    description: The handler tests prove the module invocation with the consumer's flags, its exit codes
+      and the purity of the decision.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py
+          -q -p no:randomly -k "invoked_as_module or missing_repo_root or reads_nothing or models"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC19

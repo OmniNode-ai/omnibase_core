@@ -1,0 +1,12 @@
+"""Node with logic."""
+
+
+class NodeThing:
+    def __init__(self, container):
+        super().__init__(container)
+
+    def compute(self, data):
+        return data
+
+    async def compute_async(self, data):
+        return data

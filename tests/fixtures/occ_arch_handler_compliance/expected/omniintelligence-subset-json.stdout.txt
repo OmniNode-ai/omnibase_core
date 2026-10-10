@@ -1,0 +1,203 @@
+[
+  {
+    "handler_path": "omniintelligence/nodes/node_anti_gaming_alerter_effect/handlers/protocols.py",
+    "node_dir": "omniintelligence/nodes/node_anti_gaming_alerter_effect",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_anti_gaming_alerter_effect/contract.yaml",
+    "violations": [
+      "missing_handler_routing",
+      "logic_in_node"
+    ],
+    "violation_details": [
+      "handler not registered in contract handler_routing",
+      "node.py has custom methods: execute, _serialize_alert"
+    ],
+    "declared_topics": [
+      "onex.evt.omnimemory.anti-gaming-alert.v1"
+    ],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [
+      "KAFKA"
+    ],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": false,
+    "verdict": "imperative",
+    "allowlisted": false,
+    "reachability": "dead"
+  },
+  {
+    "handler_path": "omniintelligence/nodes/node_behavior_scenario_generator_compute/handlers/handler_scenario_generator.py",
+    "node_dir": "omniintelligence/nodes/node_behavior_scenario_generator_compute",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_behavior_scenario_generator_compute/contract.yaml",
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "compliant",
+    "allowlisted": false,
+    "reachability": "live"
+  },
+  {
+    "handler_path": "omniintelligence/nodes/node_ci_fingerprint_compute/handlers/handler_fingerprint.py",
+    "node_dir": "omniintelligence/nodes/node_ci_fingerprint_compute",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_ci_fingerprint_compute/contract.yaml",
+    "violations": [
+      "missing_handler_routing",
+      "logic_in_node"
+    ],
+    "violation_details": [
+      "handler not registered in contract handler_routing",
+      "node.py has custom methods: compute"
+    ],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": false,
+    "verdict": "allowlisted",
+    "allowlisted": true,
+    "reachability": "dead"
+  },
+  {
+    "handler_path": "omniintelligence/nodes/node_code_entity_bridge_compute/handlers/handler_bridge.py",
+    "node_dir": "omniintelligence/nodes/node_code_entity_bridge_compute",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_code_entity_bridge_compute/contract.yaml",
+    "violations": [
+      "logic_in_node"
+    ],
+    "violation_details": [
+      "node.py has custom methods: compute"
+    ],
+    "declared_topics": [
+      "onex.evt.omniintelligence.code-entities-extracted.v1",
+      "onex.evt.omniintelligence.code-entity-patterns-derived.v1"
+    ],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "hybrid",
+    "allowlisted": false,
+    "reachability": "live"
+  },
+  {
+    "handler_path": "omniintelligence/nodes/node_debug_fix_record_effect/handlers/handler_fix_record.py",
+    "node_dir": "omniintelligence/nodes/node_debug_fix_record_effect",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_debug_fix_record_effect/contract.yaml",
+    "violations": [
+      "missing_handler_routing"
+    ],
+    "violation_details": [
+      "handler not registered in contract handler_routing"
+    ],
+    "declared_topics": [
+      "onex.cmd.omniintelligence.ci-recovery-detected.v1",
+      "onex.evt.omniintelligence.debug-fix-record-created.v1"
+    ],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [
+      "KAFKA"
+    ],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": false,
+    "verdict": "allowlisted",
+    "allowlisted": true,
+    "reachability": "dead"
+  },
+  {
+    "handler_path": "omniintelligence/nodes/node_intent_graph_reducer/handlers/handler_intent_graph_update.py",
+    "node_dir": "omniintelligence/nodes/node_intent_graph_reducer",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_intent_graph_reducer/contract.yaml",
+    "violations": [
+      "missing_handler_routing"
+    ],
+    "violation_details": [
+      "handler not registered in contract handler_routing"
+    ],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": false,
+    "verdict": "hybrid",
+    "allowlisted": false,
+    "reachability": "dead"
+  },
+  {
+    "handler_path": "omniintelligence/nodes/node_tcb_generation_compute/handlers/handler_candidate_scorer.py",
+    "node_dir": "omniintelligence/nodes/node_tcb_generation_compute",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_tcb_generation_compute/contract.yaml",
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "compliant",
+    "allowlisted": false,
+    "reachability": "live"
+  },
+  {
+    "handler_path": "omniintelligence/nodes/node_tcb_generation_compute/handlers/handler_intent_normalizer.py",
+    "node_dir": "omniintelligence/nodes/node_tcb_generation_compute",
+    "repo": "omniintelligence",
+    "contract_path": "omniintelligence/nodes/node_tcb_generation_compute/contract.yaml",
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "compliant",
+    "allowlisted": false,
+    "reachability": "live"
+  }
+]
+
+=== Handler Contract Compliance: omniintelligence ===
+Total handlers: 8
+Compliant: 3
+Allowlisted: 2
+New violations: 3
+
+--- New violations (not allowlisted) ---
+
+  omniintelligence/nodes/node_anti_gaming_alerter_effect/handlers/protocols.py
+    Verdict: imperative
+    - handler not registered in contract handler_routing
+    - node.py has custom methods: execute, _serialize_alert
+
+  omniintelligence/nodes/node_code_entity_bridge_compute/handlers/handler_bridge.py
+    Verdict: hybrid
+    - node.py has custom methods: compute
+
+  omniintelligence/nodes/node_intent_graph_reducer/handlers/handler_intent_graph_update.py
+    Verdict: hybrid
+    - handler not registered in contract handler_routing

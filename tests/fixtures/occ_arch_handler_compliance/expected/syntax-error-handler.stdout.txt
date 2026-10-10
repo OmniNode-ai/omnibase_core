@@ -1,0 +1,12 @@
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 2
+Compliant: 1
+Allowlisted: 0
+New violations: 1
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_syntax_compute/handlers/handler_unrouted_syntax.py
+    Verdict: hybrid
+    - handler not registered in contract handler_routing

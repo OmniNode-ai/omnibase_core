@@ -1,0 +1,127 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# ONEX Node Contract — Code Entity Bridge Compute
+#
+# Bridges AST-extracted code_entities to learned_patterns that context
+# injection (context_injection_wrapper.py) can query and use.
+#
+# Input:  onex.evt.omniintelligence.code-entities-persisted.v1
+# Output: onex.evt.omniintelligence.code-entity-patterns-derived.v1
+#
+# Ticket: OMN-7863
+
+# =============================================================================
+# IDENTIFIERS
+# =============================================================================
+name: "node_code_entity_bridge_compute"
+version: "1.0.0"
+contract_version: {major: 1, minor: 0, patch: 0}
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "COMPUTE_GENERIC"
+status: "active"
+
+description: >-
+  Pure compute node that bridges AST-extracted code_entities to learned_patterns. Reads a batch of ModelCodeEntity
+  records, derives deterministic pattern signatures, computes SHA256 lineage hashes, extracts keywords,
+  and builds context-injection snippets. Emits ModelCodeEntityBridgeOutput containing ModelDerivedPattern
+  records ready for upsert into the learned_patterns table via node_pattern_storage_effect. Supports canary_id
+  tagging for A/B testing (OMN-7844). #magic___^_^___line
+# =============================================================================
+# I/O MODELS
+# =============================================================================
+input_model:
+  name: "ModelCodeEntityBridgeInput"
+  module: "omniintelligence.nodes.node_code_entity_bridge_compute.models"
+  description: >-
+    Batch of code entities from AST extraction plus derivation config (min_confidence, domain_id, project_scope,
+    canary_id). #magic___^_^___line
+output_model:
+  name: "ModelCodeEntityBridgeOutput"
+  module: "omniintelligence.nodes.node_code_entity_bridge_compute.models"
+  description: >-
+    Derived patterns with signatures, hashes, keywords, and compiled snippets, plus skip/error counters
+    and timing. #magic___^_^___line
+# =============================================================================
+# OPERATIONS
+# =============================================================================
+operations:
+  - name: "derive_patterns"
+    description: >-
+      Derive learned patterns from a batch of code entities. Filters unsupported entity types and low-confidence
+      entities, then builds deterministic signatures.
+    input_fields:
+      - entities
+      - source_repo
+      - correlation_id
+      - canary_id
+      - project_scope
+      - domain_id
+      - min_confidence
+    output_fields:
+      - derived_patterns
+      - skipped_count
+      - error_count
+      - duration_ms
+
+# =============================================================================
+# HANDLER ROUTING
+# =============================================================================
+handler_routing:
+  routing_strategy: "operation_match"
+  handlers:
+    - operation: "derive_patterns"
+      handler:
+        function: "handle_code_entity_bridge"
+        module: "omniintelligence.nodes.node_code_entity_bridge_compute.handlers.handler_bridge"
+        type: "sync"
+
+# =============================================================================
+# EVENT BUS
+# =============================================================================
+event_bus:
+  event_bus_enabled: true
+  subscribe_topics:
+    - "onex.evt.omniintelligence.code-entities-extracted.v1"
+  publish_topics:
+    - "onex.evt.omniintelligence.code-entity-patterns-derived.v1"
+
+# =============================================================================
+# DEPENDENCIES
+# =============================================================================
+dependencies: []
+
+# =============================================================================
+# ERROR HANDLING
+# =============================================================================
+error_handling:
+  error_types:
+    - name: "CodeEntityBridgeDerivationError"
+      error_code: "CEBRIDGE_001"
+      description: "Unexpected error deriving a pattern from a code entity"
+      recoverable: true
+      retry_strategy: "immediate_retry"
+
+# =============================================================================
+# METADATA
+# =============================================================================
+metadata:
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-04-10"
+  updated: "2026-04-10"
+  tags:
+    - "ONEX"
+    - "compute"
+    - "code-entity"
+    - "pattern-bridge"
+    - "intelligence-pipeline"
+  references:
+    - ticket: "OMN-7863"
+      url: "https://linear.app/omninode/issue/OMN-7863"
+      description: "Bridge code_entity → learned_pattern derivation"
+    - ticket: "OMN-7844"
+      description: "Canary pipeline — AST ingestion proof of concept"

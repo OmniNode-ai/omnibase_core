@@ -1,0 +1,6 @@
+"""A list-valued handler_type declares QDRANT."""
+
+
+class HandlerHandlerTypeList:
+    def handle(self, request):
+        return QdrantClient()

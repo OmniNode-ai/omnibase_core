@@ -1,0 +1,6 @@
+"""An EFFECT node with topics speaks KAFKA without declaring it."""
+
+
+class HandlerPublish:
+    def handle(self, request):
+        return AIOKafkaProducer()

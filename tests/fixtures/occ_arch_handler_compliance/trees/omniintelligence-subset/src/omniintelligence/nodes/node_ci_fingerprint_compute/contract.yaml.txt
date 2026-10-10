@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+name: "node_ci_fingerprint_compute"
+version: "1.0.0"
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: "COMPUTE_GENERIC"
+description: |
+  Pure compute node that extracts a stable fingerprint from CI failure output.
+  Uses last-2-path-component frame extraction to avoid basename collisions.
+  No I/O — pure function, no logging.
+
+input_model:
+  name: "ModelCiFingerprintInput"
+  module: "omniintelligence.nodes.node_ci_fingerprint_compute.models.model_input"
+  description: "Raw failure output and optional failing test names."
+
+output_model:
+  name: "ModelCiFingerprintOutput"
+  module: "omniintelligence.nodes.node_ci_fingerprint_compute.models.model_output"
+  description: "SHA-256 hex digest fingerprint."
+
+event_bus:
+
+dependencies: []

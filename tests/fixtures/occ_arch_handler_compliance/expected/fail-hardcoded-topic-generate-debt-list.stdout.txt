@@ -1,0 +1,7 @@
+allowlisted_handlers:
+- path: fixturepkg/nodes/node_topic_effect/handlers/handler_topic.py
+  violations:
+  - hardcoded_topic
+  - hardcoded_topic
+  - hardcoded_topic
+  ticket: '# migration pending'

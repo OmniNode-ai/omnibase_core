@@ -1,0 +1,11 @@
+name: node_topic_effect
+node_type: COMPUTE_GENERIC
+event_bus:
+  publish_topics:
+    - onex.evt.fixture.declared.v1
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_topic
+        module: fixturepkg.nodes.node_topic_effect.handlers.handler_topic
+      operation: run

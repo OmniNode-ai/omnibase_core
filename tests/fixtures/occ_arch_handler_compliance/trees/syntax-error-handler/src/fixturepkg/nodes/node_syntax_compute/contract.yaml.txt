@@ -1,0 +1,8 @@
+name: node_syntax_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_syntax
+        module: fixturepkg.nodes.node_syntax_compute.handlers.handler_syntax
+      operation: run

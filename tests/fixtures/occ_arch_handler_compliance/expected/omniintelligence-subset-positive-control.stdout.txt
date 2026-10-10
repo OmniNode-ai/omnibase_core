@@ -1,0 +1,13 @@
+
+=== Handler Contract Compliance: omniintelligence ===
+Total handlers: 9
+Compliant: 3
+Allowlisted: 5
+New violations: 1
+
+--- New violations (not allowlisted) ---
+
+  omniintelligence/nodes/node_planted_control_compute/handlers/handler_planted_control.py
+    Verdict: imperative
+    - hardcoded topic 'onex.evt.lab.positive-control.v1' not in contract
+    - undeclared transport DATABASE used in handler

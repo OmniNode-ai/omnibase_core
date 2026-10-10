@@ -1,0 +1,6 @@
+"""A COMPUTE node with topics does not infer KAFKA."""
+
+
+class HandlerComputeKafka:
+    def handle(self, request):
+        return KafkaConsumer()

@@ -1,0 +1,9 @@
+name: node_handler_type_list_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_handler_type_list
+        module: fixturepkg.nodes.node_handler_type_list_compute.handlers.handler_handler_type_list
+        handler_type: [qdrant]
+      operation: run

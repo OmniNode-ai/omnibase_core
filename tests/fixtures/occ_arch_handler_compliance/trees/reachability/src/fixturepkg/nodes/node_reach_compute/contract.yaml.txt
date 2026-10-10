@@ -1,0 +1,8 @@
+name: node_reach_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_reach
+        module: fixturepkg.nodes.node_reach_compute.handlers.handler_reach
+      operation: run

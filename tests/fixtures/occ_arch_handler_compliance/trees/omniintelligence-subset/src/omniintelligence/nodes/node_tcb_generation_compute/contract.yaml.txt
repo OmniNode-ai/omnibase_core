@@ -1,0 +1,109 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# ONEX Node Contract
+# Node: NodeTcbGenerationCompute
+#
+# Compute node for generating Ticket Context Bundles (TCBs) from raw ticket
+# intent. Normalizes intent text and scores candidate file paths.
+#
+# Reference: OMN-12167 - Add contract.yaml for omniintelligence nodes
+
+name: "node_tcb_generation_compute"
+version: "1.0.0"
+contract_version: {major: 1, minor: 0, patch: 0}
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: "COMPUTE_GENERIC"
+
+status: "active"
+
+description: >
+  Compute node for generating Ticket Context Bundles (TCBs). Normalizes raw ticket intent text into structured
+  tags (repos, modules, capability tags, risk tags) and scores candidate file paths for inclusion in the
+  TCB. Pure computation — no I/O, no side effects. #magic___^_^___line
+input_model:
+  name: "ModelTCBNormalizedIntent"
+  module: "omnibase_core.models.ticket.model_ticket_context_bundle"
+  description: "Normalized intent model used as input/output for TCB generation operations."
+
+output_model:
+  name: "ModelTCBNormalizedIntent"
+  module: "omnibase_core.models.ticket.model_ticket_context_bundle"
+  description: "Normalized intent with repos, modules, capability tags, and risk tags."
+
+operations:
+  - name: "normalize_intent"
+    description: "Normalize raw intent text into structured tags (repos, modules, capabilities, risks)"
+    input_fields:
+      - raw_intent
+      - repo_manifest
+    output_fields:
+      - repos
+      - modules
+      - capability_tags
+      - risk_tags
+  - name: "score_candidate"
+    description: "Score a candidate file path for TCB inclusion using weighted heuristics"
+    input_fields:
+      - candidate_path
+      - intent_modules
+      - intent_repos
+      - days_since_last_commit
+      - commit_frequency_30d
+    output_fields:
+      - score
+
+handler_routing:
+  routing_strategy: "operation_match"
+  handlers:
+    - operation: "normalize_intent"
+      handler:
+        function: "normalize_intent"
+        module: "omniintelligence.nodes.node_tcb_generation_compute.handlers.handler_intent_normalizer"
+        type: "sync"
+      description: "Normalize raw intent text into structured TCB tags"
+    - operation: "score_candidate"
+      handler:
+        function: "score_candidate"
+        module: "omniintelligence.nodes.node_tcb_generation_compute.handlers.handler_candidate_scorer"
+        type: "sync"
+      description: "Score a candidate path using path proximity, repo proximity, recency, and volatility"
+
+dependencies: []
+
+error_handling:
+  error_types:
+    - name: "TCBNormalizationError"
+      error_code: "TCB_001"
+      description: "Failed to normalize intent text"
+      recoverable: false
+      retry_strategy: "none"
+    - name: "TCBScoringError"
+      error_code: "TCB_002"
+      description: "Failed to score candidate path"
+      recoverable: false
+      retry_strategy: "none"
+
+health_check:
+  enabled: true
+  endpoint: "/health"
+  interval_seconds: 30
+
+metadata:
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-05-25"
+  updated: "2026-05-25"
+  tags:
+    - compute
+    - tcb
+    - intent
+    - scoring
+  references:
+    - ticket: "OMN-12167"
+      url: "https://linear.app/omninode/issue/OMN-12167"
+      description: "Add contract.yaml for 4 omniintelligence nodes"

@@ -1,0 +1,10 @@
+name: node_list_transport_effect
+node_type: EFFECT_GENERIC
+metadata:
+  transport_type: [http, ' kafka ']
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_list_transport
+        module: fixturepkg.nodes.node_list_transport_effect.handlers.handler_list_transport
+      operation: run

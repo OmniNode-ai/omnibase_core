@@ -1,0 +1,470 @@
+---
+allowlisted_handlers:
+  - path: omniintelligence/nodes/node_agent_behavior_eval_compute/handlers/handler_agent_behavior_evaluation.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_anti_gaming_guardrails_compute/handlers/handler_guardrails.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_bloom_eval_orchestrator/handlers/handler_bloom_eval_effect.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_ci_error_classifier_compute/handlers/handler_classifier.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_ci_failure_tracker_effect/handlers/handler_streak.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_ci_failure_tracker_effect/handlers/handler_trigger_record.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_ci_fingerprint_compute/handlers/handler_fingerprint.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_compliance_evaluate_effect/handlers/handler_compliance_evaluate.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_contract_eval_compute/handlers/validators.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_crawl_scheduler_effect/handlers/debounce_state.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_debug_fix_record_effect/handlers/handler_fix_record.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_debug_retrieval_compute/handlers/handler_retrieval.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_document_fetch_effect/handlers/protocol_blob_store.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_evidence_collection_effect/handlers/handler_evidence_collection.py
+    violations:
+      - hardcoded_topic
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_execution_trace_parser_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_execution_trace_parser_compute/handlers/handler_compute.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_execution_trace_parser_compute/handlers/handler_event_extraction.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_execution_trace_parser_compute/handlers/handler_trace_parsing.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_execution_trace_parser_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_git_repo_crawler_effect/handlers/protocol_crawl_state.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_gmail_intent_evaluator_effect/handlers/handler_gmail_intent_evaluate.py
+    violations:
+      - hardcoded_topic
+      - hardcoded_topic
+      - undeclared_transport
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intelligence_reducer/handlers/handler_pattern_lifecycle.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intelligence_reducer/handlers/handler_process.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intent_classifier_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intent_classifier_compute/handlers/handler_adaptive_classification.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intent_classifier_compute/handlers/handler_intent_classification.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intent_classifier_compute/handlers/handler_langextract.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intent_classifier_compute/handlers/handler_typed_classification.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intent_cost_forecast_compute/handlers/handler_cost_forecast.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_intent_drift_detect_compute/handlers/handler_drift_detect.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_linear_crawler_effect/handlers/protocol_linear_state.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_memory_eval_compute/handlers/handler_memory_evaluation.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_assembler_orchestrator/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_assembler_orchestrator/handlers/handler_orchestrate.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_assembler_orchestrator/handlers/handler_pattern_assembly.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_assembler_orchestrator/handlers/handler_workflow_coordination.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_assembler_orchestrator/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_compliance_effect/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_compliance_effect/handlers/handler_compliance.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_compliance_effect/handlers/handler_compute.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_compliance_effect/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_architecture_patterns.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_converters.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_core_models.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_error_patterns.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_extract_all_patterns.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_file_patterns.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_identity.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_merge.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_tool_failure_patterns.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/handler_tool_patterns.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_extraction_compute/handlers/utils.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_feedback_effect/handlers/handler_attribution_binder.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_feedback_effect/handlers/heuristics.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/handler_confidence_scoring.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/handler_deduplication.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/handler_feature_extraction.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/handler_pattern_clustering.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/handler_pattern_learning.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/presets.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/replay.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/union_find.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_learning_compute/handlers/utils.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_matching_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_matching_compute/handlers/handler_compute.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_matching_compute/handlers/handler_pattern_matching.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_matching_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_promotion_effect/handlers/handler_auto_promote.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_promotion_effect/handlers/handler_metrics.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_storage_effect/handlers/handler_pattern_storage.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_storage_effect/handlers/model_state_transition.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_pattern_storage_effect/handlers/protocol_pattern_state_manager.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_plan_reviewer_multi_compute/handlers/handler_confidence_scorer.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_plan_reviewer_multi_compute/handlers/handler_plan_reviewer_multi_compute.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_plan_reviewer_multi_compute/handlers/strategies/handler_independent_merge.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_plan_reviewer_multi_compute/handlers/strategies/handler_panel_vote.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_plan_reviewer_multi_compute/handlers/strategies/handler_sequential_critique.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_plan_reviewer_multi_compute/handlers/strategies/handler_specialist_split.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_policy_state_reducer/handlers/handler_lifecycle.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_policy_state_reducer/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_quality_scoring_compute/handlers/enum_onex_strictness_level.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_quality_scoring_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_quality_scoring_compute/handlers/handler_compute.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_quality_scoring_compute/handlers/handler_quality_scoring.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_quality_scoring_compute/handlers/presets.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_quality_scoring_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_scoring_reducer_compute/handlers/handler_scoring.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_semantic_analysis_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_semantic_analysis_compute/handlers/handler_compute_semantic_analysis.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_semantic_analysis_compute/handlers/handler_semantic_analysis.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_semantic_analysis_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_success_criteria_matcher_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_success_criteria_matcher_compute/handlers/handler_compute.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_success_criteria_matcher_compute/handlers/handler_criteria_matching.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_success_criteria_matcher_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omniintelligence/nodes/node_watchdog_effect/handlers/observer_factory.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'

@@ -1,0 +1,21 @@
+
+=== Handler Contract Compliance: omniintelligence ===
+Total handlers: 8
+Compliant: 3
+Allowlisted: 2
+New violations: 3
+
+--- New violations (not allowlisted) ---
+
+  omniintelligence/nodes/node_anti_gaming_alerter_effect/handlers/protocols.py
+    Verdict: imperative
+    - handler not registered in contract handler_routing
+    - node.py has custom methods: execute, _serialize_alert
+
+  omniintelligence/nodes/node_code_entity_bridge_compute/handlers/handler_bridge.py
+    Verdict: hybrid
+    - node.py has custom methods: compute
+
+  omniintelligence/nodes/node_intent_graph_reducer/handlers/handler_intent_graph_update.py
+    Verdict: hybrid
+    - handler not registered in contract handler_routing

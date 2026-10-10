@@ -1,0 +1,10 @@
+"""Docstring mentions onex.evt.fixture.in-docstring.v1 and is not flagged."""
+
+DECLARED = "onex.evt.fixture.declared.v1"
+UNDECLARED = "onex.evt.fixture.undeclared.v1"
+BARE = "agent-actions"
+
+
+class HandlerTopic:
+    def handle(self, request):
+        return DECLARED, UNDECLARED, BARE

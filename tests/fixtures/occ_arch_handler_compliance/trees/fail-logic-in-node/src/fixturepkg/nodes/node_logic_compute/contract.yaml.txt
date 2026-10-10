@@ -1,0 +1,8 @@
+name: node_logic_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_logic
+        module: fixturepkg.nodes.node_logic_compute.handlers.handler_logic
+      operation: run

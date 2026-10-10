@@ -1,0 +1,8 @@
+"""A list-valued transport_type declares both transports."""
+import httpx
+
+
+class HandlerListTransport:
+    def handle(self, request):
+        httpx.post("http://example.invalid")
+        return KafkaProducer()

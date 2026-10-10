@@ -1,0 +1,6 @@
+"""Clean handler."""
+
+
+class HandlerClean:
+    def handle(self, request):
+        return request
