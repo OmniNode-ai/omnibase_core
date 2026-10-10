@@ -194,6 +194,28 @@ requirements:
           handler is pure over explicit node sources and reads nothing from the filesystem -- falsifier:
           uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py -q -p no:randomly
           -k "invoked_as_module or missing_repo_root or reads_nothing or models" fails at the merge base'
+  - id: req-omn20074-flag-hook-handler
+    statement: The no-bare-feature-flags decisions of the pinned onex_change_control hook must be reproduced
+      by an omnibase_core handler, so the hook leaves the onex_change_control repository without a change
+      in what any fleet file is flagged for.
+    acceptance:
+      - id: AC20
+        statement: 'AC20: HandlerNoBareFeatureFlags reproduces the check-bare-feature-flags decisions
+          of onex_change_control rev 8d7e85bc00e7 on verbatim omnibase_infra and omniclaude files, flagging
+          os.getenv, os.environ.get, os.environ[] and process.env reads of ENABLE_* and *_ENABLED names
+          and skipping comment lines, reasoned ONEX_FLAG_EXEMPT lines, the four approved basenames, the
+          four approved path segments and unreadable paths, with the hook''s output lines and exit code
+          byte for byte and a positive control it must flag -- falsifier: uv run pytest tests/unit/handlers/test_handler_no_bare_feature_flags.py
+          -q -p no:randomly fails at the merge base'
+  - id: req-omn20074-flag-hook-export
+    statement: omnibase_core must export the handler as pre-commit hook id no-bare-feature-flags, so a
+      consumer changes only repo and rev.
+    acceptance:
+      - id: AC21
+        statement: 'AC21: .pre-commit-hooks.yaml exports id no-bare-feature-flags running the handler
+          module with types python, ts and javascript, the types the onex_change_control hook declared
+          -- falsifier: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
+          -k bare_feature_flag fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -279,6 +301,15 @@ evidence_requirements:
       explicit sources without reading the filesystem.
     command: uv run pytest tests/unit/handlers/test_handler_arch_handler_contract_compliance.py -q -p
       no:randomly -k "invoked_as_module or missing_repo_root or reads_nothing or models"
+  - kind: tests
+    description: Replay verbatim omnibase_infra and omniclaude files against the decisions of the pinned
+      onex_change_control bare-feature-flag hook, with a positive control, every skip class and the byte-exact
+      output and exit code.
+    command: uv run pytest tests/unit/handlers/test_handler_no_bare_feature_flags.py -q -p no:randomly
+  - kind: tests
+    description: The exported hook declaration runs the handler under the same hook id with the types
+      the onex_change_control hook declared.
+    command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k bare_feature_flag
 emergency_bypass:
   enabled: false
   justification: ''
@@ -481,3 +512,23 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC19
+  - id: dod-omn-20074-ac20
+    description: The handler tests prove the pinned hook's no-bare-feature-flags decisions on verbatim
+      fleet files, a positive control and every skip class.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_no_bare_feature_flags.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC20
+  - id: dod-omn-20074-ac21
+    description: The hook declaration test proves the export under the same id with the unchanged types.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k
+          bare_feature_flag
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC21
