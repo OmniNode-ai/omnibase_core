@@ -141,12 +141,33 @@ requirements:
           naming the item id and the DOD_EVIDENCE_BINDS_AC_CHECK_TYPE rule, and still admits command_exit_0
           on an item without binds_ac -- falsifier: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py
           -q -k TestBindsAcCheckTypeRule fails at the merge base'
+  - id: req-omn20074-cosmetic-hook-handler
+    statement: The cosmetic-lint decisions of the pinned onex_change_control hook must be reproduced by
+      an omnibase_core handler over the spec carried byte for byte, so the hook leaves the onex_change_control
+      repository without a change in what any fleet repository is reported for.
+    acceptance:
+      - id: AC15
+        statement: 'AC15: HandlerCosmeticLint reproduces the `cosmetic-lint check` output lines and exit
+          status of onex_change_control rev 8d7e85bc00e7 for each of its five check classes (spdx, pyproject,
+          precommit, readme, github) on trees built from verbatim omnibase_spi files and from constructed
+          files, with a pass case, a fail case and an all-classes positive control, and the packaged spec
+          has the sha256 of the pinned spec.yaml -- falsifier: uv run pytest tests/unit/handlers/test_handler_cosmetic_lint.py
+          -q -p no:randomly fails at the merge base'
+  - id: req-omn20074-cosmetic-hook-export
+    statement: omnibase_core must export the handler as pre-commit hook id cosmetic-lint with the keys
+      of the onex_change_control export, so a consumer changes only repo and rev.
+    acceptance:
+      - id: AC16
+        statement: 'AC16: .pre-commit-hooks.yaml exports id cosmetic-lint running the handler module with
+          types file, pass_filenames false, always_run true and stage pre-commit, and no hook of that
+          id sits in this repository''s onex_change_control block -- falsifier: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py
+          -q -p no:randomly -k cosmetic fails at the merge base'
   - id: req-omn20074-codeql-reusable-home
     statement: omnibase_core must own the CodeQL reusable workflow so fleet security-scan callers can
       repoint to it and keep the required context CodeQL / CodeQL Analysis (python) without onex_change_control.
     acceptance:
-      - id: AC15
-        statement: 'AC15: .github/workflows/codeql-reusable.yml in omnibase_core is a workflow_call-only
+      - id: AC17
+        statement: 'AC17: .github/workflows/codeql-reusable.yml in omnibase_core is a workflow_call-only
           move of the previous reusable with the same language and query_suite inputs, the same analyze
           job name "CodeQL Analysis (${{ inputs.language }})" and the same permissions, so the caller
           context resolves to "CodeQL / CodeQL Analysis (python)", pins every action by full sha and references
@@ -214,6 +235,14 @@ evidence_requirements:
       binds_ac are unaffected.
     command: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py -q -k
       TestBindsAcCheckTypeRule
+    description: Replay trees of verbatim omnibase_spi files and constructed files against the recorded
+      output of the pinned onex_change_control cosmetic-lint, one pass, one fail and one positive control
+      per check class, and the spec hash.
+    command: uv run pytest tests/unit/handlers/test_handler_cosmetic_lint.py -q -p no:randomly
+  - kind: tests
+    description: The exported hook declaration runs the cosmetic handler under the same hook id with the
+      keys of the onex_change_control export.
+    command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k cosmetic
   - kind: tests
     description: The workflow tests prove the CodeQL reusable's inputs, job name, permissions, composed
       context, sha-pinned actions and the absence of any onex_change_control reference.
@@ -369,6 +398,26 @@ dod_evidence:
     binds_ac:
       - AC14
   - id: dod-omn-20074-ac15
+    description: The handler tests replay the pinned cosmetic-lint decisions on verbatim spi files and
+      constructed trees, with a positive control per check class and the spec hash.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_cosmetic_lint.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC15
+  - id: dod-omn-20074-ac16
+    description: The hook declaration tests prove the cosmetic-lint export under the same id and keys.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k
+          cosmetic
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC16
+  - id: dod-omn-20074-ac17
     description: The workflow tests prove the CodeQL reusable's inputs, job name, permissions, composed
       required context, sha-pinned actions and the absence of any onex_change_control reference.
     source: manual
@@ -377,4 +426,4 @@ dod_evidence:
         check_value: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
-      - AC15
+      - AC17

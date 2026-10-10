@@ -16,12 +16,78 @@ import pytest
 
 from omnibase_core.handlers.handler_done_write_receipt_gate import (
     ac_binding_gap,
+    acceptance_criteria_items,
+    canonical_ac_label,
     evaluate_done_write_receipt,
     extract_dod_verify_verdict,
     verdict_is_all_verified,
 )
 
 pytestmark = pytest.mark.unit
+
+
+@pytest.fixture
+def two_section_description() -> str:
+    """Two criteria sections with intervening prose, as read for OMN-18271."""
+    return (
+        "Acceptance criteria:\n\n"
+        "* AC1: Postgres data is on a persistent volume.\n"
+        "* AC2: A pod replacement preserves the database.\n"
+        "* AC3: The lab-pass receipt checks applied migrations.\n"
+        "* AC4: Review the other stateful services.\n\n"
+        "Related: storage and credential persistence.\n\n"
+        "---\n\n"
+        "## Extended requirements\n\n"
+        "### The credential half\n\n"
+        "The renderer must agree with the surviving database.\n\n"
+        "### One of two designs\n\n"
+        "* Persist the credential.\n"
+        "* Rotate in the same apply.\n\n"
+        "### Added acceptance criteria\n\n"
+        "* **AC5:** The renderer is volume-aware.\n"
+        "* **AC6:** Every client authenticates after re-apply and replacement.\n\n"
+        "### Honest limit\n\n"
+        "* A corrupted database can survive a re-apply.\n"
+    )
+
+
+def test_reader_reads_all_six_criteria_across_sections(
+    two_section_description: str,
+) -> None:
+    items = acceptance_criteria_items(two_section_description)
+    assert [canonical_ac_label(item) for item in items] == [
+        "AC1",
+        "AC2",
+        "AC3",
+        "AC4",
+        "AC5",
+        "AC6",
+    ]
+
+
+def test_receipt_binding_all_six_criteria_allows(
+    two_section_description: str,
+) -> None:
+    verdict = _verdict([_check(f"t{i}", "verified", [f"AC{i}"]) for i in range(1, 7)])
+    decision = evaluate_done_write_receipt(
+        ticket_id="OMN-1", description=two_section_description, verdict=verdict
+    )
+    assert decision.allowed
+    assert len(decision.rows) == 6
+    assert all(row.bound for row in decision.rows)
+
+
+def test_receipt_binding_first_section_only_refuses_second_section(
+    two_section_description: str,
+) -> None:
+    verdict = _verdict([_check(f"t{i}", "verified", [f"AC{i}"]) for i in range(1, 5)])
+    decision = evaluate_done_write_receipt(
+        ticket_id="OMN-1", description=two_section_description, verdict=verdict
+    )
+    assert not decision.allowed
+    assert "AC5" in decision.reason
+    assert "AC6" in decision.reason
+
 
 _DESCRIPTION = (
     "## Acceptance Criteria\n"

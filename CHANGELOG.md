@@ -1,3 +1,14 @@
+## v0.47.39 (2026-10-10)
+
+### Release
+- Cut omnibase-core from dev at 0.47.39 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.38.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.38
+- feat: add binds_ac label and check type validators (#1935)
+- feat: move the no-hardcoded-topics hook from onex_change_control into omnibase_core (#1933)
+
 ## v0.47.38 (2026-10-10)
 
 ### Release
