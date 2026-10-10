@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Canonical Cosmetic Spec for OmniNode Platform
+spdx:
+  copyright_text: "2025 OmniNode.ai Inc."
+  license_identifier: "MIT"
+  file_patterns: ["*.py"]
+  exclude_patterns: ["**/migrations/**", "**/node_modules/**", "**/.venv/**"]
+  # Also strip legacy duplicate: # Copyright (c) 2025 OmniNode Team
+
+pyproject:
+  author:
+    name: "OmniNode.ai"
+    email: "jonah@omninode.ai"
+  license_format: "table"  # {text = "MIT"} not bare string "MIT"
+  license_text: "MIT"
+  requires_python: ">=3.12"
+  url_keys:
+    required: ["Homepage", "Repository"]
+    optional: ["Documentation", "Issues", "Changelog"]
+  classifiers:
+    required:
+      - "Development Status :: 4 - Beta"
+      - "License :: OSI Approved :: MIT License"
+      - "Programming Language :: Python :: 3.12"
+      - "Typing :: Typed"
+  ruff:
+    required: true
+    target_version: "py312"
+
+precommit:
+  versions:
+    "https://github.com/astral-sh/ruff-pre-commit": "v0.15.6"
+    "https://github.com/google/yamlfmt": "v0.21.0"
+    "https://github.com/pre-commit/pre-commit-hooks": "v6.0.0"
+
+readme:
+  required_badges:
+    - pattern: "MIT"
+      description: "License badge"
+    - pattern: "ruff"
+      description: "Ruff linter badge"
+    - pattern: "mypy"
+      description: "Mypy type checker badge"
+    - pattern: "pre-commit"
+      description: "Pre-commit badge"
+
+github:
+  required_templates: ["PULL_REQUEST_TEMPLATE.md"]
+  workflow_extension: ".yml"

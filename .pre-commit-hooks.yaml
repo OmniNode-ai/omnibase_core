@@ -45,6 +45,18 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: cosmetic-lint
+  name: Cosmetic lint (OmniNode standards)
+  description: >
+    Cross-repo cosmetic linter enforcing OmniNode platform standards. Ported from onex_change_control
+    (OMN-20074, S8) under the same hook id, so a consumer changes only repo: and rev:.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_cosmetic_lint check
+  types: [file]
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]
+
 - id: check-local-paths
   name: Check for local path references
   description: >
