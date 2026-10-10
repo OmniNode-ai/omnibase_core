@@ -854,7 +854,6 @@ model_b_rollup_enforcement:
       # A required validator's covering job must NOT appear here (it would be
       # swept out of the gate); the verifier flags that as a coverage gap.
       poller_soft_allowlist:
-        - "Version Pin Compliance"  # version-pin-check: continue-on-error advisory
         - "Contract Compliance"  # compliance: orphan job, not gated, not required
       validator_jobs:
         ruff-format-check: ["lint"]

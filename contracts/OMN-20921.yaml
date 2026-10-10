@@ -1,0 +1,80 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20921
+title: omnibase_core's advisory Version Pin Compliance job stops reading onex_change_control's stale version
+  matrix
+summary: The version-pin-check job in ci.yml was advisory, was not a need of CI Summary, was not a required
+  context, and read an onex_change_control version matrix whose omnibase-core row is fourteen minor versions
+  stale. The job and its app-token mint are deleted, together with the CI Summary poller allowlist entries
+  that named it.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20921
+    statement: omnibase_core's ci.yml must not check out onex_change_control for version pins, and nothing
+      in the repository's workflow configuration may depend on the retired Version Pin Compliance job.
+    acceptance:
+      - id: AC1
+        statement: "AC1: omnibase_core .github/workflows/ci.yml on the PR head checks out no onex_change_control
+          repository for version pins and has no version-pin-check job. -- falsifier: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py
+          -q -p no:randomly -k \"runs_no_version_pin_script or version_pin_check_job_is_gone\""
+      - id: AC2
+        statement: "AC2: no job, required-checks entry or CI Summary allowlist depended on Version Pin
+          Compliance, and no file under .github names it. -- falsifier: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py
+          -q -p no:randomly -k \"nothing_in_github or required_checks_manifest or poller_no_longer\""
+      - id: AC3
+        statement: "AC3: every needs entry in ci.yml on the PR head resolves to a job, the checker is
+          not vacuous, and the CI Summary and workflow-shape suites pass with the job removed. -- falsifier:
+          uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py tests/unit/scripts/ci/test_ci_summary_gate.py
+          tests/unit/validation/test_ci_workflow_shape.py -q -p no:randomly"
+evidence_requirements:
+  - kind: tests
+    description: "ci.yml carries no version-pin-check job and no check_version_pins reference."
+    command: "uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly -k \"runs_no_version_pin_script
+      or version_pin_check_job_is_gone\""
+  - kind: tests
+    description: "nothing under .github, the required-checks manifest or the CI Summary allowlists names
+      the retired job."
+    command: "uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly -k \"nothing_in_github
+      or required_checks_manifest or poller_no_longer\""
+  - kind: tests
+    description: "every needs entry in ci.yml resolves to a job, with a positive control."
+    command: "uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly -k needs"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20921-ac1
+    description: ci.yml carries no version-pin-check job and no check_version_pins reference.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly
+          -k "runs_no_version_pin_script or version_pin_check_job_is_gone"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20921-ac2
+    description: Nothing under .github, the required-checks manifest or the CI Summary allowlists names
+      the retired job.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly
+          -k "nothing_in_github or required_checks_manifest or poller_no_longer"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-20921-ac3
+    description: Every needs entry in ci.yml resolves to a job, with a positive control, and the CI Summary
+      and workflow-shape suites pass with the job removed.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py tests/unit/scripts/ci/test_ci_summary_gate.py
+          tests/unit/validation/test_ci_workflow_shape.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
