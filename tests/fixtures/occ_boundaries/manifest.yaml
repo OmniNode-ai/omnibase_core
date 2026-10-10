@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+#
+# Hashes of the onex_change_control boundary data the packaged copies carry
+# (OMN-20074), taken over parsed content: sha256 of the JSON dump with sorted
+# keys. The packaged copies add the SPDX header and write the six topic_name
+# values of kafka_boundaries.yaml unquoted, the form of
+# contracts/topic_registry.yaml; their parsed data is the source's.
+source_repo: onex_change_control
+source_rev: a89a6f30fa
+kafka_boundaries_parsed_sha256: db2e9d19e20eac0ef2f17de2167f6923e958a3d9d168860ac598705637cb61aa
+migration_inventory_parsed_sha256: 0bd4be2d6b2d653c6d0a599b7aeb5498ea62c14f9848b90f783d98e299ab3141
