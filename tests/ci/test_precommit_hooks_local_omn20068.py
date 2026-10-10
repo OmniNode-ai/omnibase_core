@@ -104,7 +104,12 @@ def test_no_hardcoded_topics_runs_the_in_repo_handler_with_the_unchanged_exclude
 
 def test_no_hook_in_the_onex_change_control_block_is_one_this_repo_owns() -> None:
     """Catch repository-owned hooks returning to the OCC repository block."""
-    owned_ids = {"no-untracked-todos", "no-untyped-metadata", "no-hardcoded-topics"}
+    owned_ids = {
+        "no-untracked-todos",
+        "no-untyped-metadata",
+        "no-hardcoded-topics",
+        "no-bare-feature-flags",
+    }
     for repo in _repos():
         repo_name = repo["repo"]
         assert isinstance(repo_name, str)
@@ -188,3 +193,17 @@ def test_the_cosmetic_hook_is_not_in_the_onex_change_control_block() -> None:
             continue
         for hook in _mappings(repo.get("hooks", [])):
             assert hook.get("id") != "cosmetic-lint"
+def test_the_in_repo_bare_feature_flag_hook_is_exported_under_the_same_id() -> None:
+    """Catch removal or drift of the hook consumers switch to by repo: and rev: only."""
+    hooks = _mappings(yaml.safe_load(EXPORTED_HOOKS.read_text(encoding="utf-8")))
+    exported = [hook for hook in hooks if hook.get("id") == "no-bare-feature-flags"]
+    assert len(exported) == 1
+    hook = exported[0]
+    assert (
+        hook.get("entry")
+        == "python -m omnibase_core.handlers.handler_no_bare_feature_flags"
+    )
+    assert hook.get("language") == "python"
+    assert hook.get("types_or") == ["python", "ts", "javascript"]
+    assert hook.get("require_serial") is True
+    assert hook.get("stages") == ["pre-commit"]

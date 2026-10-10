@@ -1,0 +1,341 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Cases replayed against the decisions of onex_change_control rev 8d7e85bc00e7
+# check-bare-feature-flags. Every expected_rc and expected_stdout is the output of that pinned script,
+# run on the materialised files (as_path relative to the working directory, as pre-commit passes
+# them), never of the code under test. `base` names a verbatim fleet file (source_rev below) and
+# `append` the lines added after it; a file without `base` is only its appended lines. The only
+# real flag read in either repository is the exempted line of the protocol_domain_plugin base: both
+# repositories pass the hook, so the lines that must be flagged are appended to real files.
+# Lines copied from the fleet: process.env.OMNIWEB_DB_URL (omnibase_infra
+# tests/unit/scripts/fixtures/fake-source/db.ts line 1).
+bases:
+  infra-model-lane-projection-readback-py.txt:
+    repo: omnibase_infra
+    source_rev: 77e3d5a849f7a37dbd3b0463fe1bb9d5022d083d
+    source_path: src/omnibase_infra/nodes/node_chain_canary_effect/model_lane_projection_readback.py
+  omniclaude-onex-state-py.txt:
+    repo: omniclaude
+    source_rev: b06de5dec077049f79ab7e89c8caf84a1ee85d2c
+    source_path: src/omniclaude/hooks/lib/onex_state.py
+  infra-protocol-domain-plugin-py.txt:
+    repo: omnibase_infra
+    source_rev: 77e3d5a849f7a37dbd3b0463fe1bb9d5022d083d
+    source_path: src/omnibase_infra/runtime/protocol_domain_plugin.py
+cases:
+  - id: pass-clean-py
+    class: pass
+    files:
+      - as_path: src/omnibase_infra/nodes/node_chain_canary_effect/model_lane_projection_readback.py
+        base: infra-model-lane-projection-readback-py.txt
+        append: []
+    args:
+      - src/omnibase_infra/nodes/node_chain_canary_effect/model_lane_projection_readback.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: pass-near-miss-py
+    class: pass
+    files:
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - url = os.getenv("DATABASE_URL")
+          - modes = os.environ.get("ENABLED_MODES")
+          - off = os.getenv("DISABLED")
+          - bare = os.getenv("ENABLE")
+          - lower = os.getenv("enable_foo")
+          - unquoted = os.getenv(ENABLE_FOO)
+    args:
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: pass-ts-process-env
+    class: pass
+    files:
+      - as_path: tests/unit/scripts/fixtures/fake-source/db.ts
+        append:
+          - const pool = createPool(process.env.OMNIWEB_DB_URL);
+    args:
+      - tests/unit/scripts/fixtures/fake-source/db.ts
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: positive-control-py
+    class: positive-control
+    files:
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag_a = os.getenv("ENABLE_REAL_TIME_EVENTS")
+          - flag_b = os.environ.get("ENABLE_PATTERN_ENFORCEMENT")
+          - flag_c = os.environ["ENABLE_FOO"]
+          - flag_d = os.getenv("KAFKA_ENABLED")
+    args:
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 1
+    expected_stdout_lines:
+      - 'src/omniclaude/hooks/lib/onex_state.py:67: bare feature flag env var "ENABLE_REAL_TIME_EVENTS"
+        -- declare in contract.yaml feature_flags: block and resolve via flag system'
+      - 'src/omniclaude/hooks/lib/onex_state.py:68: bare feature flag env var "ENABLE_PATTERN_ENFORCEMENT"
+        -- declare in contract.yaml feature_flags: block and resolve via flag system'
+      - 'src/omniclaude/hooks/lib/onex_state.py:69: bare feature flag env var "ENABLE_FOO" -- declare
+        in contract.yaml feature_flags: block and resolve via flag system'
+      - 'src/omniclaude/hooks/lib/onex_state.py:70: bare feature flag env var "KAFKA_ENABLED" -- declare
+        in contract.yaml feature_flags: block and resolve via flag system'
+      - ''
+      - '4 violation(s). Declare flags in contract.yaml feature_flags: block and resolve via the flag
+        system.'
+  - id: fail-ts
+    class: fail
+    files:
+      - as_path: plugins/onex/hooks/example_hook.ts
+        append:
+          - const a = process.env.ENABLE_KAFKA;
+          - const b = process.env.FEATURE_ENABLED;
+    args:
+      - plugins/onex/hooks/example_hook.ts
+    expected_rc: 1
+    expected_stdout_lines:
+      - 'plugins/onex/hooks/example_hook.ts:1: bare feature flag env var "ENABLE_KAFKA" -- declare in
+        contract.yaml feature_flags: block and resolve via flag system'
+      - 'plugins/onex/hooks/example_hook.ts:2: bare feature flag env var "FEATURE_ENABLED" -- declare
+        in contract.yaml feature_flags: block and resolve via flag system'
+      - ''
+      - '2 violation(s). Declare flags in contract.yaml feature_flags: block and resolve via the flag
+        system.'
+  - id: fail-comment-lookalikes
+    class: fail
+    files:
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - 'x = 1  # os.getenv("ENABLE_FOO")'
+          - ' * os.getenv("ENABLE_FOO")'
+          - '"""os.getenv("ENABLE_FOO")"""'
+    args:
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 1
+    expected_stdout_lines:
+      - 'src/omniclaude/hooks/lib/onex_state.py:67: bare feature flag env var "ENABLE_FOO" -- declare
+        in contract.yaml feature_flags: block and resolve via flag system'
+      - 'src/omniclaude/hooks/lib/onex_state.py:68: bare feature flag env var "ENABLE_FOO" -- declare
+        in contract.yaml feature_flags: block and resolve via flag system'
+      - 'src/omniclaude/hooks/lib/onex_state.py:69: bare feature flag env var "ENABLE_FOO" -- declare
+        in contract.yaml feature_flags: block and resolve via flag system'
+      - ''
+      - '3 violation(s). Declare flags in contract.yaml feature_flags: block and resolve via the flag
+        system.'
+  - id: fail-relative-tests-root
+    class: fail
+    files:
+      - as_path: tests/unit/scripts/fixtures/fake-source/db.ts
+        append:
+          - const flag = process.env.ENABLE_KAFKA;
+    args:
+      - tests/unit/scripts/fixtures/fake-source/db.ts
+    expected_rc: 1
+    expected_stdout_lines:
+      - 'tests/unit/scripts/fixtures/fake-source/db.ts:1: bare feature flag env var "ENABLE_KAFKA" --
+        declare in contract.yaml feature_flags: block and resolve via flag system'
+      - ''
+      - '1 violation(s). Declare flags in contract.yaml feature_flags: block and resolve via the flag
+        system.'
+  - id: skip-comment-line
+    class: skip
+    files:
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - '# flag = os.getenv("ENABLE_FOO")'
+          - '    # flag = os.environ.get("BAR_ENABLED")'
+          - // const flag = process.env.ENABLE_FOO;
+    args:
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-exemption-with-reason-real
+    class: skip
+    files:
+      - as_path: src/omnibase_infra/runtime/protocol_domain_plugin.py
+        base: infra-protocol-domain-plugin-py.txt
+        append: []
+    args:
+      - src/omnibase_infra/runtime/protocol_domain_plugin.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-exemption-with-reason-ts
+    class: skip
+    files:
+      - as_path: plugins/onex/hooks/example_hook.ts
+        append:
+          - 'const a = process.env.ENABLE_FOO; // ONEX_FLAG_EXEMPT: legacy'
+    args:
+      - plugins/onex/hooks/example_hook.ts
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: fail-exemption-without-reason
+    class: fail
+    files:
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - 'a = os.getenv("ENABLE_FOO")  # ONEX_FLAG_EXEMPT:'
+          - 'b = os.getenv("ENABLE_FOO")  # ONEX_FLAG_EXEMPT:   '
+          - 'c = process.env.ENABLE_FOO; // ONEX_FLAG_EXEMPT:'
+    args:
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 1
+    expected_stdout_lines:
+      - 'src/omniclaude/hooks/lib/onex_state.py:67: ONEX_FLAG_EXEMPT without reason token -- add a reason
+        after the colon'
+      - 'src/omniclaude/hooks/lib/onex_state.py:68: ONEX_FLAG_EXEMPT without reason token -- add a reason
+        after the colon'
+      - 'src/omniclaude/hooks/lib/onex_state.py:69: ONEX_FLAG_EXEMPT without reason token -- add a reason
+        after the colon'
+      - ''
+      - '3 violation(s). Declare flags in contract.yaml feature_flags: block and resolve via the flag
+        system.'
+  - id: summary-with-exemption
+    class: fail
+    files:
+      - as_path: src/omnibase_infra/runtime/protocol_domain_plugin.py
+        base: infra-protocol-domain-plugin-py.txt
+        append: []
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omnibase_infra/runtime/protocol_domain_plugin.py
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 1
+    expected_stdout_lines:
+      - 'src/omniclaude/hooks/lib/onex_state.py:67: bare feature flag env var "ENABLE_REAL_TIME_EVENTS"
+        -- declare in contract.yaml feature_flags: block and resolve via flag system'
+      - ''
+      - '1 violation(s), 1 exemption(s) (src/omnibase_infra/runtime/protocol_domain_plugin.py:214 [docstring
+        example]). Declare flags in contract.yaml feature_flags: block and resolve via the flag system.'
+  - id: skip-approved-basename-contract-yaml
+    class: skip
+    files:
+      - as_path: src/omnibase_infra/nodes/node_architecture_validator/contract.yaml
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omnibase_infra/nodes/node_architecture_validator/contract.yaml
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-approved-basename-feature-flag-resolver
+    class: skip
+    files:
+      - as_path: src/omnibase_infra/runtime/feature_flag_resolver.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omnibase_infra/runtime/feature_flag_resolver.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-approved-basename-model-contract-feature-flag
+    class: skip
+    files:
+      - as_path: src/omniclaude/models/model_contract_feature_flag.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omniclaude/models/model_contract_feature_flag.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-approved-basename-self
+    class: skip
+    files:
+      - as_path: src/omnibase_core/handlers/check_bare_feature_flags.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omnibase_core/handlers/check_bare_feature_flags.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-approved-segment-capabilities
+    class: skip
+    files:
+      - as_path: src/omnibase_infra/capabilities/capability_inference_rules.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omnibase_infra/capabilities/capability_inference_rules.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-approved-segment-config-discovery
+    class: skip
+    files:
+      - as_path: src/omnibase_infra/runtime/config_discovery/config_prefetcher.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omnibase_infra/runtime/config_discovery/config_prefetcher.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-approved-segment-contracts
+    class: skip
+    files:
+      - as_path: src/omnibase_infra/contracts/defaults/loader.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omnibase_infra/contracts/defaults/loader.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-approved-segment-tests
+    class: skip
+    files:
+      - as_path: plugins/onex-delegate/tests/test_delegate_only_surface.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - plugins/onex-delegate/tests/test_delegate_only_surface.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-unreadable-paths
+    class: skip
+    files:
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append: []
+    args:
+      - src/omniclaude/does_not_exist.py
+      - src/omniclaude/hooks/lib
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 0
+    expected_stdout_lines: []
+  - id: skip-unreadable-then-violation
+    class: fail
+    files:
+      - as_path: src/omniclaude/hooks/lib/onex_state.py
+        base: omniclaude-onex-state-py.txt
+        append:
+          - flag = os.getenv("ENABLE_REAL_TIME_EVENTS")
+    args:
+      - src/omniclaude/does_not_exist.py
+      - src/omniclaude/hooks/lib
+      - src/omniclaude/hooks/lib/onex_state.py
+    expected_rc: 1
+    expected_stdout_lines:
+      - 'src/omniclaude/hooks/lib/onex_state.py:67: bare feature flag env var "ENABLE_REAL_TIME_EVENTS"
+        -- declare in contract.yaml feature_flags: block and resolve via flag system'
+      - ''
+      - '1 violation(s). Declare flags in contract.yaml feature_flags: block and resolve via the flag
+        system.'
+  - id: no-arguments
+    class: skip
+    files: []
+    args: []
+    expected_rc: 0
+    expected_stdout_lines: []
