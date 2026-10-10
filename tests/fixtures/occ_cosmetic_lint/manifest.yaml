@@ -1,0 +1,568 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+source_repo: onex_change_control
+source_rev: 8d7e85bc00e7f1b1306d1cb40949be1ab6e7e91a
+source_command: cosmetic-lint check
+spec_sha256: adda181e8b62c73f2ad0ac832e7fb2a8c249c629f7e1e1fef012905b0178cf28
+verbatim_source: omnibase_spi 9c145fb2836636598c0088aaff38f653cc4ac0c5 (origin/dev)
+cases:
+  - id: spi-tree-pass
+    description: Verbatim omnibase_spi pyproject, pre-commit config, README, four python files and the
+      .github tree at spi 9c145fb.
+    files:
+      pyproject.toml:
+        fixture: spi-pyproject.toml.txt
+      .pre-commit-config.yaml:
+        fixture: spi-pre-commit-config.yaml.txt
+      README.md:
+        fixture: spi-readme.md.txt
+      scripts/check_dep_provenance.py:
+        fixture: spi-scripts-check-dep-provenance-py.txt
+      src/omnibase_spi/protocols/chunking/protocol_chunkable_envelope.py:
+        fixture: spi-protocol-chunkable-envelope-py.txt
+      tests/__init__.py:
+        fixture: spi-tests-init-py.txt
+      scripts/ci/__init__.py:
+        fixture: spi-scripts-ci-init-py.txt
+    empty_files:
+      - .github/CONTRIBUTING.md
+      - .github/dependabot.yml
+      - .github/PULL_REQUEST_TEMPLATE.md
+      - .github/required-checks.yaml
+      - .github/workflows/auto-merge.yml
+      - .github/workflows/auto-tag-on-merge.yml
+      - .github/workflows/ban-hardcoded-runner-ip.yml
+      - .github/workflows/call-occ-autobind.yml
+      - .github/workflows/call-occ-companion-effect.yml
+      - .github/workflows/call-reject-skip.yml
+      - .github/workflows/call-repo-evidence-gate.yml
+      - .github/workflows/check-handshake.yml
+      - .github/workflows/ci.yml
+      - .github/workflows/contract-validation.yml
+      - .github/workflows/dep-provenance-gate.yml
+      - .github/workflows/docs-validate.yml
+      - .github/workflows/hardcoded-model-config.yml
+      - .github/workflows/kb-doc-gate.yml
+      - .github/workflows/main-target-guard.yml
+      - .github/workflows/namespace-validation.yml
+      - .github/workflows/omni-standards-compliance.yml
+      - .github/workflows/pin-resolvability-gate.yml
+      - .github/workflows/precommit-parity-gate.yml
+      - .github/workflows/pr-title-check.yml
+      - .github/workflows/public-repo-hygiene.yml
+      - .github/workflows/release-dry-run.yml
+      - .github/workflows/release.yml
+      - .github/workflows/required-check-skip-guard-caller.yml
+      - .github/workflows/security-scan.yml
+      - .github/workflows/shape-gate-independence.yml
+      - .github/workflows/spi-validation.yml
+      - .github/workflows/stale-todo-gate.yml
+      - .github/workflows/todo-audit-on-merge.yml
+      - .github/workflows/validate-validator-requirements.yml
+      - .github/workflows/workflow-script-refs.yml
+    expected_exit: 0
+    expected_stderr: []
+  - id: spi-tree-no-github-pass
+    description: 'The same spi files with no .github directory: the github check reports nothing.'
+    files:
+      pyproject.toml:
+        fixture: spi-pyproject.toml.txt
+      .pre-commit-config.yaml:
+        fixture: spi-pre-commit-config.yaml.txt
+      README.md:
+        fixture: spi-readme.md.txt
+      scripts/check_dep_provenance.py:
+        fixture: spi-scripts-check-dep-provenance-py.txt
+      src/omnibase_spi/protocols/chunking/protocol_chunkable_envelope.py:
+        fixture: spi-protocol-chunkable-envelope-py.txt
+      tests/__init__.py:
+        fixture: spi-tests-init-py.txt
+      scripts/ci/__init__.py:
+        fixture: spi-scripts-ci-init-py.txt
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: spdx-fail-headers
+    description: Legacy copyright line, wrong license, a one-line file, a shebang file with a wrong header,
+      and an empty file.
+    files:
+      pkg/legacy.py:
+        text: "# Copyright (c) 2025 OmniNode Team\n# SPDX-License-Identifier: MIT\n\nX = 1\n"
+      pkg/wrong_license.py:
+        text: "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: Apache-2.0\n"
+      pkg/one_line.py:
+        text: "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n"
+      scripts/tool.py:
+        text: |
+          #!/usr/bin/env python3
+          """Tool."""
+          X = 1
+      pkg/empty.py:
+        text: ''
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'pkg/empty.py:1: [spdx] Missing SPDX header [fixable]'
+      - 'pkg/legacy.py:1: [spdx] Expected ''# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.'', got ''#
+        Copyright (c) 2025 OmniNode Team'' [fixable]'
+      - 'pkg/one_line.py:1: [spdx] Missing SPDX header [fixable]'
+      - 'pkg/wrong_license.py:2: [spdx] Expected ''# SPDX-License-Identifier: MIT'', got ''# SPDX-License-Identifier:
+        Apache-2.0'' [fixable]'
+      - 'scripts/tool.py:2: [spdx] Expected ''# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.'', got ''"""Tool."""''
+        [fixable]'
+      - 'scripts/tool.py:3: [spdx] Expected ''# SPDX-License-Identifier: MIT'', got ''X = 1'' [fixable]'
+  - id: spdx-shebang-pass
+    description: A shebang file with the canonical header after the shebang line, and a canonical file.
+    files:
+      scripts/tool.py:
+        text: "#!/usr/bin/env python3\n# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier:
+          MIT\n\nX = 1\n"
+      pkg/ok.py:
+        text: "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n# SPDX-License-Identifier: MIT\n"
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: spdx-exemptions-pass
+    description: A spdx-skip marker file, a migrations path, a .venv path and a node_modules path carry
+      no header and raise nothing.
+    files:
+      pkg/skipped.py:
+        text: |
+          # spdx-skip
+          X = 1
+      pkg/migrations/0001_init.py:
+        text: |
+          X = 1
+      pkg/deep/migrations/0002.py:
+        text: |
+          X = 1
+      .venv/lib/site.py:
+        text: |
+          X = 1
+      web/node_modules/x/y.py:
+        text: |
+          X = 1
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: spdx-exemptions-control
+    description: 'The exemption tree plus one headerless file under src/: only that file is reported.'
+    files:
+      pkg/skipped.py:
+        text: |
+          # spdx-skip
+          X = 1
+      pkg/migrations/0001_init.py:
+        text: |
+          X = 1
+      .venv/lib/site.py:
+        text: |
+          X = 1
+      src/headerless.py:
+        text: |
+          X = 1
+
+          Y = 2
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'src/headerless.py:1: [spdx] Expected ''# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.'', got
+        ''X = 1'' [fixable]'
+      - 'src/headerless.py:2: [spdx] Expected ''# SPDX-License-Identifier: MIT'', got '''' [fixable]'
+  - id: spdx-order
+    description: Violations are reported in Path sort order (a/b.py before a-b/c.py), not string order.
+    files:
+      a-b/c.py:
+        text: |
+          X = 1
+
+          Y = 2
+      a/b.py:
+        text: |
+          X = 1
+
+          Y = 2
+      a.py:
+        text: |
+          X = 1
+
+          Y = 2
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'a/b.py:1: [spdx] Expected ''# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.'', got ''X = 1''
+        [fixable]'
+      - 'a/b.py:2: [spdx] Expected ''# SPDX-License-Identifier: MIT'', got '''' [fixable]'
+      - 'a-b/c.py:1: [spdx] Expected ''# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.'', got ''X = 1''
+        [fixable]'
+      - 'a-b/c.py:2: [spdx] Expected ''# SPDX-License-Identifier: MIT'', got '''' [fixable]'
+      - 'a.py:1: [spdx] Expected ''# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.'', got ''X = 1'' [fixable]'
+      - 'a.py:2: [spdx] Expected ''# SPDX-License-Identifier: MIT'', got '''' [fixable]'
+  - id: pyproject-fail-bare-license
+    description: Real spi pyproject with the license as a bare string.
+    files:
+      pyproject.toml:
+        fixture: spi-pyproject.toml.txt
+        replace:
+          - - license = {text = "MIT"}
+            - license = "MIT"
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'pyproject.toml:0: [pyproject] License should be table format {text = "MIT"}, got bare string
+        "MIT" [fixable]'
+  - id: pyproject-fail-wrong-license-text
+    description: Real spi pyproject with a table license of another text.
+    files:
+      pyproject.toml:
+        fixture: spi-pyproject.toml.txt
+        replace:
+          - - license = {text = "MIT"}
+            - license = {text = "Apache-2.0"}
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'pyproject.toml:0: [pyproject] Expected license text "MIT", got "Apache-2.0" [fixable]'
+  - id: pyproject-fail-missing-license
+    description: Real spi pyproject with no license field.
+    files:
+      pyproject.toml:
+        fixture: spi-pyproject.toml.txt
+        replace:
+          - - license = {text = "MIT"}
+            - ''
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'pyproject.toml:0: [pyproject] Missing license field [fixable]'
+  - id: pyproject-fail-many
+    description: Real spi pyproject with another author, requires-python, two classifiers and the Repository
+      URL removed, and ruff target-version py311.
+    files:
+      pyproject.toml:
+        fixture: spi-pyproject.toml.txt
+        replace:
+          - - email = "jonah@omninode.ai"
+            - email = "someone@example.com"
+          - - requires-python = ">=3.12"
+            - requires-python = ">=3.11"
+          - - '"Typing :: Typed",'
+            - ''
+          - - '"Development Status :: 4 - Beta",'
+            - ''
+          - - Repository = "https://github.com/OmniNode-ai/omnibase_spi"
+            - ''
+          - - target-version = "py312"
+            - target-version = "py311"
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'pyproject.toml:0: [pyproject] Expected author {name = "OmniNode.ai", email = "jonah@omninode.ai"}
+        [fixable]'
+      - 'pyproject.toml:0: [pyproject] Expected requires-python ">=3.12", got ">=3.11" [fixable]'
+      - 'pyproject.toml:0: [pyproject] Missing required classifier: "Development Status :: 4 - Beta" [fixable]'
+      - 'pyproject.toml:0: [pyproject] Missing required classifier: "Typing :: Typed" [fixable]'
+      - 'pyproject.toml:0: [pyproject] Missing required URL key: "Repository"'
+      - 'pyproject.toml:0: [pyproject] Expected ruff target-version "py312", got "py311"'
+  - id: pyproject-fail-no-ruff-section
+    description: A pyproject with the canonical project table and no [tool.ruff].
+    files:
+      pyproject.toml:
+        text: |
+          [project]
+          requires-python = ">=3.12"
+          license = {text = "MIT"}
+          classifiers = ["Development Status :: 4 - Beta", "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3.12", "Typing :: Typed"]
+
+          [[project.authors]]
+          name = "OmniNode.ai"
+          email = "jonah@omninode.ai"
+
+          [project.urls]
+          Homepage = "https://example.com"
+          Repository = "https://example.com"
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'pyproject.toml:0: [pyproject] Missing [tool.ruff] section'
+  - id: pyproject-extra-classifiers-pass
+    description: Extra classifiers and extra URL keys are additive; the canonical fields pass.
+    files:
+      pyproject.toml:
+        text: |
+          [project]
+          requires-python = ">=3.12"
+          license = {text = "MIT"}
+          classifiers = ["Development Status :: 4 - Beta", "License :: OSI Approved :: MIT License", "Programming Language :: Python :: 3.12", "Typing :: Typed", "Topic :: Utilities"]
+
+          [[project.authors]]
+          name = "Someone"
+          email = "x@example.com"
+
+          [[project.authors]]
+          name = "OmniNode.ai"
+          email = "jonah@omninode.ai"
+
+          [project.urls]
+          Homepage = "https://example.com"
+          Repository = "https://example.com"
+          Sponsor = "https://example.com"
+
+          [tool.ruff]
+          target-version = "py312"
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: precommit-tracked-pins-pass
+    description: A config that pins the three tracked repos at the spec revisions and carries a local
+      repo.
+    files:
+      .pre-commit-config.yaml:
+        text: |
+          repos:
+            - repo: https://github.com/astral-sh/ruff-pre-commit
+              rev: v0.15.6
+              hooks:
+                - id: ruff
+            - repo: https://github.com/google/yamlfmt
+              rev: v0.21.0
+              hooks:
+                - id: yamlfmt
+            - repo: https://github.com/pre-commit/pre-commit-hooks
+              rev: v6.0.0
+              hooks:
+                - id: end-of-file-fixer
+            - repo: local
+              hooks:
+                - id: x
+                  name: x
+                  entry: x
+                  language: system
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: precommit-fail-yamlfmt
+    description: Real spi config with yamlfmt moved to v0.20.0.
+    files:
+      .pre-commit-config.yaml:
+        fixture: spi-pre-commit-config.yaml.txt
+        replace:
+          - - 'rev: v0.21.0'
+            - 'rev: v0.20.0'
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - '.pre-commit-config.yaml:0: [precommit] https://github.com/google/yamlfmt: expected rev v0.21.0,
+        got v0.20.0 [fixable]'
+  - id: precommit-fail-all-three
+    description: A config with ruff-pre-commit, yamlfmt and pre-commit-hooks all at other revisions.
+    files:
+      .pre-commit-config.yaml:
+        text: |
+          repos:
+            - repo: https://github.com/astral-sh/ruff-pre-commit
+              rev: v0.15.5
+              hooks:
+                - id: ruff
+            - repo: https://github.com/google/yamlfmt
+              rev: v0.19.0
+              hooks:
+                - id: yamlfmt
+            - repo: https://github.com/pre-commit/pre-commit-hooks
+              rev: v5.0.0
+              hooks:
+                - id: end-of-file-fixer
+            - repo: local
+              hooks:
+                - id: x
+                  name: x
+                  entry: x
+                  language: system
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - '.pre-commit-config.yaml:0: [precommit] https://github.com/astral-sh/ruff-pre-commit: expected
+        rev v0.15.6, got v0.15.5 [fixable]'
+      - '.pre-commit-config.yaml:0: [precommit] https://github.com/google/yamlfmt: expected rev v0.21.0,
+        got v0.19.0 [fixable]'
+      - '.pre-commit-config.yaml:0: [precommit] https://github.com/pre-commit/pre-commit-hooks: expected
+        rev v6.0.0, got v5.0.0 [fixable]'
+  - id: precommit-untracked-repo-pass
+    description: A repo outside the spec at any revision, and no tracked repo, raises nothing.
+    files:
+      .pre-commit-config.yaml:
+        text: |
+          repos:
+            - repo: https://github.com/example/other
+              rev: v1.0.0
+              hooks:
+                - id: o
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: readme-all-badges-pass
+    description: A README whose first thirty lines carry the four badges in mixed case.
+    files:
+      README.md:
+        text: |
+          # Title
+
+          [![LICENSE: MIT](X)](LICENSE)
+          [![RUFF](X)](Y)
+          [![CHECKED WITH MYPY](X)](Y)
+          [![PRE-COMMIT](X)](Y)
+
+          Text
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: readme-fail-no-badges
+    description: A README with a title and no badges.
+    files:
+      README.md:
+        text: |
+          # Title
+
+          Text
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'README.md:0: [readme] Missing required badge: License badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Ruff linter badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Mypy type checker badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Pre-commit badge [fixable]'
+  - id: readme-fail-badges-after-line-30
+    description: All four badges sit after line 30, so all four are missing.
+    files:
+      README.md:
+        text: |
+          # Title
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          filler
+          [![License: MIT](x)](LICENSE)
+          [![Ruff](x)](y)
+          [![Checked with mypy](x)](y)
+          [![pre-commit](x)](y)
+    empty_files: []
+    expected_exit: 1
+    expected_stderr:
+      - 'README.md:0: [readme] Missing required badge: License badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Ruff linter badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Mypy type checker badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Pre-commit badge [fixable]'
+  - id: readme-spi-real-pass
+    description: The real spi README, whose first thirty lines carry all four badges.
+    files:
+      README.md:
+        fixture: spi-readme.md.txt
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: github-fail-template-and-yaml
+    description: .github with no pull request template and one .yaml workflow beside a .yml one.
+    files: {}
+    empty_files:
+      - .github/workflows/ci.yml
+      - .github/workflows/old.yaml
+      - .github/workflows/also.yaml
+      - .github/CONTRIBUTING.md
+    expected_exit: 1
+    expected_stderr:
+      - '.github/PULL_REQUEST_TEMPLATE.md:0: [github] Missing required template: PULL_REQUEST_TEMPLATE.md'
+      - '.github/workflows/also.yaml:0: [github] Workflow uses .yaml extension, expected .yml [fixable]'
+      - '.github/workflows/old.yaml:0: [github] Workflow uses .yaml extension, expected .yml [fixable]'
+  - id: github-template-present-pass
+    description: .github with the template and only .yml workflows.
+    files: {}
+    empty_files:
+      - .github/PULL_REQUEST_TEMPLATE.md
+      - .github/workflows/ci.yml
+    expected_exit: 0
+    expected_stderr: []
+  - id: github-no-dir-pass
+    description: 'No .github directory: nothing is reported.'
+    files:
+      README.md:
+        text: |
+          # T
+          [![License: MIT](x)](LICENSE)
+          [![Ruff](x)](y)
+          [![Checked with mypy](x)](y)
+          [![pre-commit](x)](y)
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []
+  - id: all-classes-fail
+    description: One tree that violates every class; the report lists spdx, pyproject, precommit, readme
+      and github in that order.
+    files:
+      pkg/legacy.py:
+        text: |
+          X = 1
+
+          Y = 2
+      pyproject.toml:
+        fixture: spi-pyproject.toml.txt
+        replace:
+          - - license = {text = "MIT"}
+            - license = "MIT"
+      .pre-commit-config.yaml:
+        fixture: spi-pre-commit-config.yaml.txt
+        replace:
+          - - 'rev: v0.21.0'
+            - 'rev: v0.20.0'
+      README.md:
+        text: |
+          # T
+    empty_files:
+      - .github/workflows/old.yaml
+    expected_exit: 1
+    expected_stderr:
+      - 'pkg/legacy.py:1: [spdx] Expected ''# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.'', got ''X
+        = 1'' [fixable]'
+      - 'pkg/legacy.py:2: [spdx] Expected ''# SPDX-License-Identifier: MIT'', got '''' [fixable]'
+      - 'pyproject.toml:0: [pyproject] License should be table format {text = "MIT"}, got bare string
+        "MIT" [fixable]'
+      - '.pre-commit-config.yaml:0: [precommit] https://github.com/google/yamlfmt: expected rev v0.21.0,
+        got v0.20.0 [fixable]'
+      - 'README.md:0: [readme] Missing required badge: License badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Ruff linter badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Mypy type checker badge [fixable]'
+      - 'README.md:0: [readme] Missing required badge: Pre-commit badge [fixable]'
+      - '.github/PULL_REQUEST_TEMPLATE.md:0: [github] Missing required template: PULL_REQUEST_TEMPLATE.md'
+      - '.github/workflows/old.yaml:0: [github] Workflow uses .yaml extension, expected .yml [fixable]'
+  - id: empty-tree-pass
+    description: A directory with no files at all.
+    files: {}
+    empty_files: []
+    expected_exit: 0
+    expected_stderr: []

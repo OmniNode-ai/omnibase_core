@@ -1,0 +1,437 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "omnibase_spi"
+version = "0.23.5"
+description = "ONEX Service Provider Interface - Protocol definitions"
+authors = [
+    {name = "OmniNode.ai", email = "jonah@omninode.ai"},
+]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = [
+    "typing-extensions>=4.5.0",
+    "pydantic>=2.11.7",
+    "omnibase-core>=0.47.20,<0.48.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/OmniNode-ai/omnibase_spi"
+Repository = "https://github.com/OmniNode-ai/omnibase_spi"
+Documentation = "https://github.com/OmniNode-ai/knowledge_base"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.13.0",
+    "pre-commit>=4.0.0",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=0.24.0",
+    "hypothesis>=6.88.0",
+    "ruff>=0.8.0",
+    "requests>=2.32.5",
+    "types-requests>=2.32.4.20250913",
+    "pyyaml>=6.0.3",
+    "pytest-cov>=7.0.0",
+    "pytest-split>=0.10.0",
+    "types-pyyaml>=6.0.12.20250915",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/omnibase_spi"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = [
+    "tests/fixtures/validation/",
+    ".github/workflows/",
+]
+
+[tool.ruff.lint]
+# Standard 40-rule set (shared across ONEX repos) + D-series (SPI-specific: docstring requirement [internal issue])
+select = ["E", "F", "W", "C90", "I", "N", "UP", "YTT", "S", "BLE", "FBT", "B", "A", "COM", "C4", "DTZ", "T10", "EM", "EXE", "ISC", "ICN", "G", "INP", "PIE", "T20", "PT", "Q", "RSE", "RET", "SLF", "SIM", "TID", "TCH", "ARG", "PTH", "ERA", "PD", "PGH", "PL", "TRY", "NPY", "RUF",
+    # SPI-specific: docstring linting [internal issue] - require docstrings on public APIs
+    "D100", "D101", "D201", "D202", "D207", "D208", "D209", "D210", "D211", "D300", "D403", "D419",
+]
+ignore = [
+    "S101",      # Allow assert statements in tests
+    "COM812",    # Trailing comma rule conflicts with formatter
+    "E501",      # Line too long (handled by formatter)
+    "B008",      # Do not perform function calls in argument defaults
+    "C901",      # Too complex
+    "FBT001",    # Boolean type hint positional argument (SPI protocols use bool params extensively)
+    "FBT002",    # Boolean default value positional argument
+    "TRY003",    # Raise vanilla args (protocol docstrings show exception patterns)
+    "EM101",     # Raw string in exception
+    "EM102",     # F-string in exception
+    "PLR0913",   # Too many arguments (protocol methods have many params by design)
+    "ERA001",    # Commented-out code (historical protocol evolution comments)
+    "PLC0105",   # Type name incorrect variance (TypeVar naming in protocols)
+    "TID252",    # Relative imports (used in protocol __init__.py re-exports)
+    "TC001",     # Typing-only first-party import (Protocol files need runtime imports for type annotations)
+    "TC003",     # Typing-only standard-library import (Protocol type annotations used at runtime)
+    "PLE0604",   # Invalid __all__ object (pre-existing, separate cleanup ticket)
+    "RUF022",    # Unsorted __all__ (pre-existing, cosmetic)
+    "TRY004",    # Type check without TypeError (pre-existing pattern)
+    "PLR2004",   # Magic value comparison (acceptable in protocol definitions)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/validation/spi_validator/*.py" = [
+    "D100",    # module docstring (subpackage modules use file-level comments)
+    "D101",    # class docstring (classes are named descriptively)
+    "T20",     # print() statements
+    "PTH123",  # builtin open
+    "BLE001",  # blind except
+    "SLF001",  # private member access
+    "PLR2004", # magic values
+    "S324",    # hashlib insecure hash
+]
+"scripts/validation/*.py" = [
+    "SIM102",  # nested if statements (readability preference in validators)
+    "SIM103",  # return condition directly (clarity in boolean functions)
+    "ARG002",  # unused method argument (signal handlers, visitor pattern)
+    "B904",    # raise from (acceptable in test utilities)
+    "T20",     # print() statements (validation scripts produce stdout output)
+    "S603",    # subprocess calls in validation scripts
+    "PLR2004", # magic values in validation thresholds
+    "PLC0415", # late imports (conditional imports in validators)
+    "BLE001",  # blind except (validation scripts catch broadly)
+    "N806",    # non-lowercase variable (validation scripts use descriptive names)
+    "PLR0912", # too many branches (validators are complex by nature)
+    "PLR0911", # too many return statements
+    "PLR0915", # too many statements
+    "PLR1714", # repeated equality comparison
+    "PLW1510", # subprocess.run without check
+    "PLW2901", # redefined loop name
+    "PTH123",  # builtin open (validation scripts)
+    "PTH108",  # os.unlink
+    "PTH110",  # os.path.exists
+    "PTH118",  # os.path.join
+    "PTH112",  # os.path.isdir
+    "PTH120",  # os.path.dirname
+    "PTH122",  # os.path.splitext
+    "S108",    # hardcoded temp file
+    "S110",    # try-except-pass
+    "S112",    # try-except-continue
+    "SLF001",  # private member access (validation inspects internals)
+    "EXE001",  # shebang not executable
+    "RUF012",  # mutable class default
+    "RUF005",  # collection literal concatenation
+    "RUF013",  # implicit optional
+    "RET504",  # unnecessary assign
+    "PIE810",  # multiple starts/ends with
+    "TRY300",  # try-consider-else
+    "TRY301",  # raise within try
+    "N817",    # camelcase imported as acronym
+    "N814",    # camelcase imported as constant
+    "RUF001",  # ambiguous unicode character
+    "S324",    # hashlib insecure hash
+    "N801",    # invalid class name (test helpers)
+    "N813",    # camelcase imported as lowercase
+    "A001",    # builtin variable shadowing
+]
+"tests/*.py" = [
+    "ARG002",  # unused method argument (mock implementations)
+    "UP038",   # isinstance tuple (readability in tests)
+    "SIM118",  # key in dict.keys() (explicit in tests)
+    "B007",    # unused loop variable (intentional in test iteration)
+    "E402",    # import not at top (path manipulation in tests)
+    "T20",     # print() in tests (debug output)
+    "S603",    # subprocess calls in tests
+    "PLR2004", # magic values in tests
+    "PLC0415", # late imports in tests
+    "BLE001",  # blind except (test error handling)
+    "N806",    # non-lowercase variable (test fixtures)
+    "PLR0912", # too many branches (complex test scenarios)
+    "PLR0911", # too many return statements
+    "PLR0915", # too many statements
+    "PLR1714", # repeated equality comparison
+    "PLW1510", # subprocess.run without check
+    "PLW2901", # redefined loop name
+    "PTH123",  # builtin open (test file I/O)
+    "PTH108",  # os.unlink
+    "S108",    # hardcoded temp file
+    "SLF001",  # private member access (testing internals)
+    "PT012",   # pytest raises with multiple statements
+    "PT018",   # pytest composite assertion
+    "PT011",   # pytest raises too broad
+    "PT017",   # pytest assert in except
+    "N817",    # camelcase imported as acronym
+    "N814",    # camelcase imported as constant
+    "N801",    # invalid class name
+    "N813",    # camelcase imported as lowercase
+    "RUF012",  # mutable class default
+    "RUF043",  # pytest raises ambiguous pattern
+    "RUF005",  # collection literal concatenation
+    "RET504",  # unnecessary assign
+    "PIE810",  # multiple starts/ends with
+    "TRY300",  # try-consider-else
+    "TRY301",  # raise within try
+    "A001",    # builtin variable shadowing
+    "RUF001",  # ambiguous unicode character
+    "RUF013",  # implicit optional
+    "S324",    # hashlib insecure hash
+    "S110",    # try-except-pass
+    "S112",    # try-except-continue
+    "D100",    # missing docstring in public module (test modules)
+    "D101",    # missing docstring in public class (test classes)
+    "D103",    # missing docstring in public function (test functions)
+    "D104",    # missing docstring in public package (test packages)
+    "D403",    # first word capitalized (test docstrings use lowercase)
+]
+"tests/**/*.py" = [
+    "ARG002",  # unused method argument (mock implementations)
+    "UP038",   # isinstance tuple (readability in tests)
+    "SIM118",  # key in dict.keys() (explicit in tests)
+    "B007",    # unused loop variable (intentional in test iteration)
+    "T20",     # print() in tests (debug output)
+    "S603",    # subprocess calls in tests
+    "PLR2004", # magic values in tests
+    "PLC0415", # late imports in tests
+    "BLE001",  # blind except (test error handling)
+    "N806",    # non-lowercase variable (test fixtures)
+    "PLR0912", # too many branches (complex test scenarios)
+    "PLR0911", # too many return statements
+    "PLR0915", # too many statements
+    "PLR1714", # repeated equality comparison
+    "PLW1510", # subprocess.run without check
+    "PLW2901", # redefined loop name
+    "PTH123",  # builtin open (test file I/O)
+    "PTH108",  # os.unlink
+    "S108",    # hardcoded temp file
+    "SLF001",  # private member access (testing internals)
+    "PT012",   # pytest raises with multiple statements
+    "PT018",   # pytest composite assertion
+    "PT011",   # pytest raises too broad
+    "PT017",   # pytest assert in except
+    "N817",    # camelcase imported as acronym
+    "N814",    # camelcase imported as constant
+    "N801",    # invalid class name
+    "N813",    # camelcase imported as lowercase
+    "RUF012",  # mutable class default
+    "RUF043",  # pytest raises ambiguous pattern
+    "RUF005",  # collection literal concatenation
+    "RET504",  # unnecessary assign
+    "PIE810",  # multiple starts/ends with
+    "TRY300",  # try-consider-else
+    "TRY301",  # raise within try
+    "A001",    # builtin variable shadowing
+    "RUF001",  # ambiguous unicode character
+    "RUF013",  # implicit optional
+    "S324",    # hashlib insecure hash
+    "S110",    # try-except-pass
+    "S112",    # try-except-continue
+    "D100",    # missing docstring in public module (test modules)
+    "D101",    # missing docstring in public class (test classes)
+    "D103",    # missing docstring in public function (test functions)
+    "D104",    # missing docstring in public package (test packages)
+    "D403",    # first word capitalized (test docstrings use lowercase)
+]
+"examples/*.py" = [
+    "ARG002",  # unused method argument (example stubs)
+    "D100",    # missing docstring in public module (examples)
+    "D103",    # missing docstring in public function (examples)
+    "INP001",  # examples are standalone scripts, not packages
+    "T201",    # print() expected in example output
+]
+"scripts/*.py" = [
+    "D103",    # missing docstring in public function (script helpers)
+    "T20",     # print() statements (scripts produce stdout output)
+    "BLE001",  # blind except
+    "PTH123",  # builtin open
+    "PTH108",  # os.unlink
+    "PTH110",  # os.path.exists
+    "PTH118",  # os.path.join
+    "PTH112",  # os.path.isdir
+    "PTH120",  # os.path.dirname
+    "PTH122",  # os.path.splitext
+    "N806",    # non-lowercase variable
+    "PLR0912", # too many branches
+    "PLR0911", # too many return statements
+    "PLR0915", # too many statements
+    "PLR1714", # repeated equality comparison
+    "PLW1510", # subprocess.run without check
+    "PLW2901", # redefined loop name
+    "S108",    # hardcoded temp file
+    "S603",    # subprocess calls
+    "EXE001",  # shebang not executable
+    "RUF005",  # collection literal concatenation
+    "RET504",  # unnecessary assign
+]
+"scripts/**/*.py" = [
+    "D103",    # missing docstring in public function (script helpers)
+    "T20",     # print() statements (scripts produce stdout output)
+    "BLE001",  # blind except
+    "PTH123",  # builtin open
+    "PTH108",  # os.unlink
+    "PTH110",  # os.path.exists
+    "PTH118",  # os.path.join
+    "PTH112",  # os.path.isdir
+    "PTH120",  # os.path.dirname
+    "PTH122",  # os.path.splitext
+    "N806",    # non-lowercase variable
+    "PLR0912", # too many branches
+    "PLR0911", # too many return statements
+    "PLR0915", # too many statements
+    "PLR1714", # repeated equality comparison
+    "PLW1510", # subprocess.run without check
+    "PLW2901", # redefined loop name
+    "S108",    # hardcoded temp file
+    "S603",    # subprocess calls
+    "EXE001",  # shebang not executable
+    "RUF005",  # collection literal concatenation
+    "RET504",  # unnecessary assign
+]
+"src/omnibase_spi/protocols/__init__.py" = [
+    "E402",    # import not at top (organized sections)
+    "F401",    # unused imports (re-exports)
+]
+"src/omnibase_spi/protocols/types/__init__.py" = [
+    "E402",    # import not at top (organized sections)
+]
+"src/omnibase_spi/protocols/workflow_orchestration/__init__.py" = [
+    "E402",    # import not at top (organized sections)
+]
+"src/omnibase_spi/protocols/nodes/legacy/__init__.py" = [
+    "E402",    # import not at top (organized sections)
+]
+"src/omnibase_spi/protocols/networking/__init__.py" = [
+    "F401",    # unused imports (re-exports or future use)
+]
+"src/omnibase_spi/protocols/storage/__init__.py" = [
+    "F401",    # unused imports (re-exports or future use)
+]
+"src/omnibase_spi/protocols/container/protocol_registry.py" = [
+    "UP040",   # TypeAlias annotation (compatibility)
+]
+"src/omnibase_spi/protocols/validation/protocol_validation_provider.py" = [
+    "UP040",   # TypeAlias annotation (compatibility)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["omnibase_spi", "omnibase_core"]
+combine-as-imports = true  # Allow aliased imports to be combined with non-aliased
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+# Exclude tests from strict checking - tests use mocking patterns and
+# Protocol identity checks that require more flexible typing
+exclude = [
+    "tests/",
+]
+
+# Allow imports from omnibase_core (SPI depends on Core)
+[[tool.mypy.overrides]]
+module = "omnibase_core.*"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "."]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests",
+    "slow: Slow-running tests",
+]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+    "--tb=short",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["src/omnibase_spi"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/__init__.py",
+    "*/conftest.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "\\.\\.\\.",
+]
+
+# =============================================================================
+# Coverage Threshold Enforcement (internal issue)
+# =============================================================================
+#
+# AUTOMATICALLY ENFORCED (by pytest-cov):
+# ----------------------------------------
+# The `fail_under` setting below is the ONLY threshold automatically enforced.
+# When running `pytest --cov`, if overall coverage drops below 80%, the test
+# run will exit with a non-zero status code and fail.
+#
+#   Command: uv run pytest --cov --cov-report=term-missing
+#   Behavior: Test suite FAILS if overall coverage < 80%
+#
+# TARGET THRESHOLDS (for reference, not auto-enforced):
+# -----------------------------------------------------
+# These are target coverage levels for critical modules. They are NOT
+# automatically enforced by pytest-cov (which only supports a single global
+# fail_under threshold). To enforce per-module thresholds, you would need:
+#   - A custom CI script that parses coverage reports, OR
+#   - Separate pytest runs with module-specific --cov paths
+#
+#   Module                    | Target | Status
+#   --------------------------|--------|------------------
+#   protocols/nodes/          | >=85%  | Target (manual)
+#   protocols/handlers/       | >=85%  | Target (manual)
+#   exceptions.py             | >=90%  | Target (manual)
+#
+# HOW TO CHECK PER-MODULE COVERAGE:
+# ---------------------------------
+# 1. Run: uv run pytest --cov --cov-report=term-missing
+# 2. Review the per-file coverage percentages in the output
+# 3. Manually verify critical modules meet their target thresholds
+#
+# Or generate an HTML report for detailed inspection:
+#   uv run pytest --cov --cov-report=html
+#   open htmlcov/index.html
+#
+# =============================================================================
+
+fail_under = 80  # Minimum coverage threshold; CI fails if coverage drops below 80%
+show_missing = true
+skip_covered = false
+
+[tool.coverage.html]
+directory = "htmlcov"
