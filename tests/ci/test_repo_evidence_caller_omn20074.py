@@ -144,7 +144,7 @@ def test_the_caller_takes_the_slot_of_the_retired_occ_preflight_caller() -> None
     allowlisted_workflows = budget["allowlisted_workflows"]
     assert "call-repo-evidence-gate.yml" in allowlisted_workflows
     assert "call-occ-preflight.yml" not in allowlisted_workflows
-    assert budget["budget"] == 30
+    assert budget["budget"] == 29
     assert len(allowlisted_workflows) == budget["budget"]
     assert not (WORKFLOWS_DIR / "call-occ-preflight.yml").exists()
 

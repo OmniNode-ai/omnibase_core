@@ -3618,6 +3618,142 @@ jobs:
     name: secrets-baseline-wiring
     uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
 
+  # ===========================================================================
+  # OMN-20074: verification gates folded in from standalone workflows.
+  # ---------------------------------------------------------------------------
+  # Each of these three jobs used to be reachable only through the occ-preflight
+  # it embedded; with that preflight retired a job of this shape runs and cannot
+  # fail. They run in THIS workflow so the required "CI Summary" poller
+  # (scripts/ci/ci_summary_gate.py) fails on them through its default-deny
+  # sweep, with no new required context, annotation, allowlist or baseline
+  # entry. The unconditional two are also registered in GATE_JOBS and
+  # STRICT_SUCCESS_JOBS there so deleting one cannot read as a green run.
+  # Pinned by tests/ci/test_ci_fold_gates_omn20074.py.
+  # ===========================================================================
+
+  # Folded from cr-thread-gate-caller.yml, which is deleted: leaving it would
+  # produce this same context from a second workflow. The caller job id stays
+  # `gate` and the reusable's job name stays `CodeRabbit Thread Check`, so the
+  # composed context `gate / CodeRabbit Thread Check` is unchanged byte for
+  # byte (.github/required-checks.yaml row repointed to this file). The caller
+  # MUST stay unconditional: a skipped `uses:` caller never invokes the
+  # reusable, so no composed check-run exists (OMN-15120/OMN-14864 vector 3).
+  # The reusable is a no-op while CodeRabbit is retired, so the review and
+  # comment events the standalone caller also listened on had nothing to
+  # re-evaluate and are not carried over.
+  gate:
+    uses: ./.github/workflows/cr-thread-gate.yml
+    with:
+      pr-number: ${{ format('{0}', github.event.pull_request.number || 0) }}
+    secrets:
+      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
+
+  # Folded from handshake-policy-gate.yml's `merge_group` trigger, the only
+  # pull-request-reachable event that workflow ever had. It stays a separate
+  # reusable (the weekly schedule and manual dispatch keep running it there) so
+  # the steps live in one place. `if:` keeps the retired trigger surface: this
+  # gate needs the onexbot App secrets, which the pull_request runner selector
+  # withholds by design, so it runs on the merge queue and nowhere else. It is
+  # not in GATE_JOBS: it is skipped on every pull_request run and a skipped
+  # `uses:` caller posts no job under its composed name, so an anchor would
+  # hold every pull request PENDING. A failure still fails CI Summary through
+  # the default-deny sweep.
+  handshake-policy-gate:
+    if: github.event_name == 'merge_group'
+    uses: ./.github/workflows/handshake-policy-gate.yml
+    permissions:
+      contents: read
+      actions: read
+    secrets: inherit
+
+  # Folded from propagate-config.yml's `dry-run-ci-check`. That workflow filtered
+  # `push` and `pull_request` on five paths; here the same five are matched
+  # inside the run, so this job always reports and CI Summary can anchor it. The
+  # `propagate` job (release and manual dispatch) is automation and stays there.
+  propagate-dry-run:
+    name: Propagate Config Dry-run (OMN-20074)
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      # Same five paths as propagate-config.yml's `on.pull_request.paths`.
+      # pull_request and push compare against their base; a manual dispatch
+      # always runs, as the standalone job did; merge_group and schedule never
+      # ran it. When no diff can be computed the check runs: failing open to
+      # the check is the safe direction for a gate.
+      - name: Detect changed propagation paths
+        id: paths
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          GH_SHA: ${{ github.sha }}
+        run: |
+          watched=(
+            .github/workflows/propagate-config.yml
+            .github/propagation-targets.yaml
+            .pre-commit-hooks.yaml
+            scripts/propagate-config.sh
+            tests/scripts/test_propagate_config.py
+          )
+          case "${EVENT_NAME}" in
+            workflow_dispatch) echo "changed=true" >> "$GITHUB_OUTPUT"; exit 0 ;;
+            pull_request) range=("${PR_BASE_SHA}...HEAD") ;;
+            push) range=("${PUSH_BEFORE}" "${GH_SHA}") ;;
+            *) echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0 ;;
+          esac
+          if ! files="$(git diff --name-only "${range[@]}" -- "${watched[@]}")"; then
+            echo "::notice::no diff for ${EVENT_NAME}; running the dry-run"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ -n "${files}" ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Python
+        if: steps.paths.outputs.changed == 'true'
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install parser deps
+        if: steps.paths.outputs.changed == 'true'
+        run: pip install pyyaml
+
+      # The per-repository GITHUB_TOKEN cannot read private sibling repos.
+      # Mint the same org installation identity as the live propagator, but
+      # restrict this dry-run job to read-only contents access.
+      - name: Mint cross-repo read token
+        id: app-token
+        if: steps.paths.outputs.changed == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          permission-contents: read
+
+      - name: Execute dry-run
+        if: steps.paths.outputs.changed == 'true'
+        env:
+          # Cross-repo read access is required because dry-run resolves every
+          # private target's live default branch and fails closed on denial.
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          PROPAGATION_NAME: normalization-symmetry-hook
+          PROPAGATION_DRY_RUN: "1"
+          PROPAGATION_SOURCE_SHA: ${{ github.sha }}
+        run: bash scripts/propagate-config.sh
+
   quality-gate:
     name: Quality Gate
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest

@@ -4,10 +4,11 @@
 name: Handshake Policy Gate
 # Checks that every active OmniNode repo has the architecture-handshake
 # CI workflow installed and passing on its default branch.
-# Runs weekly, on manual dispatch, and on merge_group (OMN-13875) so the
-# check is a live, observable pre-merge signal instead of only surfacing
-# once a week. NOT wired into required-status-checks here — the
-# required-context flip is a separate, staged decision.
+# Runs weekly and on manual dispatch here. The merge-queue run (OMN-13875) is
+# a job of ci.yml, `handshake-policy-gate`, which calls this workflow on
+# `merge_group` (OMN-20074), so the required "CI Summary" poller fails on it.
+# The steps live only in this file. The per-repository required-context flip
+# is a separate, staged decision.
 #
 # Deliberately NOT triggered on `pull_request`: this job needs
 # the onexbot App signing secrets, and this repo's OMNI_RUNNER_SELECTOR_V1
@@ -24,7 +25,7 @@ on:
   schedule:
     # Weekly on Monday at 08:00 UTC
     - cron: '0 8 * * 1'
-  merge_group:
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -32,17 +33,7 @@ permissions:
   actions: read
 
 jobs:
-  occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
-
   policy-gate:
-    needs: occ-preflight
     name: Check handshake compliance across repos
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
     runs-on: >-

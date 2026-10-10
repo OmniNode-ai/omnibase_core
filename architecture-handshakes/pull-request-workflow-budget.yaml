@@ -51,7 +51,7 @@ schema_version: 1
 # Count lock. MUST equal len(allowlisted_workflows). Frozen a second time as
 # EXPECTED_BUDGET in the test suite. Intended to move DOWN only.
 # baseline captured 2026-07-21 at origin/dev@d09128fc.
-budget: 30
+budget: 29
 
 # Every live `.github/workflows/*.yml` that triggers on pull_request /
 # pull_request_target as of the baseline. This is the frozen ratchet floor: a new
@@ -67,7 +67,6 @@ allowlisted_workflows:
   - check-handshake.yml
   - ci.yml
   - contract-validation.yml
-  - cr-thread-gate-caller.yml
   - dep-provenance-gate.yml
   - deploy-gate.yml
   - main-target-guard.yml
@@ -94,6 +93,7 @@ allowlisted_workflows:
 # net-negative rule). A past-expiry waiver fails the gate. Empty at baseline —
 # the sanctioned default is retire-one, not waive.
 waivers:
+  # OMN-20074: cr-thread-gate-caller.yml retired into ci.yml's `gate` job; budget 30 -> 29.
   # validator-no-unguarded-git-subprocess.yml waiver (OMN-14891 original,
   # OMN-16280 renewal) PERMANENTLY CLOSED by OMN-16281: the workflow was
   # migrated into ci.yml as the `no-unguarded-git-subprocess` job (Option 1,

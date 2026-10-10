@@ -183,10 +183,12 @@ gates:
   - name: "gate / CodeRabbit Thread Check"
     mode: REQUIRED
     producer_kind: local
-    workflow: cr-thread-gate-caller.yml
+    workflow: ci.yml
     job_path: ["gate", "gate"]
     skip_semantics: never
-    rationale: "OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
+    rationale: "OMN-20074: the caller job moved from cr-thread-gate-caller.yml into ci.yml, keeping the
+      job id `gate` and the reusable's job name, so the composed context is unchanged; the standalone
+      caller was deleted so this context has one producer. OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
       contexts.md): the caller job 'gate' previously had an ungated `if:` (github.actor != 'dependabot[bot]',
       among other clauses) — vector-3, a skipped caller job produces NO check run at all, which permanently
       wedged this required context on Dependabot PRs (live case: omnibase_core#1548). The `if:` is now
