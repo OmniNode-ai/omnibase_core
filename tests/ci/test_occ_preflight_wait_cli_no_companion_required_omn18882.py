@@ -90,6 +90,11 @@ class _FakeGh:
         self.pr_body = pr_body
         self.body_reads = 0
 
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]]:
+        return []
+
     def read_pr_body(self, *, repo: str, pr_number: str) -> str | None:
         self.body_reads += 1
         return self.pr_body

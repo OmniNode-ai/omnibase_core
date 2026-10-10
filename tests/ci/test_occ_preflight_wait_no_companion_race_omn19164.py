@@ -104,6 +104,11 @@ class _ScriptedGh:
         self.reads = 0
         self.sleeps: list[float] = []
 
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]]:
+        return []
+
     def read_pr_body(self, *, repo: str, pr_number: str) -> str | None:
         raise AssertionError("the pin-only probe must not read the PR body")
 

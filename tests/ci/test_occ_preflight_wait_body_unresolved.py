@@ -120,6 +120,11 @@ class _FakeGh:
         self.bodies = bodies
         self.body_reads = 0
 
+    def merged_companion_candidates(
+        self, occ_repo: str, repo: str, pr_number: str
+    ) -> list[dict[str, object]]:
+        return []
+
     def read_pr_body(self, *, repo: str, pr_number: str) -> str | None:
         index = min(self.body_reads, len(self.bodies) - 1)
         self.body_reads += 1

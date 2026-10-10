@@ -51,7 +51,9 @@
 #                   cross-repo autobind contract.
 #
 # Evidence-Source pinning (OMN-10419 / T6a):
-#   PRs opened after this workflow's merge SHA must include a line in the PR body:
+#   OMN-18338: a uniquely bound merged companion resolves from its OCC record.
+#   The body citation remains the fallback when no companion-side match exists.
+#   PRs opened after this workflow's merge SHA without a match must include:
 #     Evidence-Source: OCC#<PR-number>    # an open OCC PR
 #     Evidence-Source: <40-char-sha>      # a merged OCC commit
 #   The gate resolves the commit-ish to an exact head SHA and checks out
@@ -326,8 +328,9 @@ jobs:
           fi
           echo "exempt=${exempt}" >> "$GITHUB_OUTPUT"
 
-      # OMN-10419: Resolve Evidence-Source commit-ish to an exact OCC SHA before
-      # checking out onex_change_control. Accepts two forms:
+      # OMN-18338: resolve companion-side binding first, then the legacy
+      # OMN-10419 citation to an exact OCC SHA before checking out OCC.
+      # The citation accepts two forms:
       #   OCC#<number> — open PR head SHA (resolved via GitHub API)
       #   <sha>        — merged commit SHA (validated as ancestor of OCC main)
       # Writes the resolved exact SHA to /tmp/occ_sha.txt.
@@ -413,6 +416,17 @@ jobs:
             echo "occ_source_kind=main" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+
+          # OMN-18338: use the merged companion's binding before the body's
+          # convenience citation. The shared resolver fails closed on read
+          # errors or ambiguous matches; no new description parse lives here.
+          if [ -f "$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py" ]; then
+            binding_probe="$GITHUB_WORKSPACE/scripts/ci/occ_preflight_wait.py"
+          else
+            binding_probe="$GITHUB_WORKSPACE/.receipt-gate-deps/omnibase_core_wait/scripts/ci/occ_preflight_wait.py"
+          fi
+          evidence_source="$(python3 "$binding_probe" --resolve-evidence-source \
+            --repo "$GH_REPO" --pr-number "$resolved_pr_num")"
 
           # OMN-18882: the dependency-pin-only exemption, the third gate in the
           # OMN-18848 family to honour it. A post-release version bump (manifest

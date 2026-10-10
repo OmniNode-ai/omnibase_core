@@ -34,6 +34,10 @@ requirements:
         statement: "AC5: the request and result models are frozen and forbid extra fields, and this repository's
           tree passes against its written baseline. -- falsifier: uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
           -q -k \"request_and_result_models_are_frozen_and_forbid_extra or this_repository_tree_passes_written_baseline\""
+      - id: AC6
+        statement: "AC6: omnibase_core activates the ratchet with a sorted baseline of existing node directories,
+          a pre-commit check and a CI check against the merge base. -- falsifier: uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_activation.py
+          -q"
 evidence_requirements:
   - kind: tests
     description: "the node-home check lives in the canonical COMPUTE node node_node_home_check_compute
@@ -120,3 +124,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5
+  - id: dod-omn-20702-ac6
+    description: The activation tests check the baseline inventory and the pre-commit and merge-base CI
+      wiring.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_activation.py
+          -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
