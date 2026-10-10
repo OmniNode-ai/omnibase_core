@@ -158,17 +158,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
-
   pre-check:
-    needs: occ-preflight
     name: Resolve PR (fanout guard)
     runs-on: ubuntu-latest
     outputs:
@@ -282,8 +272,8 @@ jobs:
 
   auto-merge:
     name: Enable Auto-Merge
-    needs: [occ-preflight, pre-check]
-    if: needs.occ-preflight.result == 'success' && (needs.pre-check.outputs.skip != 'true' && needs.pre-check.outputs.actor == 'jonahgabriel')
+    needs: [pre-check]
+    if: needs.pre-check.outputs.skip != 'true' && needs.pre-check.outputs.actor == 'jonahgabriel'
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
@@ -293,26 +283,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # OMN-16288: this job previously re-resolved OCC eligibility here by
-      # fetching onex_change_control@heads/main and re-running
-      # validator_occ_merge_eligibility against that checkout. Nothing
-      # promotes OCC's own contracts dev->main (Tier-1 excluded from
-      # nightly-promote per OMN-15067), so OCC main is thousands of commits
-      # stale and that step failed permanently with eligible:false /
-      # missing_contract for every recently-minted ticket contract (e.g.
-      # OMN-16280, run 32359138410) -- it never once passed once main drifted
-      # this far, and it never gated arming: the `auto-merge` job here already
-      # requires `needs.occ-preflight.result == 'success'` (line 148 `if:`),
-      # and that occ-preflight job (line 69) calls the SAME reusable
-      # (occ-preflight.yml) that resolves OCC state from the PR body's
-      # Evidence-Source pin -- the pattern omnibase_infra and omnimarket's
-      # call-occ-preflight.yml already use, and the one context that is a
-      # required status check here ("occ-preflight / eligibility"). The
-      # heads/main re-check was a pure, broken duplicate of an
-      # already-required, already-passed check; this job now simply trusts
-      # that check's conclusion via the existing `needs:`/`if:` gate above
-      # instead of re-running its own resolution. The Python/uv setup steps
-      # that only existed to run that duplicate check are removed with it.
+      # OMN-20074: OCC eligibility is retired; required repo-owned checks
+      # govern admission when auto-merge is armed.
 
       # OMN-18179: this job used to arm auto-merge with no check for whether a
       # human had already turned it off. It fires on `pull_request: opened` and

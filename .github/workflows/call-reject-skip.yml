@@ -13,9 +13,8 @@
 # change-control preflight as a nested job and the scan no longer waits on it
 # (omniclaude#2540), so this caller stops producing
 # `call-reject-skip-token / occ-preflight / eligibility`. That context leaves
-# dev branch protection in the same cut-over window. This file's local
-# `occ-preflight` job and the scan job's `needs: occ-preflight` stay until S6
-# part 2 deletes the OCC callers.
+# dev branch protection in the same cut-over window. S6 part 2 (OMN-20074)
+# removes this file's local `occ-preflight` job and the scan's dependency on it.
 # Wire via: Settings → Branches → main → Require status checks → add the check name above.
 
 name: Reject skip-gate bypass tokens
@@ -38,17 +37,6 @@ permissions:
   pull-requests: read
 
 jobs:
-  occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
-
   call-reject-skip-token:
-    needs: occ-preflight
-    if: always()
     uses: OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@4358450ccbba0cee11e390208dd0b8b1728e94ab # OMN-20074: omniclaude#2540 squash on omniclaude dev; the scan runs with no nested change-control preflight
     secrets: inherit

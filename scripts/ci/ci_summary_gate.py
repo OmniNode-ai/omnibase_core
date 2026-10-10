@@ -6,7 +6,7 @@ Why this exists
 ---------------
 ``CI Summary`` is a required branch-protection context on omnibase_core's ``dev``
 and ``main`` branches. It used to be a ``needs``-gated aggregator job
-(``needs: [quality-gate, tests-gate, contract-compliance, boundary-validation]``,
+(``needs: [quality-gate, tests-gate, boundary-validation]``,
 all self-hosted leaves). A ``needs``-gated job gets **no** GitHub check-run until
 its ``needs`` reach a terminal state, so under self-hosted runner-fleet
 saturation the gate jobs never terminalized and ``CI Summary`` was **absent** —
@@ -35,9 +35,8 @@ Two independent checks; both must be satisfied for success:
    ``success``/``skipped`` conclusion. ``quality-gate`` and ``tests-gate`` are
    themselves ``if: always()`` fail-closed aggregators over all substantive leaf
    jobs, so requiring them present+good proves the whole substantive matrix
-   actually ran and passed. ``contract-compliance`` (Contract Compliance Check)
-   and ``boundary-validation`` (Cross-repo boundary validation) are the two
-   remaining leaves the old needs-based summary depended on. This is what
+   actually ran and passed. ``boundary-validation`` (Cross-repo boundary
+   validation) remains a required leaf alongside the aggregate gates. This
    prevents a *false green* before late-created jobs (``detect-changes`` →
    ``test-parallel`` → ``*-gate``) have even been instantiated: a pure "all
    currently-present jobs passed" check would go green too early.
@@ -62,22 +61,19 @@ from datetime import UTC, datetime
 SELF_JOB_NAME = "CI Summary"
 
 # Aggregate gate jobs that must all be present + completed + good for success.
-# These are the exact set the old needs-based ``ci-summary`` depended on
-# (``needs: [quality-gate, tests-gate, contract-compliance, boundary-validation]``);
+# These retain the repo-owned gates from the old needs-based ``ci-summary``
+# (``needs: [quality-gate, tests-gate, boundary-validation]``);
 # ``quality-gate`` and ``tests-gate`` are ``if: always()`` fail-closed aggregators
 # over their leaf jobs. Names are the ``name:`` fields from ci.yml (NOT the job
 # keys) because the GitHub jobs API reports the display name.
 GATE_JOBS: tuple[str, ...] = (
     "Quality Gate",  # quality-gate: aggregates all Phase-1 quality leaves
     "Tests Gate",  # tests-gate: aggregates test-parallel + tests-integration
-    "Contract Compliance Check",  # contract-compliance job (NOT "Contract Compliance")
     "Cross-repo boundary validation",  # boundary-validation job
-    "OCC Companion Merged Gate (OMN-15214)",  # occ-companion-merged — cited OCC evidence must be MERGED before product merge (OMN-15222 port)
     # OMN-18031: the per-run runner routing decision (ci.yml `route`, a `uses:`
     # job, so the jobs API reports it as "<caller display name> / <inner job
-    # name>"). THIS LINE IS HALF THE MECHANISM, on the identical reasoning as
-    # the companion-merged entry above: the default-deny sweep below already
-    # fails when a present job FAILS, but an unregistered job that is `skipped`
+    # name>"). THIS LINE IS HALF THE MECHANISM: the default-deny sweep below
+    # already fails when a present job FAILS, but an unregistered job that is `skipped`
     # or ABSENT yields SUCCESS. Without this entry, deleting `route` from
     # ci.yml would silently retire per-run routing on a fully green run — and
     # because routing is deliberately INERT while this repo's trusted seam
@@ -92,7 +88,7 @@ GATE_JOBS: tuple[str, ...] = (
     "Runner Route (OMN-18031) / route",
     # OMN-18790: the skip-count baseline ratchet (epic OMN-18775, ported from
     # omnibase_infra's OMN-18776). THIS LINE IS HALF THE MECHANISM, on the
-    # identical reasoning as the two entries above: the default-deny sweep below
+    # identical reasoning as routing above: the default-deny sweep below
     # already fails CI Summary when a present job FAILS, but an unregistered job
     # that is `skipped` or ABSENT yields SUCCESS. The failure mode it closes is
     # itself silent and measured -- this repo's integration matrix skipped the
@@ -150,8 +146,7 @@ GATE_JOBS: tuple[str, ...] = (
     "Propagate Config Dry-run (OMN-20074)",
 )
 
-# OMN-15222 (port of the omnibase_infra OMN-15214 canary, mirroring omniclaude's
-# OMN-14350 STRICT_SUCCESS_JOBS precedent): jobs that must be EXACTLY
+# Following the OMN-14350 STRICT_SUCCESS_JOBS precedent: jobs must be EXACTLY
 # ``success`` — stricter than GATE_JOBS membership, whose completeness anchor
 # accepts ``success``||``skipped``. Each of these runs UNCONDITIONALLY in ci.yml
 # (no ``if:``, no ``needs:``), so a SKIPPED or CANCELLED conclusion is anomalous
@@ -165,7 +160,6 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
         # so it always runs to a terminal conclusion and a `skipped` here is a
         # failure-to-run, never a legitimate absence.
         "Wheel Content Parity (OMN-18865)",
-        "OCC Companion Merged Gate (OMN-15214)",
         # OMN-18031: paired with the GATE_JOBS entry above. GATE_JOBS' anchor
         # accepts ``skipped`` as complete, so this is the half that makes a
         # SKIPPED (or CANCELLED) route job fail closed rather than pass.
@@ -197,10 +191,7 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
 #     ``continue-on-error: true`` and is explicitly NOT a ``quality-gate`` need
 #     (see the OMN-13574 comment on quality-gate ``needs``) — advisory only.
 #   - "Contract Compliance" (compliance): an ORPHAN job — not in any ``needs:``
-#     and not a required branch-protection context. The REAL gating contract
-#     check is "Contract Compliance Check" (in GATE_JOBS above); the two names
-#     are distinct and matched exactly, so allowlisting the orphan does not
-#     weaken the gate.
+#     and not a required branch-protection context.
 #   - "Shadow Selection Compare" (shadow-compare): deliberately report-only.
 #     It compares a counterfactual test selection with the authoritative full
 #     suite and uploads the record; it defines no pass/fail policy and carries

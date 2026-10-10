@@ -1,32 +1,15 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-17427
-title: Contract Compliance dep-scope keeps the dependency-bot exemption on dev push
-summary: On a push event the Contract Compliance Check dep-scope step resolves the commit's merged pull
-  request and applies the unchanged dependency-bot rules, so a merged workflow-only dependency-bot PR
-  no longer fails the dev push run for a missing Evidence-Source line; with no merged PR the step stays
-  fail-closed.
+title: Caller evidence derives the OCC writer app dependency-pin-only exemption in-job
+summary: The caller-evidence job derives the OCC writer app dependency-pin-only exemption using the pinned
+  producer classifier at the exact head and fails closed on every error. OMN-20074 retires the Contract
+  Compliance dep-scope push requirement and AC1-AC3 with the OCC evidence job.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
-  - id: req-omn17427-dep-scope-push
-    statement: The dep-scope step must take the same dependency-bot exemption decision on a dev push as
-      on the merged pull request's own run, and fail closed when no merged pull request is found.
-    acceptance:
-      - id: AC1
-        statement: "AC1: on push the step classifies the commit's merged pull request with the dependency-bot
-          rules (author, title, workflow-only files): a dependency-bot workflow-only PR is exempt, a product
-          file, a human author, another title or an empty file list is not. -- falsifier: uv run pytest
-          tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py -q -k test_push_classifies_the_merged_pr"
-      - id: AC2
-        statement: "AC2: on push with no merged pull request for the commit the step leaves exempt=false
-          and fetches no file list. -- falsifier: uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-          -q -k test_push_without_a_merged_pr_returns_without_fetching_files"
-      - id: AC3
-        statement: "AC3: on push the step selects the latest merged pull request for the commit, the same
-          selection the evidence resolver makes. -- falsifier: uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-          -q -k test_push_selects_the_latest_merged_pr_like_the_resolver"
+  # OMN-20074: req-omn17427-dep-scope-push and AC1-AC3 retired with contract-compliance.
   - id: req-omn17427-writer-pin-only-in-job
     statement: The caller-evidence job must derive the OCC writer app dependency-pin-only exemption with
       the pinned producer classifier at the exact head and fail closed on every error.
@@ -46,22 +29,6 @@ requirements:
           pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
 evidence_requirements:
   - kind: tests
-    description: "on push the step classifies the commit's merged pull request with the dependency-bot
-      rules (author, title, workflow-only files): a dependency-bot workflow-only PR is exempt, a product
-      file, a human author, another title or an empty file list is not."
-    command: "uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-      -q -k test_push_classifies_the_merged_pr"
-  - kind: tests
-    description: "on push with no merged pull request for the commit the step leaves exempt=false and
-      fetches no file list."
-    command: "uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-      -q -k test_push_without_a_merged_pr_returns_without_fetching_files"
-  - kind: tests
-    description: "on push the step selects the latest merged pull request for the commit, the same selection
-      the evidence resolver makes."
-    command: "uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-      -q -k test_push_selects_the_latest_merged_pr_like_the_resolver"
-  - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
       classifier over the exact head diff against the merge base."
     command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_exempts_a_version_bump"
@@ -78,40 +45,6 @@ emergency_bypass:
   justification: ''
   follow_up_ticket_id: ''
 dod_evidence:
-  - id: dod-omn-17427-dep-scope-push-ac1
-    description: "on push the step classifies the commit's merged pull request with the dependency-bot
-      rules (author, title, workflow-only files): a dependency-bot workflow-only PR is exempt, a product
-      file, a human author, another title or an empty file list is not."
-    source: manual
-    checks:
-      - check_type: test_passes
-        check_value: "uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-          -q -k test_push_classifies_the_merged_pr"
-        cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC1
-  - id: dod-omn-17427-dep-scope-push-ac2
-    description: "on push with no merged pull request for the commit the step leaves exempt=false and
-      fetches no file list."
-    source: manual
-    checks:
-      - check_type: test_passes
-        check_value: "uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-          -q -k test_push_without_a_merged_pr_returns_without_fetching_files"
-        cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC2
-  - id: dod-omn-17427-dep-scope-push-ac3
-    description: "on push the step selects the latest merged pull request for the commit, the same selection
-      the evidence resolver makes."
-    source: manual
-    checks:
-      - check_type: test_passes
-        check_value: "uv run pytest tests/unit/scripts/ci/test_contract_compliance_dep_scope_push_omn17427.py
-          -q -k test_push_selects_the_latest_merged_pr_like_the_resolver"
-        cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC3
   - id: dod-omn-17427-writer-pin-only-exempts-bump
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
       classifier over the exact head diff against the merge base."

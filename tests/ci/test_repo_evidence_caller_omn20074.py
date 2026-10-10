@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""OMN-20074: omnibase_core repo-owned evidence and its S5 shadow caller."""
+"""OMN-20074: omnibase_core repo-owned evidence and its S6 evidence caller."""
 
 from __future__ import annotations
 
@@ -62,12 +62,12 @@ def test_caller_workflow_shape() -> None:
     assert "secrets: inherit" not in text, "caller must not inherit secrets"
 
 
-def test_caller_compares_with_occ_for_the_s5_shadow_count() -> None:
+def test_caller_stops_comparing_with_occ_at_the_s6_cutover() -> None:
     job = yaml.safe_load(CALLER_PATH.read_text(encoding="utf-8"))["jobs"][
         "repo-evidence"
     ]
-    assert job["with"].get("compare-with-occ") == "true", (
-        'the S5 shadow count requires compare-with-occ: "true" (a quoted string input)'
+    assert job["with"].get("compare-with-occ") == "false", (
+        'the S6 cut-over requires compare-with-occ: "false" (a quoted string input)'
     )
     version = tuple(int(part) for part in job["with"]["verifier-version"].split("."))
     assert version >= _DIFFERENCE_CLASSIFIER_FLOOR, (
@@ -144,37 +144,17 @@ def test_the_caller_takes_the_slot_of_the_retired_occ_preflight_caller() -> None
     allowlisted_workflows = budget["allowlisted_workflows"]
     assert "call-repo-evidence-gate.yml" in allowlisted_workflows
     assert "call-occ-preflight.yml" not in allowlisted_workflows
-    assert budget["budget"] == 29
+    assert budget["budget"] == 28
     assert len(allowlisted_workflows) == budget["budget"]
     assert not (WORKFLOWS_DIR / "call-occ-preflight.yml").exists()
 
 
-def test_occ_preflight_context_still_materializes_on_every_judged_pull_request() -> (
-    None
-):
-    # The retired caller produced "occ-preflight / eligibility" on pull requests
-    # into main and dev. call-receipt-gate.yml's occ-preflight job produces the
-    # same context from the same reusable, unconditionally, on a superset of
-    # those events, so retiring the duplicate removes no required context.
+def test_occ_preflight_context_is_retired_at_the_s6_cutover() -> None:
     manifest = yaml.safe_load(
         (REPO_ROOT / ".github" / "required-checks.yaml").read_text(encoding="utf-8")
     )
     rows = [g for g in manifest["gates"] if g["name"] == "occ-preflight / eligibility"]
     assert len(rows) == 1
-    assert rows[0]["mode"] == "REQUIRED"
-    assert rows[0]["producer_kind"] == "local"
-    assert rows[0]["workflow"] == "call-receipt-gate.yml"
-    assert rows[0]["job_path"] == ["occ-preflight", "eligibility"]
-
-    workflow = yaml.safe_load(
-        (WORKFLOWS_DIR / "call-receipt-gate.yml").read_text(encoding="utf-8")
-    )
-    triggers = workflow.get("on", workflow.get(True))
-    pull_request = triggers["pull_request"]
-    assert {"opened", "synchronize", "reopened", "ready_for_review"} <= set(
-        pull_request["types"]
-    )
-    assert {"main", "dev"} <= set(pull_request["branches"])
-    job = workflow["jobs"]["occ-preflight"]
-    assert job["uses"] == "./.github/workflows/occ-preflight.yml"
-    assert "if" not in job, "a job-level if would let the required context go missing"
+    assert rows[0]["mode"] == "RETIRED"
+    assert "OMN-20074" in rows[0]["rationale"]
+    assert not (WORKFLOWS_DIR / "call-receipt-gate.yml").exists()

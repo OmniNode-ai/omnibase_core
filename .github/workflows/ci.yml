@@ -167,24 +167,6 @@ jobs:
       RUNNER_FLEET_STATUS_TOKEN: ${{ secrets.RUNNER_FLEET_STATUS_TOKEN }}
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
 
-  # OMN-16359: migrated from call-occ-companion-effect.yml. This remains a
-  # required composed context, so it MUST NOT gain a job-level `if:`: even a
-  # dependency-bot/ticketless skip must be produced by the invoked reusable.
-  # The job-level concurrency is the retired caller's literal group; CI's
-  # workflow-level group differs and must not silently change cancellation.
-  # This job is the ONLY producer of the required context. OMN-16359 deleted
-  # call-occ-companion-effect.yml after it was restored as a duplicate producer
-  # sharing this concurrency group. Do NOT re-add the standalone workflow.
-  occ-companion-effect:
-    concurrency:
-      group: OCC Companion Effect Publisher-${{ github.event.pull_request.number || github.ref }}
-      cancel-in-progress: true
-    uses: OmniNode-ai/omniclaude/.github/workflows/call-occ-companion-effect-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
-    # pragma: allowlist secret -- `secrets: inherit` is GHA syntax, not a secret.
-    secrets: inherit
-    with:
-      lane: dev
-
   # OMN-16589: migrated from kb-doc-gate.yml to permanently close its expired
   # pull-request-workflow-budget waiver. The caller job id deliberately remains
   # `kb-doc-gate` and the reusable's job name remains `kb-doc-gate`, preserving
@@ -3771,16 +3753,6 @@ jobs:
     # spec-required validators (validator-requirements.yaml) and are now needs so
     # a real violation turns the single required CI Summary rollup red.
     #
-    # OMN-14887: contract-compliance is DELIBERATELY NOT a need here (removed).
-    # This job's downstream (detect-changes, test-parallel) skip whenever
-    # needs.quality-gate.result != 'success', and tests-gate treats a skipped
-    # test-parallel as PASSED. With the real DoD executor now wired into
-    # contract-compliance (see that job below), a single BLOCK there would have
-    # cascaded through quality-gate -> skip detect-changes/test-parallel ->
-    # tests-gate reports PASSED on zero tests run. ci-summary's independent
-    # GATE_JOBS entry ("Contract Compliance Check", scripts/ci/ci_summary_gate.py)
-    # keeps this job required and merge-blocking without that cascade.
-    #
     # OMN-16625: zone-filter added as a need (read for its `docs_only` output
     # only, exactly like tests-gate reads it -- never for its `.result`). This
     # job itself stays `if: always()` so it is never a skip-vector; the step
@@ -4930,337 +4902,13 @@ jobs:
           warn-only: "false"
           repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket,onex_change_control"
 
-  # API-STABLE check_name: "CI Summary"
-  # Aggregates Quality Gate + Tests Gate into a single top-level status.
-  # Not strictly required for omnibase_core (no path filtering on Tier A gates),
-  # but added for uniformity across all OmniNode repos.
-
-  contract-compliance:
-    name: Contract Compliance Check
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    # enforce-everything gate audit (latent fail-open, OMN-14863 skip-vector
-    # guard): this job's DoD check_values are PR-scoped
-    # (github.event.pull_request.number), which `merge_group` and `push` never
-    # populate. The empty-PR_NUMBER branch (below) used to `exit 0` -- a
-    # vacuous SUCCESS that never actually ran a single check_value, while
-    # GATE_JOBS/STRICT_SUCCESS_JOBS (scripts/ci/ci_summary_gate.py) still
-    # counted it as a provable pass. Not currently exploited (no live dev
-    # merge queue), but it would silently vacate this gate the instant
-    # merge_group is enabled, with zero further code change.
-    #
-    # The `if:` deliberately keeps admitting all three events rather than
-    # narrowing to `pull_request` only: this job's context ("Contract
-    # Compliance Check") is a GATE_JOBS entry whose completeness anchor
-    # accepts a `skipped` conclusion as GOOD. A job-level `if:` that can
-    # evaluate false makes GitHub post that job as `skipped` -- which would
-    # make merge_group/push silently SATISFY the gate via the skip path
-    # instead of the vacuous-exit-0 path, exactly the skip-vector class the
-    # `reject-required-check-skip-vector` pre-commit hook (OMN-14863) exists
-    # to catch (confirmed live: it rejected an earlier draft of this fix that
-    # narrowed the `if:`). Keeping `if:` unconditional means the job always
-    # runs to completion; the step below fails closed (`exit 1`, caught by
-    # the default-deny sweep regardless of GATE_JOBS/STRICT_SUCCESS_JOBS
-    # membership) whenever it cannot resolve a PR number to validate against
-    # -- never an `if:`-driven skip. OMN-16346: on `push` that used to be
-    # EVERY event (permanently reddening dev's post-merge signal, since push
-    # never populates github.event.pull_request.number); the step now
-    # resolves the merge commit's originating PR via the associated-PR API
-    # first and only falls through to fail-closed if that resolution itself
-    # comes up empty. `merge_group` is unchanged (still fails closed) -- no
-    # live dev merge queue exercises it today.
-    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.event_name == 'push'
-    steps:
-      - uses: actions/checkout@v7
-      - name: Classify dependency-bot workflow-only PR
-        id: dep-scope
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          COMMIT_SHA: ${{ github.sha }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          set -euo pipefail
-          echo "exempt=false" >> "$GITHUB_OUTPUT"
-          # OMN-17427: the dev push run of a merged dependency-bot PR must
-          # take the same exemption decision as its PR run.
-          if [ "${{ github.event_name }}" = "push" ]; then
-            gh api "repos/$GH_REPO/commits/$COMMIT_SHA/pulls" \
-              --jq '[.[] | select(.merged_at != null)] | sort_by(.merged_at) | last // {}' \
-              > /tmp/dep-scope-pr.json
-            PR_NUMBER=$(python3 - <<'PY'
-          import json
-          from pathlib import Path
-
-          print(json.loads(Path("/tmp/dep-scope-pr.json").read_text()).get("number", ""))
-          PY
-            )
-            if [ -z "$PR_NUMBER" ]; then
-              exit 0
-            fi
-          elif [ "${{ github.event_name }}" != "pull_request" ]; then
-            exit 0
-          fi
-          # OMN-16606: NOT `gh pr diff --name-only`. That verb fetches the whole
-          # unified diff and only then filters to names, so GitHub answers
-          # `HTTP 406: the diff exceeded the maximum number of lines (20000)`
-          # and the step exits 1 -- reddening this GATE_JOBS entry, and with it
-          # the required `CI Summary`, for every large PR regardless of content.
-          # Measured on this very PR (#1644, 91,033 deletions): "could not find
-          # pull request diff: HTTP 406 ... PullRequest.diff too_large".
-          # The files API returns names without the diff body and paginates, so
-          # it has no line cap. It does cap at 3000 files; a truncated list can
-          # only ever shrink `files`, and `workflow_only` requires ALL entries
-          # to be under .github/workflows/ with `bool(files)` guarding empty --
-          # so a truncation or an empty response leaves `exempt=false` and the
-          # full compliance check runs. Fail-closed in both directions.
-          gh api "repos/$GH_REPO/pulls/$PR_NUMBER/files" --paginate \
-            --jq '.[].filename' > /tmp/pr-files.txt
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          author = os.environ["PR_AUTHOR"]
-          title = os.environ["PR_TITLE"]
-          if "${{ github.event_name }}" == "push":
-              pr = json.loads(Path("/tmp/dep-scope-pr.json").read_text())
-              author = pr["user"]["login"]
-              title = pr["title"]
-          files = [
-              line.strip()
-              for line in Path("/tmp/pr-files.txt").read_text().splitlines()
-              if line.strip()
-          ]
-          dependency_author = author in {"dependabot[bot]", "github-actions[bot]"}
-          dependency_title = title.startswith(("chore(deps", "build(deps", "Bump "))
-          workflow_only = bool(files) and all(path.startswith(".github/workflows/") for path in files)
-          if dependency_author and dependency_title and workflow_only:
-              with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as out:
-                  out.write("exempt=true\n")
-          PY
-      # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
-      # onexbot-occ-writer App installation token, scoped to the one
-      # sibling repo this job reads.
-      - name: Mint onexbot-occ-writer app token
-        id: app-token
-        if: steps.dep-scope.outputs.exempt != 'true'
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
-          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
-          owner: OmniNode-ai
-          repositories: onex_change_control
-          permission-contents: write
-      - name: Checkout onex_change_control
-        if: steps.dep-scope.outputs.exempt != 'true'
-        uses: actions/checkout@v7
-        with:
-          repository: OmniNode-ai/onex_change_control
-          # OMN-14887: PINNED, mirroring the omnibase_infra OMN-14454 canary
-          # exactly. This job already carried a pinned OCC ref (from OMN-10445,
-          # 2026-05-03) rather than the unpinned default-branch clone the ticket
-          # description assumed -- but that old pin (3c98ab30) predates the
-          # OMN-14436 runner revival, so it cannot be trusted to contain
-          # scripts/ci/run_contract_compliance_check.py in working order.
-          # Re-pinned to OCC dev HEAD at the time of this change.
-          ref: 91f5b69104366c2d86e4bb21de67c3c497702111
-          path: onex_change_control_checker
-          token: ${{ steps.app-token.outputs.token || github.token }}
-
-      - uses: astral-sh/setup-uv@v7
-        if: steps.dep-scope.outputs.exempt != 'true'
-        with:
-          enable-cache: false
-
-      - name: Install onex_change_control
-        if: steps.dep-scope.outputs.exempt != 'true'
-        working-directory: onex_change_control_checker
-        run: |
-          set -euo pipefail
-          export UV_HTTP_TIMEOUT="${UV_HTTP_TIMEOUT:-600}"
-          attempt=1
-          max_attempts=3
-          delay=10
-          until uv sync --no-cache --all-extras; do
-            status=$?
-            if [[ "$attempt" -ge "$max_attempts" ]]; then
-              echo "::error::uv sync onex_change_control failed after ${attempt} attempt(s)"
-              exit "$status"
-            fi
-            echo "::warning::uv sync onex_change_control attempt ${attempt}/${max_attempts} failed with exit ${status}; retrying in ${delay}s"
-            sleep "$delay"
-            attempt=$((attempt + 1))
-          done
-
-      # OMN-18157: the checker code stays at its audited immutable pin while
-      # contracts are checked out at the exact Evidence-Source SHA from this PR.
-      # A missing or malformed source is a hard failure; it never falls back to
-      # the checker pin or OCC default branch.
-      - name: Resolve contract-compliance evidence data (OMN-18157)
-        id: resolve_contract_compliance_evidence
-        if: steps.dep-scope.outputs.exempt != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
-        run: |
-          set -euo pipefail
-          uv run python scripts/ci/resolve_contract_compliance_evidence.py \
-            --repo "${{ github.repository }}" \
-            --event-name "${{ github.event_name }}" \
-            --commit-sha "${{ github.sha }}" \
-            --pr-number "${PR_NUMBER:-}" \
-            --merge-group-head-ref "${MERGE_GROUP_HEAD_REF:-}" \
-            --github-output "$GITHUB_OUTPUT"
-
-      - name: Checkout contract-compliance evidence data (OMN-18157)
-        if: steps.dep-scope.outputs.exempt != 'true'
-        uses: actions/checkout@v7
-        with:
-          repository: OmniNode-ai/onex_change_control
-          ref: ${{ steps.resolve_contract_compliance_evidence.outputs.occ_sha }}
-          path: onex_change_control_evidence
-          token: ${{ steps.app-token.outputs.token || github.token }}
-
-      # The preflight calls the same pinned runner resolver used by the runner
-      # itself, then requires that exact ticket's data contract before ``uv``
-      # can execute any check_value against the product workspace.
-      - name: Run DoD contract compliance against the product tree (OMN-14887)
-        if: steps.dep-scope.outputs.exempt != 'true'
-        run: |
-          set -euo pipefail
-          uv run python scripts/ci/run_contract_compliance_with_evidence.py \
-            --pr "${{ steps.resolve_contract_compliance_evidence.outputs.pr_number }}" \
-            --repo "${{ github.repository }}" \
-            --checker-dir "$GITHUB_WORKSPACE/onex_change_control_checker" \
-            --evidence-contracts-dir "$GITHUB_WORKSPACE/onex_change_control_evidence/contracts" \
-            --workspace "$GITHUB_WORKSPACE" \
-            --legacy-allowlist "$GITHUB_WORKSPACE/onex_change_control_checker/scripts/ci/dod_runner_legacy_allowlist.txt" \
-            --deferred-record "$RUNNER_TEMP/contract-compliance-deferred/record.json"
-        env:
-          GH_TOKEN: ${{ github.token }}
-      - name: Record dependency-bot workflow-only contract compliance decision
-        if: steps.dep-scope.outputs.exempt == 'true'
-        run: |
-          set -euo pipefail
-          echo "Dependency-bot PR changes only workflow files; no product contract DoD check_values apply." >> "$GITHUB_STEP_SUMMARY"
-          mkdir -p "$RUNNER_TEMP/contract-compliance-deferred"
-          printf '%s\n' '{"schema": 1, "deferred": []}' > "$RUNNER_TEMP/contract-compliance-deferred/record.json"
-      # OMN-18157: the pinned runner judges a `test_passes` item with
-      # `gh pr checks`, and in this job that set always holds this job's own
-      # running check, so the item can never pass here. The driver records
-      # each such item instead; CI Summary downloads this record and judges the
-      # items once every other check has a verdict
-      # (scripts/ci/deferred_test_passes_gate.py). Both paths above write a
-      # record, so a success of this job with no artifact fails CI Summary.
-      - name: Upload deferred test_passes record (OMN-18157)
-        uses: actions/upload-artifact@v7
-        with:
-          name: contract-compliance-deferred
-          path: ${{ runner.temp }}/contract-compliance-deferred/record.json
-          if-no-files-found: error
-          overwrite: true
-          retention-days: 7
-
-  occ-companion-merged:
-    name: OCC Companion Merged Gate (OMN-15214)
-    # OMN-15222 (port of the OMN-15214 canary, omnibase_infra #2486): makes the
-    # 2026-07-26 OCC hygiene-sweep trigger state — an OPEN onex_change_control
-    # evidence companion whose product PR already MERGED — unreachable via the
-    # CI Summary merge path on this repo. The sweep closed five open companions
-    # (OCC#5012–#5016) whose product PRs had merged, destroying three evidence
-    # chains (OMN-15199/OMN-15200/OMN-15203). The durable fix is ordering: the
-    # companion must MERGE BEFORE the product PR can. This job polls the PR's
-    # live Evidence-Source (live body, not event payload — occ-autobind PATCHes
-    # it in after open) and greens ONLY when the cited OCC companion PR is
-    # MERGED or the cited OCC commit SHA is an ancestor of onex_change_control
-    # dev/main. A companion CLOSED without merging fails immediately (that IS
-    # the incident state).
-    #
-    # CI Summary GATE_JOB + STRICT_SUCCESS_JOB (scripts/ci/ci_summary_gate.py)
-    # — deliberately NOT a new top-level required context: a context that does
-    # not report on every PR shape wedges merges indefinitely under branch
-    # protection, and occ-autobind itself is network-flaky (omninode_infra#679,
-    # 2026-07-26). Unconditional (no needs/if) so CI Summary always WAITS for
-    # it and a skip/cancel fails closed; internal event scoping no-ops on
-    # push/workflow_dispatch (mirrors occ-preflight). GitHub-hosted + pure gh
-    # API polling: zero self-hosted/LAN dependency, and the poll window absorbs
-    # autobind mint + companion auto-merge latency instead of converting them
-    # into instant reds.
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      pull-requests: read
-    env:
-      GH_REPO: ${{ github.repository }}
-      PR_NUMBER: ${{ github.event.pull_request.number }}
-      MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
-      # Poll window (seconds) — bounded well under ci-summary's 90m deadline so
-      # this gate reaches a terminal state first; PENDING converts to FAIL.
-      DEADLINE_SECONDS: "1500"
-      POLL_INTERVAL_SECONDS: "30"
-    steps:
-      - name: Checkout (gate script)
-        uses: actions/checkout@v7
-      # OMN-16373: CROSS_REPO_PAT retirement. Mint a short-lived
-      # onexbot-occ-writer App token and export it as GH_TOKEN — job-level
-      # `env:` is resolved before any step runs, so it cannot reference a
-      # step output directly. `|| github.token` fallback kept for resilience.
-      #
-      # OMN-16552: GitHub Actions does not expose repository secrets to a
-      # pull_request run authored by Dependabot (secret-exfiltration
-      # protection), so on a Dependabot PR ONEXBOT_OCC_APP_ID/PRIVATE_KEY
-      # resolve empty and this mint hard-fails BEFORE the Python script's own
-      # DEPENDENCY_BOT_AUTHORS exemption ever runs — the job never reaches
-      # "Require cited OCC evidence...". Skip minting only when the author is
-      # a known dependency-bot login AND the title has a deps-bump prefix
-      # (both, not either, mirroring — but stricter than — the OR the
-      # pr-title-check-reusable.yml exemption uses, so a human cannot dress a
-      # PR as a bump to dodge evidence enforcement). The job itself stays
-      # unconditional (no job-level `if:`) so CI Summary's
-      # skip/cancel-fails-closed STRICT_SUCCESS_JOBS semantics hold; only
-      # this one step is skipped. "Export GH_TOKEN" already falls back to
-      # `github.token` when app-token has no output, and the script's author
-      # exemption needs only same-repo `gh pr view` access — no cross-repo
-      # onex_change_control read — so the default token is sufficient here.
-      - name: Mint onexbot-occ-writer app token
-        id: app-token
-        if: >-
-          !(
-            contains(fromJSON('["dependabot[bot]","github-actions[bot]"]'), github.event.pull_request.user.login) &&
-            (
-              startsWith(github.event.pull_request.title, 'chore(deps') ||
-              startsWith(github.event.pull_request.title, 'build(deps') ||
-              startsWith(github.event.pull_request.title, 'Bump ')
-            )
-          )
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
-          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
-          owner: OmniNode-ai
-          repositories: onex_change_control
-          permission-contents: write
-      - name: Export GH_TOKEN
-        run: echo "GH_TOKEN=${{ steps.app-token.outputs.token || github.token }}" >> "$GITHUB_ENV"
-      - name: Require cited OCC evidence to be merged/durable before product merge
-        run: python3 scripts/ci/check_occ_companion_merged.py
-
   ci-summary:
     name: CI Summary
     # OMN-14127: REQUIRED branch-protection context, implemented as a NO-`needs`,
     # GitHub-hosted, FAIL-CLOSED poller (ported from omniclaude #1870). A
     # `needs`-gated job gets no check-run until its `needs` terminalize, so under
     # self-hosted fleet saturation the old needs-based CI Summary
-    # (needs: [quality-gate, tests-gate, contract-compliance, boundary-validation],
+    # (needs: [quality-gate, tests-gate, boundary-validation],
     # all self-hosted leaves) was ABSENT forever and the PR wedged BLOCKED with no
     # auto-recovery. With NO `needs` this job's check-run instantiates immediately
     # (the required context can never be absent); it polls the current run's job
@@ -5277,9 +4925,6 @@ jobs:
       actions: read
       checks: read
       contents: read
-      # OMN-18157: the deferred test_passes evaluation reads the recorded PR's
-      # head on push runs.
-      pull-requests: read
     # Deadline (below) is comfortably under any run-cancellation window so the
     # required context ALWAYS posts a terminal state first. On pull_request a
     # newer run of the same PR cancels this one (OMN-19614), and that newer
@@ -5290,9 +4935,7 @@ jobs:
     # 90m deadline was too tight once test-parallel's own budget grew 35->70
     # (self-hosted omnibase-ci fleet latency root-caused in OMN-15980; see that
     # job's timeout-minutes comment and scripts/ci/detect_test_paths.py history).
-    # OMN-18157: 140 -> 185 for the deferred test_passes step below (up to
-    # its own 40m deadline after the 130m poll deadline).
-    timeout-minutes: 185
+    timeout-minutes: 140
     steps:
       - name: Checkout (gate script)
         uses: actions/checkout@v7
@@ -5414,35 +5057,3 @@ jobs:
             fi
             sleep_before_deadline
           done
-      # OMN-18157: judge the `test_passes` DoD items Contract Compliance Check
-      # deferred (it cannot judge them in-job: its own check is still running).
-      # Runs only after the verdict above is SUCCESS, so every gate job,
-      # including Contract Compliance Check, has already finished. Same pass
-      # set as the pinned runner (SUCCESS, SKIPPED, NEUTRAL) over the GitHub
-      # Actions check-runs on the exact head this run gates, latest-wins per
-      # check name, every CI Summary row excluded, pending checks polled to a
-      # 40m deadline and then failed. On push the recorded PR's head is judged.
-      - name: Evaluate deferred test_passes DoD items (OMN-18157)
-        working-directory: ${{ github.workspace }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.run_id }}
-          RUN_ATTEMPT: ${{ github.run_attempt }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-          rm -rf deferred-record
-          # A missing artifact is not an error here: the gate decides from the
-          # Contract Compliance Check conclusion whether a record is required.
-          if ! gh run download "${RUN_ID}" --repo "${GH_REPO}" --name contract-compliance-deferred --dir deferred-record; then
-            echo "::notice::no contract-compliance-deferred artifact in run ${RUN_ID}"
-          fi
-          python3 -m scripts.ci.deferred_test_passes_gate \
-            --jobs-file jobs.json \
-            --run-attempt "${RUN_ATTEMPT}" \
-            --record deferred-record/record.json \
-            --head-sha "${HEAD_SHA}" \
-            --current-run-id "${RUN_ID}" \
-            --deadline-seconds 2400 \
-            --poll-interval-seconds 60
