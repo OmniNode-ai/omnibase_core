@@ -58,7 +58,7 @@ def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
         "branch-policy-mode": "legacy",
         "core-ref": "dev",
         "evidence-source": "occ",
-        "verifier-version": "0.4.280",
+        "verifier-version": "0.4.305",
         "compare-with-occ": "false",
         "shadow": "false",
         "occ-context": "occ-preflight / eligibility",
