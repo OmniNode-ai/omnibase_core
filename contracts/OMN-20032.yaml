@@ -1,0 +1,66 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20032
+title: The shared receipt gate refuses a caller-mode verifier older than the partly-bound refusal
+summary: In caller evidence mode the receipt gate's "Install the pinned verifier" step refuses any verifier-version
+  below VERIFIER_FLOOR (0.4.303, the first omnimarket release carrying omnimarket#3511's refusal of a
+  contract that leaves an acceptance criterion unbound) before installing anything, and the verifier-version
+  default moves to 0.4.305. The floor lives in one place, the step's VERIFIER_FLOOR env value.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20032-verifier-floor
+    statement: The receipt gate's caller-mode verifier install must refuse a verifier-version below the
+      floor that carries node_dod_verify's partly-bound refusal, with the floor declared once.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: in caller mode the "Install the pinned verifier" step exits 1 with "verifier-version
+          <v> is below the floor 0.4.303" and installs nothing for 0.4.294 and 0.4.280, and installs omnimarket==<v>
+          for 0.4.303 and 0.4.305. -- falsifier: uv run pytest tests/ci/test_receipt_gate_verifier_floor_omn20032.py
+          -q -k "below_the_floor or at_or_above_the_floor or non_numeric"'
+  - id: req-omn20032-verifier-default
+    statement: The receipt gate's verifier-version default must be at or above both 0.4.305 and the floor,
+      and the floor must be declared once on the install step.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the verifier-version input defaults to 0.4.305 or newer and at or above VERIFIER_FLOOR,
+          which is declared on exactly one line of receipt-gate.yml, on the install step. -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_verifier_floor_omn20032.py -q -k "declared_once or
+          default_is_at_or_above"'
+evidence_requirements:
+  - kind: tests
+    description: Execute the install step's script with a stub uv to prove the refusal below the floor
+      and the install at or above it.
+    command: uv run pytest tests/ci/test_receipt_gate_verifier_floor_omn20032.py -q -k "below_the_floor
+      or at_or_above_the_floor or non_numeric"
+  - kind: tests
+    description: Read the workflow to prove the default and the single declaration of the floor.
+    command: uv run pytest tests/ci/test_receipt_gate_verifier_floor_omn20032.py -q -k "declared_once
+      or default_is_at_or_above"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20032-ac1
+    description: Execute the install step's script with a stub uv to prove the refusal below the floor
+      and the install at or above it.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_verifier_floor_omn20032.py -q -k "below_the_floor
+          or at_or_above_the_floor or non_numeric"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20032-ac2
+    description: Read the workflow to prove the default and the single declaration of the floor.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_verifier_floor_omn20032.py -q -k "declared_once
+          or default_is_at_or_above"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2

@@ -17,7 +17,8 @@
 #                   `verify` always reports a success no-op in caller mode,
 #                   regardless of shadow (OMN-20074).
 #   verifier-version: pinned omnimarket PyPI release for caller mode
-#                   (default: 0.4.280; must be numeric MAJOR.MINOR.PATCH).
+#                   (default: 0.4.305; must be numeric MAJOR.MINOR.PATCH and
+#                   at or above the install step's VERIFIER_FLOOR, OMN-20032).
 #   compare-with-occ: "true" during the pilot, when dod-verify is required
 #                   beside OCC's contexts; "false" otherwise (default: "false").
 #                   With "true", the dod-verify head step also names a
@@ -79,7 +80,7 @@ on:
         description: Pinned omnimarket PyPI release for caller evidence verification.
         type: string
         required: false
-        default: "0.4.280"
+        default: "0.4.305"
       compare-with-occ:
         description: "Compare with OCC during the pilot, when dod-verify is required beside OCC's contexts: true or false."
         type: string
@@ -1363,16 +1364,28 @@ jobs:
         if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         uses: astral-sh/setup-uv@v7
 
+      # OMN-20032: refuse a verifier older than the floor before installing it.
+      # VERIFIER_FLOOR is the one place the floor lives: 0.4.303 is the first
+      # omnimarket release carrying omnimarket#3511, which makes node_dod_verify
+      # refuse a contract that leaves an acceptance criterion unbound. A later
+      # release that tightens verification raises this one value.
       - name: Install the pinned verifier
         id: verifier
         continue-on-error: ${{ inputs.shadow == 'true' }}
         if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         env:
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
+          VERIFIER_FLOOR: "0.4.303"
         run: |
           set -euo pipefail
           if [[ ! "$VERIFIER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "::error::verifier-version must match numeric MAJOR.MINOR.PATCH"
+            exit 1
+          fi
+          IFS=. read -r v_major v_minor v_patch <<< "$VERIFIER_VERSION"
+          IFS=. read -r f_major f_minor f_patch <<< "$VERIFIER_FLOOR"
+          if (( 10#$v_major < 10#$f_major || (10#$v_major == 10#$f_major && (10#$v_minor < 10#$f_minor || (10#$v_minor == 10#$f_minor && 10#$v_patch < 10#$f_patch))) )); then
+            echo "::error::verifier-version $VERIFIER_VERSION is below the floor $VERIFIER_FLOOR; releases before it admit a contract that leaves an acceptance criterion unbound. Re-pin the caller's verifier-version to $VERIFIER_FLOOR or newer."
             exit 1
           fi
           uv venv --clear --python 3.13 "$GITHUB_WORKSPACE/.dod-verify/venv"
