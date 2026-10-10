@@ -43,7 +43,7 @@ known_repos:
   # validators added per-repo below based on repo language and content.
   - omnibase  # meta/registry repo (repos.yaml + docs); no Python src
   - omnicursor  # Python repo: cursor AI plugin
-  - knowledge-base  # Python tooling + documentation; doc-content-scan applies
+  - knowledge_base  # Python tooling + documentation; doc-content-scan applies
 
 # Scopes:
 #   - pre_commit: "required" | "optional"  — entry in .pre-commit-config.yaml
@@ -221,7 +221,7 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with non-test source code
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   enum-governance:
     description: |
@@ -251,7 +251,7 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos using enums
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   naming-conventions:
     description: |
@@ -282,7 +282,7 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with src/
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   self-gating-workflows:
     description: |
@@ -351,7 +351,7 @@ required_validators:
       - omninode_infra
       # OMN-13579: Python repos with src/
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   mypy-type-check:
     description: |
@@ -380,7 +380,7 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with src/ + pyproject.toml
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   ruff-format-check:
     description: |
@@ -412,7 +412,7 @@ required_validators:
       - onex_change_control
       # OMN-13579: Python repos — ruff applies to all with pyproject.toml
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   aislop-patterns:
     description: |
@@ -462,7 +462,7 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos that use pydantic models
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   single-class-per-file:
     description: |
@@ -492,7 +492,7 @@ required_validators:
       - omniintelligence
       # OMN-13579: Python repos with src/
       - omnicursor
-      - knowledge-base
+      - knowledge_base
 
   detect-secrets:
     description: |
@@ -668,7 +668,7 @@ required_validators:
       # this ticket. Wiring their pre-commit hook + CI job is tracked under OMN-13576
       # (fleet rollout) — adding here means the consumer will surface MISSING_*
       # gaps for them, which is the correct enforcement posture.
-      - knowledge-base
+      - knowledge_base
       - omnibase
       - omnicursor
 
