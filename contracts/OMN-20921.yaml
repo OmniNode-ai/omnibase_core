@@ -24,9 +24,9 @@ requirements:
           Compliance, and no file under .github names it. -- falsifier: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py
           -q -p no:randomly -k \"nothing_in_github or required_checks_manifest or poller_no_longer\""
       - id: AC3
-        statement: "AC3: every needs entry in ci.yml on the PR head resolves to a job, and the checker
-          flags a broken needs entry. -- falsifier: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py
-          -q -p no:randomly -k needs"
+        statement: "AC3: version-pin-check is absent and every remaining needs entry in ci.yml on the
+          PR head resolves to a job, and the checker flags a broken needs entry. -- falsifier: uv run
+          pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly -k \"needs or version_pin_check_job_is_gone\""
 evidence_requirements:
   - kind: tests
     description: "ci.yml carries no version-pin-check job and no check_version_pins reference."
@@ -38,8 +38,10 @@ evidence_requirements:
     command: "uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly -k \"nothing_in_github
       or required_checks_manifest or poller_no_longer\""
   - kind: tests
-    description: "every needs entry in ci.yml resolves to a job, with a positive control."
-    command: "uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly -k needs"
+    description: "version-pin-check is absent and every remaining needs entry in ci.yml resolves to a
+      job, with a positive control."
+    command: "uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly -k \"needs
+      or version_pin_check_job_is_gone\""
 emergency_bypass:
   enabled: false
   justification: ''
@@ -67,12 +69,13 @@ dod_evidence:
     binds_ac:
       - AC2
   - id: dod-omn-20921-ac3
-    description: Every needs entry in ci.yml resolves to a job, with a positive control.
+    description: Version-pin-check is absent and every remaining needs entry in ci.yml resolves to a job,
+      with a positive control.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_version_pin_check_retired_omn20921.py -q -p no:randomly
-          -k needs
+          -k "needs or version_pin_check_job_is_gone"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
