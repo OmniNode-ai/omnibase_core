@@ -903,7 +903,6 @@ EXTERNAL_CONTEXT_FILES: frozenset[str] = frozenset(
 # test_direct_required_job_contexts_are_all_still_live re-checks every one.
 DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("contract-validation.yml", "contract-validation"): ("contract-validation",),
-    ("cr-thread-gate-caller.yml", "gate"): ("gate / CodeRabbit Thread Check",),
     ("dep-provenance-gate.yml", "dep-provenance-gate"): ("Dep Provenance Gate",),
     ("deploy-gate.yml", "deploy-gate"): ("deploy-gate / deploy-gate",),
     ("main-target-guard.yml", "main-target-guard"): ("main-target-guard",),
@@ -976,9 +975,6 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "its own script/config files -- there is nothing to propagate-dry-run "
         "when those paths are untouched, unlike a drift check meaningful on "
         "every PR; not flagged as a required validator by this audit."
-    ),
-    ("propagate-config.yml", "dry-run-ci-check"): (
-        "same propagate-config.yml path-scoped rationale as the 'propagate' job above."
     ),
     ("todo-audit-on-merge.yml", "todo-audit"): (
         "triggers only on pull_request closed -- post-merge TODO/ticket "

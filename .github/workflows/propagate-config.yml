@@ -53,6 +53,9 @@ concurrency:
   group: propagate-config-${{ github.event.release.tag_name || inputs.propagation_name }}
   cancel-in-progress: false
 
+# OMN-20074: the push and pull_request path-filtered dry-run sanity check moved to
+# ci.yml as `propagate-dry-run`, where the required "CI Summary" poller fails on
+# it. This file keeps only the release and manual-dispatch propagator.
 jobs:
   occ-preflight:
     uses: ./.github/workflows/occ-preflight.yml
@@ -125,57 +128,5 @@ jobs:
           PROPAGATION_NAME: ${{ steps.name.outputs.name }}
           PROPAGATION_RELEASE_TAG: ${{ steps.tag.outputs.tag }}
           # Commit a pin_source_dependency hook is pinned to (OMN-18033).
-          PROPAGATION_SOURCE_SHA: ${{ github.sha }}
-        run: bash scripts/propagate-config.sh
-
-  dry-run-ci-check:
-    needs: occ-preflight
-    # Runs on every push/PR to this repo so regressions in the script or
-    # targets file are caught before a real release fires the bot. Uses
-    # PROPAGATION_DRY_RUN=1 so no cross-repo side effects occur.
-    name: Dry-run sanity check
-    if: always() && github.event_name != 'release'
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    steps:
-      - name: Fail when OCC preflight fails
-        if: needs.occ-preflight.result != 'success'
-        run: |
-          echo "::error::occ-preflight result was ${{ needs.occ-preflight.result }}; refusing to run dry-run sanity check."
-          exit 1
-
-      - uses: actions/checkout@v7
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-
-      - name: Install parser deps
-        run: pip install pyyaml
-
-      # The per-repository GITHUB_TOKEN cannot read private sibling repos.
-      # Mint the same org installation identity as the live propagator, but
-      # restrict this dry-run job to read-only contents access.
-      - name: Mint cross-repo read token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
-          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
-          owner: OmniNode-ai
-          permission-contents: read
-
-      - name: Execute dry-run
-        env:
-          # Cross-repo read access is required because dry-run resolves every
-          # private target's live default branch and fails closed on denial.
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
-          PROPAGATION_NAME: normalization-symmetry-hook
-          PROPAGATION_DRY_RUN: "1"
           PROPAGATION_SOURCE_SHA: ${{ github.sha }}
         run: bash scripts/propagate-config.sh

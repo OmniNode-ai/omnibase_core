@@ -96,6 +96,34 @@ requirements:
           hook carrying the 13-path exclude unchanged with no onex_change_control hook of that id -- falsifier:
           uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly fails at the
           merge base'
+  - id: req-omn20074-s6-folds
+    statement: Verification gates whose only enforcing context was an embedded occ-preflight must run
+      in ci.yml, where the required CI Summary poller fails on them, with no new required context, annotation,
+      allowlist or baseline entry.
+    acceptance:
+      - id: AC9
+        statement: 'AC9: cr-thread-gate-caller.yml is deleted and ci.yml carries an unconditional, needs-free
+          `gate` caller of cr-thread-gate.yml whose composed context "gate / CodeRabbit Thread Check"
+          is unchanged and whose required-checks row names ci.yml. -- falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py
+          -q -p no:randomly -k cr_thread_gate'
+      - id: AC10
+        statement: 'AC10: handshake-policy-gate.yml no longer triggers on merge_group and keeps its schedule,
+          dispatch and workflow_call triggers with no embedded preflight, and ci.yml carries a handshake-policy-gate
+          caller that runs on merge_group only with the original permissions and inherited secrets. --
+          falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k handshake_policy_gate'
+      - id: AC11
+        statement: 'AC11: propagate-config.yml no longer carries dry-run-ci-check, and ci.yml carries
+          an unconditional propagate-dry-run job with the original steps and token scope whose in-run
+          path detection matches exactly the five propagate-config.yml path-filter entries on pull_request
+          and push, runs on workflow_dispatch, skips merge_group and schedule, and fails open when no
+          diff can be computed. -- falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q
+          -p no:randomly -k "dry_run or detection"'
+      - id: AC12
+        statement: 'AC12: CI Summary registers the gate caller and the dry-run in both its completeness
+          anchor and its strict set, does not anchor or allowlist the merge_group-only caller, and fails
+          when any of the three folded jobs fails, is skipped (anchored two) or is absent (anchored two).
+          -- falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k "anchored
+          or folded_gate or baseline_run or soft_allowlist or jobs_api"'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -132,6 +160,23 @@ evidence_requirements:
     description: The exported and local hook declarations run the handler under the same hook id, with
       the exclude unchanged and no onex_change_control hook of that id.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
+  - kind: tests
+    description: The fold tests prove the CodeRabbit thread gate caller moved into ci.yml with its composed
+      context unchanged.
+    command: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k cr_thread_gate
+  - kind: tests
+    description: The fold tests prove the handshake policy gate runs from ci.yml on merge_group and keeps
+      its weekly and manual runs.
+    command: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k handshake_policy_gate
+  - kind: tests
+    description: The fold tests prove the propagate dry-run keeps its steps and token scope and detects
+      the original five paths in-run.
+    command: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k "dry_run or detection"
+  - kind: tests
+    description: The fold tests prove CI Summary anchors the unconditional folds and fails when any folded
+      job fails, with positive controls.
+    command: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k "anchored or folded_gate
+      or baseline_run or soft_allowlist or jobs_api"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -218,3 +263,45 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
+  - id: dod-omn-20074-ac9
+    description: The fold tests prove the CodeRabbit thread gate caller moved into ci.yml with its composed
+      context unchanged.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k cr_thread_gate
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC9
+  - id: dod-omn-20074-ac10
+    description: The fold tests prove the handshake policy gate runs from ci.yml on merge_group and keeps
+      its weekly and manual runs.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k handshake_policy_gate
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC10
+  - id: dod-omn-20074-ac11
+    description: The fold tests prove the propagate dry-run keeps its steps and token scope and detects
+      the original five paths in-run.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k "dry_run
+          or detection"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC11
+  - id: dod-omn-20074-ac12
+    description: The fold tests prove CI Summary anchors the unconditional folds and fails when any folded
+      job fails, with positive controls.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k "anchored
+          or folded_gate or baseline_run or soft_allowlist or jobs_api"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC12
