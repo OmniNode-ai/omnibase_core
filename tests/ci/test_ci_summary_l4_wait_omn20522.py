@@ -68,6 +68,8 @@ CI_YML = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 
 DB = "DB ownership CI twin (B1)"
 ADVISORY = "advisory-job-gate / advisory-job-gate"
+# OMN-20074: the third pull_request L4 context (S6 part 1).
+REPO_EVIDENCE = "repo-evidence / dod-verify"
 CASE_A_NOW = datetime(2026, 10, 4, 9, 28, 15, tzinfo=UTC)
 CASE_B_NOW = datetime(2026, 10, 4, 5, 30, 38, tzinfo=UTC)
 
@@ -680,7 +682,7 @@ sleep() {
             [_run(100, status="completed"), _run(101)],
         )
         repaired = (
-            [_green(DB), _stale("failure"), _green(ADVISORY)],
+            [_green(DB), _stale("failure"), _green(ADVISORY), _green(REPO_EVIDENCE)],
             [_run(100, status="completed"), _run(101, status="completed")],
         )
         result = self._execute(tmp_path, [pending, repaired])
@@ -718,7 +720,7 @@ sleep() {
     def test_transient_api_failure_recovers(self, tmp_path: Path) -> None:
         result = self._execute(
             tmp_path,
-            [([_green(DB), _green(ADVISORY)], [])],
+            [([_green(DB), _green(ADVISORY), _green(REPO_EVIDENCE)], [])],
             failed_endpoint="checks",
             recover_fetch=True,
         )

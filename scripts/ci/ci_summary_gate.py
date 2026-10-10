@@ -256,6 +256,14 @@ EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
     # `branches:` filter, so it reports on every pull-request shape and cannot
     # be legitimately absent -- the admission condition this tuple requires.
     "advisory-job-gate / advisory-job-gate",
+    # OMN-20074 (OCC retirement S6 part 1): the repo-owned evidence verdict,
+    # from .github/workflows/call-repo-evidence-gate.yml through this
+    # repository's receipt-gate reusable. Registered so ABSENCE fails like a
+    # red verdict. The producer runs on pull_request_target (GitHub reads the
+    # base-branch definition and reports the verdict on the pull request head),
+    # so it applies to pull_request CI Summary runs only. Merged dev heads
+    # #1919, #1921, #1922, #1925, #1926 and #1927 carry a green run.
+    "repo-evidence / dod-verify",
 )
 
 # The L4 producers do not share an event contract. The CI Summary poller runs
@@ -264,7 +272,9 @@ EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
 # pending verdict. These maps state the live producer contracts explicitly.
 #
 # `merge_group` and `schedule` deliberately have no external contexts: none of
-# the two producer workflows fires on either event today. This is an explicit,
+# the producer workflows fires on either event today. The repo-evidence
+# producer fires on pull_request_target only, which is a pull_request run's
+# head. This is an explicit,
 # tested applicability decision, not an absence that is read as a pass. An
 # unknown event is rejected by `external_contexts_for_event`.
 _DB_OWNERSHIP_EXTERNAL_CONTEXTS: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS[:1]
