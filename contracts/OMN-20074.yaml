@@ -216,6 +216,43 @@ requirements:
           module with types python, ts and javascript, the types the onex_change_control hook declared
           -- falsifier: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
           -k bare_feature_flag fails at the merge base'
+  - id: req-omn20074-boundary-parity-handler
+    statement: The Kafka boundary parity decisions of the onex_change_control check-boundary-parity script
+      must be reproduced by an omnibase_core handler over the boundary manifest carried byte for byte,
+      so the boundary-validation callers can leave onex_change_control without a change in verdict.
+    acceptance:
+      - id: AC24
+        statement: 'AC24: HandlerBoundaryParity reproduces check-boundary-parity of onex_change_control
+          rev a89a6f30fa on fixture repositories: a producer file that no longer references its topic
+          exits 1 naming the topic and the producer file, a clean pair exits 0, a pending entry inside
+          its 14-day grace is skipped and one past it fails, and the packaged kafka_boundaries.yaml parses
+          to the data of the source manifest -- falsifier: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py
+          -q -p no:randomly fails at the merge base'
+  - id: req-omn20074-migration-conflicts-handler
+    statement: The migration conflict and column reference decisions of the onex_change_control check-migration-conflicts
+      script must be reproduced by an omnibase_core handler over the migration inventory carried byte
+      for byte.
+    acceptance:
+      - id: AC25
+        statement: 'AC25: HandlerMigrationConflicts reproduces check-migration-conflicts of onex_change_control
+          rev a89a6f30fa on fixture repositories: one table created with different columns in one uninventoried
+          boundary is a NAME_CONFLICT naming the table and both files and exits 1 (0 under --warn-only),
+          equal columns are an EXACT_DUPLICATE, two inventoried databases never conflict, excluded paths
+          are not scanned, an undeclared column in a Python SQL literal is a MISSING_COLUMN, and the packaged
+          migration_inventory.yaml parses to the data of the source inventory -- falsifier: uv run pytest
+          tests/unit/handlers/test_handler_migration_conflicts.py -q -p no:randomly fails at the merge
+          base'
+  - id: req-omn20074-validate-boundaries-action-home
+    statement: omnibase_core must own the validate-boundaries composite action so the four boundary-validation
+      callers can repoint their uses line and keep their job and context names without onex_change_control.
+    acceptance:
+      - id: AC26
+        statement: 'AC26: .github/actions/validate-boundaries/action.yml in omnibase_core is a composite
+          action with the inputs checks, warn-only and repos at the moved defaults, runs the two core
+          handlers from its own checkout with the moved flags (migration-conflicts with --check-columns
+          --warn-only), pins every action by full sha, has one checkout (the caller) and references onex_change_control
+          nowhere -- falsifier: uv run pytest tests/ci/test_validate_boundaries_action_omn20074.py -q
+          -p no:randomly fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -310,6 +347,20 @@ evidence_requirements:
     description: The exported hook declaration runs the handler under the same hook id with the types
       the onex_change_control hook declared.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k bare_feature_flag
+  - kind: tests
+    description: Fixture repositories against the decisions of the pinned check-boundary-parity script,
+      with a parity break naming topic and file, a clean pass, pending grace and expiry, and the parsed
+      manifest hash.
+    command: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py -q -p no:randomly
+  - kind: tests
+    description: Fixture repositories against the decisions of the pinned check-migration-conflicts script,
+      with a name conflict, an exact duplicate, a clean pass, inventory separation, excluded paths, a
+      missing column and the inventory hash.
+    command: uv run pytest tests/unit/handlers/test_handler_migration_conflicts.py -q -p no:randomly
+  - kind: tests
+    description: The action tests prove the composite action's inputs and defaults, the core handler invocations,
+      the sha pins and the absence of any onex_change_control reference, with a positive control.
+    command: uv run pytest tests/ci/test_validate_boundaries_action_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -532,3 +583,33 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC21
+  - id: dod-omn-20074-ac24
+    description: The handler tests reproduce the pinned check-boundary-parity verdicts on fixture repositories
+      and the parsed manifest hash.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC24
+  - id: dod-omn-20074-ac25
+    description: The handler tests reproduce the pinned check-migration-conflicts verdicts on fixture
+      repositories and the inventory hash.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_migration_conflicts.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC25
+  - id: dod-omn-20074-ac26
+    description: The action tests prove the validate-boundaries composite action's inputs, handler invocations,
+      sha pins and the absence of any onex_change_control reference.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_validate_boundaries_action_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC26

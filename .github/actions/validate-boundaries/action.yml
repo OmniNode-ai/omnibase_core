@@ -1,0 +1,272 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# Composite action: validate-boundaries (OMN-20074)
+#
+# Runs cross-repo boundary validation checks (Kafka parity, migration conflicts)
+# in the calling repository's CI. Moved from the change-control repository's
+# composite action of the same name (OMN-5770), with the same inputs, so a
+# caller changes only the `uses:` line and keeps its job and context names.
+#
+# The checks run omnibase_core's handlers from this action's own checkout:
+#   omnibase_core.handlers.handler_boundary_parity
+#   omnibase_core.handlers.handler_migration_conflicts
+# against the boundary manifest and migration inventory packaged beside them in
+# src/omnibase_core/contracts/boundaries/. No validator source is checked out.
+#
+# Callable via:
+#   uses: OmniNode-ai/omnibase_core/.github/actions/validate-boundaries@<sha>
+
+name: "ONEX Boundary Validation"
+description: "Run cross-repo boundary checks (Kafka parity, migration conflicts) to detect seam regressions
+  before merge. Clones peer repos, runs selected checks, and aggregates results."
+inputs:
+  checks:
+    description: >
+      Comma-separated list of checks to run. Available: boundary-parity, migration-conflicts
+    required: false
+    default: "boundary-parity,migration-conflicts"
+  warn-only:
+    description: >
+      If "true", exit 0 even when violations are found (CI warning mode).
+    required: false
+    default: "true"
+  repos:
+    description: >
+      Comma-separated list of peer repos to clone.  Defaults to all ONEX repos with boundary seams.
+    required: false
+    default: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout calling repository
+      uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      with:
+        fetch-depth: 0
+
+    - name: Detect boundary validation scope
+      id: scope
+      shell: bash
+      run: |
+        BOUNDARY_PARITY_REQUESTED=false
+        MIGRATION_CONFLICTS_REQUESTED=false
+        UNKNOWN_CHECK_REQUESTED=false
+        IFS=',' read -ra CHECKS <<< "${{ inputs.checks }}"
+        for check in "${CHECKS[@]}"; do
+          check=$(echo "$check" | xargs)
+          case "$check" in
+            boundary-parity)
+              BOUNDARY_PARITY_REQUESTED=true
+              ;;
+            migration-conflicts)
+              MIGRATION_CONFLICTS_REQUESTED=true
+              ;;
+            *)
+              if [[ -n "$check" ]]; then
+                UNKNOWN_CHECK_REQUESTED=true
+              fi
+              ;;
+          esac
+        done
+
+        MIGRATION_CONFLICTS_SHOULD_RUN="${MIGRATION_CONFLICTS_REQUESTED}"
+        if [[ "${MIGRATION_CONFLICTS_REQUESTED}" == "true" && "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+          BASE_SHA="$(jq -r '.pull_request.base.sha // empty' "${GITHUB_EVENT_PATH}")"
+          if [[ -z "${BASE_SHA}" ]]; then
+            echo "::warning::Could not resolve pull request base SHA; running migration-conflicts conservatively."
+          elif ! git fetch --no-tags --depth=1 origin "${BASE_SHA}"; then
+            echo "::warning::Could not fetch pull request base SHA; running migration-conflicts conservatively."
+          else
+            git diff --name-only "${BASE_SHA}"...HEAD > changed.txt
+            if grep -Eq '^docker/migrations/.+\.sql$' changed.txt; then
+              echo "SQL migration files changed; migration-conflicts will run."
+            else
+              echo "No SQL migration files changed; migration-conflicts will be skipped."
+              MIGRATION_CONFLICTS_SHOULD_RUN=false
+            fi
+          fi
+        fi
+
+        SHOULD_RUN_BOUNDARY_CHECKS=false
+        if [[ "${BOUNDARY_PARITY_REQUESTED}" == "true" || "${MIGRATION_CONFLICTS_SHOULD_RUN}" == "true" || "${UNKNOWN_CHECK_REQUESTED}" == "true" ]]; then
+          SHOULD_RUN_BOUNDARY_CHECKS=true
+        fi
+
+        echo "migration_conflicts_should_run=${MIGRATION_CONFLICTS_SHOULD_RUN}" >> "$GITHUB_OUTPUT"
+        echo "should_run_boundary_checks=${SHOULD_RUN_BOUNDARY_CHECKS}" >> "$GITHUB_OUTPUT"
+
+    - name: Set up Python
+      if: steps.scope.outputs.should_run_boundary_checks == 'true'
+      uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
+      with:
+        python-version: "3.12"
+
+    - name: Install uv
+      if: steps.scope.outputs.should_run_boundary_checks == 'true'
+      uses: astral-sh/setup-uv@c6081965dd0577ae48820cb8c288e12509571f0c  # v7
+      with:
+        version: "latest"
+
+    - name: Install omnibase_core boundary handlers
+      if: steps.scope.outputs.should_run_boundary_checks == 'true'
+      id: core
+      shell: bash
+      env:
+        UV_HTTP_TIMEOUT: "600"
+        UV_SYNC_ATTEMPTS: "5"
+        UV_SYNC_RETRY_DELAY_SECONDS: "10"
+        UV_CONCURRENT_DOWNLOADS: "2"
+      run: |
+        # This action's own checkout of omnibase_core, at the ref the caller pinned.
+        CORE_ROOT="$(cd "${GITHUB_ACTION_PATH}/../../.." && pwd)"
+        echo "root=${CORE_ROOT}" >> "$GITHUB_OUTPUT"
+        git config --global http.version HTTP/1.1
+        attempt=1
+        until uv sync --project "${CORE_ROOT}" --frozen --no-dev; do
+          status=$?
+          if [ "$attempt" -ge "$UV_SYNC_ATTEMPTS" ]; then
+            echo "::error::uv sync failed after ${attempt} attempt(s)"
+            exit "$status"
+          fi
+
+          sleep_seconds=$((UV_SYNC_RETRY_DELAY_SECONDS * attempt))
+          echo "::warning::uv sync attempt ${attempt}/${UV_SYNC_ATTEMPTS} failed with exit ${status}; retrying in ${sleep_seconds}s"
+          sleep "$sleep_seconds"
+          attempt=$((attempt + 1))
+        done
+
+    - name: Clone peer repos
+      if: steps.scope.outputs.should_run_boundary_checks == 'true'
+      id: clone
+      shell: bash
+      run: |
+        rm -rf /tmp/omni_repos
+        mkdir -p /tmp/omni_repos
+        DEGRADED=""
+        CALLING_REPO="${GITHUB_REPOSITORY##*/}"
+        IFS=',' read -ra REPOS <<< "${{ inputs.repos }}"
+        # OMN-13701: older callers pass an explicit repo list without omnimarket,
+        # but the canonical intent-classified consumer now lives there.
+        OMNIMARKET_PRESENT=false
+        for repo in "${REPOS[@]}"; do
+          repo=$(echo "$repo" | xargs)
+          if [[ "$repo" == "omnimarket" ]]; then
+            OMNIMARKET_PRESENT=true
+            break
+          fi
+        done
+        if [[ "$OMNIMARKET_PRESENT" != "true" ]]; then
+          REPOS+=("omnimarket")
+          echo "Adding required boundary repo omnimarket"
+        fi
+        for repo in "${REPOS[@]}"; do
+          repo=$(echo "$repo" | xargs)  # trim whitespace
+          if [[ "$repo" == "$CALLING_REPO" ]]; then
+            echo "Skipping clone of calling repo ${repo}; checked-out workspace will be symlinked."
+            continue
+          fi
+          if [ -n "${OMNI_REPO_CLONE_TOKEN:-}" ]; then
+            auth_header="AUTHORIZATION: basic $(printf 'x-access-token:%s' "${OMNI_REPO_CLONE_TOKEN}" | base64 | tr -d '\n')"
+            clone_args=(-c "http.https://github.com/.extraheader=${auth_header}")
+          else
+            clone_args=()
+          fi
+          cloned=false
+          for attempt in 1 2 3; do
+            rm -rf "/tmp/omni_repos/${repo}"
+            if git "${clone_args[@]}" clone --depth=1 "https://github.com/OmniNode-ai/${repo}.git" "/tmp/omni_repos/${repo}" 2>/dev/null; then
+              echo "Cloned ${repo} on attempt ${attempt}"
+              cloned=true
+              break
+            fi
+            if [ "${attempt}" -lt 3 ]; then
+              sleep_seconds=$((attempt * 10))
+              echo "::warning::Boundary verification clone attempt ${attempt}/3 failed for ${repo}; retrying in ${sleep_seconds}s"
+              sleep "${sleep_seconds}"
+            fi
+          done
+          if [[ "${cloned}" != "true" ]]; then
+            echo "::warning::Boundary verification DEGRADED: could not clone ${repo}. Seam parity NOT confirmed."
+            DEGRADED="${DEGRADED}${repo},"
+          fi
+        done
+        echo "degraded=${DEGRADED}" >> "$GITHUB_OUTPUT"
+
+    - name: Symlink calling repo into workspace
+      if: steps.scope.outputs.should_run_boundary_checks == 'true'
+      shell: bash
+      run: |
+        # Extract repo name from GITHUB_REPOSITORY (e.g., OmniNode-ai/omnibase_infra -> omnibase_infra)
+        REPO_NAME="${GITHUB_REPOSITORY##*/}"
+        # Remove any cloned version (main) and replace with the PR's checkout
+        rm -rf "/tmp/omni_repos/${REPO_NAME}"
+        ln -s "$GITHUB_WORKSPACE" "/tmp/omni_repos/${REPO_NAME}"
+        echo "Symlinked ${REPO_NAME} -> $GITHUB_WORKSPACE"
+
+    - name: Run boundary checks
+      if: steps.scope.outputs.should_run_boundary_checks == 'true'
+      shell: bash
+      env:
+        CORE_ROOT: ${{ steps.core.outputs.root }}
+      run: |
+        FAILURE_COUNT=0
+
+        # Check for degraded clone state
+        DEGRADED="${{ steps.clone.outputs.degraded }}"
+        if [[ -n "$DEGRADED" ]]; then
+          echo "::warning::Some peer repos could not be cloned: ${DEGRADED}"
+          echo "::warning::Boundary verification is DEGRADED — seam parity NOT fully confirmed."
+          FAILURE_COUNT=$((FAILURE_COUNT + 1))
+        fi
+
+        IFS=',' read -ra CHECKS <<< "${{ inputs.checks }}"
+        for check in "${CHECKS[@]}"; do
+          check=$(echo "$check" | xargs)
+          case "$check" in
+            boundary-parity)
+              echo "::group::Running boundary-parity check"
+              if uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python -m omnibase_core.handlers.handler_boundary_parity --repos-root /tmp/omni_repos; then
+                echo "::endgroup::"
+                echo "boundary-parity: PASSED"
+              else
+                echo "::endgroup::"
+                echo "::warning::boundary-parity: FAILED — see above for details"
+                FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              fi
+              ;;
+            migration-conflicts)
+              if [[ "${{ steps.scope.outputs.migration_conflicts_should_run }}" != "true" ]]; then
+                echo "migration-conflicts: SKIPPED — no SQL migration files changed"
+                continue
+              fi
+              echo "::group::Running migration-conflicts check"
+              if uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python -m omnibase_core.handlers.handler_migration_conflicts --repos-root /tmp/omni_repos --check-columns --warn-only; then
+                echo "::endgroup::"
+                echo "migration-conflicts: PASSED"
+              else
+                echo "::endgroup::"
+                echo "::warning::migration-conflicts: FAILED — see above for details"
+                FAILURE_COUNT=$((FAILURE_COUNT + 1))
+              fi
+              ;;
+            *)
+              echo "::warning::Unknown check: ${check}"
+              ;;
+          esac
+        done
+
+        echo ""
+        echo "=============================="
+        echo "Boundary check summary: ${FAILURE_COUNT} failure(s)"
+        echo "=============================="
+
+        if [[ "${{ inputs.warn-only }}" == "true" ]]; then
+          echo "warn-only mode: exiting 0 regardless of failures"
+          exit 0
+        fi
+
+        if [[ "$FAILURE_COUNT" -gt 0 ]]; then
+          exit "$FAILURE_COUNT"
+        fi
