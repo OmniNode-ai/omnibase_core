@@ -14,6 +14,7 @@ failing chunk.
 
 from __future__ import annotations
 
+import shutil
 import stat
 import subprocess
 from pathlib import Path
@@ -57,6 +58,9 @@ def _run_scan(
     hook = bin_dir / "detect-secrets-hook"
     hook.write_text(STUB_HOOK, encoding="utf-8")
     hook.chmod(hook.stat().st_mode | stat.S_IEXEC)
+    nproc = shutil.which("nproc") or shutil.which("gnproc")
+    assert nproc is not None, "Install GNU coreutils to run the scan shell tests"
+    (bin_dir / "nproc").symlink_to(nproc)
     runner_temp = tmp_path / "runner"
     runner_temp.mkdir()
     names = [f"src/pkg/mod_{i:04d}.py" for i in range(SCAN_FILE_COUNT)]
@@ -66,7 +70,7 @@ def _run_scan(
     log = tmp_path / "hook.log"
     log.write_text("", encoding="utf-8")
     env = {
-        # A fixed PATH: the stub first, then the system tools xargs, nproc and bash live in.
+        # Keep the stub and resolved GNU nproc first, then the system shell tools.
         "PATH": f"{bin_dir}:/usr/local/bin:/usr/bin:/bin",
         "RUNNER_TEMP": str(runner_temp),
         "GITHUB_STEP_SUMMARY": str(tmp_path / "summary.md"),

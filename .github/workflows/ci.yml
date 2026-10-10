@@ -2338,8 +2338,10 @@ jobs:
             omnibase_core.validation.validator_receipt_runtime_identity \
             --receipts-dir .
 
-  # Node-home check (OMN-20702) is built here and activated in this repository
-  # by the follow-up change.
+  # Node-home check (OMN-20702), activated in this repository: a new
+  # ONEX node directory or onex.nodes entry point outside omnimarket is refused
+  # against the shrink-only .onex_ratchets/node_home_baseline.txt, checked at
+  # the merge base, with a planted-node positive control on every run.
   # Canonical-file-shape ratchet (OMN-20304). Operator ruling 2026-10-01: no new
   # scripts, plugins or exceptions in any repository. Refuses a new code file
   # outside src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/
@@ -2421,6 +2423,44 @@ jobs:
           else
             echo "no base revision on this event; checking the tree against the baseline only"
             uv run python -m omnibase_core.validators.canonical_file_shape --head HEAD
+          fi
+
+      - name: Node-home positive control (planted node refused, clean tree accepted)
+        run: |
+          set -u
+          planted=src/omnibase_core/nodes/node_zz_canary_planted_compute
+          mkdir -p "$planted"
+          printf 'name: node_zz_canary_planted_compute\n' > "$planted/contract.yaml"
+          printf 'class NodeZzCanaryPlantedCompute:\n    pass\n' > "$planted/handler.py"
+          git add "$planted"
+          if uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check; then
+            echo "POSITIVE CONTROL FAILED: planted $planted was accepted"
+            exit 1
+          fi
+          echo "positive control: planted node refused"
+          git rm -q -r --cached "$planted"
+          rm -r "$planted"
+          uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check
+          echo "positive control: clean tree accepted"
+
+      - name: Refuse new ONEX nodes outside omnimarket
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          MQ_BASE: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -u
+          base="${PR_BASE:-${MQ_BASE:-${PUSH_BEFORE:-}}}"
+          if [ -n "$base" ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="$(git merge-base "$base" HEAD)"
+            uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check --base "$base"
+          elif [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "merge_group" ]; then
+            echo "node-home ratchet: no resolvable base revision on $EVENT_NAME; refusing"
+            exit 1
+          else
+            echo "no base revision on this event; checking the tree against HEAD"
+            uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check --base HEAD
           fi
 
   # Migrated from validator-banned-compose-vars.yml (OMN-14877, OMN-14430
