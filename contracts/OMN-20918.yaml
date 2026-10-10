@@ -1,0 +1,116 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20918
+title: "OCC retirement S8: move the imperative contract guard into omnibase_core, reading each caller's
+  own allowlist under a shrink-only ratchet"
+summary: The check-imperative-contracts validator of onex_change_control at 725d2967 and its models move
+  into omnibase_core as HandlerImperativeContractGuard (pure over supplied sources) with a CLI entry check-imperative-contracts,
+  a shrink-only allowlist ratchet (HandlerImperativeAllowlistRatchet) and a reusable workflow that checks
+  out no onex_change_control and reads the caller's own allowlist from a caller-relative path input. No
+  consumer is repointed here.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20918-guard-parity
+    statement: For each of the five consumer repositories (omnibase_infra, omniclaude, omniintelligence,
+      omnimarket, omnimemory) the core guard must return the findings the OCC validator at 725d2967 returns
+      for that repository's allowlist.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: omnibase_core''s imperative contract guard handler returns the same findings
+          as the OCC validator at 725d2967 for each of the five consumer repositories'' dev heads with
+          that repository''s allowlist -- falsifier: uv run pytest tests/unit/validation -k imperative_contract
+          parity fixtures in omnibase_core, one per consumer repository'
+  - id: req-omn20918-ratchet
+    statement: Each repository carries its own allowlist, so the guard must refuse an allowlist that gains
+      an entry against the merge base and admit one that loses an entry.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: The guard refuses an allowlist that gains an entry against the merge base and
+          admits one that loses an entry -- falsifier: uv run pytest tests/unit/validation -k imperative_contract_ratchet
+          in omnibase_core, both cases'
+  - id: req-omn20918-workflow
+    statement: The reusable workflow must run the guard from an omnibase_core checkout, check out no onex_change_control
+      repository and read the allowlist from the caller's own tree.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: The omnibase_core reusable guard workflow checks out no onex_change_control repository
+          and reads the allowlist from the caller''s own tree -- falsifier: uv run pytest tests/ci -k
+          imperative_contract_guard_workflow in omnibase_core asserting no onex_change_control checkout
+          step and a caller-relative allowlist path'
+  - id: req-omn20918-lab
+    statement: The core guard must report the same findings as the OCC validator on a fresh omnimemory
+      dev clone with omnimemory's allowlist, and find a planted freestanding imperative IO file.
+    acceptance:
+      - id: AC4
+        statement: 'AC4: The handler runs on a lab host against omnimemory dev with omnimemory''s allowlist
+          and reports zero findings, matching the OCC run on the same head -- falsifier: lab run of the
+          core guard against OmniNode-ai/omnimemory dev, findings count compared with the OCC imperative-contract-guard
+          check run on that head'
+evidence_requirements:
+  - kind: tests
+    description: Parity fixtures replay the OCC validator's text, JSON and exit code on a recorded slice
+      of each consumer repository with that repository's allowlist (byte-identical to 725d2967), plus
+      a planted-violation variant per repository and pure-handler cases.
+    command: uv run pytest tests/unit/validation -k imperative_contract -q -p no:randomly
+  - kind: tests
+    description: The ratchet is refused for a gained path, admitted for a lost path, an unchanged list
+      and a first landing, and compared against the merge base on a real git history.
+    command: uv run pytest tests/unit/validation -k imperative_contract_ratchet -q -p no:randomly
+  - kind: tests
+    description: The workflow test asserts a workflow_call-only trigger, two checkouts (caller and omnibase_core),
+      no onex_change_control reference, and a caller-relative allowlist path input.
+    command: uv run pytest tests/ci -k imperative_contract_guard_workflow -q -p no:randomly
+  - kind: manual
+    description: Lab run on a lab host of the core guard and the OCC validator at 725d2967 against a fresh
+      clone of OmniNode-ai/omnimemory dev with omnimemory's allowlist copied unchanged, findings compared,
+      plus a planted freestanding imperative IO file found by both; the host, command and counts are in
+      the pull request body.
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20918-ac1
+    description: The parity fixtures reproduce the OCC validator's text, JSON and exit code for each consumer
+      repository's recorded slice and allowlist.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_imperative_contract_guard_parity.py -q -p
+          no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn20918-ac2
+    description: The ratchet tests refuse an allowlist that gains an entry and admit one that loses an
+      entry, on texts and on a real git history.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation -k imperative_contract_ratchet -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn20918-ac3
+    description: The workflow tests prove no onex_change_control checkout and a caller-relative allowlist
+      path input.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci -k imperative_contract_guard_workflow -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn20918-ac4
+    description: The omnimemory parity case and its planted-violation control hold in the test suite;
+      the lab run on a fresh omnimemory dev clone is recorded in the pull request body.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation -k "imperative_contract and (omnimemory or planted)"
+          -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4

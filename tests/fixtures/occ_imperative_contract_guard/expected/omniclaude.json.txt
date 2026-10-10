@@ -1,0 +1,153 @@
+[
+  {
+    "repo": "omniclaude",
+    "repo_root": "<ROOT>/omniclaude",
+    "allowlist_path": "<ROOT>/allowlists/omniclaude.yaml",
+    "node_count": 2,
+    "handler_count": 5,
+    "compliant_count": 0,
+    "allowlisted_count": 4,
+    "new_violation_count": 0,
+    "non_live_violation_count": 6,
+    "freestanding_scanned": true,
+    "freestanding_module_count": 5,
+    "new_violations": [],
+    "non_live_violations": [
+      {
+        "handler_path": "omniclaude/nodes/node_git_effect/handlers/handler_shell_heredoc.py",
+        "node_dir": "omniclaude/nodes/node_git_effect",
+        "repo": "omniclaude",
+        "contract_path": "omniclaude/nodes/node_git_effect/contract.yaml",
+        "violations": [
+          "missing_handler_routing"
+        ],
+        "violation_details": [
+          "handler not registered in contract handler_routing"
+        ],
+        "declared_topics": [
+          "onex.cmd.omniclaude.git-admission-check.v1",
+          "onex.evt.omniclaude.git-admission-evaluated.v1"
+        ],
+        "used_topics": [],
+        "undeclared_topics": [],
+        "declared_transports": [
+          "INMEMORY",
+          "KAFKA"
+        ],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": false,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "handler_path": "omniclaude/nodes/node_git_effect/handlers/handler_shell_redirect.py",
+        "node_dir": "omniclaude/nodes/node_git_effect",
+        "repo": "omniclaude",
+        "contract_path": "omniclaude/nodes/node_git_effect/contract.yaml",
+        "violations": [
+          "missing_handler_routing"
+        ],
+        "violation_details": [
+          "handler not registered in contract handler_routing"
+        ],
+        "declared_topics": [
+          "onex.cmd.omniclaude.git-admission-check.v1",
+          "onex.evt.omniclaude.git-admission-evaluated.v1"
+        ],
+        "used_topics": [],
+        "undeclared_topics": [],
+        "declared_transports": [
+          "INMEMORY",
+          "KAFKA"
+        ],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": false,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "handler_path": "omniclaude/nodes/node_git_effect/handlers/handler_shell_scope.py",
+        "node_dir": "omniclaude/nodes/node_git_effect",
+        "repo": "omniclaude",
+        "contract_path": "omniclaude/nodes/node_git_effect/contract.yaml",
+        "violations": [
+          "missing_handler_routing"
+        ],
+        "violation_details": [
+          "handler not registered in contract handler_routing"
+        ],
+        "declared_topics": [
+          "onex.cmd.omniclaude.git-admission-check.v1",
+          "onex.evt.omniclaude.git-admission-evaluated.v1"
+        ],
+        "used_topics": [],
+        "undeclared_topics": [],
+        "declared_transports": [
+          "INMEMORY",
+          "KAFKA"
+        ],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": false,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      }
+    ],
+    "freestanding_violations": [],
+    "non_live_freestanding_violations": [
+      {
+        "module_path": "src/omniclaude/nodes/node_golden_chain_publish_effect/persist.py",
+        "repo": "omniclaude",
+        "findings": [
+          {
+            "violation": "direct_db",
+            "line": 47,
+            "detail": "direct DB/cache connection 'psycopg2.connect' bypasses injected services",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "module_path": "src/omniclaude/services/ci_relay/publisher.py",
+        "repo": "omniclaude",
+        "findings": [
+          {
+            "violation": "raw_kafka",
+            "line": 61,
+            "detail": "raw Kafka client 'AIOKafkaProducer' bypasses injected event bus",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "module_path": "src/omniclaude/services/linear_relay/dedup_adapter.py",
+        "repo": "omniclaude",
+        "findings": [
+          {
+            "violation": "direct_db",
+            "line": 38,
+            "detail": "direct DB/cache connection 'sqlite3.connect' bypasses injected services",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      }
+    ]
+  }
+]

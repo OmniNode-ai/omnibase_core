@@ -1,0 +1,3 @@
+class HandlerPlanted:
+    def handle(self, request):
+        return "onex.evt.planted.thing.v1"

@@ -1,0 +1,10 @@
+Imperative contract guard
+
+repo                         nodes handlers  clean baseline  live nonlive allowlist
+------------------------------------------------------------------------------------------------------
+omniintelligence                 1        1      0        3     0       3 <ROOT>/allowlists/omniintelligence.yaml
+
+Reported non-live imperative smells:
+- src/omniintelligence/adapters/adapter_http_rest.py: hybrid (dead)
+- src/omniintelligence/debug_intel/topics.py: imperative (dead)
+- src/omniintelligence/review_pairing/topics.py: imperative (dead)

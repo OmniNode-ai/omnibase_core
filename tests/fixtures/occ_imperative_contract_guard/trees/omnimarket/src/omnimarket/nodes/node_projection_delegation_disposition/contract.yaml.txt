@@ -1,0 +1,76 @@
+---
+name: projection_delegation_disposition
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: reducer
+node_version: {major: 1, minor: 0, patch: 0}
+input_model: omnimarket.nodes.node_projection_delegation_disposition.models.model_delegation_disposition.ModelDelegationDispositionProjectionRequest
+description: >
+  OMN-20242. Rule-7a disposition projection, one row per tenant and delegation
+  correlation. Producer-recorded time and disposition UUID order replacements.
+  The content-free event records accepted, edited, rejected and ignored output.
+  The tenant-scoped reader query reads delegation_events owned by
+  node_projection_delegation to group usage by tenant, model, class and lane.
+handler:
+  module: omnimarket.nodes.node_projection_delegation_disposition.handlers.handler_projection_delegation_disposition
+  class: HandlerProjectionDelegationDisposition
+handler_routing:
+  routing_strategy: operation_match
+  handlers:
+    # Only the effect writer is routed; it calls the pure fold in process (rule 7a).
+    - operation: delegation_disposition_projection_writer
+      handler:
+        name: HandlerDelegationDispositionWriter
+        module: omnimarket.nodes.node_projection_delegation_disposition.handlers.handler_delegation_disposition_writer
+      handler_module: omnimarket.nodes.node_projection_delegation_disposition.handlers.handler_delegation_disposition_writer
+terminal_event: onex.evt.omnimarket.projection-delegation-disposition-applied.v1
+golden_path:
+  - "Validate the content-free, producer-timed disposition event"
+  - "Derive one row without I/O or a clock"
+  - "Upsert under the event tenant only when its (recorded_at, disposition_id) is newer"
+  - "Count persisted, duplicate and refused older rows as handled"
+dod_evidence:
+  - test: tests/test_golden_chain_projection_delegation_disposition.py::test_fold_is_pure_and_order_independent
+    description: "Replay in either arrival order converges on the same rows"
+  - test: tests/test_golden_chain_projection_delegation_disposition.py::test_older_never_replaces_newer
+    description: "Older observations never replace newer dispositions"
+  - test: tests/test_golden_chain_projection_delegation_disposition.py::test_redelivered_event_writes_the_same_row
+    description: "Redelivery keeps the same row and key"
+  - test: tests/test_golden_chain_projection_delegation_disposition.py::test_writer_declares_inprocess_dispatch
+    description: "Runtime dispatches only the effect writer"
+  - test: tests/test_golden_chain_projection_delegation_disposition.py::test_writer_row_count_never_zero_for_non_empty_input
+    description: "Every non-empty result counts as handled"
+  - test: tests/test_golden_chain_projection_delegation_disposition.py::test_each_disposition_is_written
+    description: "All four dispositions persist with typed fields"
+  - test: tests/test_omn20242_delegation_disposition_real_postgres.py::test_disposition_ordering_and_usage_query_on_real_postgres
+    description: "Actual PostgreSQL conflict ordering and tenant-scoped usage query"
+db_io:
+  db_tables:
+    - name: delegation_dispositions
+      database_ref: application
+      schema: public
+      migration: "0000_create_delegation_dispositions.sql"
+      access: read_write
+      role: delegation_dispositions
+    # Cross-node read: queries.py reads this relation; node_projection_delegation owns its DDL.
+    - name: delegation_events
+      database_ref: application
+      schema: public
+      migration: "0007_delegation_events.sql"
+      access: read
+      role: delegation_history
+  dedupe_key: [tenant_id, delegation_correlation_id]
+  ordering_key: [recorded_at, disposition_id]
+event_bus:
+  subscribe_topics:
+    - onex.evt.omnimarket.delegation-disposition-recorded.v1
+  publish_topics:
+    - onex.evt.omnimarket.projection-delegation-disposition-applied.v1
+  dlq_topics:
+    - onex.dlq.omnimarket.projection-delegation-disposition-malformed.v1
+externally_produced_topics:
+  - topic: onex.evt.omnimarket.delegation-disposition-recorded.v1
+    producer: "omniclaude delegation CLI and merge-drain script (producer follows OMN-20242)"
+externally_consumed_topics:
+  - onex.evt.omnimarket.projection-delegation-disposition-applied.v1
+metadata:
+  transport_type: kafka

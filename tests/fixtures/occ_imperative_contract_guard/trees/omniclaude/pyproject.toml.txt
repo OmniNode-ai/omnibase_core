@@ -1,0 +1,5 @@
+[project]
+name = "omninode-claude"
+
+[project.entry-points."onex.nodes"]
+node_local_llm_inference_effect = "omniclaude.nodes.node_local_llm_inference_effect"

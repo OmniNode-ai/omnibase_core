@@ -1,0 +1,162 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# Agent Learning Retrieval EFFECT - ONEX Contract
+# EFFECT node for retrieving agent learning records from Qdrant vector collections.
+
+# === REQUIRED ROOT FIELDS ===
+name: "node_agent_learning_retrieval_effect"
+contract_version: {major: 0, minor: 1, patch: 0}
+node_version: {major: 0, minor: 1, patch: 0}
+description: "Retrieves agent learning records from Qdrant vector collections. Supports error signature
+  matching (high precision, cosine > 0.85) and task context matching (broad recall, cosine > 0.70) with
+  freshness decay ranking."
+node_type: effect
+input_model: "ModelAgentLearningRetrievalRequest"
+output_model: "ModelAgentLearningRetrievalResponse"
+
+# === IO OPERATIONS (Required for EFFECT nodes) ===
+io_operations:
+  - operation_type: "vector_query"
+    atomic: false
+    timeout_seconds: 10
+    validation_enabled: true
+
+# === TRANSACTION MANAGEMENT ===
+transaction_management:
+  enabled: false
+
+# === NODE CONFIGURATION ===
+tool_specification:
+  tool_name: "agent_learning_retrieval_effect"
+  main_tool_class: "NodeAgentLearningRetrievalEffect"
+
+# === SERVICE CONFIGURATION ===
+service_configuration:
+  is_persistent_service: false
+  requires_external_dependencies: true
+
+# === INPUT/OUTPUT STATE ===
+input_state:
+  object_type: "object"
+  required: ["repo"]
+  optional: ["match_type", "error_text", "file_paths", "task_type", "max_results", "min_similarity_error",
+    "min_similarity_context"]
+
+output_state:
+  object_type: "object"
+  required: ["query_ms"]
+  optional: ["matches", "error_matches_count", "context_matches_count"]
+
+# === ACTIONS ===
+actions:
+  - name: "retrieve"
+    description: "Retrieve relevant agent learnings by error signature or task context"
+    inputs: ["repo", "match_type", "error_text", "file_paths", "task_type", "max_results"]
+    outputs: ["matches", "query_ms", "error_matches_count", "context_matches_count"]
+
+  - name: "health_check"
+    description: "Check node health status"
+    inputs: []
+    outputs: ["status"]
+
+# === DEPENDENCIES ===
+dependencies:
+  - name: qdrant
+    dependency_type: service
+    description: Qdrant vector store for learning record similarity search
+    required: true
+
+  - name: ProtocolEmbeddingClient
+    dependency_type: protocol
+    description: Embedding client for vectorizing query text
+
+# === PERFORMANCE ===
+performance:
+  max_response_time_ms: 100
+
+# === EVENT TYPE CONFIGURATION ===
+event_type:
+  version: {major: 1, minor: 0, patch: 0}
+  primary_events: ["learning_retrieved"]
+  event_categories: ["memory", "effect", "retrieval", "learning"]
+  publish_events: true
+  subscribe_events: true
+  invocation_mode: "subscription"
+  event_routing: "memory"
+
+# === INFRASTRUCTURE ===
+infrastructure:
+  retrieval_backends:
+    - qdrant
+
+# === VALIDATION RULES ===
+validation_rules:
+  strict_typing_enabled: true
+  input_validation_enabled: true
+  output_validation_enabled: true
+  performance_validation_enabled: true
+  constraint_definitions:
+    match_type: "Literal['error_signature', 'task_context', 'auto'] - retrieval strategy"
+    repo: "string (1-128) - repository to scope search to"
+    error_text: "string (max 4000) - error message for signature matching"
+    max_results: "int (1-20) - maximum results to return"
+
+# === HANDLER ROUTING ===
+# OMN-15268: the `retrieve` -> HandlerAgentLearningRetrieval entry and the
+# matching default_handler are REMOVED. The class does not exist and never did:
+#
+#   * `grep -rn HandlerAgentLearningRetrieval src/` matches only this contract.
+#     The module the entry named,
+#     handlers/handler_agent_learning_retrieval.py, contains four module-level
+#     pure functions (compute_freshness_score, build_error_query_text,
+#     build_context_query_text, rank_and_merge) and no class at all — so
+#     getattr() raised AttributeError at boot and the route resolved to nothing.
+#   * Nothing constructs or dispatches it. This node package ships no handler
+#     class in any form: adapters/ and clients/ hold only an __init__, and the
+#     node's own __init__ re-exports models only.
+#   * Repointing is not available. The functions are query-building and ranking
+#     HELPERS — none of them performs the Qdrant retrieval this EFFECT node
+#     declares, and a bare function fails the boot ctor predicate anyway (its
+#     required, default-less parameters are not injectable).
+#
+# Removing the false route does NOT make this node work — it stops the contract
+# from claiming a dispatcher that was never written. The real gap is larger and
+# is tracked separately: this node still declares subscribe_topics below with no
+# handler behind them (phantom subscription). Implementing the retrieval handler
+# is its own lane; inventing one here would be manufacturing behavior under a
+# resolvability ticket.
+# === EVENT BUS SUBCONTRACT ===
+event_bus:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+
+  subscribe_topics:
+    - "onex.cmd.omnimemory.agent-learning-retrieval-requested.v1"
+
+  publish_topics:
+    - "onex.evt.omnimemory.agent-learning-retrieval-response.v1"
+
+  subscribe_topic_metadata:
+    "onex.cmd.omnimemory.agent-learning-retrieval-requested.v1":
+      schema_ref: "omnimemory.nodes.node_agent_learning_retrieval_effect.models.model_request.ModelAgentLearningRetrievalRequest"
+      description: "Agent learning retrieval request with match type, error text, repo, and context parameters."
+
+  publish_topic_metadata:
+    "onex.evt.omnimemory.agent-learning-retrieval-response.v1":
+      schema_ref: "omnimemory.nodes.node_agent_learning_retrieval_effect.models.model_response.ModelAgentLearningRetrievalResponse"
+      description: "Agent learning retrieval response with ranked matches, similarity scores, and freshness
+        decay."
+
+# === TAGS ===
+tags:
+  - memory
+  - retrieval
+  - effect
+  - learning
+  - agent
+  - qdrant
+  - vector

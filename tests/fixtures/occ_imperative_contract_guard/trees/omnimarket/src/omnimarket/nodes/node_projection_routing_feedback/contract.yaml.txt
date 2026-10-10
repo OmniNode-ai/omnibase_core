@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: projection_routing_feedback
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: reducer
+node_version: {major: 1, minor: 0, patch: 0}
+input_model: omnimarket.nodes.node_projection_routing_feedback.models.model_routing_feedback_projection.ModelRoutingFeedbackProjectionRequest
+description: >
+  Rule-7a platform routing feedback projection. One row per model and task type,
+  ordered by producer process window and cumulative count.
+handler:
+  module: omnimarket.nodes.node_projection_routing_feedback.handlers.handler_projection_routing_feedback
+  class: HandlerProjectionRoutingFeedback
+handler_routing:
+  routing_strategy: operation_match
+  handlers:
+    - operation: routing_feedback_projection_writer
+      handler:
+        name: HandlerRoutingFeedbackWriter
+        module: omnimarket.nodes.node_projection_routing_feedback.handlers.handler_routing_feedback_writer
+      handler_module: omnimarket.nodes.node_projection_routing_feedback.handlers.handler_routing_feedback_writer
+terminal_event: onex.evt.omnimarket.projection-routing-feedback-applied.v1
+golden_path:
+  - "Validate cumulative feedback and strip transport metadata"
+  - "Derive one row without I/O or a clock"
+  - "Upsert only when (window_start, total_count) is newer"
+  - "Count persisted, duplicate and refused older rows as handled"
+dod_evidence:
+  - test: tests/test_golden_chain_projection_routing_feedback.py::test_fold_is_pure_and_order_independent
+    description: "Replay converges regardless of arrival order"
+  - test: tests/test_golden_chain_projection_routing_feedback.py::test_newer_window_replaces_regardless_of_count
+    description: "Producer restarts begin a new window"
+  - test: tests/test_golden_chain_projection_routing_feedback.py::test_lower_count_same_window_is_refused
+    description: "Stale and duplicate deliveries count as handled"
+  - test: tests/test_golden_chain_projection_routing_feedback.py::test_writer_declares_inprocess_dispatch
+    description: "Runtime routes only the writer"
+  - test: tests/test_routing_feedback_wiring.py::test_published_event_flows_through_the_consumer_fold
+    description: "The producer's published event is consumed by the fold"
+db_io:
+  db_tables:
+    - name: delegation_routing_feedback
+      database_ref: application
+      schema: public
+      migration: "0000_create_delegation_routing_feedback.sql"
+      access: read_write
+      role: routing_feedback
+  dedupe_key: [model_id, task_type]
+  ordering_key: [window_start, total_count]
+event_bus:
+  subscribe_topics:
+    - onex.evt.omnimarket.routing-feedback-updated.v1
+  publish_topics:
+    - onex.evt.omnimarket.projection-routing-feedback-applied.v1
+  dlq_topics:
+    - onex.dlq.omnimarket.projection-routing-feedback-malformed.v1
+externally_consumed_topics:
+  - onex.evt.omnimarket.projection-routing-feedback-applied.v1
+metadata:
+  transport_type: kafka

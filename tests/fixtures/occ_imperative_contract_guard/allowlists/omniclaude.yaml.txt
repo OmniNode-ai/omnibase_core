@@ -1,0 +1,34 @@
+---
+allowlisted_handlers:
+  - path: omniclaude/nodes/node_delegation_orchestrator/handlers/handler_cross_cli_invoker.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniclaude/nodes/node_git_effect/handlers/handler_git_subprocess.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omniclaude/nodes/node_github_pr_watcher_effect/handlers/watch_registry.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: src/omniclaude/hooks/lib/compliance_result_subscriber.py
+    violations:
+      - raw_kafka
+    ticket: OMN-12564
+  - path: src/omniclaude/hooks/lib/decision_record_subscriber.py
+    violations:
+      - raw_kafka
+    ticket: OMN-12564
+  - path: src/omniclaude/hooks/topics.py
+    violations:
+      - hardcoded_topic
+    ticket: OMN-12564
+  - path: src/omniclaude/nodes/node_local_llm_inference_effect/backends/backend_vllm.py
+    violations:
+      - raw_http_inference
+    ticket: OMN-12564
+  - path: src/omniclaude/nodes/node_personality_logging_effect/sinks/sink_slack.py
+    violations:
+      - raw_http_inference
+    ticket: OMN-12564

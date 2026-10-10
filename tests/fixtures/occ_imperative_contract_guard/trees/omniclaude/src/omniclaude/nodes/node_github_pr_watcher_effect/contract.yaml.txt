@@ -1,0 +1,179 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# Copyright (c) 2025 OmniNode Team
+#
+# ONEX Node Contract
+# Node: NodeGithubPrWatcherEffect
+#
+# Effect node that subscribes to PR status events from the CI relay
+# and routes them to per-agent inbox topics via Valkey watch registry.
+#
+# See OMN-2826 Phase 2b for specification.
+
+# Contract identifiers
+name: node_github_pr_watcher_effect
+version: "0.1.0"
+contract_name: node_github_pr_watcher_effect
+node_name: node_github_pr_watcher_effect
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+# Node type
+node_type: EFFECT_GENERIC
+
+# Description
+description: >
+  Effect node for GitHub PR status event routing. Subscribes to
+  onex.evt.omniclaude.github-pr-status.v1, looks up the Valkey watch registry
+  for interested agents, and routes matching events to per-agent
+  inbox topics (onex.evt.omniclaude.agent-inbox.{agent_id}.v1).
+  Uses O(1) key lookups via SMEMBERS, no key pattern scans.
+
+# Strongly typed I/O models
+input_model:
+  name: PRStatusEvent
+  module: omniclaude.services.ci_relay.models
+
+output_model:
+  name: InboxRouteResult
+  module: omniclaude.nodes.node_github_pr_watcher_effect.models
+
+# Execution backend configuration
+execution:
+  backend: native           # Native Python, no LLM needed
+  model_purpose: null
+
+# Event bus configuration
+event_bus:
+  subscribe:
+    topic: "onex.evt.omniclaude.github-pr-status.v1"
+    consumer_group: "omniclaude.pr_watcher"
+  publish:
+    # Dynamic: publishes to per-agent inbox topics
+    # Pattern: onex.evt.omniclaude.agent-inbox.{agent_id}.v1
+    success_topic: null     # Dynamic routing, not a fixed topic
+    failure_topic: "onex.evt.omniclaude.pr-watcher-failed.v1"
+  # Canonical topic registry (used by gap-analysis scanner) [OMN-3372]
+  # ci_relay service (src/omniclaude/services/ci_relay/) publishes github-pr-status
+  # as this node governs that service's contract.
+  subscribe_topics:
+    - "onex.evt.omniclaude.github-pr-status.v1"
+  publish_topics:
+    - "onex.evt.omniclaude.github-pr-status.v1"
+    - "onex.evt.omniclaude.pr-watcher-failed.v1"
+
+# Capabilities
+capabilities:
+  - name: github.pr_watcher
+    description: Route PR status events to per-agent inboxes via Valkey watch registry
+    version: 1.0.0
+
+  - name: github.pr_watcher.register_watch
+    description: Register an agent's interest in a (repo, pr_number) pair
+
+  - name: github.pr_watcher.unregister_watch
+    description: Remove an agent's watch on a (repo, pr_number) pair
+
+# IO operations
+io_operations:
+  - operation: route_event
+    description: >
+      Look up Valkey watchset for (repo, pr_number), route event to
+      all matching agent inboxes
+    handler_method: handle_route_event
+    input_fields:
+      - event: PRStatusEvent
+    output_fields:
+      - agents_notified: list[str]
+      - inbox_topics: list[str]
+    idempotent: true
+
+  - operation: register_watch
+    description: >
+      Register agent interest in PR status events for a (repo, pr_number).
+      Idempotent via SADD. Sets 2h TTL on both watchset and reverse index.
+    handler_method: handle_register_watch
+    input_fields:
+      - agent_id: str
+      - repo: str
+      - pr_number: int
+    output_fields:
+      - registered: bool
+    idempotent: true
+
+  - operation: unregister_watch
+    description: >
+      Remove agent watch for a (repo, pr_number). Idempotent via SREM.
+    handler_method: handle_unregister_watch
+    input_fields:
+      - agent_id: str
+      - repo: str
+      - pr_number: int
+    output_fields:
+      - unregistered: bool
+    idempotent: true
+
+# Dependencies
+dependencies:
+  - name: valkey_client
+    type: external_service
+    description: Valkey (Redis-compatible) client for watch registry
+    pluggable: true
+
+  - name: kafka_producer
+    type: external_service
+    description: Kafka producer for publishing to agent inbox topics
+    pluggable: true
+
+# Valkey schema documentation
+valkey_schema:
+  watchset:
+    key_pattern: "onex:watchset:{repo}:{pr_number}"
+    type: SET
+    members: "agent_id strings"
+    ttl_seconds: 7200
+    description: "Set of agent_ids watching this (repo, pr_number)"
+
+  reverse_index:
+    key_pattern: "onex:watchbyagent:{agent_id}"
+    type: SET
+    members: '"{repo}:{pr_number}" strings'
+    ttl_seconds: 7200
+    description: "Set of (repo, pr_number) pairs watched by this agent"
+
+# Error handling
+error_handling:
+  retry_policy:
+    max_retries: 3
+    initial_delay_ms: 500
+    max_delay_ms: 5000
+    exponential_base: 2
+    retry_on:
+      - ValkeyConnectionError
+      - KafkaPublishError
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    reset_timeout_seconds: 60
+
+# Metadata
+metadata:
+  ticket: OMN-6094
+  author: OmniNode Team
+  license: MIT
+  maturity: alpha
+  tags:
+    - effect
+    - github
+    - pr_watcher
+    - push_notifications
+    - valkey
