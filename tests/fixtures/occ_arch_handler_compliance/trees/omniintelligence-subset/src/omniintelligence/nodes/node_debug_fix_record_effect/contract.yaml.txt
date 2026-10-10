@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+name: "node_debug_fix_record_effect"
+version: "1.0.0"
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: "EFFECT_GENERIC"
+description: |
+  Effect node that consumes CI recovery events. Finds the open TriggerRecord
+  for the repo+branch, inserts a FixRecord, and atomically marks the
+  TriggerRecord resolved. Race-safe via try_mark_trigger_resolved CAS operation.
+
+input_model:
+  name: "ModelCiRecoveryDetectedV1"
+  module: "omniintelligence.nodes.node_ci_failure_tracker_effect.models.model_events"
+  description: "Payload for ci-recovery-detected.v1 event."
+
+output_model:
+  name: "ModelDebugFixRecordCreatedV1"
+  module: "omniintelligence.nodes.node_ci_failure_tracker_effect.models.model_events"
+  description: "Payload emitted when a debug fix record is created."
+
+event_bus:
+  subscribe_topics:
+    - "onex.cmd.omniintelligence.ci-recovery-detected.v1"
+  publish_topics:
+    - "onex.evt.omniintelligence.debug-fix-record-created.v1"
+
+dependencies:
+  - name: debug_store
+    type: protocol
+    class_name: "ProtocolDebugStore"
+    required: true

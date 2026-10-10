@@ -1,0 +1,8 @@
+name: node_routing_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_routed
+        module: fixturepkg.nodes.node_routing_compute.handlers.handler_routed
+      operation: run

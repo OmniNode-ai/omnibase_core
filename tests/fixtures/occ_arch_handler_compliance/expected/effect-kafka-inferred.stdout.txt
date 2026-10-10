@@ -1,0 +1,12 @@
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 2
+Compliant: 1
+Allowlisted: 0
+New violations: 1
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_compute_kafka_compute/handlers/handler_compute_kafka.py
+    Verdict: hybrid
+    - undeclared transport KAFKA used in handler

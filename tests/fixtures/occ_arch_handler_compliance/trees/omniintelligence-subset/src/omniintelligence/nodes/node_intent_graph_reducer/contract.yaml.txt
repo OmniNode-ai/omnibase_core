@@ -1,0 +1,167 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# ONEX Node Contract
+# Node: NodeIntentGraphReducer
+#
+# Reducer node that accumulates a directed intent-transition graph in memory.
+# Processes classification and outcome label events to track transition paths
+# and success rates across sessions.
+#
+# Reference: OMN-12167 - Add contract.yaml for 4 omniintelligence nodes
+
+name: "node_intent_graph_reducer"
+version: "1.0.0"
+contract_version: {major: 1, minor: 0, patch: 0}
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: "REDUCER_GENERIC"
+
+status: "active"
+
+description: >
+  Reducer node for the directed intent transition graph. Accumulates classification and outcome label
+  events into an in-memory graph of intent nodes and transition edges. Tracks occurrence counts, success
+  rates, and cost per intent class and per transition pair. Pure reducer — does NOT persist state directly;
+  the Memgraph adapter in omnimemory handles persistence. #magic___^_^___line
+input_model:
+  name: "ModelIntentGraphState"
+  module: "omniintelligence.nodes.node_intent_graph_reducer.models.model_intent_graph_state"
+  description: "Mutable in-memory intent graph state accumulator."
+
+output_model:
+  name: "ModelIntentGraphState"
+  module: "omniintelligence.nodes.node_intent_graph_reducer.models.model_intent_graph_state"
+  description: "Updated intent graph state after applying the incoming event."
+
+operations:
+  - name: "update_on_classification"
+    description: "Update graph when a new intent classification event is received"
+    input_fields:
+      - session_id
+      - intent_class
+      - cost_usd
+    output_fields:
+      - nodes
+      - edges
+      - session_last_intent
+      - session_previous_intent
+  - name: "update_on_outcome"
+    description: "Update graph when an outcome label event is received"
+    input_fields:
+      - session_id
+      - intent_class
+      - success
+      - cost_usd
+    output_fields:
+      - nodes
+      - edges
+  - name: "get_top_transitions"
+    description: "Query top N intent transitions by transition count"
+    input_fields:
+      - top_n
+    output_fields:
+      - transitions
+  - name: "get_node_success_rate"
+    description: "Query success rate for a specific intent class node"
+    input_fields:
+      - intent_class
+    output_fields:
+      - success_rate
+
+# =============================================================================
+# STATE MACHINE
+# =============================================================================
+# Reducers accumulate state transitions; this section documents the graph
+# state lifecycle as classification and outcome events arrive.
+# =============================================================================
+state_machine:
+  state_machine_name: "intent_graph_fsm"
+  initial_state: "idle"
+  states:
+    - state_name: "idle"
+      description: "Initial state — waiting for classification or outcome event"
+      entry_actions: []
+      exit_actions: []
+      required_data: []
+    - state_name: "accumulating"
+      description: "Actively receiving and accumulating classification events"
+      entry_actions: []
+      exit_actions: []
+      required_data:
+        - "session_id"
+        - "intent_class"
+    - state_name: "labeled"
+      description: "Outcome label received; edge and node success rates updated"
+      entry_actions: []
+      exit_actions: []
+      required_data:
+        - "session_id"
+        - "success"
+  transitions:
+    - from: "idle"
+      to: "accumulating"
+      trigger: "classification_event_received"
+      description: "First classification event for a session upserts the node"
+    - from: "accumulating"
+      to: "accumulating"
+      trigger: "classification_event_received"
+      description: "Subsequent events update occurrence counts and record transitions"
+    - from: "accumulating"
+      to: "labeled"
+      trigger: "outcome_event_received"
+      description: "Outcome label updates node and transition edge success rates"
+    - from: "labeled"
+      to: "accumulating"
+      trigger: "classification_event_received"
+      description: "New session or continued session classification after labeling"
+
+dependencies:
+  - name: "enum_intent_class"
+    type: "enum"
+    class_name: "EnumIntentClass"
+    module: "omnibase_core.enums.intelligence.enum_intent_class"
+    description: "Intent class enumeration used as graph node keys"
+    required: true
+
+error_handling:
+  error_types:
+    - name: "IntentGraphUpdateError"
+      error_code: "IGR_001"
+      description: "Failed to update intent graph state"
+      recoverable: false
+      retry_strategy: "none"
+    - name: "IntentGraphQueryError"
+      error_code: "IGR_002"
+      description: "Failed to query intent graph state"
+      recoverable: false
+      retry_strategy: "none"
+
+idempotency:
+  enabled: false
+  description: >
+    Reducer accumulates running totals; duplicate events will inflate counts. De-duplication must be handled
+    upstream (e.g., via event ID tracking in the consuming runtime).
+
+health_check:
+  enabled: true
+  endpoint: "/health"
+  interval_seconds: 30
+
+metadata:
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-05-25"
+  updated: "2026-05-25"
+  tags:
+    - reducer
+    - intent
+    - graph
+    - transitions
+  references:
+    - ticket: "OMN-12167"
+      url: "https://linear.app/omninode/issue/OMN-12167"
+      description: "Add contract.yaml for 4 omniintelligence nodes"

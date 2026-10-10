@@ -1,0 +1,17 @@
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 2
+Compliant: 0
+Allowlisted: 0
+New violations: 2
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_imperative_compute/handlers/handler_imperative.py
+    Verdict: imperative
+    - handler not registered in contract handler_routing
+    - node.py has custom methods: compute, compute_async
+
+  fixturepkg/nodes/node_logic_compute/handlers/handler_logic.py
+    Verdict: hybrid
+    - node.py has custom methods: compute, compute_async

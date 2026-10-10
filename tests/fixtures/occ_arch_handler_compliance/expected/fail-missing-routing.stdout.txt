@@ -1,0 +1,16 @@
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 3
+Compliant: 1
+Allowlisted: 0
+New violations: 2
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_routing_compute/handlers/handler_unrouted.py
+    Verdict: hybrid
+    - handler not registered in contract handler_routing
+
+  fixturepkg/nodes/node_routing_compute/handlers/sub/handler_nested.py
+    Verdict: hybrid
+    - handler not registered in contract handler_routing

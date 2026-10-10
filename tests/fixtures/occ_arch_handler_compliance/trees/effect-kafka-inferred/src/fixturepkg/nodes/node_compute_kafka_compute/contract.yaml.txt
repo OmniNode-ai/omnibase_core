@@ -1,0 +1,11 @@
+name: node_compute_kafka_compute
+node_type: COMPUTE_GENERIC
+event_bus:
+  publish_topics:
+    - onex.evt.fixture.compute.v1
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_compute_kafka
+        module: fixturepkg.nodes.node_compute_kafka_compute.handlers.handler_compute_kafka
+      operation: run

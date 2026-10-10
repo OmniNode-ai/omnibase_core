@@ -1,0 +1,6 @@
+"""Declares the DATABASE transport, lower case in the contract."""
+
+
+class HandlerDeclaredDb:
+    def handle(self, request):
+        return request.session.query("select 1")

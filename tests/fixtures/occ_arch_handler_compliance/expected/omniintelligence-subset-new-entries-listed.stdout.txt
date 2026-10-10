@@ -1,0 +1,6 @@
+
+=== Handler Contract Compliance: omniintelligence ===
+Total handlers: 8
+Compliant: 3
+Allowlisted: 5
+New violations: 0

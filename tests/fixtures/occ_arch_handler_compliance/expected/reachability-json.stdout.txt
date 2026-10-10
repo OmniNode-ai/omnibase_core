@@ -1,0 +1,98 @@
+[
+  {
+    "handler_path": "fixturepkg/nodes/node_reach_compute/handlers/handler_reach.py",
+    "node_dir": "fixturepkg/nodes/node_reach_compute",
+    "repo": "fixturepkg",
+    "contract_path": "fixturepkg/nodes/node_reach_compute/contract.yaml",
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "compliant",
+    "allowlisted": false,
+    "reachability": "live"
+  },
+  {
+    "handler_path": "fixturepkg/nodes/node_reach_compute/handlers/test_handler_named.py",
+    "node_dir": "fixturepkg/nodes/node_reach_compute",
+    "repo": "fixturepkg",
+    "contract_path": "fixturepkg/nodes/node_reach_compute/contract.yaml",
+    "violations": [
+      "missing_handler_routing"
+    ],
+    "violation_details": [
+      "handler not registered in contract handler_routing"
+    ],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": false,
+    "verdict": "hybrid",
+    "allowlisted": false,
+    "reachability": "test_harness"
+  },
+  {
+    "handler_path": "fixturepkg/nodes/node_reach_compute/handlers/tests/handler_in_tests.py",
+    "node_dir": "fixturepkg/nodes/node_reach_compute",
+    "repo": "fixturepkg",
+    "contract_path": "fixturepkg/nodes/node_reach_compute/contract.yaml",
+    "violations": [
+      "missing_handler_routing"
+    ],
+    "violation_details": [
+      "handler not registered in contract handler_routing"
+    ],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": false,
+    "verdict": "hybrid",
+    "allowlisted": false,
+    "reachability": "test_harness"
+  },
+  {
+    "handler_path": "fixturepkg/nodes/node_reach_nocontract_compute/handlers/handler_dead.py",
+    "node_dir": "fixturepkg/nodes/node_reach_nocontract_compute",
+    "repo": "fixturepkg",
+    "contract_path": null,
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [],
+    "undeclared_transports": [],
+    "handler_in_routing": false,
+    "verdict": "missing_contract",
+    "allowlisted": false,
+    "reachability": "live"
+  }
+]
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 4
+Compliant: 1
+Allowlisted: 0
+New violations: 2
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_reach_compute/handlers/test_handler_named.py
+    Verdict: hybrid
+    - handler not registered in contract handler_routing
+
+  fixturepkg/nodes/node_reach_compute/handlers/tests/handler_in_tests.py
+    Verdict: hybrid
+    - handler not registered in contract handler_routing

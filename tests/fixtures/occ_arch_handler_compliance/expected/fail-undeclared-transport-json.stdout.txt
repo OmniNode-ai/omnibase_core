@@ -1,0 +1,118 @@
+[
+  {
+    "handler_path": "fixturepkg/nodes/node_db_http_compute/handlers/handler_db_http.py",
+    "node_dir": "fixturepkg/nodes/node_db_http_compute",
+    "repo": "fixturepkg",
+    "contract_path": "fixturepkg/nodes/node_db_http_compute/contract.yaml",
+    "violations": [
+      "undeclared_transport",
+      "undeclared_transport",
+      "undeclared_transport"
+    ],
+    "violation_details": [
+      "undeclared transport DATABASE used in handler",
+      "undeclared transport HTTP used in handler",
+      "undeclared transport QDRANT used in handler"
+    ],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [],
+    "used_transports": [
+      "DATABASE",
+      "HTTP",
+      "QDRANT"
+    ],
+    "undeclared_transports": [
+      "DATABASE",
+      "HTTP",
+      "QDRANT"
+    ],
+    "handler_in_routing": true,
+    "verdict": "imperative",
+    "allowlisted": false,
+    "reachability": "live"
+  },
+  {
+    "handler_path": "fixturepkg/nodes/node_declared_db_compute/handlers/handler_declared_db.py",
+    "node_dir": "fixturepkg/nodes/node_declared_db_compute",
+    "repo": "fixturepkg",
+    "contract_path": "fixturepkg/nodes/node_declared_db_compute/contract.yaml",
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [
+      "DATABASE"
+    ],
+    "used_transports": [
+      "DATABASE"
+    ],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "compliant",
+    "allowlisted": false,
+    "reachability": "live"
+  },
+  {
+    "handler_path": "fixturepkg/nodes/node_handler_type_list_compute/handlers/handler_handler_type_list.py",
+    "node_dir": "fixturepkg/nodes/node_handler_type_list_compute",
+    "repo": "fixturepkg",
+    "contract_path": "fixturepkg/nodes/node_handler_type_list_compute/contract.yaml",
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [
+      "QDRANT"
+    ],
+    "used_transports": [
+      "QDRANT"
+    ],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "compliant",
+    "allowlisted": false,
+    "reachability": "live"
+  },
+  {
+    "handler_path": "fixturepkg/nodes/node_list_transport_effect/handlers/handler_list_transport.py",
+    "node_dir": "fixturepkg/nodes/node_list_transport_effect",
+    "repo": "fixturepkg",
+    "contract_path": "fixturepkg/nodes/node_list_transport_effect/contract.yaml",
+    "violations": [],
+    "violation_details": [],
+    "declared_topics": [],
+    "used_topics": [],
+    "undeclared_topics": [],
+    "declared_transports": [
+      "HTTP",
+      "KAFKA"
+    ],
+    "used_transports": [
+      "HTTP",
+      "KAFKA"
+    ],
+    "undeclared_transports": [],
+    "handler_in_routing": true,
+    "verdict": "compliant",
+    "allowlisted": false,
+    "reachability": "live"
+  }
+]
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 4
+Compliant: 3
+Allowlisted: 0
+New violations: 1
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_db_http_compute/handlers/handler_db_http.py
+    Verdict: imperative
+    - undeclared transport DATABASE used in handler
+    - undeclared transport HTTP used in handler
+    - undeclared transport QDRANT used in handler

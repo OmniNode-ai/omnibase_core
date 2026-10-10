@@ -1,0 +1,8 @@
+"""Planted control: a hardcoded topic literal and an undeclared database call."""
+
+TOPIC = "onex.evt.lab.positive-control.v1"
+
+
+class HandlerPlantedControl:
+    def handle(self, request):
+        return request.session.execute(TOPIC)

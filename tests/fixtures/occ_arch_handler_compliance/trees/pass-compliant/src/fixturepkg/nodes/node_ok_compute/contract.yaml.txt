@@ -1,0 +1,8 @@
+name: node_ok_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_ok
+        module: fixturepkg.nodes.node_ok_compute.handlers.handler_ok
+      operation: run

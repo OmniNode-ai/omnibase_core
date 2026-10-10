@@ -12,6 +12,7 @@ from omnibase_core.enums.governance.enum_compliance_verdict import EnumComplianc
 from omnibase_core.enums.governance.enum_compliance_violation import (
     EnumComplianceViolation,
 )
+from omnibase_core.enums.governance.enum_reachability import EnumReachability
 
 
 class ModelHandlerComplianceResult(BaseModel):
@@ -83,4 +84,8 @@ class ModelHandlerComplianceResult(BaseModel):
     allowlisted: bool = Field(
         default=False,
         description="Whether this handler is in the allowlist",
+    )
+    reachability: EnumReachability = Field(
+        default=EnumReachability.LIVE,
+        description="Whether this handler is reachable from contract routing.",
     )

@@ -1,0 +1,14 @@
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 1
+Compliant: 0
+Allowlisted: 0
+New violations: 1
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_topic_effect/handlers/handler_topic.py
+    Verdict: imperative
+    - hardcoded topic 'agent-actions' not in contract
+    - hardcoded topic 'onex.evt.fixture.declared.v1' (declared but should use contract dispatch)
+    - hardcoded topic 'onex.evt.fixture.undeclared.v1' not in contract

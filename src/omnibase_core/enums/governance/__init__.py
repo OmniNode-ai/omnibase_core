@@ -47,6 +47,7 @@ from omnibase_core.enums.governance.enum_migration_status import EnumMigrationSt
 from omnibase_core.enums.governance.enum_pr_state import EnumPRState
 from omnibase_core.enums.governance.enum_probe_reason import EnumProbeReason
 from omnibase_core.enums.governance.enum_probe_status import EnumProbeStatus
+from omnibase_core.enums.governance.enum_reachability import EnumReachability
 from omnibase_core.enums.governance.enum_wire_field_type import EnumWireFieldType
 
 __all__ = [
@@ -76,6 +77,7 @@ __all__ = [
     "EnumPRState",
     "EnumProbeReason",
     "EnumProbeStatus",
+    "EnumReachability",
     "EnumRegressionSeverity",
     "EnumWireFieldType",
 ]

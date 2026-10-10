@@ -1,0 +1,14 @@
+
+=== Handler Contract Compliance: fixturepkg ===
+Total handlers: 4
+Compliant: 3
+Allowlisted: 0
+New violations: 1
+
+--- New violations (not allowlisted) ---
+
+  fixturepkg/nodes/node_db_http_compute/handlers/handler_db_http.py
+    Verdict: imperative
+    - undeclared transport DATABASE used in handler
+    - undeclared transport HTTP used in handler
+    - undeclared transport QDRANT used in handler

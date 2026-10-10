@@ -1,0 +1,6 @@
+"""Declarative node."""
+
+
+class NodeThing:
+    def __init__(self, container):
+        super().__init__(container)

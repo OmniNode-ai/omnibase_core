@@ -1,0 +1,8 @@
+name: node_db_http_compute
+node_type: COMPUTE_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: handler_db_http
+        module: fixturepkg.nodes.node_db_http_compute.handlers.handler_db_http
+      operation: run
