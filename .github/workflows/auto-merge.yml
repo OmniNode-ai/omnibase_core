@@ -158,6 +158,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # OMN-20074 (RULING 2026-10-10T15:10:25Z): declared automation, which
+  # advisory-job-gate CHECKS rather than exempts -- this job must stay out of
+  # required_status_checks, out of any required job's `needs:`, and free of
+  # test, lint, receipt and evidence steps, so a failing step can never block
+  # a merge.
+  # advisory-automation: OMN-20074 resolves the pull request and author before arming
   pre-check:
     name: Resolve PR (fanout guard)
     runs-on: ubuntu-latest
@@ -270,6 +276,12 @@ jobs:
             echo "skip=false"
           } >> "$GITHUB_OUTPUT"
 
+  # OMN-20074 (RULING 2026-10-10T15:10:25Z): declared automation, which
+  # advisory-job-gate CHECKS rather than exempts -- this job must stay out of
+  # required_status_checks, out of any required job's `needs:`, and free of
+  # test, lint, receipt and evidence steps, so a failing step can never block
+  # a merge.
+  # advisory-automation: OMN-20074 arms auto-merge and enqueues a ready pull request
   auto-merge:
     name: Enable Auto-Merge
     needs: [pre-check]
