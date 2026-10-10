@@ -1,0 +1,63 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-18271
+title: Read every acceptance criteria section
+summary: The shared acceptance criteria reader pauses at unrelated Markdown headings and resumes at later
+  acceptance headings. The receipt gate must bind criteria from every section before allowing a Done write.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn18271-reader
+    statement: Read criteria from both acceptance sections while excluding bullets beneath unrelated Markdown
+      headings.
+    acceptance:
+      - id: AC1
+        statement: 'The two-section description produces exactly AC1 through AC6. -- falsifier: uv run
+          pytest tests/unit/handlers/test_handler_done_write_receipt_gate.py -q -k test_reader_reads_all_six_criteria_across_sections'
+  - id: req-omn18271-complete-binding
+    statement: Allow a receipt whose verified checks bind all six criteria across both sections.
+    acceptance:
+      - id: AC2
+        statement: 'All six verified bindings yield an allowed decision with six bound rows. -- falsifier:
+          uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate.py -q -k test_receipt_binding_all_six_criteria_allows'
+  - id: req-omn18271-incomplete-binding
+    statement: Refuse a receipt that binds only the first acceptance section.
+    acceptance:
+      - id: AC3
+        statement: 'First-section-only bindings yield a refused decision naming uncovered AC5 and AC6.
+          -- falsifier: uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate.py -q -k
+          test_receipt_binding_first_section_only_refuses_second_section'
+evidence_requirements:
+  - kind: tests
+    description: The handler tests exercise parsing and receipt binding across both acceptance sections.
+    command: uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn18271-reader
+    description: The reader returns all six labels and excludes unrelated bullets.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate.py -q -k test_reader_reads_all_six_criteria_across_sections
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn18271-complete-binding
+    description: The receipt gate allows complete verified bindings across both acceptance sections.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate.py -q -k test_receipt_binding_all_six_criteria_allows
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn18271-incomplete-binding
+    description: The receipt gate refuses first-section-only bindings and names the uncovered criteria.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate.py -q -k test_receipt_binding_first_section_only_refuses_second_section
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
