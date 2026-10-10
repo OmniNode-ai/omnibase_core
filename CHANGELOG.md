@@ -1,3 +1,13 @@
+## v0.47.38 (2026-10-10)
+
+### Release
+- Cut omnibase-core from dev at 0.47.38 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.37.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.37
+- feat: activate the node-home ratchet in omnibase_core (#1925)
+
 ## v0.47.37 (2026-10-09)
 
 ### Release
