@@ -40,7 +40,6 @@
 - check-localhost-url-compute
 - check-hardcoded-topic-compute
 - validate-exception-handling
-- no-hardcoded-topics
 
 # (2) The seventeenth, and not debt. check-release-identity refuses a packaged
 # source change that is not ahead of the latest published version, which is the

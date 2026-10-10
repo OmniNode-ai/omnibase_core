@@ -116,12 +116,13 @@ def test_no_hook_in_the_onex_change_control_block_is_one_this_repo_owns() -> Non
 
 
 def test_the_in_repo_todo_hook_is_not_excused_from_the_remote_suite() -> None:
-    """Catch the local TODO hook being skipped by the remote pre-commit suite."""
+    """Catch the local TODO and topic hooks being skipped by the remote pre-commit suite."""
     skipped: object = yaml.safe_load(SKIP_FILE.read_text(encoding="utf-8"))
     assert isinstance(skipped, list), "expected a YAML list of hook ids"
     for hook_id in skipped:
         assert isinstance(hook_id, str)
     assert "no-untracked-todos" not in skipped
+    assert "no-hardcoded-topics" not in skipped
 
 
 def test_the_in_repo_todo_hook_is_exported_under_the_same_id() -> None:
