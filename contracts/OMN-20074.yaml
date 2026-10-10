@@ -37,8 +37,8 @@ requirements:
       - id: AC3
         statement: 'AC3: the Repo Evidence Gate caller pins receipt-gate.yml at omnibase_core#1914''s
           squash commit, which carries #1912''s contract-home reusable, and verifier-version at or above
-          omnimarket v0.4.305, with compare-with-occ set by AC23 at the S6 cut-over. -- falsifier: uv run
-          pytest tests/ci/test_repo_evidence_caller_omn20074.py -q'
+          omnimarket v0.4.305, with compare-with-occ set by AC23 at the S6 cut-over. -- falsifier: uv
+          run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q'
   - id: req-omn20074-writer-release-cut
     statement: The dod-verify writer_pin_only step must derive the OCC writer-app release-cut exemption
       from the head's git diff against its merge base and fail closed for every other release shape.
