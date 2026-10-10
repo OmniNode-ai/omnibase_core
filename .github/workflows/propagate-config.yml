@@ -57,19 +57,9 @@ concurrency:
 # ci.yml as `propagate-dry-run`, where the required "CI Summary" poller fails on
 # it. This file keeps only the release and manual-dispatch propagator.
 jobs:
-  occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
-
   propagate:
-    needs: occ-preflight
     name: Propagate ${{ inputs.propagation_name || 'release-triggered' }}
-    if: needs.occ-preflight.result == 'success' && (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
     runs-on: >-
       ${{
         github.event_name != 'pull_request'

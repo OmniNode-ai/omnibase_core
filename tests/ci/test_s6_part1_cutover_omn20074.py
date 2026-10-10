@@ -11,7 +11,7 @@ Two changes, mirroring omnimarket#3398 and omnibase_infra#4775:
    and the CI Summary audit stop naming the nested context
    (``call-reject-skip-token / occ-preflight / eligibility``), because nothing
    produces it any more. The standalone ``occ-preflight / eligibility`` context
-   stays declared until S6 part 2 deletes the OCC callers.
+   is now retired by S6 part 2 together with the OCC callers.
 
 2. CI Summary expects ``repo-evidence / dod-verify`` on every ``pull_request``
    run (L4 ``EXPECTED_EXTERNAL_CONTEXTS``), so an absent repo-owned evidence
@@ -94,7 +94,7 @@ def test_required_checks_manifest_retires_the_nested_preflight_row() -> None:
     nested = next(row for row in manifest["gates"] if row["name"] == NESTED_PREFLIGHT)
     assert "OMN-20074" in nested["rationale"]
     assert modes[SCAN] == "REQUIRED"
-    assert modes[STANDALONE_PREFLIGHT] == "REQUIRED"
+    assert modes[STANDALONE_PREFLIGHT] == "RETIRED"
 
 
 def test_ci_summary_audit_no_longer_maps_the_caller_to_the_nested_preflight() -> None:
@@ -143,12 +143,11 @@ def test_green_base_branch_trigger_row_satisfies_ci_summary() -> None:
     assert evaluate_external(rows) == ([], [])
 
 
-def test_evidence_caller_keeps_comparing_with_occ_until_part_2() -> None:
-    # S5 is still counting on omnibase_core: part 1 must not stop the
-    # difference step. Part 2, which deletes the OCC callers, sets it "false".
+def test_evidence_caller_stops_comparing_with_occ_after_part_2() -> None:
+    # Part 2 deletes the OCC callers and stops waiting for their verdict.
     job = yaml.safe_load(EVIDENCE_CALLER.read_text(encoding="utf-8"))["jobs"][
         "repo-evidence"
     ]
-    assert job["with"]["compare-with-occ"] == "true"
+    assert job["with"]["compare-with-occ"] == "false"
     triggers = yaml.safe_load(EVIDENCE_CALLER.read_text(encoding="utf-8"))[True]
     assert set(triggers) == {"pull_request_target"}
