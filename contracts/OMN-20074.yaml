@@ -50,6 +50,18 @@ requirements:
           and exempt=false for any other path, a rewritten or deleted changelog line, a heading/version
           mismatch or an already-released version. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_release_cut_omn20074.py
           -q'
+  - id: req-omn20074-writer-workflow-pin
+    statement: The dod-verify writer_pin_only step must derive the OCC writer-app exemption for a workflow-only
+      diff that moves only the omnibase_core checkout pin, using the pinned verifier's classify_workflow_core_pin_only
+      over head and base git blobs, and fail closed for every other workflow diff.
+    acceptance:
+      - id: AC5
+        statement: 'AC5: for an OCC writer-app pull request whose whole diff is workflow files moving
+          only the omnibase_core checkout pin, the dod-verify writer_pin_only step derives exempt=true
+          from git objects through classify_workflow_core_pin_only, and derives exempt=false for a diff
+          with any non-workflow path, a workflow change outside the pin, an added or deleted workflow,
+          or a verifier without the classifier. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_workflow_pin_omn20074.py
+          -q -p no:randomly'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -68,6 +80,11 @@ evidence_requirements:
     description: Execute the writer-app verdict against git objects to prove release-cut shapes and fail-closed
       controls for paths, changelog edits, heading versions, and already-released versions.
     command: uv run pytest tests/ci/test_receipt_gate_writer_release_cut_omn20074.py -q
+  - kind: tests
+    description: Execute the writer-app verdict against git objects to prove the omnibase_core workflow
+      checkout pin exemption and its fail-closed controls for mixed paths, edits outside the pin, added
+      or deleted workflows, and an older verifier.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_workflow_pin_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -113,3 +130,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC4
+  - id: dod-omn-20074-ac5
+    description: The workflow tests prove the git-derived writer-app omnibase_core workflow checkout pin
+      exemption and its fail-closed refusal controls.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_workflow_pin_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5

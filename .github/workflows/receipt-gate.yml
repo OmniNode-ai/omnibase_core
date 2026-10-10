@@ -1383,9 +1383,12 @@ jobs:
 
       # OMN-17427, OMN-20074: derive the writer app's verdict from the exact
       # head's git diff against its merge base, using the pinned verifier.
-      # Admit dependency-pin-only first, then release cuts with root changelog
-      # additions, one new heading matching project.version, and optional pins.
-      # Every failure is not-exempt; PR title/body never supply this verdict.
+      # Admit dependency-pin-only first, then a workflow-only diff that moves
+      # only the omnibase_core checkout pin (the OMN-9050 downstream bump the
+      # occ-autobind producer used to classify), then release cuts with root
+      # changelog additions, one new heading matching project.version, and
+      # optional pins. Every failure is not-exempt; PR title/body never supply
+      # this verdict.
       - name: Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)
         id: writer_pin_only
         continue-on-error: ${{ inputs.shadow == 'true' }}
@@ -1411,10 +1414,15 @@ jobs:
             manifest_count=0
             manifest=""
             changelog_changed=false
+            workflow_only=true
             while IFS= read -r -d '' path; do
               if [ "$path" = CHANGELOG.md ]; then
                 changelog_changed=true
               fi
+              case "$path" in
+                .github/workflows/*.yml | .github/workflows/*.yaml) ;;
+                *) workflow_only=false ;;
+              esac
               if [ "${path##*/}" = pyproject.toml ]; then
                 manifest_count=$((manifest_count + 1))
                 manifest="$path"
@@ -1438,6 +1446,27 @@ jobs:
                 fi
               done
             fi
+            # A workflow-only diff hands every file's head and base blob to the
+            # workflow classifier, in the order of the paths file.
+            mkdir -p "$probe_dir/workflows" || return 1
+            if [ "$workflow_only" = true ]; then
+              index=0
+              while IFS= read -r -d '' path; do
+                for side in head base; do
+                  sha="$HEAD_SHA"
+                  if [ "$side" = base ]; then
+                    sha="$MB"
+                  fi
+                  reason="could not read the $side workflow blob"
+                  git -C "$head_tree" ls-tree -z "$sha" -- "$path" > "$probe_dir/workflows/tree-$index-$side" || return 1
+                  # An absent side stays absent on disk and is passed as None.
+                  if [ -s "$probe_dir/workflows/tree-$index-$side" ]; then
+                    git -C "$head_tree" show "$sha:$path" > "$probe_dir/workflows/$index.$side" || return 1
+                  fi
+                done
+                index=$((index + 1))
+              done < "$probe_dir/paths" || return 1
+            fi
             if [ "$changelog_changed" = true ]; then
               for blob in changelog-head changelog-base release-project-head; do
                 sha="$HEAD_SHA"
@@ -1458,7 +1487,7 @@ jobs:
             reason="the pinned verifier Python is missing"
             [ -n "${DOD_VERIFY_PY:-}" ] && [ -x "$DOD_VERIFY_PY" ] || return 1
             reason="the pinned classifier failed"
-            (cd "$RUNNER_TEMP" && "$DOD_VERIFY_PY" -I - "$probe_dir/paths" "$probe_dir/pyproject-head" "$probe_dir/pyproject-base" "$probe_dir/changelog-head" "$probe_dir/changelog-base" "$probe_dir/release-project-head" <<'PY'
+            (cd "$RUNNER_TEMP" && "$DOD_VERIFY_PY" -I - "$probe_dir/paths" "$probe_dir/pyproject-head" "$probe_dir/pyproject-base" "$probe_dir/changelog-head" "$probe_dir/changelog-base" "$probe_dir/release-project-head" "$probe_dir/workflows" <<'PY'
           import difflib
           import json
           import re
@@ -1524,8 +1553,22 @@ jobs:
                   return False, "release cut version already has a heading at the merge base"
               return True, f"release cut adds changelog version {version} with optional dependency pins"
 
+          def classify_workflow_pin(paths, workflows_dir):
+              # Imported here so a verifier without it fails closed only on
+              # the workflow path. Contents come from git objects, never the
+              # working tree.
+              from omnimarket.occ_content_probe import classify_workflow_core_pin_only
+
+              contents = {
+                  path: (read_optional(workflows_dir / f"{index}.head"),
+                         read_optional(workflows_dir / f"{index}.base"))
+                  for index, path in enumerate(paths)
+              }
+              return classify_workflow_core_pin_only(paths, contents=contents)
+
           def classify():
-              paths_file, head_file, base_file, changelog_head, changelog_base, project_file = map(Path, sys.argv[1:])
+              (paths_file, head_file, base_file, changelog_head, changelog_base,
+               project_file, workflows_dir) = map(Path, sys.argv[1:])
               raw_paths = paths_file.read_bytes()
               paths = [path.decode("utf-8") for path in raw_paths.split(b"\0") if path]
               pyproject_head, pyproject_base = read_optional(head_file), read_optional(base_file)
@@ -1533,7 +1576,17 @@ jobs:
                   paths, pyproject_head=pyproject_head, pyproject_base=pyproject_base,
               )
               if pin_only:
-                  return {"exempt": True, "kind": "dependency_pin_only", "reason": pin_reason}
+                  return {"exempt": True, "kind": "dependency_pin_only", "reason": pin_reason,
+                          "classifier": "classify_dependency_pin_only"}
+              if paths and all(
+                  path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml"))
+                  for path in paths
+              ):
+                  workflow_pin, workflow_reason = classify_workflow_pin(paths, workflows_dir)
+                  if workflow_pin:
+                      return {"exempt": True, "kind": "dependency_pin_only", "reason": workflow_reason,
+                              "classifier": "classify_workflow_core_pin_only"}
+                  pin_reason = f"{pin_reason}; workflow checkout pin: {workflow_reason}"
               release_cut, reason = classify_release_cut(
                   paths, pyproject_head, pyproject_base, changelog_head, changelog_base, project_file,
               )
@@ -1551,6 +1604,7 @@ jobs:
             jq -s -e 'length == 1 and (.[0] | type == "object" and (.exempt | type == "boolean") and (.kind == "dependency_pin_only" or .kind == "release_cut" or .kind == "none") and (.exempt == (.kind != "none")) and (.reason | type == "string"))' "$probe_dir/verdict.json" > /dev/null 2>&1 || return 1
             reason="$(jq -r '.reason' "$probe_dir/verdict.json")" || return 1
             kind="$(jq -r '.kind' "$probe_dir/verdict.json")" || return 1
+            classifier="$(jq -r '.classifier // "classify_dependency_pin_only"' "$probe_dir/verdict.json")" || return 1
             derived_exempt="$(jq -r '.exempt' "$probe_dir/verdict.json")" || return 1
             [ "$derived_exempt" = true ] || return 1
           }
@@ -1559,7 +1613,7 @@ jobs:
           if derive_pin_only; then
             exempt=true
             if [ "$kind" = dependency_pin_only ]; then
-              echo "::notice::OCC writer app authored a dependency-pin-only change at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by the pinned verifier's classify_dependency_pin_only: ${reason}; OMN-17427). The OCC autobind outcome this exemption used to read is no longer produced for caller-evidence repositories; the evidence gate is not applicable."
+              echo "::notice::OCC writer app authored a dependency-pin-only change at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by the pinned verifier's ${classifier}: ${reason}; OMN-17427). The OCC autobind outcome this exemption used to read is no longer produced for caller-evidence repositories; the evidence gate is not applicable."
             else
               echo "::notice::OCC writer app authored a release cut at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB}: ${reason}; OMN-20074); the evidence gate is not applicable."
             fi
