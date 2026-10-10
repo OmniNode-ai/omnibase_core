@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable CodeQL workflow for all OmniNode repositories.
+#
+# Usage in a caller repo:
+#
+#   jobs:
+#     codeql:
+#       name: CodeQL
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/codeql-reusable.yml@<full sha>
+#       with:
+#         language: python          # or javascript-typescript, go, java, etc.
+#         query_suite: security-and-quality
+#       permissions:
+#         actions: read
+#         contents: read
+#         security-events: write
+#
+# OMN-5420
+# OMN-20074: moved here from its previous home; inputs, job name and permissions are unchanged so the
+# required context "CodeQL / CodeQL Analysis (python)" is byte-identical for a repointed caller.
+
+name: CodeQL Reusable
+
+on:
+  workflow_call:
+    inputs:
+      language:
+        description: >
+          CodeQL language to analyze. Common values: python, javascript-typescript,
+          go, java, csharp, cpp, ruby, swift. Defaults to python.
+        type: string
+        required: false
+        default: python
+      query_suite:
+        description: >
+          CodeQL query suite to run. Use "security-and-quality" for combined
+          security + quality checks (recommended). Use "security-extended" for
+          a broader security-only sweep.
+        type: string
+        required: false
+        default: security-and-quality
+
+jobs:
+  analyze:
+    name: CodeQL Analysis (${{ inputs.language }})
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
+
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        with:
+          languages: ${{ inputs.language }}
+          queries: ${{ inputs.query_suite }}
+
+      # For compiled languages (Java, C/C++, Go, C#, Swift) CodeQL needs an
+      # explicit build step. For interpreted languages (Python, JavaScript,
+      # Ruby) autobuild is sufficient.
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        with:
+          category: /language:${{ inputs.language }}

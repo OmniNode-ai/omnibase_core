@@ -162,6 +162,17 @@ requirements:
           types file, pass_filenames false, always_run true and stage pre-commit, and no hook of that
           id sits in this repository''s onex_change_control block -- falsifier: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py
           -q -p no:randomly -k cosmetic fails at the merge base'
+  - id: req-omn20074-codeql-reusable-home
+    statement: omnibase_core must own the CodeQL reusable workflow so fleet security-scan callers can
+      repoint to it and keep the required context CodeQL / CodeQL Analysis (python) without onex_change_control.
+    acceptance:
+      - id: AC17
+        statement: 'AC17: .github/workflows/codeql-reusable.yml in omnibase_core is a workflow_call-only
+          move of the previous reusable with the same language and query_suite inputs, the same analyze
+          job name "CodeQL Analysis (${{ inputs.language }})" and the same permissions, so the caller
+          context resolves to "CodeQL / CodeQL Analysis (python)", pins every action by full sha and references
+          onex_change_control nowhere -- falsifier: uv run pytest tests/ci/test_codeql_reusable_omn20074.py
+          -q fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -232,6 +243,10 @@ evidence_requirements:
     description: The exported hook declaration runs the cosmetic handler under the same hook id with the
       keys of the onex_change_control export.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k cosmetic
+  - kind: tests
+    description: The workflow tests prove the CodeQL reusable's inputs, job name, permissions, composed
+      context, sha-pinned actions and the absence of any onex_change_control reference.
+    command: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -402,3 +417,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC16
+  - id: dod-omn-20074-ac17
+    description: The workflow tests prove the CodeQL reusable's inputs, job name, permissions, composed
+      required context, sha-pinned actions and the absence of any onex_change_control reference.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC17
