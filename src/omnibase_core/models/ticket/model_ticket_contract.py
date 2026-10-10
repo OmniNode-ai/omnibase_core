@@ -52,7 +52,13 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.ticket.model_clarifying_question import (
     ModelClarifyingQuestion,
 )
-from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
+from omnibase_core.models.ticket.model_contract_dod_item import (
+    BINDS_AC_CHECK_TYPE_RULE,
+    BINDS_AC_CHECK_TYPES,
+    BINDS_AC_LABEL_RE,
+    BINDS_AC_LABEL_RULE,
+    ModelContractDodItem,
+)
 from omnibase_core.models.ticket.model_emergency_bypass import ModelEmergencyBypass
 from omnibase_core.models.ticket.model_evidence_requirement import (
     ModelEvidenceRequirement,
@@ -337,6 +343,49 @@ class ModelTicketContract(BaseModel):
                 "If no interfaces are touched, set interfaces_touched to []."
             )
             raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def _validate_binds_ac_items(self) -> ModelTicketContract:
+        """Apply OCC validate-yaml's two refusals to items declaring binds_ac.
+
+        OMN-20074. OCC validates an item against its local model when the item
+        carries the ``binds_ac`` key, even an empty list, so the rules key on
+        the field being set rather than on it being non-empty:
+        every entry must be a bare criterion label, and every check type must
+        be one of OCC's eight. Items without ``binds_ac`` are untouched.
+        """
+        violations: list[str] = []
+        for item in self.dod_evidence:
+            if "binds_ac" not in item.model_fields_set:
+                continue
+            malformed = [
+                entry for entry in item.binds_ac if not BINDS_AC_LABEL_RE.match(entry)
+            ]
+            if malformed:
+                rendered = ", ".join(repr(entry) for entry in malformed)
+                violations.append(
+                    f"dod_evidence item {item.id!r}: {BINDS_AC_LABEL_RULE}: "
+                    "binds_ac entries must be acceptance-criterion labels "
+                    f"(`AC1`, `ac-1`, `DoD2`); rejected: {rendered}"
+                )
+            refused = sorted(
+                {
+                    check.check_type.value
+                    for check in item.checks
+                    if check.check_type not in BINDS_AC_CHECK_TYPES
+                }
+            )
+            if refused:
+                allowed = ", ".join(sorted(t.value for t in BINDS_AC_CHECK_TYPES))
+                rendered = ", ".join(repr(t) for t in refused)
+                violations.append(
+                    f"dod_evidence item {item.id!r}: {BINDS_AC_CHECK_TYPE_RULE}: "
+                    f"an item that declares binds_ac may use only {allowed}; "
+                    f"rejected: {rendered}"
+                )
+        if violations:
+            raise ValueError("; ".join(violations))
         return self
 
     @field_validator("created_at", "updated_at", mode="before")
