@@ -193,6 +193,8 @@ def test_the_cosmetic_hook_is_not_in_the_onex_change_control_block() -> None:
             continue
         for hook in _mappings(repo.get("hooks", [])):
             assert hook.get("id") != "cosmetic-lint"
+
+
 def test_the_in_repo_bare_feature_flag_hook_is_exported_under_the_same_id() -> None:
     """Catch removal or drift of the hook consumers switch to by repo: and rev: only."""
     hooks = _mappings(yaml.safe_load(EXPORTED_HOOKS.read_text(encoding="utf-8")))
