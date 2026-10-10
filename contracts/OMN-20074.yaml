@@ -124,6 +124,23 @@ requirements:
           when any of the three folded jobs fails, is skipped (anchored two) or is absent (anchored two).
           -- falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k "anchored
           or folded_gate or baseline_run or soft_allowlist or jobs_api"'
+  - id: req-omn20074-binds-ac-occ-parity
+    statement: ModelTicketContract must refuse the two dod_evidence shapes that onex_change_control validate-yaml
+      refuses and core admitted, with OCC's semantics, so a product repo can validate its contracts without
+      OCC.
+    acceptance:
+      - id: AC13
+        statement: 'AC13: ModelTicketContract refuses a dod_evidence item that declares binds_ac with
+          an entry that is not a bare criterion label (for example "AC1 -- the gate is wired"), naming
+          the item id and the DOD_EVIDENCE_BINDS_AC_LABEL rule, and still admits AC1, ac-1, DoD2 and the
+          other label forms -- falsifier: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py
+          -q -k TestBindsAcLabelRule fails at the merge base'
+      - id: AC14
+        statement: 'AC14: ModelTicketContract refuses a dod_evidence item that declares binds_ac with
+          a check type outside OCC''s eight (command_exit_0, rendered_output, runtime_sha_match, disposition),
+          naming the item id and the DOD_EVIDENCE_BINDS_AC_CHECK_TYPE rule, and still admits command_exit_0
+          on an item without binds_ac -- falsifier: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py
+          -q -k TestBindsAcCheckTypeRule fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -177,6 +194,15 @@ evidence_requirements:
       job fails, with positive controls.
     command: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k "anchored or folded_gate
       or baseline_run or soft_allowlist or jobs_api"
+  - kind: tests
+    description: The ticket-contract tests prove the binds_ac label refusal and its admitted label forms.
+    command: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py -q -k
+      TestBindsAcLabelRule
+  - kind: tests
+    description: The ticket-contract tests prove the binds_ac check-type refusal and that items without
+      binds_ac are unaffected.
+    command: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py -q -k
+      TestBindsAcCheckTypeRule
 emergency_bypass:
   enabled: false
   justification: ''
@@ -305,3 +331,25 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC12
+  - id: dod-omn-20074-ac13
+    description: The ticket-contract tests prove the binds_ac label refusal names the item and the rule,
+      and the well-formed label forms still pass.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py
+          -q -k TestBindsAcLabelRule
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC13
+  - id: dod-omn-20074-ac14
+    description: The ticket-contract tests prove the binds_ac check-type refusal names the item and the
+      rule, and command_exit_0 without binds_ac still passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py
+          -q -k TestBindsAcCheckTypeRule
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC14

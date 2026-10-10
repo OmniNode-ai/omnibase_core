@@ -26,10 +26,12 @@ by the runtime receipt gate.
 
 from __future__ import annotations
 
+import re
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
 from omnibase_core.enums.ticket.enum_dod_evidence_execution_scope import (
     EnumDodEvidenceExecutionScope,
 )
@@ -42,6 +44,33 @@ from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
 
 _MAX_STRING_LENGTH = 10000
 _MAX_LIST_ITEMS = 1000
+
+# OMN-20074. The two ``binds_ac`` refusals onex_change_control's
+# ``validate-yaml`` adds before it hands a ticket contract to core: it validates
+# every item that declares ``binds_ac`` against its OCC-local
+# ``ModelDodEvidenceItem``, whose label validator rejects anything but a bare
+# criterion label and whose ``ModelDodCheck.check_type`` is a Literal of the
+# eight check types below. ModelTicketContract applies both, with the same
+# regex and the same set, so a product repo can validate its contracts without
+# OCC. They live on the ticket-contract model and not on this item: the goal
+# contract event models carry this item with free-form criterion ids in
+# ``binds_ac``, which OCC never validates.
+BINDS_AC_LABEL_RULE = "DOD_EVIDENCE_BINDS_AC_LABEL"
+BINDS_AC_CHECK_TYPE_RULE = "DOD_EVIDENCE_BINDS_AC_CHECK_TYPE"
+# Same pattern and same ``re.match`` as OCC's ``_AC_LABEL_ENTRY_RE``.
+BINDS_AC_LABEL_RE = re.compile(r"^(AC|DOD)[-_ .]?(\d+)$", re.IGNORECASE)
+BINDS_AC_CHECK_TYPES: frozenset[EnumDodCheckType] = frozenset(
+    {
+        EnumDodCheckType.TEST_EXISTS,
+        EnumDodCheckType.TEST_PASSES,
+        EnumDodCheckType.FILE_EXISTS,
+        EnumDodCheckType.GREP,
+        EnumDodCheckType.COMMAND,
+        EnumDodCheckType.ENDPOINT,
+        EnumDodCheckType.BEHAVIOR_PROVEN,
+        EnumDodCheckType.SEMANTIC_GRADING,
+    }
+)
 
 
 class ModelContractDodItem(BaseModel):
@@ -135,4 +164,10 @@ class ModelContractDodItem(BaseModel):
         return self
 
 
-__all__ = ["ModelContractDodItem"]
+__all__ = [
+    "BINDS_AC_CHECK_TYPES",
+    "BINDS_AC_CHECK_TYPE_RULE",
+    "BINDS_AC_LABEL_RE",
+    "BINDS_AC_LABEL_RULE",
+    "ModelContractDodItem",
+]
