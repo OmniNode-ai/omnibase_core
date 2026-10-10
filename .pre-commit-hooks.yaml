@@ -19,6 +19,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-hardcoded-topics
+  name: No hardcoded ONEX topic strings
+  description: >
+    Reject quoted onex.evt./onex.cmd. topic literals outside approved constant files. Skips comment lines,
+    docstring and block-comment lines, test files, wire_schemas/*_vN.yaml contracts and the twelve approved
+    basenames. Ported from onex_change_control (OMN-20074, S8) under the same hook id, so a consumer changes
+    only repo: and rev:.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_no_hardcoded_topics
+  types_or: [python, yaml, ts, javascript]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: no-untracked-todos
   name: No untracked TODO/FIXME/HACK comments
   description: >

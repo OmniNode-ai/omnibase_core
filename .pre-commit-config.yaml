@@ -2194,15 +2194,18 @@ repos:
         exclude: ^src/omnibase_core/validation/todo_marker/
         stages: [pre-commit]
 
-  # Hardcoded topic string prevention (OMN-5259)
-  # Rejects bare onex.evt.*/onex.cmd.* strings outside approved constant files.
-  # Centralised in onex_change_control for cross-repo enforcement.
-  # Pre-existing violations excluded below — pending migration to canonical constants.
-  - repo: https://github.com/OmniNode-ai/onex_change_control
-    rev: 8d7e85bc00e7f1b1306d1cb40949be1ab6e7e91a  # pragma: allowlist secret
-    hooks:
+      # Reject quoted onex.evt./onex.cmd. topic literals outside approved constant
+      # files (OMN-5259; OMN-20074, OCC retirement S8). Runs this repository's own
+      # handler, ported from the onex_change_control hook of the same id, which used
+      # to be pulled from the onex_change_control repo block that stood here. The
+      # exclude is that block's, unchanged: pre-existing violations pending migration
+      # to canonical constants.
       - id: no-hardcoded-topics
+        name: No hardcoded ONEX topic strings
+        language: system
+        entry: uv run python -m omnibase_core.handlers.handler_no_hardcoded_topics
         require_serial: true
+        types_or: [python, yaml, ts, javascript]
         exclude: ^(src/omnibase_core/constants/constants_event_types\.py|src/omnibase_core/models/events/contract_registration/model_contract_deregistered_event\.py|src/omnibase_core/models/events/contract_registration/model_contract_registered_event\.py|src/omnibase_core/models/events/contract_registration/model_node_heartbeat_event\.py|src/omnibase_core/models/events/model_episode_event\.py|src/omnibase_core/models/events/model_git_hook_event\.py|src/omnibase_core/models/events/model_github_pr_status_event\.py|src/omnibase_core/models/events/model_linear_snapshot_event\.py|src/omnibase_core/models/events/validation/model_validation_run_completed_event\.py|src/omnibase_core/models/events/validation/model_validation_run_started_event\.py|src/omnibase_core/models/events/validation/model_validation_violations_batch_event\.py|src/omnibase_core/schemas/cli_contribution\.v1\.example\.yaml|src/omnibase_core/validation/validator_topic_suffix\.py)$
         stages: [pre-commit]
 

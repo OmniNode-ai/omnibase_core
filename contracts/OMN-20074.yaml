@@ -74,6 +74,28 @@ requirements:
           outside the version keys, an added or deleted manifest, a mixed diff that never reaches the
           classifier, and a verifier without the classifier -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_plugin_version_omn20074.py
           -q fails at the merge base'
+  - id: req-omn20074-topic-hook-handler
+    statement: The no-hardcoded-topics decisions of the pinned onex_change_control hook must be reproduced
+      by an omnibase_core handler, so the hook leaves the onex_change_control repository without a change
+      in what any fleet file is flagged for.
+    acceptance:
+      - id: AC7
+        statement: 'AC7: HandlerNoHardcodedTopics reproduces the check-hardcoded-topics decisions of onex_change_control
+          rev 8d7e85bc00e7 on verbatim fleet files, flagging a quoted onex.evt. or onex.cmd. literal and
+          skipping comment lines, docstring lines, block comments, test files, wire_schemas contracts
+          and the twelve approved basenames, with the hook''s output lines byte for byte -- falsifier:
+          uv run pytest tests/unit/handlers/test_handler_no_hardcoded_topics.py -q -p no:randomly fails
+          at the merge base'
+  - id: req-omn20074-topic-hook-export
+    statement: omnibase_core must export the handler as pre-commit hook id no-hardcoded-topics and run
+      it locally in place of the onex_change_control block, keeping the exclude unchanged.
+    acceptance:
+      - id: AC8
+        statement: 'AC8: .pre-commit-hooks.yaml exports id no-hardcoded-topics running the handler module
+          with types python, yaml, ts and javascript, and .pre-commit-config.yaml runs it as one local
+          hook carrying the 13-path exclude unchanged with no onex_change_control hook of that id -- falsifier:
+          uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly fails at the
+          merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -102,6 +124,14 @@ evidence_requirements:
       exemption and its fail-closed controls for edits outside the version keys, added or deleted manifests,
       mixed paths, and an older verifier.
     command: uv run pytest tests/ci/test_receipt_gate_writer_plugin_version_omn20074.py -q
+  - kind: tests
+    description: Replay verbatim fleet files against the decisions of the pinned onex_change_control hook,
+      with a positive control, every skip class and the byte-exact output lines.
+    command: uv run pytest tests/unit/handlers/test_handler_no_hardcoded_topics.py -q -p no:randomly
+  - kind: tests
+    description: The exported and local hook declarations run the handler under the same hook id, with
+      the exclude unchanged and no onex_change_control hook of that id.
+    command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -168,3 +198,23 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
+  - id: dod-omn-20074-ac7
+    description: The handler tests prove the pinned hook's no-hardcoded-topics decisions on verbatim fleet
+      files, a positive control and every skip class.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_no_hardcoded_topics.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn-20074-ac8
+    description: The hook declaration tests prove the export under the same id and the local hook with
+      its unchanged exclude.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC8
