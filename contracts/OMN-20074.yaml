@@ -173,6 +173,45 @@ requirements:
           context resolves to "CodeQL / CodeQL Analysis (python)", pins every action by full sha and references
           onex_change_control nowhere -- falsifier: uv run pytest tests/ci/test_codeql_reusable_omn20074.py
           -q fails at the merge base'
+  - id: req-omn20074-boundary-parity-handler
+    statement: The Kafka boundary parity decisions of the onex_change_control check-boundary-parity script
+      must be reproduced by an omnibase_core handler over the boundary manifest moved beside it, so the
+      check leaves the onex_change_control repository without a change in any consumer's verdict.
+    acceptance:
+      - id: AC30
+        statement: 'AC30: HandlerBoundaryParity reproduces the report text and exit status of onex_change_control
+          check_boundary_parity.py (rev a89a6f30fabf, identical at dev da751e728024) on fixture repositories:
+          a clean fixture passes, a producer file that no longer references the topic fails naming the
+          topic and the producer file, a missing file fails naming the file, a pending boundary is skipped
+          within 14 days and fails after, and the packaged kafka_boundaries.yaml parses to the six source
+          boundaries -- falsifier: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py -q
+          -p no:randomly fails at the merge base'
+  - id: req-omn20074-migration-conflicts-handler
+    statement: The migration conflict decisions of the onex_change_control check-migration-conflicts script
+      must be reproduced by an omnibase_core handler over the migration inventory copied beside it.
+    acceptance:
+      - id: AC31
+        statement: 'AC31: HandlerMigrationConflicts reproduces the report text and exit status of onex_change_control
+          check_migration_conflicts.py (rev a89a6f30fabf, identical at dev da751e728024) on fixture repositories:
+          a clean fixture passes, two repositories creating one table with different columns fail as NAME_CONFLICT
+          naming the table and both files, --warn-only exits 0 with the same report, an inventory that
+          places them in different databases passes, a suppressed table is reported as suppressed, and
+          --check-columns reports a missing column and skips an ambiguous table; the packaged migration_inventory.yaml
+          holds the databases, migration sets and file counts of the source inventory at dev da751e728024
+          -- falsifier: uv run pytest tests/unit/handlers/test_handler_migration_conflicts.py -q -p no:randomly
+          fails at the merge base'
+  - id: req-omn20074-validate-boundaries-action
+    statement: omnibase_core must own a validate-boundaries composite action with the input names and
+      defaults of the onex_change_control action, so a consumer repoints by changing only its uses line
+      and keeps its job and context names and its blocking mode.
+    acceptance:
+      - id: AC32
+        statement: 'AC32: .github/actions/validate-boundaries/action.yml is a composite action with inputs
+          checks, warn-only and repos at the onex_change_control defaults, pins every action by full sha,
+          references onex_change_control nowhere, runs the two core handlers with the source flags (migration-conflicts
+          with --check-columns --warn-only), and with warn-only "false" exits non-zero on a failed check
+          or a degraded clone and zero on a clean run -- falsifier: uv run pytest tests/ci/test_validate_boundaries_action_omn20074.py
+          -q -p no:randomly fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -247,6 +286,20 @@ evidence_requirements:
     description: The workflow tests prove the CodeQL reusable's inputs, job name, permissions, composed
       context, sha-pinned actions and the absence of any onex_change_control reference.
     command: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly
+  - kind: tests
+    description: Replay fixture repositories against the recorded output of the onex_change_control boundary
+      parity script, with a clean case, a parity break naming topic and file, a missing file, the pending
+      grace period and the manifest boundaries.
+    command: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py -q -p no:randomly
+  - kind: tests
+    description: Replay fixture repositories against the recorded output of the onex_change_control migration
+      conflict script, with a clean case, a name conflict, warn-only, inventory boundaries, suppressions,
+      column references and the inventory databases.
+    command: uv run pytest tests/unit/handlers/test_handler_migration_conflicts.py -q -p no:randomly
+  - kind: tests
+    description: The action tests prove the moved inputs and defaults, sha-pinned actions, no onex_change_control
+      reference, the core handler invocations and the blocking exit status.
+    command: uv run pytest tests/ci/test_validate_boundaries_action_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -427,3 +480,34 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC17
+  - id: dod-omn-20074-ac30
+    description: The handler tests replay the boundary parity decisions on fixture repositories with a
+      clean case, a parity break, a missing file, the pending grace period and the manifest boundaries.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC30
+  - id: dod-omn-20074-ac31
+    description: The handler tests replay the migration conflict decisions on fixture repositories with
+      a clean case, a name conflict, warn-only, inventory boundaries, suppressions, column references
+      and the inventory databases.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_migration_conflicts.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC31
+  - id: dod-omn-20074-ac32
+    description: The action tests prove the moved inputs, the sha pins, no onex_change_control reference,
+      the core handler invocations and the blocking exit status.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_validate_boundaries_action_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC32

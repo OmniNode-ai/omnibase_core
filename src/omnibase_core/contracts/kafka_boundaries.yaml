@@ -1,0 +1,84 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-20074: moved from onex_change_control (src/onex_change_control/boundaries/kafka_boundaries.yaml,
+# identical at main a89a6f30fabf and dev da751e728024). Topic names are plain scalars here where the
+# source quoted them; the parsed manifest is the same.
+---
+# kafka_boundaries.yaml - Cross-repo Kafka boundary manifest
+#
+# Maps Kafka topics that cross repository boundaries through active Kafka
+# producers and consumers. Do not list projection-only dashboard topics here:
+# omnidash now reads projection state and no longer owns a Kafka consumer
+# manifest for the legacy event-observability topics.
+#
+# OMN-5640: Layer 1 - Static Kafka Boundary Parity
+#
+# Rules:
+#   - Only list topics where producer_repo != consumer_repo
+#   - Only list active Kafka consumers, not dashboard projection readers
+#   - producer_file / consumer_file are relative to the repo root
+#   - topic_pattern is a regex that must match somewhere in the file contents
+#   - event_schema is the Pydantic model name (informational, not validated yet)
+
+version: "1"
+
+boundaries:
+
+  # =========================================================================
+  # omniclaude -> omniintelligence (command topics consumed by intelligence)
+  # =========================================================================
+  - topic_name: onex.cmd.omniintelligence.claude-hook-event.v1
+    producer_repo: omniclaude
+    consumer_repo: omniintelligence
+    producer_file: "src/omniclaude/hooks/topics.py"
+    consumer_file: "src/omniintelligence/nodes/node_claude_hook_event_effect/contract.yaml"
+    topic_pattern: "claude-hook-event\\.v1"
+    event_schema: "ModelClaudeCodeHookEvent"
+
+  - topic_name: onex.cmd.omniintelligence.tool-content.v1
+    producer_repo: omniclaude
+    consumer_repo: omniintelligence
+    producer_file: "src/omniclaude/hooks/topics.py"
+    consumer_file: "src/omniintelligence/nodes/node_claude_hook_event_effect/contract.yaml"
+    topic_pattern: "tool-content\\.v1"
+    event_schema: "ModelToolContentPayload"
+
+  - topic_name: onex.cmd.omniintelligence.session-outcome.v1
+    producer_repo: omniclaude
+    consumer_repo: omniintelligence
+    producer_file: "src/omniclaude/hooks/topics.py"
+    consumer_file: "src/omniintelligence/nodes/node_pattern_feedback_effect/contract.yaml"
+    topic_pattern: "session-outcome\\.v1"
+    event_schema: "ModelSessionOutcomePayload"
+
+  - topic_name: onex.cmd.omniintelligence.compliance-evaluate.v1
+    producer_repo: omniclaude
+    consumer_repo: omniintelligence
+    producer_file: "src/omniclaude/hooks/topics.py"
+    consumer_file: "src/omniintelligence/nodes/node_compliance_evaluate_effect/contract.yaml"
+    topic_pattern: "compliance-evaluate\\.v1"
+    event_schema: "ModelComplianceEvaluatePayload"
+
+  # =========================================================================
+  # omniintelligence -> omnimarket (intent classified topic)
+  # Consumer migrated from omnimemory to omnimarket (OMN-13701)
+  # =========================================================================
+  - topic_name: onex.evt.omniintelligence.intent-classified.v1
+    producer_repo: omniintelligence
+    consumer_repo: omnimarket
+    producer_file: "src/omniintelligence/nodes/node_claude_hook_event_effect/contract.yaml"
+    consumer_file: "src/omnimarket/nodes/node_intent_event_consumer_effect/contract.yaml"
+    topic_pattern: "intent-classified\\.v1"
+    event_schema: "ModelIntentClassifiedEvent"
+
+  # =========================================================================
+  # onex_change_control -> omniclaude (contract drift detection)
+  # =========================================================================
+  - topic_name: onex.evt.onex-change-control.contract-drift-detected.v1
+    producer_repo: onex_change_control
+    consumer_repo: omniclaude
+    producer_file: "src/onex_change_control/nodes/node_contract_drift_effect/contract.yaml"
+    consumer_file: "src/omniclaude/hooks/topics.py"
+    topic_pattern: "contract-drift-detected\\.v1"
+    event_schema: "ModelContractDriftOutput"
+    status: active
