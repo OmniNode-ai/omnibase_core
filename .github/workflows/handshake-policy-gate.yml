@@ -10,6 +10,12 @@ name: Handshake Policy Gate
 # The steps live only in this file. The per-repository required-context flip
 # is a separate, staged decision.
 #
+# The check itself is omnimarket's node_handshake_policy_gate_effect (OMN-20671):
+# it reads each repository's default branch and latest completed handshake run,
+# asks node_handshake_policy_gate_compute what every read means and prints the
+# report. This workflow only mints the token and calls the node at a pinned
+# omnimarket revision; bump the revision to take a node change.
+#
 # Deliberately NOT triggered on `pull_request`: this job needs
 # the onexbot App signing secrets, and this repo's OMNI_RUNNER_SELECTOR_V1
 # convention (see ci.yml) routes every `pull_request`-triggered job to the
@@ -31,6 +37,10 @@ on:
 permissions:
   contents: read
   actions: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  UV_VERSION: "0.8.3"
 
 jobs:
   policy-gate:
@@ -67,13 +77,34 @@ jobs:
             omnimemory
             omninode_infra
 
+      - name: Fetch the policy gate node (omnimarket)
+        uses: actions/checkout@v7
+        with:
+          repository: OmniNode-ai/omnimarket
+          ref: d99970696f78c6342b0f5cddb3aed72493e2aaed # pinned omnimarket rev (OMN-20671)
+          path: .policy-gate-node-src
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+
       - name: Run policy gate check
         env:
           # The App token can read workflow runs across the scoped private repos.
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ "${{ github.event_name }}" = "merge_group" ]; then
-            bash architecture-handshakes/check-policy-gate.sh
+            strict=""
           else
-            bash architecture-handshakes/check-policy-gate.sh --strict
+            strict="--strict"
           fi
+          uv run --frozen --no-dev --project .policy-gate-node-src \
+            python -m omnimarket.nodes.node_handshake_policy_gate_effect \
+            --repos-conf architecture-handshakes/repos.conf ${strict}
