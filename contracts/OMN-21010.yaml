@@ -1,0 +1,63 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21010
+title: "A delegation request carries the lab host it was sent from, so the router can spend only that
+  host's own key"
+summary: ModelDelegationRequest gains an optional source_host, the lab host registry row name the request
+  was sent from. Operator ruling 2026-10-11T17:58:45Z binds each Claude account's API key to the machine
+  the account lives on; lab lanes delegate through a deployed runtime, so the router can only honour that
+  binding if the request names its host. Unset, the field is excluded from serialization, so every existing
+  producer and consumer sees the same wire shape as before.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - "omnibase_core.models.delegation.wire.ModelDelegationRequest.source_host"
+requirements:
+  - id: req-omn21010-source-host
+    statement: A delegation request may name the lab host it was sent from, and a malformed host name
+      is refused at validation.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: ModelDelegationRequest accepts an optional source_host, a short host name of
+          lowercase letters, digits and dashes, and refuses an empty or malformed one at validation --
+          falsifier: uv run pytest tests/unit/models/delegation -k source_host'
+  - id: req-omn21010-unchanged
+    statement: A request with no source_host is unchanged on the wire.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: a request with no source_host serializes and validates exactly as before, so
+          every existing producer and consumer is unaffected -- falsifier: uv run pytest tests/unit/models/delegation
+          -q'
+evidence_requirements:
+  - kind: tests
+    description: The source_host tests pass at the head and fail on the base (the field does not exist
+      there).
+    command: uv run pytest tests/unit/models/delegation/wire/test_omn21010_source_host.py -q -p no:randomly
+  - kind: tests
+    description: The existing delegation model suites pass unchanged.
+    command: uv run pytest tests/unit/models/delegation -q -p no:randomly
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21010-ac1
+    description: A well-formed source_host round-trips; blank, padded, upper-case, dotted and over-long
+      names are refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation -k source_host -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21010-ac2
+    description: A request with no source_host dumps without the key, and the existing delegation model
+      suites pass unchanged.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
