@@ -216,6 +216,18 @@ requirements:
           module with types python, ts and javascript, the types the onex_change_control hook declared
           -- falsifier: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
           -k bare_feature_flag fails at the merge base'
+  - id: req-omn20074-s6-part1
+    statement: For S6 part 1 of the OCC retirement, the skip-token caller must pin the omniclaude reusable
+      that runs the scan with no nested change-control preflight, the required-checks manifest and the
+      CI Summary audit must stop naming the nested preflight context, and CI Summary must expect repo-evidence
+      / dod-verify on every pull_request run while the caller keeps comparing with OCC.
+    acceptance:
+      - id: AC22
+        statement: 'AC22: call-reject-skip.yml pins reject-deploy-gate-skip.yml at omniclaude#2540''s
+          squash commit, neither the required-checks manifest nor the CI Summary audit names call-reject-skip-token
+          / occ-preflight / eligibility, repo-evidence / dod-verify is an L4 context for pull_request
+          runs only whose absence holds and whose failure fails CI Summary, and compare-with-occ stays
+          "true". -- falsifier: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py -q -p no:randomly'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -278,6 +290,7 @@ evidence_requirements:
       binds_ac are unaffected.
     command: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py -q -k
       TestBindsAcCheckTypeRule
+  - kind: tests
     description: Replay trees of verbatim omnibase_spi files and constructed files against the recorded
       output of the pinned onex_change_control cosmetic-lint, one pass, one fail and one positive control
       per check class, and the spec hash.
@@ -310,6 +323,10 @@ evidence_requirements:
     description: The exported hook declaration runs the handler under the same hook id with the types
       the onex_change_control hook declared.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k bare_feature_flag
+  - kind: tests
+    description: The S6 part 1 tests prove the preflight-free skip-token pin, the removed nested preflight
+      context, and CI Summary's pull_request-only expectation of repo-evidence / dod-verify.
+    command: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -532,3 +549,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC21
+  - id: dod-omn-20074-ac22
+    description: The S6 part 1 tests prove the preflight-free skip-token pin, the removed nested preflight
+      context, and CI Summary's pull_request-only expectation of repo-evidence / dod-verify.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC22

@@ -782,17 +782,17 @@ gates:
       Filter (docs-only check)' below. skip_semantics: neutral_ok pending triage in OMN-14864."
 
   - name: "call-reject-skip-token / occ-preflight / eligibility"
-    mode: REQUIRED
+    mode: RETIRED
     branch: dev
     producer_kind: cross_repo
     caller_workflow: call-reject-skip.yml
     caller_job: call-reject-skip-token
-    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@main"
+    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@4358450ccbba0cee11e390208dd0b8b1728e94ab"
     skip_semantics: never
-    rationale: "Second required context produced by the same caller job as 'call-reject-skip-token / scan
-      / reject-skip-gate-token' above (the omniclaude-hosted reusable's own internal occ-preflight job,
-      3-level composed context: caller job id / reusable's occ-preflight job id / occ-preflight.yml's
-      'eligibility' job name). Live required status check on omnibase_core dev branch protection."
+    rationale: "OMN-20074 (OCC retirement S6 part 1): the pinned reusable (omniclaude#2540) no longer
+      runs the nested change-control preflight, so nothing produces this context. It leaves dev branch
+      protection in the same cut-over window as this change; the change-control verdict stays enforced
+      through the standalone 'occ-preflight / eligibility' context until S6 part 2."
 
   - name: "lint (shadow)"
     mode: REQUIRED
