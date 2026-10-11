@@ -1,0 +1,210 @@
+[
+  {
+    "repo": "omnimemory",
+    "repo_root": "<ROOT>/omnimemory",
+    "allowlist_path": "<ROOT>/allowlists/omnimemory.yaml",
+    "node_count": 3,
+    "handler_count": 6,
+    "compliant_count": 1,
+    "allowlisted_count": 4,
+    "new_violation_count": 2,
+    "non_live_violation_count": 6,
+    "freestanding_scanned": true,
+    "freestanding_module_count": 8,
+    "new_violations": [
+      {
+        "handler_path": "omnimemory/nodes/node_planted_effect/handlers/handler_planted.py",
+        "node_dir": "omnimemory/nodes/node_planted_effect",
+        "repo": "omnimemory",
+        "contract_path": "omnimemory/nodes/node_planted_effect/contract.yaml",
+        "violations": [
+          "hardcoded_topic"
+        ],
+        "violation_details": [
+          "hardcoded topic 'onex.evt.planted.thing.v1' not in contract"
+        ],
+        "declared_topics": [],
+        "used_topics": [
+          "onex.evt.planted.thing.v1"
+        ],
+        "undeclared_topics": [
+          "onex.evt.planted.thing.v1"
+        ],
+        "declared_transports": [],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": true,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "live"
+      }
+    ],
+    "non_live_violations": [
+      {
+        "handler_path": "omnimemory/nodes/node_agent_learning_retrieval_effect/handlers/handler_agent_learning_retrieval.py",
+        "node_dir": "omnimemory/nodes/node_agent_learning_retrieval_effect",
+        "repo": "omnimemory",
+        "contract_path": "omnimemory/nodes/node_agent_learning_retrieval_effect/contract.yaml",
+        "violations": [
+          "missing_handler_routing"
+        ],
+        "violation_details": [
+          "handler not registered in contract handler_routing"
+        ],
+        "declared_topics": [
+          "onex.cmd.omnimemory.agent-learning-retrieval-requested.v1",
+          "onex.evt.omnimemory.agent-learning-retrieval-response.v1"
+        ],
+        "used_topics": [],
+        "undeclared_topics": [],
+        "declared_transports": [],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": false,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "handler_path": "omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_decay.py",
+        "node_dir": "omnimemory/nodes/node_memory_retrieval_effect",
+        "repo": "omnimemory",
+        "contract_path": "omnimemory/nodes/node_memory_retrieval_effect/contract.yaml",
+        "violations": [
+          "missing_handler_routing"
+        ],
+        "violation_details": [
+          "handler not registered in contract handler_routing"
+        ],
+        "declared_topics": [
+          "onex.cmd.omnimemory.memory-retrieval-requested.v1",
+          "onex.evt.omnimemory.memory-retrieval-response.v1"
+        ],
+        "used_topics": [],
+        "undeclared_topics": [],
+        "declared_transports": [
+          "QDRANT"
+        ],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": false,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "handler_path": "omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_fusion.py",
+        "node_dir": "omnimemory/nodes/node_memory_retrieval_effect",
+        "repo": "omnimemory",
+        "contract_path": "omnimemory/nodes/node_memory_retrieval_effect/contract.yaml",
+        "violations": [
+          "missing_handler_routing"
+        ],
+        "violation_details": [
+          "handler not registered in contract handler_routing"
+        ],
+        "declared_topics": [
+          "onex.cmd.omnimemory.memory-retrieval-requested.v1",
+          "onex.evt.omnimemory.memory-retrieval-response.v1"
+        ],
+        "used_topics": [],
+        "undeclared_topics": [],
+        "declared_transports": [
+          "QDRANT"
+        ],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": false,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "handler_path": "omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_qdrant_mock.py",
+        "node_dir": "omnimemory/nodes/node_memory_retrieval_effect",
+        "repo": "omnimemory",
+        "contract_path": "omnimemory/nodes/node_memory_retrieval_effect/contract.yaml",
+        "violations": [
+          "missing_handler_routing"
+        ],
+        "violation_details": [
+          "handler not registered in contract handler_routing"
+        ],
+        "declared_topics": [
+          "onex.cmd.omnimemory.memory-retrieval-requested.v1",
+          "onex.evt.omnimemory.memory-retrieval-response.v1"
+        ],
+        "used_topics": [],
+        "undeclared_topics": [],
+        "declared_transports": [
+          "QDRANT"
+        ],
+        "used_transports": [],
+        "undeclared_transports": [],
+        "handler_in_routing": false,
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      }
+    ],
+    "freestanding_violations": [
+      {
+        "module_path": "src/omnimemory/planted_imperative_io.py",
+        "repo": "omnimemory",
+        "findings": [
+          {
+            "violation": "raw_http_inference",
+            "line": 5,
+            "detail": "raw HTTP call 'requests.post' bypasses contract transport",
+            "suppressed": false,
+            "reachability": "live"
+          },
+          {
+            "violation": "hardcoded_config",
+            "line": 5,
+            "detail": "hardcoded inference param 'max_tokens=64' in dict literal",
+            "suppressed": false,
+            "reachability": "live"
+          }
+        ],
+        "verdict": "imperative",
+        "allowlisted": false,
+        "reachability": "live"
+      }
+    ],
+    "non_live_freestanding_violations": [
+      {
+        "module_path": "src/omnimemory/adapters/adapter_health_manager.py",
+        "repo": "omnimemory",
+        "findings": [
+          {
+            "violation": "direct_db",
+            "line": 723,
+            "detail": "direct DB/cache connection 'asyncpg.connect' bypasses injected services",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "module_path": "src/omnimemory/nodes/node_kreuzberg_parse_effect/adapters/adapter_kreuzberg_client.py",
+        "repo": "omnimemory",
+        "findings": [
+          {
+            "violation": "raw_http_inference",
+            "line": 85,
+            "detail": "raw HTTP call 'httpx.AsyncClient' bypasses contract transport",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      }
+    ]
+  }
+]

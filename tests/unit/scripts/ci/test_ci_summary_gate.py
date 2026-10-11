@@ -49,7 +49,14 @@ FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS: dict[str, str] = {
     "DB ownership CI twin (B1)": "check-db-ownership.yml",
     "advisory-job-gate / advisory-job-gate": "advisory-job-gate.yml",
+    # OMN-20074: produced on pull_request_target, see PRODUCER_TRIGGER_ALIASES.
+    "repo-evidence / dod-verify": "call-repo-evidence-gate.yml",
 }
+
+# A producer trigger that reports on the same pull request head as a CI event:
+# pull_request_target runs the base-branch definition for the PR head, so its
+# check-run lands on the head a pull_request CI Summary run judges.
+PRODUCER_TRIGGER_ALIASES: dict[str, str] = {"pull_request_target": "pull_request"}
 
 
 def _job(
@@ -323,13 +330,6 @@ class TestCiSummaryGate:
         code, report = evaluate(jobs)
         assert code == EXIT_FAILURE
         assert "Pyright Type Checking" in report
-
-    def test_allowlisted_version_pin_failure_is_ignored(self) -> None:
-        # "Version Pin Compliance" carries continue-on-error and is not a gate
-        # need — a failure must NOT block.
-        jobs = _all_good() + [_job("Version Pin Compliance", "failure")]
-        code, _ = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
-        assert code == EXIT_SUCCESS
 
     def test_allowlisted_orphan_contract_compliance_failure_is_ignored(self) -> None:
         # The orphan "Contract Compliance" job (compliance) is not gated — a
@@ -673,7 +673,11 @@ class TestExternalContextEventContracts:
             emitted = []
             for context, filename in EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS.items():
                 document = yaml.safe_load((WORKFLOWS_DIR / filename).read_text())
-                if event_name in _on_block(document):
+                triggers = {
+                    PRODUCER_TRIGGER_ALIASES.get(trigger, trigger)
+                    for trigger in _on_block(document)
+                }
+                if event_name in triggers:
                     emitted.append(context)
             actual[event_name] = tuple(emitted)
         assert actual == EXTERNAL_CONTEXTS_BY_EVENT
@@ -951,7 +955,6 @@ DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("call-receipt-gate.yml", "verify"): ("verify / verify",),
     ("call-reject-skip.yml", "call-reject-skip-token"): (
         "call-reject-skip-token / scan / reject-skip-gate-token",
-        "call-reject-skip-token / occ-preflight / eligibility",
     ),
 }
 

@@ -1,0 +1,103 @@
+[
+  {
+    "repo": "omniintelligence",
+    "repo_root": "<ROOT>/omniintelligence",
+    "allowlist_path": "<ROOT>/allowlists/omniintelligence.yaml",
+    "node_count": 1,
+    "handler_count": 1,
+    "compliant_count": 0,
+    "allowlisted_count": 3,
+    "new_violation_count": 0,
+    "non_live_violation_count": 3,
+    "freestanding_scanned": true,
+    "freestanding_module_count": 5,
+    "new_violations": [],
+    "non_live_violations": [],
+    "freestanding_violations": [],
+    "non_live_freestanding_violations": [
+      {
+        "module_path": "src/omniintelligence/adapters/adapter_http_rest.py",
+        "repo": "omniintelligence",
+        "findings": [
+          {
+            "violation": "raw_http_inference",
+            "line": 92,
+            "detail": "raw HTTP call 'httpx.AsyncClient' bypasses contract transport",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "hybrid",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "module_path": "src/omniintelligence/debug_intel/topics.py",
+        "repo": "omniintelligence",
+        "findings": [
+          {
+            "violation": "hardcoded_topic",
+            "line": 36,
+            "detail": "hardcoded topic literal 'onex.evt.omniintelligence.debug-trigger-record-created.v1'",
+            "suppressed": false,
+            "reachability": "dead"
+          },
+          {
+            "violation": "hardcoded_topic",
+            "line": 40,
+            "detail": "hardcoded topic literal 'onex.evt.omniintelligence.debug-fix-record-created.v1'",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "imperative",
+        "allowlisted": false,
+        "reachability": "dead"
+      },
+      {
+        "module_path": "src/omniintelligence/review_pairing/topics.py",
+        "repo": "omniintelligence",
+        "findings": [
+          {
+            "violation": "hardcoded_topic",
+            "line": 54,
+            "detail": "hardcoded topic literal 'onex.evt.review-pairing.finding-observed.v1'",
+            "suppressed": false,
+            "reachability": "dead"
+          },
+          {
+            "violation": "hardcoded_topic",
+            "line": 57,
+            "detail": "hardcoded topic literal 'onex.evt.review-pairing.fix-applied.v1'",
+            "suppressed": false,
+            "reachability": "dead"
+          },
+          {
+            "violation": "hardcoded_topic",
+            "line": 60,
+            "detail": "hardcoded topic literal 'onex.evt.review-pairing.finding-resolved.v1'",
+            "suppressed": false,
+            "reachability": "dead"
+          },
+          {
+            "violation": "hardcoded_topic",
+            "line": 63,
+            "detail": "hardcoded topic literal 'onex.evt.review-pairing.pair-created.v1'",
+            "suppressed": false,
+            "reachability": "dead"
+          },
+          {
+            "violation": "hardcoded_topic",
+            "line": 66,
+            "detail": "hardcoded topic literal 'onex.evt.review-pairing.calibration-run-completed.v1'",
+            "suppressed": false,
+            "reachability": "dead"
+          }
+        ],
+        "verdict": "imperative",
+        "allowlisted": false,
+        "reachability": "dead"
+      }
+    ]
+  }
+]
