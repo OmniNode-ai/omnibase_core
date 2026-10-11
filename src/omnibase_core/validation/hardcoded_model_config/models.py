@@ -87,6 +87,21 @@ class ModelHardcodedModelConfigPolicy(BaseModel):
     )
 
 
+class ModelHardcodedModelConfigLabDenylist(BaseModel):
+    """The operator's private list of dead endpoints (OMN-20939).
+
+    Lives outside this repository, in the workspace config root's vocabularies,
+    and is added to the policy's ``retired_values`` when present.
+    """
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    schema_version: int = Field(ge=1, description="Vocabulary schema version")
+    retired_values: tuple[str, ...] = Field(
+        min_length=1, description="Exact retired endpoint strings (family R)"
+    )
+
+
 class ModelHardcodedModelConfigScanInput(BaseModel):
     """One file's text, already loaded by the EFFECT boundary."""
 

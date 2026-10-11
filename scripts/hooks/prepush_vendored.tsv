@@ -98,7 +98,21 @@
 #     pytest_configure, OMN-16607 runbook pointer); same outstanding delta,
 #     same rule -- recorded, not hidden.
 #
+# OMN-20939 DIVERGENCE (recorded, not hidden). The deployment's host rows no
+# longer ship in this repo's prepush_hosts.tsv, so two of the copies above carry
+# local edits that upstream does not have:
+#   * prepush_dispatch.sh: `prepush_table_text` appends the table the CALLER names
+#     in PREPUSH_PRIVATE_TABLE_REL (found through ONEX_WORKSPACE_CONFIG_ROOT, else
+#     the omnibase_internal sibling of OMNI_HOME; read from HEAD when the root is
+#     a git checkout), and the remote wrapper takes the same path as an optional
+#     ELEVENTH positional and lays the shipped rows under a workspace root it
+#     exports. The library still names no repo.
+#   * pytest_full_suite_host_guard.py: reads the same deployment table, carries no
+#     built-in host name (an unreadable or absent table designates nothing), and
+#     refuses with a not-configured message that names how to supply one.
+# A re-sync from upstream must re-apply both.
+#
 #path	upstream_repo	upstream_path	upstream_commit	upstream_branch	sha256	copied_at
-scripts/hooks/prepush_dispatch.sh	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_dispatch.sh	812d0b5451c1b157dd764cc26a83b9c7e12bcf71	dev	568443860442346f2a8687740b1a9469db439cdb571e6c56110e3b30872dc070	2026-09-05
+scripts/hooks/prepush_dispatch.sh	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_dispatch.sh	812d0b5451c1b157dd764cc26a83b9c7e12bcf71	dev	fb2c6f574f5e9d0b264a6b0995195269b296fcda70af7fd81eff3b031557eed5	2026-09-05
 scripts/hooks/prepush_override_grant.py	OmniNode-ai/omnibase_infra	scripts/hooks/prepush_override_grant.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	6777c592a944fe1964a195bf088c00c7747551e5e9a20705ca49d9e59dbc3f3c	2026-09-01
-scripts/hooks/pytest_full_suite_host_guard.py	OmniNode-ai/omnibase_infra	scripts/hooks/pytest_full_suite_host_guard.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	73a104fc080bfa49cbab263830c43f53d473d5c51f31bc2fa37018d34c3c67d8	2026-09-01
+scripts/hooks/pytest_full_suite_host_guard.py	OmniNode-ai/omnibase_infra	scripts/hooks/pytest_full_suite_host_guard.py	eddf4a9d20a294bed00a3c7e73ab14f73f2c6911	dev	7d6569454bda137ccc1ae75531c296d5bd5687c72376a5beaef28480fb42a92c	2026-09-01

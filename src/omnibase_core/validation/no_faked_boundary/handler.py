@@ -5,7 +5,8 @@
 GENERATED ARTIFACT (OMN-13497). The four scanning regexes in ``scan_source`` were
 produced by ``node_generation_consumer`` (omnimarket), local-model-first through
 the real delegation chain (model ``Qwen3.6-35B-A3B`` on the local-coder backend at
-``http://192.168.86.201:8000/v1/chat/completions``),  # onex-allow-internal-ip OMN-13497 provenance: the live generation backend endpoint
+a lab inference endpoint, shown here as the RFC 5737 documentation address
+``http://192.0.2.10:8000/v1/chat/completions``),
 and accepted ONLY because it passed a deterministic acceptance corpus
 (``node_generation_consumer.validator_corpora.corpus_no_faked_boundary``) in the
 hardened sandbox: it flagged every ``violation_fixture`` (4 base + 4 adversarial
