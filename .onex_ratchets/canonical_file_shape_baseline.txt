@@ -15,7 +15,6 @@
 .pre-commit-hooks/reject-required-check-skip-vector.sh
 architecture-handshakes/_parse_repos_conf.sh
 architecture-handshakes/check-handshake.sh
-architecture-handshakes/check-policy-gate.sh
 architecture-handshakes/install.sh
 examples/__init__.py
 examples/contract_validator_usage.py

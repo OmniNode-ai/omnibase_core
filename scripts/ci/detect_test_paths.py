@@ -494,10 +494,16 @@ def compute_selection(
         # (the OMN-16745 grain lesson). A non-collectable file under tests/unit/
         # (a helper, a conftest) is NOT narrowable this way and falls through to
         # the closure below, which still forces its directory.
-        touched_tests = [
+        unit_test_modules = [
             path
             for path in residual
             if path.startswith(TEST_UNIT_PREFIX) and is_test_file_name(Path(path).name)
+        ]
+        # `git diff --name-only` lists a DELETED module too. Its tests are gone,
+        # so there is nothing to select, and naming it would make pytest exit 4
+        # ("file or directory not found") on every split (OMN-20671).
+        touched_tests = [
+            path for path in unit_test_modules if (closure_root / path).exists()
         ]
         # Documentation is positively inert (step 5's own premise), so it is not
         # a closure input. Everything else still goes through the closure and
@@ -505,7 +511,7 @@ def compute_selection(
         closure_inputs = [
             path
             for path in residual
-            if path not in set(touched_tests) and not _is_docs_only_path(path)
+            if path not in set(unit_test_modules) and not _is_docs_only_path(path)
         ]
         closure_files: list[str] = []
         if closure_inputs:

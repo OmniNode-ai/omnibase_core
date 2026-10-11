@@ -18,7 +18,8 @@ This test suite verifies that:
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+from inspect import signature
 from pathlib import Path
 
 import pytest
@@ -137,6 +138,47 @@ class TestSkipReceiptGateTokenFails:
         assert not result.passed
         assert not result.friction_logged
         assert "no bypass" in result.message.lower()
+
+
+def test_registry_approval_cannot_bypass_receipt_gate(tmp_path: Path) -> None:
+    """An approval accepted before retirement must now fail the public gate."""
+    approval_path = tmp_path / "approvals.yaml"
+    approval_path.write_text(
+        yaml.safe_dump(
+            {
+                "approvals": [
+                    {
+                        "id": "appr-retirement-control",
+                        "granted_by": "independent-reviewer",
+                        "expires_at": (
+                            datetime.now(tz=UTC) + timedelta(days=1)
+                        ).isoformat(),
+                        "scope_repos": ["omnibase_core"],
+                        "scope_pr_numbers": [1953],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    gate_signature = signature(validate_pr_receipts)
+    request = gate_signature.bind(
+        pr_body="[skip-receipt-gate: appr-retirement-control]",
+        contracts_dir=_empty_dir(tmp_path, "contracts"),
+        receipts_dir=_empty_dir(tmp_path, "receipts"),
+        pr_author="pr-author",
+        current_repo="omnibase_core",
+        current_pr_number=1953,
+    )
+    # Give the merge-base control its real registry input when that API exists.
+    # Both trees face the same rejection assertion, rather than a TypeError.
+    if "allowlist_path" in gate_signature.parameters:
+        request.arguments["allowlist_path"] = approval_path
+    result = validate_pr_receipts(*request.args, **request.kwargs)
+
+    assert not result.passed
+    assert not result.friction_logged
+    assert "no bypass" in result.message.lower()
 
 
 class TestInlineSkipTokenAllowedDoesNotBypass:

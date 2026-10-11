@@ -293,6 +293,15 @@ requirements:
           unchanged permissions, so the composed context stays "CodeQL / CodeQL Analysis (python)", and
           the file references onex_change_control nowhere -- falsifier: uv run pytest tests/ci/test_codeql_reusable_omn20074.py
           -q -p no:randomly -k security_scan fails at the merge base'
+  - id: req-omn20074-retire-approval-registry
+    statement: The receipt gate must reject every skip token after retirement of the approvals registry,
+      including an unexpired approval scoped to the repository and pull request and granted by another
+      author.
+    acceptance:
+      - id: AC43
+        statement: 'AC43: validate_pr_receipts rejects an approval that the merge-base gate accepted,
+          without logging an accepted override, while clean PR receipts still pass -- falsifier: uv run
+          pytest tests/unit/validation/test_receipt_gate_skip_token_hardening.py -q -p no:randomly'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -716,3 +725,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC40
+  - id: dod-omn-20074-ac43
+    description: The receipt-gate tests exercise the public validator with the previously accepted registry
+      approval as a failing control, ordinary tokens and a clean PR with valid receipts.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_receipt_gate_skip_token_hardening.py -q
+          -p no:randomly -c pyproject.toml -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC43

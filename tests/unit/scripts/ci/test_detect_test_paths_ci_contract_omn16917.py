@@ -171,6 +171,28 @@ def test_workflow_only_diff_selects_the_ci_contract_class() -> None:
     ]
 
 
+def test_deleted_test_module_alongside_a_workflow_is_not_selected() -> None:
+    """OMN-20671: `git diff --name-only` lists a deleted test module too.
+
+    Selecting a path that is gone makes pytest exit 4 ("file or directory not
+    found") before collecting anything, which turned every split of a PR that
+    edited a workflow and deleted a unit test red at once.
+    """
+    deleted = "tests/unit/scripts/test_module_deleted_by_this_diff.py"
+    assert not (REPO_ROOT / deleted).exists()
+
+    selection = compute_selection(
+        changed_files=[".github/workflows/handshake-policy-gate.yml", deleted],
+        adjacency_path=ADJ,
+        ref_name="pr-branch",
+        repo_root=REPO_ROOT,
+    )
+
+    assert selection.is_full_suite is False
+    assert deleted not in selection.selected_paths
+    assert CI_CONTRACT_TEST_ROOT in selection.selected_paths
+
+
 # ---------------------------------------------------------------------------
 # Fail-closed properties preserved
 # ---------------------------------------------------------------------------
