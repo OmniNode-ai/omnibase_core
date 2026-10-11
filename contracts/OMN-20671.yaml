@@ -26,8 +26,12 @@ requirements:
           a caller'
 evidence_requirements:
   - kind: tests
-    description: The workflow mints the token for every active repository and runs the gate step after
-      it.
+    description: The workflow mints the token for every active repository and the step that runs the omnimarket
+      node reads it.
+    command: uv run pytest tests/unit/scripts/test_policy_gate_node_token_handoff.py -q -p no:randomly
+  - kind: tests
+    description: The workflow still mints the token for every active repository (the pre-existing credential-scope
+      test, which also passes at the merge base).
     command: uv run pytest tests/unit/scripts/test_policy_gate_app_token.py -q -p no:randomly
   - kind: tests
     description: The script and its retry test are deleted, no tracked file names the script, and the
@@ -40,11 +44,12 @@ emergency_bypass:
 dod_evidence:
   - id: dod-omn20671-ac1
     description: The workflow still mints the App token for every active repository and hands it to the
-      gate step; the node's own contract, handler and golden-chain tests are in omnimarket.
+      step that runs omnimarket's node; the node's own contract, handler and golden-chain tests are in
+      omnimarket.
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/scripts/test_policy_gate_app_token.py -q -p no:randomly
+        check_value: uv run pytest tests/unit/scripts/test_policy_gate_node_token_handoff.py -q -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
