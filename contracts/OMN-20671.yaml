@@ -1,0 +1,60 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20671
+title: "The architecture handshake policy gate runs as omnimarket's node and the shell script is deleted"
+summary: The workflow handshake-policy-gate.yml mints the onexbot App token and runs omnimarket's node_handshake_policy_gate_effect
+  at a pinned revision in place of the shell script, which is deleted together with its retry test and
+  its canonical-file-shape baseline line.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20671-node
+    statement: The policy gate is an omnimarket node with a contract and a handler, and this repository's
+      workflow still mints the cross-repo token for it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the tool is a contract.yaml, a declarative node and a handler with the canonical
+          definition-B signature, and its topics are declared in the contract -- falsifier: uv run pytest
+          tests/unit/scripts/test_policy_gate_app_token.py passes with the node''s handler file removed'
+  - id: req-omn20671-delete
+    statement: The shell script is deleted and the workflow calls the node.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the old script, workflow or module entry point is deleted and no caller still
+          invokes it -- falsifier: a repository grep for the old entry point name outside the node returns
+          a caller'
+evidence_requirements:
+  - kind: tests
+    description: The workflow mints the token for every active repository and runs the gate step after
+      it.
+    command: uv run pytest tests/unit/scripts/test_policy_gate_app_token.py -q -p no:randomly
+  - kind: tests
+    description: The script and its retry test are deleted, no tracked file names the script, and the
+      gate step runs the omnimarket node at a pinned revision.
+    command: uv run pytest tests/unit/scripts/test_policy_gate_node_caller.py -q -p no:randomly
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20671-ac1
+    description: The workflow still mints the App token for every active repository and hands it to the
+      gate step; the node's own contract, handler and golden-chain tests are in omnimarket.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/test_policy_gate_app_token.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn20671-ac2
+    description: The script and its retry test are deleted, no tracked file outside the changelog names
+      the script, and the gate step runs the omnimarket node.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/test_policy_gate_node_caller.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
