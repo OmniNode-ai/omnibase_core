@@ -143,12 +143,11 @@ def test_green_base_branch_trigger_row_satisfies_ci_summary() -> None:
     assert evaluate_external(rows) == ([], [])
 
 
-def test_evidence_caller_keeps_comparing_with_occ_until_part_2() -> None:
-    # S5 is still counting on omnibase_core: part 1 must not stop the
-    # difference step. Part 2, which deletes the OCC callers, sets it "false".
+def test_evidence_caller_stops_comparing_with_occ_after_omn20969() -> None:
+    """OMN-20969 stops the OCC comparison before part 2 removes its producer."""
     job = yaml.safe_load(EVIDENCE_CALLER.read_text(encoding="utf-8"))["jobs"][
         "repo-evidence"
     ]
-    assert job["with"]["compare-with-occ"] == "true"
+    assert job["with"]["compare-with-occ"] == "false"
     triggers = yaml.safe_load(EVIDENCE_CALLER.read_text(encoding="utf-8"))[True]
     assert set(triggers) == {"pull_request_target"}

@@ -1,0 +1,41 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-20969
+title: 'OCC retirement S6 (omnibase_core): the repo-evidence caller on dev stops comparing with OCC, so
+  omnibase_core#1930 can verify'
+summary: Stop the S5 comparison on dev before the S6 PR removes the OCC producer. Preserve every other
+  caller line outside the S5 comment.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20969
+    statement: The dev caller passes compare-with-occ false while preserving all other inputs and the
+      reusable pin.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: dev .github/workflows/call-repo-evidence-gate.yml passes compare-with-occ "false"
+          -- falsifier: a tests/ci pytest file parsing the caller fails at the merge base.'
+      - id: AC2
+        statement: 'AC2: every other caller input and the uses pin are unchanged from the merge base;
+          only compare-with-occ and its S5 comment change -- falsifier: the same tests/ci pytest file
+          compares every other input, the uses pin and the remaining workflow against the merge base.'
+evidence_requirements:
+  - kind: tests
+    description: Caller parsing and a verbatim merge-base comparison with injected-drift controls.
+    command: uv run pytest tests/ci/test_s6_caller_occ_disabled_omn20969.py -q -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20969-ac1-ac2
+    description: The focused file requires false and rejects any other input, pin or line drift outside
+      the S5 comment.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_s6_caller_occ_disabled_omn20969.py -q -n 0
+    binds_ac:
+      - AC1
+      - AC2
