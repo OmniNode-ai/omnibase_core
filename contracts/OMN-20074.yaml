@@ -364,6 +364,7 @@ evidence_requirements:
     description: The S6 part 1 tests prove the preflight-free skip-token pin, the removed nested preflight
       context, and CI Summary's pull_request-only expectation of repo-evidence / dod-verify.
     command: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py -q -p no:randomly
+  - kind: tests
     description: Fixture repositories against the decisions of the pinned check-boundary-parity script,
       with a parity break naming topic and file, a clean pass, pending grace and expiry, and the parsed
       manifest hash.
