@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""OMN-20074: omnibase_core repo-owned evidence and its S5 shadow caller."""
+"""OMN-20074: omnibase_core repo-owned evidence and its S6 evidence caller."""
 
 from __future__ import annotations
 
@@ -62,12 +62,12 @@ def test_caller_workflow_shape() -> None:
     assert "secrets: inherit" not in text, "caller must not inherit secrets"
 
 
-def test_caller_compares_with_occ_for_the_s5_shadow_count() -> None:
+def test_caller_stops_comparing_with_occ_at_the_s6_cutover() -> None:
     job = yaml.safe_load(CALLER_PATH.read_text(encoding="utf-8"))["jobs"][
         "repo-evidence"
     ]
-    assert job["with"].get("compare-with-occ") == "true", (
-        'the S5 shadow count requires compare-with-occ: "true" (a quoted string input)'
+    assert job["with"].get("compare-with-occ") == "false", (
+        'the S6 cut-over requires compare-with-occ: "false" (a quoted string input)'
     )
     version = tuple(int(part) for part in job["with"]["verifier-version"].split("."))
     assert version >= _DIFFERENCE_CLASSIFIER_FLOOR, (
