@@ -1076,12 +1076,6 @@ jobs:
           REPO_NAME="${{ github.repository }}"
           REPO_SHORT="${REPO_NAME##*/}"
 
-          ALLOWLIST_ARG=""
-          EVIDENCE_ROOT="${{ steps.evidence.outputs.root }}"
-          if [ -f "$EVIDENCE_ROOT/allowlists/skip_token_approvals.yaml" ]; then
-            ALLOWLIST_ARG="--allowlist-path $EVIDENCE_ROOT/allowlists/skip_token_approvals.yaml"
-          fi
-
           PR_AUTHOR_ARG=""
           if [ -n "$PR_AUTHOR" ]; then
             PR_AUTHOR_ARG="--pr-author $PR_AUTHOR"
@@ -1113,7 +1107,6 @@ jobs:
             --target-branch "${{ steps.branch_policy.outputs.target_branch }}" \
             --receipt-gate-policy-mode "${{ steps.branch_policy.outputs.policy_mode }}" \
             --occ-source-kind "${{ steps.resolve_evidence_source.outputs.occ_source_kind || 'self' }}" \
-            $ALLOWLIST_ARG \
             $PR_AUTHOR_ARG \
             $PR_NUMBER_ARG \
             $PR_OPENED_AT_ARG \

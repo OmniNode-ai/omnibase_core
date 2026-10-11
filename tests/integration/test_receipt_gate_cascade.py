@@ -98,31 +98,6 @@ def _write_receipt(receipts_dir: Path, ticket_id: str, data: dict[str, object]) 
     return p
 
 
-def _write_allowlist(path: Path, entries: list[dict[str, object]]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(yaml.safe_dump({"approvals": entries}))
-
-
-def _valid_allowlist_entry(
-    *,
-    entry_id: str = "appr-cascade-001",
-    granted_by: str = "platform-lead",
-    scope_repos: list[str] | None = None,
-    scope_pr_numbers: list[int] | None = None,
-    expires_at: str | None = None,
-) -> dict[str, object]:
-    return {
-        "id": entry_id,
-        "granted_by": granted_by,
-        "granted_at": "2026-04-30T00:00:00+00:00",
-        "expires_at": expires_at or _future(),
-        "scope_repos": scope_repos or ["omnibase_core"],
-        "scope_pr_numbers": scope_pr_numbers
-        if scope_pr_numbers is not None
-        else [9001],
-    }
-
-
 def _compute_contract_sha256(contract_path: Path) -> str:
     return f"sha256:{hashlib.sha256(contract_path.read_bytes()).hexdigest()}"
 
@@ -409,63 +384,6 @@ class TestHashBinding:
 class TestSkipTokenAdversarial:
     """Adversarial skip-token scenarios from hostile review."""
 
-    def test_skip_token_self_approved_fails(self, tmp_path: Path) -> None:
-        """granted_by == PR author → self-approval rejected."""
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        _write_allowlist(
-            allowlist,
-            [
-                _valid_allowlist_entry(
-                    entry_id="appr-self-cascade",
-                    granted_by="jonahgabriel",
-                    scope_pr_numbers=[9001],
-                )
-            ],
-        )
-
-        result = validate_pr_receipts(
-            pr_body="[skip-receipt-gate: appr-self-cascade]",
-            contracts_dir=tmp_path / "contracts",
-            receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
-            pr_author="jonahgabriel",
-            current_repo="omnibase_core",
-            current_pr_number=9001,
-        )
-        assert not result.passed
-        assert (
-            "self" in result.message.lower()
-            or "self-approval" in result.message.lower()
-            or "jonahgabriel" in result.message
-        ), f"Must cite self-approval rejection; got: {result.message!r}"
-
-    def test_skip_token_missing_scope_pr_numbers_fails(self, tmp_path: Path) -> None:
-        """Allowlist entry missing scope_pr_numbers → hard fail."""
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        entry: dict[str, object] = {
-            "id": "appr-no-scope-prs",
-            "granted_by": "platform-lead",
-            "granted_at": "2026-04-30T00:00:00+00:00",
-            "expires_at": _future(),
-            "scope_repos": ["omnibase_core"],
-            # scope_pr_numbers intentionally omitted
-        }
-        _write_allowlist(allowlist, [entry])
-
-        result = validate_pr_receipts(
-            pr_body="[skip-receipt-gate: appr-no-scope-prs]",
-            contracts_dir=tmp_path / "contracts",
-            receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
-            pr_author="worker-A",
-            current_repo="omnibase_core",
-            current_pr_number=9001,
-        )
-        assert not result.passed
-        assert "scope_pr_numbers" in result.message, (
-            f"Must cite missing scope_pr_numbers; got: {result.message!r}"
-        )
-
     def test_merge_group_head_sha_matching_multiple_prs_fails(
         self, tmp_path: Path
     ) -> None:
@@ -496,55 +414,30 @@ class TestSkipTokenAdversarial:
         )
 
     def test_free_text_skip_token_fails(self, tmp_path: Path) -> None:
-        """Free-text [skip-receipt-gate: ...] with spaces → OVERRIDE_PATTERN won't match."""
+        """Free-text [skip-receipt-gate: ...] fails: there is no bypass (OMN-20074)."""
         result = validate_pr_receipts(
             pr_body="[skip-receipt-gate: this is a free text justification]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
         )
         assert not result.passed
-        assert "skip-*" in result.message or "allowlist" in result.message.lower()
+        assert "no bypass" in result.message.lower()
 
-    def test_skip_token_no_allowlist_path_fails(self, tmp_path: Path) -> None:
-        """Valid-looking token but no allowlist_path provided → hard fail."""
-        result = validate_pr_receipts(
-            pr_body="[skip-receipt-gate: appr-cascade-001]",
-            contracts_dir=tmp_path / "contracts",
-            receipts_dir=tmp_path / "receipts",
-            allowlist_path=None,
-        )
-        assert not result.passed
-        assert "allowlist" in result.message.lower()
-
-    def test_skip_token_valid_with_platform_lead_approval_passes(
+    def test_approval_id_shaped_skip_token_fails_with_full_pr_context(
         self, tmp_path: Path
     ) -> None:
-        """Properly approved skip token with external approver → PASS with friction."""
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        _write_allowlist(
-            allowlist,
-            [
-                _valid_allowlist_entry(
-                    entry_id="appr-platform-approved",
-                    granted_by="platform-lead",
-                    scope_repos=["omnibase_core"],
-                    scope_pr_numbers=[9001],
-                )
-            ],
-        )
-
+        """An id-shaped token once admitted by the registry now fails like any other."""
         result = validate_pr_receipts(
             pr_body="[skip-receipt-gate: appr-platform-approved]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
             pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=9001,
         )
-        assert result.passed, f"Valid token must pass; got: {result.message!r}"
-        assert result.friction_logged, "Bypass must set friction_logged=True"
-        assert "appr-platform-approved" in result.message
+        assert not result.passed
+        assert not result.friction_logged
+        assert "no bypass" in result.message.lower()
 
 
 # ---------------------------------------------------------------------------
@@ -561,7 +454,6 @@ class TestReplayDeterminism:
         pr_body: str,
         contracts_dir: Path,
         receipts_dir: Path,
-        allowlist_path: Path | None = None,
         pr_author: str | None = None,
         current_repo: str | None = None,
         current_pr_number: int | None = None,
@@ -570,7 +462,6 @@ class TestReplayDeterminism:
             pr_body=pr_body,
             contracts_dir=contracts_dir,
             receipts_dir=receipts_dir,
-            allowlist_path=allowlist_path,
             pr_author=pr_author,
             current_repo=current_repo,
             current_pr_number=current_pr_number,
@@ -579,7 +470,6 @@ class TestReplayDeterminism:
             pr_body=pr_body,
             contracts_dir=contracts_dir,
             receipts_dir=receipts_dir,
-            allowlist_path=allowlist_path,
             pr_author=pr_author,
             current_repo=current_repo,
             current_pr_number=current_pr_number,
@@ -611,50 +501,12 @@ class TestReplayDeterminism:
         assert not r1.passed
         assert r1.message == r2.message
 
-    def test_self_approved_token_is_deterministic(self, tmp_path: Path) -> None:
-        """Category 4 self-approval fixture replayed twice → identical FAIL + identical message."""
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        _write_allowlist(
-            allowlist,
-            [
-                _valid_allowlist_entry(
-                    entry_id="appr-self-det",
-                    granted_by="jonahgabriel",
-                    scope_pr_numbers=[9001],
-                )
-            ],
-        )
-
+    def test_skip_token_rejection_is_deterministic(self, tmp_path: Path) -> None:
+        """A skip token replayed twice → identical FAIL + identical message (OMN-20074)."""
         r1, r2 = self._run_twice(
-            pr_body="[skip-receipt-gate: appr-self-det]",
+            pr_body="[skip-receipt-gate: appr-det-token]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
-            pr_author="jonahgabriel",
-            current_repo="omnibase_core",
-            current_pr_number=9001,
-        )
-        assert r1.passed == r2.passed
-        assert not r1.passed
-        assert r1.message == r2.message
-
-    def test_missing_scope_pr_numbers_is_deterministic(self, tmp_path: Path) -> None:
-        """Missing scope_pr_numbers fixture replayed twice → identical FAIL."""
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        entry: dict[str, object] = {
-            "id": "appr-det-no-scope",
-            "granted_by": "platform-lead",
-            "granted_at": "2026-04-30T00:00:00+00:00",
-            "expires_at": _future(),
-            "scope_repos": ["omnibase_core"],
-        }
-        _write_allowlist(allowlist, [entry])
-
-        r1, r2 = self._run_twice(
-            pr_body="[skip-receipt-gate: appr-det-no-scope]",
-            contracts_dir=tmp_path / "contracts",
-            receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
             pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=9001,
@@ -777,30 +629,17 @@ class TestGateInvariants:
             f"I4: Must mention hash mismatch; got: {result.message!r}"
         )
 
-    def test_invariant_i5_skip_tokens_externally_approved(self, tmp_path: Path) -> None:
-        """I5: Skip tokens must be externally approved, scoped, non-self-issued."""
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        _write_allowlist(
-            allowlist,
-            [
-                _valid_allowlist_entry(
-                    entry_id="appr-i5-test",
-                    granted_by="the-pr-author",
-                    scope_pr_numbers=[1000],
-                )
-            ],
-        )
-
+    def test_invariant_i5_skip_tokens_are_never_accepted(self, tmp_path: Path) -> None:
+        """I5: no skip token passes; the approvals registry is retired (OMN-20074)."""
         result = validate_pr_receipts(
             pr_body="[skip-receipt-gate: appr-i5-test]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
             pr_author="the-pr-author",
             current_repo="omnibase_core",
             current_pr_number=1000,
         )
-        assert not result.passed, "I5: Self-issued approval must be rejected"
+        assert not result.passed, "I5: a skip token must be rejected"
 
     def test_invariant_i6_gate_deterministic_under_replay(self, tmp_path: Path) -> None:
         """I6: Gate is deterministic under replay (no time/network beyond fetch)."""
@@ -901,22 +740,16 @@ class TestGateInvariants:
         """I10: Skip-token PR resolution returns exactly-one-PR or gate fails.
 
         The GHA workflow layer enforces exactly-one-PR resolution for merge_group.
-        At the Python gate level, we verify that a skip token requires full
-        PR context (pr_author, current_repo, current_pr_number) — missing any
-        context fails, ensuring the caller cannot present ambiguous inputs.
+        At the Python gate level a skip token fails whatever PR context
+        accompanies it (OMN-20074: no bypass exists), so
+        a caller cannot present an ambiguous input and slip a token through.
         """
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        _write_allowlist(
-            allowlist,
-            [_valid_allowlist_entry(entry_id="appr-i10-test", scope_pr_numbers=[9001])],
-        )
 
         # Simulate merge_group confusion: no current_pr_number provided
         result = validate_pr_receipts(
             pr_body="[skip-receipt-gate: appr-i10-test]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
             pr_author="worker-A",
             current_repo="omnibase_core",
             current_pr_number=None,  # simulates 0 or 2+ PRs → cannot resolve to one
@@ -924,6 +757,4 @@ class TestGateInvariants:
         assert not result.passed, (
             "I10: Gate must fail when PR number cannot be resolved to exactly one"
         )
-        assert "current_pr_number" in result.message, (
-            f"I10: Must cite missing pr_number context; got: {result.message!r}"
-        )
+        assert "no bypass" in result.message.lower()

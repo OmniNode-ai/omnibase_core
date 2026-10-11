@@ -1,18 +1,18 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""OMN-10347/OMN-10417: Receipt-Gate [skip-*] token hardening tests.
+"""OMN-10347/OMN-20074: Receipt-Gate [skip-*] token hardening tests.
 
 Rule #10 (CLAUDE.md): ANY [skip-*] bypass token in a PR body must FAIL the
-receipt gate unless it is the central-allowlist receipt-gate form
-``[skip-receipt-gate: <approval-id>]`` with a valid scoped allowlist entry.
+receipt gate. The central approvals registry that once admitted
+``[skip-receipt-gate: <approval-id>]`` is retired (OMN-20074), so no token form
+passes, an approval-id-shaped one included.
 
-Previously the gate accepted [skip-receipt-gate:] with only a warning (exit 0).
 This test suite verifies that:
-  - [skip-receipt-gate:] alone FAILs
+  - [skip-receipt-gate:] alone FAILs, with free text or an approval-id-shaped id
   - [skip-deploy-gate:] alone FAILs (regression)
   - [skip-anything-else:] alone FAILs
-  - Legacy inline '# skip-token-allowed: <id>' does not bypass the gate
+  - A receipt-id comment ('# skip-token-allowed: <id>') never rescues a token
   - A clean PR body with a ticket and receipts still PASSes
 """
 
@@ -25,8 +25,6 @@ import pytest
 import yaml
 
 from omnibase_core.validation.validator_receipt_gate import (
-    ALLOWLIST_PATTERN,
-    OVERRIDE_PATTERN,
     SKIP_TOKEN_PATTERN,
     validate_pr_receipts,
 )
@@ -62,35 +60,6 @@ class TestSkipTokenPattern:
 
     def test_case_insensitive_skip_deploy_gate(self) -> None:
         assert SKIP_TOKEN_PATTERN.search("[SKIP-DEPLOY-GATE: reason]")
-
-    def test_override_pattern_matches_receipt_gate_approval_id(self) -> None:
-        match = OVERRIDE_PATTERN.search("[skip-receipt-gate: appr-001]")
-        assert match is not None
-        assert match.group(1) == "appr-001"
-
-    def test_override_pattern_rejects_free_text(self) -> None:
-        assert not OVERRIDE_PATTERN.search("[skip-receipt-gate: docs only]")
-
-    def test_override_pattern_does_not_match_other_skip_tokens(self) -> None:
-        assert not OVERRIDE_PATTERN.search("[skip-deploy-gate: appr-001]")
-
-
-class TestAllowlistPattern:
-    """Verify legacy inline approval marker parsing remains stable."""
-
-    def test_matches_escape_hatch(self) -> None:
-        assert ALLOWLIST_PATTERN.search(
-            "# skip-token-allowed: USER-APPROVAL-2026-04-30"
-        )
-
-    def test_no_match_on_empty_receipt_id(self) -> None:
-        assert not ALLOWLIST_PATTERN.search("# skip-token-allowed:")
-
-    def test_no_match_on_whitespace_only_receipt_id(self) -> None:
-        assert not ALLOWLIST_PATTERN.search("# skip-token-allowed:   ")
-
-    def test_case_insensitive(self) -> None:
-        assert ALLOWLIST_PATTERN.search("# Skip-Token-Allowed: some-receipt")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -153,12 +122,25 @@ class TestSkipReceiptGateTokenFails:
             receipts_dir=_empty_dir(tmp_path, "receipts"),
         )
         assert not result.passed
-        msg_lower = result.message.lower()
-        assert "allowlist" in msg_lower or "approval-id" in msg_lower
+        assert "no bypass" in result.message.lower()
+
+    def test_approval_id_shaped_token_fails(self, tmp_path: Path) -> None:
+        """The registry that admitted an id-shaped token is retired (OMN-20074)."""
+        result = validate_pr_receipts(
+            pr_body="[skip-receipt-gate: appr-001]",
+            contracts_dir=_empty_dir(tmp_path, "contracts"),
+            receipts_dir=_empty_dir(tmp_path, "receipts"),
+            pr_author="someone",
+            current_repo="omnibase_core",
+            current_pr_number=1,
+        )
+        assert not result.passed
+        assert not result.friction_logged
+        assert "no bypass" in result.message.lower()
 
 
 class TestInlineSkipTokenAllowedDoesNotBypass:
-    """Legacy '# skip-token-allowed' marker is not an approval mechanism."""
+    """A receipt-id comment ('# skip-token-allowed') never rescues a token."""
 
     def test_skip_receipt_gate_with_inline_marker_fails(self, tmp_path: Path) -> None:
         body = (
@@ -172,7 +154,7 @@ class TestInlineSkipTokenAllowedDoesNotBypass:
         )
         assert not result.passed
         assert not result.friction_logged
-        assert "allowlist token" in result.message
+        assert "no bypass" in result.message.lower()
 
     def test_skip_deploy_gate_with_inline_marker_fails(self, tmp_path: Path) -> None:
         body = (
@@ -186,7 +168,7 @@ class TestInlineSkipTokenAllowedDoesNotBypass:
         )
         assert not result.passed
         assert not result.friction_logged
-        assert "allowlist token" in result.message
+        assert "no bypass" in result.message.lower()
 
     def test_allowlist_with_empty_receipt_id_still_fails(self, tmp_path: Path) -> None:
         body = "[skip-receipt-gate: reason]\n# skip-token-allowed:"

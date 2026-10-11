@@ -69,15 +69,6 @@ def main(argv: list[str] | None = None) -> int:
         help="Directory tree containing ModelDodReceipt YAML files.",
     )
     parser.add_argument(
-        "--allowlist-path",
-        default=None,
-        help=(
-            "OMN-10417: path to onex_change_control/allowlists/skip_token_approvals.yaml. "
-            "Required when the PR body contains a [skip-receipt-gate: <id>] token. "
-            "Without this flag, any skip token is rejected."
-        ),
-    )
-    parser.add_argument(
         "--pr-author",
         default=None,
         help="OMN-10417: GitHub login of the PR author. Used for self-approval rejection.",
@@ -185,7 +176,6 @@ def main(argv: list[str] | None = None) -> int:
         contracts_dir=Path(args.contracts_dir),
         receipts_dir=Path(args.receipts_dir),
         pr_title=args.pr_title,
-        allowlist_path=Path(args.allowlist_path) if args.allowlist_path else None,
         pr_author=args.pr_author,
         current_repo=args.current_repo,
         current_pr_number=args.current_pr_number,

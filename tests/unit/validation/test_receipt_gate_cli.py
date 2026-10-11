@@ -63,8 +63,6 @@ def test_cli_accepts_workflow_context_args(monkeypatch: pytest.MonkeyPatch) -> N
                 "receipts",
                 "--current-repo",
                 "omnibase_core",
-                "--allowlist-path",
-                "allowlists/skip_token_approvals.yaml",
                 "--pr-author",
                 "jonahgabriel",
                 "--current-pr-number",
