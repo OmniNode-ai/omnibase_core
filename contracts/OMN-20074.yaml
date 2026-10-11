@@ -32,13 +32,13 @@ requirements:
           -q -p no:randomly'
   - id: req-omn20074-caller-repin
     statement: The Repo Evidence Gate caller must pin the contract-home reusable and its matching verifier
-      release while keeping the S5 shadow comparison enabled.
+      release with compare-with-occ set by AC23 at the S6 cut-over.
     acceptance:
       - id: AC3
         statement: 'AC3: the Repo Evidence Gate caller pins receipt-gate.yml at omnibase_core#1914''s
           squash commit, which carries #1912''s contract-home reusable, and verifier-version at or above
-          omnimarket v0.4.305, keeping compare-with-occ "true". -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py
-          -q'
+          omnimarket v0.4.305, with compare-with-occ set by AC23 at the S6 cut-over. -- falsifier: uv
+          run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q'
   - id: req-omn20074-writer-release-cut
     statement: The dod-verify writer_pin_only step must derive the OCC writer-app release-cut exemption
       from the head's git diff against its merge base and fail closed for every other release shape.
@@ -220,14 +220,25 @@ requirements:
     statement: For S6 part 1 of the OCC retirement, the skip-token caller must pin the omniclaude reusable
       that runs the scan with no nested change-control preflight, the required-checks manifest and the
       CI Summary audit must stop naming the nested preflight context, and CI Summary must expect repo-evidence
-      / dod-verify on every pull_request run while the caller keeps comparing with OCC.
+      / dod-verify on every pull_request run with compare-with-occ set by AC23 at the S6 cut-over.
     acceptance:
       - id: AC22
         statement: 'AC22: call-reject-skip.yml pins reject-deploy-gate-skip.yml at omniclaude#2540''s
           squash commit, neither the required-checks manifest nor the CI Summary audit names call-reject-skip-token
           / occ-preflight / eligibility, repo-evidence / dod-verify is an L4 context for pull_request
-          runs only whose absence holds and whose failure fails CI Summary, and compare-with-occ stays
-          "true". -- falsifier: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py -q -p no:randomly'
+          runs only whose absence holds and whose failure fails CI Summary, and compare-with-occ is set
+          by AC23 at the S6 cut-over. -- falsifier: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py
+          -q -p no:randomly'
+  - id: req-omn20074-s6-part2
+    statement: For S6 part 2 of the OCC retirement, omnibase_core must have no workflow that calls an
+      OCC caller, waits on occ-preflight or requires an OCC context, CI Summary must expect no OCC context,
+      and the Repo Evidence Gate caller must stop comparing with OCC.
+    acceptance:
+      - id: AC23
+        statement: 'AC23: no omnibase_core workflow calls or waits on the OCC preflight, the autobind,
+          companion-effect, companion-merge-heal and receipt-gate callers are gone, neither CI Summary
+          nor the required-checks manifest requires an OCC context, and compare-with-occ is "false". --
+          falsifier: uv run pytest tests/ci/test_no_occ_callers_omn20074.py -q -p no:randomly -k no_occ_callers'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -240,7 +251,7 @@ evidence_requirements:
   - kind: tests
     description: 'The caller tests prove the immutable reusable pin at omnibase_core#1914''s squash commit
       (carrying #1912''s contract-home reusable and the writer release-cut exemption), the matching verifier
-      release floor, and the enabled S5 shadow comparison.'
+      release floor, and the S6 compare-with-occ setting.'
     command: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q
   - kind: tests
     description: Execute the writer-app verdict against git objects to prove release-cut shapes and fail-closed
@@ -327,6 +338,10 @@ evidence_requirements:
     description: The S6 part 1 tests prove the preflight-free skip-token pin, the removed nested preflight
       context, and CI Summary's pull_request-only expectation of repo-evidence / dod-verify.
     command: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py -q -p no:randomly
+  - kind: tests
+    description: The S6 part 2 tests prove no OCC caller, dependency or required context remains and comparison
+      is disabled.
+    command: uv run pytest tests/ci/test_no_occ_callers_omn20074.py -q -p no:randomly -k no_occ_callers
 emergency_bypass:
   enabled: false
   justification: ''
@@ -354,7 +369,7 @@ dod_evidence:
   - id: dod-omn-20074-ac3
     description: 'The caller tests prove the immutable reusable pin at omnibase_core#1914''s squash commit
       (carrying #1912''s contract-home reusable and the writer release-cut exemption), the matching verifier
-      release floor, and the enabled S5 shadow comparison.'
+      release floor, and the S6 compare-with-occ setting.'
     source: manual
     checks:
       - check_type: test_passes
@@ -559,3 +574,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC22
+  - id: dod-omn-20074-ac23
+    description: The S6 part 2 tests prove no OCC caller, dependency or required context remains and comparison
+      is disabled.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_no_occ_callers_omn20074.py -q -p no:randomly -k no_occ_callers
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC23
