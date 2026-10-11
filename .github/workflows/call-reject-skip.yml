@@ -8,6 +8,14 @@
 # exactly-one-PR (invariant I10). Cache is not reused across events (invariant I9).
 #
 # Required-status-check name: `scan / reject-skip-gate-token`
+#
+# OMN-20074 (OCC retirement S6 part 1): the pinned reusable no longer runs the
+# change-control preflight as a nested job and the scan no longer waits on it
+# (omniclaude#2540), so this caller stops producing
+# `call-reject-skip-token / occ-preflight / eligibility`. That context leaves
+# dev branch protection in the same cut-over window. This file's local
+# `occ-preflight` job and the scan job's `needs: occ-preflight` stay until S6
+# part 2 deletes the OCC callers.
 # Wire via: Settings → Branches → main → Require status checks → add the check name above.
 
 name: Reject skip-gate bypass tokens
@@ -42,5 +50,5 @@ jobs:
   call-reject-skip-token:
     needs: occ-preflight
     if: always()
-    uses: OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@1618db6e272da6ca4288c784906ea62ed7491a55  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
+    uses: OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@4358450ccbba0cee11e390208dd0b8b1728e94ab # OMN-20074: omniclaude#2540 squash on omniclaude dev; the scan runs with no nested change-control preflight
     secrets: inherit

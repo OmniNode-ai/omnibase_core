@@ -49,7 +49,14 @@ FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS: dict[str, str] = {
     "DB ownership CI twin (B1)": "check-db-ownership.yml",
     "advisory-job-gate / advisory-job-gate": "advisory-job-gate.yml",
+    # OMN-20074: produced on pull_request_target, see PRODUCER_TRIGGER_ALIASES.
+    "repo-evidence / dod-verify": "call-repo-evidence-gate.yml",
 }
+
+# A producer trigger that reports on the same pull request head as a CI event:
+# pull_request_target runs the base-branch definition for the PR head, so its
+# check-run lands on the head a pull_request CI Summary run judges.
+PRODUCER_TRIGGER_ALIASES: dict[str, str] = {"pull_request_target": "pull_request"}
 
 
 def _job(
@@ -666,7 +673,11 @@ class TestExternalContextEventContracts:
             emitted = []
             for context, filename in EXTERNAL_CONTEXT_PRODUCER_WORKFLOWS.items():
                 document = yaml.safe_load((WORKFLOWS_DIR / filename).read_text())
-                if event_name in _on_block(document):
+                triggers = {
+                    PRODUCER_TRIGGER_ALIASES.get(trigger, trigger)
+                    for trigger in _on_block(document)
+                }
+                if event_name in triggers:
                     emitted.append(context)
             actual[event_name] = tuple(emitted)
         assert actual == EXTERNAL_CONTEXTS_BY_EVENT
@@ -944,7 +955,6 @@ DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("call-receipt-gate.yml", "verify"): ("verify / verify",),
     ("call-reject-skip.yml", "call-reject-skip-token"): (
         "call-reject-skip-token / scan / reject-skip-gate-token",
-        "call-reject-skip-token / occ-preflight / eligibility",
     ),
 }
 

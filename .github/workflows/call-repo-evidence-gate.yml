@@ -37,10 +37,11 @@
 #
 # S5 shadow count (OMN-20074): compare-with-occ is "true" so every run records
 # this head's new-path verdict beside OCC's occ-preflight / eligibility verdict
-# on the same head. repo-evidence / dod-verify is NOT a required context here
-# yet. Every OCC context stays required. Making it required, and then removing
-# the OCC contexts (S6), are separate rulings that wait for this repository's
-# own S5 bar. The S6 change sets compare-with-occ back to "false".
+# on the same head. S6 part 1: CI Summary expects repo-evidence / dod-verify on
+# pull_request runs (EXPECTED_EXTERNAL_CONTEXTS in scripts/ci/ci_summary_gate.py),
+# so an absent verdict holds the required CI Summary context and a red one
+# fails it. Every OCC context stays required until S6 part 2 deletes the OCC
+# callers; that change sets compare-with-occ back to "false".
 #
 # PR-workflow budget (architecture-handshakes/pull-request-workflow-budget.yaml,
 # OMN-14907): this file takes the slot of call-occ-preflight.yml, retired in
