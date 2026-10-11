@@ -1,0 +1,2 @@
+"""Import-edge stub of a module in the recorded slice: only the import that leads on to the scanned module is kept."""
+from omnibase_infra.enums.generated.enum_artifact_topic import EnumArtifactTopic

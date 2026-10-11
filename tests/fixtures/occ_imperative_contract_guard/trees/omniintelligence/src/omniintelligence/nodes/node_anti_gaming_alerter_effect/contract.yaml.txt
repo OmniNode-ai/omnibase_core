@@ -1,0 +1,172 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# ONEX Node Contract
+# Node: NodeAntiGamingAlerterEffect
+#
+# Effect node that publishes anti-gaming alerts to Kafka. Companion node to
+# NodeAntiGamingGuardrailsCompute — receives guardrail output and publishes
+# all alerts and diversity violation events.
+#
+# Reference: OMN-2563, OMN-12167
+
+name: "node_anti_gaming_alerter_effect"
+version: "1.0.0"
+contract_version: {major: 1, minor: 0, patch: 0}
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_type: "EFFECT_GENERIC"
+
+status: "active"
+
+description: >
+  Effect node for publishing anti-gaming alerts to Kafka. Companion to NodeAntiGamingGuardrailsCompute.
+  Receives guardrail output containing non-blocking alerts and optional diversity constraint violations
+  (veto events), serializes each to JSON, and publishes them to the configured Kafka topic. Emits one
+  event per alert plus one additional event if a diversity violation is present. #magic___^_^___line
+input_model:
+  name: "ModelAlerterInput"
+  module: "omniintelligence.nodes.node_anti_gaming_alerter_effect.models.model_alerter_input"
+  description: "Guardrail output bundle with Kafka topic destination."
+
+output_model:
+  name: "ModelAlerterOutput"
+  module: "omniintelligence.nodes.node_anti_gaming_alerter_effect.models.model_alerter_output"
+  description: "Published alert counts and topic confirmation."
+
+# =============================================================================
+# HANDLER ROUTING
+# =============================================================================
+handler_routing:
+  routing_strategy: "operation_match"
+  entry_point:
+    function: "NodeAntiGamingAlerterEffect"
+    module: "omniintelligence.nodes.node_anti_gaming_alerter_effect.node"
+    type: "async"
+    description: "Class-based node — instantiate and call execute() to publish alerts"
+  handlers:
+    - operation: "publish_alerts"
+      handler:
+        function: "NodeAntiGamingAlerterEffect"
+        module: "omniintelligence.nodes.node_anti_gaming_alerter_effect.node"
+        type: "async"
+      description: "Iterate alerts and diversity violation, publish each to Kafka topic"
+      actions:
+        - "iterate non-blocking alerts and publish each"
+        - "publish diversity constraint violation if present"
+        - "return counts of published alerts"
+
+  default_handler:
+    function: "NodeAntiGamingAlerterEffect"
+    module: "omniintelligence.nodes.node_anti_gaming_alerter_effect.node"
+    type: "async"
+    description: "Default to publish_alerts operation"
+
+# =============================================================================
+# IO OPERATIONS
+# =============================================================================
+io_operations:
+  - operation: "publish_alerts"
+    description: "Publish anti-gaming alerts to Kafka topic"
+    input_model: "ModelAlerterInput"
+    output_model: "ModelAlerterOutput"
+    input_fields:
+      - guardrail_output
+      - kafka_topic
+    output_fields:
+      - run_id
+      - alerts_published
+      - diversity_violation_published
+      - topic
+
+# =============================================================================
+# PUBLISHED EVENTS (Kafka)
+# =============================================================================
+published_events:
+  - topic_suffix: "onex.evt.omnimemory.anti-gaming-alert.v1"
+    full_topic_pattern: "{env}.onex.evt.omnimemory.anti-gaming-alert.v1"
+    event_type: "AntiGamingAlert"
+    trigger: "Anti-gaming alert detected by NodeAntiGamingGuardrailsCompute"
+    description: "Published for each non-blocking alert and for diversity constraint violations."
+
+# =============================================================================
+# EVENT BUS SUBCONTRACT
+# =============================================================================
+event_bus:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+
+  subscribe_topics: []
+
+  publish_topics:
+    - "onex.evt.omnimemory.anti-gaming-alert.v1"
+
+  publish_topic_metadata:
+    "onex.evt.omnimemory.anti-gaming-alert.v1":
+      schema_ref: "omniintelligence.nodes.node_anti_gaming_guardrails_compute.models.model_alert_event.ModelAntiGamingAlertUnion"
+      description: "Anti-gaming alert events including diversity constraint violations"
+      content_type: "application/json"
+
+# =============================================================================
+# DEPENDENCIES
+# =============================================================================
+dependencies:
+  - name: "alert_topic_publisher"
+    type: "protocol"
+    class_name: "ProtocolAlertTopicPublisher"
+    module: "omniintelligence.nodes.node_anti_gaming_alerter_effect.handlers.protocols"
+    description: "Kafka publisher protocol for alert topics"
+    required: true
+
+# =============================================================================
+# ERROR HANDLING
+# =============================================================================
+error_handling:
+  retry_policy:
+    max_retries: 3
+    initial_delay_ms: 100
+    max_delay_ms: 5000
+    exponential_base: 2
+    retry_on:
+      - "ConnectionError"
+      - "TimeoutError"
+
+  error_types:
+    - name: "AlertPublishError"
+      error_code: "AGA_001"
+      description: "Failed to publish alert event to Kafka"
+      recoverable: true
+      retry_strategy: "exponential_backoff"
+    - name: "AlertSerializationError"
+      error_code: "AGA_002"
+      description: "Failed to serialize alert to JSON"
+      recoverable: false
+      retry_strategy: "none"
+
+health_check:
+  enabled: true
+  endpoint: "/health"
+  interval_seconds: 30
+
+metadata:
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-05-25"
+  updated: "2026-05-25"
+  tags:
+    - effect
+    - anti-gaming
+    - kafka
+    - alerts
+  references:
+    - ticket: "OMN-2563"
+      url: "https://linear.app/omninode/issue/OMN-2563"
+      description: "Anti-gaming alerter effect node"
+    - ticket: "OMN-12167"
+      url: "https://linear.app/omninode/issue/OMN-12167"
+      description: "Add contract.yaml for 4 omniintelligence nodes"

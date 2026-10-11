@@ -1,0 +1,2 @@
+"""Import-edge stub of a module in the recorded slice: only the import that leads on to the scanned module is kept."""
+from .handler_qdrant_mock import HandlerQdrantMock

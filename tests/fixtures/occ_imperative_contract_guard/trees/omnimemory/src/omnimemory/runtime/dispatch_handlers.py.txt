@@ -1,0 +1,3 @@
+"""Import-edge stub of a module in the recorded slice: only the import that leads on to the scanned module is kept."""
+from omnimemory.topics import EnumMemoryCommandTopic as MemoryCommandTopic
+from omnimemory.topics import EnumMemoryEventTopic as MemoryEventTopic

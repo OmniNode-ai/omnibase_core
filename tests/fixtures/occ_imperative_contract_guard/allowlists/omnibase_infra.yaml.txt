@@ -1,0 +1,305 @@
+---
+allowlisted_handlers:
+  - path: omnibase_infra/nodes/node_architecture_validator/handlers/handler_architecture_validation.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_baseline_comparison_compute/handlers/handler_baseline_comparison.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_build_loop_write_effect/handlers/handler_build_loop_append.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_checkpoint_effect/handlers/util_checkpoint_sorting.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_contract_loader_effect/handlers/handler_contract_scan.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_decision_store_query_compute/handlers/handler_query_decisions.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_event_bus_wiring_effect/handlers/handler_event_bus_wiring.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_impact_analyzer_compute/handlers/constants.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_ledger_write_effect/handlers/handler_ledger_append.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_ledger_write_effect/handlers/handler_ledger_query.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/config/bifrost_shadow.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/config/model_shadow_decision_log.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/config_loader_bifrost.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/handler_bifrost_gateway.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/model_bifrost_config.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/model_bifrost_request.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/model_bifrost_response.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_llm_inference_effect/handlers/bifrost/model_bifrost_routing_rule.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_pattern_lifecycle_effect/handlers/handler_lifecycle_update.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_runtime_orchestrator/handlers/handler_runtime_lifecycle.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_savings_estimation_compute/handlers/handler_savings_estimation.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_session_state_effect/handlers/handler_run_context_read.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_session_state_effect/handlers/handler_run_context_write.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_session_state_effect/handlers/handler_session_index_read.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_session_state_effect/handlers/handler_session_index_write.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_session_state_effect/handlers/handler_stale_run_gc.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnibase_infra/nodes/node_validation_executor/handlers/handler_run_checks.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: src/omnibase_infra/adapters/github/adapter_github_client.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/backends/backend_probe.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/cli/artifact_reconcile.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/cli/cli_env.py
+    violations:
+      - freestanding_hardcoded_private_ip
+    ticket: OMN-12751
+  - path: src/omnibase_infra/cli/cli_kafka.py
+    violations:
+      - freestanding_kafka_client
+      - freestanding_hardcoded_private_ip
+    ticket: OMN-12751
+  - path: src/omnibase_infra/cli/commands.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/cli/infra_test/run_suite.py
+    violations:
+      - freestanding_db_connection
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/cli/infra_test/verify.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/cli/service_demo_reset.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/dlq/plugin_dlq.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/dlq/service_dlq_tracking.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/enums/generated/enum_artifact_topic.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/enums/generated/enum_omnibase_infra_topic.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/enums/generated/enum_omnimarket_topic.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/enums/generated/enum_platform_topic.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/event_bus/event_bus_kafka.py
+    violations:
+      - freestanding_raw_http
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/event_bus/topic_constants.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/event_bus/topic_violation_alerter.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/handlers/handler_db.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/handlers/handler_gmail_api.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/handlers/handler_linear_db_error_reporter.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/handlers/handler_slack_webhook.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/handlers/registration_storage/handler_registration_storage_postgres.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/idempotency/store_postgres.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/mixins/mixin_llm_http_transport.py
+    violations:
+      - freestanding_raw_http
+      - freestanding_hardcoded_private_ip
+    ticket: OMN-12751
+  - path: src/omnibase_infra/models/discovery/model_introspection_config.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/models/projection/model_topic_projection.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/models/validation_ledger/model_validation_ledger_entry.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/nodes/node_dlq_replay_effect/engine_dlq_replay.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/nodes/node_registration_orchestrator/plugin.py
+    violations:
+      - freestanding_kafka_client
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/probes/capability_probe.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/projectors/snapshot_publisher_registration.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/auto_wiring/handler_wiring.py
+    violations:
+      - freestanding_kafka_client
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/emit_daemon/topics.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/providers/provider_http_client.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/providers/provider_kafka_producer.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/providers/provider_postgres_pool.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/request_response_wiring.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/runtime_scheduler.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/service_kernel.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/service_pattern_b_broker.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/runtime/util_schema_fingerprint.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/services/service_llm_endpoint_health.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12751
+  - path: src/omnibase_infra/services/session/consumer.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751
+  - path: src/omnibase_infra/services/session/store.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12751
+  - path: src/omnibase_infra/topics/platform_topic_suffixes.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12751
+  - path: src/omnibase_infra/tui/consumers/consumer_status.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12751

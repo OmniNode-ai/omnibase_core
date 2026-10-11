@@ -1,0 +1,22 @@
+---
+allowlisted_handlers:
+  - path: src/omnimemory/handlers/adapters/adapter_valkey.py
+    violations:
+      - direct_db_cache_connection
+    ticket: OMN-12673
+    note: Existing live freestanding runtime adapter debt; dependency sweep must not broaden it.
+  - path: src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py
+    violations:
+      - raw_http_call
+    ticket: OMN-12673
+    note: Existing live freestanding runtime adapter debt; dependency sweep must not broaden it.
+  - path: src/omnimemory/runtime/plugin.py
+    violations:
+      - hardcoded_private_ip
+    ticket: OMN-12673
+    note: Existing live freestanding runtime plugin debt; dependency sweep must not broaden it.
+  - path: src/omnimemory/topics.py
+    violations:
+      - hardcoded_topic
+    ticket: OMN-12673
+    note: Existing live topic registry literals; dependency sweep must not broaden them.

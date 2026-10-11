@@ -1,0 +1,131 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# ONEX Node Contract — node_routing_policy_engine
+# Pure compute: selects optimal model via exploit/explore policy given constraints.
+#
+# Related: OMN-8040
+---
+name: node_routing_policy_engine
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: compute
+runtime_profiles: [main]
+node_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Deterministic model-selection engine. Accepts a task type, capability
+  requirements, available models with scores, and cost constraints; applies
+  exploitation (best eligible model) or exploration (second-best) based on
+  a caller-supplied seed value. No LLM calls, no I/O, same input = same output.
+
+handler:
+  module: omnimarket.nodes.node_routing_policy_engine.handlers.handler_routing_policy
+  class: HandlerRoutingPolicy
+  input_model: omnimarket.nodes.node_routing_policy_engine.models.model_routing_policy_request.ModelRoutingPolicyRequest
+
+handler_routing:
+  routing_strategy: operation_match
+  handlers:
+    - operation: routing_policy
+      handler:
+        name: HandlerRoutingPolicy
+        module: omnimarket.nodes.node_routing_policy_engine.handlers.handler_routing_policy
+    # OMN-13551: determine_retry_type / extract_task_shape /
+    # build_available_models_from_scores are pure helper functions called by
+    # HandlerRoutingPolicy, not runtime-dispatched handlers. They take domain
+    # args (failure_class, attempt_count, context, capability_rows, cost_map)
+    # with no injectable provider, so they quarantined at boot. Removed from
+    # handler_routing; still called internally by the routing policy handler.
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 1000
+
+inputs:
+  task_type:
+    type: str
+    description: "Task type (code, reasoning, embedding, summarization, general)"
+    required: true
+  required_capabilities:
+    type: array
+    description: "Capabilities the selected model must support"
+    required: false
+    default: []
+  available_models:
+    type: array
+    description: "Candidate models with key, score, cost_per_token, capabilities"
+    required: true
+  max_cost_per_token:
+    type: float
+    description: "Hard cost ceiling; models above it are excluded"
+    required: false
+    nullable: true
+  exploration_seed:
+    type: float
+    description: "Uniform random value in [0, 1) for exploit/explore branching. Omit or null to always exploit."
+    required: false
+    nullable: true
+  exploration_rate:
+    type: float
+    description: "Fraction of traffic routed to exploration (default 0.15)"
+    required: false
+    default: 0.15
+  request_id:
+    type: str
+    required: false
+    default: ""
+
+outputs:
+  status:
+    type: str
+    enum: [ok, error]
+  selected_model_key:
+    type: str
+    required: false
+    nullable: true
+  selection_mode:
+    type: str
+    enum: [exploit, explore]
+    required: false
+    nullable: true
+  selection_reason:
+    type: str
+  alternative_candidates:
+    type: array
+  request_id:
+    type: str
+  error:
+    type: str
+    required: false
+    nullable: true
+
+terminal_event: onex.evt.omnimarket.routing-policy-completed.v1
+
+event_bus:
+  subscribe_topics:
+    - onex.cmd.omnimarket.routing-policy-requested.v1
+  publish_topics:
+    - onex.evt.omnimarket.routing-policy-completed.v1
+
+metadata:
+  transport_type: kafka
+  author: OmniNode Platform Team
+  license: MIT
+  maturity: stable
+  tags:
+    - routing
+    - policy
+    - compute
+    - exploit-explore
+  related_tickets:
+    - "OMN-8040"
+
+runtime_dispatch:
+  # OMN-18013 -- the CLI/skill dispatcher is this node's producer. Declared so it is not inferred from subscribe_topics[0].
+  command_topic: onex.cmd.omnimarket.routing-policy-requested.v1
+
+# OMN-18013 -- explicit SINK declaration (contract topic graph closure).
+# No node contract subscribes to these; they leave the ONEX node graph here.
+externally_consumed_topics:
+  - onex.evt.omnimarket.routing-policy-completed.v1

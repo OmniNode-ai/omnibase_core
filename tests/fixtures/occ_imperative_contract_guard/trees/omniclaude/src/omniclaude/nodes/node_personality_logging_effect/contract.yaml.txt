@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# Copyright (c) 2025 OmniNode Team
+#
+# ONEX Node Contract
+# Node: NodePersonalityLoggingEffect
+#
+# Personality-aware structured logging effect node.
+# Consumes LogEvent objects, applies routing rules, renders with a personality
+# profile, and dispatches to configured sinks (stdout, Slack, JSON).
+#
+# INVARIANT: Personality rendering never mutates LogEvent fields.
+# INVARIANT: Sink failures never propagate to callers.
+# INVARIANT: privacy_mode=strict applies redaction before any rendering.
+
+# Contract identifiers
+name: node_personality_logging_effect
+version: "0.1.0"
+contract_name: node_personality_logging_effect
+node_name: node_personality_logging_effect
+
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+
+# Node type
+node_type: EFFECT_GENERIC
+
+# Description
+description: >
+  Personality-aware structured logging effect node.
+  Transforms LogEvent payloads into configurable presentation-layer renderings
+  via personality profiles (default, deadpan, panic_comic).
+  Dispatches to stdout, Slack (Block Kit), and JSON sinks.
+  Supports live config reload and token-bucket rate limiting.
+
+# Strongly typed I/O models
+input_model:
+  name: ModelLogEvent
+  module: omniclaude.nodes.node_personality_logging_effect.models
+
+output_model:
+  name: ModelRenderedLog
+  module: omniclaude.nodes.node_personality_logging_effect.models
+
+# Capabilities
+capabilities:
+  - name: personality_logging.effect
+    description: Personality-aware structured log rendering and dispatch
+    version: 1.0.0
+
+  - name: personality_logging.stdout
+    description: Emit rendered log messages to stdout
+
+  - name: personality_logging.slack
+    description: Post rendered log messages to Slack webhook (Block Kit)
+
+  - name: personality_logging.json
+    description: Write raw LogEvent as newline-delimited JSON
+
+  - name: personality_logging.live_reload
+    description: Live config reload without service restart (watchfiles)
+
+# IO operations
+io_operations:
+  - operation: process_event
+    description: Process a single LogEvent through the routing and rendering pipeline
+    input_fields:
+      - event: ModelLogEvent
+    output_fields:
+      - rendered: ModelRenderedLog | None
+    idempotent: false
+
+  - operation: enqueue
+    description: Enqueue a LogEvent for async processing
+    input_fields:
+      - event: ModelLogEvent
+    output_fields: []
+    idempotent: false
+
+# Kafka topics
+kafka:
+  input_topic: onex.evt.omniclaude.log-event-emitted.v1
+  output_topic: onex.evt.omniclaude.log-event-rendered.v1
+
+# Invariants
+invariants:
+  - personality_rendering_never_mutates_log_event: true
+  - sink_failures_never_propagate: true
+  - strict_privacy_mode_redacts_before_render: true
+  - rendering_is_deterministic: true
+
+# Error handling
+error_handling:
+  sink_failure_policy: log_and_continue
+  config_reload_failure_policy: keep_previous_config
+
+# Metadata
+metadata:
+  author: OmniNode Team
+  license: MIT
+  ticket: OMN-2575
+  maturity: production
+  tags:
+    - effect
+    - logging
+    - personality
+    - slack
+    - kafka

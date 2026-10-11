@@ -1,0 +1,101 @@
+---
+name: ticket_pipeline
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: compute
+runtime_profiles: [main]
+node_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Per-ticket execution pipeline WorkflowPackage. This first market-owned slice
+  executes PRE_FLIGHT deterministically, compiles an IMPLEMENT dispatch-worker
+  prompt without spawning an agent, and blocks later side-effect phases as not
+  implemented until they are explicitly wired.
+
+handler:
+  module: omnimarket.nodes.node_ticket_pipeline.handlers.handler_ticket_pipeline
+  class: HandlerTicketPipeline
+  input_model: omnimarket.nodes.node_ticket_pipeline.models.model_pipeline_start_command.ModelPipelineStartCommand
+
+handler_routing:
+  routing_strategy: operation_match
+  handlers:
+    - operation: ticket_pipeline
+      handler:
+        name: HandlerTicketPipeline
+        module: omnimarket.nodes.node_ticket_pipeline.handlers.handler_ticket_pipeline
+    - operation: report_poster
+      handler:
+        name: HandlerReportPoster
+        module: omnimarket.nodes.node_ticket_pipeline.handlers.handler_report_poster
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 600000
+
+inputs:
+  ticket_id:
+    type: str
+    description: "Linear ticket ID (e.g. OMN-1234)"
+    required: true
+  skip_test_iterate:
+    type: bool
+    description: "Skip the TEST_ITERATE phase"
+    required: false
+    default: false
+  dry_run:
+    type: bool
+    description: "Run without side effects"
+    required: false
+    default: false
+  skip_to:
+    type: str
+    description: "Validated resume phase for the bounded pipeline slice"
+    required: false
+    default: null
+
+outputs:
+  final_phase:
+    type: str
+    description: "Terminal phase reached (blocked for unwired phases)"
+  phase_results:
+    type: list
+    description: "Explicit phase execution results emitted by the bounded slice"
+
+terminal_event: onex.evt.omnimarket.ticket-pipeline-completed.v1
+
+event_bus:
+  subscribe_topics:
+    - onex.cmd.omnimarket.ticket-pipeline-start.v1
+  publish_topics:
+    - onex.evt.omnimarket.ticket-pipeline-phase-transition.v1
+    - onex.evt.omnimarket.ticket-pipeline-completed.v1
+
+review_gates:
+  # hostile_reviewer is the adversarial review gate for the PR_REVIEW phase.
+  # When PR_REVIEW is wired, it dispatches node_hostile_reviewer_orchestrator
+  # over the bus before advancing to AUTO_MERGE. The contract-driven model
+  # routing in node_hostile_reviewer_orchestrator guarantees N-1 graceful
+  # degradation so a single unavailable model does not block the pipeline.
+  pr_review:
+    node: "node_hostile_reviewer_orchestrator"
+    phase: "PR_REVIEW"
+    mode: "gate"
+    blocking_verdict: "blocking_issue"
+    related_ticket: "OMN-7981"
+
+dependencies:
+  nodes:
+    - name: "node_hostile_reviewer_orchestrator"
+      reason: "Adversarial review gate at PR_REVIEW phase"
+      required: false
+
+metadata:
+  transport_type: kafka
+
+# OMN-18013 -- explicit SINK declaration (contract topic graph closure).
+# No node contract subscribes to these; they leave the ONEX node graph here.
+externally_consumed_topics:
+  - onex.evt.omnimarket.ticket-pipeline-completed.v1
+  - onex.evt.omnimarket.ticket-pipeline-phase-transition.v1

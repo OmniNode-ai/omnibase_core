@@ -1,0 +1,8 @@
+[project]
+name = "omninode-intelligence"
+
+[project.scripts]
+planted-tool = "omniintelligence.planted_imperative_io:main"
+
+[project.entry-points."onex.nodes"]
+node_pattern_demotion_effect = "omniintelligence.nodes.node_pattern_demotion_effect"

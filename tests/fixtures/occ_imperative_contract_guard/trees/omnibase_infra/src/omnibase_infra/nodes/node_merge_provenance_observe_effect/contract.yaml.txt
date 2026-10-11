@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# ONEX Node Contract
+# Node: NodeMergeProvenanceObserveEffect
+#
+# Plan: knowledge-base plans/2026-09-28-verification-before-and-after-merge-
+# and-declared-lab-state.md, task S2. Ticket OMN-19927.
+#
+# Reads, through an injected GitHub reader, whether the merge queue ran the
+# repository's CI workflow on a commit, and what that run's summary job
+# concluded. It grades nothing: node_merge_provenance_compute does.
+#
+# WHY NO event_bus BLOCK YET. The only caller today is the push-run detect
+# step in .github/workflows/ci.yml, which has no bus. The provenance event the
+# plan names (onex.evt.omnibase-infra.merge-provenance-evaluated.v1) gets its
+# topic when the branch-head health projection that consumes it lands (plan
+# tasks B1/B2), so no topic is declared that nothing produces or consumes.
+name: "node_merge_provenance_observe_effect"
+contract_name: "node_merge_provenance_observe_effect"
+node_name: "node_merge_provenance_observe_effect"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_type: "EFFECT_GENERIC"
+description: >
+  Effect node that reads the merge-group runs of one workflow recorded for one commit, and the summary job of each run's latest attempt, through an injected ProtocolMergeGroupRunReader. A failed or partial read is an observation with read_ok=false and a read_error, never an empty run list, so an outage cannot read as "the queue never validated this commit".
+
+input_model:
+  name: "ModelMergeProvenanceObserveRequest"
+  module: "omnibase_infra.nodes.node_merge_provenance_observe_effect.models.model_merge_provenance_observe_request"
+  description: "Repository, full commit sha, the workflow path and the summary job name the queue gates on."
+output_model:
+  name: "ModelMergeProvenanceObservation"
+  module: "omnibase_infra.nodes.node_merge_provenance_observe_effect.models.model_merge_provenance_observation"
+  description: "The merge-group runs read for the sha with each summary job's status and conclusion, or read_ok=false with the reason."
+capabilities:
+  - name: "ci.merge_provenance.observe"
+    description: "Read the merge-group validation recorded for one commit"
+handler_routing:
+  routing_strategy: "payload_type_match"
+  handlers:
+    - event_model:
+        name: "ModelMergeProvenanceObserveRequest"
+        module: "omnibase_infra.nodes.node_merge_provenance_observe_effect.models.model_merge_provenance_observe_request"
+      handler:
+        name: "HandlerMergeProvenanceObserve"
+        module: "omnibase_infra.nodes.node_merge_provenance_observe_effect.handlers.handler_merge_provenance_observe"
+      output_events:
+        - "ModelMergeProvenanceObservation"
+dependencies:
+  - name: "protocol_merge_group_run_reader"
+    type: "protocol"
+    class_name: "ProtocolMergeGroupRunReader"
+    module: "omnibase_infra.nodes.node_merge_provenance_observe_effect.protocols.protocol_merge_group_run_reader"
+    description: "Read port; HandlerMergeGroupRunReadGithub is the GitHub REST binding."
+metadata:
+  description: "Merge-provenance observation for a pushed commit (plan S2)."
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-09-28"
+  updated: "2026-09-28"
+  ticket: "OMN-19927"
+  tags:
+    - effect
+    - ci
+    - merge-queue
+    - provenance
