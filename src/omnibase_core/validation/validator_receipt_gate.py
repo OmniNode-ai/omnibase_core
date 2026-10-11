@@ -30,12 +30,7 @@ Decision matrix:
     - Receipt status != PASS              → FAIL ("failing receipt (ADVISORY|FAIL|PENDING)")
     - UI-class evidence w/o Playwright    → FAIL ("ui-class evidence requires Playwright proxy-origin trace")
     - UI-class trace hits backend port    → FAIL ("ui-class evidence requires Playwright proxy-origin trace")
-    - Override token: free-text reason   → FAIL (must use approved allowlist id)
-    - Override token: unknown id         → FAIL ("unknown approval id")
-    - Override token: expired            → FAIL ("approval expired")
-    - Override token: scope mismatch     → FAIL ("approval not scoped to this repo/PR")
-    - Override token: self-approved      → FAIL ("self-approval rejected")
-    - Override token: valid allowlist id → PASS with friction ("override accepted")
+    - Any [skip-*] token                 → FAIL (no bypass exists)
     - All checks have PASS receipts      → PASS
 
 Adversarial invariants (OMN-9788)
@@ -56,30 +51,11 @@ Invariants 1-3 are enforced as pre-schema lookups so missing-field
 errors mention the field name even when other validation errors would
 otherwise mask the problem.
 
-Skip-token allowlist (OMN-10417)
----------------------------------
-``[skip-receipt-gate: <approval-id>]`` requires ``<approval-id>`` to exist
-in ``onex_change_control/allowlists/skip_token_approvals.yaml``.  Free-text
-reasons are rejected.  Allowlist schema:
-
-    approvals:
-      - id: <str>
-        granted_by: <github-login>
-        granted_at: <ISO-8601>
-        expires_at: <ISO-8601>
-        scope_repos: [<repo>, ...]
-        scope_pr_numbers: [<int>, ...]   # REQUIRED
-
-Rejection criteria (all hard FAIL, no bypass):
-    - ``approval-id`` not found in allowlist
-    - ``expires_at`` in the past
-    - current repo not in ``scope_repos``
-    - current PR not in ``scope_pr_numbers``
-    - ``granted_by == pr_author`` (self-approval)
-    - ``scope_pr_numbers`` missing or empty in the allowlist entry
-
-Every accepted bypass logs to CI output with the allowlist entry id, granted_by,
-and scope for audit traceability.
+No skip token (OMN-20074)
+-------------------------
+Any ``[skip-*]`` bypass token in the PR body fails the gate, whatever id it carries
+and whatever comment accompanies it. The approvals registry that once admitted a
+token (OMN-10417) and every reader of it are retired, so there is no bypass.
 """
 
 from __future__ import annotations
@@ -207,15 +183,6 @@ CLOSING_KEYWORD_PATTERN = re.compile(
 # Angle-bracket placeholders such as [skip-receipt-gate: <token>] are docs
 # examples, not executable bypass tokens.
 SKIP_TOKEN_PATTERN = re.compile(r"\[skip-[a-zA-Z][^\]<>]*\]", re.IGNORECASE)
-# Matches [skip-receipt-gate: <token>] — token must be a safe identifier to
-# reject free-text reasons and placeholder examples such as "<token>".
-OVERRIDE_PATTERN = re.compile(
-    r"\[skip-receipt-gate:\s*([A-Za-z0-9._-]+)\s*\]",
-    re.IGNORECASE,
-)
-# Inline marker pattern used only to reject the superseded approval syntax.
-# Receipt-gate bypass requires the central allowlist checked by _validate_skip_token.
-ALLOWLIST_PATTERN = re.compile(r"#\s*skip-token-allowed:\s*(\S+)", re.IGNORECASE)
 # Matches "Evidence-Ticket: OMN-XXXX" line in PR body (OMN-10420 identity binding).
 EVIDENCE_TICKET_PATTERN = re.compile(
     r"^Evidence-Ticket:\s*(OMN-\d+)\s*$",
@@ -1193,193 +1160,6 @@ def _check_one_receipt(
     )
 
 
-def _load_allowlist(
-    allowlist_path: Path,
-) -> tuple[bool, list[Any] | None, str]:
-    """Load and parse the skip-token allowlist YAML.
-
-    Returns:
-        ``(ok, approvals_list, error_message)`` where ok=True means the list
-        is usable and approvals_list is the parsed list.
-    """
-    if not allowlist_path.exists():
-        return (
-            False,
-            None,
-            f"[skip-receipt-gate] REJECTED: allowlist not found at {allowlist_path}. "
-            "Use scripts/grant-skip-approval.sh to create an approved entry.",
-        )
-    try:
-        with allowlist_path.open(encoding="utf-8") as fh:
-            raw = yaml.safe_load(fh)
-    except (yaml.YAMLError, OSError) as e:
-        return (
-            False,
-            None,
-            f"[skip-receipt-gate] REJECTED: allowlist corrupt at {allowlist_path}: {e}",
-        )
-    if not isinstance(raw, dict):
-        return (
-            False,
-            None,
-            f"[skip-receipt-gate] REJECTED: allowlist at {allowlist_path} is not a YAML mapping",
-        )
-    approvals = raw.get("approvals", [])
-    if not isinstance(approvals, list):
-        return (
-            False,
-            None,
-            "[skip-receipt-gate] REJECTED: allowlist 'approvals' key is not a list",
-        )
-    return (True, approvals, "")
-
-
-def _check_expiry(entry: Any, approval_id: str) -> tuple[bool, str] | None:
-    """Validate the expires_at field of an allowlist entry.
-
-    Returns:
-        ``None`` when the entry has not expired (caller proceeds).
-        ``(False, reason)`` when expired, unparseable, or missing.
-    """
-    expires_at_raw = entry.get("expires_at")
-    if expires_at_raw is None:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing "
-            "'expires_at' — every approval must expire.",
-        )
-    try:
-        if isinstance(expires_at_raw, str):
-            expires_at = datetime.fromisoformat(expires_at_raw)
-        elif isinstance(expires_at_raw, datetime):
-            expires_at = expires_at_raw
-        else:
-            # error-ok: internal sentinel immediately re-caught by enclosing except (ValueError, TypeError)
-            raise ValueError(f"unexpected type: {type(expires_at_raw)}")
-        if expires_at.tzinfo is None:
-            expires_at = expires_at.replace(tzinfo=UTC)
-        now_utc = datetime.now(tz=UTC)
-        if now_utc > expires_at:
-            return (
-                False,
-                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} expired at "
-                f"{expires_at.isoformat()} (now={now_utc.isoformat()}). "
-                "Use scripts/grant-skip-approval.sh to create a new entry.",
-            )
-    except (ValueError, TypeError) as e:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: approval {approval_id!r} has unparseable "
-            f"expires_at {expires_at_raw!r}: {e}",
-        )
-    return None
-
-
-def _validate_skip_token(
-    approval_id: str,
-    pr_author: str | None,
-    current_repo: str | None,
-    current_pr_number: int | None,
-    allowlist_path: Path,
-) -> tuple[bool, str]:
-    """Validate a skip-receipt-gate approval ID against the allowlist.
-
-    Args:
-        approval_id: The bare identifier from ``[skip-receipt-gate: <id>]``.
-        pr_author: GitHub login of the PR author for self-approval checks.
-        current_repo: Repo name (e.g. ``omnibase_core``) to scope check.
-        current_pr_number: PR number to scope check.
-        allowlist_path: Path to ``skip_token_approvals.yaml``.
-
-    Returns:
-        ``(True, audit_message)`` when the token is valid and accepted.
-        ``(False, rejection_reason)`` for every rejection case.
-    """
-    ok, approvals, err = _load_allowlist(allowlist_path)
-    if not ok or approvals is None:
-        return (False, err)
-
-    matches = [
-        a for a in approvals if isinstance(a, dict) and a.get("id") == approval_id
-    ]
-    if not matches:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: approval id {approval_id!r} not found in allowlist. "
-            "Use scripts/grant-skip-approval.sh to create an approved entry.",
-        )
-    if len(matches) > 1:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: approval id {approval_id!r} appears "
-            f"{len(matches)} times in the allowlist. Approval ids must be unique.",
-        )
-    entry = matches[0]
-
-    # scope_pr_numbers is REQUIRED — missing or empty means the entry is invalid.
-    scope_prs = entry.get("scope_pr_numbers")
-    if not scope_prs or not isinstance(scope_prs, list) or len(scope_prs) == 0:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing or empty "
-            "'scope_pr_numbers' — every approval must be scoped to specific PR numbers.",
-        )
-
-    # Self-approval: granted_by must not equal the PR author.
-    granted_by_raw = entry.get("granted_by")
-    if not isinstance(granted_by_raw, str) or not granted_by_raw.strip():
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing or empty "
-            "'granted_by' — every approval must record the approver login.",
-        )
-    granted_by = granted_by_raw.strip()
-    if pr_author and granted_by.casefold() == pr_author.strip().casefold():
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: self-approval — approval {approval_id!r} was "
-            f"granted by {granted_by!r} who is also the PR author. "
-            "A different team member must grant the approval.",
-        )
-
-    expiry_result = _check_expiry(entry, approval_id)
-    if expiry_result is not None:
-        return expiry_result
-
-    # Repo scope check.
-    scope_repos = entry.get("scope_repos")
-    if not isinstance(scope_repos, list) or len(scope_repos) == 0:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: allowlist entry {approval_id!r} missing or empty "
-            "'scope_repos' — every approval must be scoped to specific repos.",
-        )
-    if current_repo is not None and current_repo not in scope_repos:
-        return (
-            False,
-            f"[skip-receipt-gate] REJECTED: approval {approval_id!r} is scoped to repos "
-            f"{scope_repos!r} but current repo is {current_repo!r}.",
-        )
-
-    # PR number scope check.
-    if current_pr_number is not None and isinstance(scope_prs, list):
-        if current_pr_number not in scope_prs:
-            return (
-                False,
-                f"[skip-receipt-gate] REJECTED: approval {approval_id!r} is scoped to PR numbers "
-                f"{scope_prs!r} but current PR is #{current_pr_number}.",
-            )
-
-    audit_msg = (
-        f"[skip-receipt-gate] BYPASS ACCEPTED: approval={approval_id!r} "
-        f"granted_by={granted_by!r} "
-        f"scope_repos={scope_repos!r} scope_pr_numbers={scope_prs!r}. "
-        "FRICTION LOGGED: receipt gate bypassed — every override must be "
-        "tracked and closed within 7 days."
-    )
-    return (True, audit_msg)
-
-
 def _verify_ticket_identity(
     evidence_ticket: str,
     pr_title: str | None,
@@ -1673,7 +1453,6 @@ def validate_pr_receipts(
     contracts_dir: Path,
     receipts_dir: Path,
     pr_title: str | None = None,
-    allowlist_path: Path | None = None,
     pr_author: str | None = None,
     current_repo: str | None = None,
     current_pr_number: int | None = None,
@@ -1692,12 +1471,9 @@ def validate_pr_receipts(
         contracts_dir: Directory containing OMN-<ticket-id>.yaml ticket contracts.
         receipts_dir: Directory tree containing ModelDodReceipt YAML files.
         pr_title: Optional PR title; used as fallback ticket extraction source.
-        allowlist_path: Path to ``onex_change_control/allowlists/skip_token_approvals.yaml``.
-            When None, any ``[skip-receipt-gate: <id>]`` token is rejected because
-            there is no allowlist to verify against.
-        pr_author: GitHub login of the PR author. Required for skip tokens.
-        current_repo: Repository name (e.g. ``omnibase_core``). Required for skip tokens.
-        current_pr_number: PR number. Required for skip tokens.
+        pr_author: GitHub login of the PR author.
+        current_repo: Repository name (e.g. ``omnibase_core``).
+        current_pr_number: PR number.
         pr_opened_at: UTC datetime when the PR was opened. Used to determine whether
             missing ``contract_sha256`` is a hard FAIL (post-cutoff) or ADVISORY
             (within the 7-day legacy migration window). When None, the hash-binding
@@ -1739,61 +1515,18 @@ def validate_pr_receipts(
         if branch_policy_failure is not None:
             return ModelReceiptGateResult(passed=False, message=branch_policy_failure)
 
-    override = OVERRIDE_PATTERN.search(pr_body)
+    # OMN-20074: there is no bypass. The approvals registry and every reader of it
+    # are retired, so a skip token in the PR body fails the gate whatever id it
+    # carries and whatever comment accompanies it.
     skip_match = SKIP_TOKEN_PATTERN.search(pr_body)
-    if skip_match and override is None:
+    if skip_match:
         return ModelReceiptGateResult(
             passed=False,
             message=(
                 f"RECEIPT GATE FAILED: PR body contains a [skip-*] bypass token "
-                f"({skip_match.group(0)!r}) that is not an approved receipt-gate "
-                "allowlist token. Use [skip-receipt-gate: <approval-id>] with "
-                "a central allowlist entry scoped to this repo and PR, or add "
-                "dod_evidence proving the work."
+                f"({skip_match.group(0)!r}). There is no bypass: add dod_evidence "
+                "proving the work."
             ),
-        )
-    if override:
-        approval_id = override.group(1).strip()
-        if allowlist_path is None:
-            return ModelReceiptGateResult(
-                passed=False,
-                message=(
-                    f"[skip-receipt-gate] REJECTED: token {approval_id!r} present but "
-                    "no allowlist_path provided to the gate. "
-                    "Pass --allowlist-path pointing to "
-                    "onex_change_control/allowlists/skip_token_approvals.yaml."
-                ),
-            )
-        missing_context: list[str] = []
-        if not isinstance(pr_author, str) or not pr_author.strip():
-            missing_context.append("pr_author")
-        if not isinstance(current_repo, str) or not current_repo.strip():
-            missing_context.append("current_repo")
-        if current_pr_number is None:
-            missing_context.append("current_pr_number")
-        if missing_context:
-            return ModelReceiptGateResult(
-                passed=False,
-                message=(
-                    f"[skip-receipt-gate] REJECTED: token {approval_id!r} present but "
-                    f"required PR context is missing: {', '.join(missing_context)}. "
-                    "Pass --pr-author, --current-repo, and --current-pr-number so "
-                    "self-approval and repo/PR scope checks cannot be bypassed."
-                ),
-            )
-        accepted, message = _validate_skip_token(
-            approval_id=approval_id,
-            pr_author=pr_author,
-            current_repo=current_repo,
-            current_pr_number=current_pr_number,
-            allowlist_path=allowlist_path,
-        )
-        if not accepted:
-            return ModelReceiptGateResult(passed=False, message=message)
-        return ModelReceiptGateResult(
-            passed=True,
-            friction_logged=True,
-            message=message,
         )
 
     # OMN-14682: restrict every Evidence-Source / Evidence-Ticket extraction to
@@ -2061,7 +1794,6 @@ EVIDENCE_HANDLERS["completion-verify"] = _completion_verify
 
 
 __all__ = [
-    "ALLOWLIST_PATTERN",
     "CLOSING_KEYWORD_PATTERN",
     "EVIDENCE_HANDLERS",
     "EVIDENCE_SOURCE_ANY_PATTERN",
@@ -2075,7 +1807,6 @@ __all__ = [
     "EVIDENCE_SOURCE_VALUE_PATTERN",
     "EVIDENCE_TICKET_PATTERN",
     "HEADER_FIELDS",
-    "OVERRIDE_PATTERN",
     "SKIP_TOKEN_PATTERN",
     "TICKET_PATTERN",
     "ContractEntryNotFoundError",

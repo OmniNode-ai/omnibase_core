@@ -5,7 +5,6 @@
 
 Covers high-CCN paths in validator_receipt_gate.py (CCN 33, 747 lines):
 - _check_adversarial_invariants_raw: non-dict input, missing fields, empty fields
-- _validate_skip_token: corrupt YAML allowlist, non-dict allowlist, non-list approvals
 - _iter_dod_evidence: malformed contract structures
 - _normalized_branch: refs/heads/ and heads/ prefix stripping
 - _evidence_class_present: promotion / hotfix matching
@@ -14,18 +13,16 @@ Covers high-CCN paths in validator_receipt_gate.py (CCN 33, 747 lines):
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC
 from pathlib import Path
 
 import pytest
-import yaml
 
 from omnibase_core.validation.validator_receipt_gate import (
     _check_adversarial_invariants_raw,
     _evidence_class_present,
     _iter_dod_evidence,
     _normalized_branch,
-    _validate_skip_token,
     parse_pr_opened_at,
 )
 
@@ -126,157 +123,6 @@ class TestCheckAdversarialInvariantsRaw:
         result = _check_adversarial_invariants_raw(raw, self._dummy_path())
         assert result is not None
         assert "probe_command" in result
-
-
-# ---------------------------------------------------------------------------
-# _validate_skip_token: corrupt/malformed allowlist branches
-# ---------------------------------------------------------------------------
-
-
-def _future(days: int = 7) -> str:
-    return (datetime.now(tz=UTC) + timedelta(days=days)).isoformat()
-
-
-def _valid_entry(
-    entry_id: str = "appr-001",
-    granted_by: str = "platform-lead",
-    repo: str = "omnibase_core",
-    pr_num: int = 999,
-) -> dict[object, object]:
-    return {
-        "id": entry_id,
-        "granted_by": granted_by,
-        "granted_at": "2026-04-30T00:00:00+00:00",
-        "expires_at": _future(),
-        "scope_repos": [repo],
-        "scope_pr_numbers": [pr_num],
-    }
-
-
-class TestValidateSkipTokenMalformedAllowlist:
-    """Tests for _validate_skip_token with corrupted or malformed allowlist files."""
-
-    def test_corrupt_yaml_allowlist_returns_rejection(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        allowlist.write_text(": invalid: yaml: {{{{")
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="dev",
-            current_repo="omnibase_core",
-            current_pr_number=999,
-            allowlist_path=allowlist,
-        )
-        assert not accepted
-        assert "corrupt" in msg.lower() or "rejected" in msg.lower()
-
-    def test_non_dict_allowlist_returns_rejection(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        allowlist.write_text("- just a list\n- not a mapping\n")
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="dev",
-            current_repo="omnibase_core",
-            current_pr_number=999,
-            allowlist_path=allowlist,
-        )
-        assert not accepted
-        assert "rejected" in msg.lower()
-
-    def test_non_list_approvals_key_returns_rejection(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        allowlist.write_text("approvals: not-a-list\n")
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="dev",
-            current_repo="omnibase_core",
-            current_pr_number=999,
-            allowlist_path=allowlist,
-        )
-        assert not accepted
-        assert "rejected" in msg.lower()
-
-    def test_missing_allowlist_file_returns_rejection(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "nonexistent.yaml"
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="dev",
-            current_repo="omnibase_core",
-            current_pr_number=999,
-            allowlist_path=allowlist,
-        )
-        assert not accepted
-        assert "not found" in msg.lower() or "rejected" in msg.lower()
-
-    def test_valid_entry_not_found_returns_rejection(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        allowlist.write_text(yaml.safe_dump({"approvals": [_valid_entry("other-id")]}))
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="dev",
-            current_repo="omnibase_core",
-            current_pr_number=999,
-            allowlist_path=allowlist,
-        )
-        assert not accepted
-        assert "appr-001" in msg
-
-    def test_unparseable_expires_at_returns_rejection(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        entry = dict(_valid_entry())
-        entry["expires_at"] = "not-a-datetime"
-        allowlist.write_text(yaml.safe_dump({"approvals": [entry]}))
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="dev",
-            current_repo="omnibase_core",
-            current_pr_number=999,
-            allowlist_path=allowlist,
-        )
-        assert not accepted
-        assert "rejected" in msg.lower()
-
-    def test_none_expires_at_returns_rejection(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        entry = dict(_valid_entry())
-        entry["expires_at"] = None
-        allowlist.write_text(yaml.safe_dump({"approvals": [entry]}))
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="dev",
-            current_repo="omnibase_core",
-            current_pr_number=999,
-            allowlist_path=allowlist,
-        )
-        assert not accepted
-        assert "expires_at" in msg
-
-    def test_pr_number_none_skips_pr_scope_check(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        allowlist.write_text(yaml.safe_dump({"approvals": [_valid_entry()]}))
-        # current_pr_number=None means PR scope check is skipped
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="other-person",
-            current_repo="omnibase_core",
-            current_pr_number=None,
-            allowlist_path=allowlist,
-        )
-        assert accepted
-        assert "bypass accepted" in msg.lower()
-
-    def test_repo_none_skips_repo_scope_check(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "skip_token_approvals.yaml"
-        allowlist.write_text(yaml.safe_dump({"approvals": [_valid_entry()]}))
-        # current_repo=None means repo scope check is skipped
-        accepted, msg = _validate_skip_token(
-            approval_id="appr-001",
-            pr_author="other-person",
-            current_repo=None,
-            current_pr_number=None,
-            allowlist_path=allowlist,
-        )
-        assert accepted
-        assert "bypass accepted" in msg.lower()
 
 
 # ---------------------------------------------------------------------------
