@@ -331,13 +331,6 @@ class TestCiSummaryGate:
         assert code == EXIT_FAILURE
         assert "Pyright Type Checking" in report
 
-    def test_allowlisted_version_pin_failure_is_ignored(self) -> None:
-        # "Version Pin Compliance" carries continue-on-error and is not a gate
-        # need — a failure must NOT block.
-        jobs = _all_good() + [_job("Version Pin Compliance", "failure")]
-        code, _ = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
-        assert code == EXIT_SUCCESS
-
     def test_allowlisted_orphan_contract_compliance_failure_is_ignored(self) -> None:
         # The orphan "Contract Compliance" job (compliance) is not gated — a
         # failure must NOT block. This must NOT be confused with the gate

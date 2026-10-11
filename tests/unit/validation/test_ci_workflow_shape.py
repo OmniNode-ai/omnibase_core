@@ -180,7 +180,6 @@ EXPECTED_FIVE_MINUTE_JOBS = {
     "core-infra-boundary",
     "check-deterministic-skills",
     "node-purity-check",
-    "version-pin-check",
     "naming-conventions",
     "pydantic-patterns",
 }

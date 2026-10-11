@@ -193,9 +193,6 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
 # 2026-07-07). The default-deny sweep ignores these so it never newly-wedges a
 # PR on a job that is already non-blocking. Keep this list SMALL and only add
 # jobs that genuinely already exist in ci.yml as non-gating:
-#   - "Version Pin Compliance" (version-pin-check): carries
-#     ``continue-on-error: true`` and is explicitly NOT a ``quality-gate`` need
-#     (see the OMN-13574 comment on quality-gate ``needs``) — advisory only.
 #   - "Contract Compliance" (compliance): an ORPHAN job — not in any ``needs:``
 #     and not a required branch-protection context. The REAL gating contract
 #     check is "Contract Compliance Check" (in GATE_JOBS above); the two names
@@ -208,7 +205,6 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
 #     deny sweep would manufacture a gate from a telemetry-only surface.
 SOFT_ALLOWLIST: frozenset[str] = frozenset(
     {
-        "Version Pin Compliance",  # version-pin-check: continue-on-error advisory
         "Contract Compliance",  # compliance: orphan job, not gated, not required
         "Shadow Selection Compare",  # shadow-compare: report-only telemetry
     }

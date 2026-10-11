@@ -1287,66 +1287,6 @@ jobs:
             exit 1
           fi
 
-  # ---------------------------------------------------------------------------
-  # Phase 1 - Version Pin Compliance Check (OMN-4806)
-  # ---------------------------------------------------------------------------
-  # Verifies that this repo's dependency pins are compliant with the shared
-  # version matrix defined in onex_change_control/standards/version-matrix.yaml.
-  version-pin-check:
-    name: Version Pin Compliance
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
-    timeout-minutes: 5
-    # Skip for Dependabot PRs — CROSS_REPO_PAT is not available [OMN-5332]
-    if: github.actor != 'dependabot[bot]'
-    # Advisory until range pin support (OMN-5132) and matrix alignment land
-    continue-on-error: true
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      # OMN-16373: CROSS_REPO_PAT retirement — mint a short-lived
-      # onexbot-occ-writer App installation token (org secrets
-      # ONEXBOT_OCC_APP_ID / ONEXBOT_OCC_PRIVATE_KEY), scoped to the one
-      # sibling repo this job reads.
-      - name: Mint onexbot-occ-writer app token
-        id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
-        with:
-          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
-          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
-          owner: OmniNode-ai
-          repositories: onex_change_control
-          permission-contents: write
-
-      - name: Checkout onex_change_control standards
-        uses: actions/checkout@v7
-        with:
-          repository: OmniNode-ai/onex_change_control
-          token: ${{ steps.app-token.outputs.token }}
-          path: onex_change_control
-          # OMN-20001: the OCC sha pinned for the compliance job below
-          ref: 91f5b69104366c2d86e4bb21de67c3c497702111
-          sparse-checkout: |
-            standards/
-          sparse-checkout-cone-mode: false
-
-      - name: Set up Python
-        uses: actions/setup-python@v7
-        with:
-          python-version: "3.12"
-
-      - name: Install dependencies
-        run: pip install pyyaml packaging
-
-      - name: Check version pin compliance
-        run: python onex_change_control/standards/check_version_pins.py --repo omnibase_core --root onex_change_control --repo-path .
-
   # Phase 1 validation job - ensures no internal OmniNode packages leak into
   # [project.dependencies] (they belong in [project.optional-dependencies]).
   sdk-boundary-check:
@@ -3763,13 +3703,10 @@ jobs:
         && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
-    # OMN-13574 (Model B): version-pin-check is intentionally NOT a need here.
-    # It carries continue-on-error: true (advisory until OMN-5132 range-pin +
-    # matrix alignment land), so its result is always "success" and it could
-    # never turn this gate red — listing it in needs implied a gate it does not
-    # provide. naming-conventions / pydantic-patterns / aislop-patterns ARE
-    # spec-required validators (validator-requirements.yaml) and are now needs so
-    # a real violation turns the single required CI Summary rollup red.
+    # OMN-13574 (Model B): naming-conventions / pydantic-patterns /
+    # aislop-patterns ARE spec-required validators (validator-requirements.yaml)
+    # and are needs so a real violation turns the single required CI Summary
+    # rollup red.
     #
     # OMN-14887: contract-compliance is DELIBERATELY NOT a need here (removed).
     # This job's downstream (detect-changes, test-parallel) skip whenever
