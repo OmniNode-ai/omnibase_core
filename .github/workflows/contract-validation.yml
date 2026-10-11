@@ -3,8 +3,9 @@
 
 # Contract Validation Gate
 #
-# Validates ONEX ticket contracts for PRs in omnibase_core with the validators
-# from onex_change_control, checked out at the sha pinned in this file.
+# Validates ONEX ticket contracts for PRs in omnibase_core with this repository's
+# own ModelTicketContract (src/omnibase_core/models/ticket/model_ticket_contract.py),
+# run through uv against the checked-out source.
 #
 # Required status check: "contract-validation"
 # Must pass (or skip) before merging to main.
@@ -61,19 +62,6 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Auth preflight — confirm onex_change_control action is accessible
-        id: auth-preflight
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "Checking visibility of OmniNode-ai/onex_change_control..."
-          if gh api repos/OmniNode-ai/onex_change_control --silent; then
-            echo "::notice::onex_change_control repo is accessible."
-          else
-            echo "::error::Cannot reach OmniNode-ai/onex_change_control. Composite action will not resolve."
-            exit 1
-          fi
-
       - name: Resolve branch name
         id: resolve-branch
         env:
@@ -109,17 +97,6 @@ jobs:
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           ref: ${{ github.sha }}
-          persist-credentials: false
-
-      # Validators are read at this SHA; bump it in this repo's own PR to move validator versions.
-      # The OCC composite action is not used because its checkout resolves github.action_ref to v4.
-      - name: Check out pinned contract validators
-        if: steps.resolve-branch.outputs.skip_validation != 'true'
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
-        with:
-          repository: OmniNode-ai/onex_change_control
-          ref: 802b5f7101f4c49f8b30e8deda3d4c5d024c5710
-          path: .onex_change_control_validators
           persist-credentials: false
 
       - name: Set up uv
@@ -160,20 +137,46 @@ jobs:
             exit 0
           fi
 
-          cd .onex_change_control_validators
           for attempt in 1 2 3; do
-            if uv sync --no-group dev; then
+            if uv sync --frozen --no-dev; then
               break
             fi
             if [[ "$attempt" -eq 3 ]]; then
               echo "validation-status=failed" >> "$GITHUB_OUTPUT"
-              echo "::error::Failed to sync contract validators after 3 attempts."
+              echo "::error::Failed to sync the project environment after 3 attempts."
               exit 1
             fi
             sleep "$((10 * attempt))"
           done
 
-          if uv run validate-yaml "../$CONTRACT_PATH"; then
+          if uv run --frozen --no-dev --no-sync python - "$CONTRACT_PATH" <<'PY'
+          import sys
+
+          import yaml
+          from pydantic import ValidationError
+
+          from omnibase_core.models.ticket.model_ticket_contract import ModelTicketContract
+
+          path = sys.argv[1]
+          try:
+              with open(path, encoding="utf-8") as handle:
+                  data = yaml.safe_load(handle)
+          except yaml.YAMLError as exc:
+              print(f"::error file={path}::YAML parse error: {exc}")
+              sys.exit(1)
+          if not isinstance(data, dict):
+              print(f"::error file={path}::expected a mapping, got {type(data).__name__}")
+              sys.exit(1)
+          try:
+              ModelTicketContract.model_validate(data)
+          except ValidationError as exc:
+              for err in exc.errors():
+                  loc = ".".join(str(part) for part in err["loc"]) or "(root)"
+                  print(f"::error file={path}::{loc}: {err['msg']} [{err['type']}]")
+              sys.exit(1)
+          print(f"[OK] {path}")
+          PY
+          then
             echo "validation-status=passed" >> "$GITHUB_OUTPUT"
           else
             echo "validation-status=failed" >> "$GITHUB_OUTPUT"
