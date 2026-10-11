@@ -89,7 +89,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation -k imperative_contract_ratchet -q -p no:randomly
+        check_value: uv run pytest tests/unit/validation/test_imperative_contract_ratchet.py -q -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
@@ -99,7 +99,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/ci -k imperative_contract_guard_workflow -q -p no:randomly
+        check_value: uv run pytest tests/ci/test_imperative_contract_guard_workflow_omn20918.py -q -p
+          no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
@@ -109,8 +110,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation -k "imperative_contract and (omnimemory or planted)"
-          -q -p no:randomly
+        check_value: uv run pytest tests/unit/validation/test_imperative_contract_guard_parity.py -k "omnimemory
+          or planted" -q -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC4
