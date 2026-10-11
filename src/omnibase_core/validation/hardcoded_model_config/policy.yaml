@@ -114,10 +114,12 @@ lab_subnet_pattern: '(?<![\d.])192\.168\.86\.\d{1,3}(?![\d])'
 
 # Family R: exact retired lab strings (plan section 2.2). Matched in comments
 # too, and never admitted to a baseline. A bare ":8099" or ":8101" is NOT listed:
-# those are live projection-runner health ports (plan premise P4).
+# those are live projection-runner health ports (plan premise P4). The dead
+# endpoints of a particular deployment are not listed here: the loader adds them
+# from the operator's private vocabulary
+# (vocabularies/hardcoded_model_config_lab_denylist.yaml under the workspace
+# config root) when it is present, and runs these shape rules without it.
 retired_values:
-  - "192.168.86.200:8101"  # onex-allow-internal-ip (the dead endpoint this guard refuses)
-  - "127.0.0.1:8099"  # onex-allow-internal-ip (the dead endpoint this guard refuses)
   - "local-ds-v4-flash"
   - "deepseek-v4-flash"
   - "deepseek-v4-pro"

@@ -36,13 +36,16 @@
 # -----------------------------------------------------------------------------
 PREPUSH_HOST_TABLE_REL="scripts/hooks/prepush_hosts.tsv"
 
-# prepush_table_text -- prints the committed table, or returns 1 with a reason
-# on stderr. Reading from HEAD (not the working tree) is what stops an
-# uncommitted row from self-designating this machine as an authorizing gate
-# host; the working-tree divergence check stops the inverse trick of editing
-# the file after a commit that CI already saw.
+# prepush_table_text -- prints the committed shipped table followed by the
+# deployment's private table, or returns 1 with a reason on stderr. Reading from
+# HEAD (not the working tree) is what stops an uncommitted row from
+# self-designating this machine as an authorizing gate host; the working-tree
+# divergence check stops the inverse trick of editing the file after a commit
+# that CI already saw. An ABSENT private table is the neutral default (the
+# shipped disabled row alone), never an error; a private table that is present
+# and unreadable or divergent refuses.
 prepush_table_text() {
-  local head_copy work_copy
+  local head_copy work_copy private_copy private_rc=0
   if ! head_copy="$(git -C "$REPO_ROOT" show "HEAD:${PREPUSH_HOST_TABLE_REL}" 2> /dev/null)"; then
     printf 'host table absent at HEAD (%s)\n' "$PREPUSH_HOST_TABLE_REL" >&2
     return 1
@@ -55,6 +58,89 @@ prepush_table_text() {
     fi
   fi
   printf '%s\n' "$head_copy"
+  private_copy="$(prepush_private_table_text)" || private_rc=$?
+  if [ "$private_rc" -eq 0 ]; then
+    printf '%s\n' "$private_copy"
+  elif [ "$private_rc" -ne 2 ]; then
+    return 1
+  fi
+  return 0
+}
+
+# -----------------------------------------------------------------------------
+# Private deployment table -- OMN-20939
+# -----------------------------------------------------------------------------
+# The shipped table above carries the schema and a neutral disabled row. The
+# deployment's hosts live in a private table with the same thirteen columns,
+# found through the workspace-config resolver: ONEX_WORKSPACE_CONFIG_ROOT, else
+# the omnibase_internal sibling of OMNI_HOME. There is no built-in path and no
+# lab value in this file (CLAUDE.md rule 8).
+# The caller names the file (a repo-relative-to-the-config-root path); the shared
+# library carries no repo name. Unset means no deployment table is declared.
+PREPUSH_PRIVATE_TABLE_REL="${PREPUSH_PRIVATE_TABLE_REL:-}"
+
+# prepush_workspace_config_root -- the resolved root, or rc=1 when neither
+# ONEX_WORKSPACE_CONFIG_ROOT nor OMNI_HOME names one.
+prepush_workspace_config_root() {
+  if [ -n "${ONEX_WORKSPACE_CONFIG_ROOT:-}" ]; then
+    printf '%s' "$ONEX_WORKSPACE_CONFIG_ROOT"
+    return 0
+  fi
+  [ -n "${OMNI_HOME:-}" ] || return 1
+  printf '%s' "${OMNI_HOME}/../omnibase_internal"
+}
+
+# prepush_private_table_text -- prints the deployment table. rc=2 means NOT
+# CONFIGURED (no root, or no file): the neutral case, with the reason on stderr
+# only when the caller asks for it via prepush_private_table_status. rc=1 means
+# the table exists but cannot be trusted (unreadable, or it differs between the
+# working tree and HEAD of its git checkout).
+prepush_private_table_text() {
+  local root path top phys head_copy work_copy
+  [ -n "$PREPUSH_PRIVATE_TABLE_REL" ] || return 2
+  root="$(prepush_workspace_config_root)" || return 2
+  path="${root}/${PREPUSH_PRIVATE_TABLE_REL}"
+  [ -f "$path" ] || return 2
+  # A root that is itself the top of a git checkout is read from its COMMITTED
+  # copy, so an uncommitted row cannot self-designate a machine (the same rule
+  # the shipped table lives under). A root that is a plain directory, or a
+  # subdirectory of some other checkout, is read as a file.
+  top="$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE git -C "$root" rev-parse --show-toplevel 2> /dev/null || true)"
+  phys="$(cd "$root" 2> /dev/null && pwd -P || true)"
+  if [ -n "$top" ] && [ "$top" = "$phys" ]; then
+    if ! head_copy="$(env -u GIT_DIR -u GIT_WORK_TREE -u GIT_INDEX_FILE git -C "$root" show "HEAD:${PREPUSH_PRIVATE_TABLE_REL}" 2> /dev/null)"; then
+      printf 'private host table has no committed copy at HEAD (%s)\n' "$path" >&2
+      return 1
+    fi
+    work_copy="$(cat "$path")"
+    if [ "$work_copy" != "$head_copy" ]; then
+      printf 'private host table differs between the working tree and HEAD (%s)\n' "$path" >&2
+      return 1
+    fi
+    printf '%s\n' "$head_copy"
+    return 0
+  fi
+  cat "$path" || return 1
+}
+
+# prepush_private_table_status -- one line saying whether the deployment table is
+# configured, naming how to supply it when it is not. Printed by the guard so a
+# fork or a customer with no overlay is told, not silently given nothing.
+prepush_private_table_status() {
+  local root
+  if [ -z "$PREPUSH_PRIVATE_TABLE_REL" ]; then
+    printf 'deployment host table NOT CONFIGURED: the caller declares no table path'
+  elif root="$(prepush_workspace_config_root)"; then
+    if [ -f "${root}/${PREPUSH_PRIVATE_TABLE_REL}" ]; then
+      printf 'deployment host table: %s/%s' "$root" "$PREPUSH_PRIVATE_TABLE_REL"
+    else
+      printf 'deployment host table NOT CONFIGURED: %s/%s is absent -- create it (thirteen columns, see %s) or set ONEX_WORKSPACE_CONFIG_ROOT to the root that holds it' \
+        "$root" "$PREPUSH_PRIVATE_TABLE_REL" "$PREPUSH_HOST_TABLE_REL"
+    fi
+  else
+    printf 'deployment host table NOT CONFIGURED: neither ONEX_WORKSPACE_CONFIG_ROOT nor OMNI_HOME is set -- set ONEX_WORKSPACE_CONFIG_ROOT to a root holding %s (see %s)' \
+      "$PREPUSH_PRIVATE_TABLE_REL" "$PREPUSH_HOST_TABLE_REL"
+  fi
 }
 
 # prepush_table_rows -- data rows only (comments and blanks dropped).
@@ -1272,7 +1358,7 @@ prepush_remote_run() {
   local heavy_what repo head_sha runid workroot ssh_t uv label rundir
   local bundle argvfile runner localdir marker rc=0 argv_sha log_sha
   local m_exit m_head m_argv m_log m_collected started ended dur
-  local readback wrapper_exit base_ref base_sha slot_idx remote_cmd tcmd
+  local readback wrapper_exit base_ref base_sha slot_idx remote_cmd tcmd privfile
   heavy_what="$1"
   # Resolved by the hook before it ever reaches here; empty in a driver that
   # exercises the library alone, which the wrapper handles as "skip".
@@ -1317,6 +1403,17 @@ prepush_remote_run() {
   # different policy therefore cannot satisfy this dispatch.
   prepush_remote_pytest_flags >> "$argvfile"
   argv_sha="$(prepush_sha256_file "$argvfile")"
+  # OMN-20939: the deployment's host rows are not in the bundle (the shipped table
+  # carries none), so the rows this dispatch verified travel beside it and the
+  # target's conftest guard reads the same table. Absent on a deployment with no
+  # private table, in which case the target designates nothing.
+  privfile="${localdir}/host_table_private.tsv"
+  if prepush_private_table_text > "$privfile" 2> /dev/null && [ -s "$privfile" ]; then
+    :
+  else
+    rm -f "$privfile"
+    privfile=""
+  fi
 
   # The remote wrapper is NAMED prepush_smart_tests.sh on purpose. .201's queue
   # runner gates every lane on `ps ax | grep prepush_smart_tests.sh` ("no other
@@ -1331,6 +1428,7 @@ prepush_remote_run() {
 set -uo pipefail
 RUNDIR="$1"; UV="$2"; HEAD_SHA="$3"; ARGV_SHA="$4"; ORIGIN="$5"; WORKROOT="$6"
 BASE_REF="${7:-}"; BASE_SHA="${8:-}"; SLOT_INDEX="${9:-1}"
+PRIVATE_REL="${11:-}"
 # The repo this bundle carries, so the registry root below can name it. Passed
 # rather than derived: RUNDIR's basename is `<repo>-<sha12>-<pid>` and repo
 # names contain both separators, so splitting it back apart is guesswork.
@@ -1480,6 +1578,14 @@ mkdir -p "$RUNDIR/omni_home" || { echo "REGISTRY_ROOT_MKDIR_FAILED" >&2; exit 98
 ln -s "$RUNDIR/tree" "$RUNDIR/omni_home/$REPO_NAME" || { echo "REGISTRY_ROOT_LINK_FAILED" >&2; exit 98; }
 OMNI_HOME="$RUNDIR/omni_home"
 export OMNI_HOME
+# The deployment host table the dispatching side verified (OMN-20939), laid out
+# where the conftest guard's workspace-config resolver looks for it.
+if [ -f "$RUNDIR/host_table_private.tsv" ] && [ -n "$PRIVATE_REL" ]; then
+  mkdir -p "$(dirname "$RUNDIR/workspace_config/$PRIVATE_REL")" || { echo "WORKSPACE_CONFIG_MKDIR_FAILED" >&2; exit 98; }
+  cp "$RUNDIR/host_table_private.tsv" "$RUNDIR/workspace_config/$PRIVATE_REL" || { echo "WORKSPACE_CONFIG_COPY_FAILED" >&2; exit 98; }
+  ONEX_WORKSPACE_CONFIG_ROOT="$RUNDIR/workspace_config"
+  export ONEX_WORKSPACE_CONFIG_ROOT
+fi
 
 "$UV" sync --all-extras > "$RUNDIR/sync.log" 2>&1 || { echo "UV_SYNC_FAILED" >&2; exit 93; }
 # THE COLLECTED COUNT IS READ FROM A MACHINE-READABLE REPORT (OMN-17787).
@@ -1580,7 +1686,7 @@ REMOTE
     rm -rf "$localdir"
     return 1
   fi
-  if ! scp -q -o ConnectTimeout=6 -o BatchMode=yes "$bundle" "$argvfile" "$runner" "${ssh_t}:${rundir}/" > /dev/null 2>&1; then
+  if ! scp -q -o ConnectTimeout=6 -o BatchMode=yes "$bundle" "$argvfile" "$runner" ${privfile:+"$privfile"} "${ssh_t}:${rundir}/" > /dev/null 2>&1; then
     log "remote leg: transfer to ${label} failed"
     rm -rf "$localdir"
     return 1
@@ -1611,7 +1717,7 @@ REMOTE
   # dispatch_to_lab_host treats as a placement miss and walks past. Fail-closed
   # posture is unchanged -- a genuine remote RED still carries a marker and
   # still refuses the push.
-  remote_cmd="cd '${rundir}' || exit 96; chmod +x prepush_smart_tests.sh || exit 97; ./prepush_smart_tests.sh '${rundir}' '${uv}' '${head_sha}' '${argv_sha}' '$(hostname -s 2> /dev/null || echo unknown):$$' '${workroot}' '${base_ref}' '${base_sha}' '${slot_idx}' '${repo}'; rc=\$?; echo REMOTE_WRAPPER_EXIT=\$rc; echo \$rc > '${rundir}/WRAPPER_EXIT'; exit 0"
+  remote_cmd="cd '${rundir}' || exit 96; chmod +x prepush_smart_tests.sh || exit 97; ./prepush_smart_tests.sh '${rundir}' '${uv}' '${head_sha}' '${argv_sha}' '$(hostname -s 2> /dev/null || echo unknown):$$' '${workroot}' '${base_ref}' '${base_sha}' '${slot_idx}' '${repo}' '${PREPUSH_PRIVATE_TABLE_REL}'; rc=\$?; echo REMOTE_WRAPPER_EXIT=\$rc; echo \$rc > '${rundir}/WRAPPER_EXIT'; exit 0"
   tcmd="$(_prepush_timeout_cmd)"
   if [ -n "$tcmd" ]; then
     "$tcmd" "$PREPUSH_REMOTE_EXEC_TIMEOUT_SECONDS" \

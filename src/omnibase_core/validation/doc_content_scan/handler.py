@@ -7,7 +7,8 @@ GENERATED ARTIFACT (OMN-13569, G2). The scanning logic in ``scan_source`` is a
 structured refactor of the seed produced by ``HandlerGenerationConsumer``
 (``node_generation_consumer``, omnimarket), local-model-first through the real
 delegation chain against the live model (``Qwen3.6-35B-A3B`` on the local-coder
-backend at ``http://192.168.86.201:8000/v1/chat/completions``),  # onex-allow-internal-ip OMN-13569 provenance: the live generation backend endpoint
+backend at a lab inference endpoint, shown here as the RFC 5737 documentation address
+``http://192.0.2.10:8000/v1/chat/completions``),
 and accepted ONLY because it passed a deterministic acceptance corpus
 (``node_generation_consumer.validator_corpora.corpus_doc_content_scan.DOC_CONTENT_SCAN_CORPUS``)
 in the hardened sandbox on the FIRST attempt: it flagged every ``violation_fixture``

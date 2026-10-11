@@ -160,7 +160,7 @@ def test_violation_message_none_when_host_undetermined() -> None:
     assert (
         guard.full_suite_host_violation_message(
             host="",
-            target_hostname="stickybeatz-studio",
+            target_hostname="gate-host-a",
             override_authorized=False,
         )
         is None
@@ -170,8 +170,8 @@ def test_violation_message_none_when_host_undetermined() -> None:
 def test_violation_message_none_when_host_matches_case_insensitive() -> None:
     assert (
         guard.full_suite_host_violation_message(
-            host="Stickybeatz-Studio",
-            target_hostname="stickybeatz-studio",
+            host="Gate-Host-A",
+            target_hostname="gate-host-a",
             override_authorized=False,
         )
         is None
@@ -181,9 +181,9 @@ def test_violation_message_none_when_host_matches_case_insensitive() -> None:
 def test_violation_message_none_when_host_matches_201_gate_runner() -> None:
     assert (
         guard.full_suite_host_violation_message(
-            host="gate-runner-201",
-            target_hostname="stickybeatz-studio",
-            additional_target_hostnames=("gate-runner-201",),
+            host="gate-runner-b",
+            target_hostname="gate-host-a",
+            additional_target_hostnames=("gate-runner-b",),
             override_authorized=False,
         )
         is None
@@ -197,8 +197,8 @@ def test_violation_message_none_when_override_authorized() -> None:
     authorization, not an ambient inheritable flag."""
     assert (
         guard.full_suite_host_violation_message(
-            host="omnibook",
-            target_hostname="stickybeatz-studio",
+            host="gate-host-d",
+            target_hostname="gate-host-a",
             override_authorized=True,
         )
         is None
@@ -207,13 +207,14 @@ def test_violation_message_none_when_override_authorized() -> None:
 
 def test_violation_message_present_on_real_mismatch() -> None:
     message = guard.full_suite_host_violation_message(
-        host="omnibook",
-        target_hostname="stickybeatz-studio",
+        host="gate-host-d",
+        target_hostname="gate-host-a",
         override_authorized=False,
     )
     assert message is not None
-    assert "omnibook" in message
-    assert "stickybeatz-studio" in message
+    assert "gate-host-d" in message
+    assert "gate-host-a" in message
+    assert "not a designated gate host" in message
     assert "prepush_override_grant.py mint" in message, (
         "the refusal must name the supported override path; a refusal with no "
         "alternative is how a gate gets disabled outright"
@@ -285,6 +286,8 @@ def _hermetic_subprocess_env(env_overrides: dict[str, str]) -> dict[str, str]:
         "GITHUB_ACTIONS",
         "PREPUSH_ALLOW_LOCAL_FULL_SUITE",
         "PREPUSH_200_HOSTNAME",
+        "ONEX_WORKSPACE_CONFIG_ROOT",
+        "OMNI_HOME",
         "PYTEST_ADDOPTS",
         "PYTEST_CURRENT_TEST",
     ):
@@ -380,8 +383,8 @@ def test_direct_invocation_refused_on_non_200_host(tmp_path: Path) -> None:
         f"run on a non-.200 host; got exit {result.returncode}. "
         f"stdout={result.stdout!r} stderr={result.stderr!r}"
     )
-    assert "not the designated .200 build host" in result.stderr, (
-        f"expected the refusal message; got stderr={result.stderr!r}"
+    assert "no gate host is configured" in result.stderr, (
+        f"expected the not-configured refusal; got stderr={result.stderr!r}"
     )
     assert "1 passed" not in result.stdout, (
         "the guard must refuse BEFORE any test executes -- found a passing "
@@ -395,7 +398,9 @@ def test_direct_invocation_allowed_when_host_matches(tmp_path: Path) -> None:
     project = _write_synthetic_project(tmp_path)
     real_host = guard.resolve_local_hostname()
     assert real_host, "this test requires a resolvable local hostname"
-    result = _run_pytest(project, env_overrides={"PREPUSH_200_HOSTNAME": real_host})
+    _write_host_table(project, real_host.lower(), "authorizing")
+    _git_init(project)
+    result = _run_pytest(project, env_overrides={})
     assert result.returncode == 0, (
         f"expected the run to proceed on a matching host; got exit "
         f"{result.returncode}. stdout={result.stdout!r} stderr={result.stderr!r}"
@@ -536,7 +541,7 @@ def test_direct_invocation_allowed_with_a_minted_grant(tmp_path: Path) -> None:
         "the grant must be SPENT after one use -- a reusable grant is an "
         "environment variable with extra steps"
     )
-    assert "not the designated .200 build host" in refused.stderr
+    assert "no gate host is configured" in refused.stderr
 
     receipts = (
         project / ".onex_state" / "prepush_override" / "receipts.jsonl"
@@ -611,7 +616,47 @@ def test_full_suite_refused_when_the_committed_table_only_shadows_this_host(
     assert result.returncode != 0, (
         f"a shadow row must not authorize; got exit {result.returncode}"
     )
-    assert "not the designated .200 build host" in result.stderr
+    assert "no gate host is configured" in result.stderr
+
+
+def test_a_table_naming_another_machine_refuses_with_the_designated_set(
+    tmp_path: Path,
+) -> None:
+    project = _write_synthetic_project(tmp_path)
+    _write_host_table(project, "some-other-machine", "authorizing")
+    _git_init(project)
+    result = _run_pytest(project, env_overrides={})
+    assert result.returncode != 0
+    assert "not a designated gate host" in result.stderr
+    assert "some-other-machine" in result.stderr
+
+
+def test_a_deployment_table_designates_this_host_without_the_shipped_table_naming_it(
+    tmp_path: Path,
+) -> None:
+    """OMN-20939: the shipped table carries a neutral row; the host is named only
+    by the deployment's own table, read through the workspace-config resolver."""
+    project = _write_synthetic_project(tmp_path)
+    real_host = guard.resolve_local_hostname()
+    assert real_host, "this test requires a resolvable local hostname"
+    _write_host_table(project, "localhost", "disabled")
+    _git_init(project)
+    root = tmp_path / "deployment"
+    table = root / "config" / "lab" / "prepush_hosts.omnibase_core.tsv"
+    table.parent.mkdir(parents=True)
+    table.write_text(
+        _HOST_TABLE_HEADER
+        + f"hx\tcapacity\t{real_host.lower()}\t-\t8\t/bin/uv\t0.1.0\t/tmp/w\tlockdir\t1\t-\tauthorizing\tsynthetic\n",
+        encoding="utf-8",
+    )
+    allowed = _run_pytest(
+        project, env_overrides={"ONEX_WORKSPACE_CONFIG_ROOT": str(root)}
+    )
+    assert allowed.returncode == 0, allowed.stdout + allowed.stderr
+    assert "1 passed" in allowed.stdout
+    refused = _run_pytest(project, env_overrides={})
+    assert refused.returncode != 0
+    assert "no gate host is configured" in refused.stderr
 
 
 def test_an_uncommitted_table_row_cannot_self_designate_this_host(

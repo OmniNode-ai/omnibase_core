@@ -4,7 +4,10 @@
 #
 # check_forbidden_patterns.sh — Scan src/ for decommissioned/forbidden patterns (OMN-4801)
 #
-# Reads patterns from scripts/validation/decommissioned_patterns.conf (one per line).
+# Reads patterns from scripts/validation/decommissioned_patterns.conf (one per line),
+# plus the operator's private vocabularies/decommissioned_patterns.lab.conf from the
+# workspace config root (ONEX_WORKSPACE_CONFIG_ROOT, else $OMNI_HOME/../omnibase_internal)
+# when that file exists. Without it only the shipped patterns apply.
 # Lines beginning with '#' and empty lines are ignored.
 # Exits non-zero if any match is found in src/; prints file:line for each hit.
 #
@@ -43,6 +46,18 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Private lab denylist: optional, supplied by whoever runs the system.
+LAB_PATTERNS_REL="vocabularies/decommissioned_patterns.lab.conf"
+LAB_PATTERNS_FILE=""
+if [[ -n "${ONEX_WORKSPACE_CONFIG_ROOT:-}" ]]; then
+    LAB_PATTERNS_FILE="${ONEX_WORKSPACE_CONFIG_ROOT}/${LAB_PATTERNS_REL}"
+elif [[ -n "${OMNI_HOME:-}" ]]; then
+    LAB_PATTERNS_FILE="${OMNI_HOME}/../omnibase_internal/${LAB_PATTERNS_REL}"
+fi
+if [[ -n "${LAB_PATTERNS_FILE}" && ! -f "${LAB_PATTERNS_FILE}" ]]; then
+    LAB_PATTERNS_FILE=""
+fi
+
 if [[ ! -f "${PATTERNS_FILE}" ]]; then
     echo "ERROR: patterns file not found: ${PATTERNS_FILE}" >&2
     exit 2
@@ -66,7 +81,7 @@ while IFS= read -r pattern; do
     done < <(grep -rn --include="*.py" --include="*.sh" --include="*.yaml" --include="*.yml" \
         -F "${pattern}" "${SCAN_DIR}" 2>/dev/null || true)
 
-done < "${PATTERNS_FILE}"
+done < <(cat "${PATTERNS_FILE}"; echo; [[ -z "${LAB_PATTERNS_FILE}" ]] || cat "${LAB_PATTERNS_FILE}")
 
 if [[ ${FOUND} -eq 1 ]]; then
     echo "ERROR: Forbidden/decommissioned pattern(s) found in ${SCAN_DIR}:" >&2
