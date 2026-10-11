@@ -290,6 +290,7 @@ evidence_requirements:
       binds_ac are unaffected.
     command: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_binds_ac_rules.py -q -k
       TestBindsAcCheckTypeRule
+  - kind: tests
     description: Replay trees of verbatim omnibase_spi files and constructed files against the recorded
       output of the pinned onex_change_control cosmetic-lint, one pass, one fail and one positive control
       per check class, and the spec hash.
@@ -322,6 +323,7 @@ evidence_requirements:
     description: The exported hook declaration runs the handler under the same hook id with the types
       the onex_change_control hook declared.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly -k bare_feature_flag
+  - kind: tests
     description: The S6 part 1 tests prove the preflight-free skip-token pin, the removed nested preflight
       context, and CI Summary's pull_request-only expectation of repo-evidence / dod-verify.
     command: uv run pytest tests/ci/test_s6_part1_cutover_omn20074.py -q -p no:randomly
