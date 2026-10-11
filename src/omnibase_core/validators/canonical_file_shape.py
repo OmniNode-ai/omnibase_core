@@ -45,8 +45,14 @@ A declared shrink-only gate baseline is not an exception. The
 ``.pre-commit-config.yaml``. Only hooks taken from omnibase_core count; local
 hooks do not. The node-boundary hook without ``--baseline`` declares
 ``.onex_ratchets/node_boundary_import_baseline.yaml``. The configuration is read
-from the head revision, and each gate enforces that its list only shrinks. A
-baseline-named file nothing declares is still refused.
+from the head revision, and each gate enforces that its list only shrinks.
+A workflow job in a ``.github/workflows/*.yml`` or ``*.yaml`` file whose
+``uses:`` is omnibase_core's own imperative contract guard reusable
+(``OmniNode-ai/omnibase_core/.github/workflows/imperative-contract-guard.yml@<ref>``,
+OMN-20918) declares its ``with.allowlist-path`` the same way (OMN-20946); that
+reusable enforces the allowlist shrink-only. A local workflow or another
+repository's reusable declares nothing, and an unparseable workflow file
+declares nothing. A baseline-named file nothing declares is still refused.
 The node-home gate (OMN-20702) has a fixed baseline path,
 admitted in every repository without a declaration; that gate enforces its own
 shrink-only list of node directories.
@@ -110,6 +116,11 @@ PRE_COMMIT_CONFIG = ".pre-commit-config.yaml"
 GATE_HOOK_IDS = ("check-direct-model-call", "check-node-boundary-imports")
 NODE_BOUNDARY_BASELINE = ".onex_ratchets/node_boundary_import_baseline.yaml"
 GATE_REPO_URL = re.compile(r"omnibase_core(\.git)?/?$")
+WORKFLOWS_DIR = ".github/workflows"
+GUARD_WORKFLOW_USES = re.compile(
+    r"OmniNode-ai/omnibase_core/\.github/workflows/imperative-contract-guard\.yml@[^\s@]+"
+)
+GUARD_ALLOWLIST_INPUT = "allowlist-path"
 INDEX = ":"
 # Failure type of a git run, for callers that must not import subprocess themselves.
 GitCommandError = subprocess.SubprocessError
@@ -354,6 +365,52 @@ def declared_gate_baselines(text: str | None) -> frozenset[str]:
     return frozenset(PurePosixPath(p).as_posix() for p in declared)
 
 
+def is_workflow_file(path: str) -> bool:
+    """A file GitHub reads as a workflow: directly under ``.github/workflows/``."""
+    pure = PurePosixPath(path)
+    return pure.parent.as_posix() == WORKFLOWS_DIR and pure.suffix in {".yml", ".yaml"}
+
+
+def declared_guard_allowlists(text: str | None) -> frozenset[str]:
+    """Allowlist paths declared by callers of omnibase_core's imperative guard.
+
+    Read from one workflow file. Only a job whose ``uses:`` is omnibase_core's
+    own ``imperative-contract-guard.yml`` reusable at a ref counts; a local
+    workflow or another repository's reusable does not.
+    """
+    if text is None:
+        return frozenset()
+    try:
+        workflow = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return frozenset()
+    if not isinstance(workflow, dict) or not isinstance(workflow.get("jobs"), dict):
+        return frozenset()
+    declared: set[str] = set()
+    for job in workflow["jobs"].values():
+        if not isinstance(job, dict) or not GUARD_WORKFLOW_USES.fullmatch(
+            str(job.get("uses", "")).strip()
+        ):
+            continue
+        inputs = job.get("with")
+        if not isinstance(inputs, dict):
+            continue
+        allowlist = inputs.get(GUARD_ALLOWLIST_INPUT)
+        if isinstance(allowlist, str) and allowlist.strip():
+            declared.add(PurePosixPath(allowlist.strip()).as_posix())
+    return frozenset(declared)
+
+
+def declared_paths(repo: GitRepo, head: str) -> frozenset[str]:
+    """Every shrink-only gate list the ``head`` revision declares."""
+    workflows = [f for f in repo.list_files(head) if is_workflow_file(f)]
+    blobs = repo.read_blobs(head, [PRE_COMMIT_CONFIG, *workflows])
+    declared = declared_gate_baselines(_decode(blobs[PRE_COMMIT_CONFIG]))
+    for path in workflows:
+        declared |= declared_guard_allowlists(_decode(blobs[path]))
+    return declared
+
+
 def is_exception_file(
     path: str, baseline_path: str, declared: frozenset[str] = frozenset()
 ) -> bool:
@@ -430,9 +487,7 @@ def check(
 ) -> list[ModelCanonicalFileShapeFinding]:
     """Every finding for ``head`` against the baseline and the ``base`` revision."""
     findings: list[ModelCanonicalFileShapeFinding] = []
-    declared = declared_gate_baselines(
-        _decode(repo.read_blobs(head, [PRE_COMMIT_CONFIG])[PRE_COMMIT_CONFIG])
-    )
+    declared = declared_paths(repo, head)
     head_baseline = parse_baseline(
         _decode(repo.read_blobs(head, [baseline_path])[baseline_path])
     )
