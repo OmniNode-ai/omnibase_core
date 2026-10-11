@@ -1,0 +1,1164 @@
+---
+allowlisted_handlers:
+  - path: omnimarket/nodes/node_ab_compare_reducer/handlers/handler_ab_compare_reducer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ab_inference_effect/handlers/handler_ab_inference_effect.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_adr_canary_orchestrator/handlers/handler_canary_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_adr_decision_extraction_llm_effect/handlers/handler_decision_extraction.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_adr_document_ingestion_effect/handlers/handler_document_ingestion.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_adr_draft_generation_compute/handlers/handler_adr_generation.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_adr_extraction_grader_llm_effect/handlers/handler_extraction_grader.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_adr_segmentation_llm_effect/handlers/handler_segmentation.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_aislop_sweep/handlers/handler_aislop_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_architectural_invariant_loop/handlers/handler_architectural_invariant_loop.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_audit_trail_compactor/handlers/handler_audit_trail_compactor.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_authorize/handlers/handler_authorize.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_auto_merge_effect/handlers/handler_auto_merge_effect.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_capture/handlers/handler_baseline_capture.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_capture/handlers/probes/probe_db_row_counts.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_capture/handlers/probes/probe_git_branches.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_capture/handlers/probes/probe_github_prs.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_capture/handlers/probes/probe_kafka_topics.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_capture/handlers/probes/probe_linear_tickets.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_capture/handlers/probes/probe_system_health.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_baseline_compare/handlers/handler_baseline_compare.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_budget_policy_compute/handlers/handler_budget_policy.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_dispatch_effect/handlers/dispatch_history_store.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop/handlers/handler_build_loop.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop_orchestrator/handlers/adapter_delegation_router.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop_orchestrator/handlers/adapter_linear_fill.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop_orchestrator/handlers/adapter_llm_classify.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop_orchestrator/handlers/adapter_llm_dispatch.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop_orchestrator/handlers/assemble_live.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop_orchestrator/handlers/handler_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_build_loop_orchestrator/handlers/model_policy_loader.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_bus_audit_compute/handlers/handler_bus_audit_compute.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_canary_score_reducer/handlers/handler_canary_score_reducer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_candidate_pool_compute/handlers/handler_candidate_pool.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_chain_diff/handlers/handler_chain_diff.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_chain_diff_compute/handlers/handler_chain_diff.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ci_fix_effect/handlers/handler_ci_fix.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ci_rerun_effect/handlers/handler_ci_rerun.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ci_watch/handlers/handler_ci_watch.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_claim_resolver/handlers/handler_claim_resolver.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_close_out/handlers/handler_close_out.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_closeout_effect/handlers/handler_closeout.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_closeout_verifier_compute/handlers/handler_closeout_verifier.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_code_embedding_effect/handlers/handler_code_embedding_effect.py
+    violations:
+      - hardcoded_topic
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_code_enrichment_effect/handlers/handler_code_enrichment_effect.py
+    violations:
+      - hardcoded_topic
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_coderabbit_triage/handlers/handler_coderabbit_triage.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_compliance_sweep/handlers/handler_compliance_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_conflict_hunk_effect/handlers/handler_conflict_hunk.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_content_ingestion_effect/handlers/handler_content_ingestion.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_context_bundle_generator_compute/handlers/handler_context_bundle.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_context_pack_builder_compute/handlers/handler_context_pack_builder.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_contract_reducer/handlers/handler_contract_reducer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_contract_registry/handlers/handler_contract_registry.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_contract_sweep/handlers/handler_contract_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_coverage_sweep/handlers/handler_coverage_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_create_ticket/handlers/handler_create_ticket.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_dashboard_sweep/handlers/handler_dashboard_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_data_flow_sweep/handlers/handler_data_flow_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_data_verification/handlers/datasource_postgres.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_data_verification/handlers/handler_data_verification.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_database_sweep/handlers/handler_database_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_delegate_skill_orchestrator/handlers/handler_delegate_skill.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_delegation_orchestrator/handlers/handler_compliance_loop.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_delegation_orchestrator/handlers/handler_delegation_workflow.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_delegation_quality_gate_reducer/handlers/handler_quality_gate.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_delegation_routing_reducer/handlers/handler_delegation_routing.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_demo_drift_detector/handlers/handler_demo_drift_detector.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_demo_fix_dispatcher/handlers/handler_demo_fix_dispatcher.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_demo_rehearsal/handlers/handler_demo_rehearsal.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_design_to_plan/handlers/handler_design_to_plan.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_dispatch_queue_drainer/handlers/handler_dispatch_queue_drainer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_dispatch_worker/handlers/dispatch_record_writer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_dispatch_worker/handlers/handler_dispatch_worker.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_doc_freshness_sweep/handlers/handler_doc_freshness_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_dod_sweep_orchestrator/handlers/handler_dod_sweep_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_dod_verify/handlers/handler_dod_verify.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_dod_verify/handlers/handler_runtime_sha_verify.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_duplication_sweep/handlers/handler_duplication_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_emit_daemon/handlers/handler_emit_daemon.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_env_parity_compute/handlers/handler_env_parity_compute.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/handler_environment_health_scanner.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/prober_containers.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/prober_emit_daemon.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/prober_entry_points.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/prober_hooks.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/prober_kafka.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/prober_model_endpoints.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_environment_health_scanner/handlers/prober_projections.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_evidence_dashboard_effect/handlers/handler_evidence_dashboard_effect.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_evidence_dashboard_reducer/handlers/handler_evidence_dashboard_reducer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_filesystem_crawler_effect/handlers/handler_filesystem_crawler.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_fixer_dispatcher/handlers/handler_fixer_dispatcher.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_full_triage_orchestrator/handlers/handler_full_triage.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_full_triage_orchestrator/handlers/output_formatter.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_full_triage_orchestrator/handlers/probe_interface.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_gap_compute/handlers/handler_gap_compute.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_generation_consumer/handlers/handler_generated_executor.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_golden_chain_generator/handlers/handler_golden_chain_generator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_golden_chain_generator_compute/handlers/handler_golden_chain_generator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_golden_chain_sweep/handlers/handler_golden_chain_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_handoff_effect/handlers/handler_handoff_effect.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_hostile_reviewer/handlers/adapter_inference_bridge.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_hostile_reviewer/handlers/handler_convergence_reducer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_hostile_reviewer/handlers/handler_hostile_reviewer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_hostile_reviewer/handlers/handler_prompt_builder.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_hostile_reviewer/handlers/handler_response_parser.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_hostile_reviewer/handlers/handler_review_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_hostile_reviewer/handlers/model_config_loader.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_integration_sweep_orchestrator/handlers/handler_integration_sweep_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_integration_test_runner/handlers/handler_integration_test_runner.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_intelligence_reducer/handlers/handler_pattern_lifecycle.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_intelligence_reducer/handlers/handler_process.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_intelligence_reducer/handlers/handler_intelligence_reducer.py
+    violations:
+      - logic_in_node
+    ticket: OMN-11759
+  - path: omnimarket/nodes/node_intent_query_effect/handlers/handler_intent_query.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_kafka_topic_emit_probe/handlers/handler_kafka_probe.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_kb_adr_publisher/handlers/handler_kb_adr_publisher.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_kreuzberg_parse_effect/handlers/handler_kreuzberg_parse.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ledger_append_effect/handlers/handler_ledger_append.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ledger_hash_compute/handlers/handler_ledger_hash.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ledger_orchestrator/handlers/handler_ledger_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ledger_state_reducer/handlers/handler_ledger_state.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_linear_triage/handlers/handler_linear_triage.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_llm_eval_harness/handlers/handler_llm_eval_harness.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_local_review/handlers/handler_local_review.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_local_supervisor/handlers/handler_local_supervisor.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_log_projection/handlers/handler_log_projection.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_memory_lifecycle_orchestrator/handlers/handler_memory_archive.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_memory_lifecycle_orchestrator/handlers/handler_memory_expire.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_memory_lifecycle_orchestrator/handlers/handler_memory_tick.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_merge_effect/handlers/handler_merge.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_merge_sweep_auto_merge_arm_effect/handlers/handler_auto_merge_arm.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_merge_sweep_compute/handlers/handler_merge_sweep.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_merge_sweep_state_reducer/handlers/handler_sweep_state.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_merge_sweep_triage_orchestrator/handlers/handler_triage.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_model_router/handlers/handler_model_router.py
+    violations:
+      - hardcoded_topic
+      - undeclared_transport
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_morning_handoff_generator/handlers/handler_morning_handoff_generator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_navigation_history_reducer/handlers/handler_navigation_history_reducer.py
+    violations:
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_nightly_loop_controller/handlers/handler_projection_nightly_loop.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_omnigate_check_executor/handlers/handler_check_executor.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_omnigate_receipt_generator/handlers/handler_receipt_generator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_omnigate_receipt_verifier/handlers/handler_receipt_verifier.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_onboarding/handlers/handler_onboarding.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_output_schema_registry_compute/handlers/handler_output_schema_registry.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_overnight/handlers/handler_overnight.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_overnight/handlers/overseer_tick.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_overseer_benchmarker/handlers/handler_overseer_benchmarker.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_overseer_observer/handlers/handler_evidence_evaluator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_overseer_observer/handlers/handler_side_effect_observer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_overseer_verifier/handlers/handler_overseer_verifier.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_overseer_verifier/handlers/handler_overseer_verifier_consumer.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pattern_b_broker/handlers/adapter_broker_contract_config.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pattern_b_broker/handlers/adapter_broker_publish.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pattern_b_broker/handlers/adapter_broker_terminal_consumer.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_persona_lifecycle_orchestrator/handlers/handler_persona_rebuild.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_plan_to_tickets/handlers/handler_plan_to_tickets.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_platform_diagnostics/handlers/dimension_checks.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_platform_diagnostics/handlers/handler_platform_diagnostics.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_platform_readiness/handlers/dimension_checks.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_platform_readiness/handlers/handler_platform_readiness.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_health_monitor/handlers/handler_pr_health_monitor.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_lifecycle_fix_effect/handlers/adapter_github_cli.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_lifecycle_fix_effect/handlers/adapter_pr_polish_dispatch.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_lifecycle_fix_effect/handlers/handler_admin_merge.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_lifecycle_fix_effect/handlers/handler_auto_rebase.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_lifecycle_fix_effect/handlers/handler_comment_resolution.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_lifecycle_merge_effect/handlers/adapter_github_merge_queue.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_lifecycle_orchestrator/handlers/handler_pr_lifecycle_orchestrator.py
+    violations:
+      - hardcoded_topic
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_polish/handlers/handler_pr_polish.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_commit_citation_verifier.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_diff_fetcher.py
+    violations:
+      - undeclared_transport
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_emergency_bypass_parser.py
+    violations:
+      - hardcoded_topic
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_fsm.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_judge_verifier.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_llm_reviewer.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_report_poster.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_thread_poster.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_thread_watcher.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_verification_loop.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_review_bot/handlers/handler_webhook_reconciler.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_semantic_grader_llm_effect/handlers/handler_pr_semantic_grader.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_snapshot_effect/handlers/handler_pr_snapshot.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_pr_watch_orchestrator/handlers/handler_pr_watch_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_process_watchdog/handlers/check_daemon_health.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_process_watchdog/handlers/check_socket.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_process_watchdog/handlers/checktargets_production.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_process_watchdog/handlers/handler_process_watchdog.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_baselines/handlers/handler_baselines.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_baselines/handlers/handler_projection_baselines.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_cost_by_repo/handlers/handler_projection_cost_by_repo.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_cost_summary/handlers/handler_projection_cost_summary.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_cost_token_usage/handlers/handler_projection_cost_token_usage.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_delegation/handlers/handler_delegation.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_delegation/handlers/handler_projection_delegation.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_dep_health/handlers/handler_projection_dep_health.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_llm_cost/handlers/handler_llm_cost.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_llm_cost/handlers/handler_projection_llm_cost.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_overnight/handlers/handler_projection_overnight.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_query/handlers/handler_projection_query.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_registration/handlers/handler_heartbeat_emitter.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_registration/handlers/handler_projection_registration.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_registration/handlers/handler_registration.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_savings/handlers/handler_projection_savings.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_savings/handlers/handler_savings.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_session_outcome/handlers/handler_projection_session_outcome.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_projection_session_outcome/handlers/handler_session_outcome.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_quality_scoring_compute/handlers/enum_onex_strictness_level.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_quality_scoring_compute/handlers/exceptions.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_quality_scoring_compute/handlers/handler_compute.py
+    violations:
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_quality_scoring_compute/handlers/handler_quality_scoring.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_quality_scoring_compute/handlers/presets.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_quality_scoring_compute/handlers/protocols.py
+    violations:
+      - missing_handler_routing
+      - logic_in_node
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_rebase_effect/handlers/handler_rebase.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_redeploy/handlers/handler_redeploy_kafka.py
+    violations:
+      - hardcoded_topic
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_release/handlers/handler_release.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_retention_cleanup/handlers/handler_retention_cleanup.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_review_thread_reconciler/handlers/handler_review_thread_reconciler.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_routing_policy_engine/handlers/handler_retry_strategy.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_routing_policy_engine/handlers/handler_routing_policy.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_routing_policy_engine/handlers/handler_task_shape_extractor.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_runtime_sweep/handlers/handler_runtime_sweep.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_schema_repair_compute/handlers/handler_schema_repair.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_seam_parallel_executor/handlers/handler_seam_parallel_executor.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_bootstrap/handlers/handler_session_bootstrap.py
+    violations:
+      - hardcoded_topic
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_compose/handlers/handler_session_compose.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_orchestrator/handlers/handler_session_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_phase_dispatcher/handlers/handler_session_phase_dispatcher.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_phase_evaluator/handlers/handler_session_phase_evaluator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_phase_orchestrator/handlers/handler_session_phase_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_post_mortem/handlers/adapter_friction_reader.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_post_mortem/handlers/adapter_pr_collector.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_session_post_mortem/handlers/handler_session_post_mortem.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_skill_dispatch_engine_orchestrator/handlers/handler_skill_requested.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_skill_overseer_verify_orchestrator/handlers/handler_skill_requested.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_state_persist_effect/handlers/handler_state_persist_effect.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_sweep_outcome_classify/handlers/handler_outcome_classify.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_test_generator/handlers/handler_test_generator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_test_generator_compute/handlers/handler_test_generator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_thread_reply_effect/handlers/handler_thread_reply.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ticket_pipeline/handlers/handler_report_poster.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ticket_pipeline/handlers/handler_ticket_pipeline.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_ticket_work/handlers/handler_ticket_work.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_two_strike_arbiter/handlers/handler_two_strike_arbiter.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_verification_receipt_generator/handlers/handler_verification_receipt.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_verified_dispatch_orchestrator/handlers/handler_verified_dispatch_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_verify_effect/handlers/handler_verify.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_version_skew_detector/handlers/handler_version_skew_detector.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_worker_stall_recovery/handlers/handler_stall_recovery.py
+    violations:
+      - missing_handler_routing
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_swarm_decomposer_compute/handlers/handler_swarm_decomposer.py
+    violations:
+      - hybrid
+      - missing_handler_routing
+    ticket: OMN-11809
+  - path: omnimarket/nodes/node_swarm_endpoint_health_effect/handlers/handler_swarm_endpoint_health.py
+    violations:
+      - imperative
+      - undeclared_transport
+      - missing_handler_routing
+    ticket: OMN-11810
+  - path: omnimarket/nodes/node_swarm_fanout_effect/handlers/handler_swarm_fanout.py
+    violations:
+      - hybrid
+    ticket: '# migration pending'
+  - path: omnimarket/nodes/node_generate_node_effect/handlers/handler_generate_node.py
+    violations:
+      - missing_handler_routing
+    ticket: OMN-12230
+  - path: omnimarket/nodes/node_log_persistence_effect/handlers/handler_log_persistence_effect.py
+    violations:
+      - undeclared_transport
+    ticket: OMN-12132
+  - path: omnimarket/nodes/node_observability_sink_effect/handlers/handler_observability_sink_effect.py
+    violations:
+      - missing_handler_routing
+    ticket: OMN-12217
+  - path: omnimarket/nodes/node_pr_lifecycle_fix_effect/handlers/adapter_occ_contract.py
+    violations:
+      - missing_handler_routing
+      - hardcoded_topic
+    ticket: OMN-10278
+  - path: omnimarket/nodes/node_routing_policy_engine/handlers/handler_score_lookup.py
+    violations:
+      - missing_handler_routing
+    ticket: OMN-8040
+  - path: omnimarket/nodes/node_ticketing_epic_org_orchestrator/handlers/handler_ticketing_epic_org.py
+    violations:
+      - imperative
+      - hardcoded_topic
+    ticket: OMN-12202
+  - path: src/omnimarket/adapters/asyncpg_adapter.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12750
+  - path: src/omnimarket/adapters/codex/runtime_client.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12750
+  - path: src/omnimarket/adapters/codex/topics.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12750
+  - path: src/omnimarket/cli/cli_ab_compare_suite.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12750
+  - path: src/omnimarket/cli/commands/trace.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12750
+  - path: src/omnimarket/events/topics.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12750
+  - path: src/omnimarket/github_api.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12750
+  - path: src/omnimarket/logging/topics.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_delegate_skill_orchestrator/ports/port_direct_curl_dispatch.py
+    violations:
+      - freestanding_db_connection
+      - freestanding_hardcoded_inference_param
+      - freestanding_subprocess_network
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_emit_daemon/health_probe.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_filesystem_crawler_effect/models/model_filesystem_crawler_config.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_handoff_effect/service_catalog.py
+    violations:
+      - freestanding_subprocess_network
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_integration_sweep_orchestrator/models/model_integration_sweep_orchestrator_request.py
+    violations:
+      - freestanding_hardcoded_private_ip
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_intent_event_consumer_effect/models/model_consumer_config.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_kreuzberg_parse_effect/clients/client_kreuzberg.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_kreuzberg_parse_effect/models/model_kreuzberg_parse_config.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_pr_review_bot/adapter_github_bridge.py
+    violations:
+      - freestanding_raw_http
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_redeploy/models/model_deployment_adapter.py
+    violations:
+      - freestanding_hardcoded_topic
+    ticket: OMN-12750
+  - path: src/omnimarket/nodes/node_runner_orchestrator/models/model_runner_result.py
+    violations:
+      - freestanding_hardcoded_private_ip
+    ticket: OMN-12750
+  - path: src/omnimarket/projection/api_server.py
+    violations:
+      - freestanding_db_connection
+    ticket: OMN-12750
+  - path: src/omnimarket/projection/runner.py
+    violations:
+      - freestanding_kafka_client
+    ticket: OMN-12750
+  - path: omnimarket/nodes/node_knowledge_context_assembler_orchestrator/handlers/handler_knowledge_context_assembler_orchestrator.py
+    violations:
+      - missing_handler_routing
+    ticket: OMN-11935
+  - path: omnimarket/nodes/node_create_followup_tickets_effect/handlers/handler_create_followup_tickets_effect.py
+    violations:
+      - missing_handler_routing
+    ticket: OMN-12204

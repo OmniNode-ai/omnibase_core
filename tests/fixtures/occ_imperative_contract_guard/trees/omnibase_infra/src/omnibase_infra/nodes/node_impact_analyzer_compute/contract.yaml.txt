@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 OmniNode Team
+#
+# ONEX Node Contract
+# Node: NodeImpactAnalyzerCompute
+#
+# Pure compute node: matches change triggers against the artifact
+# registry to produce per-artifact impact scores and highest merge policy.
+#
+# Related Tickets:
+#   - OMN-3935: Task 3 - Impact Analyzer COMPUTE Node
+#   - OMN-3925: Artifact Reconciliation + Update Planning MVP
+#   - OMN-14817: HandlerImpactAnalysis flipped to canonical def-B
+#     handle(request) via a hand-flip; scoring helpers preserved verbatim.
+name: "node_impact_analyzer_compute"
+contract_name: "node_impact_analyzer_compute"
+node_name: "node_impact_analyzer_compute"
+contract_version:
+  major: 0
+  minor: 1
+  patch: 1
+node_version:
+  major: 0
+  minor: 1
+  patch: 1
+node_type: "COMPUTE_GENERIC"
+description: >
+  Pure compute node for artifact impact analysis. Takes a ModelUpdateTrigger and an artifact registry, matches changed files against source trigger patterns using fnmatch, applies the OMN-3925 scoring table (scope multiplier, policy floor, threshold-based action assignment), and returns a ModelImpactAnalysisResult with per-artifact scores and the highest merge policy. No external I/O.
+
+input_model:
+  name: "ModelImpactAnalysisRequest"
+  module: "omnibase_infra.nodes.node_impact_analyzer_compute.models.model_impact_analysis_request"
+  description: "Typed def-B request binding the change trigger and the artifact registry to score against."
+output_model:
+  name: "ModelImpactAnalysisResult"
+  module: "omnibase_infra.nodes.node_impact_analyzer_compute.models.model_impact_analysis_result"
+  description: "Impact analysis result with per-artifact scores and highest merge policy."
+capabilities:
+  - name: "artifact.analyze_impact"
+    description: "Score changed files against registry triggers to determine artifact impact"
+event_bus:
+  subscribe_topics:
+    - "onex.evt.artifact.change-detected.v1"
+  publish_topics:
+    - "onex.evt.artifact.impact-analyzed.v1"
+handler_routing:
+  routing_strategy: "operation_match"
+  handlers:
+    - operation: "artifact.analyze_impact"
+      handler:
+        name: "HandlerImpactAnalysis"
+        module: "omnibase_infra.nodes.node_impact_analyzer_compute.handlers.handler_impact_analysis"
+      description: "Score artifacts against changed files using the OMN-3925 scoring table"
+      input_model:
+        name: "ModelImpactAnalysisRequest"
+        module: "omnibase_infra.nodes.node_impact_analyzer_compute.models.model_impact_analysis_request"
+        description: "Typed def-B request for impact scoring"
+error_handling:
+  retry_policy:
+    max_retries: 0
+    initial_delay_ms: 0
+    max_delay_ms: 0
+    exponential_base: 1
+    retry_on: []
+  error_types:
+    - name: "ImpactAnalysisError"
+      description: "Failed to compute impact analysis"
+      recoverable: false
+health_check:
+  enabled: true
+  endpoint: "/health"
+  interval_seconds: 30
+  checks:
+    - name: "impact_handler_loaded"
+      type: "handler"
+      critical: true
+metadata:
+  description: "Pure compute node for artifact impact analysis. Takes a ModelUpdateTrigger and an artifact registry, matches changed files against source trigger patterns using fnmatch, applies the OMN-3925 scoring table (scope multiplier, policy floor, threshold-based action assignment), and returns a ModelImpactAnalysisResult with per-artifact scores and the highest merge policy. No external I/O."
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-03-08"
+  updated: "2026-07-20"
+  tags:
+    - compute
+    - artifact
+    - impact
+    - registry
+    - reconciliation
+  related_tickets:
+    - "OMN-3935"
+    - "OMN-3925"
+    - "OMN-14817"

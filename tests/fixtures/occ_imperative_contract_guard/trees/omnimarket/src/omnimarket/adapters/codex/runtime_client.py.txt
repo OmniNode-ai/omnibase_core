@@ -1,0 +1,2 @@
+"""Import-edge stub of a module in the recorded slice: only the import that leads on to the scanned module is kept."""
+from omnimarket.adapters.codex.topics import TOPIC_CODEX_DELEGATE_SKILL_COMMAND, TOPIC_CODEX_DELEGATE_SKILL_COMPLETED, TOPIC_CODEX_DELEGATE_SKILL_FAILED, TOPIC_CODEX_PATTERN_B_DISPATCH_COMMAND, TOPIC_CODEX_PATTERN_B_DISPATCH_COMPLETED

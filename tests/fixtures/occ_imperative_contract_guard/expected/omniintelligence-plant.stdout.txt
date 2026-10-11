@@ -1,0 +1,19 @@
+Imperative contract guard
+
+repo                         nodes handlers  clean baseline  live nonlive allowlist
+------------------------------------------------------------------------------------------------------
+omniintelligence                 2        2      0        3     2       3 <ROOT>/allowlists/omniintelligence.yaml
+
+Blocking LIVE imperative violations:
+- omniintelligence/nodes/node_planted_effect/handlers/handler_planted.py: hybrid (live)
+  - hardcoded topic 'onex.evt.planted.thing.v1' not in contract
+
+Blocking LIVE freestanding imperative violations:
+- src/omniintelligence/planted_imperative_io.py: imperative (live)
+  - L5 [live] raw HTTP call 'requests.post' bypasses contract transport
+  - L5 [live] hardcoded inference param 'max_tokens=64' in dict literal
+
+Reported non-live imperative smells:
+- src/omniintelligence/adapters/adapter_http_rest.py: hybrid (dead)
+- src/omniintelligence/debug_intel/topics.py: imperative (dead)
+- src/omniintelligence/review_pairing/topics.py: imperative (dead)

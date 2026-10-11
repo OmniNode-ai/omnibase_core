@@ -1,0 +1,16 @@
+Imperative contract guard
+
+repo                         nodes handlers  clean baseline  live nonlive allowlist
+------------------------------------------------------------------------------------------------------
+omnibase_infra                   4        4      1        5     1       4 <ROOT>/allowlists/omnibase_infra.yaml
+
+Blocking LIVE freestanding imperative violations:
+- src/omnibase_infra/event_bus/kafka_transport.py: imperative (live)
+  - L217 [live] raw Kafka client 'AIOKafkaProducer' bypasses injected event bus
+  - L270 [live] raw Kafka client 'AIOKafkaConsumer' bypasses injected event bus
+
+Reported non-live imperative smells:
+- omnibase_infra/nodes/node_merge_provenance_observe_effect/handlers/handler_merge_group_run_read_github.py: hybrid (dead)
+- src/omnibase_infra/enums/generated/enum_occ_topic.py: hybrid (dead)
+- src/omnibase_infra/enums/generated/enum_omninode_topic.py: hybrid (dead)
+- src/omnibase_infra/enums/generated/enum_steel_onslaught_topic.py: hybrid (dead)

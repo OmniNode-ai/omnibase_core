@@ -1,0 +1,5 @@
+[project]
+name = "omninode-memory"
+
+[project.entry-points."onex.domain_plugins"]
+memory = "omnimemory.runtime.plugin:PluginMemory"

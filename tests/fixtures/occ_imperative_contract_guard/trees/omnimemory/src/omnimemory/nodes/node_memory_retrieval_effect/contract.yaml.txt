@@ -1,0 +1,317 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+
+# Memory Retrieval EFFECT - ONEX Contract
+# EFFECT node for memory search operations across retrieval backends.
+
+# === REQUIRED ROOT FIELDS ===
+name: "node_memory_retrieval_effect"
+contract_version: {major: 0, minor: 2, patch: 0}
+node_version: {major: 0, minor: 1, patch: 0}
+description: "Memory retrieval effect node for search operations. P2A: Qdrant semantic search, PostgreSQL
+  full-text search, and Graph traversal backends."
+node_type: effect
+input_model: "ModelMemoryRetrievalRequest"
+output_model: "ModelMemoryRetrievalResponse"
+
+# === IO OPERATIONS (Required for EFFECT nodes) ===
+# All operations are read-only searches - no atomicity required
+io_operations:
+  - operation_type: "vector_query"
+    atomic: false
+    timeout_seconds: 10
+    validation_enabled: true
+  - operation_type: "database_read"
+    atomic: false
+    timeout_seconds: 10
+    validation_enabled: true
+  - operation_type: "graph_traversal"
+    atomic: false
+    timeout_seconds: 15
+    validation_enabled: true
+
+# === TRANSACTION MANAGEMENT ===
+# Disabled: All operations are read-only searches, no transactions needed
+transaction_management:
+  enabled: false
+
+# === TRANSPORT DECLARATIONS ===
+metadata:
+  transport_type: "QDRANT"
+
+# === NODE CONFIGURATION ===
+# NOTE: tool_name and main_tool_class are required per ModelContractEffect validation
+tool_specification:
+  tool_name: "memory_retrieval_effect"
+  main_tool_class: "NodeMemoryRetrievalEffect"
+
+# === SERVICE CONFIGURATION ===
+service_configuration:
+  is_persistent_service: false
+  requires_external_dependencies: true
+
+# === INPUT/OUTPUT STATE ===
+input_state:
+  object_type: "object"
+  required: ["operation"]
+  optional: ["query_text", "query_embedding", "snapshot_id", "limit", "similarity_threshold", "traversal_depth",
+    "relationship_types", "metadata_filters", "tags"]
+
+output_state:
+  object_type: "object"
+  required: ["status"]
+  optional: ["results", "total_count", "query_embedding_used", "error_message"]
+
+# === ACTIONS ===
+actions:
+  - name: "search"
+    description: "Semantic similarity search using vector embeddings"
+    inputs: ["query_text", "query_embedding", "limit", "similarity_threshold"]
+    outputs: ["results", "total_count"]
+
+  - name: "search_text"
+    description: "Full-text search using SQL LIKE/FTS"
+    inputs: ["query_text", "limit", "tags"]
+    outputs: ["results", "total_count"]
+
+  - name: "search_graph"
+    description: "Graph traversal for relationship-based retrieval"
+    inputs: ["snapshot_id", "traversal_depth", "relationship_types"]
+    outputs: ["results", "total_count"]
+
+  # OMN-16765: fused semantic + full-text retrieval. Additive — 'search' and
+  # 'search_text' are unchanged and existing callers are unaffected.
+  - name: "search_hybrid"
+    description: "Fused semantic and full-text retrieval, combined by rank fusion"
+    inputs: ["query_text", "limit", "tags"]
+    outputs: ["results", "total_count"]
+
+  - name: "health_check"
+    description: "Check node health status"
+    inputs: []
+    outputs: ["status"]
+
+# === DEPENDENCIES ===
+# P2A: Qdrant primary for semantic search, DB/Graph adapters
+dependencies:
+  # P2A Primary Backend
+  - name: qdrant
+    dependency_type: service
+    description: Qdrant vector store for semantic similarity search (P2A primary)
+    required: true
+
+  # P2A Additional Backends
+  - name: postgresql
+    dependency_type: service
+    description: PostgreSQL database for full-text search (P2A adapter)
+    required: false
+  - name: graph_db
+    dependency_type: service
+    description: Graph database (Neo4j/Memgraph) for relationship traversal (P2A adapter)
+    required: false
+
+  # Protocol Dependencies
+  - name: ProtocolVectorStoreHandler
+    dependency_type: protocol
+    description: Vector store operations protocol
+  - name: ProtocolMemoryOperations
+    dependency_type: protocol
+    description: Memory CRUD operations protocol
+
+# === DESCRIPTOR (endpoint overlay seam) ===
+# OMN-13562 / OMN-13556 Wave-1 endpoint→overlay migration.
+# The Qdrant host/port the retrieval-effect handlers (and the navigation-history
+# reducer that writes to the same store) connect to are declared here with the
+# ${env.VAR} overlay convention so an operator overlay / the per-lane service env
+# supplies the real endpoint per lane — never a hardcoded host in source. The
+# config defaults resolve these through
+# omnibase_infra.runtime.overlay.contract_env_ref.expand_contract_env_refs (the
+# one sanctioned env-reading boundary) and fail closed: an unset/empty host
+# raises rather than silently defaulting to localhost.
+descriptor:
+  node_archetype: effect
+  purity: side_effect
+  idempotent: false
+  qdrant_host: "${env.QDRANT_HOST}"
+  qdrant_port: "${env.QDRANT_PORT:6333}"
+
+# === PERFORMANCE ===
+performance:
+  max_response_time_ms: 100
+
+# === EVENT TYPE CONFIGURATION ===
+# NOTE: Using version per ModelEventTypeSubcontract from omnibase_core
+event_type:
+  version: {major: 1, minor: 0, patch: 0}
+  primary_events: ["memory_searched", "memory_retrieved", "graph_traversed"]
+  event_categories: ["memory", "effect", "retrieval", "search"]
+  publish_events: true
+  subscribe_events: true
+  invocation_mode: "subscription"
+  event_routing: "memory"
+
+# === INFRASTRUCTURE ===
+infrastructure:
+  retrieval_backends:
+    - qdrant  # P2A primary - semantic search
+    - postgresql  # P2A adapter - full-text search
+    - graph_db  # P2A adapter - relationship traversal
+
+# === VALIDATION RULES ===
+validation_rules:
+  strict_typing_enabled: true
+  input_validation_enabled: true
+  output_validation_enabled: true
+  performance_validation_enabled: true
+  constraint_definitions:
+    # OMN-15235: 'index' removed. The authoritative input model for this node,
+    # ModelMemoryRetrievalRequest.operation, is a Literal — 'index' was never a
+    # constructible operation here, so declaring it made this contract narrate a
+    # capability the node's own DTO forbids.
+    # OMN-16765: 'search_hybrid' added. Added to the DTO Literal in the same
+    # change, so the two stay aligned — that alignment is enforced by
+    # TestHandlerRoutingKeyAlignment, which derives the legal routing keys from
+    # this line.
+    operation: "Literal['search', 'search_text', 'search_graph', 'search_hybrid'] - must match ModelMemoryRetrievalRequest.operation"
+    status: "Literal['success', 'error', 'no_results'] - must match enums.status.values"
+    query_text: "string type for text query (required for search/search_text unless embedding provided)"
+    query_embedding: "list[float] for pre-computed embedding vector"
+    snapshot_id: "string type for starting snapshot ID (required for search_graph)"
+    limit: "int (1-1000) - maximum number of results"
+    similarity_threshold: "float (0.0-1.0) - minimum similarity score for results"
+    traversal_depth: "int (1-10) - maximum depth for graph traversal"
+    relationship_types: "list[str] - filter graph traversal by relationship types"
+
+# === HANDLER ROUTING (ONEX Multi-Backend Effect Pattern) ===
+# Declarative routing configuration for backend handlers.
+# The main HandlerMemoryRetrieval acts as router, dispatching to backend handlers.
+# Supports both orchestrator invocation and event subscription (OMN-1746/OMN-2212).
+handler_routing:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  routing_strategy: operation_match
+  # OMN-15227: every dispatchable operation routes to the production handler
+  # HandlerMemoryRetrieval, which is the class the runtime actually dispatches
+  # to (omnimemory.runtime.dispatch_handlers.create_memory_retrieval_dispatch_handler)
+  # and the only one satisfying both downstream omnimarket gates: the
+  # dispatch-entrypoint gate (OMN-14617 — requires handle_async/handle) and the
+  # boot-resolvability gate (OMN-13603 — no required, default-less ctor param
+  # outside {event_bus, container, ownership_query}).
+  #
+  # The Qdrant/Db/Graph mocks previously named here are NOT dispatch targets —
+  # they are internal sub-handlers that HandlerMemoryRetrieval.execute() fans
+  # out to by operation. Each exposes only execute() and requires a default-less
+  # `config`, so declaring them here failed both gates. Do not re-point at them.
+  #
+  # OMN-15235: the `index` -> HandlerQdrant entry that used to close this list is
+  # REMOVED, not repointed. It was a route to a handler that cannot serve it:
+  #   * HandlerMemoryRetrieval.execute() has no `index` branch — its match covers
+  #     search/search_text/search_graph and closes with
+  #     assert_never(request.operation), so repointing (the OMN-15227 precedent
+  #     for the three mocks) would declare a route the type system forbids;
+  #   * ModelMemoryRetrievalRequest.operation, this node's declared input_model,
+  #     is Literal['search', 'search_text', 'search_graph'] — an `index` request
+  #     is not constructible, so no dispatch could ever reach the entry;
+  #   * HandlerQdrant fails both boot gates (only execute(), plus a required
+  #     default-less `config` ctor param) AND takes a duck-typed
+  #     `request: object` needing `document_id`/`content` attributes that
+  #     ModelMemoryRetrievalRequest does not carry — a seam mismatch, not just a
+  #     shape defect.
+  # HandlerQdrant itself is retained and still directly exercised by
+  # tests/unit/nodes/test_handler_qdrant.py and
+  # tests/integration/test_golden_chain_qdrant_ingestion.py; only the false ROUTE
+  # is gone. Indexing is not an operation of this retrieval node — give it its
+  # own node/contract if it is ever needed on the bus.
+  handlers:
+    # Semantic similarity search via Qdrant (sub-handler: HandlerQdrantMock)
+    - operation: "search"
+      handler:
+        name: "HandlerMemoryRetrieval"
+        module: "omnimemory.nodes.node_memory_retrieval_effect.handlers.handler_memory_retrieval"
+    # Full-text search via PostgreSQL (sub-handler: HandlerDbMock)
+    - operation: "search_text"
+      handler:
+        name: "HandlerMemoryRetrieval"
+        module: "omnimemory.nodes.node_memory_retrieval_effect.handlers.handler_memory_retrieval"
+    # Graph traversal via Neo4j/Memgraph (sub-handler: HandlerGraphMock)
+    - operation: "search_graph"
+      handler:
+        name: "HandlerMemoryRetrieval"
+        module: "omnimemory.nodes.node_memory_retrieval_effect.handlers.handler_memory_retrieval"
+    # Fused semantic + full-text retrieval (OMN-16765). Fans out to the 'search'
+    # and 'search_text' sub-handlers and fuses their rankings; introduces no new
+    # sub-handler of its own.
+    - operation: "search_hybrid"
+      handler:
+        name: "HandlerMemoryRetrieval"
+        module: "omnimemory.nodes.node_memory_retrieval_effect.handlers.handler_memory_retrieval"
+    # Health check — primary retrieval handler (default for all operations)
+    - operation: "health_check"
+      handler:
+        name: "HandlerMemoryRetrieval"
+        module: "omnimemory.nodes.node_memory_retrieval_effect.handlers.handler_memory_retrieval"
+  default_handler: "HandlerMemoryRetrieval"
+
+# =============================================================================
+# EVENT BUS SUBCONTRACT - Runtime Routing Layer
+# =============================================================================
+# PURPOSE: Machine-readable configuration of WHERE events are routed.
+#
+# This subcontract provides structured topic routing for:
+#   - RuntimeHostProcess auto-discovery and wiring
+#   - Kafka topic subscription/publication
+#   - Schema validation via topic metadata
+#
+# Contains: topic suffixes (simple strings) + optional schema references.
+#
+# NOTE: This node supports both orchestrator invocation and subscription mode.
+# When subscription-driven, it listens for retrieval request commands and
+# publishes response events.
+#
+# Topic naming: onex.{kind}.omnimemory.{event-name}.v{n}
+#   - kind=cmd for commands/inputs
+#   - kind=evt for events/outputs
+#   - Internal runtime events use onex.internal.* namespace
+# =============================================================================
+event_bus:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+
+  # Topics this node subscribes to (receives events from)
+  subscribe_topics:
+    - "onex.cmd.omnimemory.memory-retrieval-requested.v1"
+
+  # Topics this node publishes to (sends events to)
+  publish_topics:
+    - "onex.evt.omnimemory.memory-retrieval-response.v1"
+
+  # Metadata for subscribed topics
+  subscribe_topic_metadata:
+    "onex.cmd.omnimemory.memory-retrieval-requested.v1":
+      schema_ref: "omnimemory.nodes.node_memory_retrieval_effect.models.model_memory_retrieval_request.ModelMemoryRetrievalRequest"
+      description: "Memory retrieval request events containing search parameters including query text,
+        embeddings, similarity thresholds, and backend selection."
+
+  # Metadata for published topics
+  publish_topic_metadata:
+    "onex.evt.omnimemory.memory-retrieval-response.v1":
+      schema_ref: "omnimemory.nodes.node_memory_retrieval_effect.models.model_memory_retrieval_response.ModelMemoryRetrievalResponse"
+      description: "Memory retrieval response events containing search results with similarity scores,
+        total counts, and metadata from the queried backends."
+
+# === TAGS ===
+tags:
+  - memory
+  - retrieval
+  - effect
+  - search
+  - semantic
+  - vector
+  - graph
+  - qdrant
+  - postgresql

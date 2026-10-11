@@ -47,6 +47,42 @@ class EnumComplianceViolation(str, Enum):
     MODEL_DUMP_DRIFT = "model_dump_drift"
     """Pydantic model schema has drifted from wire schema contract declaration."""
 
+    HARDCODED_CONFIG = "hardcoded_config"
+    """Configuration hardcoded as an in-source literal.
+
+    Freestanding code passes runtime configuration as literals
+    (e.g. ``max_tokens=2048``, ``temperature=0.7``, a private-range IP address)
+    instead of resolving it from a contract or model registry.
+    """
+
+    RAW_HTTP_INFERENCE = "raw_http_inference"
+    """Freestanding code performs raw HTTP I/O instead of a contract transport.
+
+    Direct ``httpx`` / ``requests`` / ``aiohttp`` / ``urllib`` calls bypass the
+    contract-declared transport + handler dispatch path.
+    """
+
+    RAW_KAFKA = "raw_kafka"
+    """Freestanding code constructs a Kafka producer/consumer directly.
+
+    Direct ``confluent_kafka`` / ``aiokafka`` / ``kafka`` client construction
+    bypasses the injected event-bus transport.
+    """
+
+    DIRECT_DB = "direct_db"
+    """Freestanding code opens a database/cache connection directly.
+
+    Direct ``asyncpg`` / ``psycopg`` / ``sqlite3`` / ``redis`` connection
+    construction bypasses injected persistence services.
+    """
+
+    SUBPROCESS_NETWORK = "subprocess_network"
+    """Freestanding code shells out to a network/git operation via subprocess.
+
+    ``subprocess`` invocations of ``ssh`` / ``scp`` / ``curl`` / ``git`` / ``rsync``
+    bypass contract-declared transports and deployment handlers.
+    """
+
     def __str__(self) -> str:
         """Return the string value for serialization."""
         return self.value

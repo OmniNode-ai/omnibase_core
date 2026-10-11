@@ -1,0 +1,5 @@
+[project]
+name = "omninode-intelligence"
+
+[project.entry-points."onex.nodes"]
+node_pattern_demotion_effect = "omniintelligence.nodes.node_pattern_demotion_effect"
