@@ -371,6 +371,157 @@ class TestCompanionResolvedFromRecord:
         )
 
 
+class TestMultipleMergedCompanions:
+    """OMN-20978 — a PR whose head moved after its first companion merged.
+
+    Fixture shape is the observed omniclaude#2661 record: OCC#13596 (bound the
+    old head, merged 2026-10-10T19:00Z) and OCC#13675 (bound a later head,
+    merged 2026-10-11T14:15Z) both name the PR; before this fix the gate
+    refused both and polled to its deadline.
+    """
+
+    @staticmethod
+    def _merged(
+        number: int,
+        merged_at: str | None,
+        *,
+        pr: str = "2500",
+        base: str = "dev",
+        state: str = "MERGED",
+    ) -> dict[str, object]:
+        record: dict[str, object] = {
+            "number": number,
+            "title": f"evidence(OMN-20978): OCC companion for {PRODUCT_REPO}#{pr}",
+            "state": state,
+            "baseRefName": base,
+        }
+        if merged_at is not None:
+            record["mergedAt"] = merged_at
+        return record
+
+    OLD = "2026-10-10T19:00:00Z"
+    NEW = "2026-10-11T14:15:00Z"
+
+    @pytest.mark.parametrize(
+        "order", ["old-first", "new-first"], ids=["old-first", "new-first"]
+    )
+    def test_multiple_merged_resolves_to_latest_merge(self, order: str) -> None:
+        records = [self._merged(13596, self.OLD), self._merged(13675, self.NEW)]
+        if order == "new-first":
+            records.reverse()
+        ref, detail = select_merged_companion(records, PRODUCT_REPO, "2500")
+        assert ref == "OCC#13675"
+        assert "latest merged" in detail
+        assert "OMN-20978" in detail
+
+    def test_multiple_merged_follows_merge_time_not_number(self) -> None:
+        # A later-opened companion that merged FIRST is not the latest record.
+        records = [self._merged(13596, self.NEW), self._merged(13675, self.OLD)]
+        ref, _detail = select_merged_companion(records, PRODUCT_REPO, "2500")
+        assert ref == "OCC#13596"
+
+    def test_multiple_merged_compares_instants_across_offsets(self) -> None:
+        records = [
+            self._merged(13596, "2026-10-11T10:00:00-05:00"),  # 15:00Z
+            self._merged(13675, "2026-10-11T14:15:00Z"),
+        ]
+        ref, _detail = select_merged_companion(records, PRODUCT_REPO, "2500")
+        assert ref == "OCC#13596"
+
+    @pytest.mark.parametrize(
+        ("records", "why"),
+        [
+            ([_merged(13596, OLD), _merged(13675, None)], "no readable merge time"),
+            ([_merged(13596, OLD), _merged(13675, "yesterday")], "no readable"),
+            (
+                [_merged(13596, OLD), _merged(13675, "2026-10-11T14:15:00")],
+                "no readable",
+            ),
+            (
+                [_merged(13596, OLD), _merged(13675, NEW, base="main")],
+                "different or unreadable base",
+            ),
+            (
+                [_merged(13596, OLD), _merged(13675, NEW, base="")],
+                "different or unreadable base",
+            ),
+            ([_merged(13596, NEW), _merged(13675, NEW)], "share the latest"),
+        ],
+        ids=[
+            "missing-time",
+            "garbled-time",
+            "naive-time",
+            "split-base",
+            "no-base",
+            "tied-time",
+        ],
+    )
+    def test_multiple_merged_unorderable_still_fails_closed(
+        self, records: list[dict[str, object]], why: str
+    ) -> None:
+        ref, detail = select_merged_companion(records, PRODUCT_REPO, "2500")
+        assert ref is None
+        assert detail.startswith("ambiguous merged companions: OCC#13596, OCC#13675")
+        assert why in detail
+
+    @pytest.mark.parametrize(
+        "intruder",
+        [
+            _merged(13700, "2026-10-11T18:00:00Z", pr="2501"),
+            _merged(13700, "2026-10-11T18:00:00Z", pr="25000"),
+            _merged(13700, "2026-10-11T18:00:00Z", state="OPEN"),
+            _merged(13700, "2026-10-11T18:00:00Z", state="CLOSED"),
+        ],
+        ids=["other-pr", "other-pr-prefix", "open", "closed"],
+    )
+    def test_other_pr_or_unmerged_record_never_resolves(
+        self, intruder: dict[str, object]
+    ) -> None:
+        # The newest record of all is excluded before ordering, so a later
+        # companion for another PR, or an unmerged one, can never win.
+        ref, _detail = select_merged_companion(
+            [self._merged(13596, self.OLD), self._merged(13675, self.NEW), intruder],
+            PRODUCT_REPO,
+            "2500",
+        )
+        assert ref == "OCC#13675"
+        alone, detail = select_merged_companion([intruder], PRODUCT_REPO, "2500")
+        assert alone is None
+        assert detail == "no merged companion"
+
+    def test_other_pr_zero_merged_still_waits(self) -> None:
+        fetcher = FakeFetcher(
+            prs={(PRODUCT_REPO, "2500"): _product_pr("description lost its stamp")},
+            candidates={
+                (OCC_REPO, PRODUCT_REPO, "2500"): [
+                    self._merged(13700, self.NEW, pr="2501")
+                ]
+            },
+        )
+        assert _evaluate(fetcher).code == EXIT_PENDING
+
+    def test_multiple_merged_gate_passes_on_the_latest(self) -> None:
+        fetcher = FakeFetcher(
+            prs={
+                (PRODUCT_REPO, "2500"): _product_pr("Evidence-Source: OCC#13596"),
+                (OCC_REPO, "13675"): {
+                    "state": "MERGED",
+                    "mergeCommit": {"oid": "def456"},
+                },
+            },
+            candidates={
+                (OCC_REPO, PRODUCT_REPO, "2500"): [
+                    self._merged(13596, self.OLD),
+                    self._merged(13675, self.NEW),
+                ]
+            },
+        )
+        verdict = _evaluate(fetcher)
+        assert verdict.code == EXIT_PASS
+        assert "OCC#13675" in verdict.reason
+        assert "def456" in verdict.reason
+
+
 class TestMergedCompanionCandidates:
     """OMN-18338 — fixed argv and failed reads remain distinct from absence."""
 
@@ -417,7 +568,7 @@ class TestMergedCompanionCandidates:
                 "--search",
                 '"omnibase_core" "2500" in:title,body',
                 "--json",
-                "number,title,body,state,mergeCommit",
+                "number,title,body,state,mergeCommit,mergedAt,baseRefName",
                 "--limit",
                 "50",
             ]
