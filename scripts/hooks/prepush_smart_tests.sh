@@ -186,7 +186,6 @@ consume_override_grant() {
 # cheap (<1s, before any pytest) and names its remediation, consistent with
 # this hook's fail-loud doctrine: a gate that cannot run must be
 # indistinguishable from a failing gate.
-PREPUSH_200_HOSTNAME="${PREPUSH_200_HOSTNAME:-stickybeatz-studio}"
 
 # =============================================================================
 # Live-load host selection (OMN-16295)
@@ -210,9 +209,6 @@ PREPUSH_200_HOSTNAME="${PREPUSH_200_HOSTNAME:-stickybeatz-studio}"
 # on that silence is exactly how the 2026-07-24 / 2026-08-20 incidents
 # happened -- assumed headroom that was not there. "Neither host reachable"
 # refuses; it does not skip the check.
-PREPUSH_201_GATE_RUNNER_HOSTNAME="${PREPUSH_201_GATE_RUNNER_HOSTNAME:-gate-runner-201}"
-PREPUSH_200_SSH_TARGET="${PREPUSH_200_SSH_TARGET:-jonah@stickybeatz-studio.tail75df5e.ts.net}"  # onex-allow-internal-ip OMN-16295 reason="pre-push guard needs the real host target to probe live load"
-PREPUSH_201_SSH_TARGET="${PREPUSH_201_SSH_TARGET:-jonah@192.168.86.201}"  # onex-allow-internal-ip OMN-16295 reason="pre-push guard needs the real host target to probe live load" # fallback-ok: real .201 host target, not a dev/local placeholder
 # load1/cores at or under this ratio counts as "fit". 1.0 == "not
 # oversubscribed" (a standard load-average heuristic); correctly reads the
 # observed-fit `.201` snapshot (~0.4x, 2026-08-20) as fit and both observed
@@ -340,6 +336,9 @@ host_is_fit() {
 # item 3 -- the "three copies byte-identical" cross-repo assertion is not
 # implementable from a repo-local harness, so each repo pins the digest of the
 # copy it ships.
+# OMN-20939: this repo's deployment host table, found by the library through the
+# workspace-config resolver. The shared library carries no repo name.
+PREPUSH_PRIVATE_TABLE_REL="config/lab/prepush_hosts.omnibase_core.tsv"
 # shellcheck source=scripts/hooks/prepush_dispatch.sh
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/prepush_dispatch.sh"
 
@@ -461,7 +460,7 @@ guard_full_suite_host() {
   heavy_what="${1:-heavy fail-closed full-suite escalation}"
   host="$(hostname -s 2>/dev/null || true)"
   if [ -z "$host" ]; then
-    # Fail CLOSED (OMN-16489): see the routing note above PREPUSH_200_HOSTNAME.
+    # Fail CLOSED (OMN-16489): see the host-routing note above guard_full_suite_host.
     die "could not determine the local hostname while deciding where ${heavy_what} may run" \
         "heavy gate runs are routed by host identity (OMN-15059) and an unidentifiable host cannot be routed. Fix 'hostname -s' (macOS: 'sudo scutil --set HostName <name>'; Linux: 'hostnamectl set-hostname <name>'), or run the push from a designated gate host listed in ${PREPUSH_HOST_TABLE_REL}"
   fi
@@ -485,11 +484,16 @@ guard_full_suite_host() {
   # hostname above: heavy runs are routed by host identity, and identity that
   # cannot be resolved cannot be routed.
   if ! prepush_table_text > /dev/null 2>&1; then
-    die "the pre-push host table (${PREPUSH_HOST_TABLE_REL}) could not be read from HEAD, so no host can be identified as a designated gate host for ${heavy_what}" \
+    die "the pre-push host tables (${PREPUSH_HOST_TABLE_REL} and the deployment table ${PREPUSH_PRIVATE_TABLE_REL}) could not be read from HEAD, so no host can be identified as a designated gate host for ${heavy_what}" \
         "the table is read from the COMMITTED tree so an uncommitted row cannot self-designate this machine as an authorizing gate host. Commit ${PREPUSH_HOST_TABLE_REL} (or, if you have edited it, commit the edit so HEAD and the working tree agree), then re-push"
   fi
   label="$(prepush_identity_label "$lc_host" || true)"
   designated="$(prepush_designated_hostnames)"
+  if [ -z "$designated" ]; then
+    # OMN-20939: the shipped table designates no host. Say so, and say how to
+    # supply the deployment table, instead of failing without a reason.
+    log "NOTE: no designated gate host is configured -- $(prepush_private_table_status)"
+  fi
 
   if [ -n "$label" ]; then
     # OMN-16295: identity alone is not enough -- this known-good host must
@@ -598,8 +602,8 @@ guard_full_suite_host() {
     log "WARNING: DEGRADED-HOST OVERRIDE IN EFFECT (single-use grant consumed) -- running ${heavy_what} on '${host}', NOT a designated gate host (${designated}). This host has weaker isolation/headroom; treat any evidence from this run as WEAKER than a designated-host gate. See ${PREPUSH_HOST_TABLE_REL} for the designated set."
     return 0
   fi
-  die "${heavy_what} triggered on host '${host}', not the designated .200 build host ('${PREPUSH_200_HOSTNAME}') nor any other designated gate host (${designated})" \
-      "probed lab hosts: ${PREPUSH_PROBE_LOG:-none}. Push from a designated host, OR add/enable a lab host (the procedure is in ${PREPUSH_HOST_TABLE_REL}'s header), OR mint a single-use override grant to run the full suite on this host anyway (visible, receipted, degraded-evidence override -- do not use as a routine bypass): uv run python scripts/hooks/prepush_override_grant.py mint --reason '<why>'"
+  die "${heavy_what} triggered on host '${host}', not a designated gate host (${designated:-none configured})" \
+      "probed lab hosts: ${PREPUSH_PROBE_LOG:-none}. $(prepush_private_table_status). Push from a designated host, OR add/enable a lab host (the procedure is in ${PREPUSH_HOST_TABLE_REL}'s header), OR mint a single-use override grant to run the full suite on this host anyway (visible, receipted, degraded-evidence override -- do not use as a routine bypass): uv run python scripts/hooks/prepush_override_grant.py mint --reason '<why>'"
 }
 
 # -----------------------------------------------------------------------------

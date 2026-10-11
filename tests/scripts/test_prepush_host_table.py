@@ -41,6 +41,17 @@ import pytest
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
 )
+from tests.scripts._prepush_private_table import (
+    HOST_A,
+    HOST_B,
+    HOST_B_CONTAINER,
+    HOST_C,
+    HOST_D,
+    HOST_E,
+    PRIVATE_TABLE_REL,
+    SYNTHETIC_TABLE,
+    write_private_root,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HOOK = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
@@ -87,121 +98,43 @@ def test_table_exists_and_every_row_has_the_full_column_set() -> None:
         )
 
 
-def test_table_contents_are_pinned() -> None:
-    """The exact designated set, asserted.
+def test_the_shipped_table_carries_only_the_neutral_disabled_row() -> None:
+    """The shipped table is the schema plus one row that designates nothing.
 
-    This is the point of the file: the table decides which machines may
-    authorize a heavy gate run, so a row addition or a `mode` promotion must be
-    a reviewed, deliberate change and not a quiet edit.
+    A deployment's hosts live in its own private table (OMN-20939). The shipped
+    row is never probed and never an identity, so a checkout with no private
+    table has no designated host and says so instead of borrowing anyone's.
     """
-    got = {r[0]: (r[1], r[2], r[11]) for r in _rows()}
-    assert got == {
-        "h200": ("capacity", "stickybeatz-studio", "authorizing"),
-        "h201": ("capacity", "omninode-pc", "authorizing"),
-        "h201c": ("identity", "gate-runner-201", "authorizing"),
-        "h101": ("capacity", "stickybeatz", "authorizing"),
-        "h105": ("capacity", "omnibook", "authorizing"),
-        "hcloud": ("capacity", "onex-prepush-cloud1", "authorizing"),
-    }
-
-
-def test_201_host_is_designated_by_its_real_hostname() -> None:
-    """`.201`'s real `hostname -s` is `omninode-pc`; `gate-runner-201` is only
-    the CONTAINER's. Before OMN-16991 only the container name was designated,
-    so every push on the host itself needed an env override that the pytest
-    child's env scrub then stripped."""
-    hosts = {r[0]: r[2] for r in _rows()}
-    assert hosts["h201"] == "omninode-pc"
-    assert hosts["h201c"] == "gate-runner-201"
-
-
-def test_201_denies_no_repo_since_omn16989_closed() -> None:
-    """OMN-16989 recorded 15 "host-coupled" `omnibase_infra` failures and denied
-    the repo on `h201` because of them. Every one of those 15 was measured in
-    the `.201` **gate-runner container** -- a different execution environment
-    from the one this table addresses, which is the `.201` HOST over the
-    OMN-16991 remote leg (bundle transplant, `uv sync` in a fresh tree, the
-    wrapper's developer-shell PATH). Re-measured on the host over that real leg
-    the full `tests/unit/` selection is green, so the denial was pinning a
-    verdict from an environment the table never routes work to.
-
-    Denial is per-repo capacity policy, so lifting it is a reviewed table edit
-    plus a deliberate edit here -- the same two-step that guards a promotion."""
-    denied = {r[0]: r[10] for r in _rows()}
-    assert denied["h201"] == "-", (
-        "h201 must deny no repo: the OMN-16989 denial was lifted after a green "
-        "full tests/unit/ run on the host over the real remote leg"
-    )
-    assert all(v == "-" for v in denied.values()), (
-        f"no row should deny a repo today; got {denied}"
+    rows = _rows()
+    assert [r[0] for r in rows] == ["local"]
+    row = rows[0]
+    assert (row[1], row[2], row[3], row[8], row[11]) == (
+        "capacity",
+        "localhost",
+        "-",
+        "none",
+        "disabled",
     )
 
 
-def test_h105_is_authorizing_because_shadow_could_never_add_capacity() -> None:
-    """h105 (omnibook) is the only net-new host, and while it was `shadow` it
-    could not add a single unit of pre-push capacity -- by construction, not by
-    accident. A shadow row never authorizes, and the transplanted tree carries
-    this repo's own conftest guard, which refuses a full-suite target on any
-    host outside the authorizing set. So every heavy dispatch to a shadow h105
-    exited nonzero at `pytest_configure` and wrote a receipt whose
-    `pytest_exit != 0` is indistinguishable from a genuine red.
-
-    Promotion is the fix, and it is a reviewed table edit plus a deliberate
-    edit here -- exactly the two-step this file exists to force."""
-    modes = {r[0]: r[11] for r in _rows()}
-    assert modes["h105"] == "authorizing"
+_DEPLOYMENT_SHAPES = re.compile(
+    r"\b(?:10\.\d+\.\d+\.\d+"
+    r"|172\.(?:1[6-9]|2\d|3[01])\.\d+\.\d+"
+    r"|192\.168\.\d+\.\d+"
+    r"|100\.(?:6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d+\.\d+)\b"
+    r"|\.ts\.net\b"
+)
 
 
-def test_h101_is_authorizing_because_shadow_could_never_add_capacity() -> None:
-    """h101 (stickybeatz) was the last row stuck `disabled` (uv 0.8.3, below
-    the 0.11.0 floor). OMN-17161 upgraded uv to 0.12.7 and re-probed
-    non-interactively; the same shadow-can-never-authorize reasoning as h105
-    applies, so promotion is proven by a real full-suite dispatch to h101
-    rather than a preceding shadow day (see OMN-16991's own SUPERSEDED DoD
-    item)."""
-    modes = {r[0]: r[11] for r in _rows()}
-    assert modes["h101"] == "authorizing"
+def test_the_shipped_table_names_no_address_or_tailnet() -> None:
+    text = TABLE.read_text(encoding="utf-8")
+    assert _DEPLOYMENT_SHAPES.search(text) is None
 
 
-def test_h101_hostname_is_what_hostname_s_actually_prints() -> None:
-    """`ssh jonah@192.168.86.101 'hostname -s'` prints `Stickybeatz`, not
-    `stickybeatz.local`. The old value could never have matched an identity
-    check, so the row would have failed silently the moment it was promoted."""
-    hosts = {r[0]: r[2] for r in _rows()}
-    assert hosts["h101"] == "stickybeatz"
-    assert "." not in hosts["h101"], (
-        "the column holds `hostname -s` output, which is never dotted"
-    )
-
-
-def test_every_capacity_row_carries_an_absolute_uv_path_and_a_floor() -> None:
-    """uv is on no host's non-interactive PATH, and the live fleet spread is
-    0.8.3 -> 0.11.32 against a lockfile at revision 3. Presence is not enough;
-    the version floor is what makes a stale host skip rather than fail weirdly
-    mid-`uv sync`."""
-    for row in _rows():
-        if row[1] != "capacity":
-            continue
-        assert row[5].startswith("/"), (
-            f"{row[0]}: uv path must be absolute, got {row[5]!r}"
-        )
-        assert row[6][0].isdigit(), (
-            f"{row[0]}: expected a uv_min_version, got {row[6]!r}"
-        )
-
-
-def test_101_workroot_avoids_the_tcc_protected_tree() -> None:
-    """`ssh jonah@.101 'ls ~/Code'` returns `Operation not permitted`, so the
-    workroot must live outside it -- the bundle design never needs `~/Code` on
-    a remote host, which is what removes the out-of-band GUI grant step."""
-    workroots = {r[0]: r[7] for r in _rows()}
-    assert not workroots["h101"].startswith(
-        "/Users/jonah/Code"  # local-path-ok: the literal IS the assertion
-    )
-    assert (
-        workroots["h101"]
-        == "/Users/Shared/onex-prepush"  # local-path-ok: pins the table value
-    )
+def test_the_deployment_shape_check_has_a_positive_control() -> None:
+    assert _DEPLOYMENT_SHAPES.search("ssh " + ".".join(["192", "168", "1", "5"]))
+    assert _DEPLOYMENT_SHAPES.search("host.example-net.ts.net")
+    assert _DEPLOYMENT_SHAPES.search("local\tcapacity\tlocalhost") is None
 
 
 # =============================================================================
@@ -221,6 +154,7 @@ def _run_driver(repo_root: Path, body: str) -> subprocess.CompletedProcess[str]:
     script = f"""
 set -uo pipefail
 REPO_ROOT={repo_root}
+PREPUSH_PRIVATE_TABLE_REL={PRIVATE_TABLE_REL}
 PREPUSH_LOAD_THRESHOLD=1.0
 log() {{ printf '[t] %s\\n' "$1" >&2; }}
 die() {{ printf 'DIE: %s\\n' "$1" >&2; exit 1; }}
@@ -240,6 +174,9 @@ host_load_ratio() {{ return 1; }}
             **os.environ,
             "PREPUSH_LOAD_OVERRIDE_MAP": "",
             "PREPUSH_SLOT_OVERRIDE_MAP": "",
+            # The deployment table is the repo's sibling `workspace_config`
+            # directory: present for `table_repo`, absent for the synthetic repos.
+            "ONEX_WORKSPACE_CONFIG_ROOT": str(repo_root.parent / "workspace_config"),
         },
     )
 
@@ -305,9 +242,11 @@ def _repo_with_table(tmp_path: Path, table_text: str, name: str = "synth") -> Pa
 
 @pytest.fixture
 def table_repo(tmp_path: Path) -> Path:
-    """A throwaway repo whose HEAD carries the real table, so the tests
-    exercise the real `git show HEAD:` read path rather than a stub."""
+    """A throwaway repo whose HEAD carries the shipped table, beside a synthetic
+    deployment table, so the tests exercise the real `git show HEAD:` read path
+    rather than a stub."""
     repo = tmp_path / "repo"
+    write_private_root(tmp_path)
     (repo / "scripts" / "hooks").mkdir(parents=True)
     (repo / "scripts" / "hooks" / "prepush_hosts.tsv").write_text(
         TABLE.read_text(encoding="utf-8"), encoding="utf-8"
@@ -338,13 +277,149 @@ def table_repo(tmp_path: Path) -> Path:
 # =============================================================================
 
 
-def test_identity_accepts_the_real_201_hostname(table_repo: Path) -> None:
-    out = _driver(table_repo, "prepush_identity_label omninode-pc || echo NONE")
+# =============================================================================
+# The deployment table (OMN-20939)
+# =============================================================================
+
+
+def _rows_via_driver(repo: Path, env_extra: str = "") -> str:
+    return _driver_both(repo, f"{env_extra}\nprepush_table_rows | cut -f1,3,12")
+
+
+def test_the_deployment_table_rows_follow_the_shipped_neutral_row(
+    table_repo: Path,
+) -> None:
+    out = _driver(table_repo, "prepush_table_rows | cut -f1")
+    assert out.split() == ["local", "h200", "h201", "h201c", "h101", "h105", "hcloud"]
+
+
+def test_without_a_config_root_only_the_neutral_row_remains_and_the_status_says_how_to_supply_one(
+    tmp_path: Path,
+) -> None:
+    repo = _repo_with_table(tmp_path, TABLE.read_text(encoding="utf-8"), name="bare")
+    body = (
+        "unset ONEX_WORKSPACE_CONFIG_ROOT OMNI_HOME\n"
+        "echo ROWS=$(prepush_table_rows | cut -f1)\n"
+        "echo STATUS=$(prepush_private_table_status)\n"
+        "echo DESIGNATED=[$(prepush_designated_hostnames)]\n"
+    )
+    out = _driver(repo, body)
+    assert "ROWS=local" in out, out
+    assert "DESIGNATED=[]" in out, out
+    assert "NOT CONFIGURED" in out and "ONEX_WORKSPACE_CONFIG_ROOT" in out, out
+
+
+def test_a_config_root_without_the_table_is_the_neutral_case_not_an_error(
+    tmp_path: Path,
+) -> None:
+    repo = _repo_with_table(tmp_path, TABLE.read_text(encoding="utf-8"), name="empty")
+    (tmp_path / "workspace_config").mkdir()
+    body = (
+        "echo ROWS=$(prepush_table_rows | cut -f1)\n"
+        "echo STATUS=$(prepush_private_table_status)\n"
+    )
+    out = _driver(repo, body)
+    assert "ROWS=local" in out, out
+    assert f"{PRIVATE_TABLE_REL} is absent" in out, out
+
+
+def test_the_omni_home_sibling_is_the_default_root(tmp_path: Path) -> None:
+    repo = _repo_with_table(tmp_path, TABLE.read_text(encoding="utf-8"), name="sib")
+    omni_home = tmp_path / "omni_home"
+    omni_home.mkdir()
+    sibling = tmp_path / "omnibase_internal"
+    (sibling / PRIVATE_TABLE_REL).parent.mkdir(parents=True)
+    (sibling / PRIVATE_TABLE_REL).write_text(SYNTHETIC_TABLE, encoding="utf-8")
+    body = (
+        "unset ONEX_WORKSPACE_CONFIG_ROOT\n"
+        f"OMNI_HOME={omni_home}\n"
+        "echo ROWS=$(prepush_table_rows | cut -f1 | tr '\\n' ' ')\n"
+    )
+    out = _driver(repo, body)
+    assert "ROWS=local h200 h201 h201c h101 h105 hcloud" in out, out
+
+
+def _git_root_with_table(base: Path, *, commit: bool) -> Path:
+    root = base / "git_config_root"
+    target = root / PRIVATE_TABLE_REL
+    target.parent.mkdir(parents=True)
+    target.write_text(SYNTHETIC_TABLE, encoding="utf-8")
+    subprocess.run(
+        ["git", "init", "-q", "."],
+        cwd=root,
+        check=True,
+        env=scrub_git_location_env(os.environ),
+    )
+    if commit:
+        subprocess.run(
+            ["git", "add", "-A"],
+            cwd=root,
+            check=True,
+            env=scrub_git_location_env(os.environ),
+        )
+        subprocess.run(
+            ["git", "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "t"],
+            cwd=root,
+            check=True,
+            env=scrub_git_location_env(os.environ),
+        )
+    return root
+
+
+def _designated_with_root(repo: Path, root: Path) -> str:
+    body = (
+        f"ONEX_WORKSPACE_CONFIG_ROOT={root}\n"
+        "if prepush_table_text > /dev/null 2>&1; then echo READ=ok; else echo READ=refused; fi\n"
+        "echo DESIGNATED=[$(prepush_designated_hostnames)]\n"
+    )
+    return _driver(repo, body)
+
+
+def test_a_committed_deployment_table_in_a_git_root_is_read(tmp_path: Path) -> None:
+    repo = _repo_with_table(tmp_path, TABLE.read_text(encoding="utf-8"), name="gitok")
+    root = _git_root_with_table(tmp_path, commit=True)
+    out = _designated_with_root(repo, root)
+    assert "READ=ok" in out and HOST_A in out, out
+
+
+def test_an_uncommitted_edit_to_the_deployment_table_is_refused(tmp_path: Path) -> None:
+    repo = _repo_with_table(
+        tmp_path, TABLE.read_text(encoding="utf-8"), name="gitdirty"
+    )
+    root = _git_root_with_table(tmp_path, commit=True)
+    (root / PRIVATE_TABLE_REL).write_text(
+        SYNTHETIC_TABLE
+        + "hx\tcapacity\tself-designated\t-\t1\t-\t-\t-\tnone\t1\t-\tauthorizing\tforged\n",
+        encoding="utf-8",
+    )
+    out = _designated_with_root(repo, root)
+    assert "READ=refused" in out, out
+    assert "self-designated" not in out, out
+
+
+def test_a_deployment_table_never_committed_in_a_git_root_is_refused(
+    tmp_path: Path,
+) -> None:
+    repo = _repo_with_table(tmp_path, TABLE.read_text(encoding="utf-8"), name="gitnew")
+    root = _git_root_with_table(tmp_path, commit=False)
+    out = _designated_with_root(repo, root)
+    assert "READ=refused" in out, out
+
+
+def test_the_deployment_table_path_is_declared_by_the_caller_not_the_library() -> None:
+    hook = HOOK.read_text(encoding="utf-8")
+    assert f'PREPUSH_PRIVATE_TABLE_REL="{PRIVATE_TABLE_REL}"' in hook
+    lib = LIB.read_text(encoding="utf-8")
+    assert PRIVATE_TABLE_REL not in lib
+
+
+def test_identity_accepts_a_capacity_row_hostname(table_repo: Path) -> None:
+    out = _driver(table_repo, f"prepush_identity_label {HOST_B} || echo NONE")
     assert out.strip() == "h201"
 
 
-def test_identity_accepts_the_201_container_hostname(table_repo: Path) -> None:
-    out = _driver(table_repo, "prepush_identity_label gate-runner-201 || echo NONE")
+def test_identity_accepts_the_container_identity_hostname(table_repo: Path) -> None:
+    out = _driver(table_repo, f"prepush_identity_label {HOST_B_CONTAINER} || echo NONE")
     assert out.strip() == "h201c"
 
 
@@ -362,7 +437,7 @@ def test_a_shadow_host_is_not_a_designated_identity(tmp_path: Path) -> None:
 
 
 def test_a_disabled_host_is_not_a_designated_identity(table_repo: Path) -> None:
-    out = _driver(table_repo, "prepush_identity_label stickybeatz.local || echo NONE")
+    out = _driver(table_repo, "prepush_identity_label unlisted-host.local || echo NONE")
     assert out.strip() == "NONE"
 
 
@@ -375,7 +450,7 @@ def test_an_override_replaces_its_row_rather_than_adding_a_name(
     this machine, silently inverting the guard."""
     out = _driver(
         table_repo,
-        "PREPUSH_200_HOSTNAME=nope prepush_identity_label stickybeatz-studio || echo NONE",
+        f"PREPUSH_200_HOSTNAME=nope prepush_identity_label {HOST_A} || echo NONE",
     )
     assert out.strip() == "NONE"
 
@@ -383,7 +458,7 @@ def test_an_override_replaces_its_row_rather_than_adding_a_name(
 def test_the_per_row_override_can_de_designate_any_row(table_repo: Path) -> None:
     out = _driver(
         table_repo,
-        "PREPUSH_HOST_OVERRIDE_H201=nope prepush_identity_label omninode-pc || echo NONE",
+        f"PREPUSH_HOST_OVERRIDE_H201=nope prepush_identity_label {HOST_B} || echo NONE",
     )
     assert out.strip() == "NONE"
 
@@ -417,7 +492,7 @@ def _pick(
         f'export PREPUSH_LOAD_OVERRIDE_MAP="{load}"\n'
         f'export PREPUSH_SLOT_OVERRIDE_MAP="{slot}"\n'
         f'export PREPUSH_UV_OVERRIDE_MAP="{uv}"\n'
-        f"if pick_capacity_host stickybeatz-studio {repo_name}; then\n"
+        f"if pick_capacity_host {HOST_A} {repo_name}; then\n"
         '  echo "PICK=$PREPUSH_PICK_LABEL"\n'
         "else\n"
         '  echo "PICK=none"\n'
@@ -520,16 +595,6 @@ def test_a_repo_denied_host_is_never_chosen(tmp_path: Path) -> None:
     assert "PICK=hb" in out, out
 
 
-def test_no_row_denies_a_repo_today_so_the_rule_needs_a_synthetic_fixture() -> None:
-    """Guards the fixture choice above: the moment a real row denies a repo
-    again, this fails and tells the next author they may pin the live table."""
-    denied = {r[0]: r[10] for r in _rows()}
-    assert all(v == "-" for v in denied.values()), (
-        f"a row denies a repo again ({denied}) -- "
-        "test_a_repo_denied_host_is_never_chosen may pin the live table again"
-    )
-
-
 def test_a_disabled_host_is_never_probed(tmp_path: Path) -> None:
     """Driven off a synthetic table because the shipped one no longer carries
     a disabled row (h101 was promoted, OMN-17161); the RULE still has to hold
@@ -588,84 +653,10 @@ _SYNTHETIC_TABLE_MULTISLOT = (
 )
 
 
-def test_the_shipped_slots_column_is_pinned(table_repo: Path) -> None:
-    """h101 and h105 carry slots=2; every other row stays slots=1.
-
-    OMN-17159 pinned every row here at slots=1 and refused to inherit
-    omnibase_infra's widening, on an explicit premise: that this repo's
-    escalation is the whole `tests/` tree, so "two concurrent core suites on
-    h105's ten cores would make both slower than one serialized pair while
-    degrading the load signal every other row is ranked on." That premise was
-    a projection, and it is now falsified by direct measurement of the thing
-    it projected about -- a REAL core escalation on the remote leg.
-
-    Measured 2026-09-02T19:22Z by read-only `ps`/`uptime` over ssh, on two
-    hosts each carrying exactly one live governed core full-suite leg:
-
-    * h101 (12 cores, 32 GiB), run `omnibase_core-4e116501fd0a-37091`,
-      1h13m43s elapsed: the ENTIRE suite is ONE pytest process at 100.0% of
-      ONE core, RSS 670 MB (whole process tree: cpu_sum 100.0%, rss_sum
-      671 MB, 2 processes). load1 2.96/12 = 0.25x.
-    * h105 (10 cores, 32 GiB), run `omnibase_core-e69568dd5e02-80404`,
-      1h49m49s elapsed: same shape, one process, RSS 700 MB. load1 at
-      19:22:08Z 4.07/10 = 0.41x while that host was carrying TWO concurrent
-      core pytest invocations (the single-threaded leg plus a second `-n4`
-      one) -- an accidental but on-point datapoint that a 10-core M4 is
-      nowhere near saturated by two concurrent core suites.
-
-    A core lane costs one core and ~0.7 GB, not the machine. Two of them cost
-    two cores of ten (0.2x) and ~1.4 GB of 32 GiB -- so the serialization the
-    old pin bought was not protecting the host from saturation, it was
-    idling 8-11 cores per host while six lanes queued for a placement target.
-    The load1 signal is not degraded either: it is re-measured per slot at
-    pick time and 2/10 stays an order of magnitude under the 1.0x threshold.
-
-    The widening survives OMN-17603 restoring `-n4` on the remote leg: two
-    4-way suites is 8 of h105's 10 cores (0.8x, still under threshold) and 8
-    of h101's 12 (0.67x), at ~2.8 GB per suite by the per-worker RSS measured
-    above -- 5.6 GB of 32 GiB. It does NOT survive a widening past 2, which
-    would put h105 over the threshold under `-n4`; slots=3 needs its own
-    measurement, exactly as this one did.
-
-    h200 and h201 are deliberately NOT widened: h200 is the local/default
-    identity host rather than a distribution target, and h201 runs the
-    separate `~/push-lanes/QUEUE` serializer (slot_mode=queue), a different
-    concurrency mechanism this column does not govern. h201c never executes.
-
-    `hcloud` -- the AWS overflow row this same PR adds (OMN-16634) -- also
-    stays slots=1, and NOT by inheriting the old blanket pin. The h101/h105
-    widening above is earned by a measurement of those two hosts; no such
-    measurement of the EC2 host exists, and the row is an overflow target that
-    is only reached once the lab is saturated anyway. Widening it is a separate,
-    measured change, exactly as this one was.
-
-    Widening a row's capacity stays the kind of change this file exists to
-    force through a reviewed, deliberate test edit (same reasoning as the
-    mode-promotion pins above)."""
-    slots = {r[0]: r[9] for r in _rows()}
-    assert slots == {
-        "h200": "1",
-        "h201": "1",
-        "h201c": "1",
-        "h101": "2",
-        "h105": "2",
-        "hcloud": "1",
-    }
-
-
-def test_a_widened_shipped_row_places_a_second_lane_when_slot_one_is_held(
+def test_a_widened_row_places_a_second_lane_when_slot_one_is_held(
     table_repo: Path,
 ) -> None:
-    """The point of the widening, asserted against the REAL shipped table.
-
-    Before OMN-17602 this behaviour was only ever exercised on the synthetic
-    `hm` fixture below, because no shipped row declared slots>1 -- so the
-    table could have been widened wrongly (a typo, a column shift) and every
-    slot test would still have passed. Measured live 2026-09-02T19:11Z:
-    across h105 (121 run dirs) and h101 (73), `LOCK.2` has never once been
-    created and no `slots/` directory exists, i.e. the fleet has never taken
-    a second slot for ANY repo -- which is what an unexercised path looks
-    like from the outside.
+    """The point of a widened row, asserted through the deployment table path.
 
     With slot 1 held and slot 2 re-qualified on its own live load, the picker
     must offer `h105.2` rather than reporting a placement miss."""
@@ -1372,7 +1363,7 @@ def test_the_picker_scans_every_row_even_when_a_probe_consumes_stdin(
         'host_load_ratio() { while IFS= read -r _junk; do :; done; printf "1.0 10 0.10\\n"; }\n'
         "prepush_slot_state() { while IFS= read -r _junk; do :; done; PREPUSH_SLOT_DETAIL=stub; return 0; }\n"
         "prepush_uv_version_ok() { while IFS= read -r _junk; do :; done; PREPUSH_UV_VERSION_SEEN=9.9.9; return 0; }\n"
-        "pick_capacity_host stickybeatz-studio omnibase_core > /dev/null 2>&1 || true\n"
+        f"pick_capacity_host {HOST_A} omnibase_core > /dev/null 2>&1 || true\n"
         'echo "PROBE=$PREPUSH_PROBE_LOG"\n'
     )
     out = _driver(table_repo, body)
@@ -1658,6 +1649,7 @@ def remote_run_env(tmp_path: Path) -> dict[str, Path]:
         # on BOTH the `sync` and the pytest invocation, so a wrapper that
         # establishes the registry too late (after `uv sync`) is still caught.
         'printf "%s\\n" "${OMNI_HOME:-<unset>}" > "$OMNI_HOME_WITNESS"\n'
+        'printf "%s\\n" "${ONEX_WORKSPACE_CONFIG_ROOT:-<unset>}" > "$OMNI_HOME_WITNESS.cfg"\n'
         'if [ "$1" = "sync" ]; then exit 0; fi\n'
         # Proof that the target-host slot is held for the DURATION of the run,
         # not merely acquired and dropped before the expensive part.
@@ -1684,6 +1676,7 @@ def _run_wrapper(
     extra_env: dict[str, str] | None = None,
     extra_argv: list[str] | None = None,
     repo: str = "omnibase_core",
+    private_rel: str = "",
 ) -> subprocess.CompletedProcess[str]:
     env = {
         **os.environ,
@@ -1697,6 +1690,7 @@ def _run_wrapper(
     # would let a wrapper that establishes nothing pass the registry assertions
     # on the launcher's value.
     env.pop("OMNI_HOME", None)
+    env.pop("ONEX_WORKSPACE_CONFIG_ROOT", None)
     env.update(extra_env or {})
     # The wrapper's trailing positionals are optional on the remote side but
     # POSITIONAL, so they are padded here rather than appended: a caller that
@@ -1719,6 +1713,7 @@ def _run_wrapper(
             base_sha,
             slot,
             repo,
+            private_rel,
         ],
         capture_output=True,
         text=True,
@@ -1727,6 +1722,31 @@ def _run_wrapper(
         stdin=subprocess.DEVNULL,
         env=env,
     )
+
+
+def test_the_remote_leg_lays_the_shipped_deployment_table_where_the_guard_reads_it(
+    remote_run_env: dict[str, Path],
+) -> None:
+    """OMN-20939: the bundle carries no deployment rows, so the dispatching side
+    ships the rows it verified beside the bundle and the wrapper points the
+    target's workspace-config resolver at them."""
+    rundir = remote_run_env["rundir"]
+    (rundir / "host_table_private.tsv").write_text(SYNTHETIC_TABLE, encoding="utf-8")
+    result = _run_wrapper(remote_run_env, private_rel=PRIVATE_TABLE_REL)
+    assert result.returncode == 0, result.stderr
+    cfg = Path(str(remote_run_env["omni_home_witness"]) + ".cfg")
+    root = Path(cfg.read_text().strip())
+    assert root == rundir / "workspace_config"
+    assert (root / PRIVATE_TABLE_REL).read_text(encoding="utf-8") == SYNTHETIC_TABLE
+
+
+def test_the_remote_leg_sets_no_config_root_when_no_table_was_shipped(
+    remote_run_env: dict[str, Path],
+) -> None:
+    result = _run_wrapper(remote_run_env, private_rel=PRIVATE_TABLE_REL)
+    assert result.returncode == 0, result.stderr
+    cfg = Path(str(remote_run_env["omni_home_witness"]) + ".cfg")
+    assert cfg.read_text().strip() == "<unset>"
 
 
 def test_the_remote_leg_holds_the_target_hosts_lock_for_the_whole_run(
@@ -2065,7 +2085,11 @@ _GIT_SCOPING_ENV_VARS = (
 )
 
 
-def _designated_from(repo: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[str, ...]:
+def _designated_from(
+    repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    config_root: Path | None = None,
+) -> tuple[str, ...]:
     """`designated_hostnames()` resolved against REPO's committed table.
 
     A live `git push` exports GIT_DIR/GIT_WORK_TREE into hook children and they
@@ -2077,30 +2101,39 @@ def _designated_from(repo: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[str, 
     for var in _GIT_SCOPING_ENV_VARS:
         monkeypatch.delenv(var, raising=False)
     monkeypatch.chdir(repo)
-    return designated_hostnames(env={})
+    env = {"ONEX_WORKSPACE_CONFIG_ROOT": str(config_root)} if config_root else {}
+    return designated_hostnames(env=env)
 
 
-def test_the_conftest_guard_reads_the_same_committed_table_as_the_bash_guard(
+def test_the_conftest_guard_reads_the_same_tables_as_the_bash_guard(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     repo = _repo_with_table(tmp_path, TABLE.read_text(encoding="utf-8"), name="shipped")
-    assert _designated_from(repo, monkeypatch) == (
-        "stickybeatz-studio",
-        "omninode-pc",
-        "gate-runner-201",
-        "stickybeatz",
-        "omnibook",
-        "onex-prepush-cloud1",
+    root = write_private_root(tmp_path)
+    assert _designated_from(repo, monkeypatch, root) == (
+        HOST_A,
+        HOST_B,
+        HOST_B_CONTAINER,
+        HOST_C,
+        HOST_D,
+        HOST_E,
     )
 
 
-def test_omnibook_can_now_produce_a_green_full_suite_verdict(
+def test_the_conftest_guard_designates_nothing_without_a_deployment_table(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The end of finding 4, asserted on the exact decision function that
-    refused: with h105 authorizing, a full-suite target transplanted to
-    omnibook is no longer rejected at pytest_configure, so a dispatch there can
-    return a verdict that means something."""
+    repo = _repo_with_table(tmp_path, TABLE.read_text(encoding="utf-8"), name="bare")
+    assert _designated_from(repo, monkeypatch) == ()
+    assert _designated_from(repo, monkeypatch, tmp_path / "no-such-root") == ()
+
+
+def test_a_designated_deployment_host_can_produce_a_green_full_suite_verdict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With the host authorizing in the deployment table, a full-suite target
+    transplanted to it is not rejected at pytest_configure, so a dispatch there
+    can return a verdict that means something."""
     from scripts.hooks.pytest_full_suite_host_guard import (
         full_suite_host_violation_message,
     )
@@ -2108,16 +2141,30 @@ def test_omnibook_can_now_produce_a_green_full_suite_verdict(
     repo = _repo_with_table(
         tmp_path, TABLE.read_text(encoding="utf-8"), name="shipped2"
     )
-    names = _designated_from(repo, monkeypatch)
+    names = _designated_from(repo, monkeypatch, write_private_root(tmp_path))
     assert (
         full_suite_host_violation_message(
-            host="omnibook",
+            host=HOST_D,
             target_hostname=names[0],
             additional_target_hostnames=names[1:],
             override_authorized=False,
         )
         is None
     )
+
+
+def test_a_host_with_no_configured_table_gets_a_not_configured_refusal() -> None:
+    from scripts.hooks.pytest_full_suite_host_guard import (
+        full_suite_host_violation_message,
+    )
+
+    message = full_suite_host_violation_message(
+        host="some-laptop", target_hostname="", override_authorized=False
+    )
+    assert message is not None
+    assert "no gate host is configured" in message
+    assert PRIVATE_TABLE_REL in message
+    assert "ONEX_WORKSPACE_CONFIG_ROOT" in message
 
 
 def test_a_shadow_row_is_still_refused_by_the_conftest_guard(

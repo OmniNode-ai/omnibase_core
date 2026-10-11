@@ -61,6 +61,7 @@ from scripts.ci.test_selection_closure import TEST_UNIT_PREFIX
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 from tests.scripts._prepush_lab_isolation import network_free_lab_env
+from tests.scripts._prepush_private_table import SYNTHETIC_TABLE
 
 HOOK_SCRIPT = REPO_ROOT / "scripts" / "hooks" / "prepush_smart_tests.sh"
 
@@ -79,7 +80,7 @@ def _nonmatching_host_overrides() -> dict[str, str]:
     OTHER capacity row (h101, h105, h201, hcloud) still matches its live
     hostname when this suite runs ON that host, which flips these refusal
     proofs into the designated-host branch instead. Measured live on
-    onex-prepush-cloud1 (OMN-16634, 2026-09-01): the hook answered with the
+    an overflow host (OMN-16634, 2026-09-01): the hook answered with the
     slot/placement refusal, not the identity refusal, and the assertion on
     the message text went red -- the same false-red class was latent for any
     full-suite dispatch of THIS repo to h101/h105 since OMN-17159 added those
@@ -88,7 +89,10 @@ def _nonmatching_host_overrides() -> dict[str, str]:
     refusal proof host-independent on every current and future table row.
     """
     env: dict[str, str] = {}
-    for raw in _HOST_TABLE.read_text(encoding="utf-8").splitlines():
+    # The shipped table is neutral; the authorizing rows are the deployment
+    # table's, which these tests supply synthetically (OMN-20939).
+    table_text = _HOST_TABLE.read_text(encoding="utf-8") + SYNTHETIC_TABLE
+    for raw in table_text.splitlines():
         line = raw.split("#", 1)[0]
         if not line.strip():
             continue
@@ -230,7 +234,7 @@ def test_guard_refuses_full_suite_escalation_on_non_200_host() -> None:
         f"non-.200 host; got exit {result.returncode}. "
         f"stdout={result.stdout!r} stderr={result.stderr!r}"
     )
-    assert "not the designated .200 build host" in result.stderr, (
+    assert "not a designated gate host" in result.stderr, (
         f"expected the refusal message in stderr, got: {result.stderr!r}"
     )
     assert "collected" not in result.stdout, (
@@ -595,7 +599,7 @@ def test_guard_refuses_selector_whole_tree_sentinel_when_flag_is_false(
         f"exit {result.returncode}. "
         f"stdout={result.stdout!r} stderr={result.stderr!r}"
     )
-    assert "not the designated .200 build host" in result.stderr, (
+    assert "not a designated gate host" in result.stderr, (
         f"expected the refusal message in stderr, got: {result.stderr!r}"
     )
     assert "STUB-PYTEST-INVOKED" not in result.stdout, (
@@ -623,7 +627,7 @@ def test_guard_allows_a_narrow_selection_under_the_sentinel_on_a_local_host(
         f"non-.200 host; got exit {result.returncode}. "
         f"stdout={result.stdout!r} stderr={result.stderr!r}"
     )
-    assert "not the designated .200 build host" not in result.stderr, (
+    assert "not a designated gate host" not in result.stderr, (
         f"the guard must NOT refuse a proper narrowing; stderr: {result.stderr!r}"
     )
     assert "STUB-PYTEST-INVOKED" in result.stdout, (
@@ -689,7 +693,7 @@ def test_guard_refuses_whole_suite_equivalent_selection_when_flag_is_false(
         "even though is_full_suite=False; got exit "
         f"{result.returncode}. stdout={result.stdout!r} stderr={result.stderr!r}"
     )
-    assert "not the designated .200 build host" in result.stderr, (
+    assert "not a designated gate host" in result.stderr, (
         f"expected the refusal message in stderr, got: {result.stderr!r}"
     )
     assert "STUB-PYTEST-INVOKED" not in result.stdout, (
@@ -717,7 +721,7 @@ def test_guard_allows_a_genuinely_narrow_selection_on_a_local_host(
         f"host; got exit {result.returncode}. "
         f"stdout={result.stdout!r} stderr={result.stderr!r}"
     )
-    assert "not the designated .200 build host" not in result.stderr, (
+    assert "not a designated gate host" not in result.stderr, (
         f"the guard must NOT refuse a proper narrowing; stderr: {result.stderr!r}"
     )
     assert "STUB-PYTEST-INVOKED" in result.stdout, (
