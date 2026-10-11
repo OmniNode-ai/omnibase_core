@@ -1,0 +1,68 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21008
+title: 'OCC retirement S8 (omnibase_core): the pr-title check runs omnimarket''s node, not the change-control
+  reusable'
+summary: The required context pr-title / check-title was produced by the check-title bash step of onex_change_control's
+  pr-title-check-reusable.yml. omnibase_core's PR Title Check job now runs omnimarket's node_pr_title_check_compute
+  from a pinned published release under the same job id and context name, so branch protection does not
+  change, and the manifest row names the local producer.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21008
+    statement: omnibase_core's PR Title Check job runs omnimarket's node_pr_title_check_compute from a
+      pinned published release and keeps the pr-title / check-title context.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: omnibase_core''s PR Title Check workflow produces `pr-title / check-title` by
+          running node_pr_title_check_compute from a pinned published omnimarket release, and no workflow
+          line in pr-title-check.yml references onex_change_control -- falsifier: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py
+          -q -n 0 fails when parsing the merge-base workflow.'
+      - id: AC2
+        statement: 'AC2: the installed release node''s verdicts equal the old reusable''s bash verdicts
+          on a table of titles and authors covering every exempt prefix, the bot rule, a passing OMN title
+          and a failing bare title -- falsifier: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py
+          -q -n 0 fails on any case run through the installed node.'
+      - id: AC3
+        statement: 'AC3: .github/required-checks.yaml names the `pr-title / check-title` row as a local
+          producer for pr-title-check.yml job pr-title with no cross_repo_ref to onex_change_control --
+          falsifier: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py -q -n 0 fails when
+          parsing the merge-base manifest row.'
+evidence_requirements:
+  - kind: tests
+    description: Workflow, installed-node verdict parity against the old reusable's bash, and local-producer
+      manifest assertions.
+    command: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py -q -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21008-ac1-workflow
+    description: The workflow runs the pinned published node under the unchanged context and no longer
+      references the change-control repository.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py -q -n 0
+    binds_ac:
+      - AC1
+  - id: dod-omn21008-ac2-verdicts
+    description: The installed release node agrees with the old reusable's bash decision on the title
+      table.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py -q -n 0
+    binds_ac:
+      - AC2
+  - id: dod-omn21008-ac3-manifest
+    description: The required-check manifest row names the local producer with no cross_repo_ref.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py -q -n 0
+    binds_ac:
+      - AC3

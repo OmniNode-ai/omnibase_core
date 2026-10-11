@@ -205,13 +205,13 @@ gates:
 
   - name: "pr-title / check-title"
     mode: REQUIRED
-    producer_kind: cross_repo
-    caller_workflow: pr-title-check.yml
-    caller_job: pr-title
-    cross_repo_ref: "OmniNode-ai/onex_change_control/.github/workflows/pr-title-check-reusable.yml@main"
+    producer_kind: local
+    workflow: pr-title-check.yml
+    job_path: ["pr-title"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection (cross-repo reusable
-      caller)."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-21008: the job
+      pr-title runs omnimarket's node_pr_title_check_compute from a pinned published release under the
+      context name the former reusable call produced."
 
   - name: "no-plugin-daemon-classes"
     mode: REQUIRED
