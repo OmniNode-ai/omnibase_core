@@ -29,13 +29,19 @@ OCC = "OmniNode-ai/onex_change_control"
 SHA = "a" * 40
 
 
-def candidate(number: int = 7001, *, title: str | None = None) -> dict[str, object]:
-    return {
+def candidate(
+    number: int = 7001, *, title: str | None = None, merged_at: str | None = None
+) -> dict[str, object]:
+    record: dict[str, object] = {
         "number": number,
         "title": title or f"evidence(OMN-18338): OCC companion for {REPO}#2500",
         "state": "MERGED",
         "mergeCommit": {"oid": SHA},
     }
+    if merged_at is not None:
+        record["mergedAt"] = merged_at
+        record["baseRefName"] = "dev"
+    return record
 
 
 class RecordedGh(GhCli, GhFetcher):
@@ -74,6 +80,14 @@ class RecordedGh(GhCli, GhFetcher):
         ("Evidence-Source: OCC#9999", [candidate()], True),
         ("Evidence-Source: OCC#7001", [], True),
         ("description lost its line", [candidate(), candidate(7002)], False),
+        (
+            "Evidence-Source: OCC#7002",
+            [
+                candidate(merged_at="2026-10-11T14:15:00Z"),
+                candidate(7002, merged_at="2026-10-10T19:00:00Z"),
+            ],
+            True,
+        ),
         ("description lost its line", None, False),
         (
             "description lost its line",
@@ -87,6 +101,7 @@ class RecordedGh(GhCli, GhFetcher):
         "wrong-line",
         "legacy",
         "ambiguous",
+        "latest-of-two",
         "unreadable",
         "number-trap",
     ],
@@ -157,6 +172,22 @@ def test_batch_companion_names_product_in_its_record() -> None:
     assert "OCC#7001" in (body or "")
     assert state == "MERGED"
     assert sha == SHA
+
+
+def test_receipt_resolution_names_latest_merged_companion(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """OMN-20978: the receipt-gate probe resolves several merged companions."""
+    records = [
+        candidate(7001, merged_at="2026-10-10T19:00:00Z"),
+        candidate(7002, merged_at="2026-10-11T14:15:00Z"),
+    ]
+    rc = main(
+        ["--repo", REPO, "--pr-number", "2500", "--resolve-evidence-source"],
+        gh=RecordedGh("Evidence-Source: OCC#7001", records),
+    )
+    assert rc == 0
+    assert capsys.readouterr().out == "OCC#7002\n"
 
 
 @pytest.mark.parametrize("body", ["lost line", "Evidence-Source: OCC#7001"])

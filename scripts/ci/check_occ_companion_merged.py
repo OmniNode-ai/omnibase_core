@@ -69,6 +69,7 @@ import sys
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Protocol
 
 OCC_REPO_DEFAULT = "OmniNode-ai/onex_change_control"
@@ -218,7 +219,7 @@ class GhFetcher:
                 "--search",
                 f'"{basename}" "{pr_number}" in:title,body',
                 "--json",
-                "number,title,body,state,mergeCommit",
+                "number,title,body,state,mergeCommit,mergedAt,baseRefName",
                 "--limit",
                 "50",
             ]
@@ -254,7 +255,12 @@ def parse_evidence_source(body: str) -> str | None:
 def select_merged_companion(
     candidates: Sequence[object], repo: str, pr_number: str
 ) -> tuple[str | None, str]:
-    """OMN-18338: resolve one distinct merged companion, failing closed on ties."""
+    """OMN-18338: resolve one merged companion naming the product PR.
+
+    Several distinct merged companions resolve to the latest merged one
+    (OMN-20978, see :func:`_latest_merged_companion`); any shape that rule
+    cannot order still fails closed with an ``ambiguous`` detail.
+    """
     basename = repo.rsplit("/", 1)[-1]
     title_re = re.compile(
         rf"OCC companion for (?:{re.escape(repo.rsplit('/', 1)[0])}/)?{re.escape(basename)}"
@@ -272,7 +278,7 @@ def select_merged_companion(
     batch_member_re = re.compile(
         rf"^- {re.escape(repo)}#{re.escape(pr_number)}\s*$", re.MULTILINE
     )
-    numbers: set[int] = set()
+    matched: dict[int, dict[str, object]] = {}
     for candidate in candidates:
         if not isinstance(candidate, dict):
             continue
@@ -289,14 +295,75 @@ def select_merged_companion(
             continue
         number = candidate.get("number")
         if isinstance(number, int):
-            numbers.add(number)
-    if not numbers:
+            matched.setdefault(number, candidate)
+    if not matched:
         return None, "no merged companion"
-    if len(numbers) > 1:
-        refs = ", ".join(f"OCC#{number}" for number in sorted(numbers))
-        return None, f"ambiguous merged companions: {refs}"
-    ref = f"OCC#{next(iter(numbers))}"
-    return ref, f"merged companion {ref} resolved from the change-control record"
+    if len(matched) == 1:
+        ref = f"OCC#{next(iter(matched))}"
+        return ref, f"merged companion {ref} resolved from the change-control record"
+    return _latest_merged_companion(matched)
+
+
+def _parse_merged_at(value: object) -> datetime | None:
+    """A timezone-aware merge time from ``gh``'s ``mergedAt``, else ``None``."""
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo is not None else None
+
+
+def _latest_merged_companion(
+    matched: dict[int, dict[str, object]],
+) -> tuple[str | None, str]:
+    """OMN-20978: two or more merged companions name one product PR.
+
+    This is the ordinary state of a PR whose head moved after its first
+    companion merged: each head gets its own companion and each one merges.
+    Every one of them is durable evidence, so refusing them all (the OMN-18338
+    behaviour) left the PR waiting on a record that could never change.
+
+    The companion merged LAST into the shared base is the one to cite: the
+    change-control branch is squash-only and linear, so that merge commit has
+    every earlier companion's merge commit as an ancestor, and a tree checked
+    out at it (receipt-gate) or at a tip containing it (occ-preflight) carries
+    every record the earlier ones did. Picking it can therefore never hide
+    evidence another candidate would have shown.
+
+    That argument holds only when the candidates merged into the same branch
+    at distinct, readable times, so every other shape still fails closed with
+    an ``ambiguous`` detail: a merge time missing or unparseable, candidates
+    merged into different bases, or two candidates sharing the latest time.
+    """
+    refs = ", ".join(f"OCC#{number}" for number in sorted(matched))
+    timed: list[tuple[datetime, int]] = []
+    bases: set[str] = set()
+    for number, candidate in matched.items():
+        merged_at = _parse_merged_at(candidate.get("mergedAt"))
+        if merged_at is None:
+            return None, (
+                f"ambiguous merged companions: {refs} (OCC#{number} has no "
+                "readable merge time)"
+            )
+        timed.append((merged_at, number))
+        bases.add(str(candidate.get("baseRefName") or ""))
+    if len(bases) != 1 or "" in bases:
+        return None, (
+            f"ambiguous merged companions: {refs} (merged into different or "
+            "unreadable base branches)"
+        )
+    timed.sort()
+    if timed[-1][0] == timed[-2][0]:
+        return None, (
+            f"ambiguous merged companions: {refs} (two share the latest merge time)"
+        )
+    ref = f"OCC#{timed[-1][1]}"
+    return ref, (
+        f"merged companion {ref} resolved from the change-control record as the "
+        f"latest merged of {refs} (OMN-20978)"
+    )
 
 
 class MergedCompanionPort(Protocol):
@@ -313,7 +380,9 @@ def resolve_evidence_source_from_record(
     """OMN-18338: companion-side binding wins; a legacy citation is a fallback.
 
     Unreadable and ambiguous records never license trusting a conflicting body.
-    The caller either retries or fails closed on ValueError.
+    Several merged companions that the latest-merge rule orders are not
+    ambiguous (OMN-20978). The caller either retries or fails closed on
+    ValueError.
     """
     candidates = fetcher.merged_companion_candidates(occ_repo, repo, pr_number)
     if candidates is None:
