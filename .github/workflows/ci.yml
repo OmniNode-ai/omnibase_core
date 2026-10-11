@@ -186,6 +186,30 @@ jobs:
     permissions:
       contents: read
 
+  # OMN-20940: deployment and lab configuration never lives in a shipped
+  # repository, and the check that refuses it is a required context here, as in
+  # every other shipped repository: `public-repo-hygiene / deployment-config`.
+  # The caller job id is `public-repo-hygiene` and the reusable's job name is
+  # `deployment-config`, so the context reads exactly as the other repositories'
+  # standalone public-repo-hygiene.yml caller spells it. It is a job in this
+  # file, not a workflow of its own, because the OMN-14907 ratchet locks the
+  # count of pull_request-triggered workflow files and only lets it fall. The
+  # deployment-config job reads no private vocabulary and uses no secret, so it
+  # runs on a fork pull request. The whole-tree hygiene job in the same reusable
+  # runs in report mode, as it does everywhere the gate was adopted
+  # (.public-repo-hygiene.yaml), and is not a required context. The immutable
+  # caller pin is the single source of truth: the reusable checks its validator
+  # out at the pinned SHA, and the pre-commit hook in .pre-commit-config.yaml
+  # runs the same commit.
+  public-repo-hygiene:
+    if: github.event_name == 'pull_request' && github.base_ref == 'dev'
+    uses: OmniNode-ai/omniclaude/.github/workflows/public-repo-hygiene-reusable.yml@0c9f9146d8dd0446fc5c10952aa57247b3a880ae
+    with:
+      mode: report
+    secrets: inherit
+    permissions:
+      contents: read
+
   # OMN-18865: the pre-merge twin of the OMN-14631 workspace content-parity
   # gate. It proves this repository's built wheel carries byte-for-byte the
   # tracked source tree under src/omnibase_core, plus whatever this repo
@@ -4833,7 +4857,7 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: OmniNode-ai/onex_change_control/.github/actions/validate-boundaries@77f63a25b67db14dbca603ed8f841c3c5c4ee93e # dev
+      - uses: OmniNode-ai/omnibase_core/.github/actions/validate-boundaries@de3398d1fcf7a6f48451f680b74b1a6c6c383b8a # omnibase_core dev (OMN-20074 H/F)
         with:
           checks: "boundary-parity"
           warn-only: "false"

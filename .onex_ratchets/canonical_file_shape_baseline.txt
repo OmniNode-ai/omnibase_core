@@ -15,7 +15,6 @@
 .pre-commit-hooks/reject-required-check-skip-vector.sh
 architecture-handshakes/_parse_repos_conf.sh
 architecture-handshakes/check-handshake.sh
-architecture-handshakes/check-policy-gate.sh
 architecture-handshakes/install.sh
 examples/__init__.py
 examples/contract_validator_usage.py
@@ -79,7 +78,6 @@ scripts/fix_dict_any_violations.py
 scripts/gen_config_overlay_schemas.py
 scripts/gen_feature_flag_catalog.py
 scripts/gen_hook_bits.py
-scripts/grant-skip-approval.sh
 scripts/hooks/prepush_dispatch.sh
 scripts/hooks/prepush_override_grant.py
 scripts/hooks/prepush_smart_tests.sh

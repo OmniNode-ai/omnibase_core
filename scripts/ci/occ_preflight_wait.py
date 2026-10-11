@@ -91,8 +91,10 @@ Companion-side binding (OMN-18338)
 The existing merged-companion gate owns the binding resolver. This poller and
 receipt-gate's ``--resolve-evidence-source`` probe share it: one uniquely merged
 record naming the product PR wins over an absent or conflicting body citation.
-With no matching record the legacy citation path is unchanged. Ambiguous,
-unreadable or capped lookups never grant a pass. No product description is
+With no matching record the legacy citation path is unchanged. Several merged
+records naming one PR resolve to the one merged last into their shared base
+(OMN-20978). Records that rule cannot order, and unreadable or capped lookups,
+never grant a pass. No product description is
 rewritten; only the poll's local decision input uses the resolved reference.
 
 The third consumer (OMN-18882)

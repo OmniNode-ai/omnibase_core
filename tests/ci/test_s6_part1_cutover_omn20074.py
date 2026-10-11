@@ -144,7 +144,8 @@ def test_green_base_branch_trigger_row_satisfies_ci_summary() -> None:
 
 
 def test_evidence_caller_stops_comparing_with_occ_after_part_2() -> None:
-    # Part 2 deletes the OCC callers and stops waiting for their verdict.
+    # OMN-20969 stopped the comparison on dev first; part 2 deletes the OCC
+    # callers, so nothing turns it back on.
     job = yaml.safe_load(EVIDENCE_CALLER.read_text(encoding="utf-8"))["jobs"][
         "repo-evidence"
     ]

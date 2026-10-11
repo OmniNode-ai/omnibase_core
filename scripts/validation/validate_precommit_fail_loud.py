@@ -56,10 +56,10 @@ _DEGRADE_RE = re.compile(r"not\s+found", re.IGNORECASE)
 _EXIT_ZERO_RE = re.compile(r"\bexit\s+0\b")
 _WINDOW = 6  # lines of look-back from an `exit 0` for a degrade signal
 
-# Env-var-name shapes commonly used for undocumented gate bypasses. The
-# sanctioned bypass (`# skip-token-allowed: <receipt-id>`) is a *comment*
-# marker checked by reject-deploy-gate-skip-token.sh, not an env-var
-# conditional, and is not matched by this pattern. Identifiers ending in
+# Env-var-name shapes commonly used for undocumented gate bypasses. There is
+# no sanctioned bypass (OMN-20074): a gate that must let something through
+# gets a reviewed suppression marker with a reason, never an env-var toggle.
+# Identifiers ending in
 # PATTERN/REGEX (e.g. $SKIP_PATTERN, a regex literal, not a toggle) are
 # excluded -- they are pattern-holder variables, not bypass flags.
 _SKIP_ENV_VAR_RE = re.compile(
@@ -118,9 +118,9 @@ def _scan_text(source: str, label: str) -> list[str]:
         ) and any("if" in w or "&&" in w for w in window):
             violations.append(
                 f"{label}:{idx + 1}: `exit 0` conditioned on a SKIP/BYPASS-shaped "
-                f"env var -- undocumented env-var bypasses defeat the gate. Route "
-                f"through the sanctioned `# skip-token-allowed: <receipt-id>` "
-                f"escape hatch (CLAUDE.md Rule #10) or suppress a reviewed false "
+                f"env var -- undocumented env-var bypasses defeat the gate, and "
+                f"there is no escape hatch (CLAUDE.md Rule #10). Remove the "
+                f"bypass or suppress a reviewed false "
                 f"positive with `# {SUPPRESS_MARKER}: <reason>`.\n    {line.strip()}"
             )
 

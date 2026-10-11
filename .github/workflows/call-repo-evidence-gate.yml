@@ -35,17 +35,25 @@
 # receipt-gate.yml in this repository does not change the definition that
 # judges it.
 #
-# At the S6 cut-over (OMN-20074), repo-evidence / dod-verify is the evidence
-# verdict CI Summary expects on pull_request runs and no OCC caller remains in
-# this repository, so compare-with-occ is "false". The difference step would
-# otherwise wait for an OCC verdict and fail closed without one. verifier-version
-# stays a release that ships the classifier, so a rollback turns the step back
-# on with this one input.
+# S5 shadow count (OMN-20074): ended. The comparison was turned off on dev
+# first (OMN-20969), because this caller runs from dev under
+# pull_request_target and the retiring PR cannot change the input used to judge
+# itself. At the S6 cut-over, repo-evidence / dod-verify is the evidence verdict
+# CI Summary expects on pull_request runs and no OCC caller remains in this
+# repository, so compare-with-occ stays "false"; the difference step would
+# otherwise wait for an OCC verdict and fail closed without one.
+# verifier-version stays a release that ships the classifier, so a rollback
+# turns the step back on with this one input. The PR-workflow budget note below
+# records why this file took its slot. S6 part 2 has since deleted
+# call-receipt-gate.yml, so nothing here produces occ-preflight / eligibility,
+# and it lowered the budget in that file; the autobind waiver is closed.
 #
 # PR-workflow budget (architecture-handshakes/pull-request-workflow-budget.yaml,
-# OMN-14907): this file took the slot of the retired call-occ-preflight.yml.
-# S6 part 2 also deletes call-receipt-gate.yml and its OCC context producer,
-# lowering the allowlisted budget to 29; the autobind waiver is closed.
+# OMN-14907): this file takes the slot of call-occ-preflight.yml, retired in
+# the same change. That file was a duplicate producer of the required
+# occ-preflight / eligibility context; call-receipt-gate.yml's occ-preflight
+# job still produces it on every pull request into main or dev and on
+# merge_group. The budget stays 30.
 
 name: Repo Evidence Gate
 

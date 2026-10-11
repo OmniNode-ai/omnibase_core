@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-# Shared repos.conf parser — sourced by install.sh and check-policy-gate.sh.
+# Shared repos.conf parser — sourced by install.sh.
 # Outputs one repo name per line to stdout.
 #
 # Usage (bash 3.2+ compatible):

@@ -51,8 +51,10 @@ repos:
         # .kb-doc-gate.yaml is excluded because the KB doc gate reads it with a
         # deliberately stdlib-only, bootstrap-safe parser that accepts a restricted
         # YAML subset; this repo's yamlfmt config sets include_document_start, and the
-        # '---' it inserts is not in that subset (OMN-16606).
-        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/|\.kb-doc-gate\.yaml$)
+        # '---' it inserts is not in that subset (OMN-16606). The same holds for
+        # .public-repo-hygiene.yaml, which the public-repo hygiene gate reads with a
+        # restricted stdlib-only parser (OMN-18016, OMN-20940).
+        exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/|\.kb-doc-gate\.yaml$|\.public-repo-hygiene\.yaml$)
 
   # Essential file formatting (standard across ecosystem)
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -407,7 +409,7 @@ repos:
 
       # Skip-token rejection gate (OMN-11412 / OMN-10414)
       # Blocks [skip-*] bypass tokens in staged markdown/yaml/txt files.
-      # Escape hatch: add '# skip-token-allowed: <receipt-id>' with a traceable approval receipt.
+      # There is no escape hatch (OMN-20074): a skip token is rejected whatever comment accompanies it.
       - id: reject-deploy-gate-skip-token
         name: Reject skip-gate bypass tokens (OMN-10414)
         entry: .pre-commit-hooks/reject-deploy-gate-skip-token.sh
@@ -2330,9 +2332,18 @@ repos:
   # the two verdicts cannot diverge. Advancing it is those two lines, together.
   # --------------------------------------------------------------------------
   - repo: https://github.com/OmniNode-ai/omniclaude
-    rev: 42b994826519e8d6bc21d0ca915803084c7c3955  # pragma: allowlist secret
+    rev: 0c9f9146d8dd0446fc5c10952aa57247b3a880ae  # pragma: allowlist secret
     hooks:
       - id: secrets-baseline-wired
+        require_serial: true
+      # OMN-20940: the local twin of the required CI context
+      # `public-repo-hygiene / deployment-config` (the public-repo-hygiene job in
+      # .github/workflows/ci.yml), run at the same omniclaude commit as that job.
+      # It refuses deployment and lab configuration a commit adds, by shape, with
+      # no vocabulary and no token. It shares this block, and so its one existing
+      # allowlist comment, because the canonical-file-shape ratchet admits no new
+      # suppression.
+      - id: deployment-config
         require_serial: true
 
   # OMN-19677: the debt baseline itself is a shrink-only contract. The same

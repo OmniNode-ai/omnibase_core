@@ -10,7 +10,7 @@ hardening.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -76,33 +76,6 @@ def _write_receipt(
         data.update(overrides)
     p.write_text(yaml.safe_dump(data))
     return p
-
-
-def _write_skip_approval_allowlist(
-    allowlist_path: Path,
-    *,
-    approval_id: str = "appr-script-test",
-    scope_pr_numbers: list[int] | None = None,
-) -> None:
-    allowlist_path.parent.mkdir(parents=True, exist_ok=True)
-    allowlist_path.write_text(
-        yaml.safe_dump(
-            {
-                "approvals": [
-                    {
-                        "id": approval_id,
-                        "granted_by": "platform-lead",
-                        "granted_at": datetime.now(tz=UTC).isoformat(),
-                        "expires_at": (
-                            datetime.now(tz=UTC) + timedelta(days=1)
-                        ).isoformat(),
-                        "scope_repos": ["omnibase_core"],
-                        "scope_pr_numbers": scope_pr_numbers or [1015],
-                    }
-                ]
-            }
-        )
-    )
 
 
 @pytest.mark.unit
@@ -599,27 +572,19 @@ class TestReceiptGateMultiTicket:
 
 @pytest.mark.unit
 class TestReceiptGateOverride:
-    def test_override_passes_with_friction(self, tmp_path: Path) -> None:
-        allowlist = tmp_path / "allowlists" / "skip_token_approvals.yaml"
-        _write_skip_approval_allowlist(
-            allowlist,
-            approval_id="appr-override-001",
-            scope_pr_numbers=[1015],
-        )
-
+    def test_approval_id_shaped_token_does_not_override(self, tmp_path: Path) -> None:
+        """OMN-20074: the registry that admitted an id-shaped token is retired."""
         result = validate_pr_receipts(
             pr_body="fix: emergency hotfix [skip-receipt-gate: appr-override-001]",
             contracts_dir=tmp_path / "contracts",
             receipts_dir=tmp_path / "receipts",
-            allowlist_path=allowlist,
             pr_author="worker-author",
             current_repo="omnibase_core",
             current_pr_number=1015,
         )
-        assert result.passed
-        assert result.friction_logged
-        assert "BYPASS ACCEPTED" in result.message
-        assert "appr-override-001" in result.message
+        assert not result.passed
+        assert not result.friction_logged
+        assert "no bypass" in result.message.lower()
 
     def test_free_text_reason_does_not_override(self, tmp_path: Path) -> None:
         result = validate_pr_receipts(
@@ -630,7 +595,7 @@ class TestReceiptGateOverride:
         assert not result.passed
         assert not result.friction_logged
         assert "skip-*" in result.message
-        assert "allowlist token" in result.message
+        assert "no bypass" in result.message.lower()
 
     def test_inline_skip_token_allowed_does_not_override(self, tmp_path: Path) -> None:
         result = validate_pr_receipts(
@@ -643,7 +608,7 @@ class TestReceiptGateOverride:
         )
         assert not result.passed
         assert not result.friction_logged
-        assert "allowlist token" in result.message
+        assert "no bypass" in result.message.lower()
 
     def test_empty_reason_does_not_override(self, tmp_path: Path) -> None:
         result = validate_pr_receipts(
