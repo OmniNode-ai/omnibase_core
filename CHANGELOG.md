@@ -1,3 +1,17 @@
+## v0.47.41 (2026-10-11)
+
+### Release
+- Cut omnibase-core from dev at 0.47.41 by the scheduled release train.
+- 5 release-relevant commit(s) merged since v0.47.39.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.39
+- feat: move the imperative contract guard into omnibase_core with a shrink-only allowlist ratchet (#1946)
+- feat: move the no-bare-feature-flags hook from onex_change_control into omnibase_core (#1936)
+- feat: move the arch-handler-contract-compliance validator from onex_change_control into omnibase_core (#1941)
+- feat: move the cosmetic-lint hook from onex_change_control into omnibase_core (#1938)
+- fix: read every acceptance criteria section (#1937)
+
 ## v0.47.39 (2026-10-10)
 
 ### Release

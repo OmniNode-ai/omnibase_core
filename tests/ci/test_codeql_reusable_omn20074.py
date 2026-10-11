@@ -110,3 +110,41 @@ def test_third_party_actions_are_pinned_by_full_sha() -> None:
     ]
     for ref in uses:
         assert _FULL_SHA_USES.match(ref), f"{ref} must be pinned by a full sha"
+
+
+# --- security-scan.yml repointed to the in-repo reusable (OMN-20074, S8) ---
+
+SECURITY_SCAN_PATH = WORKFLOWS_DIR / "security-scan.yml"
+_IN_REPO_REUSABLE = "./.github/workflows/codeql-reusable.yml"
+
+
+def _security_scan_codeql() -> dict[str, Any]:
+    data = yaml.safe_load(SECURITY_SCAN_PATH.read_text(encoding="utf-8"))
+    assert isinstance(data, dict)
+    job = data["jobs"]["codeql"]
+    assert isinstance(job, dict)
+    return job
+
+
+def test_security_scan_calls_the_in_repo_reusable() -> None:
+    assert _security_scan_codeql()["uses"] == _IN_REPO_REUSABLE
+    assert (REPO_ROOT / _IN_REPO_REUSABLE).is_file()
+
+
+def test_security_scan_keeps_its_inputs_permissions_and_context_name() -> None:
+    job = _security_scan_codeql()
+    assert job["name"] == _CALLER_JOB_NAME
+    assert job["with"] == {"language": "python", "query_suite": "security-and-quality"}
+    assert job["permissions"] == {
+        "actions": "read",
+        "contents": "read",
+        "security-events": "write",
+    }
+    resolved = _load()["jobs"]["analyze"]["name"].replace(
+        "${{ inputs.language }}", "python"
+    )
+    assert f"{job['name']} / {resolved}" == _REQUIRED_CONTEXT
+
+
+def test_security_scan_references_onex_change_control_nowhere() -> None:
+    assert not _references_occ(SECURITY_SCAN_PATH.read_text(encoding="utf-8"))
