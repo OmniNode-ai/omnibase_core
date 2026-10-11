@@ -11,6 +11,7 @@ full commit sha of the merge that added the action (omnibase_core#1942).
 
 from __future__ import annotations
 
+import importlib
 import re
 from pathlib import Path
 from typing import Any
@@ -66,6 +67,64 @@ def test_retired_action_reference_is_detected() -> None:
     )
 
     assert _retired_references(old) == [old.strip()]
+
+
+def _core_action_file() -> Path:
+    """The action.yml in this tree that the job's omnibase_core ``uses:`` line names."""
+    prefix = "OmniNode-ai/omnibase_core/"
+    paths = [
+        s["uses"].split("@")[0].removeprefix(prefix)
+        for s in _job()["steps"]
+        if s.get("uses", "").startswith(prefix)
+    ]
+    assert len(paths) == 1, f"expected one omnibase_core action step, found {paths}"
+    return REPO_ROOT / paths[0] / "action.yml"
+
+
+def test_the_called_action_runs_core_handlers_that_fail_a_drifted_fixture(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Run the module the called action names, as the action runs it, on both fixtures."""
+    action = _core_action_file().read_text(encoding="utf-8")
+    module = re.search(
+        r"python -m (omnibase_core\.handlers\.handler_boundary_parity)\b", action
+    )
+    assert module is not None, (
+        "the called action does not run the boundary-parity handler"
+    )
+    main = importlib.import_module(module.group(1)).main
+
+    topic = "onex.cmd.omniintelligence.claude-hook-event.v1"
+    producer = "src/omniclaude/hooks/topics.py"
+    consumer = "src/omniintelligence/nodes/node_claude_hook_event_effect/contract.yaml"
+    manifest = tmp_path / "manifest.yaml"
+    manifest.write_text(
+        f'---\nversion: "1"\nboundaries:\n  - topic_name: "{topic}"\n'
+        f"    producer_repo: omniclaude\n    consumer_repo: omniintelligence\n"
+        f'    producer_file: "{producer}"\n    consumer_file: "{consumer}"\n'
+        '    topic_pattern: "claude-hook-event\\\\.v1"\n'
+        '    event_schema: "ModelClaudeCodeHookEvent"\n',
+        encoding="utf-8",
+    )
+    repos = tmp_path / "repos"
+    (repos / "omniintelligence" / Path(consumer).parent).mkdir(parents=True)
+    (repos / "omniintelligence" / consumer).write_text(
+        f"subscribe_topics:\n  - {topic}\n", encoding="utf-8"
+    )
+    (repos / "omniclaude" / Path(producer).parent).mkdir(parents=True)
+    argv = ["--repos-root", str(repos), "--manifest", str(manifest)]
+
+    (repos / "omniclaude" / producer).write_text(
+        f'HOOK = "{topic}"\n', encoding="utf-8"
+    )
+    assert main(argv) == 0
+    capsys.readouterr()
+
+    (repos / "omniclaude" / producer).write_text("UNRELATED = 1\n", encoding="utf-8")
+    assert main(argv) != 0
+    assert (
+        f"topic not found in producer: omniclaude/{producer}" in capsys.readouterr().out
+    )
 
 
 def test_inputs_job_name_and_required_context_are_unchanged() -> None:

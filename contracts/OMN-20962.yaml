@@ -31,8 +31,10 @@ evidence_requirements:
       control that the retired reference is detected."
     command: "uv run pytest tests/ci/test_validate_boundaries_caller_omn20962.py -q -p no:randomly"
   - kind: tests
-    description: "The core handlers the action runs pass a clean fixture and fail a drifted one."
+    description: "The core handlers the action runs pass a clean fixture and fail a drifted one, and the
+      action the job now calls is the one that runs them."
     command: "cd omnibase_core && uv run pytest tests/unit/handlers/test_handler_boundary_parity.py tests/unit/handlers/test_handler_migration_conflicts.py
+      tests/ci/test_validate_boundaries_caller_omn20962.py::test_the_called_action_runs_core_handlers_that_fail_a_drifted_fixture
       -q -p no:randomly"
 emergency_bypass:
   enabled: false
@@ -50,11 +52,13 @@ dod_evidence:
     binds_ac:
       - AC1
   - id: dod-omn-20962-ac2
-    description: The core handlers the action runs pass a clean fixture and fail a drifted one.
+    description: The core handlers the action runs pass a clean fixture and fail a drifted one, and the
+      action the job now calls is the one that runs them.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py tests/unit/handlers/test_handler_migration_conflicts.py
+          tests/ci/test_validate_boundaries_caller_omn20962.py::test_the_called_action_runs_core_handlers_that_fail_a_drifted_fixture
           -q -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
