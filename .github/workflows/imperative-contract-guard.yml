@@ -1,0 +1,145 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable imperative contract guard for OmniNode repositories (OMN-20918).
+#
+# The guard runs HandlerImperativeContractGuard from this repository's own checkout
+# against the CALLER's tree and the CALLER's own allowlist, and refuses an allowlist that
+# gains a path against the merge base (a shrink-only ratchet), so no repository can widen
+# another repository's list.
+#
+# Usage in a caller repo:
+#
+#   jobs:
+#     imperative-contract-guard:
+#       name: Imperative Contract Guard
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/imperative-contract-guard.yml@<full sha>
+#       with:
+#         allowlist-path: imperative-contract-allowlist.yaml   # relative to the caller's root
+#
+# The validator version is the caller's pin: omnibase-core-ref defaults to
+# github.job_workflow_sha, the sha of this file as the caller pinned it.
+
+name: Imperative Contract Guard
+
+on:
+  workflow_call:
+    inputs:
+      allowlist-path:
+        description: >-
+          The caller's own allowlist, relative to the caller's repository root.
+        required: true
+        type: string
+      ratchet-base-ref:
+        description: >-
+          Ref the allowlist may only shrink against (merge base). Empty means the
+          pull request base sha, or the merge-group base sha; a push event has none and
+          the ratchet is skipped.
+        required: false
+        type: string
+        default: ""
+      scan-freestanding:
+        description: Also audit freestanding src/ modules outside node handlers.
+        required: false
+        type: boolean
+        default: true
+      python-version:
+        description: Python version for the validator runtime.
+        required: false
+        type: string
+        default: "3.12"
+      uv-version:
+        description: uv version for the validator runtime.
+        required: false
+        type: string
+        default: "0.8.3"
+      target-ref:
+        description: Caller repository ref to check out.
+        required: false
+        type: string
+        default: ""
+      omnibase-core-ref:
+        description: >-
+          omnibase_core ref containing the validator. Empty means the sha this
+          workflow file was called at.
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  imperative-contract-guard:
+    name: Imperative Contract Guard
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: target
+          ref: ${{ inputs['target-ref'] || github.ref }}
+          fetch-depth: 0
+
+      - name: Checkout omnibase_core validator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ inputs['omnibase-core-ref'] || github.job_workflow_sha }}
+          path: omnibase_core
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ inputs['python-version'] }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ inputs['uv-version'] }}
+
+      - name: Run imperative contract guard
+        working-directory: omnibase_core
+        env:
+          UV_HTTP_TIMEOUT: "600"
+          UV_SYNC_ATTEMPTS: "3"
+          UV_SYNC_RETRY_DELAY_SECONDS: "10"
+          ALLOWLIST_PATH: ${{ inputs['allowlist-path'] }}
+          RATCHET_BASE_REF: >-
+            ${{ inputs['ratchet-base-ref']
+            || github.event.pull_request.base.sha
+            || github.event.merge_group.base_sha }}
+          SCAN_FREESTANDING: ${{ inputs['scan-freestanding'] }}
+        run: |
+          git config --global http.version HTTP/1.1
+          attempt=1
+          until uv sync --locked --no-dev; do
+            status=$?
+            if [ "$attempt" -ge "$UV_SYNC_ATTEMPTS" ]; then
+              echo "::error::uv sync failed after ${attempt} attempt(s)"
+              exit "$status"
+            fi
+
+            sleep_seconds=$((UV_SYNC_RETRY_DELAY_SECONDS * attempt))
+            echo "::warning::uv sync attempt ${attempt}/${UV_SYNC_ATTEMPTS} failed with exit ${status}; retrying in ${sleep_seconds}s"
+            sleep "$sleep_seconds"
+            attempt=$((attempt + 1))
+          done
+
+          args=(--repo-root "$GITHUB_WORKSPACE/target" --allowlist-path "$ALLOWLIST_PATH")
+          if [ "$SCAN_FREESTANDING" = "true" ]; then
+            args+=(--scan-freestanding)
+          fi
+          if [ -n "$RATCHET_BASE_REF" ]; then
+            args+=(--ratchet-base-ref "$RATCHET_BASE_REF")
+          else
+            echo "::notice::no ratchet base ref (push event): allowlist ratchet skipped"
+          fi
+          uv run --no-sync check-imperative-contracts "${args[@]}"

@@ -1,0 +1,13 @@
+Imperative contract guard
+
+repo                         nodes handlers  clean baseline  live nonlive allowlist
+------------------------------------------------------------------------------------------------------
+omniclaude                       2        5      0        4     0       6 <ROOT>/allowlists/omniclaude.yaml
+
+Reported non-live imperative smells:
+- omniclaude/nodes/node_git_effect/handlers/handler_shell_heredoc.py: hybrid (dead)
+- omniclaude/nodes/node_git_effect/handlers/handler_shell_redirect.py: hybrid (dead)
+- omniclaude/nodes/node_git_effect/handlers/handler_shell_scope.py: hybrid (dead)
+- src/omniclaude/nodes/node_golden_chain_publish_effect/persist.py: hybrid (dead)
+- src/omniclaude/services/ci_relay/publisher.py: hybrid (dead)
+- src/omniclaude/services/linear_relay/dedup_adapter.py: hybrid (dead)

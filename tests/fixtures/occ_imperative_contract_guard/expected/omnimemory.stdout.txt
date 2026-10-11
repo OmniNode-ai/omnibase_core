@@ -1,0 +1,13 @@
+Imperative contract guard
+
+repo                         nodes handlers  clean baseline  live nonlive allowlist
+------------------------------------------------------------------------------------------------------
+omnimemory                       2        5      1        4     0       6 <ROOT>/allowlists/omnimemory.yaml
+
+Reported non-live imperative smells:
+- omnimemory/nodes/node_agent_learning_retrieval_effect/handlers/handler_agent_learning_retrieval.py: hybrid (dead)
+- omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_decay.py: hybrid (dead)
+- omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_fusion.py: hybrid (dead)
+- omnimemory/nodes/node_memory_retrieval_effect/handlers/handler_qdrant_mock.py: hybrid (dead)
+- src/omnimemory/adapters/adapter_health_manager.py: hybrid (dead)
+- src/omnimemory/nodes/node_kreuzberg_parse_effect/adapters/adapter_kreuzberg_client.py: hybrid (dead)

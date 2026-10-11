@@ -1,0 +1,74 @@
+---
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# [OMN-10695]
+
+name: adr_decision_extraction_llm_effect
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Decision extraction effect node that uses a caller-specified LLM to identify
+  architectural decisions, pivots, doctrine, operational lessons, supersessions,
+  and rejected approaches from segmented document content. Called once per model
+  in the ADR canary pipeline (19 calls per document). Extraction IDs are
+  deterministically computed from extraction_version, model_id, and source
+  segment content hashes. On failure returns success=False with error details.
+
+handler_routing:
+  routing_strategy: operation_match
+  handlers:
+    - operation: adr_decision_extraction_llm
+      handler:
+        name: HandlerDecisionExtraction
+        module: omnimarket.nodes.node_adr_decision_extraction_llm_effect.handlers.handler_decision_extraction
+
+handler:
+  module: omnimarket.nodes.node_adr_decision_extraction_llm_effect.handlers.handler_decision_extraction
+  class: HandlerDecisionExtraction
+  input_model: omnimarket.nodes.node_adr_decision_extraction_llm_effect.models.model_extraction_request.ModelExtractionRequest
+
+descriptor:
+  node_archetype: effect
+  purity: effectful
+  idempotent: false
+  timeout_ms: 120000
+  runtime_profiles:
+    - effects
+
+io_operations:
+  - operation_type: llm_call
+    timeout_seconds: 120
+
+event_bus:
+  subscribe_topics:
+    - onex.cmd.omnimarket.adr-decision-extraction-requested.v1
+  publish_topics:
+    - onex.evt.omnimarket.adr-decision-extraction-completed.v1
+
+config:
+  extraction_timeout_seconds:
+    description: "Per-call timeout in seconds for the extraction LLM call."
+    default: 120.0
+  prompt_template_id:
+    description: "Identifier for the extraction prompt template."
+    default: "adr_decision_extraction_v1"
+  prompt_template_version:
+    description: "Version of the extraction prompt template."
+    default: "1.0.0"
+  response_format:
+    description: "Caller-owned structured output contract for decision extraction inference."
+    default:
+      type: json_object
+  json_repair_enabled:
+    description: "Whether one bounded parse-repair call is permitted after malformed output."
+    default: true
+
+metadata:
+  transport_type: kafka
+
+# OMN-18013 -- explicit SINK declaration (contract topic graph closure).
+# No node contract subscribes to these; they leave the ONEX node graph here.
+externally_consumed_topics:
+  - onex.evt.omnimarket.adr-decision-extraction-completed.v1

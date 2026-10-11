@@ -1,0 +1,20 @@
+Imperative contract guard
+
+repo                         nodes handlers  clean baseline  live nonlive allowlist
+------------------------------------------------------------------------------------------------------
+omnimarket                       7        7      0        8     2       6 <ROOT>/allowlists/omnimarket.yaml
+
+Blocking LIVE freestanding imperative violations:
+- src/omnimarket/github_landing/github_landing_transport.py: hybrid (live)
+  - L116 [live] raw HTTP call 'urllib.request.urlopen' bypasses contract transport
+- src/omnimarket/inference/adapter_inference_bridge.py: imperative (live)
+  - L204 [live] hardcoded inference param 'max_tokens=2048' in dict literal
+  - L222 [live] raw HTTP call 'httpx.AsyncClient' bypasses contract transport
+
+Reported non-live imperative smells:
+- omnimarket/nodes/node_delegation_acceptance_judge_compute/handlers/parse_rubric.py: hybrid (dead)
+- omnimarket/nodes/node_projection_delegation_disposition/handlers/handler_projection_delegation_disposition.py: hybrid (dead)
+- omnimarket/nodes/node_projection_routing_feedback/handlers/handler_projection_routing_feedback.py: hybrid (dead)
+- src/omnimarket/delegation/rung_eval/runner.py: imperative (dead)
+- src/omnimarket/nodes/node_house_routing_overlay_effect/publish_house_overlay_command.py: hybrid (dead)
+- src/omnimarket/nodes/node_process_watchdog/targets/http_check_target.py: hybrid (dead)

@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 OmniNode Team
+# Ticket: OMN-2143
+name: "node_checkpoint_effect"
+node_type: "EFFECT_GENERIC"
+contract_version:
+  major: 1
+  minor: 0
+  patch: 0
+node_version: "1.0.0"
+description: >
+  EFFECT node that owns all filesystem I/O for pipeline checkpoint persistence. Supports write, read, and list operations on checkpoint YAML files stored under ~/.claude/checkpoints/{ticket_id}/{run_id}/.
+
+input_model:
+  name: "ModelCheckpointEffectInput"
+  module: "omnibase_infra.nodes.node_checkpoint_effect.models.model_checkpoint_effect_input"
+  description: "Input envelope for checkpoint effect operations."
+output_model:
+  name: "ModelCheckpointEffectOutput"
+  module: "omnibase_infra.nodes.node_checkpoint_effect.models.model_checkpoint_effect_output"
+  description: "Result of checkpoint effect operations."
+io_operations:
+  - name: "write_checkpoint"
+    description: "Write a phase checkpoint YAML to disk (append-only)."
+    input_fields: ["checkpoint"]
+    output_fields: ["success", "checkpoint_path"]
+  - name: "read_checkpoint"
+    description: "Read a specific checkpoint from disk."
+    input_fields: ["ticket_id", "run_id", "phase"]
+    output_fields: ["success", "checkpoint"]
+  - name: "list_checkpoints"
+    description: "List available checkpoints for a ticket/run."
+    input_fields: ["ticket_id", "run_id"]
+    output_fields: ["success", "checkpoints"]
+handler_routing:
+  routing_strategy: "operation_match"
+  handlers:
+    - operation: "write_checkpoint"
+      handler:
+        name: "HandlerCheckpointWrite"
+        module: "omnibase_infra.nodes.node_checkpoint_effect.handlers.handler_checkpoint_write"
+    - operation: "read_checkpoint"
+      handler:
+        name: "HandlerCheckpointRead"
+        module: "omnibase_infra.nodes.node_checkpoint_effect.handlers.handler_checkpoint_read"
+    - operation: "list_checkpoints"
+      handler:
+        name: "HandlerCheckpointList"
+        module: "omnibase_infra.nodes.node_checkpoint_effect.handlers.handler_checkpoint_list"
+capabilities:
+  - "checkpoint.write"
+  - "checkpoint.read"
+  - "checkpoint.list"
+metadata:
+  description: "Owns all filesystem I/O for pipeline checkpoint persistence, supporting write, read, and list operations on checkpoint YAML files stored under ~/.claude/checkpoints/"

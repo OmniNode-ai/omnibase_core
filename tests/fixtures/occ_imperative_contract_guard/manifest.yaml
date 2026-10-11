@@ -1,0 +1,59 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Replay cases for the imperative contract guard (OMN-20918): one per consumer repository, plus a planted-violation variant.
+- id: omnimemory
+  repo: omnimemory
+  trees:
+    - omnimemory
+  expected_exit: 0
+- id: omnimemory-plant
+  repo: omnimemory
+  trees:
+    - omnimemory
+    - omnimemory-plant
+  expected_exit: 1
+- id: omniintelligence
+  repo: omniintelligence
+  trees:
+    - omniintelligence
+  expected_exit: 0
+- id: omniintelligence-plant
+  repo: omniintelligence
+  trees:
+    - omniintelligence
+    - omniintelligence-plant
+  expected_exit: 1
+- id: omnibase_infra
+  repo: omnibase_infra
+  trees:
+    - omnibase_infra
+  expected_exit: 1
+- id: omnibase_infra-plant
+  repo: omnibase_infra
+  trees:
+    - omnibase_infra
+    - omnibase_infra-plant
+  expected_exit: 1
+- id: omniclaude
+  repo: omniclaude
+  trees:
+    - omniclaude
+  expected_exit: 0
+- id: omniclaude-plant
+  repo: omniclaude
+  trees:
+    - omniclaude
+    - omniclaude-plant
+  expected_exit: 1
+- id: omnimarket
+  repo: omnimarket
+  trees:
+    - omnimarket
+  expected_exit: 1
+- id: omnimarket-plant
+  repo: omnimarket
+  trees:
+    - omnimarket
+    - omnimarket-plant
+  expected_exit: 1

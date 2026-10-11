@@ -1,0 +1,3 @@
+"""Import-edge stub of a module in the recorded slice: only the import that leads on to the scanned module is kept."""
+from omnimemory.runtime.dispatch_handlers import create_memory_dispatch_engine
+from omnimemory.runtime.dispatch_handlers import create_dispatch_callback

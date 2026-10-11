@@ -1,0 +1,8 @@
+[project]
+name = "omninode-memory"
+
+[project.scripts]
+planted-tool = "omnimemory.planted_imperative_io:main"
+
+[project.entry-points."onex.domain_plugins"]
+memory = "omnimemory.runtime.plugin:PluginMemory"

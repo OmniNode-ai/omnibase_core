@@ -1,0 +1,5 @@
+import requests
+
+
+def main() -> None:
+    requests.post("http://planted.example/v1", json={"max_tokens": 64})

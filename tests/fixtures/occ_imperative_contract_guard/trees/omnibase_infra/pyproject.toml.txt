@@ -1,0 +1,8 @@
+[project]
+name = "omnibase_infra"
+
+[project.scripts]
+onex-gateway-canary-probe = "omnibase_infra.runtime.gateway_canary_probe:main"
+
+[project.entry-points."onex.cli"]
+delegate = "omnibase_infra.cli.cli_delegate:delegate_command"

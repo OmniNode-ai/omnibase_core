@@ -1,0 +1,56 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# ONEX Node Contract - CI Rerun Effect (OMN-8962)
+name: node_ci_rerun_effect
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+
+description: >
+  Re-triggers CI on a PR. Default mode reruns the most recent FAILED workflow
+  run (rerun-failed-jobs); does not retrigger successful ones. In empty_commit
+  mode (OMN-13416) it pushes an empty commit on the PR head branch to re-fire
+  workflow-dispatch events that GitHub dropped, when a required workflow
+  produced ZERO runs on HEAD and there is no failed run to rerun.
+  Serial-in-handler execution per Phase 1 audit. Idempotent per gh behavior.
+
+handler:
+  module: omnimarket.nodes.node_ci_rerun_effect.handlers.handler_ci_rerun
+  class: HandlerCiRerunEffect
+  input_model: omnimarket.nodes.node_merge_sweep_triage_orchestrator.models.model_triage_request.ModelCiRerunCommand
+
+handler_routing:
+  routing_strategy: operation_match
+  handlers:
+    - operation: ci_rerun
+      handler:
+        name: HandlerCiRerunEffect
+        module: omnimarket.nodes.node_ci_rerun_effect.handlers.handler_ci_rerun
+
+descriptor:
+  node_archetype: effect
+  purity: impure
+  idempotent: true
+  timeout_ms: 15000
+  runtime_profiles:
+    - effects
+
+secrets:
+  # OMN-12856: GitHub token is contract-declared so the handler reads the ref
+  # name from here — not a bare source literal. Value is resolved at the effect
+  # boundary via the canonical secret-store resolver.
+  GITHUB_TOKEN:
+    description: "GitHub PAT or Actions token for API calls (REST + GraphQL)."
+    required: true
+
+event_bus:
+  subscribe_topics:
+    - onex.cmd.omnimarket.pr-ci-rerun.v1
+  publish_topics:
+    - onex.evt.omnimarket.pr-ci-rerun-triggered.v1
+  dlq_topics:
+    - onex.dlq.omnimarket.pr-ci-rerun.v1
+
+metadata:
+  transport_type: kafka

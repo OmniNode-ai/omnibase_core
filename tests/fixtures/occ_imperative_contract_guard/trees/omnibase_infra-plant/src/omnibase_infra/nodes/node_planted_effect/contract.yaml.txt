@@ -1,0 +1,8 @@
+name: node_planted_effect
+node_type: EFFECT_GENERIC
+handler_routing:
+  handlers:
+    - handler:
+        name: HandlerPlanted
+        module: omnibase_infra.nodes.node_planted_effect.handlers.handler_planted
+      operation: run

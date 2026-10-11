@@ -1,0 +1,320 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+# Copyright (c) 2025 OmniNode Team
+#
+# ONEX Node Contract
+# Node: NodeGitEffect
+#
+# Capability-oriented effect node for git operations.
+# Named by capability ("git.operations"), not by vendor.
+# Principle: "I'm interested in what you do, not what you are"
+#
+# INVARIANT: No subprocess 'git' or 'gh' calls outside this effect node.
+# All PRs created via this node include a mandatory ticket stamp block.
+
+# Contract identifiers
+name: node_git_effect
+version: "0.1.0"
+contract_name: node_git_effect
+node_name: node_git_effect
+
+contract_version:
+  major: 1
+  minor: 1
+  patch: 0
+
+node_version:
+  major: 1
+  minor: 1
+  patch: 0
+
+# Runtime profile. A command-consuming contract declares its owning runtime
+# profile explicitly (OMN-20560); main is what every omniclaude contract names.
+runtime_profiles: [main]
+
+# Node type
+node_type: EFFECT_GENERIC
+
+# Description
+description: >
+  Capability-oriented effect node for git operations.
+  Handles branch management, commits, pushes, pull request lifecycle,
+  merge operations (direct and merge-queue), tag management, and label
+  management with pluggable backends. Every PR body created via this node
+  contains a mandatory ticket stamp block.
+  Push and merge re-read ledger RULING rows appended after the lane CLAIM,
+  refusing until exact ledger ACKs cite each surfaced row (OMN-18645).
+
+# Strongly typed I/O models
+input_model:
+  name: ModelGitRequest
+  module: omniclaude.nodes.node_git_effect.models
+
+output_model:
+  name: ModelGitResult
+  module: omniclaude.nodes.node_git_effect.models
+
+# Capabilities
+capabilities:
+  - name: git.operations.admission_check
+    description: Shared-tree, dirty-restore and lane-fetch admission
+
+  - name: git.operations
+    description: All git and GitHub CLI operations
+    version: 1.1.0
+
+  - name: git.operations.branch_create
+    description: Create a new git branch from base
+
+  - name: git.operations.commit
+    description: Stage and commit changes with a message
+
+  - name: git.operations.push
+    description: Push a branch to the remote
+
+  - name: git.operations.pr_create
+    description: Create a pull request with mandatory ticket stamp block
+
+  - name: git.operations.pr_update
+    description: Update title, body, or labels of an existing PR
+
+  - name: git.operations.pr_close
+    description: Close a pull request without merging
+
+  - name: git.operations.pr_merge
+    description: Merge a pull request (direct or via merge queue)
+
+  - name: git.operations.pr_list
+    description: List pull requests with structured JSON output
+
+  - name: git.operations.pr_view
+    description: View a single pull request with structured JSON output
+
+  - name: git.operations.tag_create
+    description: Create and push a git tag (lightweight or annotated)
+
+  - name: git.operations.label_add
+    description: Add labels to a pull request
+
+# IO operations
+io_operations:
+  - operation: admission_check
+    description: Check a hook payload against host-local Git admission policy
+    protocol_method: admission_check
+    input_fields:
+      - admission: ModelGitAdmissionRequest
+    output_fields:
+      - admission: ModelGitAdmissionResult
+    idempotent: true
+
+  - operation: branch_create
+    description: Create a new git branch
+    protocol_method: branch_create
+    input_fields:
+      - branch_name: str
+      - base_ref: str
+      - working_directory: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: false
+
+  - operation: commit
+    description: Stage all changes and create a commit
+    protocol_method: commit
+    input_fields:
+      - message: str
+      - working_directory: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: false
+
+  - operation: push
+    description: Push branch to remote
+    protocol_method: push
+    input_fields:
+      - branch_name: str
+      - force: bool
+      - working_directory: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: true
+
+  - operation: pr_create
+    description: Create pull request with mandatory ticket stamp block
+    protocol_method: pr_create
+    input_fields:
+      - title: str
+      - body: str
+      - ticket_id: str
+      - base_branch: str
+      - working_directory: str | None
+      - repo: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: false
+
+  - operation: pr_update
+    description: Update existing pull request
+    protocol_method: pr_update
+    input_fields:
+      - pr_number: int
+      - title: str | None
+      - body: str | None
+      - working_directory: str | None
+      - repo: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: true
+
+  - operation: pr_close
+    description: Close pull request without merging
+    protocol_method: pr_close
+    input_fields:
+      - pr_number: int
+      - working_directory: str | None
+      - repo: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: true
+
+  - operation: pr_merge
+    description: Merge a pull request or add to merge queue
+    protocol_method: pr_merge
+    input_fields:
+      - pr_number: int
+      - merge_method: str | None
+      - use_merge_queue: bool
+      - working_directory: str | None
+      - repo: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: false
+
+  - operation: pr_list
+    description: List pull requests with structured JSON output
+    protocol_method: pr_list
+    input_fields:
+      - json_fields: list[str]
+      - list_filters: ModelPRListFilters | None
+      - working_directory: str | None
+      - repo: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: true
+
+  - operation: pr_view
+    description: View a single pull request with structured JSON output
+    protocol_method: pr_view
+    input_fields:
+      - pr_number: int
+      - json_fields: list[str]
+      - working_directory: str | None
+      - repo: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: true
+
+  - operation: tag_create
+    description: Create and push a git tag
+    protocol_method: tag_create
+    input_fields:
+      - tag_name: str
+      - tag_message: str | None
+      - working_directory: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: false
+
+  - operation: label_add
+    description: Add labels to a pull request
+    protocol_method: label_add
+    input_fields:
+      - pr_number: int
+      - labels: list[str]
+      - working_directory: str | None
+      - repo: str | None
+      - correlation_id: UUID | None
+    output_fields:
+      - result: ModelGitResult
+    idempotent: true
+
+# Dependencies
+dependencies:
+  - name: protocol_git_operations
+    type: protocol
+    class_name: ProtocolGitOperations
+    module: omniclaude.nodes.node_git_effect.protocols
+    pluggable: true
+
+# Handler routing
+handler_routing:
+  routing_strategy: backend_match
+  handlers:
+    - operation: admission_check
+      event_model:
+        module: omniclaude.nodes.node_git_effect.models
+        name: ModelGitRequest
+      handler:
+        module: omniclaude.nodes.node_git_effect.handlers.handler_git_admission_transport
+        name: HandlerGitAdmissionTransport
+      output_events: [ModelGitResult]
+  default_backend: subprocess
+  backends:
+    - backend: subprocess
+      handler_key: subprocess
+      handler_class: HandlerGitSubprocess
+      handler_module: omniclaude.nodes.node_git_effect.handlers
+
+# Invariants
+invariants:
+  - all_prs_include_ticket_stamp: true
+  - no_subprocess_outside_handler: true
+  # OMN-18782: enforced by the existing subprocess backend on create and update.
+  - failure_claim_paragraphs_require_citations: true
+
+# Error handling
+error_handling:
+  retry_policy:
+    max_retries: 2
+    initial_delay_ms: 500
+    max_delay_ms: 5000
+    exponential_base: 2
+    retry_on:
+      - GitNetworkError
+      - GitTimeoutError
+  circuit_breaker:
+    enabled: false
+
+# Metadata
+metadata:
+  transport_type: inmemory
+  transport_reason: Admission reads the hook host filesystem and Git index.
+  author: OmniNode Team
+  license: MIT
+  ticket: OMN-2817
+  maturity: alpha
+  tags:
+    - effect
+    - git
+    - github
+    - pull-request
+    - merge-queue
+    - tag
+    - label
+
+# Host-local admission is an operation of the existing Git effect node (OMN-20685).
+terminal_event: onex.evt.omniclaude.git-admission-evaluated.v1
+event_bus:
+  subscribe_topics: [onex.cmd.omniclaude.git-admission-check.v1]
+  publish_topics: [onex.evt.omniclaude.git-admission-evaluated.v1]

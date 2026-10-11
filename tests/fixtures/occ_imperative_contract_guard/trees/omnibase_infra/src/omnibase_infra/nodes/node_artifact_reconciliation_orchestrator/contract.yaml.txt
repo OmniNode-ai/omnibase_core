@@ -1,0 +1,164 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 OmniNode Team
+#
+# ONEX Node Contract — Artifact Reconciliation Orchestrator
+#
+# Coordinates artifact reconciliation: receives update plans, posts PR comments,
+# and emits YAML plan events.
+#
+# Related Tickets:
+#   - OMN-3944: Task 7 — Reconciliation ORCHESTRATOR Node
+#   - OMN-3925: Artifact Reconciliation + Update Planning MVP
+#
+# Contract identifiers
+name: "node_artifact_reconciliation_orchestrator"
+contract_name: "node_artifact_reconciliation_orchestrator"
+node_name: "node_artifact_reconciliation_orchestrator"
+contract_version:
+  major: 0
+  minor: 1
+  patch: 0
+node_version:
+  major: 0
+  minor: 1
+  patch: 0
+# Node type
+node_type: "ORCHESTRATOR_GENERIC"
+# Description
+description: >
+  Orchestrator for the artifact reconciliation pipeline. Consumes artifact update plans from the REDUCER node, posts PR comments via HandlerPlanToPRComment (for PR-triggered plans only), and emits YAML plan events via HandlerPlanToYaml. Drives the post_pr_comment -> emit_yaml_plan workflow.
+
+# Strongly typed I/O models
+input_model:
+  name: "ModelUpdatePlan"
+  module: "omnibase_infra.nodes.node_update_plan_reducer.models.model_update_plan"
+  description: "An artifact update plan produced by the REDUCER node."
+output_model:
+  name: "ModelUpdatePlan"
+  module: "omnibase_infra.nodes.node_update_plan_reducer.models.model_update_plan"
+  description: "The same update plan, after orchestration actions are complete."
+# Event Bus Subcontract
+event_bus:
+  version:
+    major: 0
+    minor: 1
+    patch: 0
+  subscribe_topics:
+    - "onex.evt.artifact.update-plan-created.v1"
+  publish_topics:
+    - "onex.evt.artifact.pr-comment-posted.v1"
+    - "onex.evt.artifact.update-plan-emitted.v1"
+# Handler Routing Configuration
+handler_routing:
+  routing_strategy: "payload_type_match"
+  handlers:
+    # ModelUpdatePlan -> HandlerPlanToPRComment
+    - event_model:
+        name: "ModelUpdatePlan"
+        module: "omnibase_infra.nodes.node_update_plan_reducer.models.model_update_plan"
+      handler:
+        name: "HandlerPlanToPRComment"
+        module: "omnibase_infra.nodes.node_artifact_reconciliation_orchestrator.handlers.handler_plan_to_pr_comment"
+        handler_type: "HTTP"
+      output_events:
+        - "onex.evt.artifact.pr-comment-posted.v1"
+      description: "Post or update PR comment with the artifact update plan table."
+    # ModelUpdatePlan -> HandlerPlanToYaml
+    - event_model:
+        name: "ModelUpdatePlan"
+        module: "omnibase_infra.nodes.node_update_plan_reducer.models.model_update_plan"
+      handler:
+        name: "HandlerPlanToYaml"
+        module: "omnibase_infra.nodes.node_artifact_reconciliation_orchestrator.handlers.handler_plan_to_yaml"
+      output_events:
+        - "onex.evt.artifact.update-plan-emitted.v1"
+      description: "Serialize update plan to YAML and emit as event payload."
+# Consumed events
+consumed_events:
+  - topic: "onex.evt.artifact.update-plan-created.v1"
+    event_type: "ArtifactUpdatePlanCreated"
+    description: "Update plan produced by the REDUCER node"
+# Published events
+published_events:
+  - topic: "onex.evt.artifact.pr-comment-posted.v1"
+    event_type: "ArtifactPRCommentPosted"
+  - topic: "onex.evt.artifact.update-plan-emitted.v1"
+    event_type: "ArtifactUpdatePlanEmitted"
+# Workflow Coordination Configuration
+workflow_coordination:
+  workflow_definition:
+    workflow_metadata:
+      workflow_name: "artifact_reconciliation_workflow"
+      workflow_version:
+        major: 0
+        minor: 1
+        patch: 0
+      execution_mode: sequential
+      description: "Reconciliation pipeline: post PR comment, emit YAML plan"
+    execution_graph:
+      nodes:
+        - node_id: "post_pr_comment"
+          node_type: EFFECT_GENERIC
+          description: "Post or update PR comment with artifact update plan markdown table"
+          step_config:
+            handler: "HandlerPlanToPRComment"
+            skip_condition: "trigger_type not in pr_trigger_types"
+        - node_id: "emit_yaml_plan"
+          node_type: COMPUTE_GENERIC
+          description: "Serialize update plan to YAML and emit as event payload"
+          depends_on: ["post_pr_comment"]
+          step_config:
+            handler: "HandlerPlanToYaml"
+            target_topic: "onex.evt.artifact.update-plan-emitted.v1"
+    coordination_rules:
+      execution_mode: sequential
+      parallel_execution_allowed: false
+      failure_recovery_strategy: none
+      max_retries: 0
+      timeout_ms: 30000
+      checkpoint_enabled: false
+      state_persistence_enabled: false
+      rollback_enabled: false
+# Dependencies
+dependencies:
+  - name: "container"
+    type: "ModelONEXContainer"
+    module: "omnibase_core.models.container.model_onex_container"
+    description: "ONEX dependency injection container"
+  - name: "github_token"
+    type: "environment"
+    description: "GITHUB_TOKEN environment variable for GitHub API authentication"
+# Error Handling Configuration
+error_handling:
+  retry_policy:
+    max_retries: 0
+  error_types:
+    - name: "PRCommentError"
+      description: "Failed to post or update PR comment via GitHub API"
+      recoverable: false
+      retry_strategy: "none"
+    - name: "YamlSerializationError"
+      description: "Failed to serialize update plan to YAML"
+      recoverable: false
+      retry_strategy: "none"
+# Health check
+health_check:
+  enabled: true
+  endpoint: "/health"
+  interval_seconds: 30
+# Metadata
+metadata:
+  description: "Coordinates artifact reconciliation by consuming update plans, posting PR comments for PR-triggered plans, and emitting YAML plan events through a sequential post_pr_comment -> emit_yaml_plan workflow."
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-03-08"
+  tags:
+    - orchestrator
+    - artifact
+    - reconciliation
+    - pr-comment
+    - yaml-emission
+  related_tickets:
+    - "OMN-3944"
+    - "OMN-3925"

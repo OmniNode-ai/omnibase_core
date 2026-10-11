@@ -1,0 +1,133 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_delegation_acceptance_judge_compute
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Pure definition-B blind acceptance judging of delegated output (OMN-20429). Three
+  operations over the versioned rubric in delegation_acceptance_judge_rubric.v1.yaml.
+  render turns items into judge batches (liveness probes excluded, long text shortened,
+  a seeded sample for the second judge). check validates one judge reply against the
+  item ids it had to answer. score compares the two judges (Cohen's kappa, sample size)
+  and builds the model by task type matrix of true accept rate beside terminal_ok.
+  The caller passes the rubric text and runs the judges; this node reads no file and calls
+  no model. It is an offline measurement, not an acceptance gate.
+
+handler_routing:
+  routing_strategy: operation_match
+  handlers:
+    - operation: delegation_acceptance_judge
+      handler:
+        name: HandlerDelegationAcceptanceJudge
+        module: omnimarket.nodes.node_delegation_acceptance_judge_compute.handlers.handler_delegation_acceptance_judge
+
+handler:
+  module: omnimarket.nodes.node_delegation_acceptance_judge_compute.handlers.handler_delegation_acceptance_judge
+  class: HandlerDelegationAcceptanceJudge
+  input_model: omnimarket.models.delegation_acceptance_judge.model_acceptance_judge_request.ModelAcceptanceJudgeRequest
+
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
+  runtime_profiles: [main]
+
+inputs:
+  operation:
+    type: str
+    required: true
+    description: render, check or score.
+  rubric_yaml:
+    type: str
+    required: true
+    description: The text of delegation_acceptance_judge_rubric.v1.yaml; the caller reads the file, the node does no I/O.
+  cell_cap:
+    type: int
+    required: false
+    description: Judge at most this many items per model, task type and kind, in seeded order (render; 0 is no cap).
+  receipts:
+    type: tuple
+    required: false
+    description: Which judged items joined to a run receipt on the caller's machine (score).
+  seed:
+    type: str
+    required: false
+    description: Reproduces the batch order and the second-judge sample (render).
+  items:
+    type: tuple
+    required: false
+    description: Delegated tasks and outputs, with an opaque item id each (render, score).
+  batch_item_ids:
+    type: tuple
+    required: false
+    description: The item ids one judge call had to answer (check).
+  reply_text:
+    type: str
+    required: false
+    description: The judge reply to validate (check).
+  primary_verdicts:
+    type: tuple
+    required: false
+    description: The primary judge's validated verdicts (score).
+  secondary_verdicts:
+    type: tuple
+    required: false
+    description: The second judge's validated verdicts on the sample (score).
+  cell_events:
+    type: tuple
+    required: false
+    description: Every delegation event of the cells, without text, for terminal_ok (score).
+
+outputs:
+  operation:
+    type: str
+  rubric_version:
+    type: str
+  status:
+    type: str
+  issues:
+    type: tuple
+  batches:
+    type: tuple
+  excluded_probe_ids:
+    type: tuple
+  dropped_item_ids:
+    type: tuple
+  double_judge_item_ids:
+    type: tuple
+  verdicts:
+    type: tuple
+  agreement:
+    type: ModelAcceptanceAgreement
+  matrix:
+    type: tuple
+  events_counted:
+    type: int
+  volume_weighted_accept_rate:
+    type: float
+  volume_terminal_ok_rate:
+    type: float
+  receipts_joined:
+    type: int
+  report_markdown:
+    type: str
+
+terminal_event: onex.evt.omnimarket.delegation-acceptance-judged.v1
+
+event_bus:
+  subscribe_topics:
+    - onex.cmd.omnimarket.delegation-acceptance-judge-requested.v1
+  publish_topics:
+    - onex.evt.omnimarket.delegation-acceptance-judged.v1
+
+metadata:
+  transport_type: kafka
+
+runtime_dispatch:
+  command_topic: onex.cmd.omnimarket.delegation-acceptance-judge-requested.v1
+
+externally_consumed_topics:
+  - onex.evt.omnimarket.delegation-acceptance-judged.v1

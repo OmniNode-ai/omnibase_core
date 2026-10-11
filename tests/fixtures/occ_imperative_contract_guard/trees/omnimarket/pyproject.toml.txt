@@ -1,0 +1,8 @@
+[project]
+name = "omnimarket"
+
+[project.scripts]
+onex-delegate = "omnimarket.adapters.claude_code.delegate:main"
+
+[project.entry-points."onex.cli"]
+market = "omnimarket.cli.market:market"
