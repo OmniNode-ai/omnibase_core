@@ -51,6 +51,9 @@ permissions:
   contents: read
 
 jobs:
+  # OMN-20074: pinned at omniclaude#2659's squash commit, the first gate that
+  # reads and checks the `# advisory-automation:` declarations in auto-merge.yml
+  # and propagate-config.yml; the earlier pin reports those jobs as unenforced.
   advisory-job-gate:
-    uses: OmniNode-ai/omniclaude/.github/workflows/advisory-job-gate-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
+    uses: OmniNode-ai/omniclaude/.github/workflows/advisory-job-gate-reusable.yml@52227ebfeb738cde2f671104270a0e01071b9e53
     secrets: inherit
