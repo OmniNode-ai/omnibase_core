@@ -1,3 +1,15 @@
+## v0.47.42 (2026-10-12)
+
+### Release
+- Cut omnibase-core from dev at 0.47.42 by the scheduled release train.
+- 3 release-relevant commit(s) merged since v0.47.41.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.41
+- feat: a delegation request carries the lab host it was sent from, so the router can spend only that host's own key (#1958)
+- feat: retire the skip-token approvals registry; the receipt gate rejects every skip token (#1953)
+- feat: canonical-file-shape reads the allowlist-path a caller passes to omnibase_core's imperative contract guard (#1949)
+
 ## v0.47.41 (2026-10-11)
 
 ### Release
