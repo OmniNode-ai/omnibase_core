@@ -110,6 +110,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)",
         PG_TOOLS_STEP,
         PG_ENV_STEP,
+        "Provision the contracts' declared sibling checkouts",
         HEAD_STEP,
         "Prepare the merge base with the pull request's test side laid over it",
         BASE_STEP,

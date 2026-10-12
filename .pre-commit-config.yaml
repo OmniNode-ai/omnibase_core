@@ -169,6 +169,15 @@ repos:
         always_run: true
         stages: [pre-push]
 
+      # OMN-21013: execute the reusable's declared-sibling provisioning tests.
+      - id: receipt-gate-sibling-checkouts
+        name: Receipt gate sibling checkout tests (OMN-21013)
+        entry: uv run --frozen pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q -n 0
+          --no-cov
+        language: system
+        pass_filenames: false
+        files: ^(\.github/workflows/receipt-gate\.yml|tests/ci/test_receipt_gate_sibling_checkouts_omn21013\.py|\.pre-commit-config\.yaml)$
+
       # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
       # Enforces the DIRECTION of imports between omnibase_core sub-packages via
       # import-linter (.importlinter). Whole-graph check (grimp caches the graph

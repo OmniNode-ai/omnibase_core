@@ -1746,6 +1746,163 @@ jobs:
           } >> "$GITHUB_ENV"
           echo "Postgres service for the bound tests: host=${host} port=${POSTGRES_PORT}"
 
+      # OMN-21013: resolve declared sibling revisions once, before either verdict.
+      # Missing or conflicting pins leave the sibling absent; node_dod_verify
+      # owns the refusal. Credentials exist only in each git process's env
+      # (the equivalent of persist-credentials: false), using the default token.
+      - name: Provision the contracts' declared sibling checkouts
+        id: sibling_checkouts
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        env:
+          REPO_SHORT: ${{ github.event.repository.name }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          "$DOD_VERIFY_PY" - <<'PY'
+          import base64
+          import os
+          import re
+          import shutil
+          import subprocess
+          import sys
+          import tomllib
+          from pathlib import Path
+
+          import yaml
+
+          home = Path(os.environ["GITHUB_WORKSPACE"]) / ".dod-verify/head_home"
+          caller = home / os.environ["REPO_SHORT"]
+          dod = Path(os.environ["RUNNER_TEMP"]) / "dod"
+          # A reused runner must not supply a stale sibling from an earlier job.
+          for previous in home.iterdir():
+              if previous != caller:
+                  if previous.is_symlink() or previous.is_file():
+                      previous.unlink()
+                  else:
+                      shutil.rmtree(previous)
+          manifest = dod / "siblings.tsv"
+          manifest.write_text("")
+          siblings = set()
+          for ticket in (dod / "tickets.txt").read_text().splitlines():
+              contract_path = caller / "contracts" / f"{ticket}.yaml"
+              if not contract_path.is_file():
+                  continue
+              try:
+                  contract = yaml.safe_load(contract_path.read_text()) or {}
+              except (OSError, yaml.YAMLError):
+                  # Contract validation belongs to the verifier below.
+                  continue
+              if not isinstance(contract, dict):
+                  continue
+              for item in contract.get("dod_evidence", []):
+                  if not isinstance(item, dict):
+                      continue
+                  for check in item.get("checks", []):
+                      if not isinstance(check, dict):
+                          continue
+                      cwd = check.get("cwd", "")
+                      if not isinstance(cwd, str):
+                          continue
+                      match = re.fullmatch(r"\$\{OMNI_HOME\}/([A-Za-z0-9][A-Za-z0-9_.-]*)(?:/.*)?", cwd)
+                      if match and ".." not in match[1] and match[1] != caller.name:
+                          siblings.add(match[1])
+
+          if not siblings:
+              sys.exit(0)
+          # Read data from the PR head; never execute a caller-owned action.
+          # Unreadable pin metadata cannot authorize a fallback revision.
+          try:
+              project = caller / "pyproject.toml"
+              sources = tomllib.loads(project.read_text()).get("tool", {}).get("uv", {}).get("sources", {}) if project.is_file() else {}
+              if not isinstance(sources, dict):
+                  raise ValueError("uv sources must be a table")
+              documents = []
+              for folder in (caller / ".github/workflows", caller / ".github/actions"):
+                  for path in sorted(folder.rglob("*")):
+                      if path.suffix in (".yml", ".yaml") and path.is_file():
+                          documents.append(yaml.safe_load(path.read_text()))
+          except (OSError, ValueError, yaml.YAMLError):
+              print("::notice::sibling pin metadata unreadable; checkouts left absent")
+              sys.exit(0)
+
+          def mappings(value):
+              if isinstance(value, dict):
+                  yield value
+                  for child in value.values():
+                      yield from mappings(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from mappings(child)
+
+          git_env = {key: value for key, value in os.environ.items() if key not in (
+              "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR",
+          )}
+          git_env["GIT_TERMINAL_PROMPT"] = "0"
+          token = os.environ.get("GH_TOKEN", "")
+          if token:
+              auth = base64.b64encode(f"x-access-token:{token}".encode()).decode()
+              git_env.update(GIT_CONFIG_COUNT="1", GIT_CONFIG_KEY_0="http.https://github.com/.extraheader",
+                             GIT_CONFIG_VALUE_0=f"AUTHORIZATION: basic {auth}")
+
+          def git(*args):
+              return subprocess.run(["git", *args], env=git_env, check=True,
+                                    capture_output=True, text=True, timeout=45).stdout.strip()
+
+          for sibling in sorted(siblings):
+              target = home / sibling
+              repository = f"OmniNode-ai/{sibling}"
+              url = f"https://github.com/{repository}.git"
+              uv_pins, action_pins, checkout_refs = set(), set(), set()
+              for source in sources.values():
+                  for entry in (source if isinstance(source, list) else [source]):
+                      if isinstance(entry, dict) and str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
+                          pin = entry.get("rev") or entry.get("tag")
+                          if pin:
+                              uv_pins.add(pin)
+              for document in documents:
+                  for entry in mappings(document):
+                      uses = entry.get("uses", "")
+                      if isinstance(uses, str) and uses.startswith(repository + "/.github/actions/") and "@" in uses:
+                          action_pins.add(uses.rsplit("@", 1)[1])
+                      if isinstance(uses, str) and uses.startswith("actions/checkout@"):
+                          options = entry.get("with", {})
+                          if options.get("repository") == repository and options.get("ref"):
+                              checkout_refs.add(str(options["ref"]))
+              pins = next((pins for pins in (uv_pins, action_pins, checkout_refs) if pins), set())
+              if len(pins) > 1:
+                  print(f"::notice::{sibling}: conflicting revision pins; checkout left absent")
+                  continue
+              ref = next(iter(pins), "HEAD")
+              if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_./-]*", ref) or ".." in ref:
+                  print(f"::notice::{sibling}: unresolved revision; checkout left absent")
+                  continue
+              try:
+                  if re.fullmatch(r"[0-9a-fA-F]{40}", ref):
+                      sha = ref.lower()
+                  else:
+                      patterns = ["HEAD"] if ref == "HEAD" else [ref, f"refs/heads/{ref}", f"refs/tags/{ref}", f"refs/tags/{ref}^{{}}"]
+                      rows = [line.split() for line in git("ls-remote", url, *patterns).splitlines()]
+                      peeled = {row[0] for row in rows if len(row) == 2 and row[1].endswith("^{}")}
+                      resolved = peeled or {row[0] for row in rows if len(row) == 2}
+                      if len(resolved) != 1:
+                          raise ValueError("revision did not resolve uniquely")
+                      sha = resolved.pop()
+                  if not re.fullmatch(r"[0-9a-f]{40}", sha):
+                      raise ValueError("revision is not a commit SHA")
+                  target.mkdir()
+                  git("init", str(target))
+                  git("-C", str(target), "remote", "add", "origin", url)
+                  git("-C", str(target), "fetch", "--depth=1", "--no-tags", "origin", sha)
+                  git("-C", str(target), "checkout", "--detach", "FETCH_HEAD")
+                  with manifest.open("a") as stream:
+                      stream.write(f"{sibling}\t{sha}\n")
+                  print(f"Sibling checkout: {sibling}@{sha}")
+              except (subprocess.SubprocessError, OSError, ValueError) as error:
+                  shutil.rmtree(target, ignore_errors=True)
+                  print(f"::notice::{sibling}: checkout unavailable ({type(error).__name__}); left absent")
+          PY
+
       - name: Verify the contract at the PR head
         id: head_verify
         continue-on-error: ${{ inputs.shadow == 'true' }}
@@ -1833,6 +1990,17 @@ jobs:
             overlay_paths="$(mktemp "$RUNNER_TEMP/dod/overlay-paths.XXXXXX")"
             mkdir -p "$control_home"
             git -C "$head_tree" worktree add --detach "$control_tree" "$MB"
+            # OMN-21013: reuse the early resolved SHA, including unpinned siblings,
+            # for every merge-base and reverted-fix registry. Never re-resolve here.
+            if [ -f "$RUNNER_TEMP/dod/siblings.tsv" ]; then
+              while IFS=$'\t' read -r sibling sibling_sha; do
+                git -C "$GITHUB_WORKSPACE/.dod-verify/head_home/$sibling" worktree prune
+                if ! git -C "$GITHUB_WORKSPACE/.dod-verify/head_home/$sibling" worktree add --detach "$control_home/$sibling" "$sibling_sha"; then
+                  echo "::notice::$sibling: control checkout unavailable; left absent"
+                  rm -rf "$control_home/$sibling"
+                fi
+              done < "$RUNNER_TEMP/dod/siblings.tsv"
+            fi
             local path test_side cited_contract ticket
             if [ -n "$fix" ]; then
               local -a product=()
@@ -2232,7 +2400,7 @@ jobs:
             {
               new_path=verified
               refused_step=none
-              for step_id in occ_probe_checkout bot_exempt same_repo tickets head_checkout setup_python install_uv verifier writer_pin_only pg_tools pg_env head_verify merge_base base_control; do
+              for step_id in occ_probe_checkout bot_exempt same_repo tickets head_checkout setup_python install_uv verifier writer_pin_only pg_tools pg_env sibling_checkouts head_verify merge_base base_control; do
                 if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
                   new_path=refused
                   refused_step="$step_id"
