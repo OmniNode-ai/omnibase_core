@@ -230,6 +230,20 @@ class ModelDelegationRequest(BaseModel):
             "The durable per-tenant identity design is OMN-14107."
         ),
     )
+    source_host: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        pattern=r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$",
+        description=(
+            "The lab host registry row name (lab_run_hosts.yaml, e.g. 'h201') "
+            "this request was sent from. OMN-21010: each Claude account's API "
+            "key is bound to the machine the account lives on (operator ruling "
+            "2026-10-11T17:58:45Z), and lab lanes delegate through a deployed "
+            "runtime, so the router can choose that host's own key only when "
+            "the request names it. None (off the lab, or an older producer) "
+            "keeps routing unchanged and is omitted from the wire."
+        ),
+    )
     trace_id: UUID | None = Field(
         default=None,
         exclude_if=lambda value: value is None,
