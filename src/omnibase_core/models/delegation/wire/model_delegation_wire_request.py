@@ -248,7 +248,7 @@ class ModelDelegationRequest(BaseModel):
         default=None,
         exclude_if=lambda value: value is None,
         description=(
-            "Distributed trace identifier for this delegation. OMN-19437:"
+            "Distributed trace identifier for this delegation. OMN-19437: "
             "463 deployed-lane terminals in 7 days carried null trace and "
             "span ids because nothing set them. None is explicit "
             "legacy/unset; the CLI and RuntimeLocal set it at publish "

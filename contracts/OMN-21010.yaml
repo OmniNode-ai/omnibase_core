@@ -11,7 +11,7 @@ summary: ModelDelegationRequest gains an optional source_host, the lab host regi
 is_seam_ticket: true
 interface_change: true
 interfaces_touched:
-  - "omnibase_core.models.delegation.wire.ModelDelegationRequest.source_host"
+  - public_api
 requirements:
   - id: req-omn21010-source-host
     statement: A delegation request may name the lab host it was sent from, and a malformed host name
