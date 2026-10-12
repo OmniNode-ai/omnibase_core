@@ -15,18 +15,7 @@ concurrency:
 
 
 jobs:
-  occ-preflight:
-    uses: ./.github/workflows/occ-preflight.yml
-    permissions:
-      contents: read
-      pull-requests: read
-    with:
-      contracts-dir: contracts
-      receipts-dir: drift/dod_receipts
-
   pr-title:
-    needs: occ-preflight
-    if: always()
     # OMN-21008: the decision moved out of the change-control repository's
     # pr-title-check-reusable.yml into omnimarket's node_pr_title_check_compute,
     # run here from a pinned published omnimarket release installed with

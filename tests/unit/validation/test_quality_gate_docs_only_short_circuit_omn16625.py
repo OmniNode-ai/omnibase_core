@@ -28,13 +28,8 @@ This ticket:
      `docs_only` from `needs.zone-filter.outputs.docs_only` before ever
      admitting a leaf's `skipped` conclusion as passing -- a skip on a
      non-docs-only diff still fails `quality-gate` closed.
-  4. Leaves `contract-compliance`, `boundary-validation`, and
-     `occ-companion-merged` fully untouched -- `contract-compliance`'s own
-     in-file comment documents a PREVIOUSLY REJECTED attempt to narrow its
-     `if:` (blocked by the `reject-required-check-skip-vector` guard,
-     OMN-14863) because it is a direct, unwrapped `GATE_JOBS` entry with no
-     re-deriving aggregator; building that safe wrapper is separable
-     follow-up scope, not bundled here.
+  4. Leaves `boundary-validation` fully untouched: it remains a direct,
+     unwrapped GATE_JOBS entry without a docs-only short circuit.
 
 Fail-closed proof is structural: `quality-gate` is a `GATE_JOBS` completeness
 anchor in `ci_summary_gate.py` (must be present+completed+success|skipped),
@@ -307,20 +302,10 @@ def _var_alias(job_id: str) -> str:
 
 
 class TestDeliberatelyUntouchedJobs:
-    """contract-compliance / boundary-validation / occ-companion-merged are
-    direct, unwrapped GATE_JOBS entries with no re-deriving aggregator (see
-    module docstring) -- gating them here would repeat a PREVIOUSLY REJECTED
-    change (see contract-compliance's own in-file comment, OMN-14863)."""
-
-    def test_contract_compliance_if_does_not_reference_docs_only(self) -> None:
-        condition = str(_ci_job("contract-compliance").get("if", ""))
-        assert "docs_only" not in condition
+    """Boundary validation remains unconditional after OCC retirement."""
 
     def test_boundary_validation_has_no_if_at_all(self) -> None:
         assert "if" not in _ci_job("boundary-validation")
-
-    def test_occ_companion_merged_has_no_if_at_all(self) -> None:
-        assert "if" not in _ci_job("occ-companion-merged")
 
 
 class TestRequiredChecksManifestOverrides:

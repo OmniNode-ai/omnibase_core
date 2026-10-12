@@ -6,8 +6,7 @@ The ``CI Summary`` required context is posted by a NO-``needs`` poller that
 calls ``scripts/ci/ci_summary_gate.py``. These tests pin the fail-closed,
 default-deny verdict so the required gate can never silently rubber-stamp, and
 they pin core's specific gating set + soft-allowlist (e.g. the orphan "Contract
-Compliance" job must be ignored while the gate "Contract Compliance Check" must
-not).
+Compliance" job must be ignored).
 """
 
 from __future__ import annotations
@@ -333,8 +332,7 @@ class TestCiSummaryGate:
 
     def test_allowlisted_orphan_contract_compliance_failure_is_ignored(self) -> None:
         # The orphan "Contract Compliance" job (compliance) is not gated — a
-        # failure must NOT block. This must NOT be confused with the gate
-        # "Contract Compliance Check".
+        # failure must NOT block.
         jobs = _all_good() + [_job("Contract Compliance", "failure")]
         code, _ = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
         assert code == EXIT_SUCCESS
@@ -346,17 +344,6 @@ class TestCiSummaryGate:
         jobs = _all_good() + [_job("Shadow Selection Compare", "failure")]
         code, _ = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
         assert code == EXIT_SUCCESS
-
-    def test_gate_contract_compliance_check_failure_is_failure(self) -> None:
-        # The gating "Contract Compliance Check" is distinct from the allowlisted
-        # orphan "Contract Compliance"; its failure MUST block.
-        assert "Contract Compliance Check" in GATE_JOBS
-        jobs = _all_good()
-        idx = GATE_JOBS.index("Contract Compliance Check")
-        jobs[idx] = _job("Contract Compliance Check", "failure")
-        code, report = evaluate(jobs)
-        assert code == EXIT_FAILURE
-        assert "Contract Compliance Check" in report
 
     def test_self_job_is_excluded(self) -> None:
         # The poller's own in-progress/failed record must not affect the verdict.
@@ -441,32 +428,6 @@ class TestCiSummaryGate:
         jobs = _all_good() + [_job("Some New Job", "neutral")]
         code, _ = evaluate(jobs)
         assert code == EXIT_FAILURE
-
-    def test_occ_companion_merged_gate_is_strict_and_fails_closed(self) -> None:
-        # OMN-15222 (OMN-15214 canary port): the companion-merged gate makes the
-        # 2026-07-26 hygiene-sweep trigger state (OPEN companion + MERGED product
-        # PR) unreachable via the merge path. It must be a GATE_JOB (CI Summary
-        # WAITS for it) AND strict-success (a skip/cancel fails closed) so a
-        # red/absent/skipped result can never green the "CI Summary" umbrella —
-        # folding into the umbrella instead of adding a new top-level required
-        # context avoids the never-reports wedge.
-        gate = "OCC Companion Merged Gate (OMN-15214)"
-        assert gate in GATE_JOBS
-        assert gate in STRICT_SUCCESS_JOBS
-        jobs = [j for j in _all_good() if j["name"] != gate]
-        jobs.append(_job(gate, "failure"))
-        code, report = evaluate(jobs)
-        assert code == EXIT_FAILURE
-        assert gate in report
-        # A skip must also fail closed — the job is unconditional in ci.yml.
-        jobs = [j for j in _all_good() if j["name"] != gate]
-        jobs.append(_job(gate, "skipped"))
-        code, _ = evaluate(jobs)
-        assert code == EXIT_FAILURE
-        # Absent entirely → PENDING (completeness anchor), never a vacuous green.
-        jobs = [j for j in _all_good() if j["name"] != gate]
-        code, _ = evaluate(jobs)
-        assert code == EXIT_PENDING
 
     def test_spec_required_validator_jobs_match_spec(self) -> None:
         # SYNC GUARD (OMN-14127): SPEC_REQUIRED_VALIDATOR_JOBS must equal the set
@@ -807,67 +768,10 @@ class TestExpectedExternalContexts:
         assert EXPECTED_EXTERNAL_CONTEXTS[0] in report
 
 
-class TestContractComplianceFailClosed:
-    """Static pins for the ci.yml latent fail-open fix.
-
-    contract-compliance's DoD check_values are PR-scoped; its empty-PR_NUMBER
-    branch used to `exit 0` -- a vacuous SUCCESS on merge_group/push that
-    never ran a single check_value, while GATE_JOBS/STRICT_SUCCESS_JOBS still
-    counted it as a provable pass. The `if:` deliberately stays unconditional
-    (all three events) rather than narrowing to pull_request-only: since
-    "Contract Compliance Check" is a GATE_JOBS entry whose completeness anchor
-    accepts a `skipped` conclusion as GOOD, an `if:` that can evaluate false
-    would make GitHub post the job as `skipped` on merge_group/push -- a
-    *worse* silent-pass than the original bug, via the skip path instead of
-    the vacuous-exit-0 path. The reject-required-check-skip-vector pre-commit
-    hook (OMN-14863) rejected an earlier draft of this fix that narrowed the
-    `if:`, live-confirming this class of regression. The shell logic itself
-    can't run outside a real Actions runner, so these pin the source text
-    directly.
-    """
-
-    def test_contract_compliance_if_stays_unconditional_no_skip_vector(self) -> None:
-        # Pins the OMN-14863 skip-vector guard: this job's `if:` must keep
-        # admitting pull_request, merge_group, AND push -- narrowing it would
-        # let GitHub post a `skipped` conclusion on merge_group/push, which
-        # GATE_JOBS' completeness anchor accepts as GOOD (silently worse than
-        # the vacuous-exit-0 bug this fix closes). See the class docstring.
-        doc = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
-        condition = doc["jobs"]["contract-compliance"]["if"]
-        for event in ("pull_request", "merge_group", "push"):
-            assert f"github.event_name == '{event}'" in condition, condition
-
-    def test_pr_resolution_is_delegated_to_the_fail_closed_evidence_resolver(
-        self,
-    ) -> None:
-        """The resolver owns push/merge-group PR admission after OMN-18157."""
-        workflow = yaml.safe_load(CI_YML.read_text(encoding="utf-8"))
-        steps = workflow["jobs"]["contract-compliance"]["steps"]
-        resolver = next(
-            step
-            for step in steps
-            if step.get("id") == "resolve_contract_compliance_evidence"
-        )
-        assert "resolve_contract_compliance_evidence.py" in resolver["run"]
-        assert '--event-name "${{ github.event_name }}"' in resolver["run"]
-        assert '--commit-sha "${{ github.sha }}"' in resolver["run"]
-        resolver_source = (
-            REPO_ROOT / "scripts/ci/resolve_contract_compliance_evidence.py"
-        ).read_text(encoding="utf-8")
-        assert "No PR number could be resolved" in resolver_source
-        assert "return 1" in resolver_source
-
-
-class TestContractComplianceNameDistinction:
-    def test_orphan_and_gate_contract_compliance_names_never_swap(self) -> None:
-        # "Contract Compliance" (the orphan `compliance` job, ci.yml:1036) is
-        # advisory-only and must stay in SOFT_ALLOWLIST; "Contract Compliance
-        # Check" (the real DoD gate, ci.yml:3374) must stay in GATE_JOBS. A
-        # future edit that swaps these two names would silently downgrade the
-        # real gate to advisory.
+class TestContractComplianceAdvisory:
+    def test_orphan_contract_compliance_remains_advisory(self) -> None:
+        # The repo-owned standards reader remains advisory after OCC retirement.
         assert "Contract Compliance" in SOFT_ALLOWLIST
-        assert "Contract Compliance Check" not in SOFT_ALLOWLIST
-        assert "Contract Compliance Check" in GATE_JOBS
         assert "Contract Compliance" not in GATE_JOBS
 
 
@@ -878,18 +782,16 @@ class TestContractComplianceNameDistinction:
 # (ci.yml's own jobs are covered by the in-run default-deny sweep, opt-out
 # only via SOFT_ALLOWLIST -- see the ci_summary_gate.py module docstring) must
 # resolve into exactly one of:
-#   (a) the shared generic occ-preflight reusable-workflow context, OR
-#   (b) EXTERNAL_CONTEXT_FILES (L4 EXPECTED_EXTERNAL_CONTEXTS), OR
-#   (c) DIRECT_REQUIRED_JOB_CONTEXTS (a literal context name already directly
+#   (a) EXTERNAL_CONTEXT_FILES (L4 EXPECTED_EXTERNAL_CONTEXTS), OR
+#   (b) DIRECT_REQUIRED_JOB_CONTEXTS (a literal context name already directly
 #       required on `dev`, per the committed branch-protection snapshot), OR
-#   (d) EXPLICIT_EXEMPT_JOBS (a one-line reason).
+#   (c) EXPLICIT_EXEMPT_JOBS (a one-line reason).
 # A job in a NEW workflow file, or a new job in an existing one, satisfies
 # none of these and fails test_every_pr_triggered_job_is_classified until a
 # human classifies it -- this is the mechanism that keeps "new workflow file
 # = structurally invisible" closed for this repo going forward.
 # ---------------------------------------------------------------------------
 
-_OCC_PREFLIGHT_CONTEXT = "occ-preflight / eligibility"
 
 EXTERNAL_CONTEXT_FILES: frozenset[str] = frozenset(
     {
@@ -952,7 +854,6 @@ DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("canonical-inference-gate.yml", "canonical-inference-gate"): (
         "Canonical Inference Gate",
     ),
-    ("call-receipt-gate.yml", "verify"): ("verify / verify",),
     ("call-reject-skip.yml", "call-reject-skip-token"): (
         "call-reject-skip-token / scan / reject-skip-gate-token",
     ),
@@ -983,32 +884,6 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "triggers only on pull_request closed -- post-merge TODO/ticket "
         "audit, structurally cannot be a merge gate (same class as "
         "auto-tag-on-merge)."
-    ),
-    ("call-occ-autobind.yml", "occ-autobind"): (
-        "thin uses: caller of omniclaude's call-occ-autobind-reusable.yml "
-        "(OMN-14160 fan-out) -- it PUBLISHES a Kafka command for the .201 "
-        "dev-lane effects runtime to consume out of band and validates no PR "
-        "content, so it cannot gate a merge and must not be treated as though "
-        "it does. Deliberately absent from .github/required-checks.yaml and "
-        "NOT added to EXPECTED_EXTERNAL_CONTEXTS: asserting it there would "
-        "make this poller treat a publisher as de facto required, and a "
-        "transient broker outage would then block every merge in the "
-        "repository. Self-declared non-required by the "
-        "pull-request-workflow-budget.yaml waiver on this same workflow file. "
-        "Being non-required is also precisely why this job may carry a "
-        "job-level `if:` where the sibling occ-companion-effect caller may "
-        "not (OMN-15120/OMN-14864: a skipped `uses:` job produces no check "
-        "run at all)."
-    ),
-    ("call-occ-autobind.yml", "occ-autobind-manual-replay"): (
-        "OMN-14993 manual replay entrypoint, gated to `github.event_name == "
-        "'workflow_dispatch'` -- it is skipped on every pull_request event and "
-        "is reachable only by an operator dispatching it by hand for a named "
-        "PR. Structurally cannot gate a merge, the same class as the "
-        "closed-PR-only jobs in auto-tag-on-merge.yml and "
-        "todo-audit-on-merge.yml above. It is enumerated here rather than "
-        "omitted because this audit walks every job in a PR-triggered "
-        "workflow file, not only the ones a pull_request event can start."
     ),
 }
 
@@ -1096,10 +971,6 @@ class TestEnforceEverythingCompleteness:
                 continue
             jobs = _pr_triggered_jobs(path)
             for job_key, job in jobs.items():
-                if job_key == "occ-preflight" and "occ-preflight.yml" in str(
-                    job.get("uses", "")
-                ):
-                    continue  # shared generic context, see _OCC_PREFLIGHT_CONTEXT
                 if path.name in EXTERNAL_CONTEXT_FILES:
                     continue  # L4 EXPECTED_EXTERNAL_CONTEXTS
                 key = (path.name, job_key)
@@ -1129,7 +1000,6 @@ class TestEnforceEverythingCompleteness:
         all_named = {
             c for names in DIRECT_REQUIRED_JOB_CONTEXTS.values() for c in names
         }
-        all_named.add(_OCC_PREFLIGHT_CONTEXT)
         missing = sorted(all_named - required_snapshot)
         assert not missing, (
             f"contexts referenced but absent from the snapshot: {missing}"
@@ -1167,8 +1037,6 @@ class TestEnforceEverythingCompleteness:
             on = _on_block(doc)
             if _pr_targets_main_or_dev(on):
                 for job_key, job in (doc.get("jobs", {}) or {}).items():
-                    if job_key == "occ-preflight":
-                        continue
                     name = job.get("name", job_key)
                     assert name in required_snapshot, (
                         f"{path.name}::{job_key} ('{name}') fires on pull_request "

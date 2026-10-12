@@ -37,7 +37,6 @@ CI and skips only on a local machine; a definitive 404 fails everywhere.
 from __future__ import annotations
 
 import json
-import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -241,37 +240,20 @@ def test_real_tree_extraction_is_nonempty() -> None:
 
 
 @pytest.mark.unit
-def test_occ_born_path_pins_are_dev_not_main() -> None:
-    """OMN-14941 F1 regression pin, carried into omnibase_core (OMN-14990 for
-    the companion-effect caller, OMN-14160 for the autobind caller).
+def test_no_occ_born_path_caller_remains_after_the_s6_cutover() -> None:
+    """OMN-20074 (OCC retirement S6 part 2) retires the OMN-14941 F1 pin.
 
-    Both OCC born-path reusables are pinned to a sha on `dev` (OMN-20001; was `@dev`), which is the ref every
-    sibling caller on the fleet pins. An `@main` pin was a parse-time 404 on
-    every PR when the original omnibase_infra caller shipped -- the E1 failure
-    class, in which the workflow never runs and the publisher never fires.
-
-    This assertion is an exact-equality map on purpose. A subset check would
-    let a THIRD born-path caller land unpinned and unnoticed, which is the
-    shape of the omission this repository spent fourteen months carrying: the
-    autobind caller was simply absent, and nothing here said a word about it.
-    Adding a born-path caller means adding its expected pin on this line.
-
-    OMN-14812 tracks re-pinning to `@main` or a main SHA now that both
-    reusables also resolve there (re-verified 2026-09-19). That is a fleet-wide
-    change across seven callers and updates this map when it happens.
+    That pin held both OCC born-path callers (the companion-effect job in
+    ci.yml and call-occ-autobind.yml) to one omniclaude sha on `dev`. S6 part 2
+    deletes both callers, so the exact-equality map is now empty: a born-path
+    caller that reappears fails here instead of silently minting OCC
+    companions for this repository again.
     """
     refs = _extract_cross_repo_uses(WORKFLOWS_DIR)
     occ_pins = {
         r.path: r.ref for r in refs if r.repo == "omniclaude" and "call-occ-" in r.path
     }
-    # OMN-20001: each is pinned to an omniclaude sha (not a moving branch), so
-    # an omniclaude merge cannot turn this repo red; both use the same sha.
-    assert set(occ_pins) == {
-        ".github/workflows/call-occ-companion-effect-reusable.yml",
-        ".github/workflows/call-occ-autobind-reusable.yml",
-    }
-    assert len(set(occ_pins.values())) == 1
-    assert re.fullmatch(r"[0-9a-f]{40}", next(iter(occ_pins.values())))
+    assert occ_pins == {}
 
 
 # ---------------------------------------------------------------------------
