@@ -222,7 +222,7 @@ def test_read_only_permissions_and_ephemeral_default_token(tmp_path):
     _, _, calls = _run(tmp_path)
     assert _job()["permissions"] == {"contents": "read", "pull-requests": "read"}
     assert _step()["env"]["GH_TOKEN"] == "${{ github.token }}"
-    assert "continue-on-error" not in _step()
+    assert _step()["continue-on-error"] == "${{ inputs.shadow == 'true' }}"
     assert "secrets." not in json.dumps(_step())
     for argv, kwargs in calls:
         assert "test-token" not in " ".join(argv)
