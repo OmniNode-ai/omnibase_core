@@ -1397,6 +1397,13 @@ jobs:
       # plugin version classifier (the OMN-20710 post-merge plugin version
       # bump, OMN-20074). Every failure is not-exempt; PR title/body never
       # supply this verdict.
+      # OMN-20068: before the release cut, admit a pin swap across the
+      # declared pin files (.github/sibling-pins.yaml,
+      # .github/omnimarket-contract-pin.yaml), dependency manifests (judged by
+      # classify_dependency_pin_only) and workflow ref:/uses: shas, where every
+      # changed line replaces one pin value with another and nothing else
+      # moves: no added, removed or reworded line, no new or deleted file.
+      # Operator ruling 2026-10-12T22:05:22Z: a pin bump rides on its own CI.
       - name: Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)
         id: writer_pin_only
         continue-on-error: ${{ inputs.shadow == 'true' }}
@@ -1424,6 +1431,7 @@ jobs:
             changelog_changed=false
             workflow_only=true
             plugin_only=true
+            pin_swap_paths=true
             while IFS= read -r -d '' path; do
               if [ "$path" = CHANGELOG.md ]; then
                 changelog_changed=true
@@ -1431,6 +1439,15 @@ jobs:
               case "$path" in
                 .github/workflows/*.yml | .github/workflows/*.yaml) ;;
                 *) workflow_only=false ;;
+              esac
+              case "$path" in
+                .github/workflows/*.yml | .github/workflows/*.yaml | .github/sibling-pins.yaml | .github/omnimarket-contract-pin.yaml) ;;
+                *)
+                  case "${path##*/}" in
+                    pyproject.toml | uv.lock) ;;
+                    *) pin_swap_paths=false ;;
+                  esac
+                  ;;
               esac
               case "$path" in
                 .claude-plugin/plugin.json | .claude-plugin/marketplace.json | */.claude-plugin/plugin.json | */.claude-plugin/marketplace.json) ;;
@@ -1459,11 +1476,11 @@ jobs:
                 fi
               done
             fi
-            # A workflow-only or plugin-manifest-only diff hands every file's
-            # head and base blob to its classifier, in the order of the paths
-            # file.
+            # Workflow-only, plugin-manifest-only and allowed pin-swap diffs
+            # hand every file's head and base blob to their classifier, in
+            # the order of the paths file.
             mkdir -p "$probe_dir/blobs" || return 1
-            if [ "$workflow_only" = true ] || [ "$plugin_only" = true ]; then
+            if [ "$workflow_only" = true ] || [ "$plugin_only" = true ] || [ "$pin_swap_paths" = true ]; then
               index=0
               while IFS= read -r -d '' path; do
                 for side in head base; do
@@ -1593,6 +1610,78 @@ jobs:
 
               return classify_plugin_manifest_version_only(paths, contents=read_blobs(paths, blobs_dir))
 
+          def classify_pin_swap_only(paths, pyproject_head, pyproject_base, blobs_dir):
+              if not paths:
+                  return False, "pin swap requires changed paths"
+              pin_files = {".github/sibling-pins.yaml", ".github/omnimarket-contract-pin.yaml"}
+              manifests = []
+              pin_paths = []
+              for index, path in enumerate(paths):
+                  workflow = path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml"))
+                  if workflow or path in pin_files:
+                      pin_paths.append((index, path, workflow))
+                  elif Path(path).name in {"pyproject.toml", "uv.lock"}:
+                      manifests.append(path)
+                  else:
+                      return False, f"path is not allowed for a pin swap: {path}"
+              manifest_reason = None
+              if manifests:
+                  pin_only, manifest_reason = classify_dependency_pin_only(
+                      manifests, pyproject_head=pyproject_head, pyproject_base=pyproject_base,
+                  )
+                  if not pin_only:
+                      return False, f"pin swap manifests are not dependency-pin-only: {manifest_reason}"
+              if not pin_paths:
+                  return False, "pin swap requires a workflow or declared pin file"
+              workflow_patterns = [
+                  re.compile(r"^(?P<lead>[ ]*(?:-[ ]+)?ref:[ ]+)(?P<value>[0-9a-f]{40})(?P<tail>(?:[ ]+#.*)?)$"),
+                  re.compile(r"^(?P<lead>[ ]*(?:-[ ]+)?uses:[ ]+[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@)(?P<value>[0-9a-f]{40})(?P<tail>(?:[ ]+#.*)?)$"),
+              ]
+              pin_pattern = re.compile(r"^(?P<lead>[ ]*(?:-[ ]+)?[A-Za-z0-9_.-]+:[ ]+)(?P<value>[0-9a-f]{40}|v?\d+(?:\.\d+)+)(?P<tail>(?:[ ]+#.*)?)$")
+              swapped = 0
+              for index, path, workflow in pin_paths:
+                  head_file, base_file = blobs_dir / f"{index}.head", blobs_dir / f"{index}.base"
+                  if not head_file.exists() or not base_file.exists():
+                      return False, f"pin swap file is added or deleted: {path}"
+                  # Preserve line endings: read_text would normalize CRLF.
+                  head = head_file.read_bytes().decode("utf-8").splitlines(keepends=True)
+                  base = base_file.read_bytes().decode("utf-8").splitlines(keepends=True)
+                  file_swapped = 0
+                  patterns = workflow_patterns if workflow else [pin_pattern]
+                  for tag, base_start, base_end, head_start, head_end in difflib.SequenceMatcher(
+                      None, base, head, autojunk=False,
+                  ).get_opcodes():
+                      if tag == "equal":
+                          continue
+                      if tag != "replace" or base_end - base_start != head_end - head_start:
+                          return False, f"{path} adds or removes a line"
+                      for offset, (base_line, head_line) in enumerate(zip(
+                          base[base_start:base_end], head[head_start:head_end],
+                      )):
+                          base_body, head_body = base_line.rstrip("\r\n"), head_line.rstrip("\r\n")
+                          valid = False
+                          if base_line[len(base_body):] == head_line[len(head_body):]:
+                              for pattern in patterns:
+                                  old, new = pattern.fullmatch(base_body), pattern.fullmatch(head_body)
+                                  if old is None or new is None:
+                                      continue
+                                  old_sha = re.fullmatch(r"[0-9a-f]{40}", old["value"]) is not None
+                                  new_sha = re.fullmatch(r"[0-9a-f]{40}", new["value"]) is not None
+                                  valid = (old["lead"] == new["lead"] and old["tail"] == new["tail"]
+                                           and old["value"] != new["value"] and old_sha == new_sha)
+                                  if valid:
+                                      break
+                          if not valid:
+                              return False, f"{path} line {head_start + offset + 1} is not solely a pin value swap"
+                          file_swapped += 1
+                  if not file_swapped:
+                      return False, f"{path} has no swapped pin line"
+                  swapped += file_swapped
+              reason = f"pin swap only: {swapped} pin value(s) in {len(pin_paths)} file(s)"
+              if manifests:
+                  reason += f"; manifests: {manifest_reason}"
+              return True, reason
+
           def classify():
               (paths_file, head_file, base_file, changelog_head, changelog_base,
                project_file, blobs_dir) = map(Path, sys.argv[1:])
@@ -1620,6 +1709,11 @@ jobs:
                       return {"exempt": True, "kind": "plugin_version_bump", "reason": plugin_reason,
                               "classifier": "classify_plugin_manifest_version_only"}
                   pin_reason = f"{pin_reason}; plugin manifest version: {plugin_reason}"
+              pin_swap, reason = classify_pin_swap_only(paths, pyproject_head, pyproject_base, blobs_dir)
+              if pin_swap:
+                  return {"exempt": True, "kind": "pin_swap_only", "reason": reason,
+                          "classifier": "classify_pin_swap_only"}
+              pin_reason = f"{pin_reason}; pin swap: {reason}"
               release_cut, reason = classify_release_cut(
                   paths, pyproject_head, pyproject_base, changelog_head, changelog_base, project_file,
               )
@@ -1634,7 +1728,7 @@ jobs:
           PY
             ) > "$probe_dir/verdict.json" || return 1
             reason="the pinned classifier output is not one valid JSON verdict"
-            jq -s -e 'length == 1 and (.[0] | type == "object" and (.exempt | type == "boolean") and (.kind == "dependency_pin_only" or .kind == "plugin_version_bump" or .kind == "release_cut" or .kind == "none") and (.exempt == (.kind != "none")) and (.reason | type == "string"))' "$probe_dir/verdict.json" > /dev/null 2>&1 || return 1
+            jq -s -e 'length == 1 and (.[0] | type == "object" and (.exempt | type == "boolean") and (.kind == "dependency_pin_only" or .kind == "plugin_version_bump" or .kind == "pin_swap_only" or .kind == "release_cut" or .kind == "none") and (.exempt == (.kind != "none")) and (.reason | type == "string"))' "$probe_dir/verdict.json" > /dev/null 2>&1 || return 1
             reason="$(jq -r '.reason' "$probe_dir/verdict.json")" || return 1
             kind="$(jq -r '.kind' "$probe_dir/verdict.json")" || return 1
             classifier="$(jq -r '.classifier // "classify_dependency_pin_only"' "$probe_dir/verdict.json")" || return 1
@@ -1649,6 +1743,8 @@ jobs:
               echo "::notice::OCC writer app authored a dependency-pin-only change at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by the pinned verifier's ${classifier}: ${reason}; OMN-17427). The OCC autobind outcome this exemption used to read is no longer produced for caller-evidence repositories; the evidence gate is not applicable."
             elif [ "$kind" = plugin_version_bump ]; then
               echo "::notice::OCC writer app authored a plugin version bump at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by the pinned verifier's ${classifier}: ${reason}; OMN-20074); the evidence gate is not applicable."
+            elif [ "$kind" = pin_swap_only ]; then
+              echo "::notice::OCC writer app authored a pin-swap-only change at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB} by ${classifier}: ${reason}; OMN-20068). Every changed line replaces one pin value with another; the pull request rides on its own CI and the evidence gate is not applicable."
             else
               echo "::notice::OCC writer app authored a release cut at ${HEAD_SHA} (derived in this job from the head's diff against merge base ${MB}: ${reason}; OMN-20074); the evidence gate is not applicable."
             fi
