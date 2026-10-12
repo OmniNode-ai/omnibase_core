@@ -1,0 +1,80 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20068
+title: The repo-evidence gate admits a writer-app pin swap across pin files, dependency manifests and
+  workflow refs as pin-only
+summary: The dod-verify writer_pin_only step gains classify_pin_swap_only. A writer-app diff confined
+  to the declared pin files, pyproject.toml/uv.lock and workflow files is exempt only when every changed
+  line replaces one pin value with another (a 40-hex ref or uses sha in a workflow, a sha or version in
+  a pin file, manifests judged by classify_dependency_pin_only). Any added, removed or reworded line,
+  an added or deleted file, or any other path is refused. The step stays writer-app only.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20068
+    statement: A writer-app pull request whose whole diff is pin swaps rides on its own CI, and nothing
+      wider is exempt.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the omnibase_infra#4832 shape (two declared pin files and nine workflows, 16
+          swapped lines) is exempt as pin_swap_only. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py
+          -q -k test_4832_pin_swap_is_exempt'
+      - id: AC2
+        statement: 'AC2: the same diff plus a non-pin workflow line, a run line changed beside a sha swap,
+          an added or removed line, an added or deleted file, a reworded comment, key or indent, or a
+          source path is refused. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py
+          -q -k test_mixed_pin_swap_fails_closed'
+      - id: AC3
+        statement: 'AC3: manifests, uses shas and pin-file versions are judged by value class, and the
+          step stays writer-app only. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py
+          -q -k "test_pin_swap_with_dependency_manifests or test_workflow_uses_pin_swap or test_pin_file_version_swap
+          or test_multiple_dependency_manifests_still_refused or test_writer_pin_swap_step_stays_writer_app_only"'
+evidence_requirements:
+  - kind: tests
+    description: The step, run against a real git history, exempts the omnibase_infra#4832 pin swap.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -k test_4832_pin_swap_is_exempt
+  - kind: tests
+    description: The step refuses each negative control, naming the file and line.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -k test_mixed_pin_swap_fails_closed
+  - kind: tests
+    description: The step judges manifests, uses shas and pin-file versions by value class, and its if
+      stays writer-app only.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -k "test_pin_swap_with_dependency_manifests
+      or test_workflow_uses_pin_swap or test_pin_file_version_swap or test_multiple_dependency_manifests_still_refused
+      or test_writer_pin_swap_step_stays_writer_app_only"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20068-ac1
+    description: The step, run against a real git history, exempts the omnibase_infra#4832 pin swap.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -k test_4832_pin_swap_is_exempt
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20068-ac2
+    description: The step refuses each negative control, naming the file and line.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -k test_mixed_pin_swap_fails_closed
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-20068-ac3
+    description: The step judges manifests, uses shas and pin-file versions by value class, and its if
+      stays writer-app only.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -k "test_pin_swap_with_dependency_manifests
+          or test_workflow_uses_pin_swap or test_pin_file_version_swap or test_multiple_dependency_manifests_still_refused
+          or test_writer_pin_swap_step_stays_writer_app_only"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
