@@ -83,8 +83,10 @@ def test_workflow_keeps_context_triggers_and_runner() -> None:
     assert job["runs-on"] == RUNNER
     assert job["timeout-minutes"] == 10
     assert job["permissions"] == {"contents": "read"}
-    assert job["needs"] == "occ-preflight"
-    assert job["if"] == "always()"
+    # OMN-20074 retired the occ-preflight caller job, so pr-title waits on nothing.
+    assert "needs" not in job
+    assert "if" not in job
+    assert "occ-preflight" not in _workflow()["jobs"]
     assert _workflow()[True]["pull_request"]["types"] == [
         "opened",
         "edited",

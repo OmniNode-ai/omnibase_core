@@ -116,12 +116,13 @@ gates:
     rationale: "Live required status check on omnibase_core dev branch protection."
 
   - name: "verify / verify"
-    mode: REQUIRED
+    mode: RETIRED
     producer_kind: local
     workflow: call-receipt-gate.yml
     job_path: ["verify", "verify"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "OMN-20074 (OCC retirement S6 part 2): the producer was deleted with the OCC callers and
+      the context leaves dev branch protection in the same cut-over window."
 
   - name: "contract-validation"
     mode: REQUIRED
@@ -324,13 +325,15 @@ gates:
       skip_semantics reverted to never since a skip is no longer even reachable."
 
   - name: "Contract Compliance Check"
-    mode: REQUIRED
+    mode: RETIRED
     branch: main
     producer_kind: local
     workflow: ci.yml
     job_path: ["contract-compliance"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection."
+    rationale: "OMN-20074 (OCC retirement S6 part 2): the producer (the OCC-evidence contract-compliance
+      job) was deleted with the OCC callers; main branch protection required no status check when read
+      on 2026-10-10, and repo-evidence / dod-verify carries the contract verdict."
 
   - name: "Cross-repo boundary validation"
     mode: REQUIRED
@@ -805,44 +808,23 @@ gates:
       Phase 3 product-readiness shadow subcheck; no needs:, no if: -- unconditional)."
 
   - name: "occ-companion-effect / Publish occ-companion-effect command"
-    mode: REQUIRED
+    mode: RETIRED
     branch: dev
     producer_kind: local
     workflow: ci.yml
     job_path: ["occ-companion-effect"]
     skip_semantics: neutral_ok
-    rationale: "OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
-      contexts.md), migrated into ci.yml by OMN-16359 without changing the reusable call or composed context
-      name: the former caller job 'occ-companion-effect' previously had its own job-level `if: github.actor
-      != 'dependabot[bot]' && github.actor != 'renovate[bot]' && (contains(...OMN-...))` -- vector-3 (ungated
-      caller if). A skipped CALLER job never invokes the reusable at all, so no check run under this composed
-      context is ever created -- permanently PENDING, not a neutral skip. This was the live cause of omnibase_core#1548
-      (Dependabot) never materializing this context. Fix: the caller `if:` is removed entirely so the
-      reusable is always invoked. The identical actor/ticket exemption still exists, but now ONLY inside
-      the reusable's own job-level `if:` (omniclaude call-occ-companion-effect-reusable.yml, job `publish-occ-companion-effect`)
-      -- a job-level skip *inside* an invoked reusable still produces a real check run with conclusion=skipped
-      under this exact composed name, which GitHub branch protection accepts as passing. skip_semantics:
-      neutral_ok is accurate here (not `never`): this context legitimately terminates skipped for Dependabot/Renovate/ticketless
-      PRs by design, and always produces a check run when it does. Cross-repo remainder (not required
-      for correctness, tracked as a possible follow-up): the omniclaude reusable could additionally convert
-      its job-level `if:` into an in-script early-exit success so no producer ever reports a bare 'skipped'
-      conclusion; not implemented here since a job-level skip on the callee already satisfies branch protection
-      and requires no cross-repo change to close the OMN-14864/OMN-15120 defect."
+    rationale: "OMN-20074 (OCC retirement S6 part 2): the producer was deleted with the OCC callers and
+      the context leaves dev branch protection in the same cut-over window."
 
   - name: "occ-preflight / eligibility"
-    mode: REQUIRED
+    mode: RETIRED
     producer_kind: local
     workflow: call-receipt-gate.yml
     job_path: ["occ-preflight", "eligibility"]
     skip_semantics: never
-    rationale: "Live required status check on BOTH omnibase_core dev and main branch protection (verified
-      2026-07-25) -- no branch: tag, per schema-v3 convention. OMN-20074 retired call-occ-preflight.yml,
-      which produced this same context from occ-preflight.yml@main on [main, dev, hotfix/**] pull requests.
-      call-receipt-gate.yml's occ-preflight job calls the same reusable with no job-level `if:` on every
-      pull_request into main or dev (a superset of the retired file's activity types, adding edited) and
-      on merge_group, so the context still materializes on every pull request that branch protection judges.
-      Several other workflows here (receipt-honesty.yml, check-handshake.yml, check-db-ownership.yml and
-      more) also carry an occ-preflight job that posts this same context name."
+    rationale: "OMN-20074 (OCC retirement S6 part 2): the producer was deleted with the OCC callers and
+      the context leaves dev branch protection in the same cut-over window."
 
   - name: "product-readiness / evaluate"
     mode: REQUIRED

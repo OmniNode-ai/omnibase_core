@@ -45,19 +45,6 @@ def _pre_check_step() -> dict[str, object]:
     raise AssertionError("resolver step not found in auto-merge.yml")
 
 
-def test_auto_merge_job_requires_occ_preflight_success() -> None:
-    # OMN-16288: the auto-merge job trusts the already-required
-    # "occ-preflight / eligibility" check's conclusion (resolved from the PR
-    # body's Evidence-Source pin by the shared occ-preflight.yml reusable --
-    # the same pattern omnibase_infra/omnimarket use) instead of re-resolving
-    # OCC eligibility itself. It must not run any step before that gate is
-    # satisfied.
-    job = _job()
-
-    assert "occ-preflight" in job["needs"]
-    assert "needs.occ-preflight.result == 'success'" in job["if"]
-
-
 def test_auto_merge_does_not_re_resolve_occ_against_heads_main() -> None:
     # Regression guard for OMN-16288: this job previously re-resolved OCC
     # eligibility by fetching onex_change_control@heads/main and re-running
@@ -65,8 +52,7 @@ def test_auto_merge_does_not_re_resolve_occ_against_heads_main() -> None:
     # OCC's own contracts dev->main (OMN-15067), so OCC main is thousands of
     # commits stale and that duplicate check failed permanently
     # (eligible:false/missing_contract, e.g. OMN-16280 / run 32359138410) --
-    # it never gated arming (the job-level needs/if above already did), it
-    # only ever broke it. It must not come back.
+    # it only ever broke arming. It must not come back.
     names = [step.get("name") for step in _steps()]
 
     assert "Resolve OCC main SHA" not in names

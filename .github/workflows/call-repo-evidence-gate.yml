@@ -35,12 +35,18 @@
 # receipt-gate.yml in this repository does not change the definition that
 # judges it.
 #
-# S5 shadow count: the comparison ended at S6 (OMN-20969), so compare-with-occ
-# is "false" before omnibase_core#1930 removes the OCC producers. This caller
-# runs from dev under pull_request_target; the retiring PR cannot change the
-# input used to judge itself. CI Summary still expects repo-evidence / dod-verify
-# on pull_request runs. Every OCC context stays required and running until S6
-# part 2 lands and the separately approved protection change is applied.
+# S5 shadow count (OMN-20074): ended. The comparison was turned off on dev
+# first (OMN-20969), because this caller runs from dev under
+# pull_request_target and the retiring PR cannot change the input used to judge
+# itself. At the S6 cut-over, repo-evidence / dod-verify is the evidence verdict
+# CI Summary expects on pull_request runs and no OCC caller remains in this
+# repository, so compare-with-occ stays "false"; the difference step would
+# otherwise wait for an OCC verdict and fail closed without one.
+# verifier-version stays a release that ships the classifier, so a rollback
+# turns the step back on with this one input. The PR-workflow budget note below
+# records why this file took its slot. S6 part 2 has since deleted
+# call-receipt-gate.yml, so nothing here produces occ-preflight / eligibility,
+# and it lowered the budget in that file; the autobind waiver is closed.
 #
 # PR-workflow budget (architecture-handshakes/pull-request-workflow-budget.yaml,
 # OMN-14907): this file takes the slot of call-occ-preflight.yml, retired in
