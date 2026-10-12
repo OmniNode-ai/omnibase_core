@@ -135,21 +135,6 @@ entries:
   - path: examples/demo/model-validate/mock-responses/candidate/response_015_negative_sentiment.json
     family: M
     content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
-  - path: scripts/hooks/prepush_hosts.tsv
-    family: E-LAN
-    content_sha1: 044a792f127e77a9696fc8ba74eb5508b2cd544d
-  - path: scripts/hooks/prepush_hosts.tsv
-    family: E-LAN
-    content_sha1: 57ae2180d30166c3ef6b478df204439c650dbf57
-  - path: scripts/hooks/prepush_hosts.tsv
-    family: E-LAN
-    content_sha1: ecd71df31e0ba2246516df3e201bb13138c0a71d
-  - path: scripts/hooks/prepush_smart_tests.sh
-    family: E-LAN
-    content_sha1: 2f38b8e0f437ec067a60d17fb90ed09eef25bec6
-  - path: scripts/validation/decommissioned_patterns.conf
-    family: E-LAN
-    content_sha1: 0fe76943a15b6660e9faa8b971554cc01812f635
   - path: src/omnibase_core/contracts/integrations/catalog.yaml
     family: E
     content_sha1: 2931f82937808122aab89d6a24d4024320d21416

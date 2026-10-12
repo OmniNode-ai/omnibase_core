@@ -1,0 +1,73 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20939
+title: Lab values leave the shipped omnibase_core files and move to the private overlay
+summary: The pre-push host table, the dead-endpoint denylists, the default SSH targets and the validator
+  docstring addresses stop carrying our lab. The hook and the two detectors read the deployment's own
+  rows from the workspace-config root, and a checkout with no overlay gets a neutral disabled localhost
+  row or the shipped shape rules and is told how to supply one.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20939-shipped-files
+    statement: omnibase_core's shipped configuration and defaults must name no lab host, address or port,
+      with the lab values held in the private overlay.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: omnibase_core at the head of this change carries no lab host in the pre-push
+          host table, the decommissioned-pattern list, the hardcoded-model-config policy, the pre-push
+          default SSH targets or the validator docstrings -- falsifier: uv run pytest tests/scripts/test_prepush_host_table.py
+          tests/scripts/test_check_forbidden_patterns_lab_denylist.py tests/unit/validation/hardcoded_model_config
+          -q -p no:randomly -k "no_address_or_tailnet or neutral_disabled_row or no_lab_endpoint" reports
+          no failure and the hardcoded-model-config gate reports no stale or new finding'
+  - id: req-omn20939-resolver
+    statement: The pre-push placement hook and the full-suite guard must read their lab rows from the
+      private overlay through the workspace-config resolver and keep a neutral disabled localhost row
+      without it.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the pre-push placement hook reads its lab rows from the private overlay and keeps
+          a neutral localhost row without it -- falsifier: uv run pytest tests/scripts/test_prepush_host_table.py
+          tests/scripts/test_pytest_full_suite_host_guard.py -q -p no:randomly -k "deployment or config_root
+          or not_configured or neutral" with and without ONEX_WORKSPACE_CONFIG_ROOT'
+evidence_requirements:
+  - kind: tests
+    description: The host-table tests assert the shipped table is one neutral disabled row with no address
+      or tailnet name, and that the deployment table's rows are read, refused when edited or uncommitted
+      in a git root, and absent without a root.
+    command: uv run pytest tests/scripts/test_prepush_host_table.py -q -p no:randomly
+  - kind: tests
+    description: The guard tests assert the conftest guard designates only deployment-table hosts and
+      refuses with a not-configured message otherwise.
+    command: uv run pytest tests/scripts/test_pytest_full_suite_host_guard.py -q -p no:randomly
+  - kind: tests
+    description: The denylist tests assert the detectors add the private vocabulary's dead endpoints when
+      present and run the shipped shape rules without it.
+    command: uv run pytest tests/scripts/test_check_forbidden_patterns_lab_denylist.py tests/unit/validation/hardcoded_model_config
+      -q -p no:randomly
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-20939-ac1
+    description: The shipped-file tests and the denylist tests pass.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_check_forbidden_patterns_lab_denylist.py tests/unit/validation/hardcoded_model_config
+          -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-20939-ac2
+    description: The host-table and guard tests pass with and without the deployment table.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_prepush_host_table.py tests/scripts/test_pytest_full_suite_host_guard.py
+          -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
