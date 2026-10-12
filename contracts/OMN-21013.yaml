@@ -1,0 +1,83 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21013
+title: The repo-evidence reusable provides declared sibling repository checkouts
+summary: The caller-mode dod-verify job reads cited contracts at the PR head and provides declared sibling
+  checkouts using fixed uv sources, then composite action pins, then explicit checkout refs, otherwise
+  the sibling default-branch SHA resolved once before verification. The same SHA supplies every control
+  registry. Conflicting or unresolved pins leave the sibling absent for the verifier's refusal. The default
+  token stays read-only and credentials are not persisted. This contract binds the repo-evidence half
+  of AC2; the replay and named refusal are delivered separately.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21013-repo-evidence
+    statement: The repo-evidence dod-verify reusable must provide each cited check's declared sibling
+      checkout at the chosen revision for the head and its controls, with read-only credentials.
+    acceptance:
+      - id: AC2
+        statement: "AC2: The repo-evidence dod-verify path and the occ-difference replay provide the declared
+          sibling checkout, so omniintelligence#1051's head verifies as OCC admitted it -- falsifier:
+          node_dod_verify run for [OMN-20965](https://linear.app/omninode/issue/OMN-20965) at omniintelligence#1051's
+          merge head on a lab host, with only omniintelligence cloned before the run, passes AC2; with
+          the sibling provisioning disabled (positive control) it yields the AC1 code"
+evidence_requirements:
+  - kind: tests
+    description: Execute the reusable's provisioning code against isolated caller trees, with git transport
+      controlled deterministically; exercise declared and own cwds, revision precedence, conflicting pins,
+      unresolvable siblings, once-only resolution and read-only authentication.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q -n 0 --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21013-ac2-provision
+    description: A declared sibling is checked out at the uv source pin or composite action pin or explicit
+      checkout ref.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q
+          -n 0 --no-cov -k "provisions_declared or action_pin or uv_precedes or reusable_workflow_pins"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21013-ac2-own-repo
+    description: The caller's own repository and cwds outside the declared registry do not request a sibling.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q
+          -n 0 --no-cov -k ignores_callers
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21013-ac2-frozen
+    description: The unpinned sibling is resolved once and its SHA is reused in every control registry.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q
+          -n 0 --no-cov -k freezes_unpinned
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21013-ac2-conflicts
+    description: Conflicting pins and unresolved revisions leave the sibling absent for the verifier's
+      named refusal.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q
+          -n 0 --no-cov -k "conflicting_pins or unresolvable_sibling"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21013-ac2-read-only
+    description: Provisioning uses the default read-only job token without persisted credentials or new
+      secrets.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q
+          -n 0 --no-cov -k read_only_permissions
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
