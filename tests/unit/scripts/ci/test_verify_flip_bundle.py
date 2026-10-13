@@ -41,6 +41,7 @@ from scripts.ci import equivalence_producer as eqp
 from scripts.ci.verify_flip_bundle import (
     PARITY_BASELINE_FILENAME,
     ModelFlipBundleResult,
+    _assert_typed_adequacy,
     load_parity_baseline,
     verify_flip_bundle,
 )
@@ -696,6 +697,46 @@ def test_missing_adequacy_receipt_fails_closed_assertion_1(tmp_path: Path) -> No
     assert result.ok is False
     assert result.failed_assertion == 1
     assert "absent" in result.reason
+
+
+def _no_legacy_receipt(**overrides: object) -> dict[str, object]:
+    body: dict[str, object] = {
+        "receipt_schema": "adequacy_receipt.no_legacy.v1",
+        "node_id": NODE_ID,
+        "legacy_handler": "none",
+        "base_ref": "a" * 40,
+        "base_node_files": ["src/testpkg/nodes/node_demo_compute/contract.yaml"],
+        "handler_module": "testpkg.nodes.node_demo_compute.handlers.handler_demo",
+        "handler_module_sha256": "sha256:" + "b" * 64,
+        "contract_tests": ["tests/unit/test_demo_handler.py::test_handle"],
+        "recorded_at": "2026-10-13T00:00:00Z",
+    }
+    body.update(overrides)
+    return body
+
+
+def test_no_legacy_receipt_is_typed_against_its_own_model_assertion_1(
+    tmp_path: Path,
+) -> None:
+    """OMN-20298: assertion 1 validates a ``legacy_handler`` receipt as the no-legacy shape."""
+    (tmp_path / f"{NODE_ID}.json").write_text(
+        json.dumps(_no_legacy_receipt()), encoding="utf-8"
+    )
+    ok, detail = _assert_typed_adequacy(NODE_ID, tmp_path)
+    assert ok is True, detail
+    assert "ModelNoLegacyAdequacyReceipt" in detail
+
+
+def test_malformed_no_legacy_receipt_fails_assertion_1_naming_its_model(
+    tmp_path: Path,
+) -> None:
+    """OMN-20298: ``legacy_handler`` other than ``none`` is refused by the no-legacy model."""
+    (tmp_path / f"{NODE_ID}.json").write_text(
+        json.dumps(_no_legacy_receipt(legacy_handler="present")), encoding="utf-8"
+    )
+    ok, detail = _assert_typed_adequacy(NODE_ID, tmp_path)
+    assert ok is False
+    assert "ModelNoLegacyAdequacyReceipt invariants violated" in detail
 
 
 # --------------------------------------------------------------------------- #
