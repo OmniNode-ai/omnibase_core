@@ -1,3 +1,13 @@
+## v0.47.43 (2026-10-13)
+
+### Release
+- Cut omnibase-core from dev at 0.47.43 by the scheduled release train.
+- 1 release-relevant commit(s) merged since v0.47.42.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.42
+- feat: add a no-legacy-handler flip path to the canonical handler-shape ratchet (#1963)
+
 ## v0.47.42 (2026-10-12)
 
 ### Release
