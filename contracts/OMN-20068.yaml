@@ -30,6 +30,10 @@ requirements:
           step stays writer-app only. -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py
           -q -k "test_pin_swap_with_dependency_manifests or test_workflow_uses_pin_swap or test_pin_file_version_swap
           or test_multiple_dependency_manifests_still_refused or test_writer_pin_swap_step_stays_writer_app_only"'
+      - id: AC4
+        statement: 'AC4: the pre-commit hook receipt-gate-writer-pin-only runs the pin-only and pin-swap
+          verdict tests, and a broken pin-swap line check turns them red. -- falsifier: uv run --frozen
+          pre-commit run receipt-gate-writer-pin-only --all-files'
 evidence_requirements:
   - kind: tests
     description: The step, run against a real git history, exempts the omnibase_infra#4832 pin swap.
@@ -43,6 +47,9 @@ evidence_requirements:
     command: uv run pytest tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -k "test_pin_swap_with_dependency_manifests
       or test_workflow_uses_pin_swap or test_pin_file_version_swap or test_multiple_dependency_manifests_still_refused
       or test_writer_pin_swap_step_stays_writer_app_only"
+  - kind: tests
+    description: The wired hook runs both verdict test modules; the Pre-commit Suite job runs it in CI.
+    command: uv run --frozen pre-commit run receipt-gate-writer-pin-only --all-files
 emergency_bypass:
   enabled: false
   justification: ''
@@ -78,3 +85,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
+  - id: dod-omn-20068-ac4
+    description: The wired hook runs the pin-only and pin-swap verdict tests and passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py
+          tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -n 0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4

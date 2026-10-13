@@ -4,11 +4,14 @@
 
 from __future__ import annotations
 
+import re
+import shlex
 from collections.abc import Mapping
 from pathlib import Path
 from textwrap import dedent
 
 import pytest
+import yaml
 
 from tests.ci.test_receipt_gate_writer_pin_only_in_job_omn17427 import (
     _assert_output,
@@ -275,3 +278,36 @@ def test_writer_pin_swap_step_stays_writer_app_only() -> None:
         "steps.bot_exempt.outputs.writer_app == 'true'"
         in _step("writer_pin_only")["if"]
     )
+
+
+def test_pin_verdict_hook_runs_both_modules_in_the_precommit_suite() -> None:
+    root = Path(__file__).resolve().parents[2]
+    config = yaml.safe_load((root / ".pre-commit-config.yaml").read_text())
+    hooks = [
+        hook
+        for repo in config["repos"]
+        if repo["repo"] == "local"
+        for hook in repo["hooks"]
+        if hook["id"] == "receipt-gate-writer-pin-only"
+    ]
+    assert len(hooks) == 1, "the pin verdict tests need one local pre-commit hook"
+    hook = hooks[0]
+    command = shlex.split(hook["entry"])
+    assert command[:4] == ["uv", "run", "--frozen", "pytest"]
+    modules = {
+        "tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py",
+        "tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py",
+    }
+    assert {argument for argument in command if argument.endswith(".py")} == modules
+    assert not {"-k", "-m", "--collect-only"}.intersection(command)
+    assert hook["language"] == "system"
+    assert hook["pass_filenames"] is False
+    assert "pre-commit" in hook.get("stages", ["pre-commit"])
+    for path in modules | {
+        ".github/workflows/receipt-gate.yml",
+        ".pre-commit-config.yaml",
+    }:
+        assert re.search(hook["files"], path), f"hook does not run when {path} changes"
+        assert not re.search(hook.get("exclude", r"^$"), path)
+    skipped = yaml.safe_load((root / ".github/precommit-suite-skip.yaml").read_text())
+    assert hook["id"] not in skipped
