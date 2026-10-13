@@ -178,6 +178,18 @@ repos:
         pass_filenames: false
         files: ^(\.github/workflows/receipt-gate\.yml|tests/ci/test_receipt_gate_sibling_checkouts_omn21013\.py|\.pre-commit-config\.yaml)$
 
+      # OMN-20068: execute the writer_pin_only verdict tests (a PR that only
+      # bumps pins rides on passing CI as its evidence, ruling 2026-10-12T22:05:22Z).
+      # Check-only. Runs in CI through the Pre-commit Suite job (precommit-suite),
+      # which the required CI Summary context needs.
+      - id: receipt-gate-writer-pin-only
+        name: Receipt gate writer pin-only verdict tests (OMN-20068)
+        entry: uv run --frozen pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py
+          -q -n 0 --no-cov
+        language: system
+        pass_filenames: false
+        files: ^(\.github/workflows/receipt-gate\.yml|tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427\.py|tests/ci/test_receipt_gate_writer_pin_swap_omn20068\.py|tests/ci/test_bot_exempt_writer_app_pin_only_omn20161\.py|tests/ci/test_receipt_gate_writer_workflow_pin_omn20074\.py|\.pre-commit-config\.yaml)$
+
       # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
       # Enforces the DIRECTION of imports between omnibase_core sub-packages via
       # import-linter (.importlinter). Whole-graph check (grimp caches the graph
