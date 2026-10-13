@@ -311,3 +311,30 @@ def test_pin_verdict_hook_runs_both_modules_in_the_precommit_suite() -> None:
         assert not re.search(hook.get("exclude", r"^$"), path)
     skipped = yaml.safe_load((root / ".github/precommit-suite-skip.yaml").read_text())
     assert hook["id"] not in skipped
+
+
+def test_pin_verdict_step_runs_in_the_precommit_suite_job() -> None:
+    """ci.yml names the pin verdict tests in a step of a job CI Summary sweeps.
+
+    The hook above already runs through the Pre-commit Suite, but no workflow
+    file named the test module, so nothing that reads ci.yml could see the gate.
+    """
+    root = Path(__file__).resolve().parents[2]
+    workflow = yaml.safe_load((root / ".github/workflows/ci.yml").read_text())
+    job = workflow["jobs"]["precommit-suite"]
+    assert "if" not in job and "needs" not in job
+    assert job.get("continue-on-error") is not True
+    marker = "tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py"
+    steps = [step for step in job["steps"] if marker in str(step.get("run", ""))]
+    assert len(steps) == 1, "the pre-commit suite job needs one step for the pin tests"
+    step = steps[0]
+    assert step.get("name"), "the pin verdict step must be named"
+    assert "if" not in step
+    assert step.get("continue-on-error") is not True
+    command = shlex.split(str(step["run"]))
+    assert command[:4] == ["uv", "run", "--frozen", "pytest"]
+    assert {argument for argument in command if argument.endswith(".py")} == {
+        marker,
+        "tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py",
+    }
+    assert not {"-k", "-m", "--collect-only"}.intersection(command)

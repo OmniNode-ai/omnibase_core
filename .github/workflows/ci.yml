@@ -1917,6 +1917,14 @@ jobs:
           echo "skipping: $SKIP"
           uv run pre-commit run --all-files --show-diff-on-failure
 
+      # OMN-20068: name the writer pin-only verdict tests in ci.yml. The
+      # receipt-gate-writer-pin-only hook already runs them in the suite above;
+      # this step puts them in a workflow file so a reader of ci.yml sees the
+      # gate, and a failure fails the job CI Summary sweeps. Pinned by
+      # tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py.
+      - name: Writer pin-only verdict tests (OMN-20068)
+        run: uv run --frozen pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -n 0 --no-cov
+
   # Hardcoded model-configuration baseline ratchet (OMN-19252).
   #
   # The check-hardcoded-model-config-compute hook already runs over the whole
