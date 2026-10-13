@@ -33,7 +33,7 @@ import tempfile
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol, Self
+from typing import Any, Literal, Protocol, Self
 
 import coverage
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -127,6 +127,30 @@ class ModelAdequacyReceipt(BaseModel):
                 "(coverage cannot be certified over zero inputs)"
             )
         return self
+
+
+NO_LEGACY_RECEIPT_VERSION = "adequacy_receipt.no_legacy.v1"
+
+
+class ModelNoLegacyAdequacyReceipt(BaseModel):
+    """Adequacy receipt for a node that had NO legacy handler (OMN-20298).
+
+    There is nothing to keep byte-identical and nothing pure to replay, so the
+    adequacy evidence is the new handler's own contract tests plus the node's file
+    listing at ``base_ref``. The canonical-shape gate re-derives every field.
+    """
+
+    model_config = ConfigDict(extra="forbid", frozen=True, from_attributes=True)
+
+    receipt_schema: Literal["adequacy_receipt.no_legacy.v1"]
+    node_id: str = Field(..., min_length=1)
+    legacy_handler: Literal["none"]
+    base_ref: str = Field(..., min_length=1)
+    base_node_files: list[str] = Field(..., min_length=1)
+    handler_module: str = Field(..., min_length=1)
+    handler_module_sha256: str = Field(..., min_length=1)
+    contract_tests: list[str] = Field(..., min_length=1)
+    recorded_at: str
 
 
 def handler_module_sha256(module_file: str | Path) -> str:

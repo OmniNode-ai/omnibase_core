@@ -106,7 +106,10 @@ try:  # pragma: no cover - import shim
     from scripts.ci import canonical_handler_shape as chs
     from scripts.ci import equivalence_producer as eqp
     from scripts.ci import parity_replay as prp
-    from scripts.ci.adequacy_receipt import ModelAdequacyReceipt
+    from scripts.ci.adequacy_receipt import (
+        ModelAdequacyReceipt,
+        ModelNoLegacyAdequacyReceipt,
+    )
 except ImportError:  # pragma: no cover - script-dir invocation
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     import canonical_handler_shape as chs  # type: ignore[import-not-found, no-redef]
@@ -114,6 +117,7 @@ except ImportError:  # pragma: no cover - script-dir invocation
     import parity_replay as prp  # type: ignore[import-not-found, no-redef]
     from adequacy_receipt import (  # type: ignore[import-not-found, no-redef]
         ModelAdequacyReceipt,
+        ModelNoLegacyAdequacyReceipt,
     )
 
 # The two flips that merged BEFORE this gate existed. Assertion 6 (deterministic
@@ -324,11 +328,17 @@ def _assert_typed_adequacy(node_id: str, receipts_dir: Path) -> tuple[bool, str]
         return False, f"adequacy receipt unparseable: {exc}"
     if not isinstance(raw, dict):
         return False, "adequacy receipt is not a JSON object"
+    # OMN-20298: a receipt carrying ``legacy_handler`` is the no-legacy shape.
+    model: type[ModelAdequacyReceipt] | type[ModelNoLegacyAdequacyReceipt] = (
+        ModelNoLegacyAdequacyReceipt
+        if "legacy_handler" in raw
+        else ModelAdequacyReceipt
+    )
     try:
-        ModelAdequacyReceipt(**raw)
+        model(**raw)
     except Exception as exc:  # pydantic ValidationError et al. => FAIL (BLE001 ignored)
-        return False, f"ModelAdequacyReceipt invariants violated: {exc}"
-    return True, "full ModelAdequacyReceipt cross-field invariants hold"
+        return False, f"{model.__name__} invariants violated: {exc}"
+    return True, f"full {model.__name__} cross-field invariants hold"
 
 
 # --------------------------------------------------------------------------- #
@@ -821,8 +831,10 @@ def verify_flip_bundle(
         chs.NODES_GLOB,
         chs.BASELINE_PATH,
         chs.RECEIPTS_DIR,
+        chs.BASE_REF,
     )
     try:
+        chs.BASE_REF = base_ref
         return _verify_flip_bundle_impl(
             node_id,
             package,
@@ -839,6 +851,7 @@ def verify_flip_bundle(
             chs.NODES_GLOB,
             chs.BASELINE_PATH,
             chs.RECEIPTS_DIR,
+            chs.BASE_REF,
         ) = saved
 
 
@@ -933,7 +946,10 @@ def _verify_flip_bundle_impl(
     # Assertion 6 — deterministic producer rerun + byte-compare (E1), equivalence +
     # new-flip only.
     ok_e = chs.verify_equivalence_replay(node_id)[0]
-    if not ok_e:
+    no_legacy = "legacy_handler" in (chs._load_json(s_recv / f"{node_id}.json") or {})
+    if no_legacy:
+        detail6 = "no-legacy path — no legacy handler to replay against; exempt"
+    elif not ok_e:
         detail6 = "hand-flip proof path — verbatim-preservation git-re-derived; exempt"
     elif repo_root is None:
         # Equivalence path but no git to establish newness / rerun the legacy side.
@@ -965,7 +981,12 @@ def _verify_flip_bundle_impl(
     # own base_ref (OMN-15340). Hand-flip path only: the equivalence path carries no
     # parity block and is covered by assertion 6's deterministic rerun.
     handflip_path = s_recv / f"{node_id}{chs.HANDFLIP_SUFFIX}"
-    if not handflip_path.exists():
+    if no_legacy:
+        detail7 = (
+            "no-legacy path — contract tests executed green on HEAD by assertion 2; "
+            "no legacy handler exists at base to be RED against"
+        )
+    elif not handflip_path.exists():
         detail7 = (
             "equivalence proof path — no hand-flip parity block to execute "
             "(assertion 6 covers reproducibility)"
