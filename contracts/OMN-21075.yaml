@@ -1,0 +1,38 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21075
+title: Onboarding sets up every OpenRouter key on Qwen3.8 27B and asks no model question
+summary: omnibase_core's hardcoded-model-config policy admits omniclaude's onboarding script as a VENDOR_DEFAULT
+  file, so the script can name the one vendor-published OpenRouter model it sets up. The script change
+  and its tests land in omniclaude under the same ticket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21075-core-policy
+    statement: The hardcoded-model-config policy names the onboarding script as a VENDOR_DEFAULT file,
+      by exact path.
+    acceptance:
+      - id: AC4
+        statement: "AC4: omnibase_core's hardcoded-model-config policy lists plugins/onex/skills/_bin/lab-onboarding.sh
+          as a VENDOR_DEFAULT file, and the omniclaude gate at its pinned core commit reports no new finding
+          for the script -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config -q in
+          omnibase_core"
+evidence_requirements:
+  - kind: tests
+    description: The onboarding script path classifies as VENDOR_DEFAULT; a sibling script stays SOURCE.
+    command: uv run pytest tests/unit/validation/hardcoded_model_config -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21075-core-vendor-default
+    description: The policy classifies plugins/onex/skills/_bin/lab-onboarding.sh as VENDOR_DEFAULT and
+      plugins/onex/skills/_bin/other-script.sh as SOURCE.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q
+    binds_ac:
+      - AC4

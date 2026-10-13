@@ -110,6 +110,8 @@ def test_handler_is_a_typed_pure_compute(
         (".env.example", "EXAMPLE"),
         ("src/omnimarket/configs/bifrost_delegation.yaml", "VENDOR_DEFAULT"),
         ("src/omnimarket/configs/other_delegation.yaml", "SOURCE"),
+        ("plugins/onex/skills/_bin/lab-onboarding.sh", "VENDOR_DEFAULT"),
+        ("plugins/onex/skills/_bin/other-script.sh", "SOURCE"),
         ("deploy/systemd/vllm-gpu0.service", "LAUNCH"),
         ("README.md", "DOC"),
         ("app/(marketing)/page.tsx", "DOC"),

@@ -52,6 +52,10 @@ path_classes:
       - "src/omnimarket/inference/openrouter_models.py"
       - "src/omniintelligence/adapters/plan_reviewer_z_ai_client.py"
       - "src/omniintelligence/adapters/plan_reviewer_gemini_client.py"
+      # Team decision 2026-10-13: onboarding sets up every OpenRouter key on one
+      # vendor-published model named in the script, so a developer never picks
+      # or types a model id (omniclaude).
+      - "plugins/onex/skills/_bin/lab-onboarding.sh"
     families: [E-LAN, R]
 
   # Review decision 2 (2026-09-23): the files that start a model server name the
