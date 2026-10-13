@@ -188,7 +188,7 @@ repos:
           -q -n 0 --no-cov
         language: system
         pass_filenames: false
-        files: ^(\.github/workflows/receipt-gate\.yml|tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427\.py|tests/ci/test_receipt_gate_writer_pin_swap_omn20068\.py|tests/ci/test_bot_exempt_writer_app_pin_only_omn20161\.py|tests/ci/test_receipt_gate_writer_workflow_pin_omn20074\.py|\.pre-commit-config\.yaml)$
+        files: ^(\.github/workflows/(receipt-gate|ci)\.yml|tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427\.py|tests/ci/test_receipt_gate_writer_pin_swap_omn20068\.py|tests/ci/test_bot_exempt_writer_app_pin_only_omn20161\.py|tests/ci/test_receipt_gate_writer_workflow_pin_omn20074\.py|\.pre-commit-config\.yaml)$
 
       # Intra-Core Dependency-Layering Oracle (OMN-14216, epic OMN-3210)
       # Enforces the DIRECTION of imports between omnibase_core sub-packages via
