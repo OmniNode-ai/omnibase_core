@@ -35,7 +35,6 @@ REMOVED_PATHS = (
 CALLER_INPUTS = {"evidence-source", "verifier-version", "compare-with-occ", "shadow"}
 
 CLI_MODULES = (
-    "src/omnibase_core/validation/validator_receipt_gate_cli.py",
     "src/omnibase_core/validation/validator_receipt_reprobe.py",
     "src/omnibase_core/validation/validator_receipt_honesty.py",
 )

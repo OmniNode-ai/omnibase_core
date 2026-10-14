@@ -4,7 +4,7 @@
 """ModelDodReceipt — proof artifact for a single dod_evidence check run.
 
 A receipt is the **only** acceptable proof that a ticket's DoD check was
-executed. The receipt-gate CI check (`validator_receipt_gate_cli`) blocks
+executed. The receipt-gate CI check (`validator_receipt_gate`) blocks
 merge on any PR whose linked ticket contract has dod_evidence items
 without corresponding PASS receipts.
 
