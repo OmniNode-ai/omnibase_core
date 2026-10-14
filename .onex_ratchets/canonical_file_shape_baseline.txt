@@ -3,11 +3,6 @@
 # when the ratchet was installed. Delete a line when its file is removed,
 # moved into a canonical location or rewritten as contract + node +
 # handler. A new line is refused.
-.github/actions/deploy-gate/models/__init__.py
-.github/actions/deploy-gate/models/deploy_evidence_check.py
-.github/actions/deploy-gate/models/deploy_evidence_contract.py
-.github/actions/deploy-gate/models/deploy_evidence_item.py
-.github/actions/deploy-gate/validate_pr_deploy_required.py
 .github/actions/required-check-skip-guard/_workflow_model.py
 .github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors.py
 .pre-commit-hooks/check-evidence-shape.sh
@@ -72,7 +67,6 @@ scripts/ci/test_selection_shadow_models.py
 scripts/ci/verify_flip_bundle.py
 scripts/cleanup.py
 scripts/compute_contract_fingerprint.py
-scripts/deploy-gate/checkout-occ-contracts.sh
 scripts/emit_ts_types.py
 scripts/fix_dict_any_violations.py
 scripts/gen_config_overlay_schemas.py

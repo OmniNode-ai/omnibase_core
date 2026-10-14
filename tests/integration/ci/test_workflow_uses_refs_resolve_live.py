@@ -30,33 +30,13 @@ from tests.ci.test_workflow_uses_refs_resolve import (
     _resolve_ref_live,
 )
 
-# Pre-existing, dormant broken pin discovered by this gate on first run
-# (OMN-14992): `deploy-gate-reusable.yml` (relocated from omniclaude under
-# OMN-14277, never wired to any live caller — 0 hits org-wide via
-# `gh api search/code`) self-references `.github/actions/deploy-gate@main`,
-# which exists on omnibase_core `dev` but was never promoted to `main`. It
-# is unrelated to the OMN-14990 occ-companion-effect change this test suite
-# ships alongside, and grandfathering it here (rather than silently failing
-# this PR on someone else's pre-existing debt) follows the same
-# documented-exception pattern as e.g. deploy_gate_legacy_grandfather.yaml.
-# Remove this entry the moment OMN-14992 closes — do NOT add further
-# entries without an equally-cited ticket; this is a single, named
-# exception, not a blanket allowlist mechanism.
-_KNOWN_BROKEN_PINS_PENDING_FIX: frozenset[tuple[str, str, str]] = frozenset(
-    {
-        ("omnibase_core", ".github/actions/deploy-gate", "main"),  # OMN-14992
-    }
-)
-
 
 @pytest.mark.integration
 def test_every_cross_repo_uses_ref_resolves_live() -> None:
     refs = _extract_cross_repo_uses(WORKFLOWS_DIR)
     assert refs, "no cross-repo uses: pins extracted — extractor is broken"
 
-    unique_targets = sorted(
-        {(r.repo, r.path, r.ref) for r in refs} - _KNOWN_BROKEN_PINS_PENDING_FIX
-    )
+    unique_targets = sorted({(r.repo, r.path, r.ref) for r in refs})
     broken: list[str] = []
     undetermined: list[str] = []
     transport_failures = 0
