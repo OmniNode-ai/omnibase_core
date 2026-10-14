@@ -22,8 +22,8 @@ requirements:
       - id: AC2
         statement: 'AC2: a present Evidence-Source still flows through, and a missing Evidence-Ticket
           still fails the step. -- falsifier: uv run pytest tests/unit/validation/test_release_workflow_shape.py
-          -n 0 --no-cov -q -k "test_release_evidence_still_threads_an_evidence_source_when_present or
-          test_release_evidence_still_requires_a_ticket"'
+          -n 0 --no-cov -q -k "test_release_evidence_resolves_with_a_ticket_and_no_evidence_source or
+          test_release_evidence_still_threads_an_evidence_source_when_present or test_release_evidence_still_requires_a_ticket"'
       - id: AC3
         statement: 'AC3: the dependency cascade accepts an empty evidence_source on both triggers. --
           falsifier: uv run pytest tests/scripts/test_dependency_cascade_matrix.py -n 0 --no-cov -q -k
@@ -33,9 +33,9 @@ evidence_requirements:
     description: The resolve step releases a ticket-only release PR body.
     command: uv run pytest tests/unit/validation/test_release_workflow_shape.py -n 0 --no-cov -q -k test_release_evidence_resolves_with_a_ticket_and_no_evidence_source
   - kind: tests
-    description: The resolve step keeps the ticket requirement and the present-source path.
-    command: uv run pytest tests/unit/validation/test_release_workflow_shape.py -n 0 --no-cov -q -k "test_release_evidence_still_threads_an_evidence_source_when_present
-      or test_release_evidence_still_requires_a_ticket"
+    description: The ticket-only resolve step keeps the ticket requirement and the present-source path.
+    command: uv run pytest tests/unit/validation/test_release_workflow_shape.py -n 0 --no-cov -q -k "test_release_evidence_resolves_with_a_ticket_and_no_evidence_source
+      or test_release_evidence_still_threads_an_evidence_source_when_present or test_release_evidence_still_requires_a_ticket"
   - kind: tests
     description: The cascade workflow takes an empty evidence_source.
     command: uv run pytest tests/scripts/test_dependency_cascade_matrix.py -n 0 --no-cov -q -k test_workflow_call_requires_ticket_and_evidence_source_is_optional
@@ -55,12 +55,13 @@ dod_evidence:
     binds_ac:
       - AC1
   - id: dod-omn-14355-ac2
-    description: The resolve step keeps the ticket requirement and the present-source path.
+    description: The ticket-only resolve step keeps the ticket requirement and the present-source path.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/test_release_workflow_shape.py -n 0 --no-cov
-          -q -k "test_release_evidence_still_threads_an_evidence_source_when_present or test_release_evidence_still_requires_a_ticket"
+          -q -k "test_release_evidence_resolves_with_a_ticket_and_no_evidence_source or test_release_evidence_still_threads_an_evidence_source_when_present
+          or test_release_evidence_still_requires_a_ticket"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
