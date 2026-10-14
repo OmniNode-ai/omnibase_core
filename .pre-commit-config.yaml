@@ -2384,6 +2384,26 @@ repos:
           - origin/dev
         files: ^src/omnibase_core/validators/extra_forbid_baseline\.yaml$
 
+  # OMN-20780: warn on a push to main. `main` is release-synced and never a
+  # feature pull-request target (operator ruling 2026-10-10T16:52:56Z); the hosted
+  # `main-target-guard` check refuses a PR whose base is main. A PR's base is not
+  # known at push time, so the one local signal is the remote ref being pushed
+  # (pre-commit exports it as PRE_COMMIT_REMOTE_BRANCH). It warns and exits 0:
+  # the hosted check is the refusal. Pinned by
+  # tests/ci/test_main_target_guard_prepush_omn20780.py.
+  - repo: local
+    hooks:
+      - id: main-target-guard
+        name: "main-target-guard: warn on a push to main (OMN-20780)"
+        entry: bash -c 'if [ "${PRE_COMMIT_REMOTE_BRANCH:-}" = "refs/heads/main" ]; then echo "WARNING
+          main-target-guard (OMN-20780) - you are pushing to main. main is release-synced and no feature
+          PR may target it; push a branch and open the PR against dev." >&2; fi'
+        language: system
+        pass_filenames: false
+        always_run: true
+        verbose: true
+        stages: [pre-push]
+
 # ---------------------------------------------------------------------------
 # RETIRED 2026-09-11 (OMN-18176): the governed impacted-test selector
 # `prepush-smart-tests` (OMN-13973 / WS7 OMN-14655) no longer runs at
