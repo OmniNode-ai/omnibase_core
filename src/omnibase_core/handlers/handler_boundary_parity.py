@@ -49,7 +49,7 @@ MANIFEST_RESOURCE: Final[str] = "kafka_boundaries.yaml"
 
 
 def load_manifest_yaml() -> str:
-    """Read the byte-for-byte OCC manifest packaged with the contracts."""
+    """Read the boundary manifest packaged with the contracts."""
     return (
         importlib.resources.files("omnibase_core.contracts")
         / "boundaries"
