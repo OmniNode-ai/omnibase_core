@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
 
       # omnibase_core IS the source-of-truth for architecture handshakes.
       # No separate checkout needed -- check-handshake.sh auto-detects
@@ -44,7 +44,7 @@ jobs:
       # omnibase_core itself; downstream repos copy this workflow and change
       # --repo accordingly (OMN-9049 universal rollout).
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
 
       - name: Enforce validator-requirements.yaml
         run: |

@@ -63,7 +63,7 @@ jobs:
       ticket: ${{ steps.release_evidence.outputs.ticket }}
       evidence_source: ${{ steps.release_evidence.outputs.evidence_source }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
@@ -117,7 +117,7 @@ jobs:
           fi
           echo "Version validated: $PKG_VERSION"
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: '3.12'
 
@@ -441,7 +441,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 

@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install uv
-        uses: astral-sh/setup-uv@c6081965dd0577ae48820cb8c288e12509571f0c # v7
+        uses: astral-sh/setup-uv@b627d85691ead579b598a36169571b1c7123526f # v7
 
       - name: Fail-loud meta-gate (exit-0-on-missing / stages coverage)
         run: |

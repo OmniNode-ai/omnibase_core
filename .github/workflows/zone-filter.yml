@@ -51,13 +51,13 @@ jobs:
 
     steps:
       - name: Checkout caller repo
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
 
       - name: Checkout omnibase_core classifier
         if: ${{ !inputs.use-local-classifier }}
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           repository: OmniNode-ai/omnibase_core
           ref: ${{ inputs.omnibase-core-ref }}

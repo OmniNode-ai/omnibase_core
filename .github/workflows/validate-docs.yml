@@ -49,9 +49,9 @@ jobs:
       CHECK_EXTERNAL: ${{ inputs.check-external }}
       STANDALONE: ${{ inputs.standalone }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install dependencies (with omnibase_core)
         if: ${{ !inputs.standalone }}

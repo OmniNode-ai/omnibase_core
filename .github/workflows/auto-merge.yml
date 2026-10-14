@@ -293,7 +293,7 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
 
       # OMN-20074: OCC eligibility is retired; required repo-owned checks
       # govern admission when auto-merge is armed.

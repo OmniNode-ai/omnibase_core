@@ -64,7 +64,7 @@ jobs:
       # separate credential file and includes it through `includeIf.gitdir`, so
       # it overrides the App credential in the push URL below and the push
       # authenticates as github-actions[bot] again.
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 

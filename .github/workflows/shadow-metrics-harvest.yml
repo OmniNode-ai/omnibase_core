@@ -53,7 +53,7 @@ jobs:
           permission-contents: write
 
       - name: Checkout product branch (for the append script)
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
           # The metrics branch is cloned below through an explicit credentialed
