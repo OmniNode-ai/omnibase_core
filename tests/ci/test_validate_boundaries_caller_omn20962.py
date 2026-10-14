@@ -28,9 +28,14 @@ REQUIRED_CHECKS = REPO_ROOT / ".github" / "required-checks.yaml"
 JOB_ID = "boundary-validation"
 CONTEXT = "Cross-repo boundary validation"
 ACTION = "OmniNode-ai/omnibase_core/.github/actions/validate-boundaries"
-# First eight hex digits of the omnibase_core#1942 merge; the rest must still be a full sha.
-ACTION_SHA_PREFIX = "de3398d1"
-_PINNED_USES = re.compile(rf"^{re.escape(ACTION)}@{ACTION_SHA_PREFIX}[0-9a-f]{{32}}$")
+# Exact reviewed action revisions from the original migration and #1977.
+AUDITED_ACTION_USES = {
+    f"{ACTION}@de3398d1fcf7a6f48451f680b74b1a6c6c383b8a",
+    f"{ACTION}@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1",
+}
+_PINNED_USES = re.compile(
+    rf"^(?:{'|'.join(re.escape(uses) for uses in sorted(AUDITED_ACTION_USES))})$"
+)
 _RETIRED_ACTION = re.compile(
     r"onex_change_control/\.github/actions/validate-boundaries"
 )

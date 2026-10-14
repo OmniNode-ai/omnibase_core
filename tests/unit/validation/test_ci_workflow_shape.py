@@ -233,9 +233,31 @@ def _contains_literal(value: object, literal: str) -> bool:
     return False
 
 
+# OMN-20768: audited dependency-only rotations in omnibase_core#1977.
+# Canonicalize only these exact step pins; every other job field and unknown
+# ref stays in the digest, including action identity and all execution options.
+AUDITED_ACTION_PIN_ROTATIONS = {
+    "actions/checkout@v7.0.1": "actions/checkout@v7",
+    "astral-sh/setup-uv@v10.3.0": "astral-sh/setup-uv@v7",
+}
+
+
+def _canonical_audited_action_pins(value: object) -> object:
+    if isinstance(value, dict):
+        return {
+            key: AUDITED_ACTION_PIN_ROTATIONS.get(item, item)
+            if key == "uses" and isinstance(item, str)
+            else _canonical_audited_action_pins(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, list):
+        return [_canonical_audited_action_pins(item) for item in value]
+    return value
+
+
 def _execution_contract_digest(value: object) -> str:
     canonical = json.dumps(
-        value,
+        _canonical_audited_action_pins(value),
         ensure_ascii=True,
         allow_nan=False,
         separators=(",", ":"),
@@ -1056,3 +1078,30 @@ def test_diff_scoped_validators_keep_their_full_tree_fallbacks(
     out_file = re.search(r'--out "(\$RUNNER_TEMP/[\w-]+)"', run)
     assert out_file is not None
     assert any(out_file.group(1) in scan for scan in scan_runs)
+
+
+def test_audited_pin_rotations_preserve_complete_job_guards() -> None:
+    workflow = cast(dict[str, object], _canonical_audited_action_pins(_ci_workflow()))
+    rotations = {old: new for new, old in AUDITED_ACTION_PIN_ROTATIONS.items()}
+    jobs = workflow["jobs"]
+    assert isinstance(jobs, dict)
+    rotated = 0
+    for name in AUDITED_GUARD_JOB_EXECUTION_CONTRACTS:
+        for step in _workflow_job_steps(workflow, name):
+            uses = step.get("uses")
+            if isinstance(uses, str) and uses in rotations:
+                step["uses"] = rotations[uses]
+                rotated += 1
+    assert rotated > 0
+    assert _guard_job_contract_violations(workflow) == []
+    assert _no_dev_contract_violations(workflow) == []
+
+    step = _workflow_job_steps(workflow, "exports-validation")[0]
+    assert str(step["uses"]).startswith("actions/checkout@")
+    step["uses"] = "actions/checkout@unreviewed"
+    assert _guard_job_contract_violations(workflow) == ["exports-validation"]
+    step["uses"] = "unreviewed/checkout@v7.0.1"
+    assert _guard_job_contract_violations(workflow) == ["exports-validation"]
+    step["uses"] = "actions/checkout@v7.0.1"
+    step["continue-on-error"] = True
+    assert _guard_job_contract_violations(workflow) == ["exports-validation"]

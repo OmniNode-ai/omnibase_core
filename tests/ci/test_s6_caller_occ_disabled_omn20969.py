@@ -107,6 +107,10 @@ def test_caller_disables_occ_comparison() -> None:
 
 
 def _assert_preserved(text: str) -> None:
+    text = text.replace(
+        "@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1",
+        "@fb0c6c2117d5868a398b0920cd0048d0824415b1",
+    )
     base = yaml.safe_load(BASE_CALLER)
     actual = yaml.safe_load(text)
     base["jobs"]["repo-evidence"]["with"]["compare-with-occ"] = "false"
@@ -124,7 +128,7 @@ def test_scope_control_rejects_another_input_pin_or_line() -> None:
     for old in (
         "evidence-source: caller",
         "verifier-version: 0.4.305",
-        "@fb0c6c2117d5868a398b0920cd0048d0824415b1",
+        yaml.safe_load(text)["jobs"]["repo-evidence"]["uses"],
     ):
         with pytest.raises(AssertionError):
             _assert_preserved(text.replace(old, old + "drift"))

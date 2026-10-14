@@ -112,7 +112,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
             step.get("with", {}).get("repository") != "OmniNode-ai/onex_change_control"
         )
     checkout = _step("Check out the pull request head")
-    assert checkout["uses"] == "actions/checkout@v7"
+    assert checkout["uses"] in {"actions/checkout@v7", "actions/checkout@v7.0.1"}
     assert checkout["with"] == {
         "repository": "${{ github.repository }}",
         "ref": "${{ github.event.pull_request.head.sha }}",
@@ -121,7 +121,10 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "path": ".dod-verify/head_home/${{ github.event.repository.name }}",
     }
     assert _step("Set up Python 3.13")["with"]["python-version"] == "3.13"
-    assert _step("Install uv")["uses"] == "astral-sh/setup-uv@v7"
+    assert _step("Install uv")["uses"] in {
+        "astral-sh/setup-uv@v7",
+        "astral-sh/setup-uv@v10.3.0",
+    }
 
 
 def test_caller_scripts_use_env_for_expression_values() -> None:
