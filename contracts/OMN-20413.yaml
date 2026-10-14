@@ -1,0 +1,44 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20413
+title: The dod-verify job provisions the PG16 server tools on a runner without sudo apt-get
+summary: The receipt-gate dod-verify step that provides the PostgreSQL 16 server tools refused every same-repo
+  pull request routed to the self-hosted omnibase-ci image, which has no PG16 and no sudo apt-get. It
+  now downloads postgresql-16 and its missing dependencies from PGDG into RUNNER_TEMP without root and
+  extracts them there, and refuses by name only when neither path yields a PG16 initdb.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20413-rootless-pg16
+    statement: dod-verify provides working PG16 server tools on a runner that grants no sudo apt-get.
+    acceptance:
+      - id: AC1
+        statement: The Provide the PostgreSQL 16 server tools step keeps the sudo apt-get path, adds a
+          rootless PGDG download and dpkg-deb extraction under RUNNER_TEMP, exports its library directory
+          through GITHUB_ENV, and still refuses by name when both paths fail.
+evidence_requirements:
+  - kind: tests
+    description: Hosted CI test that pins the step's sudo path, rootless extraction path and named refusal.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q --no-cov
+      -k "postgres_steps_are_gated_and_fail_closed"
+  - kind: ci
+    description: Deploy check scoped to hosted CI configuration; fails when the receipt-gate workflow
+      loses the rootless PG16 path. No runtime service changes are included.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_caller_evidence_omn20070.py tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20413-rootless-pg16
+    description: The PG16 tools step test asserts the rootless RUNNER_TEMP extraction path beside the
+      sudo path and the named refusal; it fails at the merge base, whose step has no rootless path.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q
+          --no-cov -k "postgres_steps_are_gated_and_fail_closed"
+        cwd: ${OMNI_HOME}/omnibase_core
