@@ -149,9 +149,8 @@ class NodeSprintRollApplyEffect:
         refuses the whole plan: a due date cannot be derived from it, and a refusal now
         leaves nothing half applied.
         """
-        ids: list[JsonValue] = list(
-            sorted({str(p.sprint_id) for p in plan.placements if p.moved_in})
-        )
+        ids: list[JsonValue] = []
+        ids.extend(sorted({str(p.sprint_id) for p in plan.placements if p.moved_in}))
         if not ids:
             return {}
         rows = node_rows(self._read(PROJECT_QUERY, {"ids": ids}), "projects")

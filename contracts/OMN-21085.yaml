@@ -79,3 +79,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5
+  - id: dod-omn21085-deploy-readback-on-dev
+    description: Deploy probe. omnibase_core is a library, so the live surface for this change is its
+      dev branch, which the sprint-roll workflow reaches through omninode_infra's locked core pin. The
+      probe reads the merged handler from dev and fails until the three-field move and its readback error
+      are there. Run at the local done gate, after merge.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_sprint_roll_apply_effect/handler.py?ref=dev"
+          --jq .content | base64 -d | grep -c -e projectMilestoneId -e NodeSprintRollReadbackError
