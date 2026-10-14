@@ -23,11 +23,10 @@ in-repo, testable mechanisms the fix actually delivers:
    longer a module-level import of ``cli_commands`` -- verified via AST, so
    the assertion survives refactors that reorder the file.
 
-The onex.cli EXTENSION loader (``load_cli_extensions``, OMN-16967) is
-deliberately untouched by this ticket: its eager, fail-loud-at-import-time
-contract is a dated, ticketed operator ruling, pinned by
-``tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py``, and nothing
-here weakens it.
+The onex.cli EXTENSION group loads lazily too (``register_lazy_cli_extensions``,
+pinned by ``test_lazy_cli_extensions_omn19444.py``); the eager OMN-16967
+loader ``load_cli_extensions`` keeps its fail-loud contract, pinned by
+``test_cli_extension_loader_fail_loud_omn16967.py``.
 """
 
 from __future__ import annotations

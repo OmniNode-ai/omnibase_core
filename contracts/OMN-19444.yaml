@@ -1,0 +1,57 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19444
+title: onex delegate --help loads only the requested subcommand
+summary: The onex CLI registers onex.cli extensions by name and loads one on first resolution of its name,
+  so onex delegate --help no longer imports every advertised extension. Name collisions still raise at
+  import and a malformed extension still raises when resolved or listed.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19444-lazy-cli
+    statement: onex delegate --help is fast because the CLI loads only the subcommand it was asked for.
+    acceptance:
+      - id: AC1
+        statement: onex delegate --help median wall time is under 1 s on a co-installed omnibase_infra.
+      - id: AC2
+        statement: Resolving one onex.cli extension does not load the other advertised extensions, and
+          a malformed extension still raises instead of being skipped.
+evidence_requirements:
+  - kind: tests
+    description: Hosted CI tests register synthetic entry points and assert that registration and the
+      resolution of one name load no other extension, that collisions raise before any load, and that
+      an unloadable or non-click extension raises on resolution and on the root listing.
+    command: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py
+      tests/unit/cli/test_lazy_cli_loading_omn19444.py -q --no-cov
+  - kind: ci
+    description: Deploy check scoped to the CLI module; fails when resolving one extension loads another.
+      No runtime service changes are included.
+    command: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py::test_resolving_one_extension_loads_only_that_extension
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19444-ac1-delegate-help-latency
+    description: Lab readback on host h202 against the omnibase_infra virtualenv, five runs of onex delegate
+      --help each with the installed omnibase_core and with this branch on PYTHONPATH. The wall times
+      are in the pull request body.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py::test_invoking_a_subcommand_help_loads_only_that_extension
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn19444-ac2-lazy-extensions
+    description: Registration loads no extension, resolving one name loads only that one, collisions raise
+      before any load, and a malformed extension raises on resolution and on the root listing.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

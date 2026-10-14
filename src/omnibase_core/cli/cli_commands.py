@@ -12,7 +12,7 @@ import socket
 import sys
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 import click
 
@@ -91,13 +91,15 @@ def print_version(
 # command by name, so ``onex <cmd> ...`` only pays for ``<cmd>``'s own
 # dependency tree.
 #
-# This is deliberately scoped to CORE'S OWN commands only. The onex.cli
-# EXTENSION group (kafka, delegate, market, cloud, ... contributed by other
-# distributions via ``load_cli_extensions`` below) keeps its existing eager,
-# fail-loud-at-import-time contract untouched: that is a dated, ticketed
-# operator ruling (OMN-16967, 2026-08-29), pinned by
-# ``tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py``, and
-# reversing it is a separate architectural decision this ticket does not make.
+# The onex.cli EXTENSION group (kafka, delegate, market, cloud, ... contributed
+# by other distributions) loads lazily too, through
+# ``register_lazy_cli_extensions`` below: eagerly loading every advertised
+# extension cost ~3s of ``onex delegate --help`` on a co-installed
+# omnibase_infra, because importing this module imported auth, kafka, skill
+# and the rest before click had resolved ``delegate``. The OMN-16967 fail-loud
+# contract is kept in the shapes that do not need a load: name collisions
+# still raise at import. A malformed extension still raises, never skips, when
+# click resolves it by name or when the root listing renders every command.
 _LAZY_BUILTIN_COMMANDS: dict[str, tuple[str, str]] = {
     "compliance": ("omnibase_core.cli.cli_compliance", "compliance_group"),
     "composition-report": (
@@ -151,16 +153,25 @@ class _LazyCoreCommandGroup(click.Group):
     ) -> None:
         super().__init__(*args, **kwargs)  # type: ignore[arg-type]
         self._lazy_commands: dict[str, tuple[str, str]] = dict(lazy_commands or {})
+        # onex.cli entry points advertised but not yet loaded, by command name.
+        self._lazy_extensions: dict[str, EntryPoint] = {}
 
     def list_commands(self, ctx: click.Context) -> list[str]:
         names = set(super().list_commands(ctx))
         names.update(self._lazy_commands)
+        names.update(self._lazy_extensions)
         return sorted(names)
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         command = super().get_command(ctx, cmd_name)
         if command is not None:
             return command
+        extension = self._lazy_extensions.get(cmd_name)
+        if extension is not None:
+            resolved_extension = _load_extension_command(extension)
+            self.add_command(resolved_extension, cmd_name)
+            del self._lazy_extensions[cmd_name]
+            return resolved_extension
         target = self._lazy_commands.get(cmd_name)
         if target is None:
             return None
@@ -778,6 +789,12 @@ def _check_kafka_reachable() -> tuple[bool, str]:
 # — one of the two commands would win nondeterministically, per machine. Naming
 # the collision is the only honest option.
 #
+# OMN-19444 narrows WHEN the load-time shapes raise, not WHETHER: the live CLI
+# registers extensions lazily (``register_lazy_cli_extensions``), so a collision
+# still raises at import, and an unloadable or non-click target raises when
+# click resolves that name or when the root listing renders every command.
+# ``load_cli_extensions`` below keeps the original eager contract.
+#
 # Security note: entry points are resolved from pip-installed packages, whose
 # trust boundary is the Python environment itself. Loading is limited to the
 # installed package set — no arbitrary code is executed from untrusted sources.
@@ -785,6 +802,58 @@ from importlib.metadata import EntryPoint
 from importlib.metadata import entry_points as _entry_points
 
 _CLI_EXTENSION_GROUP = "onex.cli"
+
+
+def _origin_of(entry_point: EntryPoint) -> str:
+    return (
+        entry_point.dist.name
+        if entry_point.dist is not None
+        else "an unknown distribution"
+    )
+
+
+def _load_extension_command(entry_point: EntryPoint) -> click.Command:
+    """Load one ``onex.cli`` entry point and check it names a click command.
+
+    Raises:
+        ModelOnexError: If the target fails to load or is not a click command.
+    """
+    origin = _origin_of(entry_point)
+    try:
+        command = entry_point.load()
+        # boundary-ok: entry points are provided by pip-installed packages.
+    except Exception as exc:
+        raise ModelOnexError(
+            f"the '{_CLI_EXTENSION_GROUP}' entry point "
+            f"'{entry_point.name}' (from {origin}) points at "
+            f"'{entry_point.value}', which failed to load: "
+            f"{type(exc).__name__}: {exc}. The command it advertises does "
+            f"not exist, so this is a packaging defect in {origin}, not a "
+            f"CLI fault.",
+            error_code=EnumCoreErrorCode.IMPORT_ERROR,
+        ) from exc
+
+    if not isinstance(command, (click.Command, click.Group)):
+        raise ModelOnexError(
+            f"the '{_CLI_EXTENSION_GROUP}' entry point "
+            f"'{entry_point.name}' (from {origin}) resolved to "
+            f"{type(command).__name__}, not a click.Command or click.Group. "
+            f"'{entry_point.value}' must name a click command object.",
+            error_code=EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED,
+        )
+    return command
+
+
+def _collision_error(entry_point: EntryPoint) -> ModelOnexError:
+    return ModelOnexError(
+        f"the '{_CLI_EXTENSION_GROUP}' entry point "
+        f"'{entry_point.name}' (from {_origin_of(entry_point)}) collides with a "
+        f"command that is already registered. Entry points have no defined "
+        f"order across distributions, so allowing this would make which "
+        f"'onex {entry_point.name}' runs depend on the machine. Rename "
+        f"one of them.",
+        error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
+    )
 
 
 def load_cli_extensions(
@@ -810,52 +879,49 @@ def load_cli_extensions(
     """
     attached: list[str] = []
     for entry_point in extension_points:
-        origin = (
-            entry_point.dist.name
-            if entry_point.dist is not None
-            else "an unknown distribution"
-        )
-        try:
-            command = entry_point.load()
-            # boundary-ok: entry points are provided by pip-installed packages.
-        except Exception as exc:
-            raise ModelOnexError(
-                f"the '{_CLI_EXTENSION_GROUP}' entry point "
-                f"'{entry_point.name}' (from {origin}) points at "
-                f"'{entry_point.value}', which failed to load: "
-                f"{type(exc).__name__}: {exc}. The command it advertises does "
-                f"not exist, so this is a packaging defect in {origin}, not a "
-                f"CLI fault.",
-                error_code=EnumCoreErrorCode.IMPORT_ERROR,
-            ) from exc
-
-        if not isinstance(command, (click.Command, click.Group)):
-            raise ModelOnexError(
-                f"the '{_CLI_EXTENSION_GROUP}' entry point "
-                f"'{entry_point.name}' (from {origin}) resolved to "
-                f"{type(command).__name__}, not a click.Command or click.Group. "
-                f"'{entry_point.value}' must name a click command object.",
-                error_code=EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED,
-            )
-
+        command = _load_extension_command(entry_point)
         if entry_point.name in group.commands:
-            raise ModelOnexError(
-                f"the '{_CLI_EXTENSION_GROUP}' entry point "
-                f"'{entry_point.name}' (from {origin}) collides with a command "
-                f"that is already registered. Entry points have no defined "
-                f"order across distributions, so allowing this would make which "
-                f"'onex {entry_point.name}' runs depend on the machine. Rename "
-                f"one of them.",
-                error_code=EnumCoreErrorCode.DUPLICATE_REGISTRATION,
-            )
-
+            raise _collision_error(entry_point)
         group.add_command(command, entry_point.name)
         attached.append(entry_point.name)
 
     return attached
 
 
-load_cli_extensions(cli, _entry_points(group=_CLI_EXTENSION_GROUP))
+def register_lazy_cli_extensions(
+    group: _LazyCoreCommandGroup,
+    extension_points: Iterable[EntryPoint],
+) -> list[str]:
+    """Advertise every ``onex.cli`` extension on ``group`` without loading any.
+
+    Each extension loads on first resolution of its name (``onex delegate``
+    imports only delegate's own tree), or when the root listing renders every
+    command. Name collisions are decided from entry-point metadata alone, so
+    they still raise here, at import, before any extension code runs. A
+    malformed extension raises from :func:`_load_extension_command` when it is
+    resolved; it is never skipped.
+
+    Raises:
+        ModelOnexError: If an entry point claims a name already taken by a core
+            command (eager or lazy) or by another extension.
+    """
+    attached: list[str] = []
+    for entry_point in extension_points:
+        name = entry_point.name
+        if (
+            name in group.commands
+            or name in group._lazy_commands
+            or name in group._lazy_extensions
+        ):
+            raise _collision_error(entry_point)
+        group._lazy_extensions[name] = entry_point
+        attached.append(name)
+    return attached
+
+
+register_lazy_cli_extensions(
+    cast(_LazyCoreCommandGroup, cli), _entry_points(group=_CLI_EXTENSION_GROUP)
+)
 
 if __name__ == "__main__":
     cli()
