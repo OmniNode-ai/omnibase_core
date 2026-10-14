@@ -313,6 +313,15 @@ requirements:
         statement: 'AC43: validate_pr_receipts rejects an approval that the merge-base gate accepted,
           without logging an accepted override, while clean PR receipts still pass -- falsifier: uv run
           pytest tests/unit/validation/test_receipt_gate_skip_token_hardening.py -q -p no:randomly'
+  - id: req-omn20074-no-occ-dev-dependency
+    statement: The omnibase_core dev environment must not install onex_change_control, so no uv sync clones
+      the retiring repository; the dependency group entry, the git source pin and the lock entry go together.
+    acceptance:
+      - id: AC44
+        statement: 'AC44: no pyproject.toml dependency group names onex-change-control, tool.uv.sources
+          pins no onex-change-control, and uv.lock carries no onex-change-control package and no onex_change_control
+          git url -- falsifier: uv run pytest tests/ci/test_no_occ_dev_dependency_omn20074.py -q -p no:randomly
+          fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -445,6 +454,10 @@ evidence_requirements:
     description: The security-scan caller uses the in-repo CodeQL reusable with unchanged inputs, permissions
       and composed context, and names onex_change_control nowhere.
     command: uv run pytest tests/ci/test_codeql_reusable_omn20074.py -q -p no:randomly -k security_scan
+  - kind: tests
+    description: The dependency tests read pyproject.toml and uv.lock and find no onex-change-control
+      entry, with the parsed lock's omnibase-core package as a positive control.
+    command: uv run pytest tests/ci/test_no_occ_dev_dependency_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -761,3 +774,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC43
+  - id: dod-omn-20074-ac44
+    description: The dependency tests read pyproject.toml and uv.lock and find no onex-change-control
+      entry, with the parsed lock's omnibase-core package as a positive control.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_no_occ_dev_dependency_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC44
