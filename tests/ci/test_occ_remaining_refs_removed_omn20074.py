@@ -5,7 +5,7 @@
 Covers the live references left after the S9 deploy-gate deletion that no
 reusable-workflow caller needs: the downstream pin-bump manifest entry, the
 config-propagation targets, the validator-requirements repo registry, the
-boundary-parity repo list, the CodeQL required-check ref, and the receipt-gate
+CodeQL required-check ref, and the receipt-gate
 CLI wrapper script nothing invokes. The receipt-gate and occ-preflight
 reusables stay hosted because ``@main`` callers outside this repository still
 use them (see ``test_occ_unused_reusables_deleted_omn20074``).

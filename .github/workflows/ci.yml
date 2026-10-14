@@ -4869,7 +4869,7 @@ jobs:
         with:
           checks: "boundary-parity"
           warn-only: "false"
-          repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket"
+          repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket,onex_change_control"
 
   ci-summary:
     name: CI Summary

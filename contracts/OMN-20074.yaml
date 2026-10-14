@@ -345,14 +345,14 @@ requirements:
   - id: req-omn20074-s10-remaining-refs
     statement: omnibase_core must not carry the change-control references no reusable caller needs; the
       pin-bump manifest entry, the config-propagation targets, the validator-requirements repo registry,
-      the boundary-parity repo list, the dependency-cascade target, the CodeQL required-check ref and
-      the receipt-gate CLI wrapper script nothing invokes go together.
+      the dependency-cascade target, the CodeQL required-check ref and the receipt-gate CLI wrapper script
+      nothing invokes go together.
     acceptance:
       - id: AC47
         statement: 'AC47: docs/downstream-repos.yaml, .github/propagation-targets.yaml and the validator-requirements
-          registry name no onex_change_control repository, no dependency-cascade case and no boundary-parity
-          repos list names it, required-checks.yaml carries no cross_repo_ref into it, and scripts/validation/validate_pr_receipts.py
-          is absent from the tree and from every tracked list -- falsifier: uv run pytest tests/ci/test_occ_remaining_refs_removed_omn20074.py
+          registry name no onex_change_control repository, no dependency-cascade case names it, required-checks.yaml
+          carries no cross_repo_ref into it, and scripts/validation/validate_pr_receipts.py is absent
+          from the tree and from every tracked list -- falsifier: uv run pytest tests/ci/test_occ_remaining_refs_removed_omn20074.py
           tests/scripts/test_dependency_cascade_matrix.py -q -p no:randomly fails at the merge base'
 evidence_requirements:
   - kind: tests
