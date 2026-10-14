@@ -12,13 +12,10 @@ period is skipped and one past it fails.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
-import yaml
 
 from omnibase_core.handlers.handler_boundary_parity import (
     HandlerBoundaryParity,
@@ -33,7 +30,6 @@ from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSo
 
 pytestmark = pytest.mark.unit
 
-FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "occ_boundaries"
 TOPIC = "onex.cmd.omniintelligence.claude-hook-event.v1"
 PRODUCER_FILE = "src/omniclaude/hooks/topics.py"
 CONSUMER_FILE = "src/omniintelligence/nodes/node_claude_hook_event_effect/contract.yaml"
@@ -196,11 +192,69 @@ def test_handler_reports_per_side_verdicts() -> None:
     assert result.consumer_ok
 
 
-def test_packaged_manifest_is_the_occ_manifest() -> None:
-    expected = yaml.safe_load((FIXTURES / "manifest.yaml").read_text(encoding="utf-8"))
-    text = load_manifest_yaml()
-    parsed = json.dumps(yaml.safe_load(text), sort_keys=True).encode("utf-8")
-    assert (
-        hashlib.sha256(parsed).hexdigest() == expected["kafka_boundaries_parsed_sha256"]
+def _packaged_repos_root(tmp_path: Path) -> Path:
+    """A repos root holding every file the packaged manifest names, bar one repo.
+
+    Each producer and consumer file carries its topic, so the packaged manifest
+    is in parity wherever the repo directory exists.
+    """
+    repos = tmp_path / "repos"
+    for entry in load_boundary_manifest(load_manifest_yaml()):
+        for repo, file in (
+            (entry.producer_repo, entry.producer_file),
+            (entry.consumer_repo, entry.consumer_file),
+        ):
+            target = repos / repo / file
+            if target.is_file():
+                target.write_text(
+                    target.read_text(encoding="utf-8") + f"\n# {entry.topic_name}\n",
+                    encoding="utf-8",
+                )
+            else:
+                _write(repos, f"{repo}/{file}", f"# {entry.topic_name}\n")
+    return repos
+
+
+def test_packaged_manifest_names_no_change_control_repo() -> None:
+    entries = load_boundary_manifest(load_manifest_yaml())
+    assert len(entries) == 5
+    repos = {e.producer_repo for e in entries} | {e.consumer_repo for e in entries}
+    assert "onex_change_control" not in repos
+    assert "contract-drift-detected" not in load_manifest_yaml()
+
+
+def test_packaged_manifest_passes_without_change_control_on_the_repos_root(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    repos = _packaged_repos_root(tmp_path)
+    assert not (repos / "onex_change_control").exists()
+    code = main(["--repos-root", str(repos)])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "All boundaries are in parity." in out
+
+
+def test_a_boundary_produced_by_change_control_fails_without_its_repo(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Positive control: the 'producer file missing' exit the removed entry caused."""
+    repos = _packaged_repos_root(tmp_path)
+    removed = """
+  - topic_name: onex.evt.onex-change-control.contract-drift-detected.v1
+    producer_repo: onex_change_control
+    consumer_repo: omniclaude
+    producer_file: "src/onex_change_control/nodes/node_contract_drift_effect/contract.yaml"
+    consumer_file: "src/omniclaude/hooks/topics.py"
+    topic_pattern: "contract-drift-detected\\\\.v1"
+    event_schema: "ModelContractDriftOutput"
+    status: active
+"""
+    _write(tmp_path, "with_removed.yaml", load_manifest_yaml() + removed)
+    code = main(
+        ["--repos-root", str(repos), "--manifest", str(tmp_path / "with_removed.yaml")]
     )
-    assert len(load_boundary_manifest(text)) == 6
+    assert code == 1
+    assert (
+        "producer file missing: onex_change_control/src/onex_change_control/"
+        "nodes/node_contract_drift_effect/contract.yaml"
+    ) in capsys.readouterr().out

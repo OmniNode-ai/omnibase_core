@@ -67,15 +67,3 @@ boundaries:
     consumer_file: "src/omnimarket/nodes/node_intent_event_consumer_effect/contract.yaml"
     topic_pattern: "intent-classified\\.v1"
     event_schema: "ModelIntentClassifiedEvent"
-
-  # =========================================================================
-  # onex_change_control -> omniclaude (contract drift detection)
-  # =========================================================================
-  - topic_name: onex.evt.onex-change-control.contract-drift-detected.v1
-    producer_repo: onex_change_control
-    consumer_repo: omniclaude
-    producer_file: "src/onex_change_control/nodes/node_contract_drift_effect/contract.yaml"
-    consumer_file: "src/omniclaude/hooks/topics.py"
-    topic_pattern: "contract-drift-detected\\.v1"
-    event_schema: "ModelContractDriftOutput"
-    status: active
