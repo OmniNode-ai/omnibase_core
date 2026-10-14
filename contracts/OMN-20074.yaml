@@ -354,6 +354,15 @@ requirements:
           carries no cross_repo_ref into it, and scripts/validation/validate_pr_receipts.py is absent
           from the tree and from every tracked list -- falsifier: uv run pytest tests/ci/test_occ_remaining_refs_removed_omn20074.py
           tests/scripts/test_dependency_cascade_matrix.py -q -p no:randomly fails at the merge base'
+  - id: req-omn20074-boundary-peer-closure
+    statement: The validate-boundaries action must include every producer and consumer in its packaged
+      boundary manifest even when the caller omits a required peer, without changing boundary verdicts.
+    acceptance:
+      - id: AC48
+        statement: 'AC48: boundary-parity resolves every packaged boundary endpoint into the clone list,
+          retains caller extras without duplicates, and migration-only requests do not add boundary endpoints;
+          clone failures remain degraded failures -- falsifier: uv run pytest tests/ci/test_validate_boundaries_peer_closure_omn20074.py
+          -q --no-cov -p no:randomly'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -867,3 +876,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC47
+  - id: dod-omn-20074-ac47
+    description: The action resolver executes against the packaged manifest and the clone step consumes
+      its output while retaining degraded clone failure handling.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_validate_boundaries_peer_closure_omn20074.py -q --no-cov
+          -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC48

@@ -137,6 +137,35 @@ runs:
           attempt=$((attempt + 1))
         done
 
+    - name: Resolve required boundary repositories
+      if: steps.scope.outputs.should_run_boundary_checks == 'true'
+      id: required_repos
+      shell: bash
+      env:
+        CORE_ROOT: ${{ steps.core.outputs.root }}
+        INPUT_REPOS: ${{ inputs.repos }}
+        INPUT_CHECKS: ${{ inputs.checks }}
+      run: |
+        uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python - <<'PY' >> "$GITHUB_OUTPUT"
+        import os
+
+        from omnibase_core.handlers.handler_boundary_parity import (
+            load_boundary_manifest,
+            load_manifest_yaml,
+        )
+
+        repos = list(dict.fromkeys(
+            repo.strip() for repo in os.environ["INPUT_REPOS"].split(",") if repo.strip()
+        ))
+        checks = {check.strip() for check in os.environ["INPUT_CHECKS"].split(",")}
+        if "boundary-parity" in checks:
+            for boundary in load_boundary_manifest(load_manifest_yaml()):
+                for repo in (boundary.producer_repo, boundary.consumer_repo):
+                    if repo not in repos:
+                        repos.append(repo)
+        print("repos=" + ",".join(repos))
+        PY
+
     - name: Clone peer repos
       if: steps.scope.outputs.should_run_boundary_checks == 'true'
       id: clone
@@ -146,7 +175,7 @@ runs:
         mkdir -p /tmp/omni_repos
         DEGRADED=""
         CALLING_REPO="${GITHUB_REPOSITORY##*/}"
-        IFS=',' read -ra REPOS <<< "${{ inputs.repos }}"
+        IFS=',' read -ra REPOS <<< "${{ steps.required_repos.outputs.repos }}"
         # OMN-13701: older callers pass an explicit repo list without omnimarket,
         # but the canonical intent-classified consumer now lives there.
         OMNIMARKET_PRESENT=false
