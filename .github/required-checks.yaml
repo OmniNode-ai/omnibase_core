@@ -757,7 +757,7 @@ gates:
     producer_kind: matrix
     caller_workflow: security-scan.yml
     caller_job: codeql
-    cross_repo_ref: "OmniNode-ai/onex_change_control/.github/workflows/codeql-reusable.yml@main"
+    cross_repo_ref: "./.github/workflows/codeql-reusable.yml"
     skip_semantics: matrix_unresolvable
     rationale: "OMN-15120 fan-out finding: this composed context's first segment is the caller job's DISPLAY
       NAME ('CodeQL', set via `name:`) rather than its `job_id` ('codeql') -- the guard's static resolve_context_to_job()

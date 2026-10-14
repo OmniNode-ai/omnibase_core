@@ -106,7 +106,7 @@ jobs:
 
           case "$PACKAGE" in
             omnibase_core)
-              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude", "onex_change_control", "omninode_infra"]'
+              REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude", "omninode_infra"]'
               ;;
             omnibase_spi)
               REPOS='["omnibase_infra", "omniintelligence", "omnimemory", "omniclaude"]'

@@ -84,8 +84,3 @@ repos:
     owner: OmniNode-ai
     pin_sites: []
     notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared."
-
-  - name: onex_change_control
-    owner: OmniNode-ai
-    pin_sites: []
-    notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared."

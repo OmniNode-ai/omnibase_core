@@ -135,7 +135,7 @@ def test_inputs_job_name_and_required_context_are_unchanged() -> None:
     assert step["with"] == {
         "checks": "boundary-parity",
         "warn-only": "false",
-        "repos": "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket,onex_change_control",
+        "repos": "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket",
     }
     entries = yaml.safe_load(REQUIRED_CHECKS.read_text(encoding="utf-8"))
     required = [e for e in _entries(entries) if e.get("name") == CONTEXT]
