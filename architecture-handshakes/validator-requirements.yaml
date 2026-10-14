@@ -37,7 +37,6 @@ known_repos:
   - omnimemory
   - omninode_infra
   - omniweb
-  - onex_change_control
   # OMN-13579: previously ungoverned public repos — onboarded here so universal
   # validators (applies_to_repos: "all") automatically apply; Python-specific
   # validators added per-repo below based on repo language and content.
@@ -167,7 +166,7 @@ required_validators:
   no-hardcoded-topics:
     description: |
       Kafka topic strings must come from contract.yaml, not hardcoded in source.
-    central_source: "onex_change_control (centralized hook)"
+    central_source: "omnibase_core.handlers.handler_no_hardcoded_topics"
     pre_commit: required
     ci_workflow: required
     required_check_on_main: "ARCH-Invariants / no-hardcoded-topics"
@@ -189,7 +188,6 @@ required_validators:
       - omnimemory
       - omniintelligence
       - omninode_infra
-      - onex_change_control
       # OMN-13579: this repo has hardcoded topic strings in source (omnicursor: _TOPIC_MAP dict)
       - omnicursor
       # knowledge-base is doc-only; no contract.yaml / Kafka coupling — excluded
@@ -409,7 +407,6 @@ required_validators:
       - omnimemory
       - omniintelligence
       - omninode_infra
-      - onex_change_control
       # OMN-13579: Python repos — ruff applies to all with pyproject.toml
       - omnicursor
       - knowledge_base
@@ -515,7 +512,7 @@ required_validators:
   no-untracked-todos:
     description: |
       Blocks bare TODO/FIXME. Requires # TODO(OMN-XXXX): format.
-    central_source: "onex_change_control (centralized)"
+    central_source: "omnibase_core.handlers.handler_todo_format"
     pre_commit: required
     ci_workflow: required
     required_check_on_main: "ARCH-Invariants / no-untracked-todos"

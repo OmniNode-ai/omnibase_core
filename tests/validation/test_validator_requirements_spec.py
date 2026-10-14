@@ -71,7 +71,6 @@ KNOWN_REPOS = {
     "omnimemory",
     "omninode_infra",
     "omniweb",
-    "onex_change_control",
     # OMN-13579: ungoverned public repos onboarded
     "omnibase",
     "omnicursor",

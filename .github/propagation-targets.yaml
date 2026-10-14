@@ -74,10 +74,6 @@ propagations:
         path: .pre-commit-config.yaml
         operation: append_hook_entry
         hook_id: normalization-symmetry
-      - repo: OmniNode-ai/onex_change_control
-        path: .pre-commit-config.yaml
-        operation: append_hook_entry
-        hook_id: normalization-symmetry
     auto_merge: true
     merge_method: queue_default
 
@@ -118,10 +114,6 @@ propagations:
         operation: append_hook_entry
         hook_id: validate-gitignore-baseline
       - repo: OmniNode-ai/omninode_infra
-        path: .pre-commit-config.yaml
-        operation: append_hook_entry
-        hook_id: validate-gitignore-baseline
-      - repo: OmniNode-ai/onex_change_control
         path: .pre-commit-config.yaml
         operation: append_hook_entry
         hook_id: validate-gitignore-baseline

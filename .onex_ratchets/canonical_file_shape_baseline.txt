@@ -156,7 +156,6 @@ scripts/validation/validate_no_except_swallow.py
 scripts/validation/validate_no_import_none_fallback.py
 scripts/validation/validate_no_none_guard_publish.py
 scripts/validation/validate_optimization.py
-scripts/validation/validate_pr_receipts.py
 scripts/validation/validate_precommit_fail_loud.py
 scripts/validation/validate_precommit_pin_parity.py
 scripts/validation/validate_protocol_syntax.py

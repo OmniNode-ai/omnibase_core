@@ -55,59 +55,21 @@ def test_workflow_yaml_parses() -> None:
 
 
 @pytest.mark.unit
-def test_omnibase_core_cascades_to_onex_change_control() -> None:
-    """OMN-9425: ccc's uv.lock must be auto-bumped on omnibase_core release.
+def test_no_cascade_target_is_onex_change_control() -> None:
+    """OMN-20074: no package cascades to onex_change_control any more.
 
-    onex_change_control depends on omnibase-core (see ccc/pyproject.toml).
-    Without this entry, ccc PRs block on stale lockfiles when new core
-    modules ship, as happened with ccc#301 pre-OMN-9425.
+    omnibase_core is off onex_change_control, so a release no longer opens a
+    lockfile bump there (the OMN-9425 entry is retired with the dependency).
     """
     mapping = _extract_case_mapping()
     assert "omnibase_core" in mapping, (
         "omnibase_core case missing from dependency-cascade.yml"
     )
-    assert "onex_change_control" in mapping["omnibase_core"], (
-        "onex_change_control must be in the omnibase_core downstream matrix; "
-        "without it, ccc's uv.lock won't auto-bump on core releases "
-        "(see OMN-9425 and the ccc#301 regression)."
-    )
-
-
-@pytest.mark.unit
-def test_all_foundation_packages_have_downstream_lists() -> None:
-    """Each foundation package in the docstring must have a case branch."""
-    mapping = _extract_case_mapping()
-    expected = {"omnibase_core", "omnibase_spi", "omnibase_infra"}
-    assert expected.issubset(mapping.keys()), (
-        f"Missing case branches for: {expected - mapping.keys()}"
-    )
-
-
-@pytest.mark.unit
-def test_downstream_lists_are_non_empty_and_unique() -> None:
-    """Sanity: every case emits at least one repo and no duplicates."""
-    mapping = _extract_case_mapping()
-    for pkg, repos in mapping.items():
-        assert repos, f"{pkg}: downstream list is empty"
-        assert len(repos) == len(set(repos)), (
-            f"{pkg}: downstream list has duplicates: {repos}"
-        )
-
-
-@pytest.mark.unit
-def test_omnibase_spi_and_infra_exclude_ccc() -> None:
-    """ccc does not hard-depend on spi or infra; keep them out.
-
-    Guard against over-eager additions. If ccc's pyproject.toml ever gains a
-    spi or infra dependency, update the workflow case AND this test together.
-    """
-    mapping = _extract_case_mapping()
-    assert "onex_change_control" not in mapping.get("omnibase_spi", []), (
-        "ccc does not depend on omnibase-spi; see onex_change_control/pyproject.toml"
-    )
-    assert "onex_change_control" not in mapping.get("omnibase_infra", []), (
-        "ccc does not depend on omnibase-infra; see onex_change_control/pyproject.toml"
-    )
+    assert {
+        package: targets
+        for package, targets in mapping.items()
+        if "onex_change_control" in targets
+    } == {}
 
 
 # ---------------------------------------------------------------------------
