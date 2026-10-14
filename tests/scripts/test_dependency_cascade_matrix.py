@@ -164,8 +164,13 @@ def test_open_pull_request_targets_dev_not_main() -> None:
 
 
 @pytest.mark.unit
-def test_workflow_call_requires_ticket_and_evidence_source() -> None:
-    """Bug 2: the caller (release.yml) must supply real, non-optional evidence."""
+def test_workflow_call_requires_ticket_and_evidence_source_is_optional() -> None:
+    """Bug 2: the caller (release.yml) must supply a real ticket.
+
+    OMN-14355: ``evidence_source`` is optional. The change-control companion
+    mint that wrote it into a release PR body is retired (OMN-20074), and the
+    generator never writes it into a bump PR (OMN-18202).
+    """
     with WORKFLOW_PATH.open() as fh:
         doc = yaml.safe_load(fh)
     on_block = doc[True] if True in doc else doc["on"]
@@ -175,7 +180,8 @@ def test_workflow_call_requires_ticket_and_evidence_source() -> None:
     for inputs in (call_inputs, dispatch_inputs):
         assert inputs["ticket"]["required"] is True, inputs["ticket"]
         assert inputs["ticket"]["type"] == "string"
-        assert inputs["evidence_source"]["required"] is True, inputs["evidence_source"]
+        assert inputs["evidence_source"]["required"] is False, inputs["evidence_source"]
+        assert inputs["evidence_source"]["default"] == ""
         assert inputs["evidence_source"]["type"] == "string"
 
 

@@ -43,13 +43,12 @@ on:
       evidence_source:
         description: >-
           Evidence-Source value (OCC#<n> or a merged OCC commit SHA) that
-          already proved the released package version (OMN-16286). Re-cited
-          verbatim as this PR's own `Evidence-Source:` line -- a cascade PR
-          carries no new testing of its own beyond this repo's CI against the
-          new lockfile, so it honestly reuses the evidence that proved the
-          release rather than fabricating new evidence or claiming an
-          exemption.
-        required: true
+          already proved the released package version (OMN-16286). Optional
+          since OMN-14355: the change-control companion mint that produced it
+          is retired (OMN-20074), and no bump PR body carries it (OMN-18202).
+          An empty value is accepted; a non-empty one is still validated.
+        required: false
+        default: ''
         type: string
     secrets:
       # OMN-16373: CROSS_REPO_PAT retired. The caller now passes through the
@@ -78,8 +77,9 @@ on:
         required: true
         type: string
       evidence_source:
-        description: 'Evidence-Source that already proved the release (OMN-16286), e.g. OCC#6695.'
-        required: true
+        description: 'Evidence-Source that already proved the release (OMN-16286), e.g. OCC#6695. Optional (OMN-14355).'
+        required: false
+        default: ''
         type: string
 
 permissions:
@@ -221,7 +221,7 @@ jobs:
             echo "::error::OMN-16286: inputs.ticket '${TICKET}' does not match the required ^OMN-[0-9]+\$ pattern."
             exit 1
           fi
-          if ! [[ "$EVIDENCE_SOURCE" =~ ^(OCC#[0-9]+|[0-9a-fA-F]{7,40})$ ]]; then
+          if [ -n "$EVIDENCE_SOURCE" ] && ! [[ "$EVIDENCE_SOURCE" =~ ^(OCC#[0-9]+|[0-9a-fA-F]{7,40})$ ]]; then
             echo "::error::OMN-16286: inputs.evidence_source '${EVIDENCE_SOURCE}' does not match the required OCC#<n> or <hex-sha> pattern."
             exit 1
           fi

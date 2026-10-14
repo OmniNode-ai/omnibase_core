@@ -203,8 +203,14 @@ jobs:
           ticket="$(printf '%s' "$pr_body" | grep -oiE '^Evidence-Ticket:[[:space:]]*OMN-[0-9]+' | head -1 | grep -oiE 'OMN-[0-9]+' | tr '[:lower:]' '[:upper:]' || true)"
           evidence_source="$(printf '%s' "$pr_body" | grep -iE '^Evidence-Source:[[:space:]]+\S' | head -1 | sed -E 's/^Evidence-Source:[[:space:]]*//; s/[[:space:]]+$//' || true)"
 
-          if [ -z "$ticket" ] || [ -z "$evidence_source" ]; then
-            echo "::error::OMN-16286: release PR #${pr_number} (commit ${head_sha}) is missing a resolvable Evidence-Ticket/Evidence-Source pair (ticket='${ticket:-<none>}', evidence_source='${evidence_source:-<none>}'). Fix the release PR's evidence trailer, or release from a properly evidenced commit, before the dependency cascade can open honest downstream PRs."
+          # OMN-14355: only the ticket is required. The change-control
+          # companion mint that wrote `Evidence-Source:` into a release PR body
+          # is retired (OMN-20074), so v0.47.43 was tagged and then refused here
+          # before the build, and never reached PyPI (run 38485202286). The
+          # cascade generator never writes the source into a bump PR (OMN-18202),
+          # so an absent source is passed on empty and a present one still flows.
+          if [ -z "$ticket" ]; then
+            echo "::error::OMN-16286: release PR #${pr_number} (commit ${head_sha}) is missing a resolvable Evidence-Ticket (ticket='${ticket:-<none>}'). Fix the release PR's evidence trailer, or release from a properly evidenced commit, before the dependency cascade can open honest downstream PRs."
             exit 1
           fi
 

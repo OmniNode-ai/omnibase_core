@@ -848,3 +848,102 @@ def test_workflow_dispatch_recovery_checks_out_the_requested_tag() -> None:
     ref = str(_as_mapping(checkout["with"], "checkout `with:`")["ref"])
     assert "workflow_dispatch" in ref
     assert "inputs.tag" in ref
+
+
+# --------------------------------------------------------------------------
+# OMN-14355 -- a release PR without an Evidence-Source line must still release
+# --------------------------------------------------------------------------
+_RESOLVE_EVIDENCE_STEP = "Resolve release ticket + evidence (OMN-16286)"
+
+
+def _run_resolve_evidence_script(
+    tmp_path: Path, *, pr_body: str
+) -> tuple[subprocess.CompletedProcess[str], dict[str, str]]:
+    """Execute the real ``Resolve release ticket + evidence`` step under bash.
+
+    ``gh`` and ``git`` are stubbed on PATH; the two ``${{ }}`` expressions the
+    step carries (``github.repository``) are substituted with a literal, since
+    Actions would have expanded them before bash saw the script.
+    """
+    script = _step(_RESOLVE_EVIDENCE_STEP)["run"]
+    assert isinstance(script, str)
+    script = script.replace("${{ github.repository }}", "OmniNode-ai/omnibase_core")
+    assert "${{" not in script, script
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    body_file = tmp_path / "pr_body.txt"
+    body_file.write_text(pr_body)
+    (bin_dir / "git").write_text("#!/bin/sh\necho " + "d" * 40 + "\n")
+    (bin_dir / "gh").write_text(
+        "#!/bin/sh\n"
+        'case "$*" in\n'
+        "  api*) echo 1965 ;;\n"
+        '  *"--json state"*) echo MERGED ;;\n'
+        f'  *"--json body"*) cat "{body_file}" ;;\n'
+        "esac\n"
+    )
+    for tool in ("git", "gh"):
+        (bin_dir / tool).chmod(0o755)
+
+    github_output = tmp_path / "github_output"
+    github_output.write_text("")
+    env = {
+        "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+        "GITHUB_OUTPUT": str(github_output),
+        "GH_TOKEN": "stub",
+    }
+    run = subprocess.run(
+        ["bash", "-e", "-c", script],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
+    )
+    outputs = dict(
+        line.split("=", 1) for line in github_output.read_text().splitlines() if line
+    )
+    return run, outputs
+
+
+def test_release_evidence_resolves_with_a_ticket_and_no_evidence_source(
+    tmp_path: Path,
+) -> None:
+    """OMN-14355: v0.47.43 was tagged but never published.
+
+    Run 38485202286 died in this step with ``ticket='OMN-18595',
+    evidence_source='<none>'``: since the change-control companion mint was
+    retired (OMN-20074) a release PR body carries ``Evidence-Ticket:`` and no
+    ``Evidence-Source:`` line, and the step demanded both. The cascade
+    generator never writes the source into a bump PR (OMN-18202), so only the
+    ticket is load-bearing; its absence must not stop the publish.
+    """
+    run, outputs = _run_resolve_evidence_script(
+        tmp_path, pr_body="## Summary\n\nEvidence-Ticket: OMN-18595\n"
+    )
+
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert outputs["ticket"] == "OMN-18595"
+    assert outputs["evidence_source"] == ""
+
+
+def test_release_evidence_still_threads_an_evidence_source_when_present(
+    tmp_path: Path,
+) -> None:
+    run, outputs = _run_resolve_evidence_script(
+        tmp_path,
+        pr_body="Evidence-Ticket: OMN-18595\nEvidence-Source: OCC#9159\n",
+    )
+
+    assert run.returncode == 0, run.stdout + run.stderr
+    assert outputs["ticket"] == "OMN-18595"
+    assert outputs["evidence_source"] == "OCC#9159"
+
+
+def test_release_evidence_still_requires_a_ticket(tmp_path: Path) -> None:
+    run, _ = _run_resolve_evidence_script(
+        tmp_path, pr_body="Evidence-Source: OCC#9159\n"
+    )
+
+    assert run.returncode != 0
+    assert "Evidence-Ticket" in run.stdout
