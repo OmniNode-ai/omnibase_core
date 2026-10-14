@@ -991,8 +991,6 @@ src/omnibase_core/validation/validator_contracts.py
 src/omnibase_core/validation/validator_demo_path_topic_coherence.py
 src/omnibase_core/validation/validator_dispatch_report_anchors.py
 src/omnibase_core/validation/validator_duplicate_config_ids.py
-src/omnibase_core/validation/validator_evidence_commit_binding.py
-src/omnibase_core/validation/validator_evidence_commit_binding_cli.py
 src/omnibase_core/validation/validator_evidence_shape_cli.py
 src/omnibase_core/validation/validator_fsm_analysis.py
 src/omnibase_core/validation/validator_github_token_env_reads.py
@@ -1012,7 +1010,6 @@ src/omnibase_core/validation/validator_pull_request_workflow_ratchet.py
 src/omnibase_core/validation/validator_pydantic_conventions.py
 src/omnibase_core/validation/validator_receipt_diff_consistency.py
 src/omnibase_core/validation/validator_receipt_gate.py
-src/omnibase_core/validation/validator_receipt_gate_cli.py
 src/omnibase_core/validation/validator_receipt_honesty.py
 src/omnibase_core/validation/validator_receipt_reprobe.py
 src/omnibase_core/validation/validator_receipt_runtime_identity.py

@@ -382,6 +382,18 @@ requirements:
         statement: 'AC51: requirement, acceptance and evidence IDs are unique, and every binds_ac value
           names a declared criterion -- falsifier: uv run pytest tests/ci/test_ticket_contract_ids_unique_omn20074.py
           -q --no-cov -p no:randomly'
+  - id: req-omn20074-s12-unused-validators
+    statement: omnibase_core must not carry the change-control validators and CLIs no workflow calls;
+      the Evidence-Commit binding validator and its CLI and the receipt-gate CLI go together, while the
+      receipt-gate library and the OCC merge-eligibility validator stay because omnibase_infra, omnimarket
+      and omniclaude import them.
+    acceptance:
+      - id: AC49
+        statement: 'AC49: validator_evidence_commit_binding.py, its CLI and validator_receipt_gate_cli.py
+          are absent from the tree, the canonical-file-shape baseline, the ruff per-file ignores and the
+          ai-slop scope fixture, while validator_receipt_gate.py and validator_occ_merge_eligibility.py
+          are present -- falsifier: uv run pytest tests/ci/test_occ_unused_validators_deleted_omn20074.py
+          -q -p no:randomly fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -533,6 +545,11 @@ evidence_requirements:
       declare other entries.
     command: uv run pytest tests/ci/test_occ_remaining_refs_removed_omn20074.py tests/scripts/test_dependency_cascade_matrix.py
       -q -p no:randomly
+  - kind: tests
+    description: The structural test finds the Evidence-Commit binding validator, its CLI and the receipt-gate
+      CLI gone from the tree and every registry, with the two validators other repositories import still
+      present as positive controls.
+    command: uv run pytest tests/ci/test_occ_unused_validators_deleted_omn20074.py -q -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -942,3 +959,21 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC51
+  - id: dod-omn-20074-ac48
+    description: The structural test finds the unused validators and CLIs gone from the tree and from
+      the baseline, ruff ignores and scope fixture, with the imported validators present as a positive
+      control.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_occ_unused_validators_deleted_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -c 'from importlib.util import find_spec; from omnibase_core.validation
+          import validator_receipt_gate, validator_occ_merge_eligibility; assert all(find_spec("omnibase_core.validation."
+          + name) is None for name in ("validator_evidence_commit_binding", "validator_evidence_commit_binding_cli",
+          "validator_receipt_gate_cli")); assert callable(validator_receipt_gate.validate_pr_receipts)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC49

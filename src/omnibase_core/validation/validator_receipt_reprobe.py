@@ -36,9 +36,7 @@ and :func:`verify_receipts_by_reexecuting_probes` (batch, producing a
 :class:`ModelReceiptReprobeReport`).
 
 CLI: ``python -m omnibase_core.validation.validator_receipt_reprobe``
-exposes a ``--receipts-dir`` driver. The receipt-gate CLI in
-``receipt_gate_cli.py`` accepts ``--reexecute-probes`` (default OFF in CI;
-ON in the manual scaffold session-end ritual).
+exposes a ``--receipts-dir`` driver.
 """
 
 from __future__ import annotations
