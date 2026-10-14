@@ -1,0 +1,69 @@
+{
+  "$defs": {
+    "ModelDeveloperPrincipalDeclaration": {
+      "additionalProperties": false,
+      "description": "The identity of one developer machine's principal.\n\nThe row names who holds the principal and holds no grant: the grants come\nfrom the document's ``grants_source``.",
+      "properties": {
+        "device": {
+          "description": "Device the principal is issued to: lower-case letters, digits and hyphens.",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Device",
+          "type": "string"
+        },
+        "login": {
+          "description": "Identity-provider login of the developer who holds the principal.",
+          "minLength": 1,
+          "pattern": "\\S",
+          "title": "Login",
+          "type": "string"
+        },
+        "principal": {
+          "description": "Broker principal name: lower-case letters, digits and hyphens.",
+          "pattern": "^[a-z0-9][a-z0-9-]*$",
+          "title": "Principal",
+          "type": "string"
+        }
+      },
+      "required": [
+        "principal",
+        "login",
+        "device"
+      ],
+      "title": "ModelDeveloperPrincipalDeclaration",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The developer machines a deployment gives a broker principal.\n\nThe document has no field for a grant. The grants of every principal in it\nare derived from the declaration ``grants_source`` names, so a grant cannot\nbe typed into a row and left to drift from that declaration.",
+  "properties": {
+    "grants_source": {
+      "description": "The declaration every principal's grants are derived from.",
+      "minLength": 1,
+      "pattern": "\\S",
+      "title": "Grants Source",
+      "type": "string"
+    },
+    "principals": {
+      "description": "The developer machines holding a principal.",
+      "items": {
+        "$ref": "#/$defs/ModelDeveloperPrincipalDeclaration"
+      },
+      "minItems": 1,
+      "title": "Principals",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "developer_principal.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "grants_source",
+    "principals"
+  ],
+  "title": "ModelDeveloperPrincipalOverlay",
+  "type": "object"
+}

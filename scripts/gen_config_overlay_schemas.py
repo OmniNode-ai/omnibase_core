@@ -22,6 +22,7 @@ from omnibase_core.models.config_overlay import (
     ModelBrokerPrincipalGrantsOverlay,
     ModelConfigOverlayDocument,
     ModelConfigOverlayScope,
+    ModelDeveloperPrincipalOverlay,
     ModelEmbeddingEndpointOverlay,
     ModelHostSettingsOverlay,
     ModelLaneServicesOverlay,
@@ -43,6 +44,7 @@ SCHEMA_DIR = (
 
 SCHEMA_EXPORTS: dict[str, type[BaseModel]] = {
     "broker_principal_grants.schema.json": ModelBrokerPrincipalGrantsOverlay,
+    "developer_principal.schema.json": ModelDeveloperPrincipalOverlay,
     "host_settings.schema.json": ModelHostSettingsOverlay,
     "lane_services.schema.json": ModelLaneServicesOverlay,
     "config_overlay_document.schema.json": ModelConfigOverlayDocument,
