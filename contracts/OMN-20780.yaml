@@ -1,0 +1,37 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-20780"
+title: "A push to main warns through a main-target-guard pre-push hook, pinned with the hosted guard"
+summary: "Operator ruling 2026-10-10T16:52:56Z: dev is the default branch of every code repository and
+  no feature PR targets main. The hosted main-target-guard check refuses such a PR, but no pre-commit
+  hook referenced it, so the ruling audit read the rule unmechanized. A check-only pre-push hook now warns
+  on a push to refs/heads/main, and a test pins the hook and runs the guard's shipped step."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: "req-main-target-guard-prepush"
+    statement: |-
+      A push to main warns locally through the main-target-guard pre-push hook, and the hosted main-target-guard step refuses a feature PR onto main and admits it onto dev.
+    acceptance:
+      - id: "AC1"
+        statement: |-
+          AC1: the pre-push hook main-target-guard warns and exits 0 on a push to refs/heads/main, prints nothing for any other ref, and the guard's shipped step refuses a feature branch onto main and admits it onto dev -- falsifier: uv run pytest tests/ci/test_main_target_guard_prepush_omn20780.py -q -p no:randomly --no-cov fails at the merge base because the hook is absent
+evidence_requirements:
+  - kind: "tests"
+    description: "The pre-push hook and the hosted guard step behave as pinned."
+    command: "uv run pytest tests/ci/test_main_target_guard_prepush_omn20780.py -q -p no:randomly --no-cov"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-omn20780-main-target-guard-prepush"
+    description: "The main-target-guard pre-push hook and the hosted guard step pass their pin test."
+    source: "manual"
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/ci/test_main_target_guard_prepush_omn20780.py -q -p no:randomly
+          --no-cov"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC1"]

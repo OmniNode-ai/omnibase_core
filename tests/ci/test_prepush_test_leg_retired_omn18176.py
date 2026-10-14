@@ -70,6 +70,7 @@ EXPECTED_PREPUSH_HOOKS: tuple[str, ...] = (
     "pytest-protocol-uuid-enforcement",
     "check-enum-governance",
     "check-node-purity",
+    "main-target-guard",  # OMN-20780: warns on a push to main
 )
 
 #: Tokens that mean "a test runner is being launched here".
@@ -255,12 +256,13 @@ def test_both_named_exceptions_are_still_present_and_still_reach_the_runner() ->
 
 
 # ---------------------------------------------------------------------------
-# 3. The other nine survive, by id and in order.
+# 3. The other nine survive, by id and in order, followed by the OMN-20780
+#    main-target-guard warning.
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.unit
-def test_the_surviving_prepush_hooks_are_exactly_these_nine_in_order() -> None:
+def test_the_surviving_prepush_hooks_are_exactly_these_in_order() -> None:
     actual = tuple(hook["id"] for hook in _prepush_hooks())
     assert actual == EXPECTED_PREPUSH_HOOKS, (
         "the pre-push hook set changed. OMN-18176 removes exactly one hook and "
