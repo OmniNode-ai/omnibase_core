@@ -48,9 +48,33 @@ class SprintRollError(ValueError):
 
 
 def _open_tickets(
-    sprint: ModelSprint, closed_states: frozenset[str]
+    sprint: ModelSprint,
+    closed_states: frozenset[str],
+    excluded_state_types: frozenset[str] = frozenset(),
 ) -> list[ModelSprintTicket]:
-    return [t for t in sprint.tickets if t.state not in closed_states]
+    return [
+        t
+        for t in sprint.tickets
+        if t.state not in closed_states and t.state_type not in excluded_state_types
+    ]
+
+
+def _refused(
+    sprints: tuple[ModelSprint, ...],
+    closed_states: frozenset[str],
+    excluded_state_types: frozenset[str],
+) -> dict[str, str]:
+    """Tickets an excluded state TYPE keeps out of the candidate set, and why.
+
+    Only those the state-name filter would have let through: a ticket already closed by
+    name was never a candidate, and listing it would bury the ones this filter catches.
+    """
+    return {
+        t.identifier: f"state type {t.state_type} ({t.state}) is not work to place"
+        for s in sprints
+        for t in s.tickets
+        if t.state not in closed_states and t.state_type in excluded_state_types
+    }
 
 
 def resolve_source(
@@ -218,7 +242,8 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
     """
     source, following = resolve_source(request.sprints, request.as_of)
     closed = request.closed_states
-    rolling = _open_tickets(source, closed)
+    excluded = request.excluded_state_types
+    rolling = _open_tickets(source, closed, excluded)
     median = median_estimate(rolling)
 
     if request.cap_override is not None:
@@ -238,7 +263,7 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
     origin: dict[str, UUID] = {t.identifier: source.sprint_id for t in rolling}
     pool: list[ModelSprintTicket] = list(rolling)
     for sprint in following:
-        for ticket in _open_tickets(sprint, closed):
+        for ticket in _open_tickets(sprint, closed, excluded):
             if ticket.identifier in origin:
                 continue
             origin[ticket.identifier] = sprint.sprint_id
@@ -297,9 +322,13 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
     # evidence that someone who did not build a thing exercised it, so a cap may not
     # defer one: the 2026-10-04 run put all three delegation walks in Backlog. Their
     # size still counts, so the overflow they cause lands on ordinary work below.
+    #
+    # A pin label is the same rule for any ticket (OMN-21085): before it, the mandatory
+    # set came from a title regex that only the external walks could match.
     first = targets[0]
     for ticket in pool:
-        if ticket.identifier in request.mandatory:
+        pinned = not request.pin_labels.isdisjoint(ticket.labels)
+        if ticket.identifier in request.mandatory or pinned:
             seat(first.sprint_id, ticket)
 
     # PASS 2 -- PILLAR FLOOR. A sprint that ships one pillar and starves another reads
@@ -346,7 +375,7 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
         ModelSprintPlacement(
             sprint_id=s.sprint_id,
             name=s.name,
-            load_before=sum(size(t) for t in _open_tickets(s, closed)),
+            load_before=sum(size(t) for t in _open_tickets(s, closed, excluded)),
             load_after=load[s.sprint_id],
             ticket_ids=tuple(t.identifier for t in placed[s.sprint_id]),
             moved_in=tuple(
@@ -403,4 +432,5 @@ def compute_roll(request: ModelSprintRollRequest) -> ModelSprintRollPlan:
         placements=placements,
         backlog_ticket_ids=tuple(t.identifier for t in backlog),
         proposals=proposals,
+        refused=_refused((source, *following), closed, excluded),
     )

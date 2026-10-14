@@ -13,6 +13,7 @@ from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply
     MUTATION,
     GraphQLTransport,
     write_payload,
+    writes_payload,
 )
 
 __all__ = ["NodeSprintRollJournal"]
@@ -42,3 +43,13 @@ class NodeSprintRollJournal:
         """Journal, then mutate. Never the other way round."""
         self.record(write)
         transport(MUTATION, {"id": write.issue_uuid, "in": write_payload(write)})
+
+    def send_together(
+        self, transport: GraphQLTransport, writes: list[ModelSprintRollWrite]
+    ) -> None:
+        """Journal every field of one issue's update, then send them as ONE mutation."""
+        if not writes:
+            return
+        for write in writes:
+            self.record(write)
+        transport(MUTATION, {"id": writes[0].issue_uuid, "in": writes_payload(writes)})

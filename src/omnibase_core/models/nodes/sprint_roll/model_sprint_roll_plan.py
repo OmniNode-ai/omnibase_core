@@ -46,3 +46,8 @@ class ModelSprintRollPlan(BaseModel):
     #: Unestimated tickets deliberately left alone because their children hold the
     #: points. Reported so a blank parent reads as a decision, not an omission.
     unestimated_parents: tuple[str, ...] = Field(default_factory=tuple)
+
+    #: Ticket identifier -> why it is not a candidate, for open-by-name tickets whose
+    #: workflow state type is excluded (duplicate, canceled). Never moved, never sent
+    #: to Backlog: the roll leaves them exactly where they are (OMN-21085).
+    refused: dict[str, str] = Field(default_factory=dict)

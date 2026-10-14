@@ -42,6 +42,11 @@ DEFAULT_CLOSED_STATES: frozenset[str] = frozenset(
 #: sprint, so it is never a text-fallback target. C27 is "every gate row in section 7.1
 #: has a ticket in the beta sprint, or a recorded ruling that retires it".
 DEFAULT_META_CRITERIA: frozenset[str] = frozenset({"C27"})
+#: The label that holds a ticket in its sprint the way a walk is held (OMN-21085).
+DEFAULT_PIN_LABELS: frozenset[str] = frozenset({"sprint-pinned"})
+#: Workflow state types that are never work to place. Duplicate is its own type in
+#: Linear, not a kind of canceled, so it must be named (OMN-21085).
+DEFAULT_EXCLUDED_STATE_TYPES: frozenset[str] = frozenset({"duplicate", "canceled"})
 
 
 class ModelSprintRollRequest(BaseModel):
@@ -66,6 +71,18 @@ class ModelSprintRollRequest(BaseModel):
     #: mandatory ticket is placed before the cap is consulted and its size still counts
     #: against the load, so the overflow lands on ordinary work rather than on proof.
     mandatory: frozenset[str] = frozenset()
+
+    #: Labels that make a ticket mandatory, whatever its title. Before OMN-21085 only a
+    #: `Walker W<n>` title could be held -- the caller built `mandatory` from that one
+    #: regex -- so nothing else could be kept in a sprint, and the 2026-10-05 run put all
+    #: seven tickets of one pillar into Backlog. A ticket carrying one of these is placed
+    #: exactly as a `mandatory` one is.
+    pin_labels: frozenset[str] = DEFAULT_PIN_LABELS
+
+    #: Workflow state types whose tickets are not candidates at all. They are left out of
+    #: every placement and named in the plan's `refused` map instead, so a ticket the
+    #: roll would not touch reads as a decision rather than as a disappearance.
+    excluded_state_types: frozenset[str] = DEFAULT_EXCLUDED_STATE_TYPES
 
     #: Per-owner ceiling inside one sprint, in the same unit as the cap. A team-wide cap
     #: alone is satisfied while one person carries the whole sprint: on the 2026-10-04

@@ -33,3 +33,7 @@ class ModelSprintRollWrite(BaseModel):
     before: tuple[str, ...] | None
     after: tuple[str, ...] | None
     at: dt.datetime = Field(default_factory=lambda: dt.datetime.now(dt.UTC))
+    #: Records that were sent as ONE `issueUpdate` share a batch, so an undo restores
+    #: them as one too (OMN-21085). None on a record sent alone, and on every record a
+    #: manifest written before batches existed holds.
+    batch: str | None = None
