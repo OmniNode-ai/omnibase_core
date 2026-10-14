@@ -305,7 +305,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--receipts-dir",
-        default="onex_change_control/drift/dod_receipts",
+        default="drift/dod_receipts",
         help="Directory tree containing ModelDodReceipt YAML files.",
     )
     args = parser.parse_args(argv)

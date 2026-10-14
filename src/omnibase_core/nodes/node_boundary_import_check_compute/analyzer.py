@@ -47,7 +47,6 @@ REGISTRY_PACKAGES: Final = (
     "omniintelligence",
     "omnimemory",
     "omnibase_internal",
-    "onex_change_control",
 )
 CORE_BASE_CLASS_MODULES: Final = (
     "node_compute",

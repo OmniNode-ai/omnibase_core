@@ -12,24 +12,35 @@ interface_change: false
 interfaces_touched: []
 requirements:
   - id: req-omn20074
-    statement: The shared receipt gate's verify job must report a success no-op in caller evidence mode,
-      including enforcing mode, rather than a skipped check-run.
+    statement: The shared receipt gate's verify job must report a success no-op, since caller evidence
+      is the only mode, rather than a skipped check-run.
     acceptance:
       - id: AC1
-        statement: 'AC1: verify has no job-level condition, and in enforcing caller mode its bot_exempt
-          step exits 0, writes only exempt=true and emits exactly one notice with the no-op reason before
-          reading the pull request. -- falsifier: uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py
-          -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason'
+        statement: 'AC1: verify has no job-level condition and runs exactly one step, which exits 0 and
+          emits exactly one notice with the no-op reason without reading the pull request. -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason'
   - id: req-omn20074-contract-home
-    statement: When compare-with-occ is true and the PR head lacks its cited contract, probe other product
-      repositories before onex_change_control and write the first home for contract_in_another_repo classification,
-      preserving the original error, notice and exit 1.
+    statement: When the PR head lacks its cited contract, the head step refuses with the original error,
+      notice and exit 1 and probes no other repository; the comparison it once fed is removed.
     acceptance:
       - id: AC2
-        statement: 'AC2: the missing-contract path writes the first available home, prioritizes product
-          repositories over OCC, skips the caller, writes nothing when absent, and never probes with compare-with-occ
-          false; occ-difference still reads the same dod directory. -- falsifier: uv run pytest tests/ci/test_receipt_gate_contract_home_omn20074.py
-          -q -p no:randomly'
+        statement: 'AC2: the missing-contract path prints the original error and notice, exits 1, calls
+          no GitHub API and carries no contract-home or comparison environment. -- falsifier: uv run pytest
+          tests/ci/test_receipt_gate_contract_home_omn20074.py -q -p no:randomly'
+  - id: req-omn20074-s11-occ-mode-removed
+    statement: omnibase_core must carry no change-control evidence mode; the receipt-gate reusable runs
+      caller evidence only, and the occ-preflight reusable, its bounded-wait probe, the companion-merged
+      gate, the evidence-root resolver, the CLI defaults naming the change-control clone and the boundary
+      analyzer's registry entry for it go together. This supersedes AC45's clause that receipt-gate.yml,
+      occ_preflight_wait.py and check_occ_companion_merged.py are still present; receipt-gate.yml stays.
+    acceptance:
+      - id: AC47
+        statement: 'AC47: receipt-gate.yml declares only the evidence-source (default caller), verifier-version,
+          compare-with-occ and shadow inputs and names no change-control checkout, probe or occ-preflight
+          context; occ-preflight.yml, occ_preflight_wait.py and check_occ_companion_merged.py are absent;
+          resolve_evidence_root is gone; no receipt CLI default and no REGISTRY_PACKAGES entry names onex_change_control
+          -- falsifier: uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -p no:randomly
+          fails at the merge base'
   - id: req-omn20074-caller-repin
     statement: The Repo Evidence Gate caller must pin the contract-home reusable and its matching verifier
       release with compare-with-occ set by AC23 at the S6 cut-over.
@@ -348,9 +359,14 @@ evidence_requirements:
       mode is a success no-op with one notice line, without reading the pull request.
     command: uv run pytest tests/ci/test_receipt_gate_caller_verify_noop_omn20074.py -q -k test_enforcing_caller_mode_verify_runs_as_a_success_noop_with_one_line_reason
   - kind: tests
-    description: Execute the head step with fake GitHub API responses to prove contract-home precedence,
-      absent and disabled behavior, and the unchanged refusal.
+    description: Execute the head step with a fake gh on PATH to prove the unchanged refusal and that
+      no other repository is probed.
     command: uv run pytest tests/ci/test_receipt_gate_contract_home_omn20074.py -q -p no:randomly
+  - kind: tests
+    description: The structural test finds the change-control evidence mode, the occ-preflight reusable,
+      its probe, the companion gate, the evidence-root resolver, the CLI defaults and the registry entry
+      gone, with positive controls on the caller verifier, the sibling resolver and the CLI path defaults.
+    command: uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -p no:randomly
   - kind: tests
     description: 'The caller tests prove the immutable reusable pin at omnibase_core#1914''s squash commit
       (carrying #1912''s contract-home reusable and the writer release-cut exemption), the matching verifier
@@ -498,7 +514,8 @@ dod_evidence:
     binds_ac:
       - AC1
   - id: dod-omn-20074-ac2
-    description: The workflow tests prove contract-home discovery and the unchanged missing-contract refusal.
+    description: The workflow tests prove the unchanged missing-contract refusal with no other repository
+      probed.
     source: manual
     checks:
       - check_type: test_passes
@@ -506,6 +523,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
+  - id: dod-omn-20074-ac47
+    description: The structural test finds the change-control evidence mode and its companions gone, with
+      positive controls on the caller verifier, the sibling resolver and the CLI path defaults.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC47
   - id: dod-omn-20074-ac3
     description: 'The caller tests prove the immutable reusable pin at omnibase_core#1914''s squash commit
       (carrying #1912''s contract-home reusable and the writer release-cut exemption), the matching verifier

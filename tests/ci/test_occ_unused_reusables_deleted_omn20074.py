@@ -29,11 +29,9 @@ _DELETED = (
     "tests/unit/validation/test_deploy_gate_evidence_contract.py",
 )
 
-_STILL_CALLED = (
-    ".github/workflows/receipt-gate.yml",
-    "scripts/ci/occ_preflight_wait.py",
-    "scripts/ci/check_occ_companion_merged.py",
-)
+# OMN-20074 (AC47): occ_preflight_wait.py and check_occ_companion_merged.py
+# are deleted with the change-control evidence mode; receipt-gate.yml stays.
+_STILL_CALLED = (".github/workflows/receipt-gate.yml",)
 
 
 def test_unused_deploy_gate_files_are_deleted() -> None:

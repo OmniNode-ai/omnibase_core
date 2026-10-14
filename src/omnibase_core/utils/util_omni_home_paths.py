@@ -8,7 +8,7 @@ Root defect being fixed
 ``ONEX_WORKTREES_ROOT=${OMNI_HOME}/omni_worktrees``) as separate shell
 variables that were expanded at ``source`` time.  When ``OMNI_HOME`` was
 unset at that moment, every derived var baked a broken bare-root path
-(``/omni_worktrees``, ``/onex_change_control/evidence``, …).
+(``/omni_worktrees``, …).
 
 Two-layer canonical fix (per OMN-12803 / OMN-13136)
 ----------------------------------------------------
@@ -21,7 +21,7 @@ Two-layer canonical fix (per OMN-12803 / OMN-13136)
    via the typed bootstrap boundary (OMN-17744). Callers that previously
    read ``os.environ["ONEX_WORKTREES_ROOT"]`` etc. should migrate to the
    functions below. The derived env vars (``ONEX_WORKTREES_ROOT``,
-   ``ONEX_EVIDENCE_ROOT``, ``OMNIBASE_INFRA_PATH``) can then be removed from
+   ``OMNIBASE_INFRA_PATH``) can then be removed from
    ``~/.omnibase/.env`` as follow-up operator cleanup.
 
 Boundary ruling (OMN-16849, operator, 2026-08-28)
@@ -42,14 +42,15 @@ Migration note
 --------------
 Existing readers of the legacy env vars are updated in follow-up PRs (one
 per repo):
-* ``omniclaude/plugins/onex/skills/_lib/dod-evidence-runner/dod_evidence_runner.py``
-  → migrate ``os.environ.get("ONEX_EVIDENCE_ROOT")`` to ``resolve_evidence_root()``.
 * ``omniclaude/plugins/onex/hooks/scripts/pre_tool_use_bash_guard.sh``
   → already has ``OMNI_HOME``-derived fallback; remove the
   ``ONEX_WORKTREES_ROOT`` override path and rely on ``OMNI_HOME`` only.
-* ``~/.omnibase/.env`` — operator cleanup: remove the three derived-path
-  lines (``ONEX_WORKTREES_ROOT``, ``ONEX_EVIDENCE_ROOT``,
-  ``OMNIBASE_INFRA_PATH``) once all readers are migrated.
+* ``~/.omnibase/.env`` — operator cleanup: remove the derived-path lines
+  (``ONEX_WORKTREES_ROOT``, ``OMNIBASE_INFRA_PATH``) once all readers are
+  migrated.
+
+OMN-20074: the DoD evidence-root resolver (``resolve_evidence_root``) is
+removed; it returned a directory inside the retired change-control clone.
 """
 
 from __future__ import annotations
@@ -107,23 +108,6 @@ def resolve_worktrees_root() -> Path:
     return _omni_home() / "omni_worktrees"
 
 
-def resolve_evidence_root() -> Path:
-    """Return the canonical DoD evidence root: ``$OMNI_HOME/onex_change_control/evidence``.
-
-    This is the canonical resolver that replaces direct reads of the
-    ``ONEX_EVIDENCE_ROOT`` env var. Reads ``OMNI_HOME`` fail-fast; callers
-    must ensure ``OMNI_HOME`` is set before invoking. Internal orchestration
-    (OMN-16849 boundary ruling) -- never customer-facing.
-
-    Returns:
-        Absolute path to the evidence directory (not guaranteed to exist).
-
-    Raises:
-        ModelOnexError: when ``OMNI_HOME`` is not set.
-    """
-    return _omni_home() / "onex_change_control" / "evidence"
-
-
 def resolve_omnibase_infra_path() -> Path:
     """Return the canonical omnibase_infra clone path: ``$OMNI_HOME/omnibase_infra``.
 
@@ -143,7 +127,6 @@ def resolve_omnibase_infra_path() -> Path:
 
 
 __all__ = [
-    "resolve_evidence_root",
     "resolve_omnibase_infra_path",
     "resolve_worktrees_root",
 ]

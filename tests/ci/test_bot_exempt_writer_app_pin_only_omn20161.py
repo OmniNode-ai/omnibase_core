@@ -1,28 +1,15 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Executable pins for the writer-app pin-only exemption (OMN-20161).
+"""Executable author classification for receipt-gate dod-verify (OMN-20161).
 
-The ``bot_exempt`` step of ``occ-preflight.yml`` and ``receipt-gate.yml`` is
-extracted from the YAML and run under ``bash`` with a ``gh`` shim that reports
-the author login and a stub ``occ_preflight_wait.py`` whose exit status and
-call record the test controls. The assertion is on the ``exempt=`` line the step
-writes to ``$GITHUB_OUTPUT``.
-
-Design rules under test:
-
-* ``DEPENDENCY_BOT_AUTHORS`` is exempt unconditionally; the probe never runs.
-* ``OCC_WRITER_BOT_AUTHORS`` is exempt only when the existing probe
-  (``--check-no-companion-required``) exits 0.
-* Anyone else (humans, near-miss logins) never reaches the probe.
-* Every probe failure, including a missing probe file, is NOT exempt.
+Dependency bots are exempt. Writer apps must derive their verdict at the head;
+the author step only marks them and reads GitHub author metadata, never the body.
 """
 
 from __future__ import annotations
 
 import re
-import stat
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -37,25 +24,7 @@ from omnibase_core.validation.validator_receipt_gate import (
 pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-WORKFLOWS = {
-    "occ-preflight": (
-        REPO_ROOT / ".github" / "workflows" / "occ-preflight.yml",
-        "eligibility",
-        ".occ-preflight-deps/omnibase_core_wait",
-    ),
-    "receipt-gate": (
-        REPO_ROOT / ".github" / "workflows" / "receipt-gate.yml",
-        "verify",
-        ".receipt-gate-deps/omnibase_core_wait",
-    ),
-    # OMN-20073: the caller-evidence job carries the same exemption.
-    "receipt-gate-dod-verify": (
-        REPO_ROOT / ".github" / "workflows" / "receipt-gate.yml",
-        "dod-verify",
-        ".receipt-gate-deps/omnibase_core_wait",
-    ),
-}
-PROBE_REL = "scripts/ci/occ_preflight_wait.py"
+WORKFLOW_PATH = REPO_ROOT / ".github" / "workflows" / "receipt-gate.yml"
 WRITER_LOGINS = (
     "onexbot-occ-writer[bot]",
     "app/onexbot-occ-writer",
@@ -65,63 +34,51 @@ NEAR_MISSES = (
     "onexbot-occ-writer-fork",
     "app/onexbot-occ-writerx",
     "xonexbot-occ-writer",
+    "dependabot-fork",
+    "app/renovatex",
 )
 HUMANS = ("jonah", "jonahgabriel")
 
 
-def _steps(name: str) -> list[dict[str, Any]]:
-    path, job, _ = WORKFLOWS[name]
-    jobs = yaml.safe_load(path.read_text())["jobs"]
-    steps = jobs[job]["steps"]
-    assert isinstance(steps, list)
-    return steps
+def _steps() -> list[dict[str, Any]]:
+    return yaml.safe_load(WORKFLOW_PATH.read_text())["jobs"]["dod-verify"]["steps"]
 
 
-def _bot_exempt(name: str) -> dict[str, Any]:
-    return next(s for s in _steps(name) if s.get("id") == "bot_exempt")
+def _bot_exempt() -> dict[str, Any]:
+    return next(s for s in _steps() if s.get("id") == "bot_exempt")
 
 
 def _run(
     tmp_path: Path,
-    name: str,
     *,
     author: str,
-    probe: str,  # "in-tree" | "checkout" | "absent"
-    probe_exit: int,
+    api_author: str | None = None,
+    api_exit: int = 0,
     pr_number: str = "7",
     merge_group_head_ref: str = "",
-) -> tuple[str, list[str]]:
-    step = _bot_exempt(name)
-    script = str(step["run"]).replace("${{ github.repository }}", "o/r")
-    assert "${{" not in script, "unexpected expression left in the bot_exempt script"
-
-    workspace = tmp_path / "ws"
-    workspace.mkdir()
-    probe_path: Path | None = None
-    if probe == "in-tree":
-        probe_path = workspace / PROBE_REL
-    elif probe == "checkout":
-        probe_path = workspace / WORKFLOWS[name][2] / PROBE_REL
-    if probe_path is not None:
-        probe_path.parent.mkdir(parents=True)
-        probe_path.write_text(
-            "import sys\n"
-            f"with open({str(tmp_path / 'probe_calls.txt')!r}, 'a') as fh:\n"
-            "    fh.write(' '.join(sys.argv[1:]) + '\\n')\n"
-            f"sys.exit({probe_exit})\n"
-        )
-
+    body: str = "Evidence-Source: OCC#123\nDEPENDENCY_PIN_ONLY",
+) -> tuple[dict[str, str], list[str]]:
+    step = _bot_exempt()
+    script = str(step["run"])
+    assert "${{" not in script
     shim_dir = tmp_path / "bin"
     shim_dir.mkdir()
     gh = shim_dir / "gh"
     gh.write_text(
         "#!/bin/bash\n"
-        'if [ "$1 $2" = "pr view" ]; then printf "%s\\n" "$FAKE_AUTHOR"; exit 0; fi\n'
-        "exit 1\n"
+        'printf "%s\\n" "$*" >> "$GH_CALLS"\n'
+        '[ "$1 $2" = "pr view" ] || exit 99\n'
+        'printf "%s\\n" "$FAKE_AUTHOR"\n'
+        'exit "$FAKE_EXIT"\n'
     )
-    gh.chmod(gh.stat().st_mode | stat.S_IXUSR)
-
-    record = tmp_path / "probe_calls.txt"
+    gh.chmod(0o755)
+    # Any attempted probe interpreter is observable and fails immediately.
+    probe_calls = tmp_path / "probe_calls.txt"
+    for command in ("python", "python3", "uv"):
+        shim = shim_dir / command
+        shim.write_text('#!/bin/bash\necho "$*" >> "$PROBE_CALLS"\nexit 99\n')
+        shim.chmod(0o755)
+    record = tmp_path / "gh_calls.txt"
     output = tmp_path / "github_output.txt"
     values = {
         "GH_TOKEN": "t",
@@ -129,165 +86,135 @@ def _run(
         "PR_EVENT_AUTHOR": author,
         "MERGE_GROUP_HEAD_REF": merge_group_head_ref,
         "GH_REPO": "o/r",
-        # OMN-20073: the verify job's no-op switch for shadow caller-evidence
-        # mode; off here, because these cases are the OCC path's own.
-        "CALLER_EVIDENCE_MODE": "false",
     }
-    declared = step.get("env", {})
-    assert set(declared) <= set(values), f"unmodelled step env: {set(declared)}"
-    env = {
-        "PATH": f"{shim_dir}:{Path(sys.executable).parent}:/usr/local/bin:/usr/bin:/bin",
-        "HOME": str(tmp_path),
-        "GITHUB_WORKSPACE": str(workspace),
-        "GITHUB_OUTPUT": str(output),
-        "FAKE_AUTHOR": author,
-        **{k: values[k] for k in declared},
-    }
+    assert set(step["env"]) == set(values)
     result = subprocess.run(
-        ["bash", "-c", script],
-        env=env,
+        ["/bin/bash", "-c", script],
+        env={
+            "PATH": f"{shim_dir}:/usr/bin:/bin",
+            "GITHUB_OUTPUT": str(output),
+            "FAKE_AUTHOR": author if api_author is None else api_author,
+            "FAKE_EXIT": str(api_exit),
+            "GH_CALLS": str(record),
+            "PROBE_CALLS": str(probe_calls),
+            "PR_BODY": body,
+            **values,
+        },
         capture_output=True,
         text=True,
         check=False,
         cwd=tmp_path,
     )
     assert result.returncode == 0, result.stderr
-    lines = [ln for ln in output.read_text().splitlines() if ln.startswith("exempt=")]
-    assert len(lines) == 1, output.read_text()
+    lines = output.read_text().splitlines()
+    assert len(lines) == 2
+    outputs = dict(line.split("=", 1) for line in lines)
+    assert set(outputs) == {"exempt", "writer_app"}
+    assert not probe_calls.exists()
     calls = record.read_text().splitlines() if record.exists() else []
-    return lines[0], calls
-
-
-@pytest.mark.parametrize("name", WORKFLOWS)
-@pytest.mark.parametrize("probe", ["in-tree", "checkout"])
-@pytest.mark.parametrize("login", WRITER_LOGINS)
-def test_writer_with_pin_only_proof_is_exempt(
-    tmp_path: Path, name: str, probe: str, login: str
-) -> None:
-    line, calls = _run(tmp_path, name, author=login, probe=probe, probe_exit=0)
-    assert line == "exempt=true"
-    assert calls == ["--check-no-companion-required --repo o/r --pr-number 7"]
-
-
-@pytest.mark.parametrize("name", WORKFLOWS)
-@pytest.mark.parametrize("probe_exit", [1, 2, 124])
-@pytest.mark.parametrize("login", WRITER_LOGINS)
-def test_writer_without_pin_only_proof_is_not_exempt(
-    tmp_path: Path, name: str, probe_exit: int, login: str
-) -> None:
-    line, calls = _run(
-        tmp_path, name, author=login, probe="in-tree", probe_exit=probe_exit
+    # All metadata reads must request the author alone, so body tokens cannot
+    # manufacture an exemption or impersonate the writer app.
+    resolved = pr_number or ("42" if merge_group_head_ref else "")
+    assert calls == (
+        [f"pr view {resolved} --repo o/r --json author --jq .author.login"]
+        if resolved
+        else []
     )
-    assert line == "exempt=false"
-    assert len(calls) == 1
-
-
-@pytest.mark.parametrize("name", WORKFLOWS)
-def test_writer_with_no_probe_file_is_not_exempt(tmp_path: Path, name: str) -> None:
-    line, calls = _run(
-        tmp_path, name, author=WRITER_LOGINS[1], probe="absent", probe_exit=0
+    assert ("::notice::Receipt-gate exemption" in result.stdout) == (
+        outputs["exempt"] == "true"
     )
-    assert line == "exempt=false"
-    assert calls == []
+    return outputs, calls
 
 
-@pytest.mark.parametrize("name", WORKFLOWS)
-def test_the_probe_receives_the_pr_number_resolved_from_a_merge_group(
-    tmp_path: Path, name: str
+@pytest.mark.parametrize("login", WRITER_LOGINS)
+def test_writer_apps_require_a_job_local_verdict(tmp_path: Path, login: str) -> None:
+    outputs, _ = _run(tmp_path, author=login)
+    assert outputs == {"exempt": "false", "writer_app": "true"}
+
+
+@pytest.mark.parametrize("login", [*HUMANS, *NEAR_MISSES])
+@pytest.mark.parametrize(
+    "body", ["", "onexbot-occ-writer[bot]\nDEPENDENCY_PIN_ONLY\nexempt=true"]
+)
+def test_humans_and_near_misses_are_not_exempt(
+    tmp_path: Path, login: str, body: str
 ) -> None:
-    line, calls = _run(
+    outputs, _ = _run(tmp_path, author=login, body=body)
+    assert outputs == {"exempt": "false", "writer_app": "false"}
+
+
+@pytest.mark.parametrize("login", sorted(DEPENDENCY_BOT_AUTHORS))
+def test_dependency_bots_stay_exempt(tmp_path: Path, login: str) -> None:
+    outputs, _ = _run(tmp_path, author=login)
+    assert outputs == {"exempt": "true", "writer_app": "false"}
+
+
+@pytest.mark.parametrize("login", ["jonah", "dependabot[bot]", *WRITER_LOGINS])
+@pytest.mark.parametrize("api_exit", [0, 1])
+def test_author_falls_back_to_the_event_when_api_is_unavailable(
+    tmp_path: Path, login: str, api_exit: int
+) -> None:
+    outputs, _ = _run(tmp_path, author=login, api_author="", api_exit=api_exit)
+    assert outputs == {
+        "exempt": str(login in DEPENDENCY_BOT_AUTHORS).lower(),
+        "writer_app": str(login in OCC_WRITER_BOT_AUTHORS).lower(),
+    }
+
+
+def test_api_author_takes_precedence_over_event_login(tmp_path: Path) -> None:
+    outputs, _ = _run(tmp_path, author="dependabot[bot]", api_author="jonah")
+    assert outputs == {"exempt": "false", "writer_app": "false"}
+
+
+def test_merge_group_resolves_the_pr_number_for_author_metadata(tmp_path: Path) -> None:
+    outputs, _ = _run(
         tmp_path,
-        name,
         author=WRITER_LOGINS[0],
-        probe="in-tree",
-        probe_exit=0,
         pr_number="",
         merge_group_head_ref="refs/heads/gh-readonly-queue/dev/pr-42-abc123",
     )
-    assert line == "exempt=true"
-    assert calls == ["--check-no-companion-required --repo o/r --pr-number 42"]
+    assert outputs == {"exempt": "false", "writer_app": "true"}
 
 
-@pytest.mark.parametrize("name", WORKFLOWS)
-@pytest.mark.parametrize("login", [*HUMANS, *NEAR_MISSES])
-def test_humans_and_near_misses_never_reach_the_probe(
-    tmp_path: Path, name: str, login: str
-) -> None:
-    line, calls = _run(tmp_path, name, author=login, probe="in-tree", probe_exit=0)
-    assert line == "exempt=false"
-    assert calls == []
-
-
-@pytest.mark.parametrize("name", WORKFLOWS)
-@pytest.mark.parametrize("login", sorted(DEPENDENCY_BOT_AUTHORS))
-def test_dependency_bots_stay_exempt_and_skip_the_probe(
-    tmp_path: Path, name: str, login: str
-) -> None:
-    line, calls = _run(tmp_path, name, author=login, probe="in-tree", probe_exit=1)
-    assert line == "exempt=true"
+def test_event_author_without_a_pr_number_needs_no_api_call(tmp_path: Path) -> None:
+    outputs, calls = _run(tmp_path, author="dependabot[bot]", pr_number="")
+    assert outputs == {"exempt": "true", "writer_app": "false"}
     assert calls == []
 
 
 _ARM_RE = re.compile(r'^\s*((?:"[^"\n]+"\|)*"[^"\n]+")\)\s*$', re.MULTILINE)
 
 
-@pytest.mark.parametrize("name", WORKFLOWS)
-def test_case_arms_match_the_python_sets(name: str) -> None:
+def test_case_arms_match_the_python_sets() -> None:
     arms = [
         frozenset(re.findall(r'"([^"]+)"', m.group(1)))
-        for m in _ARM_RE.finditer(str(_bot_exempt(name)["run"]))
+        for m in _ARM_RE.finditer(str(_bot_exempt()["run"]))
     ]
     assert arms == [DEPENDENCY_BOT_AUTHORS, OCC_WRITER_BOT_AUTHORS]
 
 
-@pytest.mark.parametrize("name", WORKFLOWS)
-def test_probe_token_is_not_respelled_in_the_step(name: str) -> None:
-    run = str(_bot_exempt(name)["run"])
-    assert "DEPENDENCY_PIN_ONLY" not in run
-    assert "--check-no-companion-required" in run
-
-
-@pytest.mark.parametrize("name", WORKFLOWS)
-def test_the_probe_checkout_precedes_bot_exempt_and_is_not_gated_on_it(
-    name: str,
-) -> None:
-    steps = _steps(name)
-    ids = [s.get("id") for s in steps]
-    exempt_idx = ids.index("bot_exempt")
-    checkouts = [
-        i
-        for i, s in enumerate(steps)
-        if s.get("name") == "Check out omnibase_core (for occ_preflight_wait.py)"
-    ]
-    assert len(checkouts) == 1
-    assert checkouts[0] < exempt_idx
-    condition = str(steps[checkouts[0]]["if"])
-    assert "bot_exempt" not in condition
-    assert "github.repository != 'OmniNode-ai/onex_change_control'" in condition
-    assert f"! hashFiles('{PROBE_REL}')" in condition
-    assert steps[checkouts[0]]["with"]["path"] == WORKFLOWS[name][2]
-
-
-_GUARD = "steps.bot_exempt.outputs.exempt != 'true'"
+def test_author_step_has_no_probe_or_pr_body_read() -> None:
+    script = _bot_exempt()["run"]
+    assert "--json author --jq '.author.login'" in script
+    for retired in (
+        "occ_preflight_wait.py",
+        "--check-no-companion-required",
+        "PR_BODY",
+        "--json body",
+    ):
+        assert retired not in script
+    assert "occ_probe_checkout" not in {s.get("id") for s in _steps()}
 
 
 def test_every_dod_verify_step_after_bot_exempt_is_gated_on_it() -> None:
-    """OMN-20073: an exempt bot bump must skip the whole caller-evidence run.
-
-    Only the best-effort Summarise step may run regardless; every other step
-    after ``bot_exempt`` carries the guard, so a skipped job concludes success
-    and ``repo-evidence / dod-verify`` passes without a skip token.
-    """
-    steps = _steps("receipt-gate-dod-verify")
-    ids = [s.get("id") for s in steps]
-    after = steps[ids.index("bot_exempt") + 1 :]
-    assert after, "dod-verify has no step after bot_exempt"
-    ungated = [s["name"] for s in after if _GUARD not in str(s.get("if", ""))]
+    steps = _steps()
+    assert steps[0]["id"] == "bot_exempt"
+    after = steps[1:]
+    assert after
+    ungated = [
+        s["name"]
+        for s in after
+        if "steps.bot_exempt.outputs.exempt != 'true'" not in str(s.get("if", ""))
+    ]
     assert ungated == ["Summarise"]
-
-
-def test_dod_verify_runs_only_the_probe_checkout_before_bot_exempt() -> None:
-    steps = _steps("receipt-gate-dod-verify")
-    ids = [s.get("id") for s in steps]
-    before = [s["name"] for s in steps[: ids.index("bot_exempt")]]
-    assert before == ["Check out omnibase_core (for occ_preflight_wait.py)"]
+    assert after[-1]["if"] == "always()"
