@@ -42,7 +42,6 @@ scripts/ci/canonical_handler_shape.py
 scripts/ci/check_async_fixture_decorators.py
 scripts/ci/check_auto_merge_hold.py
 scripts/ci/check_import_ratchet.py
-scripts/ci/check_occ_companion_merged.py
 scripts/ci/ci_scan_scope.py
 scripts/ci/ci_summary_gate.py
 scripts/ci/compute_golden.py
@@ -52,7 +51,6 @@ scripts/ci/enum_additive_diff.py
 scripts/ci/equivalence_producer.py
 scripts/ci/import_ratchet_baseline.py
 scripts/ci/merge_queue_enqueue.py
-scripts/ci/occ_preflight_wait.py
 scripts/ci/parity_replay.py
 scripts/ci/product_readiness.py
 scripts/ci/product_reason_graph.py

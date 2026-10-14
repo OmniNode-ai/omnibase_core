@@ -23,7 +23,6 @@ import pytest
 
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_omni_home_paths import (
-    resolve_evidence_root,
     resolve_omnibase_infra_path,
     resolve_worktrees_root,
 )
@@ -60,27 +59,6 @@ class TestResolveWorktreesRoot:
 
         monkeypatch.setenv("OMNI_HOME", "/some/registry")
         assert isinstance(resolve_worktrees_root(), Path)
-
-
-@pytest.mark.unit
-class TestResolveEvidenceRoot:
-    def test_derives_from_omni_home(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        monkeypatch.setenv("OMNI_HOME", "/some/registry")
-        result = resolve_evidence_root()
-        assert str(result) == "/some/registry/onex_change_control/evidence"
-
-    def test_raises_typed_refusal_when_unset(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        monkeypatch.delenv("OMNI_HOME", raising=False)
-        with pytest.raises(ModelOnexError, match="OMNI_HOME"):
-            resolve_evidence_root()
-
-    def test_returns_path_type(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from pathlib import Path
-
-        monkeypatch.setenv("OMNI_HOME", "/some/registry")
-        assert isinstance(resolve_evidence_root(), Path)
 
 
 @pytest.mark.unit

@@ -523,7 +523,7 @@ def main(argv: list[str] | None = None) -> int:
     Usage::
 
         python -m omnibase_core.validation.validator_receipt_honesty \\
-            --receipts-dir onex_change_control/drift/dod_receipts
+            --receipts-dir drift/dod_receipts
 
     Exit codes:
         0 — no honesty violations found
@@ -538,7 +538,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument(
         "--receipts-dir",
-        default="onex_change_control/drift/dod_receipts",
+        default="drift/dod_receipts",
         help="Root of the dod_receipts/ tree to scan.",
     )
     parser.add_argument(

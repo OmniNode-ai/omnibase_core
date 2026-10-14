@@ -47,33 +47,25 @@ def _step(step_id: str) -> dict[str, Any]:
 
 
 @pytest.mark.parametrize(
-    ("login", "probe_exit", "exempt", "writer_app"),
+    ("login", "exempt", "writer_app"),
     [
-        (login, code, code == 0, code != 0)
+        (login, False, True)
         for login in (
             "onexbot-occ-writer[bot]",
             "app/onexbot-occ-writer",
             "onexbot-occ-writer",
         )
-        for code in (0, 1)
     ]
-    + [("jonah", 1, False, False), ("dependabot[bot]", 1, True, False)],
+    + [("jonah", False, False), ("dependabot[bot]", True, False)],
 )
 def test_bot_exempt_marks_an_unproven_writer_app(
-    tmp_path: Path, login: str, probe_exit: int, exempt: bool, writer_app: bool
+    tmp_path: Path, login: str, exempt: bool, writer_app: bool
 ) -> None:
-    line, _ = _run_bot(
-        tmp_path,
-        "receipt-gate-dod-verify",
-        author=login,
-        probe="in-tree",
-        probe_exit=probe_exit,
-    )
-    assert line == f"exempt={str(exempt).lower()}"
-    assert (tmp_path / "github_output.txt").read_text().splitlines() == [
-        line,
-        f"writer_app={str(writer_app).lower()}",
-    ]
+    outputs, _ = _run_bot(tmp_path, author=login)
+    assert outputs == {
+        "exempt": str(exempt).lower(),
+        "writer_app": str(writer_app).lower(),
+    }
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -266,7 +258,7 @@ def test_writer_pin_only_step_is_gated_and_gates_every_evidence_step() -> None:
         "head_verify",
         "merge_base",
         "base_control",
-        "occ_difference",
+        "sibling_checkouts",
     ):
         assert "steps.writer_pin_only.outputs.exempt != 'true'" in _step(step_id)["if"]
     assert not any(
@@ -307,8 +299,9 @@ def test_shadow_summary_counts_the_writer_pin_only_exemption(
     )
     assert result.returncode == 0, result.stderr
     text = summary.read_text()
+    assert "occ_difference=" not in text
     if shadow == "true":
-        assert "new_path=exempt refused_step=none occ_difference=not_run" in text
+        assert "new_path=exempt refused_step=none" in text
     else:
         assert (
             "Writer-app dependency-pin-only exemption: derived at the head (OMN-17427)"

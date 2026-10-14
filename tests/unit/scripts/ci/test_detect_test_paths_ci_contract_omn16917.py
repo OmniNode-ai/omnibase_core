@@ -58,7 +58,7 @@ OMN_16625_DIFF = [
 NAMED_CI_CONTRACT_MODULES = (
     "tests/unit/validation/test_ci_workflow_shape.py",
     "tests/unit/validation/test_receipt_gate_workflow_shape.py",
-    "tests/unit/validation/test_occ_preflight_workflow_shape.py",
+    "tests/unit/validation/test_quality_gate_docs_only_short_circuit_omn16625.py",
     "tests/unit/validation/test_release_workflow_shape.py",
     "tests/unit/validation/test_auto_merge_workflow_shape.py",
     "tests/unit/validation/test_required_check_skip_guard.py",
@@ -77,6 +77,7 @@ def test_ci_contract_class_is_non_empty_and_workflow_aware() -> None:
     assert paths, "the CI-contract class may never select nothing"
     assert CI_CONTRACT_TEST_ROOT in paths
     for module in NAMED_CI_CONTRACT_MODULES:
+        assert (REPO_ROOT / module).is_file()
         assert module in paths, (
             f"{module} reads .github/** off disk but is not in the class"
         )

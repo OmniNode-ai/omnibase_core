@@ -42,7 +42,7 @@ FULL_SUITE_BRANCHES = {"main"}
 # exempts a diff when EVERY changed file is affirmatively provable as
 # prose/documentation, not merely unclassified. Deliberately does NOT include
 # `.github/`, `.pre-commit-config.yaml`, or `scripts/hooks/`: core has
-# workflow-shape unit tests (tests/unit/validation/test_occ_preflight_workflow_shape.py,
+# workflow-shape unit tests (tests/unit/validation/test_quality_gate_docs_only_short_circuit_omn16625.py,
 # test_receipt_gate_workflow_shape.py) whose outcome depends on those files, so a
 # change there must still run the fallback rather than select nothing. The
 # required-check manifest has a positive mapping below because otherwise the

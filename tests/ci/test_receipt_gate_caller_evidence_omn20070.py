@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Shape guards for caller verification, its control, and the OCC pilot difference."""
+"""Guards for caller verification, its must-fail control, and input refusals."""
 
 from __future__ import annotations
 
@@ -53,36 +53,28 @@ def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
     assert isinstance(trigger, dict)
     inputs = trigger["workflow_call"]["inputs"]
     expected = {
-        "contracts-dir": "contracts",
-        "receipts-dir": "drift/dod_receipts",
-        "branch-policy-mode": "legacy",
-        "core-ref": "dev",
-        "evidence-source": "occ",
+        "evidence-source": "caller",
         "verifier-version": "0.4.305",
         "compare-with-occ": "false",
         "shadow": "false",
-        "occ-context": "occ-preflight / eligibility",
-        "occ-wait-seconds": "1500",
     }
+    assert set(inputs) == set(expected)
     for name, default in expected.items():
         assert inputs[name]["default"] == default
         assert inputs[name]["type"] == "string"
         assert inputs[name]["required"] is False
 
 
-def test_jobs_select_evidence_source_and_preserve_occ_steps() -> None:
+def test_jobs_run_without_conditions_and_preserve_caller_verification() -> None:
     verify = _workflow()["jobs"]["verify"]
     # OMN-20074: verify runs in every mode; caller mode makes it a no-op.
     assert "if" not in verify
-    names = {step.get("name") for step in verify["steps"]}
-    assert {
-        "Resolve Evidence-Source",
-        "Run OCC Eligibility",
-        "Run Receipt-Gate",
-    } <= names
+    assert [step["name"] for step in verify["steps"]] == [
+        "Caller evidence runs in dod-verify"
+    ]
     caller = _job()
     assert caller["name"] == "dod-verify"
-    assert caller["if"] == "inputs.evidence-source == 'caller'"
+    assert "if" not in caller
     # Same routing as verify, with pull_request_target counted as a pull request.
     assert (
         caller["runs-on"].replace(
@@ -99,7 +91,6 @@ def test_jobs_select_evidence_source_and_preserve_occ_steps() -> None:
 def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
     steps = _job()["steps"]
     assert [step.get("name") for step in steps] == [
-        "Check out omnibase_core (for occ_preflight_wait.py)",
         "Detect dependency-bot author (receipt-gate exemption)",
         "Refuse anything but a same-repository pull request",
         "Resolve the cited tickets",
@@ -114,7 +105,6 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         HEAD_STEP,
         "Prepare the merge base with the pull request's test side laid over it",
         BASE_STEP,
-        DIFFERENCE_STEP,
         "Summarise",
     ]
     for step in steps:
@@ -148,13 +138,14 @@ def test_caller_scripts_use_env_for_expression_values() -> None:
     assert "pull_request|pull_request_target" in refusal["run"]
     assert '[ "$HEAD_REPOSITORY" != "$CALLER_REPOSITORY" ]' in refusal["run"]
     assert refusal["env"]["COMPARE_WITH_OCC"] == "${{ inputs.compare-with-occ }}"
-    assert 'case "$COMPARE_WITH_OCC" in' in refusal["run"]
-    assert "true|false) ;;" in refusal["run"]
-    assert "::error::compare-with-occ must be exactly true or false" in refusal["run"]
-    assert (
-        "exit 1"
-        in refusal["run"].split('case "$COMPARE_WITH_OCC" in')[1].split("esac")[0]
-    )
+    assert refusal["env"]["EVIDENCE_SOURCE"] == "${{ inputs.evidence-source }}"
+    for switch, allowed in (
+        ("COMPARE_WITH_OCC", "false"),
+        ("EVIDENCE_SOURCE", "caller"),
+    ):
+        assert f'[ "${switch}" != {allowed} ]' in refusal["run"]
+    assert "::error::compare-with-occ must be false" in refusal["run"]
+    assert "::error::evidence-source must be caller" in refusal["run"]
     tickets = _step("Resolve the cited tickets")
     assert tickets["env"]["PR_TITLE"] == "${{ github.event.pull_request.title }}"
     assert "grep -oE 'OMN-[0-9]+'" in tickets["run"]
@@ -235,83 +226,65 @@ def test_control_refuses_always_pass_non_failed_and_missing_bound_checks() -> No
     assert 'exit "$failed"' in script
 
 
-def test_occ_difference_runs_after_refusal_with_only_the_existing_read_token() -> None:
-    step = _step(DIFFERENCE_STEP)
-    assert step["if"] == (
-        "${{ !cancelled() && steps.bot_exempt.outputs.exempt != 'true' "
-        "&& inputs.compare-with-occ == 'true' "
-        "&& steps.writer_pin_only.outputs.exempt != 'true' }}"
+@pytest.mark.parametrize(
+    ("source", "compare", "event", "head_repo", "error"),
+    [
+        ("caller", "false", "pull_request", "o/r", None),
+        ("caller", "false", "pull_request_target", "o/r", None),
+        ("occ", "false", "pull_request", "o/r", "evidence-source must be caller"),
+        ("", "false", "pull_request", "o/r", "evidence-source must be caller"),
+        ("caller", "true", "pull_request", "o/r", "compare-with-occ must be false"),
+        ("caller", "FALSE", "pull_request", "o/r", "compare-with-occ must be false"),
+        ("caller", "", "pull_request", "o/r", "compare-with-occ must be false"),
+        (
+            "caller",
+            "false",
+            "merge_group",
+            "o/r",
+            "requires a pull_request or pull_request_target event",
+        ),
+        (
+            "caller",
+            "false",
+            "pull_request",
+            "fork/r",
+            "requires a same-repository pull request",
+        ),
+    ],
+)
+def test_same_repository_guard_accepts_only_supported_caller_inputs(
+    source: str, compare: str, event: str, head_repo: str, error: str | None
+) -> None:
+    result = subprocess.run(
+        [
+            "/bin/bash",
+            "-c",
+            _step("Refuse anything but a same-repository pull request")["run"],
+        ],
+        env={
+            "EVIDENCE_SOURCE": source,
+            "COMPARE_WITH_OCC": compare,
+            "EVENT_NAME": event,
+            "HEAD_REPOSITORY": head_repo,
+            "CALLER_REPOSITORY": "o/r",
+        },
+        capture_output=True,
+        text=True,
+        check=False,
     )
-    assert step["env"] == {
-        "GH_TOKEN": "${{ github.token }}",
-        "REPO": "${{ github.repository }}",
-        "HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
-        "OCC_CONTEXT": "${{ inputs.occ-context }}",
-        "WAIT_SECONDS": "${{ inputs.occ-wait-seconds }}",
-        "NEGATIVE_CONTROL": "${{ contains(github.event.pull_request.labels.*.name, 'dod-negative-control') }}",
-    }
-    assert _job()["permissions"] == {"contents": "read", "pull-requests": "read"}
-    script = step["run"]
-    assert "set -euo pipefail" in script
-    assert '[ -z "${DOD_VERIFY_PY:-}" ]' in script
-    assert (
-        "the pinned verifier was not installed; the difference was not computed"
-        in script
-    )
-    assert '[ ! -f "$RUNNER_TEMP/dod/tickets.txt" ]' in script
-    assert '[[ ! "$WAIT_SECONDS" =~ ^[0-9]+$ ]]' in script
-    assert script.index('[[ ! "$WAIT_SECONDS"') < script.index("deadline=")
-    assert script[: script.index("occ_file=")].count("exit 1") == 3
+    assert result.returncode == (0 if error is None else 1), result.stderr
+    if error is None:
+        assert result.stdout == ""
+    else:
+        assert len(result.stdout.splitlines()) == 1
+        assert result.stdout.startswith("::error::")
+        assert error in result.stdout
 
 
-def test_occ_difference_polls_the_same_head_and_retries_cancelled_runs() -> None:
-    script = _step(DIFFERENCE_STEP)["run"]
-    assert 'occ_file="$RUNNER_TEMP/dod/occ-check-run.json"' in script
-    assert script.index('rm -f "$occ_file"') < script.index("gh api")
-    assert "deadline=$((SECONDS + 10#$WAIT_SECONDS))" in script
-    assert 'while [ "$SECONDS" -lt "$deadline" ]; do' in script
-    assert 'gh api -X GET "repos/$REPO/commits/$HEAD_SHA/check-runs"' in script
-    assert '-f check_name="$OCC_CONTEXT" -f filter=latest -f per_page=1' in script
-    assert '--jq \'.check_runs[0] // empty\' 2>/dev/null)" || check_run=""' in script
-    assert '.status == "completed" and .conclusion != "cancelled"' in script
-    assert "jq -r '.id'" in script
-    assert (
-        'gh api "repos/$REPO/check-runs/$check_id/annotations?per_page=100"' in script
-    )
-    assert "2>/dev/null)\" || annotations='[]'" in script
-    assert (
-        'jq -n --argjson check_run "$check_run" --argjson annotations "$annotations"'
-        in script
-    )
-    assert "conclusion: $check_run.conclusion" in script
-    assert 'html_url: ($check_run.html_url // "")' in script
-    assert "annotations: [$annotations[] | {message: .message}]" in script
-    assert '> "$occ_file"\n    break' in script
-    assert "sleep_seconds=30" in script
-    assert 'sleep "$sleep_seconds"' in script
-    assert "remaining=$((deadline - SECONDS))" in script
-    assert '[ "$remaining" -lt "$sleep_seconds" ]' in script
-    assert '[ ! -f "$occ_file" ]' in script
-    assert "::notice::OCC's verdict was not available within $WAIT_SECONDS" in script
-    assert "not_compared" in script
-
-
-def test_occ_difference_delegates_classification_to_the_pinned_node() -> None:
-    script = _step(DIFFERENCE_STEP)["run"]
-    assert (
-        '"$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify occ-difference' in script
-    )
-    assert '--dod-dir "$RUNNER_TEMP/dod"' in script
-    assert '--tickets-file "$RUNNER_TEMP/dod/tickets.txt"' in script
-    assert '--occ-check-run "$occ_file"' in script
-    assert (
-        'if [ "$NEGATIVE_CONTROL" = true ]; then\n  difference_args+=(--negative-control)\nfi'
-        in script
-    )
-    assert (
-        '"${difference_args[@]}" | tee "$RUNNER_TEMP/dod/occ-difference.json"' in script
-    )
-    assert script.rstrip().endswith('| tee "$RUNNER_TEMP/dod/occ-difference.json"')
+def test_retired_occ_difference_is_absent_from_the_caller_job() -> None:
+    assert HEAD_STEP in {s["name"] for s in _job()["steps"]}
+    assert DIFFERENCE_STEP not in {s["name"] for s in _job()["steps"]}
+    assert "occ_difference" not in {s.get("id") for s in _job()["steps"]}
 
 
 def test_summary_always_reports_head_and_base_without_failing() -> None:
@@ -326,11 +299,13 @@ def test_summary_always_reports_head_and_base_without_failing() -> None:
     ):
         assert field in script
     assert "base control" in script
-    assert '[ -f "$RUNNER_TEMP/dod/occ-difference.json" ]' in script
+    assert "occ-difference.json" not in script
+    assert "OCC difference:" not in script
+    assert "occ_probe_checkout" not in script
     assert (
-        "jq -r '\"OCC difference: \\(.outcome) \\(.reason_code) — \\(.message)\"' "
-        '"$RUNNER_TEMP/dod/occ-difference.json" || true'
-    ) in script
+        'verdict_line="Shadow verdict: head=$HEAD_SHA new_path=$new_path refused_step=$refused_step"'
+        in script
+    )
     assert '"$GITHUB_STEP_SUMMARY" || true' in script
     assert script.rstrip().endswith("exit 0")
 

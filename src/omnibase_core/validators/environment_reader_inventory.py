@@ -40,7 +40,6 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "examples/demo/handlers/support_assistant/model_config.py",
         "scripts/check_hook_bits_drift.py",
         "scripts/ci/canonical_handler_shape.py",
-        "scripts/ci/check_occ_companion_merged.py",
         "scripts/ci/detect_test_paths.py",
         "scripts/ci/parity_replay.py",
         "scripts/ci/rsd_provenance_stamp.py",

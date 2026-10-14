@@ -33,7 +33,6 @@ from .util_hash import (
     string_to_uuid,
 )
 from .util_omni_home_paths import (
-    resolve_evidence_root,
     resolve_omnibase_infra_path,
     resolve_worktrees_root,
 )
@@ -69,7 +68,6 @@ __all__ = [
     "get_contract_attr",
     "has_contract_attr",
     "parse_datetime",
-    "resolve_evidence_root",
     "resolve_omnibase_infra_path",
     "resolve_worktrees_root",
     "string_to_uuid",

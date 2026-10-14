@@ -106,17 +106,17 @@ _CONTRACT_SHA256_REQUIRED_AFTER = datetime(2026, 4, 30, 0, 0, 0, tzinfo=UTC)
 # evidence gates. A dependency-bump PR (Dependabot, Renovate) is opened by an
 # automated bot and structurally cannot cite a Linear ticket, an Evidence-Source,
 # or an OCC receipt — the receipt gate's premise (a human-authored, ticket-backed
-# change) does not apply. The receipt-gate and occ-preflight reusable workflows
-# short-circuit their evidence steps for these authors, identifying the author
-# from GitHub-verified PR metadata (never from PR body text). This frozenset is
-# the canonical UNCONDITIONAL allowlist mirrored by the first bash `case` arm in
-# ``.github/workflows/receipt-gate.yml`` and ``.github/workflows/occ-preflight.yml``.
+# change) does not apply. The receipt-gate reusable workflow short-circuits its
+# evidence steps for these authors, identifying the author from GitHub-verified
+# PR metadata (never from PR body text). This frozenset is the canonical
+# UNCONDITIONAL allowlist mirrored by the first bash `case` arm in
+# ``.github/workflows/receipt-gate.yml``.
 # Both the gh CLI login form ("app/dependabot") and the raw API/event login form
 # ("dependabot[bot]") are listed because the two surfaces report differently.
 #
 # There are two sets, deliberately. DEPENDENCY_BOT_AUTHORS is exempt always.
-# OCC_WRITER_BOT_AUTHORS (below) is exempt ONLY when the producer's head-SHA-bound
-# outcome proves the PR is dependency-pin-only (OMN-20161).
+# OCC_WRITER_BOT_AUTHORS (below) is exempt ONLY when the receipt-gate's
+# writer_pin_only step derives a pin-only verdict from the head's own diff.
 DEPENDENCY_BOT_AUTHORS: frozenset[str] = frozenset(
     {
         "dependabot[bot]",
@@ -132,11 +132,10 @@ DEPENDENCY_BOT_AUTHORS: frozenset[str] = frozenset(
 # that the autobind producer declines with the dependency-pin-only verdict. It is
 # NOT in DEPENDENCY_BOT_AUTHORS: it also authors PRs that do owe evidence, so it
 # is exempt only when that verdict is proven for the PR's current head SHA. The
-# proof is the existing probe (``occ_preflight_wait.py
-# --check-no-companion-required``) in the workflows and this repo's own outcome
-# reader in ``scripts/ci/check_occ_companion_merged.py``; it is never re-derived
-# or re-spelled here. The three logins are the gh CLI form, the raw API/event
-# form and the bare form. Mirrored by the second `case` arm of each workflow.
+# proof is derived in receipt-gate.yml's writer_pin_only step from the head's
+# diff against its merge base (OMN-17427, OMN-20074); it is never re-derived or
+# re-spelled here. The three logins are the gh CLI form, the raw API/event form
+# and the bare form. Mirrored by the second `case` arm of the workflow.
 OCC_WRITER_BOT_AUTHORS: frozenset[str] = frozenset(
     {
         "onexbot-occ-writer[bot]",

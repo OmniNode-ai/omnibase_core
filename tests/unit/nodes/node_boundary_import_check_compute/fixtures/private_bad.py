@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-from onex_change_control._internal.api import execute
+from omnimemory._internal.api import execute
 
 __all__ = ["execute"]

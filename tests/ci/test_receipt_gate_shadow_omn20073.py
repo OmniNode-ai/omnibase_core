@@ -49,28 +49,12 @@ def test_shadow_input_defaults_to_false() -> None:
 def test_verify_runs_as_a_reported_noop_in_shadow_caller_mode() -> None:
     job = _workflow()["jobs"]["verify"]
     assert "if" not in job
-    by_name = {step["name"]: step for step in job["steps"]}
-    # The three steps before the exemption probe touch the pull request or a
-    # checkout, so each must be off in caller mode.
-    for name in (
-        "Check out PR head",
-        "Resolve receipt gate branch policy",
-        "Check out omnibase_core (for occ_preflight_wait.py)",
-    ):
-        assert "inputs.evidence-source != 'caller'" in by_name[name]["if"], name
-    exempt = by_name["Detect dependency-bot author (receipt-gate exemption)"]
-    assert exempt["env"]["CALLER_EVIDENCE_MODE"] == (
-        "${{ inputs.evidence-source == 'caller' }}"
-    )
-    assert exempt["run"].index('"${CALLER_EVIDENCE_MODE:-}" = "true"') < exempt[
-        "run"
-    ].index("gh pr view")
-    # Every step after the probe is gated on the exemption, so they all skip.
-    names = list(by_name)
-    after = names[names.index(exempt["name"]) + 1 :]
-    assert after
-    for name in after:
-        assert "steps.bot_exempt.outputs.exempt != 'true'" in by_name[name]["if"], name
+    assert job["steps"] == [
+        {
+            "name": "Caller evidence runs in dod-verify",
+            "run": 'echo "::notice::caller evidence is verified by the dod-verify job (OMN-20074)"',
+        }
+    ]
 
 
 def test_every_dod_verify_step_but_the_summary_absorbs_a_refusal_in_shadow() -> None:
@@ -98,9 +82,7 @@ def test_a_refusal_stops_the_steps_that_depend_on_it() -> None:
     guarded = [
         step
         for step in steps
-        if step["name"] in after_same_repo
-        and step["name"] not in {"Difference against OCC's verdict for the same head"}
-        and step["name"] != "Summarise"
+        if step["name"] in after_same_repo and step["name"] != "Summarise"
     ]
     assert len(guarded) >= 10
     for step in guarded:
@@ -157,7 +139,7 @@ def test_a_planted_disagreement_is_recorded_and_the_job_still_passes(
         "tickets": {"outcome": "success"},
         "head_verify": {"outcome": "success"},
         "base_control": {"outcome": "success"},
-        # The difference step failed: the classifier disagreed with OCC.
+        # Plant retired OCC data: it must not alter the caller verdict.
         "occ_difference": {"outcome": "failure"},
     }
     occ = {
@@ -170,11 +152,10 @@ def test_a_planted_disagreement_is_recorded_and_the_job_still_passes(
     }
     result, summary = _run_summary(tmp_path, shadow="true", steps=steps, occ=occ)
     assert result.returncode == 0, result.stderr
-    line = (
-        f"Shadow verdict: head={HEAD_SHA} new_path=verified refused_step=none "
-        "occ_difference=unclassified_difference/none"
-    )
-    assert line in summary
+    line = f"Shadow verdict: head={HEAD_SHA} new_path=verified refused_step=none"
+    assert line in summary.splitlines()
+    assert "OCC difference:" not in summary
+    assert "occ_difference=" not in summary
     assert f"::notice title=repo-evidence shadow verdict::{line}" in result.stdout
 
 
@@ -192,9 +173,9 @@ def test_a_refusal_names_the_first_refused_step_and_still_passes(
     result, summary = _run_summary(tmp_path, shadow="true", steps=steps, occ=None)
     assert result.returncode == 0, result.stderr
     assert (
-        f"Shadow verdict: head={HEAD_SHA} new_path=refused refused_step=tickets "
-        "occ_difference=not_compared/unavailable"
-    ) in summary
+        f"Shadow verdict: head={HEAD_SHA} new_path=refused refused_step=tickets"
+    ) in summary.splitlines()
+    assert "occ_difference=" not in summary
 
 
 @needs_jq
@@ -207,7 +188,11 @@ def test_a_clean_agreement_is_recorded(tmp_path: Path) -> None:
     occ = {"passed": True, "outcome": "agree", "reason_code": None}
     result, summary = _run_summary(tmp_path, shadow="true", steps=steps, occ=occ)
     assert result.returncode == 0, result.stderr
-    assert "new_path=verified refused_step=none occ_difference=agree/none" in summary
+    line = f"Shadow verdict: head={HEAD_SHA} new_path=verified refused_step=none"
+    assert line in summary.splitlines()
+    assert f"::notice title=repo-evidence shadow verdict::{line}" in result.stdout
+    assert "OCC difference:" not in summary
+    assert "occ_difference=" not in summary
 
 
 @needs_jq
@@ -215,7 +200,9 @@ def test_a_dependency_bot_is_recorded_as_exempt(tmp_path: Path) -> None:
     steps = {"bot_exempt": {"outcome": "success", "outputs": {"exempt": "true"}}}
     result, summary = _run_summary(tmp_path, shadow="true", steps=steps, occ=None)
     assert result.returncode == 0, result.stderr
-    assert "new_path=exempt refused_step=none occ_difference=not_run" in summary
+    line = f"Shadow verdict: head={HEAD_SHA} new_path=exempt refused_step=none"
+    assert line in summary.splitlines()
+    assert f"::notice title=repo-evidence shadow verdict::{line}" in result.stdout
 
 
 @needs_jq
@@ -228,23 +215,32 @@ def test_enforcing_mode_records_no_shadow_verdict(tmp_path: Path) -> None:
 
 
 def test_verify_noop_exempts_without_reading_the_pull_request(tmp_path: Path) -> None:
-    exempt = next(s for s in _steps("verify") if s.get("id") == "bot_exempt")
+    steps = _steps("verify")
+    assert len(steps) == 1
+    step = steps[0]
+    assert set(step) == {"name", "run"}
     output = tmp_path / "github_output.txt"
     output.write_text("")
-    # No gh on PATH: the no-op must exit before it reads anything.
-    env = {
-        "PATH": "/usr/bin:/bin",
-        "GITHUB_OUTPUT": str(output),
-        "CALLER_EVIDENCE_MODE": "true",
-    }
-    script = exempt["run"].replace("${{ github.repository }}", "o/r")
+    calls = tmp_path / "gh_calls"
+    gh = tmp_path / "gh"
+    gh.write_text('#!/bin/bash\necho "$*" >> "$GH_CALLS"\nexit 99\n')
+    gh.chmod(0o755)
     result = subprocess.run(
-        [shutil.which("bash") or "bash", "-e", "-c", script],
-        env=env,
+        [shutil.which("bash") or "bash", "-e", "-c", step["run"]],
+        env={
+            "PATH": str(tmp_path),
+            "GITHUB_OUTPUT": str(output),
+            "GH_CALLS": str(calls),
+            "PR_NUMBER": "7",
+            "PR_BODY": "Evidence-Source: OCC#123",
+        },
         capture_output=True,
         text=True,
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    assert output.read_text().splitlines() == ["exempt=true"]
-    assert "does not apply in caller-evidence mode" in result.stdout
+    assert output.read_text() == ""
+    assert not calls.exists()
+    assert result.stdout.splitlines() == [
+        "::notice::caller evidence is verified by the dod-verify job (OMN-20074)"
+    ]
