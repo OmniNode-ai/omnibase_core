@@ -627,3 +627,107 @@ def test_a_parent_is_reported_rather_than_estimated() -> None:
     assert "PARENT" not in plan.proposed_estimates
     assert plan.unestimated_parents == ("PARENT",)
     assert "LEAF" in plan.proposed_estimates
+
+
+# -- OMN-21085: a pin label holds any ticket; dead state types are refused ----
+
+
+def _labelled(identifier: str, owner: str, labels: tuple[str, ...] = ()):
+    return _owned(identifier, owner, 5).model_copy(update={"labels": labels})
+
+
+def _pinned_window(pin: tuple[str, ...]):
+    """Mike already fills his owner cap with work that outranks the candidate."""
+    return _owned_window(
+        (
+            _owned("MIKE-REVIEW", "mike", 5, "In Review"),
+            _labelled("CANDIDATE", "mike", pin),
+        )
+    )
+
+
+def test_a_pinned_ticket_over_the_owner_cap_is_still_mandatory() -> None:
+    plan = _policy_plan(
+        _pinned_window(("sprint-pinned",)), cap_override=20, owner_cap=5
+    )
+    assert "CANDIDATE" in _ids_in(plan, P1)
+    assert "CANDIDATE" not in plan.backlog_ticket_ids
+
+
+def test_an_unpinned_ticket_is_deferred_once_the_label_is_removed() -> None:
+    plan = _policy_plan(_pinned_window(()), cap_override=20, owner_cap=5)
+    assert "CANDIDATE" not in _ids_in(plan, P1)
+    assert "MIKE-REVIEW" in _ids_in(plan, P1)
+
+
+def test_an_unrelated_label_leaves_the_ticket_unpinned() -> None:
+    plan = _policy_plan(
+        _pinned_window(("beta-critical",)), cap_override=20, owner_cap=5
+    )
+    assert "CANDIDATE" not in _ids_in(plan, P1)
+
+
+def test_the_pinned_label_set_is_the_callers_to_name() -> None:
+    plan = _policy_plan(
+        _pinned_window(("hold",)),
+        cap_override=20,
+        owner_cap=5,
+        pin_labels=frozenset({"hold"}),
+    )
+    assert "CANDIDATE" in _ids_in(plan, P1)
+
+
+def test_a_pinned_ticket_in_the_mandatory_set_is_seated_once() -> None:
+    plan = _policy_plan(
+        _pinned_window(("sprint-pinned",)),
+        cap_override=20,
+        owner_cap=5,
+        mandatory=frozenset({"CANDIDATE"}),
+    )
+    assert _ids_in(plan, P1).count("CANDIDATE") == 1
+
+
+def _dead(identifier: str, state: str, state_type: str) -> ModelSprintTicket:
+    return _owned(identifier, "mike", 1, state).model_copy(
+        update={"state_type": state_type}
+    )
+
+
+def test_a_duplicate_state_ticket_is_no_move_and_is_named_in_the_refusals() -> None:
+    """The 2026-10-12 plan moved a ticket in `Duplicate`: no closed-state name list
+    carried that state, so only its type can catch it."""
+    window = _owned_window(
+        (_owned("LIVE", "jonah", 1), _dead("DUPE", "Duplicate", "duplicate"))
+    )
+    plan = _policy_plan(window, cap_override=20)
+    moved = {t for p in plan.placements for t in p.moved_in}
+    placed = {t for p in plan.placements for t in p.ticket_ids}
+    assert "DUPE" not in moved
+    assert "DUPE" not in placed
+    assert "DUPE" not in plan.backlog_ticket_ids
+    assert "DUPE" not in plan.rolling_ticket_ids
+    assert "duplicate" in plan.refused["DUPE"]
+    assert "LIVE" in moved
+
+
+def test_a_canceled_state_type_under_a_renamed_state_is_refused() -> None:
+    window = _owned_window((_dead("GONE", "Won't do", "canceled"),))
+    plan = _policy_plan(window, cap_override=20)
+    assert "GONE" not in {t for p in plan.placements for t in p.ticket_ids}
+    assert "canceled" in plan.refused["GONE"]
+
+
+def test_a_duplicate_in_a_later_sprint_is_refused_too() -> None:
+    window = _owned_window(
+        (_owned("LIVE", "jonah", 1),),
+        p1_tickets=(_dead("LATER-DUPE", "Duplicate", "duplicate"),),
+    )
+    plan = _policy_plan(window, cap_override=20)
+    assert "LATER-DUPE" not in {t for p in plan.placements for t in p.ticket_ids}
+    assert "LATER-DUPE" in plan.refused
+
+
+def test_a_canceled_by_name_ticket_is_not_listed_as_a_refusal() -> None:
+    window = _owned_window((_dead("DONE-DUPE", "Canceled", "canceled"),))
+    plan = _policy_plan(window, cap_override=20)
+    assert plan.refused == {}

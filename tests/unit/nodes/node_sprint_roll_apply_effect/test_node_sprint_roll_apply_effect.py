@@ -30,14 +30,21 @@ from omnibase_core.models.nodes.sprint_roll.model_sprint_roll_write import (
     ModelSprintRollWrite,
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect import NodeSprintRollApplyEffect
+from omnibase_core.nodes.node_sprint_roll_apply_effect.handler import (
+    destination_milestone,
+)
 from omnibase_core.nodes.node_sprint_roll_apply_effect.node_linear_transport_error import (
     NodeLinearTransportError,
 )
 from omnibase_core.nodes.node_sprint_roll_apply_effect.node_sprint_roll_journal import (
     NodeSprintRollJournal,
 )
+from omnibase_core.nodes.node_sprint_roll_apply_effect.node_sprint_roll_readback_error import (
+    NodeSprintRollReadbackError,
+)
 from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply import (
     MAX_ATTEMPTS,
+    READBACK_QUERY,
     RETRYABLE_STATUS,
     label_uuid,
     resolve_source_start,
@@ -48,14 +55,27 @@ from omnibase_core.nodes.node_sprint_roll_apply_effect.runtime_sprint_roll_apply
 
 P_OLD = UUID(int=10)
 P_NEW = UUID(int=11)
+MS_OLD = "ms-m4-old"
+MS_FAST = "ms-m45"
+DUE_OLD = "2026-10-11"
+DUE_NEW = "2026-10-25"
 
 
 class Recorder:
-    """A transport that records every call and answers from a canned issue set."""
+    """A transport that records every call and answers from a canned issue set.
 
-    def __init__(self, *, fail_after: int | None = None) -> None:
+    It also HOLDS what it is sent (OMN-21085): a mutation changes the issue it names, and
+    a readback answers from that state, so a case can make Linear drop a field the way
+    a real project move drops the milestone.
+    """
+
+    def __init__(
+        self, *, fail_after: int | None = None, drops: frozenset[str] = frozenset()
+    ) -> None:
         self.calls: list[tuple[str, dict[str, Any]]] = []
         self.fail_after = fail_after
+        self.drops = drops
+        self.held: dict[str, dict[str, Any]] = {}
 
     @property
     def mutations(self) -> list[dict[str, Any]]:
@@ -65,16 +85,61 @@ class Recorder:
     def reads(self) -> list[dict[str, Any]]:
         return [v for q, v in self.calls if not q.lstrip().startswith("mutation")]
 
+    def _issue(self, uuid: str) -> dict[str, Any]:
+        return self.held.setdefault(
+            uuid,
+            {
+                "projectId": str(P_OLD),
+                "projectMilestoneId": MS_OLD,
+                "dueDate": DUE_OLD,
+            },
+        )
+
     def __call__(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
         self.calls.append((query, variables))
         if self.fail_after is not None and len(self.mutations) > self.fail_after:
             raise NodeLinearTransportError("transport refused")
         if query.lstrip().startswith("mutation"):
+            issue = self._issue(variables["id"])
+            for field, value in variables["in"].items():
+                issue[field] = None if field in self.drops else value
             return {"issueUpdate": {"success": True}}
         if "issueLabels" in query:
             return {"issueLabels": {"nodes": [{"id": "label-uuid"}]}}
         if "workflowStates" in query:
             return {"workflowStates": {"nodes": [{"id": "state-uuid"}]}}
+        if "projects(filter:{id:" in query:
+            return {
+                "projects": {
+                    "nodes": [
+                        {
+                            "id": pid,
+                            "targetDate": DUE_NEW,
+                            "projectMilestones": {
+                                "nodes": [
+                                    {"id": MS_FAST, "name": "M4.5"},
+                                    {"id": f"ms-m4-{pid}", "name": "M4"},
+                                ]
+                            },
+                        }
+                        for pid in variables["ids"]
+                    ]
+                }
+            }
+        if "issue(id:" in query:
+            issue = self._issue(variables["id"])
+            return {
+                "issue": {
+                    "id": variables["id"],
+                    "project": {"id": issue["projectId"]},
+                    "projectMilestone": (
+                        {"id": issue["projectMilestoneId"]}
+                        if issue["projectMilestoneId"]
+                        else None
+                    ),
+                    "dueDate": issue["dueDate"],
+                }
+            }
         return {
             "issues": {
                 "nodes": [
@@ -82,6 +147,8 @@ class Recorder:
                         "id": f"uuid-{ident}",
                         "identifier": ident,
                         "project": {"id": str(P_OLD)},
+                        "projectMilestone": {"id": MS_OLD, "name": "M4"},
+                        "dueDate": DUE_OLD,
                         "state": {"id": "state-old"},
                         "labels": {"nodes": [{"id": "keep-me"}]},
                     }
@@ -126,7 +193,8 @@ def test_a_dry_run_issues_no_mutation() -> None:
     assert recorder.mutations == []
     assert result.write_calls == 0
     assert result.dry_run is True
-    assert len(result.writes) == 2  # what it WOULD send, still reported
+    # What it WOULD send, still reported: project, milestone and due date per ticket.
+    assert len(result.writes) == 6
 
 
 def test_a_dry_run_writes_no_manifest(tmp_path: Path) -> None:
@@ -155,7 +223,7 @@ def test_every_mutation_is_journalled_before_it_is_sent(tmp_path: Path) -> None:
     )
     assert len(recorder.mutations) == 2
     lines = manifest.read_text(encoding="utf-8").strip().splitlines()
-    assert len(lines) == 2
+    assert len(lines) == 6  # three fields per ticket, one mutation per ticket
     assert {json.loads(line)["identifier"] for line in lines} == {"OMN-1", "OMN-2"}
     assert result.write_calls == 2
 
@@ -175,7 +243,7 @@ def test_a_run_interrupted_after_the_first_write_still_leaves_its_undo(
             )
         )
     lines = manifest.read_text(encoding="utf-8").strip().splitlines()
-    assert len(lines) == 2
+    assert len(lines) == 6
     assert len(recorder.mutations) == 2
 
 
@@ -186,7 +254,8 @@ def test_the_journal_records_the_prior_value_not_the_new_one(tmp_path: Path) -> 
             plan=_plan(("OMN-1",)), dry_run=False, manifest_path=manifest
         )
     )
-    record = json.loads(manifest.read_text(encoding="utf-8").strip())
+    record = json.loads(manifest.read_text(encoding="utf-8").splitlines()[0])
+    assert record["field"] == "projectId"
     assert record["before"] == [str(P_OLD)]
     assert record["after"] == [str(P_NEW)]
 
@@ -540,3 +609,112 @@ def test_a_plan_whose_tickets_carry_no_number_refuses_rather_than_reading_everyt
         NodeSprintRollApplyEffect(Recorder()).handle(
             ModelSprintRollApplyRequest(plan=plan)
         )
+
+
+# -- OMN-21085: a move is project, milestone and due date, read back ----------
+
+
+def _applied(recorder: Recorder, manifest: Path | None = None) -> None:
+    NodeSprintRollApplyEffect(recorder).handle(
+        ModelSprintRollApplyRequest(plan=_plan(), dry_run=False, manifest_path=manifest)
+    )
+
+
+def test_one_update_per_ticket_carries_project_milestone_and_due_date() -> None:
+    """Linear clears the milestone on a project change and keeps the old due date, so
+    a project-only update lands the ticket off the board and outside its window."""
+    recorder = Recorder()
+    _applied(recorder)
+    assert len(recorder.mutations) == 2
+    for mutation in recorder.mutations:
+        assert mutation["in"] == {
+            "projectId": str(P_NEW),
+            "projectMilestoneId": f"ms-m4-{P_NEW}",
+            "dueDate": DUE_NEW,
+        }
+
+
+def test_the_milestone_with_the_same_name_wins_over_a_second_one() -> None:
+    milestones: list[Any] = [
+        {"id": MS_FAST, "name": "M4.5"},
+        {"id": "ms-m4", "name": "M4"},
+    ]
+    assert destination_milestone("M4", milestones) == "ms-m4"
+
+
+def test_the_milestone_falls_back_to_the_destination_only_milestone() -> None:
+    assert destination_milestone("Gone", [{"id": "ms-only", "name": "M4"}]) == (
+        "ms-only"
+    )
+    assert destination_milestone(None, [{"id": "ms-only", "name": "M4"}]) == "ms-only"
+
+
+def test_the_milestone_is_blank_rather_than_guessed_between_two() -> None:
+    milestones: list[Any] = [
+        {"id": MS_FAST, "name": "M4.5"},
+        {"id": "ms-m4", "name": "M4"},
+    ]
+    assert destination_milestone("Gone", milestones) is None
+
+
+def test_the_readback_reads_each_ticket_after_its_update() -> None:
+    recorder = Recorder()
+    _applied(recorder)
+    kinds = [
+        "mutation" if q.lstrip().startswith("mutation") else q.split("(")[0]
+        for q, _v in recorder.calls
+        if q.lstrip().startswith("mutation") or "issue(id:" in q
+    ]
+    assert kinds == ["mutation", "query", "mutation", "query"]
+    assert READBACK_QUERY in [q for q, _v in recorder.calls]
+
+
+def test_a_readback_mismatch_is_raised_not_reported_as_success(tmp_path: Path) -> None:
+    """`issueUpdate` answers success and Linear blanks the milestone anyway. The node
+    must stop on that, not count it as a write."""
+    manifest = tmp_path / "m.jsonl"
+    recorder = Recorder(drops=frozenset({"projectMilestoneId"}))
+    with pytest.raises(NodeSprintRollReadbackError, match="projectMilestoneId"):
+        _applied(recorder, manifest)
+    assert len(recorder.mutations) == 1  # stopped at the first ticket
+    assert len(manifest.read_text(encoding="utf-8").splitlines()) == 3
+
+
+def test_a_readback_due_date_mismatch_is_raised_too() -> None:
+    with pytest.raises(NodeSprintRollReadbackError, match="dueDate"):
+        _applied(Recorder(drops=frozenset({"dueDate"})))
+
+
+def test_a_readback_mismatch_is_still_a_transport_error_for_older_callers() -> None:
+    assert issubclass(NodeSprintRollReadbackError, NodeLinearTransportError)
+
+
+def test_a_destination_with_no_due_date_refuses_before_any_write() -> None:
+    class NoTargetDate(Recorder):
+        def __call__(self, query: str, variables: dict[str, Any]) -> dict[str, Any]:
+            data = super().__call__(query, variables)
+            if "projects(filter:{id:" in query:
+                for row in data["projects"]["nodes"]:
+                    row["targetDate"] = None
+            return data
+
+    recorder = NoTargetDate()
+    with pytest.raises(NodeLinearTransportError, match="no due date"):
+        _applied(recorder)
+    assert recorder.mutations == []
+
+
+def test_undo_restores_milestone_and_due_date_with_the_project_as_one_update(
+    tmp_path: Path,
+) -> None:
+    """Restored field by field, the old milestone would be written while the ticket
+    still sat in the new sprint, and the project restore after it would clear it."""
+    manifest = tmp_path / "m.jsonl"
+    _applied(Recorder(), manifest)
+    undo = Recorder()
+    reversed_writes, skipped = undo_from_manifest(undo, manifest)
+    assert skipped == []
+    assert len(reversed_writes) == 6
+    assert [m["in"] for m in undo.mutations] == [
+        {"projectId": str(P_OLD), "projectMilestoneId": MS_OLD, "dueDate": DUE_OLD}
+    ] * 2

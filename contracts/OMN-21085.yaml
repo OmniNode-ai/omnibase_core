@@ -1,0 +1,105 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21085
+title: The sprint roll moves a ticket's project, milestone and due date together and reads them back;
+  a sprint-pinned label holds any ticket; duplicate and canceled tickets are refused
+summary: omnibase_core half of OMN-21085. The apply effect sends one issueUpdate per moved ticket carrying
+  projectId, projectMilestoneId and dueDate, reads the issue back and raises NodeSprintRollReadbackError
+  on a mismatch; the undo restores a batch as one update. The compute node treats a ticket carrying a
+  pin label (default sprint-pinned) as mandatory and excludes duplicate and canceled state types from
+  the candidate set, naming them in the plan's refused map. The workflow half (AC1, AC2) lands in omninode_infra
+  under the same ticket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21085-three-field-move
+    statement: A sprint move is one issueUpdate carrying project, milestone and due date, verified by
+      readback.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: one `issueUpdate` per moved ticket carries projectId, projectMilestoneId and
+          dueDate together, and the node compares all three on readback -- falsifier: `uv run pytest tests/nodes/node_sprint_roll_apply_effect
+          -k "milestone or due_date or readback"` fails today and passes after, and a test that asserts
+          a readback mismatch is raised rather than reported as success must be among the passing cases.'
+  - id: req-omn21085-pin-label
+    statement: A sprint-pinned label makes any ticket mandatory.
+    acceptance:
+      - id: AC4
+        statement: 'AC4: a `sprint-pinned` label joins the Walker title regex in the mandatory set, so
+          any ticket can be held in its sprint -- falsifier: `uv run pytest tests/nodes/node_sprint_roll_compute
+          -k "mandatory or pinned"` proves a labelled ticket at or over the owner cap is still placed,
+          and that removing the label defers it.'
+  - id: req-omn21085-dead-state-types
+    statement: Duplicate and canceled state types are not candidates and are named as refusals.
+    acceptance:
+      - id: AC5
+        statement: 'AC5: tickets whose workflow state type is duplicate or canceled are excluded from
+          the candidate set -- falsifier: `uv run pytest tests/nodes/node_sprint_roll_compute -k "duplicate
+          or canceled"` shows a duplicate-state fixture absent from the plan''s moves and named in its
+          refusal list.'
+evidence_requirements:
+  - kind: tests
+    description: Apply effect and compute node unit suites for the sprint roll.
+    command: uv run pytest tests/unit/nodes/node_sprint_roll_apply_effect/test_node_sprint_roll_apply_effect.py
+      tests/unit/nodes/node_sprint_roll_compute/test_node_sprint_roll_compute.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21085-ac3-three-fields-read-back
+    description: One issueUpdate per moved ticket carries projectId, projectMilestoneId and dueDate; a
+      readback mismatch raises NodeSprintRollReadbackError.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_sprint_roll_apply_effect/test_node_sprint_roll_apply_effect.py
+          -q -k 'milestone or due_date or readback'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21085-ac4-pin-label-is-mandatory
+    description: A sprint-pinned ticket over the owner cap is placed in the first target; without the
+      label it is deferred.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_sprint_roll_compute/test_node_sprint_roll_compute.py
+          -q -k 'mandatory or pinned'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21085-ac5-dead-state-types-refused
+    description: A duplicate-state ticket is absent from every placement and named in plan.refused; a
+      canceled type under a renamed state is refused too.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_sprint_roll_compute/test_node_sprint_roll_compute.py
+          -q -k 'duplicate or canceled'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21085-deploy-readback-on-dev
+    description: Deploy probe. omnibase_core is a library, so the live surface for this change is its
+      dev branch, which the sprint-roll workflow reaches through omninode_infra's locked core pin. The
+      probe reads the merged handler from dev and fails until the three-field move and its readback error
+      are there. Run at the local done gate, after merge.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_sprint_roll_apply_effect/handler.py?ref=dev"
+          --jq .content | base64 -d | grep -c -e projectMilestoneId -e NodeSprintRollReadbackError
+  - id: dod-omn21085-deploy-hosted-readback
+    description: Hosted deploy probe for the library's apply handler. A recorded transport checks that
+      each moved ticket receives one update carrying project, milestone and due date, and that dropped
+      milestone or due date values raise a readback mismatch instead of reporting success.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/nodes/node_sprint_roll_apply_effect/test_node_sprint_roll_apply_effect.py
+          -q -k 'one_update_per_ticket or readback_mismatch_is_raised or readback_due_date_mismatch'
+        cwd: ${OMNI_HOME}/omnibase_core

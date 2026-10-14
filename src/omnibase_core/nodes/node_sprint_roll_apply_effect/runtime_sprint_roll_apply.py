@@ -38,14 +38,17 @@ from omnibase_core.nodes.node_sprint_roll_apply_effect.node_linear_transport_err
 __all__ = [
     "MAX_ATTEMPTS",
     "MUTATION",
+    "READBACK_QUERY",
     "RETRYABLE_STATUS",
     "GraphQLTransport",
     "label_uuid",
     "node_rows",
+    "readback_mismatches",
     "resolve_source_start",
     "state_uuid",
     "undo_from_manifest",
     "write_payload",
+    "writes_payload",
     "with_retries",
 ]
 
@@ -67,6 +70,11 @@ GraphQLTransport = Callable[[str, GraphQLPayload], GraphQLPayload]
 MUTATION = (
     "mutation($id:String!,$in:IssueUpdateInput!)"
     "{issueUpdate(id:$id,input:$in){success}}"
+)
+
+#: One issue's three sprint fields, read back after an update to prove Linear holds them.
+READBACK_QUERY = (
+    "query($id:String!){issue(id:$id){id project{id} projectMilestone{id} dueDate}}"
 )
 
 SPRINT_PROJECTS_QUERY = (
@@ -186,8 +194,9 @@ def state_uuid(transport: GraphQLTransport, team_key: str, state_name: str) -> s
     return _text(rows[0], "id")
 
 
-#: Fields Linear takes as a single id. Everything else is a set.
-SCALAR_FIELDS = frozenset({"projectId", "stateId"})
+#: Fields Linear takes as a single value. Everything else is a set. `dueDate` is a date
+#: string, not an id, but it is just as single.
+SCALAR_FIELDS = frozenset({"projectId", "projectMilestoneId", "dueDate", "stateId"})
 
 
 def _value(field: str, ids: tuple[str, ...] | None) -> JsonValue:
@@ -201,6 +210,63 @@ def write_payload(write: ModelSprintRollWrite) -> GraphQLPayload:
     return {write.field: _value(write.field, write.after)}
 
 
+def writes_payload(writes: list[ModelSprintRollWrite]) -> GraphQLPayload:
+    """Several fields of ONE issue as one `IssueUpdateInput`.
+
+    A sprint move is sent this way because Linear clears `projectMilestoneId` when
+    `projectId` changes: a milestone sent in a later update would land, but one sent
+    first would be wiped by the project move after it. Together they are one change.
+    """
+    payload: GraphQLPayload = {}
+    for write in writes:
+        payload[write.field] = _value(write.field, write.after)
+    return payload
+
+
+#: Where each written field sits in a READBACK_QUERY answer.
+_READBACK_PATH: dict[str, tuple[str, str | None]] = {
+    "projectId": ("project", "id"),
+    "projectMilestoneId": ("projectMilestone", "id"),
+    "dueDate": ("dueDate", None),
+}
+
+
+def _held(issue: GraphQLPayload, field: str) -> str | None:
+    key, inner = _READBACK_PATH[field]
+    value = issue.get(key)
+    if inner is not None:
+        value = value.get(inner) if isinstance(value, dict) else None
+    return value if isinstance(value, str) and value else None
+
+
+def readback_mismatches(
+    transport: GraphQLTransport, writes: list[ModelSprintRollWrite]
+) -> list[str]:
+    """Read one issue back and name every written field Linear does not hold.
+
+    `writes` are the fields of one update to one issue. An empty list is the only
+    success: `issueUpdate` answers `success` for an input Linear then partly undoes,
+    which is exactly how a project move loses its milestone.
+    """
+    if not writes:
+        return []
+    data = transport(READBACK_QUERY, {"id": writes[0].issue_uuid})
+    issue = data.get("issue")
+    if not isinstance(issue, dict):
+        return [f"{writes[0].identifier}: Linear returned no issue to read back"]
+    mismatches: list[str] = []
+    for write in writes:
+        if write.field not in _READBACK_PATH:
+            continue
+        wanted = write.after[0] if write.after else None
+        held = _held(issue, write.field)
+        if held != wanted:
+            mismatches.append(
+                f"{write.identifier} {write.field}: sent {wanted!r}, Linear holds {held!r}"
+            )
+    return mismatches
+
+
 def undo_from_manifest(
     transport: GraphQLTransport, path: Path
 ) -> tuple[list[ModelSprintRollWrite], list[ModelSprintRollWrite]]:
@@ -211,6 +277,10 @@ def undo_from_manifest(
     which belonged to no sprint. Writing null back is a legitimate restore for a project
     but not for a workflow state, which cannot be empty, so the two are not treated
     alike.
+
+    Records that share a `batch` were one update and are restored as one (OMN-21085).
+    Restored field by field, the old milestone would be written while the issue still
+    sat in the new project, and the project restore after it would clear it again.
     """
     records = [
         ModelSprintRollWrite.model_validate_json(line)
@@ -219,13 +289,31 @@ def undo_from_manifest(
     ]
     reversed_writes: list[ModelSprintRollWrite] = []
     skipped: list[ModelSprintRollWrite] = []
+    groups: list[list[ModelSprintRollWrite]] = []
     for record in reversed(records):
-        if record.before is None and record.field == "stateId":
-            # A workflow state cannot be empty, so there is nothing to restore and
-            # guessing one would be worse than reporting it.
-            skipped.append(record)
+        last = groups[-1][-1] if groups else None
+        if (
+            last is not None
+            and record.batch is not None
+            and record.batch == last.batch
+            and record.issue_uuid == last.issue_uuid
+        ):
+            groups[-1].append(record)
+        else:
+            groups.append([record])
+    for group in groups:
+        payload: GraphQLPayload = {}
+        restored: list[ModelSprintRollWrite] = []
+        for record in group:
+            if record.before is None and record.field == "stateId":
+                # A workflow state cannot be empty, so there is nothing to restore and
+                # guessing one would be worse than reporting it.
+                skipped.append(record)
+                continue
+            payload[record.field] = _value(record.field, record.before)
+            restored.append(record)
+        if not restored:
             continue
-        payload: GraphQLPayload = {record.field: _value(record.field, record.before)}
-        transport(MUTATION, {"id": record.issue_uuid, "in": payload})
-        reversed_writes.append(record)
+        transport(MUTATION, {"id": group[0].issue_uuid, "in": payload})
+        reversed_writes.extend(restored)
     return reversed_writes, skipped
