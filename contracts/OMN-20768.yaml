@@ -1,0 +1,45 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20768
+title: CI checks audit dependency pin rotations without masking execution changes
+summary: A separate check-fix for omnibase_core#1977 audits its exact dependency pin rotations, retains
+  complete guard-job execution checks and mutation refusals, and rotates the anti-growth reusable and
+  pre-commit hook together.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20768-audited-ci-pins
+    statement: CI dependency pin updates preserve the execution checks and shared anti-growth validator
+      revision.
+    acceptance:
+      - id: AC1
+        statement: The audited checkout and setup-uv pin rotations pass complete-job checks, unknown action
+          refs and advisory execution remain refused, and both anti-growth consumers use cc59bc1087f96c268e797995e17bf5d9bdc0c2db.
+evidence_requirements:
+  - kind: tests
+    description: Hosted CI tests exercise the exact audited rotations, execution mutation refusals and
+      matching anti-growth validator revisions.
+    command: uv run --frozen pytest tests/unit/validation/test_ci_workflow_shape.py tests/ci/test_anti_growth_baseline_caller_omn19677.py
+      -q --no-cov -k "audited_pin_rotations or audited_anti_growth_pin"
+  - kind: ci
+    description: Deploy check scoped to hosted CI configuration; fails when the two validator consumers
+      do not use the audited revision. No runtime service changes are included.
+    command: uv run --frozen pytest tests/ci/test_anti_growth_baseline_caller_omn19677.py::test_audited_anti_growth_pin_rotates_hook_and_reusable_together
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20768-audited-ci-pins
+    description: Exercise both audited pin variants and unknown-ref and execution refusals, with the two
+      anti-growth consumers pinned together. The same test-side overlay fails on the merge-base consumers'
+      old validator pin.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_ci_workflow_shape.py tests/ci/test_anti_growth_baseline_caller_omn19677.py
+          -q --no-cov -k "audited_pin_rotations or audited_anti_growth_pin"
+        cwd: ${OMNI_HOME}/omnibase_core

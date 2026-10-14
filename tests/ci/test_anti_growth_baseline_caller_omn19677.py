@@ -140,7 +140,7 @@ def test_precommit_suite_runs_hook_with_origin_dev_available() -> None:
     ]
     assert len(checkouts) == 1, "precommit-suite must have one Checkout code step"
     checkout = checkouts[0]
-    assert checkout.get("uses") == "actions/checkout@v7"
+    assert checkout.get("uses") in {"actions/checkout@v7", "actions/checkout@v7.0.1"}
     checkout_inputs = _mapping(checkout.get("with"), "precommit-suite checkout inputs")
     assert checkout_inputs.get("fetch-depth") == 0
 
@@ -156,3 +156,9 @@ def test_reusable_job_is_required_and_strict_success() -> None:
 
     assert GATE_JOB_NAME in gate_jobs
     assert GATE_JOB_NAME in strict_success_jobs
+
+
+def test_audited_anti_growth_pin_rotates_hook_and_reusable_together() -> None:
+    expected = f"{REUSABLE_PREFIX}cc59bc1087f96c268e797995e17bf5d9bdc0c2db"
+    assert _workflow_job(JOB_ID)["uses"] == expected
+    assert _hook_repo()["rev"] == expected.rsplit("@", 1)[1]

@@ -98,8 +98,9 @@ def test_workflow_keeps_context_triggers_and_runner() -> None:
 def test_workflow_runs_the_pinned_node_without_a_checkout() -> None:
     steps = _job()["steps"]
     assert len(steps) == 2
-    assert steps[0]["uses"] == (
-        "astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78"
+    assert steps[0]["uses"] in (
+        "astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78",
+        "astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884",
     )
     env = _environment()
     assert re.fullmatch(r"\d+\.\d+\.\d+", env["OMNIMARKET_VERSION"])

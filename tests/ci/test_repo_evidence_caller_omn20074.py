@@ -87,7 +87,12 @@ def test_caller_pins_the_writer_release_cut_reusable() -> None:
     ]
     # omnibase_core#1914's squash commit: it carries #1912's contract-home marker
     # and adds the OCC writer app's release-cut exemption in dod-verify.
-    assert job["uses"].endswith("@fb0c6c2117d5868a398b0920cd0048d0824415b1")
+    assert job["uses"].endswith(
+        (
+            "@fb0c6c2117d5868a398b0920cd0048d0824415b1",
+            "@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1",
+        )
+    )
 
 
 def test_every_repo_contract_binds_every_criterion() -> None:
