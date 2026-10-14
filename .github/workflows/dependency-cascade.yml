@@ -170,7 +170,7 @@ jobs:
 
       - name: Checkout downstream repo
         if: steps.token_check.outputs.has_token == 'true'
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           repository: OmniNode-ai/${{ matrix.repo }}
           token: ${{ steps.app-token.outputs.token }}
@@ -178,7 +178,7 @@ jobs:
 
       - name: Set up uv
         if: steps.token_check.outputs.has_token == 'true'
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@v10.3.0
         with:
           python-version: '3.12'
 
@@ -247,7 +247,7 @@ jobs:
       # downstream repo's own checkout above).
       - name: Checkout omnibase_infra dep-provenance script
         if: steps.token_check.outputs.has_token == 'true'
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           repository: OmniNode-ai/omnibase_infra
           # OMN-20001: release tag v0.38.61, not live default branch; the
