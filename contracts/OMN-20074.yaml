@@ -333,6 +333,15 @@ requirements:
           scope fixture names them, and receipt-gate.yml, occ_preflight_wait.py and check_occ_companion_merged.py
           are still present -- falsifier: uv run pytest tests/ci/test_occ_unused_reusables_deleted_omn20074.py
           -q -p no:randomly fails at the merge base'
+  - id: req-omn20074-drop-occ-boundary
+    statement: The packaged Kafka boundary manifest must no longer require the retired change-control
+      repository, while the parity handler still refuses a boundary whose producer file is missing.
+    acceptance:
+      - id: AC46
+        statement: 'AC46: the packaged manifest has five boundaries and names no onex_change_control repository
+          or contract-drift-detected topic; parity exits 0 without that repository, and restoring its
+          boundary exits 1 naming its missing producer file -- falsifier: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py
+          -q -p no:randomly -k "packaged_manifest or a_boundary_produced_by_change_control"'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -809,3 +818,22 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC45
+  - id: dod-omn-20074-ac46-pr1972
+    description: The boundary-removal tests exercise parity without change control and with its boundary
+      restored as a failing control. The hosted deploy check loads the packaged manifest through the handler
+      and refuses any change-control producer or consumer or a boundary count other than five.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_boundary_parity.py -q -p no:randomly
+          -k "packaged_manifest or a_boundary_produced_by_change_control"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -c 'from omnibase_core.handlers.handler_boundary_parity import load_boundary_manifest,
+          load_manifest_yaml; deployed_manifest = load_boundary_manifest(load_manifest_yaml()); assert
+          len(deployed_manifest) == 5; assert all("onex_change_control" not in (entry.producer_repo, entry.consumer_repo)
+          for entry in deployed_manifest)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC46
