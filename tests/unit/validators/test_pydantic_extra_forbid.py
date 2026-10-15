@@ -27,6 +27,9 @@ from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_UNRESOLVED,
 )
 from omnibase_core.validators import pydantic_extra_forbid as pyd
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
 from omnibase_core.validators.pydantic_extra_forbid import (
     changed_line_ranges,
     load_baseline,
@@ -1084,6 +1087,260 @@ def test_main_enforce_modified_ignores_inherited_git_dir(
 
     assert exit_code == 1
     assert "ModelX" in capsys.readouterr().err
+
+
+# ===========================================================================
+# Working-tree modified-model enforcement (OMN-17572): ``pre-commit run
+# --all-files`` runs on an unstaged tree, so ``:staged`` alone is blind to it.
+# ===========================================================================
+BROKEN_BASE = (
+    "from pydantic import BaseModel\n"
+    "\n"
+    "class ModelUntouched(BaseModel):\n"
+    "    a: str\n"
+    "\n"
+    "class ModelTouched(BaseModel):\n"
+    "    b: str\n"
+)
+BROKEN_EDITED = BROKEN_BASE + "    c: int = 0\n"
+
+
+def _seed_baselined(
+    git_repo: Path, module_name: str = "mod_touched"
+) -> tuple[Path, Path, Path]:
+    """Commit a module with two baselined, still-broken models.
+
+    Returns ``(module, baseline, waivers)``.
+    """
+    from omnibase_core.validation.pydantic_module_index import module_for_path
+
+    module = git_repo / "pkg" / f"{module_name}.py"
+    module.write_text(BROKEN_BASE, encoding="utf-8")
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    prefix = module_for_path(module)[0]
+    baseline = _write_baseline(
+        git_repo / "baseline.yaml",
+        [f"{prefix}:ModelUntouched", f"{prefix}:ModelTouched"],
+    )
+    return module, baseline, _empty_waivers(git_repo / "waivers.yaml")
+
+
+def _run_gate(baseline: Path, waivers: Path, ref: str, *paths: str) -> int:
+    return main(
+        [
+            *(paths or ("pkg",)),
+            "--baseline",
+            str(baseline),
+            "--waivers",
+            str(waivers),
+            "--enforce-modified",
+            ref,
+        ]
+    )
+
+
+def test_unstaged_modification_of_baselined_model_fails_under_worktree_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The ``pre-commit run --all-files`` shape: edit on disk, nothing staged."""
+    module, baseline, waivers = _seed_baselined(git_repo)
+    monkeypatch.chdir(git_repo)
+    assert _run_gate(baseline, waivers, ":worktree") == 0
+
+    module.write_text(BROKEN_EDITED, encoding="utf-8")  # unstaged
+
+    assert _run_gate(baseline, waivers, ":worktree") == 1
+    err = capsys.readouterr().err
+    assert "MODIFIED" in err
+    assert "ModelTouched" in err
+    assert "ModelUntouched" not in err
+
+
+def test_staged_modification_of_baselined_model_fails_under_worktree_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    module, baseline, waivers = _seed_baselined(git_repo)
+    monkeypatch.chdir(git_repo)
+    module.write_text(BROKEN_EDITED, encoding="utf-8")
+    _git(git_repo, "add", "-A")
+
+    assert _run_gate(baseline, waivers, ":worktree") == 1
+
+
+def test_partly_staged_modification_fails_under_worktree_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Staged edit to one model plus an unstaged edit to the other: both are seen."""
+    module, baseline, waivers = _seed_baselined(git_repo)
+    monkeypatch.chdir(git_repo)
+    module.write_text(
+        BROKEN_BASE.replace("a: str", "a: str\n    z: int = 1"), encoding="utf-8"
+    )
+    _git(git_repo, "add", "-A")
+    module.write_text(
+        BROKEN_BASE.replace("a: str", "a: str\n    z: int = 1") + "    c: int = 0\n",
+        encoding="utf-8",
+    )
+
+    assert _run_gate(baseline, waivers, ":worktree") == 1
+
+
+def test_untouched_baselined_models_pass_under_worktree_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A dirty tree that does not touch the baselined classes stays green."""
+    _, baseline, waivers = _seed_baselined(git_repo)
+    monkeypatch.chdir(git_repo)
+    (git_repo / "pkg" / "unrelated.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (git_repo / "NOTES.md").write_text("notes\n", encoding="utf-8")
+    _git(git_repo, "add", "NOTES.md")
+
+    assert _run_gate(baseline, waivers, ":worktree") == 0
+
+
+def test_new_model_without_forbid_fails_under_worktree_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _, baseline, waivers = _seed_baselined(git_repo)
+    monkeypatch.chdir(git_repo)
+    (git_repo / "pkg" / "brand_new.py").write_text(
+        "from pydantic import BaseModel\n\nclass ModelBrandNew(BaseModel):\n"
+        "    a: str\n",
+        encoding="utf-8",
+    )
+
+    assert _run_gate(baseline, waivers, ":worktree") == 1
+    assert "ModelBrandNew" in capsys.readouterr().err
+
+
+def test_explicit_and_inherited_forbid_pass_when_modified_under_worktree_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (git_repo / "pkg" / "good.py").write_text(
+        "from pydantic import BaseModel, ConfigDict\n"
+        "\n"
+        "class ModelBase(BaseModel):\n"
+        '    model_config = ConfigDict(extra="forbid")\n'
+        "    a: str\n"
+        "\n"
+        "class ModelChild(ModelBase):\n"
+        "    b: str\n",
+        encoding="utf-8",
+    )
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    monkeypatch.chdir(git_repo)
+    (git_repo / "pkg" / "good.py").write_text(
+        (git_repo / "pkg" / "good.py").read_text(encoding="utf-8") + "    c: int = 0\n",
+        encoding="utf-8",
+    )
+    baseline = _write_baseline(git_repo / "baseline.yaml", [])
+    waivers = _empty_waivers(git_repo / "waivers.yaml")
+
+    assert _run_gate(baseline, waivers, ":worktree") == 0
+
+
+AWKWARD_FILENAMES = [
+    pytest.param("with space.py", id="space"),
+    pytest.param('quo"te.py', id="double-quote"),
+    pytest.param("new\nline.py", id="newline"),
+    pytest.param("tab\there.py", id="tab"),
+    pytest.param("ünï.py", id="non-ascii"),
+]
+
+
+@pytest.mark.parametrize("ref", [":staged", ":worktree"])
+@pytest.mark.parametrize("filename", AWKWARD_FILENAMES)
+def test_changed_line_ranges_keeps_files_git_would_quote(
+    git_repo: Path, filename: str, ref: str
+) -> None:
+    """git C-quotes these names in patch headers; the diff reader must still see them."""
+    module = git_repo / "pkg" / filename
+    module.write_text(BROKEN_BASE, encoding="utf-8")
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    module.write_text(BROKEN_EDITED, encoding="utf-8")
+    _git(git_repo, "add", "-A")
+
+    ranges = changed_line_ranges(ref, git_repo)
+
+    assert list(ranges) == [module.resolve()]
+    assert ranges[module.resolve()] == [(8, 8)]
+
+
+@pytest.mark.parametrize(
+    "filename", [p for p in AWKWARD_FILENAMES if p.id in {"space", "tab", "non-ascii"}]
+)
+def test_awkward_filenames_are_not_silently_dropped_by_the_gate(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, filename: str
+) -> None:
+    """End to end: a baselined model in such a file counts as touched when edited."""
+    module = git_repo / "pkg" / filename
+    module.write_text(BROKEN_BASE, encoding="utf-8")
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    baseline = _write_baseline(
+        git_repo / "baseline.yaml",
+        [f.fqn for f in scan_paths([module], use_runtime=True)],
+    )
+    waivers = _empty_waivers(git_repo / "waivers.yaml")
+    monkeypatch.chdir(git_repo)
+    assert _run_gate(baseline, waivers, ":worktree", str(module)) == 0
+
+    module.write_text(BROKEN_EDITED, encoding="utf-8")
+
+    assert _run_gate(baseline, waivers, ":worktree", str(module)) == 1
+
+
+def test_worktree_ref_does_not_touch_the_index(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Preserve the index while rejecting a modified model, not an invalid ref."""
+    module, baseline, waivers = _seed_baselined(git_repo)
+    monkeypatch.chdir(git_repo)
+    module.write_text(BROKEN_EDITED, encoding="utf-8")
+    index = git_repo / ".git" / "index"
+    before = index.read_bytes()
+
+    assert _run_gate(baseline, waivers, ":worktree") == 1
+
+    err = capsys.readouterr().err
+    assert "MODIFIED" in err
+    assert "ModelTouched" in err
+    assert "ModelUntouched" not in err
+    assert index.read_bytes() == before
+    staged = subprocess.run(
+        ["git", "diff", "--cached", "--name-only"],
+        cwd=git_repo,
+        check=True,
+        capture_output=True,
+        text=True,
+        env=scrub_git_location_env(os.environ),
+    ).stdout
+    assert staged == ""
+
+
+def test_nonexistent_scan_path_fails_closed(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A supplied path that does not exist must not be skipped as 'nothing to scan'."""
+    _, baseline, waivers = _seed_baselined(git_repo)
+    monkeypatch.chdir(git_repo)
+
+    assert _run_gate(baseline, waivers, ":worktree", "pkg/gone.py") == 1
+    assert "pkg/gone.py" in capsys.readouterr().err
+
+
+def test_precommit_hook_enforces_the_working_tree_not_only_the_index() -> None:
+    """The shipped hook must pass ``:worktree`` so ``--all-files`` sees unstaged edits."""
+    config = Path(__file__).resolve().parents[3] / ".pre-commit-config.yaml"
+    text = config.read_text(encoding="utf-8")
+    start = text.index("id: pydantic-extra-forbid")
+    entry = text[start : text.index("stages:", start)]
+
+    assert "--enforce-modified :worktree" in " ".join(entry.split())
+    assert ":staged" not in entry
 
 
 # ===========================================================================
