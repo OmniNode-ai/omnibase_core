@@ -113,12 +113,15 @@ dod_evidence:
     binds_ac:
       - AC6
   - id: dod-omn17920-ac7-lint-types-tests
-    description: Ruff and strict mypy pass on the changed validation modules.
+    description: Ruff and strict mypy pass on the changed validation modules, the focused regression tests
+      pass, and the extra-forbid hook command accepts the source tree.
     source: manual
     checks:
       - check_type: command
         check_value: uv run ruff check src/omnibase_core/validation tests/unit/validators/test_pydantic_extra_forbid.py
           && uv run mypy src/omnibase_core/validation/pydantic_module_index.py src/omnibase_core/validation/pydantic_static_resolver.py
+          && uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q && uv run --frozen python
+          -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified :staged src/omnibase_core
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC7
