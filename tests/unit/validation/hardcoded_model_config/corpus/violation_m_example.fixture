@@ -1,0 +1,3 @@
+backends:
+  - model: qwen3-coder
+    endpoint_url: "http://gpu.example.test/v1/chat/completions"

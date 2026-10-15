@@ -9,8 +9,16 @@
 # This file IS the allowlist. There is no inline suppression marker: an exception
 # is a change to this file, which every repository running the hook sees.
 # path_classes are ordered and the first match wins; the last class is SOURCE.
-# A path joins VENDOR_DEFAULT only by being named in `files`, never by a glob, so
-# a new file cannot silently join the one class that tolerates model ids.
+#
+# OMN-21147 (operator ruling 2026-10-15): a model id belongs in a contract
+# overlay, never in a repository. No file is named into a class that tolerates
+# one: the VENDOR_DEFAULT class is gone, and examples and launch files refuse
+# model ids (M), private and lab-subnet hosts (E-LAN) and lab deployment facts
+# (D) like source does. HISTORICAL records and this guard's own corpus scan
+# nothing; DOC refuses retired values only.
+# TEST does not yet refuse model ids: today's test findings would grow the
+# shrink-only baseline, which the canonical-file-shape ratchet refuses, so that
+# step waits on a follow-up of OMN-21147.
 
 schema_version: 1
 
@@ -40,31 +48,15 @@ path_classes:
       - "**/*.example.json"
       - "**/.env.example"
       - "**/examples/config-overlays/**"
-    families: [R]
+    families: [M, E-LAN, D, R]
 
-  # Review decision 1 (2026-09-23): public, vendor-published endpoints and model
-  # ids stay in these named package default files so the local customer path
-  # works with a provider key alone. A private or lab host and a retired lab
-  # value are still refused here.
-  - name: VENDOR_DEFAULT
-    files:
-      - "src/omnimarket/configs/bifrost_delegation.yaml"
-      - "src/omnimarket/inference/openrouter_models.py"
-      - "src/omniintelligence/adapters/plan_reviewer_z_ai_client.py"
-      - "src/omniintelligence/adapters/plan_reviewer_gemini_client.py"
-      # Team decision 2026-10-13: onboarding sets up every OpenRouter key on one
-      # vendor-published model named in the script, so a developer never picks
-      # or types a model id (omniclaude).
-      - "plugins/onex/skills/_bin/lab-onboarding.sh"
-    families: [E-LAN, R]
-
-  # Review decision 2 (2026-09-23): the files that start a model server name the
-  # model they serve. Only retired lab values are refused there.
+  # A file that starts a model server takes the model it serves from an
+  # overlay, like any other configuration (OMN-21147). It may name an endpoint.
   - name: LAUNCH
     globs:
       - "deploy/systemd/*.service"
       - "k8s/**"
-    families: [R]
+    families: [M, E-LAN, D, R]
 
   - name: DOC
     globs:
@@ -88,12 +80,12 @@ path_classes:
       - "**/*.test.tsx"
       - "**/*.spec.ts"
       - "**/*.stories.tsx"
-    families: [R, E-LAN]
+    families: [E-LAN, D, R]
 
   - name: SOURCE
     globs:
       - "**"
-    families: [M, E, E-LAN, R, L]
+    families: [M, E, E-LAN, D, R, L]
 
 # Family M: the plan's P1 model-family regex, applied case-insensitively.
 model_id_pattern: >-
@@ -123,6 +115,13 @@ lab_subnet_pattern: '(?<![\d.])192\.168\.86\.\d{1,3}(?![\d])'
 # from the operator's private vocabulary
 # (vocabularies/hardcoded_model_config_lab_denylist.yaml under the workspace
 # config root) when it is present, and runs these shape rules without it.
+# Family D: lab deployment facts, a lab host name or a lab port. The public
+# policy spells none: the loader reads them from the operator's private
+# vocabulary (lab_host_names, lab_ports in the denylist file named above). A run
+# without that vocabulary does not judge D baseline entries.
+lab_host_names: []
+lab_ports: []
+
 retired_values:
   - "local-ds-v4-flash"
   - "deepseek-v4-flash"

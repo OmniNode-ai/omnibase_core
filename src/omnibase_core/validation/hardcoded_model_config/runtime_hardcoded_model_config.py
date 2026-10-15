@@ -132,8 +132,9 @@ def _workspace_config_root() -> Path | None:
     return None
 
 
-def _lab_denylist_values() -> tuple[str, ...]:
-    """Dead lab endpoints from the private vocabulary, when it is present.
+def _lab_denylist() -> ModelHardcodedModelConfigLabDenylist | None:
+    """Dead lab endpoints and lab deployment facts from the private vocabulary,
+    when it is present.
 
     An absent file is the neutral case (shape rules only). A file that is
     present and unreadable or malformed stops the gate: a denylist that
@@ -141,17 +142,27 @@ def _lab_denylist_values() -> tuple[str, ...]:
     """
     root = _workspace_config_root()
     if root is None:
-        return ()
+        return None
     path = root / _LAB_DENYLIST_REL
     if not path.is_file():
-        return ()
+        return None
     try:
-        document = load_yaml_content_as_model(
+        return load_yaml_content_as_model(
             path.read_text(encoding="utf-8"), ModelHardcodedModelConfigLabDenylist
         )
     except (OSError, ModelOnexError) as exc:
         raise _InputError(f"{path}: lab denylist is invalid: {exc}") from exc
-    return document.retired_values
+
+
+def _union[T](first: tuple[T, ...], second: tuple[T, ...]) -> tuple[T, ...]:
+    return first + tuple(v for v in second if v not in first)
+
+
+def unjudged_families(policy: ModelHardcodedModelConfigPolicy) -> frozenset[str]:
+    """Families this run cannot detect, whose baseline entries it must not judge."""
+    if policy.lab_host_names or policy.lab_ports:
+        return frozenset()
+    return frozenset({"D"})
 
 
 def load_policy() -> ModelHardcodedModelConfigPolicy:
@@ -165,10 +176,18 @@ def load_policy() -> ModelHardcodedModelConfigPolicy:
     last = policy.path_classes[-1] if policy.path_classes else None
     if last is None or last.name != "SOURCE" or last.globs != ("**",):
         raise _InputError("policy.yaml must end with a SOURCE class globbing '**'")
-    extra = tuple(v for v in _lab_denylist_values() if v not in policy.retired_values)
-    if extra:
+    denylist = _lab_denylist()
+    if denylist is not None:
         policy = policy.model_copy(
-            update={"retired_values": policy.retired_values + extra}
+            update={
+                "retired_values": _union(
+                    policy.retired_values, denylist.retired_values
+                ),
+                "lab_host_names": _union(
+                    policy.lab_host_names, denylist.lab_host_names
+                ),
+                "lab_ports": _union(policy.lab_ports, denylist.lab_ports),
+            }
         )
     return policy
 
@@ -345,7 +364,13 @@ def _run(args: argparse.Namespace) -> int:
         )
 
     missing = frozenset(e.path for e in baseline if not Path(e.path).is_file())
-    new, stale = compare_with_baseline(findings, baseline, frozenset(files), missing)
+    new, stale = compare_with_baseline(
+        findings,
+        baseline,
+        frozenset(files),
+        missing,
+        unjudged_families=unjudged_families(policy),
+    )
 
     grown: list[ModelHardcodedModelConfigBaselineEntry] = []
     if args.base:
