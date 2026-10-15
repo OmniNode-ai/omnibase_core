@@ -1,0 +1,145 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-17920
+title: The static extra-forbid scanner follows custom Pydantic bases named Protocol, Generic or ABC
+summary: The static resolver behind the extra-forbid gate skipped any base whose final simple name was
+  Protocol, Generic, ABC or object before it looked at what that name is bound to, so a model class with
+  one of those names, and every model derived from it, was never evaluated. The module index now records
+  module-scope bindings in source order (imports, aliases, assignments, definitions and rebinding), and
+  the resolver exempts a stdlib base only by the origin its name is bound to at that point. The resolver
+  also gains the cycle guard that exemption lookup lacked.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17920-named-bases
+    statement: Custom Pydantic bases named Protocol, Generic or ABC are followed and their derived models
+      are evaluated, while the real typing and abc bases stay exempt.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: direct custom Pydantic bases named `Protocol`, `Generic` or `ABC`, defined in
+          the same module or imported, are followed and their derived models are evaluated -- falsifier:
+          a model derived from such a base is absent from the scan.'
+      - id: AC2
+        statement: 'AC2: the real `typing.Protocol`, `typing.Generic`, `abc.ABC` and `object` stay exempt,
+          including through `import typing`, `import typing as t` and `from typing import Generic as G`
+          -- falsifier: a model with one of them as an extra base is reported UNRESOLVED.'
+      - id: AC3
+        statement: 'AC3: imports, aliases, assignments and definitions are read in source order, so a
+          name rebound to a model is followed and a name rebound away from a model is not -- falsifier:
+          a rebinding fixture is classified by its first or its last binding in the file.'
+      - id: AC4
+        statement: 'AC4: positive aliases, custom direct names, rebinding to a model, rebinding away from
+          a model, rebinding an alias to `object`, multi-base order and cyclic bases all have a regression
+          test -- falsifier: any of those cases has no test or the scan does not terminate.'
+      - id: AC5
+        statement: 'AC5: the static and runtime modes return the same findings for the fixture, and the
+          static mode does not import the scanned module -- falsifier: the two modes differ, or a marker
+          written at import time exists after a static scan.'
+      - id: AC6
+        statement: 'AC6: the ordered-MRO and cycle behaviour of OMN-17903 and OMN-17906 and every other
+          existing extra-forbid test is unchanged -- falsifier: a test in the extra-forbid test module
+          fails, or the static findings for src/omnibase_core change.'
+      - id: AC7
+        statement: 'AC7: ruff, strict mypy, the extra-forbid pre-commit hook and the focused tests pass
+          -- falsifier: any of them fails on the PR head.'
+evidence_requirements:
+  - kind: tests
+    description: The extra-forbid test module, including the OMN-17920 named-base cases.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17920-ac1-custom-named-bases-followed
+    description: Imported and locally defined custom Protocol, Generic and ABC models are followed.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -k 'omn17920
+          and (custom_named_bases_are_followed or custom_named_base_alias or inherits_explicit_config)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn17920-ac2-stdlib-bases-exempt
+    description: The real typing and abc bases stay exempt through every import spelling.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -k 'omn17920
+          and (stdlib_generic_and_abc_remain_exempt or stdlib_protocol_and_object_remain_exempt)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn17920-ac3-source-order
+    description: Rebinding in either direction and redefinition after an import follow the latest binding.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -k 'omn17920
+          and (rebinding or redefined)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn17920-ac4-regression-matrix
+    description: The alias, direct-name, rebinding, multi-base and cyclic cases all run.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -k 'omn17920
+          and (alias or among_several_bases or rebinding or cyclic or locally)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn17920-ac5-static-runtime-parity
+    description: Static and runtime scans agree and the static scan imports nothing.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -k 'omn17920
+          and (agree_on_named_bases or does_not_import)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn17920-ac6-existing-behaviour
+    description: The whole extra-forbid test module, which carries the baseline-matches-the-tree check,
+      passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn17920-ac7-lint-types-tests
+    description: Ruff and strict mypy pass on the changed validation modules, the focused regression tests
+      pass, and the extra-forbid hook command accepts the source tree.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run ruff check src/omnibase_core/validation tests/unit/validators/test_pydantic_extra_forbid.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run mypy src/omnibase_core/validation/pydantic_module_index.py src/omnibase_core/validation/pydantic_static_resolver.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run --frozen python -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified
+          :staged src/omnibase_core
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn17920-deploy-hosted-readback
+    description: Hosted deploy probe. omnibase_core is a library with no runtime lane, so the proof runs
+      the gate as production wires it, through scan_paths in static mode over a custom Protocol-named
+      base, and fails if the derived model is missing.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -k 'omn17920_custom_named_bases_are_followed_when_imported
+          and static'
+        cwd: ${OMNI_HOME}/omnibase_core

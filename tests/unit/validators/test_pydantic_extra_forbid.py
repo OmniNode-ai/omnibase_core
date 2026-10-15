@@ -1134,3 +1134,420 @@ def test_waiver_expiring_within_horizon_fails_the_pull_request(tmp_path: Path) -
     expired_active, expired = load_waivers(waivers, date(2026, 10, 1))
     assert expired_active == set()
     assert any("EXPIRED" in error for error in expired)
+
+
+# ===========================================================================
+# Base provenance: custom bases named Protocol / Generic / ABC (OMN-17920)
+# ===========================================================================
+def _model_findings(
+    paths: list[Path], *, use_runtime: bool
+) -> dict[str, tuple[str, str | None]]:
+    return {
+        f.class_name: (f.status, f.effective_extra)
+        for f in scan_paths(paths, use_runtime=use_runtime)
+    }
+
+
+_CUSTOM_NAMED_BASES = (
+    "from pydantic import BaseModel\n"
+    "\n"
+    "class Protocol(BaseModel):\n"
+    "    pass\n"
+    "\n"
+    "class Generic(BaseModel):\n"
+    "    pass\n"
+    "\n"
+    "class ABC(BaseModel):\n"
+    "    pass\n"
+)
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_custom_named_bases_are_followed_when_imported(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    """Imported custom ``Protocol``/``Generic``/``ABC`` models are not skipped by name."""
+    bases = _pkg(tmp_path, "named_bases", _CUSTOM_NAMED_BASES)
+    child = _pkg(
+        tmp_path,
+        "named_children",
+        "from .named_bases import ABC, Generic, Protocol\n"
+        "\n"
+        "class ChildProtocol(Protocol):\n"
+        "    field: str\n"
+        "\n"
+        "class ChildGeneric(Generic):\n"
+        "    field: str\n"
+        "\n"
+        "class ChildABC(ABC):\n"
+        "    field: str\n",
+    )
+    statuses = _statuses([bases, child], use_runtime=use_runtime)
+    for name in ("ChildProtocol", "ChildGeneric", "ChildABC"):
+        assert statuses[name] == STATUS_IMPLICIT_DEFAULT, name
+    assert {"ChildProtocol", "ChildGeneric", "ChildABC"} <= _violations(
+        [bases, child], use_runtime=use_runtime
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_custom_named_bases_are_followed_when_defined_locally(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    module = _pkg(
+        tmp_path,
+        "named_local",
+        _CUSTOM_NAMED_BASES + "\n"
+        "class ChildProtocol(Protocol):\n"
+        "    field: str\n"
+        "\n"
+        "class ChildGeneric(Generic):\n"
+        "    field: str\n"
+        "\n"
+        "class ChildABC(ABC):\n"
+        "    field: str\n",
+    )
+    statuses = _statuses([module], use_runtime=use_runtime)
+    for name in ("ChildProtocol", "ChildGeneric", "ChildABC"):
+        assert statuses[name] == STATUS_IMPLICIT_DEFAULT, name
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_custom_named_base_alias_is_followed(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    bases = _pkg(tmp_path, "alias_bases", _CUSTOM_NAMED_BASES)
+    child = _pkg(
+        tmp_path,
+        "alias_children",
+        "from .alias_bases import Protocol as CustomProtocol\n"
+        "\n"
+        "class ChildAlias(CustomProtocol):\n"
+        "    field: str\n",
+    )
+    assert _statuses([bases, child], use_runtime=use_runtime)["ChildAlias"] == (
+        STATUS_IMPLICIT_DEFAULT
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_custom_named_base_inherits_explicit_config(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    """A custom ``Protocol`` that declares ``forbid`` makes its children compliant."""
+    bases = _pkg(
+        tmp_path,
+        "forbid_bases",
+        "from pydantic import BaseModel, ConfigDict\n"
+        "\n"
+        "class Protocol(BaseModel):\n"
+        '    model_config = ConfigDict(extra="forbid")\n',
+    )
+    child = _pkg(
+        tmp_path,
+        "forbid_children",
+        "from .forbid_bases import Protocol\n"
+        "\n"
+        "class ChildCompliant(Protocol):\n"
+        "    field: str\n",
+    )
+    assert _statuses([bases, child], use_runtime=use_runtime)["ChildCompliant"] == (
+        STATUS_EXPLICIT_FORBID
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_custom_named_base_is_followed_among_several_bases(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    """A custom ``Protocol`` model is found whatever its position among the bases."""
+    bases = _pkg(
+        tmp_path,
+        "multi_bases",
+        "from pydantic import BaseModel, ConfigDict\n"
+        "\n"
+        "class Protocol(BaseModel):\n"
+        '    model_config = ConfigDict(extra="forbid")\n'
+        "\n"
+        "class Mixin:\n"
+        "    pass\n",
+    )
+    child = _pkg(
+        tmp_path,
+        "multi_children",
+        "from .multi_bases import Mixin, Protocol\n"
+        "\n"
+        "class ModelFirst(Protocol, Mixin):\n"
+        "    field: str\n"
+        "\n"
+        "class ModelLast(Mixin, Protocol):\n"
+        "    field: str\n",
+    )
+    findings = _model_findings([bases, child], use_runtime=use_runtime)
+    assert findings["ModelFirst"] == (STATUS_EXPLICIT_FORBID, "forbid")
+    assert findings["ModelLast"] == (STATUS_EXPLICIT_FORBID, "forbid")
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_rebinding_a_stdlib_name_to_a_model_is_followed(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    """``Protocol = CustomModel`` after the import rebinds the name to the model."""
+    bases = _pkg(
+        tmp_path,
+        "rebind_to_bases",
+        "from pydantic import BaseModel\n\nclass CustomProtocol(BaseModel):\n    pass\n",
+    )
+    child = _pkg(
+        tmp_path,
+        "rebind_to_children",
+        "from typing import Protocol\n"
+        "\n"
+        "from .rebind_to_bases import CustomProtocol\n"
+        "\n"
+        "Protocol = CustomProtocol\n"
+        "\n"
+        "class ChildRebound(Protocol):\n"
+        "    field: str\n",
+    )
+    assert _statuses([bases, child], use_runtime=use_runtime)["ChildRebound"] == (
+        STATUS_IMPLICIT_DEFAULT
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_rebinding_a_custom_name_to_the_stdlib_is_not_followed(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    """A later ``from typing import Generic`` replaces the custom ``Generic`` model."""
+    bases = _pkg(tmp_path, "rebind_away_bases", _CUSTOM_NAMED_BASES)
+    child = _pkg(
+        tmp_path,
+        "rebind_away_children",
+        "from typing import TypeVar\n"
+        "\n"
+        "from pydantic import BaseModel\n"
+        "\n"
+        "from .rebind_away_bases import Generic\n"
+        "from typing import Generic\n"
+        "\n"
+        "T = TypeVar('T')\n"
+        "\n"
+        "class ChildStdlib(BaseModel, Generic[T]):\n"
+        "    field: str\n",
+    )
+    assert _statuses([bases, child], use_runtime=use_runtime)["ChildStdlib"] == (
+        STATUS_IMPLICIT_DEFAULT
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_rebinding_a_model_alias_to_object_is_not_followed(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    bases = _pkg(
+        tmp_path,
+        "to_object_bases",
+        "from pydantic import BaseModel, ConfigDict\n"
+        "\n"
+        "class Loose(BaseModel):\n"
+        '    model_config = ConfigDict(extra="allow")\n',
+    )
+    child = _pkg(
+        tmp_path,
+        "to_object_children",
+        "from pydantic import BaseModel\n"
+        "\n"
+        "from .to_object_bases import Loose as Mixin\n"
+        "\n"
+        "Mixin = object\n"
+        "\n"
+        "class ChildPlain(Mixin, BaseModel):\n"
+        "    field: str\n",
+    )
+    assert _statuses([bases, child], use_runtime=use_runtime)["ChildPlain"] == (
+        STATUS_IMPLICIT_DEFAULT
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_a_class_redefined_after_import_uses_the_latest_binding(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    bases = _pkg(tmp_path, "redefine_bases", _CUSTOM_NAMED_BASES)
+    child = _pkg(
+        tmp_path,
+        "redefine_children",
+        "from pydantic import BaseModel, ConfigDict\n"
+        "\n"
+        "from .redefine_bases import Protocol\n"
+        "\n"
+        "class Protocol(BaseModel):\n"
+        '    model_config = ConfigDict(extra="forbid")\n'
+        "\n"
+        "class ChildRedefined(Protocol):\n"
+        "    field: str\n",
+    )
+    assert _statuses([bases, child], use_runtime=use_runtime)["ChildRedefined"] == (
+        STATUS_EXPLICIT_FORBID
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_omn17920_stdlib_generic_and_abc_remain_exempt(
+    tmp_path: Path, use_runtime: bool
+) -> None:
+    """Real ``typing.Generic`` / ``abc.ABC`` never make a base unresolved."""
+    module = _pkg(
+        tmp_path,
+        "stdlib_exempt",
+        "import abc\n"
+        "import typing\n"
+        "import typing as t\n"
+        "from abc import ABC\n"
+        "from typing import Generic as G\n"
+        "from typing import Generic, TypeVar\n"
+        "\n"
+        "from pydantic import BaseModel\n"
+        "\n"
+        "T = TypeVar('T')\n"
+        "\n"
+        "class ViaFrom(BaseModel, Generic[T]):\n"
+        "    field: str\n"
+        "\n"
+        "class ViaAlias(BaseModel, G[T]):\n"
+        "    field: str\n"
+        "\n"
+        "class ViaModule(BaseModel, typing.Generic[T]):\n"
+        "    field: str\n"
+        "\n"
+        "class ViaModuleAlias(BaseModel, t.Generic[T]):\n"
+        "    field: str\n"
+        "\n"
+        "class ViaAbc(BaseModel, ABC):\n"
+        "    field: str\n"
+        "\n"
+        "class ViaAbcModule(BaseModel, abc.ABC):\n"
+        "    field: str\n",
+    )
+    statuses = _statuses([module], use_runtime=use_runtime)
+    assert statuses == dict.fromkeys(
+        (
+            "ViaFrom",
+            "ViaAlias",
+            "ViaModule",
+            "ViaModuleAlias",
+            "ViaAbc",
+            "ViaAbcModule",
+        ),
+        STATUS_IMPLICIT_DEFAULT,
+    )
+
+
+def test_omn17920_stdlib_protocol_and_object_remain_exempt_statically(
+    tmp_path: Path,
+) -> None:
+    """Static-only: ``Protocol`` is never imported, so a metaclass clash is not hit."""
+    module = _pkg(
+        tmp_path,
+        "stdlib_protocol",
+        "import typing\n"
+        "from typing import Protocol\n"
+        "\n"
+        "from pydantic import BaseModel\n"
+        "\n"
+        "class ViaProtocol(BaseModel, Protocol):\n"
+        "    field: str\n"
+        "\n"
+        "class ViaProtocolModule(BaseModel, typing.Protocol):\n"
+        "    field: str\n"
+        "\n"
+        "class ViaObject(BaseModel, object):\n"
+        "    field: str\n"
+        "\n"
+        "class PlainProtocol(Protocol):\n"
+        "    def method(self) -> None: ...\n",
+    )
+    assert _statuses([module], use_runtime=False) == {
+        "ViaProtocol": STATUS_IMPLICIT_DEFAULT,
+        "ViaProtocolModule": STATUS_IMPLICIT_DEFAULT,
+        "ViaObject": STATUS_IMPLICIT_DEFAULT,
+    }
+
+
+def test_omn17920_static_scan_does_not_import_the_scanned_module(
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "imported.marker"
+    bases = _pkg(tmp_path, "noimport_bases", _CUSTOM_NAMED_BASES)
+    child = _pkg(
+        tmp_path,
+        "noimport_children",
+        f"from pathlib import Path\n"
+        f"Path({str(marker)!r}).write_text('imported')\n"
+        "from .noimport_bases import Protocol\n"
+        "\n"
+        "class ChildNoImport(Protocol):\n"
+        "    field: str\n",
+    )
+    assert _statuses([bases, child], use_runtime=False)["ChildNoImport"] == (
+        STATUS_IMPLICIT_DEFAULT
+    )
+    assert not marker.exists()
+
+
+def test_omn17920_cyclic_custom_named_bases_terminate(tmp_path: Path) -> None:
+    module = _pkg(
+        tmp_path,
+        "cyclic_named",
+        "from pydantic import BaseModel\n"
+        "\n"
+        "class ABC(BaseModel):\n"
+        "    pass\n"
+        "\n"
+        "class Left(ABC, Right):\n"
+        "    pass\n"
+        "\n"
+        "class Right(Left):\n"
+        "    pass\n"
+        "\n"
+        "Alias = Alias\n"
+        "\n"
+        "class ViaSelfAlias(Alias):\n"
+        "    pass\n",
+    )
+    findings = _model_findings([module], use_runtime=False)
+    assert "Left" in findings
+    assert "Right" in findings
+
+
+def test_omn17920_static_and_runtime_modes_agree_on_named_bases(
+    tmp_path: Path,
+) -> None:
+    bases = _pkg(tmp_path, "agree_bases", _CUSTOM_NAMED_BASES)
+    child = _pkg(
+        tmp_path,
+        "agree_children",
+        "from typing import TypeVar\n"
+        "\n"
+        "from pydantic import BaseModel\n"
+        "\n"
+        "from .agree_bases import ABC, Generic, Protocol\n"
+        "from .agree_bases import Protocol as Aliased\n"
+        "\n"
+        "class ChildProtocol(Protocol):\n"
+        "    field: str\n"
+        "\n"
+        "class ChildGeneric(Generic):\n"
+        "    field: str\n"
+        "\n"
+        "class ChildABC(ABC):\n"
+        "    field: str\n"
+        "\n"
+        "class ChildAliased(Aliased):\n"
+        "    field: str\n",
+    )
+    paths = [bases, child]
+    assert _model_findings(paths, use_runtime=False) == _model_findings(
+        paths, use_runtime=True
+    )
