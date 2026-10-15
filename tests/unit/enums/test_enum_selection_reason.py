@@ -35,17 +35,21 @@ class TestEnumSelectionReason:
         assert issubclass(EnumSelectionReason, str)
         assert issubclass(EnumSelectionReason, Enum)
 
-    def test_exactly_five_members(self) -> None:
-        """Plan mandates exactly five reasons — no more, no fewer."""
-        values = {member.value for member in EnumSelectionReason}
-        assert values == {
+    def test_members_and_order(self) -> None:
+        """The first five members keep their values and order; TC.1 appends one."""
+        assert [member.value for member in EnumSelectionReason] == [
             "policy_effectiveness",
             "policy_required_factor",
             "experiment_assignment",
             "exploration",
             "fallback_no_score",
-        }
-        assert len(list(EnumSelectionReason)) == 5
+            "policy_scope_rule",
+        ]
+
+    def test_policy_scope_rule_appended_last(self) -> None:
+        """OMN-18531 / TC.1: the profile-declared scope-rule reason."""
+        assert EnumSelectionReason.POLICY_SCOPE_RULE == "policy_scope_rule"
+        assert list(EnumSelectionReason)[-1] is EnumSelectionReason.POLICY_SCOPE_RULE
 
     def test_json_serialization(self) -> None:
         """Test that enum values can be JSON serialized as their string value."""
