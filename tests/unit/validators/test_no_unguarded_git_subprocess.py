@@ -18,6 +18,7 @@ import pytest
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     GIT_LOCATION_ENV_VARS,
     main,
+    scrubbed_git_env,
     validate_paths,
     validate_source,
 )
@@ -220,3 +221,35 @@ def test_main_returns_zero_when_clean(tmp_path: Path) -> None:
     clean = tmp_path / "test_clean.py"
     clean.write_text("x = 1\n", encoding="utf-8")
     assert main([str(clean)]) == 0
+
+
+# ---------------------------------------------------------------------------
+# scrubbed_git_env: cwd is the only authority, an explicit index survives
+# ---------------------------------------------------------------------------
+
+
+def test_scrubbed_git_env_drops_selectors_and_keeps_identity(tmp_path: Path) -> None:
+    environ = {
+        **dict.fromkeys(set(GIT_LOCATION_ENV_VARS) - {"GIT_INDEX_FILE"}, "/elsewhere"),
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_PARAMETERS": "'a.b=c'",
+        "GIT_CEILING_DIRECTORIES": "/x",
+        "GIT_AUTHOR_NAME": "A",
+        "PATH": "/usr/bin",
+    }
+    env = scrubbed_git_env(tmp_path, environ)
+    assert env == {"GIT_AUTHOR_NAME": "A", "PATH": "/usr/bin"}
+
+
+@pytest.mark.parametrize(
+    ("index_file", "expected"),
+    [("/abs/index", "/abs/index"), (".git/alt", "{cwd}/.git/alt")],
+    ids=["absolute", "relative-to-cwd"],
+)
+def test_scrubbed_git_env_keeps_explicit_index_file_absolute(
+    tmp_path: Path, index_file: str, expected: str
+) -> None:
+    env = scrubbed_git_env(
+        tmp_path, {"GIT_DIR": "/elsewhere", "GIT_INDEX_FILE": index_file}
+    )
+    assert env == {"GIT_INDEX_FILE": expected.format(cwd=tmp_path.resolve())}

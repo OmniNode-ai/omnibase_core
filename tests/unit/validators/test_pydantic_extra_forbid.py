@@ -26,6 +26,7 @@ from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_IMPLICIT_DEFAULT,
 )
 from omnibase_core.validators.pydantic_extra_forbid import (
+    changed_line_ranges,
     load_baseline,
     load_waivers,
     main,
@@ -543,7 +544,7 @@ def test_absent_or_empty_mapping_baseline_and_waivers_are_explicit_empty_documen
 # ===========================================================================
 # Modified-model enforcement: touch a broken model -> you must fix it
 # ===========================================================================
-def _git(repo: Path, *args: str) -> None:
+def _git(repo: Path, *args: str, extra_env: dict[str, str] | None = None) -> None:
     env = dict(os.environ)
     for key in tuple(env):
         if key.startswith("GIT_CONFIG"):
@@ -557,6 +558,7 @@ def _git(repo: Path, *args: str) -> None:
         "GIT_ALTERNATE_OBJECT_DIRECTORIES",
     ):
         env.pop(key, None)
+    env.update(extra_env or {})
     subprocess.run(
         ["git", *args],
         cwd=repo,
@@ -694,6 +696,165 @@ def test_enforce_modified_fails_closed_on_bad_ref(
     )
     assert exit_code == 1
     assert "failing closed" in capsys.readouterr().err
+
+
+# ===========================================================================
+# OMN-17910: the diff reader takes its repository authority from cwd alone
+# ===========================================================================
+def _init_repo(path: Path, module: str, staged_line: str) -> Path:
+    """A repo with one committed module and ``staged_line`` staged onto it."""
+    (path / "pkg").mkdir(parents=True)
+    _git(path.parent, "init", "-q", str(path))
+    _git(path, "config", "user.email", "t@t.t")
+    _git(path, "config", "user.name", "t")
+    _git(path, "config", "commit.gpgsign", "false")
+    target = path / "pkg" / module
+    target.write_text("A = 1\nB = 2\n", encoding="utf-8")
+    _git(path, "add", "-A")
+    _git(path, "commit", "-qm", "seed")
+    target.write_text(f"A = 1\nB = 2\n{staged_line}\n", encoding="utf-8")
+    _git(path, "add", "-A")
+    return target
+
+
+@pytest.fixture
+def two_repos(tmp_path: Path) -> tuple[Path, Path]:
+    """(target module, other module): each repo has its own staged edit."""
+    target = _init_repo(tmp_path / "target", "target_mod.py", "C = 3")
+    other = _init_repo(tmp_path / "other", "other_mod.py", "VALUE = 'OTHER'")
+    return target, other
+
+
+def _injections(other_repo: Path, tmp_path: Path) -> dict[str, dict[str, str]]:
+    noprefix = tmp_path / "noprefix.gitconfig"
+    noprefix.write_text("[diff]\n\tnoprefix = true\n", encoding="utf-8")
+    return {
+        "GIT_DIR": {"GIT_DIR": str(other_repo / ".git")},
+        "GIT_WORK_TREE": {"GIT_WORK_TREE": str(other_repo)},
+        "GIT_COMMON_DIR": {"GIT_COMMON_DIR": str(other_repo / ".git")},
+        "GIT_OBJECT_DIRECTORY": {
+            "GIT_OBJECT_DIRECTORY": str(other_repo / ".git" / "objects")
+        },
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES": {
+            "GIT_ALTERNATE_OBJECT_DIRECTORIES": str(other_repo / ".git" / "objects")
+        },
+        "GIT_CONFIG_COUNT": {
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": "diff.noprefix",
+            "GIT_CONFIG_VALUE_0": "true",
+        },
+        "GIT_CONFIG_PARAMETERS": {"GIT_CONFIG_PARAMETERS": "'diff.noprefix=true'"},
+        "GIT_CONFIG_GLOBAL": {"GIT_CONFIG_GLOBAL": str(noprefix)},
+    }
+
+
+@pytest.mark.parametrize(
+    "selector",
+    [
+        "GIT_DIR",
+        "GIT_WORK_TREE",
+        "GIT_COMMON_DIR",
+        "GIT_OBJECT_DIRECTORY",
+        "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+        "GIT_CONFIG_COUNT",
+        "GIT_CONFIG_PARAMETERS",
+        "GIT_CONFIG_GLOBAL",
+    ],
+)
+def test_changed_line_ranges_ignores_inherited_repository_authority(
+    two_repos: tuple[Path, Path],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    selector: str,
+) -> None:
+    """An inherited repo/object/config selector never changes which bytes are read."""
+    target, other = two_repos
+    for key, value in _injections(other.parent.parent, tmp_path)[selector].items():
+        monkeypatch.setenv(key, value)
+
+    ranges = changed_line_ranges(":staged", target.parent.parent)
+
+    assert ranges == {target.resolve(): [(3, 3)]}
+
+
+def test_changed_line_ranges_ref_mode_ignores_inherited_git_dir(
+    two_repos: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The ``<ref>...HEAD`` form reads the same sanitized repository as ``:staged``."""
+    target, other = two_repos
+    _git(target.parent.parent, "commit", "-qm", "staged edit")
+    monkeypatch.setenv("GIT_DIR", str(other.parent.parent / ".git"))
+
+    assert changed_line_ranges("HEAD~1", target.parent.parent) == {
+        target.resolve(): [(3, 3)]
+    }
+
+
+@pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
+def test_explicit_git_index_file_is_still_honoured(
+    two_repos: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, relative: bool
+) -> None:
+    """A hook's temporary index (``git commit <path>``) selects the staged side."""
+    target, _ = two_repos
+    repo = target.parent.parent
+    real_index = repo / ".git" / "index"
+    alt_index = repo / ".git" / "alt-index"
+    alt_index.write_bytes(real_index.read_bytes())
+    extra = repo / "pkg" / "extra.py"
+    extra.write_text("X = 1\n", encoding="utf-8")
+    _git(repo, "add", "pkg/extra.py", extra_env={"GIT_INDEX_FILE": str(alt_index)})
+    real_before, alt_before = real_index.read_bytes(), alt_index.read_bytes()
+
+    assert set(changed_line_ranges(":staged", repo)) == {target.resolve()}
+
+    monkeypatch.setenv(
+        "GIT_INDEX_FILE", ".git/alt-index" if relative else str(alt_index)
+    )
+    assert set(changed_line_ranges(":staged", repo)) == {
+        target.resolve(),
+        extra.resolve(),
+    }
+    assert real_index.read_bytes() == real_before
+    assert alt_index.read_bytes() == alt_before
+
+
+def test_main_enforce_modified_ignores_inherited_git_dir(
+    two_repos: tuple[Path, Path],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """End to end: the gate judges the target repo's staged edit, not the other's."""
+    target, other = two_repos
+    repo = target.parent.parent
+    target.write_text(
+        "from pydantic import BaseModel\n\nclass ModelX(BaseModel):\n    a: str\n",
+        encoding="utf-8",
+    )
+    _git(repo, "add", "-A")
+    from omnibase_core.validation.pydantic_module_index import module_for_path
+
+    baseline = _write_baseline(
+        tmp_path / "baseline.yaml", [f"{module_for_path(target)[0]}:ModelX"]
+    )
+    waivers = _empty_waivers(tmp_path / "waivers.yaml")
+    monkeypatch.chdir(repo)
+    monkeypatch.setenv("GIT_DIR", str(other.parent.parent / ".git"))
+
+    exit_code = main(
+        [
+            "pkg",
+            "--baseline",
+            str(baseline),
+            "--waivers",
+            str(waivers),
+            "--enforce-modified",
+            ":staged",
+        ]
+    )
+
+    assert exit_code == 1
+    assert "ModelX" in capsys.readouterr().err
 
 
 # ===========================================================================
