@@ -616,8 +616,15 @@ def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
     assert "PostgreSQL\\) 16\\." in tools
     assert 'echo "${pg16_bin}" >> "$GITHUB_PATH"' in tools
     # A runner that cannot install the tools refuses by name, never continues.
-    assert "cannot be installed (no sudo apt-get)" in tools
+    assert "cannot be installed (no sudo apt-get" in tools
     assert "sudo -n apt-get install --yes postgresql-16" in tools
+    # OMN-20413: a runner without sudo apt-get (the self-hosted omnibase-ci
+    # image) extracts PG16 under RUNNER_TEMP before it refuses.
+    assert 'pg_root="${RUNNER_TEMP}/pg16"' in tools
+    assert "install --download-only --yes postgresql-16" in tools
+    assert 'dpkg-deb -x {} "${pg_root}"' in tools
+    assert 'pg16_bin="${pg_root}/usr/lib/postgresql/16/bin"' in tools
+    assert '>> "$GITHUB_ENV"' in tools
     export = _step(PG_ENV_STEP)
     assert export["env"] == {
         "POSTGRES_PORT": "${{ job.services.postgres.ports['5432'] }}"

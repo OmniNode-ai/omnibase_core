@@ -679,6 +679,14 @@ jobs:
       # temporary directory) needs the PG16 server tools on PATH. Fail here,
       # before any verdict, when they are missing: a database test that cannot
       # start its database is a control that did not run, never a pass.
+      # OMN-20413: the self-hosted omnibase-ci image ships no PG16 and grants
+      # the runner no sudo apt-get, so on it this step refused every same-repo
+      # pull request whatever it changed (omninode_infra#1896, #1897, #1898).
+      # Without root, apt downloads postgresql-16 and the dependencies the image
+      # lacks into a runner-owned state directory under RUNNER_TEMP, and
+      # dpkg-deb extracts them there; no package script runs and nothing outside
+      # RUNNER_TEMP is written. The step still refuses by name when neither
+      # path yields a working PG16 initdb.
       - name: Provide the PostgreSQL 16 server tools
         id: pg_tools
         continue-on-error: ${{ inputs.shadow == 'true' }}
@@ -687,14 +695,42 @@ jobs:
           set -euo pipefail
           pg16_bin=/usr/lib/postgresql/16/bin
           if [ ! -x "${pg16_bin}/initdb" ]; then
-            # The GitHub-hosted image this job routes to today lets the runner
-            # install packages. The self-hosted omnibase-ci image does not grant
-            # apt-get, so a routing flip to it needs PG16 baked into that image;
-            # until then this step refuses by name rather than letting a native
-            # cluster test skip, which would read as a pass.
-            if ! { sudo -n apt-get update && sudo -n apt-get install --yes postgresql-16; }; then
-              echo "::error::the PostgreSQL 16 server tools are absent from this runner and cannot be installed (no sudo apt-get); bake PG16 into the runner image before routing dod-verify to it"
-              exit 1
+            if sudo -n true 2>/dev/null && sudo -n apt-get update && sudo -n apt-get install --yes postgresql-16; then
+              echo "Installed PostgreSQL 16 server tools with sudo apt-get"
+            else
+              pg_root="${RUNNER_TEMP}/pg16"
+              apt_dir="${RUNNER_TEMP}/pg16-apt"
+              rm -rf "${pg_root}" "${apt_dir}"
+              mkdir -p "${pg_root}" "${apt_dir}/lists/partial" "${apt_dir}/archives/partial" "${apt_dir}/preferences.d"
+              codename="$(. /etc/os-release && echo "${VERSION_CODENAME}")"
+              if ! {
+                curl -fsSL --retry 3 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o "${apt_dir}/pgdg.asc" &&
+                { cat /etc/apt/sources.list &&
+                  echo "deb [signed-by=${apt_dir}/pgdg.asc] https://apt.postgresql.org/pub/repos/apt ${codename}-pgdg main"
+                } > "${apt_dir}/sources.list" &&
+                apt_opts=(
+                  -o Debug::NoLocking=1
+                  -o Dir::State::Lists="${apt_dir}/lists"
+                  -o Dir::Cache="${apt_dir}"
+                  -o Dir::Cache::archives="${apt_dir}/archives"
+                  -o Dir::Etc::sourcelist="${apt_dir}/sources.list"
+                  -o Dir::Etc::sourceparts=-
+                  -o Dir::Etc::preferencesparts="${apt_dir}/preferences.d"
+                  -o APT::Install-Recommends=false
+                  -o Acquire::Retries=3
+                ) &&
+                apt-get "${apt_opts[@]}" update &&
+                apt-get "${apt_opts[@]}" install --download-only --yes postgresql-16 &&
+                find "${apt_dir}/archives" -maxdepth 1 -name '*.deb' -print0 | xargs -0 -r -I{} dpkg-deb -x {} "${pg_root}"
+              }; then
+                echo "::error::the PostgreSQL 16 server tools are absent from this runner and cannot be installed (no sudo apt-get, and the rootless PGDG download into RUNNER_TEMP failed)"
+                exit 1
+              fi
+              pg16_bin="${pg_root}/usr/lib/postgresql/16/bin"
+              pg16_lib="${pg_root}/usr/lib/$(uname -m)-linux-gnu"
+              export LD_LIBRARY_PATH="${pg16_lib}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}"
+              echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}" >> "$GITHUB_ENV"
+              echo "Extracted PostgreSQL 16 server tools into ${pg_root} without root"
             fi
           fi
           for tool in initdb pg_ctl psql; do
