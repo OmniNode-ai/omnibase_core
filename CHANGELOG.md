@@ -1,3 +1,24 @@
+## v0.47.44 (2026-10-15)
+
+### Release
+- Cut omnibase-core from dev at 0.47.44 by the scheduled release train.
+- 12 release-relevant commit(s) merged since v0.47.43.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.43
+- feat: context-source contract models for plan task TC.1 (core half) (#1988)
+- feat: add named_tests wire models for delegation (#1985)
+- perf: lazy-load onex.cli extension entry points in CLI (#1981)
+- feat: add developer.principal overlay key, models, and validation (#1983)
+- chore: remove unused evidence validators after rebase (#1978)
+- chore(deps-dev): update ruff requirement from <0.17.0,>=0.14.13 to >=0.14.13,<0.18.0 (#1976)
+- fix: the sprint roll moves project, milestone and due date together and reads them back (#1975)
+- chore: remove the change-control evidence mode from receipt-gate (#1974)
+- ci: drop the remaining onex_change_control references nothing needs (S10) (#1971)
+- fix: drop the onex_change_control boundary from the kafka manifest (#1972)
+- chore: delete the deploy gate reusable no caller uses (S9) (#1970)
+- build: drop the unused onex_change_control dev dependency (#1967)
+
 ## v0.47.43 (2026-10-13)
 
 ### Release
