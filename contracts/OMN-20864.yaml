@@ -1,0 +1,66 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20864
+title: The canonical-file-shape ratchet refuses growth of a baselined mod script
+summary: Operator ruling 2026-10-15T08:14:15Z asks for canonical shapes for all mod work. The ratchet
+  refused a new code file outside a canonical location but let a baselined hook or plugin script keep
+  growing, so new mod behaviour could still land as legacy-shape script code. The ratchet now refuses
+  a baselined code file under plugins/, .claude/ or a hooks/ directory that has more code lines than at
+  the base revision, and names the contract, node and handler route.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20864-mod-file-growth
+    statement: A baselined mod script may shrink or stay the same size; growth in code lines is refused
+      by the canonical-file-shape ratchet, and nothing outside a mod surface is judged.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the ratchet reports mod-file-growth when a baselined script under a mod surface
+          gains a code line, including through a rename -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py
+          -q --no-cov -n 0 -k 'mod_file_growth' fails because the grown script yields no mod-file-growth
+          finding"
+      - id: AC2
+        statement: "AC2: a shrink, a comment or blank line, an equal-size edit and growth outside a mod
+          surface are all accepted -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py
+          -q --no-cov -n 0 -k 'mod_file_shrink or mod_file_comment or mod_file_equal or not_in_scope or
+          mod_surface_paths' reports a mod-file-growth finding"
+evidence_requirements:
+  - kind: tests
+    description: The mod-file-growth tests fail at the merge base, where the rule does not exist, and
+      pass at the head.
+    command: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20864-ac1-growth-refused
+    description: Growth of a baselined mod script, in place or through a rename, is refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+          -k mod_file_growth
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn20864-ac2-controls-accepted
+    description: A shrink, a comment or blank line, an equal-size edit and growth outside a mod surface
+      are accepted.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+          -k "mod_file_shrink or mod_file_comment or mod_file_equal or not_in_scope or mod_surface_paths"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn20864-deploy-hosted-ratchet
+    description: Hosted deploy probe for the packaged ratchet module. The mod-file-growth rule refuses
+      the grown script and the shrink control passes.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+          -k "mod_file or mod_surface"
+        cwd: ${OMNI_HOME}/omnibase_core
