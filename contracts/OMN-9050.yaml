@@ -1,0 +1,37 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-9050
+title: omnibase_core pin bump declares one pin site for omnidash
+summary: >-
+  omnidash pins omnibase_core in check-handshake.yml, type-sync-check.yml and onex-schema-compat.yml.
+  The bot rewrote the first two and never the third, so every omnidash PR failed ONEX Schema Compatibility
+  Check after each bump. omnidash now reads the handshake's pin from the other two workflows, so the manifest
+  declares check-handshake.yml as omnidash's only pin site.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omnidash-one-pin-site
+    statement: The pin-bump manifest declares only the file omnidash pins omnibase_core in.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the shipped manifest lists check-handshake.yml as omnidash''s only pin site,
+          so the bot rewrites one file whose pin the other workflows read. -- falsifier: uv run pytest
+          tests/unit/scripts/test_pin_bump.py -q -k omnidash'
+evidence_requirements:
+  - kind: tests
+    description: The shipped manifest declares one omnidash pin site.
+    command: uv run pytest tests/unit/scripts/test_pin_bump.py -q -k omnidash
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn-9050-ac1
+    description: The shipped manifest lists check-handshake.yml as omnidash's only pin site.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/test_pin_bump.py -q -k omnidash_has_one_pin_site
+        cwd: ${OMNI_HOME}/omnibase_core
