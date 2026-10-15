@@ -1294,8 +1294,9 @@ def test_awkward_filenames_are_not_silently_dropped_by_the_gate(
 
 
 def test_worktree_ref_does_not_touch_the_index(
-    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    """Preserve the index while rejecting a modified model, not an invalid ref."""
     module, baseline, waivers = _seed_baselined(git_repo)
     monkeypatch.chdir(git_repo)
     module.write_text(BROKEN_EDITED, encoding="utf-8")
@@ -1304,6 +1305,10 @@ def test_worktree_ref_does_not_touch_the_index(
 
     assert _run_gate(baseline, waivers, ":worktree") == 1
 
+    err = capsys.readouterr().err
+    assert "MODIFIED" in err
+    assert "ModelTouched" in err
+    assert "ModelUntouched" not in err
     assert index.read_bytes() == before
     staged = subprocess.run(
         ["git", "diff", "--cached", "--name-only"],
