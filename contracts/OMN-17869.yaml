@@ -44,7 +44,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
-  - id: dod-omn17869-ac2-effect-workflows-complete-under-werror
+  - id: dod-omn17869-ac2-effect-workflows-werror
     description: Sequential and parallel effect-step workflows complete with warnings as errors.
     source: manual
     checks:
