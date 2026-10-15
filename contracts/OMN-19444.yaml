@@ -67,7 +67,9 @@ dod_evidence:
           set -eu
           probe_dir="$(mktemp -d)"
           trap 'rm -rf "$probe_dir"' EXIT
-          uv run --frozen python - "$probe_dir" <<'PY'
+          uv sync --frozen
+          export PATH="$PWD/.venv/bin:$PATH"
+          python - "$probe_dir" <<'PY'
           import sys
           from pathlib import Path
 
@@ -90,9 +92,9 @@ dod_evidence:
           )
           PY
           export PYTHONPATH="$probe_dir${PYTHONPATH:+:$PYTHONPATH}"
-          help_output="$(uv run --frozen onex delegate --help)"
+          help_output="$(onex delegate --help)"
           printf '%s\n' "$help_output" | grep -Fq 'Lazy extension deploy probe'
-          if uv run --frozen onex omn19444-broken --help >"$probe_dir/broken.log" 2>&1; then
+          if onex omn19444-broken --help >"$probe_dir/broken.log" 2>&1; then
             printf '%s\n' 'Resolving the broken extension unexpectedly succeeded' >&2
             exit 1
           fi
