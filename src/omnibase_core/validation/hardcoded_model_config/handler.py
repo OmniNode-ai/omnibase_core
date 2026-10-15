@@ -16,7 +16,8 @@ Families (the policy decides which apply to a path):
 * ``E``: an inference endpoint: a URL literal ending in one of the policy's
   ``/v1/...`` paths, a URL-valued literal assigned to one of the policy's
   endpoint keys, or a URL default of ``os.getenv``/``os.environ.get``.
-* ``E-LAN``: an RFC 1918 host inside a URL, or any literal on our own lab subnet.
+* ``E-LAN``: an RFC 1918 address in a literal (inside a URL or bare), or any
+  literal on our own lab subnet.
 * ``D``: a lab deployment fact, a lab host name or a lab port the policy carries
   (OMN-21147), matched as a whole value in code. Comments and docstrings are
   skipped.
@@ -79,6 +80,9 @@ _URL: Final[str] = r"[A-Za-z][A-Za-z0-9+.\-]*://[^\s\"'<>`]+"
 _URL_HOST_IPV4: Final[re.Pattern[str]] = re.compile(
     r"[A-Za-z][A-Za-z0-9+.\-]*://(?:[^\s/@\"'<>`]*@)?"
     r"(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\d.])"
+)
+_BARE_IPV4: Final[re.Pattern[str]] = re.compile(
+    r"(?<![\w.])(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(?![\w.])"
 )
 _ENV_READ_DEFAULT: Final[re.Pattern[str]] = re.compile(
     r"\bos\.(?:getenv|environ\.get)\(\s*[^,()]+,\s*[rbuRBU]?[\"'](?P<url>" + _URL + r")"
@@ -288,6 +292,9 @@ def _is_rfc1918(octets: Iterable[str]) -> bool:
 
 def _first_private_url_host(text: str) -> str | None:
     for match in _URL_HOST_IPV4.finditer(text):
+        if _is_rfc1918(match.groups()):
+            return match.group(0)
+    for match in _BARE_IPV4.finditer(text):
         if _is_rfc1918(match.groups()):
             return match.group(0)
     return None

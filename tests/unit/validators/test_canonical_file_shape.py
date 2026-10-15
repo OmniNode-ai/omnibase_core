@@ -291,6 +291,7 @@ def test_new_exception_file_refused(repo: Path) -> None:
 
 
 GATE_BASELINE = ".onex_ratchets/direct_model_call_baseline.yaml"
+CORE_URL = "https://github.com/OmniNode-ai/omnibase_core"
 
 
 def _gate_config(
@@ -444,6 +445,123 @@ def test_incomplete_boundary_baseline_argument_does_not_declare_default() -> Non
         "    hooks:\n      - id: check-node-boundary-imports\n        args: [--baseline]\n"
     )
     assert declared_gate_baselines(config) == frozenset()
+
+
+MODEL_CONFIG_BASELINE = "config/hardcoded_model_config_baseline.yaml"
+MODEL_CONFIG_MODULE = (
+    "omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config"
+)
+
+
+def _model_config_config(args: str = "", url: str = CORE_URL) -> str:
+    return (
+        "repos:\n"
+        f"  - repo: {url}\n"
+        "    hooks:\n"
+        "      - id: check-hardcoded-model-config-compute\n" + args
+    )
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ("", MODEL_CONFIG_BASELINE),
+        ("        args: [--baseline, cfg/model.yaml]\n", "cfg/model.yaml"),
+        ("        args: ['--baseline=cfg/model.yaml']\n", "cfg/model.yaml"),
+    ],
+)
+def test_hardcoded_model_config_gate_declares_its_baseline(
+    args: str, expected: str
+) -> None:
+    """OMN-21147: the model-config guard is a declared shrink-only gate."""
+    assert declared_gate_baselines(_model_config_config(args)) == frozenset({expected})
+
+
+def test_hardcoded_model_config_gate_baseline_may_shrink(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _model_config_config())
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n  - b\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gate")
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_hardcoded_model_config_gate_owns_its_growth(repo: Path) -> None:
+    """Growth is judged by the gate itself (``--base``), never admitted here.
+
+    The ratchet stops counting the file's entries; the guard's own ``--base``
+    comparison refuses an entry for a line the change adds.
+    """
+    _write(repo, ".pre-commit-config.yaml", _model_config_config())
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gate")
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_hardcoded_model_config_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_hardcoded_model_config_local_hook_in_consumer_refused(repo: Path) -> None:
+    config = _model_config_config(
+        f"        entry: python -m {MODEL_CONFIG_MODULE}\n", url="local"
+    )
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def _provider_hooks(entry: str) -> str:
+    return (
+        "- id: check-hardcoded-model-config-compute\n"
+        "  name: guard\n"
+        "  language: python\n"
+        f"  entry: {entry}\n"
+    )
+
+
+def test_provider_local_hook_declares_its_baseline(repo: Path) -> None:
+    """In the repository that provides the hook, its local copy is that hook."""
+    config = _model_config_config(
+        f"        entry: uv run python -m {MODEL_CONFIG_MODULE}\n"
+        f"          --baseline {MODEL_CONFIG_BASELINE}\n",
+        url="local",
+    )
+    _write(
+        repo,
+        ".pre-commit-hooks.yaml",
+        _provider_hooks(f"python -m {MODEL_CONFIG_MODULE}"),
+    )
+    _write(repo, ".pre-commit-config.yaml", config)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "provider")
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_provider_local_hook_running_another_module_refused(repo: Path) -> None:
+    config = _model_config_config(
+        "        entry: python -m some.other.module\n"
+        f"          --baseline {MODEL_CONFIG_BASELINE}\n",
+        url="local",
+    )
+    _write(
+        repo,
+        ".pre-commit-hooks.yaml",
+        _provider_hooks(f"python -m {MODEL_CONFIG_MODULE}"),
+    )
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
 
 
 def test_exception_entry_growth_refused(repo: Path) -> None:
