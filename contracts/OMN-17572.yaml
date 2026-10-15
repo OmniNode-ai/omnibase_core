@@ -1,0 +1,85 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17572
+title: The pydantic-extra-forbid pre-commit hook enforces unstaged working-tree edits
+summary: The pydantic-extra-forbid hook diffed only the index (--enforce-modified :staged), so pre-commit
+  run --all-files on an unstaged edit to a baselined model passed while the same edit staged failed. The
+  validator gains a :worktree reference (working tree against HEAD, staged and unstaged), the hook uses
+  it, the diff reader no longer drops file names git quotes, and a scan path that does not exist fails
+  closed.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17572-worktree-modified-enforcement
+    statement: The hook enforces modified-model rules on the working tree, never mutates the index, and
+      never silently drops a supplied or changed file.
+    acceptance:
+      - id: AC1
+        statement: "AC1: an unstaged edit to a baselined model fails the validator under :worktree and
+          a staged edit fails it too -- falsifier: the unstaged-edit test passes with the hook reverted
+          to :staged"
+      - id: AC2
+        statement: "AC2: an untouched baselined model passes, a new model without extra=forbid fails,
+          and explicit or inherited extra=forbid passes -- falsifier: the new-model test passes with the
+          model's body left without extra=forbid"
+      - id: AC3
+        statement: "AC3: file names with a space, quote, tab, newline or non-ASCII byte are not dropped
+          from the modified-file set, and a scan path that does not exist fails closed -- falsifier: the
+          file-name tests pass with the diff reader parsing patch headers"
+      - id: AC4
+        statement: "AC4: validation does not stage or change the index -- falsifier: the index bytes differ
+          after a :worktree run"
+evidence_requirements:
+  - kind: tests
+    description: Run the pydantic extra-forbid validator tests, which build throwaway git repositories
+      for each staged, unstaged and file-name case.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n 0
+  - kind: ci
+    description: Hosted-runner deploy check; the tests build their own temporary git repositories and
+      read this repository's pre-commit configuration.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n 0 -k "worktree
+      or changed_line_ranges or awkward or nonexistent or precommit_hook"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17572-ac1-unstaged
+    description: An unstaged and a staged edit to a baselined model both fail under :worktree, and the
+      shipped hook passes :worktree.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "unstaged_modification or staged_modification or partly_staged or precommit_hook"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn17572-ac2-ratchet
+    description: Untouched baseline entries pass, a new model without extra=forbid fails, and explicit
+      or inherited extra=forbid passes under :worktree.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "untouched_baselined or new_model_without_forbid or explicit_and_inherited"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn17572-ac3-names
+    description: Awkward file names stay in the modified-file set and a missing scan path fails closed.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "changed_line_ranges_keeps or awkward_filenames or nonexistent_scan_path"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn17572-ac4-index
+    description: The index bytes and the staged file list are unchanged by a :worktree run.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "does_not_touch_the_index"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
