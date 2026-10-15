@@ -791,12 +791,23 @@ def test_changed_line_ranges_ref_mode_ignores_inherited_git_dir(
 
 
 @pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
+@pytest.mark.parametrize(
+    "inherited_git_dir", [False, True], ids=["clean-env", "inherited-git-dir"]
+)
 def test_explicit_git_index_file_is_still_honoured(
-    two_repos: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch, relative: bool
+    two_repos: tuple[Path, Path],
+    monkeypatch: pytest.MonkeyPatch,
+    relative: bool,
+    inherited_git_dir: bool,
 ) -> None:
-    """A hook's temporary index (``git commit <path>``) selects the staged side."""
-    target, _ = two_repos
+    """A hook's index selects staged bytes even with another repository inherited."""
+    target, other = two_repos
     repo = target.parent.parent
+    # Distinct base bytes prevent Git's rename detection from making the
+    # other repository's HEAD look like the target's baseline.
+    other.write_text("DECOY = 'another repository'\n", encoding="utf-8")
+    _git(other.parent.parent, "add", "-A")
+    _git(other.parent.parent, "commit", "-qm", "seed")
     real_index = repo / ".git" / "index"
     alt_index = repo / ".git" / "alt-index"
     alt_index.write_bytes(real_index.read_bytes())
@@ -805,14 +816,16 @@ def test_explicit_git_index_file_is_still_honoured(
     _git(repo, "add", "pkg/extra.py", extra_env={"GIT_INDEX_FILE": str(alt_index)})
     real_before, alt_before = real_index.read_bytes(), alt_index.read_bytes()
 
-    assert set(changed_line_ranges(":staged", repo)) == {target.resolve()}
+    assert changed_line_ranges(":staged", repo) == {target.resolve(): [(3, 3)]}
 
+    if inherited_git_dir:
+        monkeypatch.setenv("GIT_DIR", str(other.parent.parent / ".git"))
     monkeypatch.setenv(
         "GIT_INDEX_FILE", ".git/alt-index" if relative else str(alt_index)
     )
-    assert set(changed_line_ranges(":staged", repo)) == {
-        target.resolve(),
-        extra.resolve(),
+    assert changed_line_ranges(":staged", repo) == {
+        target.resolve(): [(3, 3)],
+        extra.resolve(): [(1, 1)],
     }
     assert real_index.read_bytes() == real_before
     assert alt_index.read_bytes() == alt_before

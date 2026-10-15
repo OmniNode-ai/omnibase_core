@@ -25,8 +25,9 @@ requirements:
           the env= argument removed"
       - id: AC3
         statement: "AC3: an explicit absolute or relative GIT_INDEX_FILE still selects the staged side,
-          resolved against cwd, and the real and alternate index bytes are unchanged -- falsifier: the
-          alternate-index test passes when GIT_INDEX_FILE is scrubbed"
+          resolved against cwd even when GIT_DIR points at another repository, and the real and alternate
+          index bytes are unchanged -- falsifier: the alternate-index test passes when GIT_INDEX_FILE
+          is scrubbed or inherited GIT_DIR is kept"
       - id: AC4
         statement: "AC4: the shared helper drops every location, discovery and GIT_CONFIG* variable, keeps
           identity and PATH, and makes a kept GIT_INDEX_FILE absolute -- falsifier: the helper test passes
@@ -67,8 +68,8 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn17910-ac3-index
-    description: An explicit absolute or relative GIT_INDEX_FILE still selects the staged side and no
-      index bytes change.
+    description: An explicit absolute or relative GIT_INDEX_FILE still selects the staged side even with
+      GIT_DIR pointing at another repository, and no index bytes change.
     source: manual
     checks:
       - check_type: test_passes
