@@ -1,0 +1,98 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19998
+title: Cross-repository dependency-direction check every repository inherits from omnibase_core
+summary: A repository may depend only on repositories at a strictly lower layer of the declared order
+  (src/omnibase_core/contracts/repo_layers.yaml). The check reads Python imports, pyproject dependencies
+  and uv sources, requirements files, Dockerfile installs and clones, workflow checkouts and pins, and
+  scripts that install, clone or fetch, and refuses a dependency at the same or a higher layer that the
+  repository's shrink-only baseline does not record.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19998-direction-across-repositories
+    statement: The dependency-direction handler must fail a dependency on a repository at the same or
+      a higher layer through every channel it reads, and pass a dependency on a lower layer.
+    acceptance:
+      - id: AC1
+        statement: "AC1: An upward or same-layer reference through a Python import, pyproject, a requirements
+          file, a Dockerfile, a workflow checkout or pin, or a script install or clone fails, and each
+          negative control passes. -- falsifier: uv run pytest tests/unit/handlers/test_handler_dependency_direction.py
+          -q"
+      - id: AC2
+        statement: "AC2: The CLI warns on a baselined violation, refuses a baseline entry the base ref
+          does not have, refuses a missing base ref, and writes the report with its run and fire events.
+          -- falsifier: uv run pytest tests/unit/handlers/test_handler_dependency_direction_cli.py -q"
+      - id: AC3
+        statement: "AC3: The canonical-file-shape ratchet counts the baseline the check-dependency-direction
+          hook declares with --baseline as a declared gate baseline, and still refuses an undeclared one.
+          -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k dependency_direction"
+evidence_requirements:
+  - kind: tests
+    description: "Every channel fails upward and same-layer references; negative controls pass."
+    command: "uv run pytest tests/unit/handlers/test_handler_dependency_direction.py -q"
+  - kind: tests
+    description: "The CLI baseline, ratchet, base-ref and report-and-events behaviour."
+    command: "uv run pytest tests/unit/handlers/test_handler_dependency_direction_cli.py -q"
+  - kind: tests
+    description: "The canonical-file-shape ratchet admits the declared gate baseline only."
+    command: "uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k dependency_direction"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-19998-channels
+    description: "An upward or same-layer reference through every channel fails, and each negative control
+      passes."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_dependency_direction.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-19998-cli-ratchet-events
+    description: "The CLI warns on a baselined violation, refuses baseline growth and a missing base ref,
+      and writes the report with its run and fire events."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_dependency_direction_cli.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-19998-declared-gate-baseline
+    description: "The canonical-file-shape ratchet admits the baseline the hook declares and refuses an
+      undeclared one."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k dependency_direction"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn-19998-deploy-hosted-dependency-direction
+    description: Hosted deploy probe for the dependency-direction handler. Read the handler and its rules
+      at the immutable PR implementation commit and compare their bytes with the checked-out product,
+      then run omnibase_core's own tree through the check against its baseline. A missing published file,
+      a different implementation, or a new upward dependency fails the probe.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/142f76653ca70600f1ba2ea7011a276cd7900105/src/omnibase_core/handlers/handler_dependency_direction.py
+          | cmp - src/omnibase_core/handlers/handler_dependency_direction.py'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/142f76653ca70600f1ba2ea7011a276cd7900105/src/omnibase_core/handlers/handler_dependency_direction_rules.py
+          | cmp - src/omnibase_core/handlers/handler_dependency_direction_rules.py'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run check-dependency-direction --repo omnibase_core
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1

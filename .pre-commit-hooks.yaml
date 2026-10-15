@@ -1144,3 +1144,21 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-dependency-direction
+  name: Cross-repository dependency direction (OMN-19998)
+  description: >
+    Refuse a dependency on a repository at the same or a higher layer of the declared order (omnibase_core
+    src/omnibase_core/contracts/repo_layers.yaml; registry Operating Rule 7 plus the 2026-10-15 ruling
+    that omnimarket depends on omnibase_infra, never the reverse) through any channel: Python imports,
+    pyproject dependencies, extras, groups and uv sources, requirements files, Dockerfile installs and
+    clones, workflow checkouts and pins, and scripts that install, clone or fetch another repository.
+    The staged files are checked against the repository's own .onex_ratchets/dependency_direction_baseline.yaml;
+    pre-existing violations recorded there warn, new ones fail. The full tree and the shrink-only baseline
+    ratchet run in CI through .github/workflows/dependency-direction.yml.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_dependency_direction_cli
+  files: (\.py|(^|/)pyproject\.toml|(^|/)(requirements|constraints)[^/]*\.(txt|in)|(^|/)(Dockerfile|Containerfile)[^/]*|\.dockerfile|\.(sh|bash|zsh|mk)|(^|/)(GNU)?Makefile|^\.github/.*\.ya?ml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

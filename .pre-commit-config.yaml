@@ -1776,6 +1776,22 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # Cross-repository dependency direction (OMN-19998). Refuses a staged file
+      # that depends on a repository at the same or a higher layer of the
+      # declared order (src/omnibase_core/contracts/repo_layers.yaml)
+      # unless .onex_ratchets/dependency_direction_baseline.yaml records it. Mirrors the CI step
+      # in the lint-imports job, which also runs the full tree and the
+      # shrink-only baseline ratchet.
+      - id: check-dependency-direction
+        name: Cross-repository dependency direction (OMN-19998)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_dependency_direction_cli
+        language: system
+        args: [--baseline, .onex_ratchets/dependency_direction_baseline.yaml]
+        files: (\.py|(^|/)pyproject\.toml|(^|/)(requirements|constraints)[^/]*\.(txt|in)|(^|/)(Dockerfile|Containerfile)[^/]*|\.dockerfile|\.(sh|bash|zsh|mk)|(^|/)(GNU)?Makefile|^\.github/.*\.ya?ml)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # No localhost/hardcoded-endpoint fallback defaults (OMN-14659). Scope is
       # every Python and shell file: OMN-20565 retired the script hook
       # (scripts/validate_no_env_fallbacks.py) that covered the whole tree, and

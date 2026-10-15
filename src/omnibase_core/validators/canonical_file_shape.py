@@ -49,7 +49,8 @@ This ratchet looks at every tracked file in the repository and refuses:
 
 A declared shrink-only gate baseline is not an exception. The
 ``check-direct-model-call`` (OMN-20295), ``check-node-boundary-imports``
-(OMN-17427) and ``check-hardcoded-model-config-compute`` (OMN-21147) hooks
+(OMN-17427), ``check-hardcoded-model-config-compute`` (OMN-21147) and
+``check-dependency-direction`` (OMN-19998) hooks
 declare paths via ``--baseline`` in the repository's own
 ``.pre-commit-config.yaml``. Only hooks taken from omnibase_core count; local
 hooks do not, except in the repository that provides the hook: there a local
@@ -131,6 +132,7 @@ GATE_HOOK_IDS = (
     "check-direct-model-call",
     "check-node-boundary-imports",
     MODEL_CONFIG_HOOK_ID,
+    "check-dependency-direction",
 )
 NODE_BOUNDARY_BASELINE = ".onex_ratchets/node_boundary_import_baseline.yaml"
 # The manifest default of the model-config hook's ``args`` (OMN-21147).

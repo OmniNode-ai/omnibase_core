@@ -1,0 +1,153 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable cross-repository dependency-direction check for OmniNode repositories
+# (OMN-19998).
+#
+# Runs HandlerDependencyDirection (src/omnibase_core/handlers/) from this repository's own checkout
+# against the CALLER's tree: the caller may depend only on repositories at a lower
+# layer of the declared order (src/omnibase_core/contracts/repo_layers.yaml), through Python
+# imports, pyproject dependencies and uv sources, requirements files, Dockerfile
+# installs and clones, workflow checkouts and pins, and scripts that install, clone
+# or fetch. Pre-existing violations live in the CALLER's own baseline, which may
+# only shrink against the merge base.
+#
+# Usage in a caller repo:
+#
+#   jobs:
+#     dependency-direction:
+#       name: Dependency Direction
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/dependency-direction.yml@<full sha>
+#       with:
+#         baseline-path: .onex_ratchets/dependency_direction_baseline.yaml   # relative to the caller's root
+#
+# The validator version is the caller's pin: omnibase-core-ref defaults to
+# github.job_workflow_sha, the sha of this file as the caller pinned it.
+
+name: Dependency Direction
+
+on:
+  workflow_call:
+    inputs:
+      baseline-path:
+        description: The caller's own baseline, relative to the caller's repository root.
+        required: false
+        type: string
+        default: .onex_ratchets/dependency_direction_baseline.yaml
+      repo:
+        description: >-
+          The caller's repository name as declared in contracts/repo_layers.yaml. Empty means
+          the name of the repository the workflow runs in.
+        required: false
+        type: string
+        default: ""
+      ratchet-base-ref:
+        description: >-
+          Ref the baseline may only shrink against. Empty means the pull request base
+          sha, or the merge-group base sha; a push event has none and the ratchet is
+          skipped.
+        required: false
+        type: string
+        default: ""
+      python-version:
+        description: Python version for the validator runtime.
+        required: false
+        type: string
+        default: "3.12"
+      uv-version:
+        description: uv version for the validator runtime.
+        required: false
+        type: string
+        default: "0.8.3"
+      target-ref:
+        description: Caller repository ref to check out.
+        required: false
+        type: string
+        default: ""
+      omnibase-core-ref:
+        description: >-
+          omnibase_core ref containing the validator. Empty means the sha this
+          workflow file was called at.
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-direction:
+    name: Dependency Direction
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: target
+          ref: ${{ inputs['target-ref'] || github.ref }}
+          fetch-depth: 0
+
+      - name: Checkout omnibase_core validator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ inputs['omnibase-core-ref'] || github.job_workflow_sha }}
+          path: omnibase_core
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ inputs['python-version'] }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: ${{ inputs['uv-version'] }}
+
+      - name: Run dependency-direction check
+        working-directory: omnibase_core
+        env:
+          UV_HTTP_TIMEOUT: "600"
+          UV_SYNC_ATTEMPTS: "3"
+          UV_SYNC_RETRY_DELAY_SECONDS: "10"
+          BASELINE_PATH: ${{ inputs['baseline-path'] }}
+          TARGET_REPO: ${{ inputs.repo || github.event.repository.name }}
+          RATCHET_BASE_REF: >-
+            ${{ inputs['ratchet-base-ref']
+            || github.event.pull_request.base.sha
+            || github.event.merge_group.base_sha }}
+        run: |
+          git config --global http.version HTTP/1.1
+          attempt=1
+          until uv sync --locked --no-dev; do
+            status=$?
+            if [ "$attempt" -ge "$UV_SYNC_ATTEMPTS" ]; then
+              echo "::error::uv sync failed after ${attempt} attempt(s)"
+              exit "$status"
+            fi
+            sleep_seconds=$((UV_SYNC_RETRY_DELAY_SECONDS * attempt))
+            echo "::warning::uv sync attempt ${attempt}/${UV_SYNC_ATTEMPTS} failed with exit ${status}; retrying in ${sleep_seconds}s"
+            sleep "$sleep_seconds"
+            attempt=$((attempt + 1))
+          done
+
+          args=(
+            --root "$GITHUB_WORKSPACE/target"
+            --repo "$TARGET_REPO"
+            --baseline "$BASELINE_PATH"
+            --report-json "$GITHUB_WORKSPACE/dependency-direction-report.json"
+          )
+          if [ -n "$RATCHET_BASE_REF" ]; then
+            args+=(--ratchet-base-ref "$RATCHET_BASE_REF")
+          else
+            echo "::notice::no ratchet base ref (push event): baseline ratchet skipped"
+          fi
+          uv run --no-sync check-dependency-direction "${args[@]}"
