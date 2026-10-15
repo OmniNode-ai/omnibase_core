@@ -1,31 +1,73 @@
 ---
-schema_version: "1.0.0"
+schema_version: 1.0.0
 ticket_id: OMN-18531
-title: "TA.2 Session and tier factors in core: EnumContextFactor gains fifteen members"
-summary: Plan task TA.2 of the Claude Code context and delegation adapter plan, number 1 in the compaction
-  order. EnumContextFactor in omnibase_core gains the six session factors and the nine tier factors, appended
-  in order after the existing five, so the context pack builder can carry operator rulings, open work
-  and the other session state a compaction needs.
+title: Context-source contract (plan task TC.1, core half) and EnumContextFactor session and tier factors
+  (plan task TA.2)
+summary: omnibase_core half of plan task TC.1. Adds ModelContextSourceRequest, ModelContextSourceEntry,
+  ModelContextSourceResult, ModelContextCallerScope, ModelContextAccess and ModelContextSourceSpan, the
+  status, supersession, span-unit and error-code enums, and appends POLICY_SCOPE_RULE to EnumSelectionReason.
+  The omnibase_spi ProtocolContextSource and its layering criterion land in a follow-up PR against the
+  core release that carries these models. Plan task TA.2 of the Claude Code context and delegation adapter
+  plan, number 1 in the compaction order. EnumContextFactor in omnibase_core gains the six session factors
+  and the nine tier factors, appended in order after the existing five, so the context pack builder can
+  carry operator rulings, open work and the other session state a compaction needs.
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
   - omnibase_core.enums.enum_context_factor.EnumContextFactor
 requirements:
+  - id: req-omn18531-tc1-entry-validation
+    statement: Context-source entries refuse a text that does not hash to its text_sha256 and a verbatim
+      claim with no source_ref or span.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the models are frozen with `extra="forbid"`, and an entry whose `text` does not
+          hash to its `text_sha256` fails validation -- falsifier: a fixture entry with a mismatched hash
+          that validates.'
+      - id: AC2
+        statement: 'AC2: an entry marked `verbatim_verified: true` without a `source_ref` or a `span`
+          fails validation -- falsifier: such an entry validates.'
+  - id: req-omn18531-tc1-selection-reason
+    statement: POLICY_SCOPE_RULE is appended to EnumSelectionReason without moving an existing member.
+    acceptance:
+      - id: AC4
+        statement: 'AC4: the existing `EnumSelectionReason` members keep their values and order -- falsifier:
+          enum test.'
+  - id: req-omn18531-tc1-access
+    statement: A context-source request carries the tenant it is made for and cannot be built without
+      it.
+    acceptance:
+      - id: AC5
+        statement: 'AC5: `ModelContextSourceRequest` refuses construction without `access`, and an `access`
+          without `tenant_id` -- falsifier: either validates.'
+  - id: req-omn18531-tc1-result
+    statement: A context-source result carries paging, counts and timings, and a failed response is a
+      typed error, never an empty resolved.
+    acceptance:
+      - id: AC6
+        statement: 'AC6: `ModelContextSourceResult` carries `has_more`, per-source entry counts and per-leg
+          timings as typed fields, and a response that fails validation yields a typed error status, never
+          an empty `resolved` -- falsifier: a result without those fields validates, or an invalid response
+          becomes an empty result.'
   - id: req-omn18531-ta2-factors
     statement: EnumContextFactor carries the session and tier factors in plan order without disturbing
       the existing members or duplicating the meaning of one.
     acceptance:
-      - id: AC1
-        statement: "AC1: the six members of section 4, then the nine of section 4.1, exist, appended in
+      - id: AC7
+        statement: 'AC7: the six members of section 4, then the nine of section 4.1, exist, appended in
           that order after the existing five, with string values equal to their lower-case names -- falsifier:
-          enum test, or an existing member's position changed."
-      - id: AC2
-        statement: "AC2: no member duplicates an existing one's meaning: patterns and exemplars use `ARCHITECTURE_PATTERNS`
-          and `EXEMPLAR` -- falsifier: a new member named for patterns or exemplars."
-      - id: AC3
-        statement: "AC3: `node_context_roi_runner` tests in omnimarket pass unchanged against the new
-          core -- falsifier: any change in its golden output."
+          enum test, or an existing member''s position changed.'
+      - id: AC8
+        statement: 'AC8: no member duplicates an existing one''s meaning: patterns and exemplars use `ARCHITECTURE_PATTERNS`
+          and `EXEMPLAR` -- falsifier: a new member named for patterns or exemplars.'
+      - id: AC9
+        statement: 'AC9: `node_context_roi_runner` tests in omnimarket pass unchanged against the new
+          core -- falsifier: any change in its golden output.'
 evidence_requirements:
+  - kind: tests
+    description: Context-source contract model tests and the EnumSelectionReason test.
+    command: uv run pytest tests/unit/models/context/test_model_context_source_contract.py tests/unit/enums/test_enum_selection_reason.py
+      -q
   - kind: tests
     description: Enum order, value and no-duplicate tests, and the pack schema member set.
     command: uv run pytest tests/unit/enums/test_enum_context_factor.py tests/models/pack/test_context_pack_schema.py
@@ -35,6 +77,76 @@ emergency_bypass:
   justification: ''
   follow_up_ticket_id: ''
 dod_evidence:
+  - id: dod-omn18531-tc1-ac1-frozen-and-hash
+    description: The models are frozen with extra forbid; a mismatched text_sha256 fails validation.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/context/test_model_context_source_contract.py -q
+          -k 'TestFrozenAndForbid or TestEntryHash'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn18531-tc1-ac2-verbatim-needs-source
+    description: verbatim_verified without source_ref or span fails validation.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/context/test_model_context_source_contract.py -q
+          -k 'TestVerbatimVerified'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn18531-tc1-ac4-selection-reason-order
+    description: The six EnumSelectionReason members are in order, the original five unchanged.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/enums/test_enum_selection_reason.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn18531-tc1-ac5-access-required
+    description: A request without access, and an access without a tenant_id, fail validation.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/context/test_model_context_source_contract.py -q
+          -k 'TestAccessAndRequest'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn18531-tc1-ac6-result-typed-error
+    description: The result carries has_more, entry_counts and leg_timings_ms; an invalid response becomes
+      an UNAVAILABLE result with an error code, never an empty resolved.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/context/test_model_context_source_contract.py -q
+          -k 'TestResult'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn18531-tc1-deploy-readback-on-dev
+    description: Deploy probe. omnibase_core is a library, so the live surface for this change is its
+      dev branch. The probe reads the merged result model from dev and fails until the typed error path
+      is there. Run at the local done gate, after merge.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/context/model_context_source_result.py?ref=dev"
+          --jq .content | base64 -d | grep -c -e INVALID_RESPONSE -e from_raw_response
+  - id: dod-omn18531-tc1-deploy-hosted-readback
+    description: Hosted deploy probe. The result-model tests run the invalid-response path as production
+      wires it (from_raw_response over a tampered entry) and assert an UNAVAILABLE result with INVALID_RESPONSE.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/models/context/test_model_context_source_contract.py -q
+          -k 'invalid_response_yields_typed_error_not_empty_resolved or raw_valid_response_round_trips'
+        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18531-ta2-order
     description: The fifteen members exist after the existing five, in plan order, with lower-case name
       values.
@@ -44,7 +156,8 @@ dod_evidence:
         check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -o addopts= --no-cov
           -k "members_in_order or value_is_lower_case_name or existing_members_keep"
         cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac: [AC1]
+    binds_ac:
+      - AC7
   - id: dod-omn18531-ta2-no-duplicates
     description: All fifteen additions exist, and none is named for patterns or exemplars.
     source: manual
@@ -53,11 +166,12 @@ dod_evidence:
         check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -o addopts= --no-cov
           -k no_member_duplicates
         cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac: [AC2]
+    binds_ac:
+      - AC8
   - id: dod-omn18531-ta2-roi-runner
-    description: The expanded enum is present, and the unchanged omnimarket node_context_roi_runner tests
-      pass against this core. The expansion prerequisite makes the compatibility check fail against the
-      original five-member enum instead of accepting a run without the new factors.
+    description: 'Hosted half of AC9: the twenty factors are present and the existing context pack surface
+      the ROI runner consumes still validates and serializes against this core. Fails at the merge base,
+      where the enum has five members.'
     source: manual
     execution_scope: hosted_and_local
     checks:
@@ -65,6 +179,18 @@ dod_evidence:
         check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -o addopts= --no-cov
           -k members_in_order
         cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/models/pack/test_context_pack_schema.py -q -o addopts= --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC9
+  - id: dod-omn18531-ta2-roi-runner-omnimarket
+    description: The unchanged omnimarket node_context_roi_runner tests pass against this core. Needs
+      an omnimarket clone beside this one, which the hosted runner does not check out, so it runs at the
+      local done gate and binds no criterion.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
       - check_type: test_passes
         check_value: OMNIMARKET_ALLOW_PYTHONPATH_OVERRIDE=1 PYTHONPATH=${OMNI_HOME}/omnibase_core/src
           uv run --frozen pytest tests/nodes/node_context_roi_runner/test_handler_context_roi_runner.py
@@ -74,7 +200,6 @@ dod_evidence:
           tests/nodes/node_context_roi_runner/test_context_roi_runner_emits_runtime_observed_rows.py -q
           -o addopts= --no-cov -p no:cacheprovider
         cwd: ${OMNI_HOME}/omnimarket
-    binds_ac: [AC3]
   - id: dod-omn18531-deploy-hosted-pack-schema
     description: Hosted deploy probe for the library. The pack schema and enum tests exercise the twenty
       factors and serialization of the existing context pack surface against this checkout.
