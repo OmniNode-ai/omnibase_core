@@ -17,6 +17,7 @@ from datetime import date
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_direct_model_call_kind import EnumDirectModelCallKind
 from omnibase_core.models.nodes.direct_model_call_check import (
@@ -209,3 +210,78 @@ def test_ratchet_verdict_refuses_growth_against_base() -> None:
 def test_finding_kind_is_the_enum() -> None:
     kinds = {f.kind for f in _scan(_source("s5c.py"), _source("caller.py"))}
     assert kinds == {EnumDirectModelCallKind.CLI_EXEC, EnumDirectModelCallKind.CALL_VIA}
+
+
+def test_expired_baseline_entry_is_refused_and_does_not_cover_its_site() -> None:
+    files = (_source("s6.py", "lab_crush.py"),)
+    findings = _scan(*files)
+    assert findings
+    expired = tuple(
+        _entry(f).model_copy(update={"expires": date(2026, 9, 30)}) for f in findings
+    )
+    verdict = HandlerDirectModelCallCompute().handle(
+        ModelDirectModelCallCheckInput(
+            policy=load_policy(),
+            repo="omnimarket",
+            files=files,
+            today=date(2026, 10, 1),
+            baseline_path="baseline.yaml",
+            baseline=expired,
+        )
+    )
+    assert not verdict.passed
+    assert verdict.expired == expired
+    assert {f.key() for f in verdict.new} == {f.key() for f in findings}
+
+
+@pytest.mark.parametrize("ticket", ["", "TBD", "none", "LIN-1", "OMN-"])
+def test_baseline_entry_without_a_ticket_is_refused(ticket: str) -> None:
+    finding = _scan(_source("s5c.py"))[0]
+    with pytest.raises(ValidationError):
+        _entry(finding, ticket=ticket)
+
+
+def _baseline_text(entry: ModelDirectModelCallBaselineEntry, ticket: str) -> str:
+    return (
+        "schema_version: 1\n"
+        "entries:\n"
+        f"  - path: {entry.path}\n"
+        f"    kind: {entry.kind}\n"
+        f"    symbol: {entry.symbol}\n"
+        f"    target: {entry.target}\n"
+        f"    ticket: '{ticket}'\n"
+        "    expires: '2099-01-01'\n"
+    )
+
+
+def _repo_with_baseline(tmp_path: Path, baseline: str) -> None:
+    _git(tmp_path, "init", "-q")
+    (tmp_path / "s5g.py").write_text((SAMPLES / "s5g.py.txt").read_text("utf-8"))
+    (tmp_path / "baseline.yaml").write_text(baseline)
+    _git(tmp_path, "add", "s5g.py", "baseline.yaml")
+
+
+def test_cli_baseline_file_with_a_ticket_covers_its_site(tmp_path: Path) -> None:
+    entry = _entry(_scan(_source("s5g.py", "s5g.py"))[0])
+    _repo_with_baseline(tmp_path, _baseline_text(entry, "OMN-20290"))
+    argv = ["--repo", "omnimarket", "--repo-root", str(tmp_path)]
+    assert main([*argv, "--baseline", "baseline.yaml"]) == 0
+
+
+@pytest.mark.parametrize("ticket", ["", "TBD", "no ticket"])
+def test_cli_refuses_a_baseline_file_entry_with_no_ticket(
+    tmp_path: Path, ticket: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    entry = _entry(_scan(_source("s5g.py", "s5g.py"))[0])
+    _repo_with_baseline(tmp_path, _baseline_text(entry, ticket))
+    argv = ["--repo", "omnimarket", "--repo-root", str(tmp_path)]
+    assert main([*argv, "--baseline", "baseline.yaml"]) == 1
+    assert "not a valid baseline" in capsys.readouterr().out
+
+
+def test_cli_refuses_a_baseline_file_entry_past_its_expiry(tmp_path: Path) -> None:
+    entry = _entry(_scan(_source("s5g.py", "s5g.py"))[0])
+    text = _baseline_text(entry, "OMN-20290").replace("2099-01-01", "2020-01-01")
+    _repo_with_baseline(tmp_path, text)
+    argv = ["--repo", "omnimarket", "--repo-root", str(tmp_path)]
+    assert main([*argv, "--baseline", "baseline.yaml"]) == 1
