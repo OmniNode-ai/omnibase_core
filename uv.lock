@@ -487,20 +487,20 @@ wheels = [
 
 [[package]]
 name = "dependency-injector"
-version = "4.48.3"
+version = "4.49.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/14/4f7b2d24d3ad50ac399262636cdf4b66b9318bfd0e9de5c61669625dc77c/dependency_injector-4.48.3.tar.gz", hash = "sha256:106e43a6a9959b2c49926edc45bdf07fdc377bc5fa1fd59012741590df30b20c", size = 1129251, upload-time = "2025-12-04T18:43:55.751Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d1/84/5e05c2997a196155b86446d48b9e5b2a055087c574746389fdc3c530f5b5/dependency_injector-4.49.1.tar.gz", hash = "sha256:b4614fa3731ffec00a381aebc1d17317b0a3a407aa679f164a3ea03c347de691", size = 1171204, upload-time = "2026-06-18T17:51:48.221Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b8/d1/bebb2921e1cfdeba992e57c62bcd871f4703fde852b1d64ceb0dd65540ee/dependency_injector-4.48.3-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:37d5b962d9ba67f6536557dec3c83136cefd7a747bbe8ba53b158e34e050bae5", size = 1746065, upload-time = "2025-12-04T18:43:06.655Z" },
-    { url = "https://files.pythonhosted.org/packages/c3/da/068f23d12b55cda6e2d5e7783d1b602aa40f0889f35cf182ecfa1b12f7b8/dependency_injector-4.48.3-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:54aa2b8b8ff057555ab03ee98035eb41120d30f8ec220cf43aa3b117f6b9b1b1", size = 1829780, upload-time = "2025-12-04T18:43:08.497Z" },
-    { url = "https://files.pythonhosted.org/packages/e4/7f/7d5f16a87d6cc4111be41c8593ae6b98ebcdf0dc797c6e08e303ce6155b7/dependency_injector-4.48.3-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:6a1f8d5b7dcf24773c27ddb9beab043753d8e251804f2398468944b93c767a35", size = 1741838, upload-time = "2025-12-04T18:43:10.072Z" },
-    { url = "https://files.pythonhosted.org/packages/ea/1d/251c79858c9ebf53c6d8b51c9a653c794db0392070ab5a8f3f4a298a8b26/dependency_injector-4.48.3-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:7ed11a944f5c84a5ad3f15bc9154f07affae2902967b4e47c74504d4595ed92f", size = 1726565, upload-time = "2025-12-04T18:43:11.892Z" },
-    { url = "https://files.pythonhosted.org/packages/45/92/023bd0b72baf170368323412a911fe31fd1c5cccbd4d399744bdec21cecd/dependency_injector-4.48.3-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:00c7ad5b5b5f9b1616c363770eed8c629a42dd0155b398c4458c949b8c0b9ae0", size = 1820764, upload-time = "2025-12-04T18:43:13.765Z" },
-    { url = "https://files.pythonhosted.org/packages/ef/ae/0f6c65c6f67be9a7bcc18546ad08610b1cb294cef0da3d16502a1b336246/dependency_injector-4.48.3-cp310-abi3-win32.whl", hash = "sha256:2870a3b84ddb2e4b13731b7250b7714f0d4a07f6147a181b3ecbceed061b74f2", size = 1527160, upload-time = "2025-12-04T18:43:15.534Z" },
-    { url = "https://files.pythonhosted.org/packages/ae/74/51e8d051d55ae3b88fb0d94356cc9998e070a8b0cf6c93ef8456b8d05c01/dependency_injector-4.48.3-cp310-abi3-win_amd64.whl", hash = "sha256:d0e6244b3674a48ee2c5b0af29bf20d2b0b5baef806dd1739af9aab9d20f08de", size = 1655409, upload-time = "2025-12-04T18:43:16.901Z" },
+    { url = "https://files.pythonhosted.org/packages/c0/1e/9f3abdf0ac42cac1c319b210aa060669ea9d29f06caf00c27fe72fa5335c/dependency_injector-4.49.1-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:b1b71d6f500c001230a53e5bee01ea01c6d3bb2089f64ecc841b42672924a19a", size = 1771519, upload-time = "2026-06-18T17:50:58.476Z" },
+    { url = "https://files.pythonhosted.org/packages/68/20/fc1812f20ec75af2d4b5e391e93f15621af3102da46142e26177eb506b32/dependency_injector-4.49.1-cp310-abi3-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl", hash = "sha256:10e481880b307a6a438c1cc7b0a1fa8754247239ef5a2e8fe82bd8a1e76e7682", size = 1854593, upload-time = "2026-06-18T17:51:02.069Z" },
+    { url = "https://files.pythonhosted.org/packages/32/ab/b1e1826aacc37d07ba0101230de7b5cbbb5ac6364b78ca3957f0a90d6a51/dependency_injector-4.49.1-cp310-abi3-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:e05da5bc73a3e026f962a223672002934c0f415064b6e2c3db0b255e46c7b521", size = 1767354, upload-time = "2026-06-18T17:51:03.715Z" },
+    { url = "https://files.pythonhosted.org/packages/3e/ab/1d873876e9adb612f8fba1e801820bf5a69cd7d864e01dca81651edd40f6/dependency_injector-4.49.1-cp310-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:5760390d295af0b605aacd02bb8ac2e9fe206f9c4fbe7770d0843a6cbfb9c2cd", size = 1748758, upload-time = "2026-06-18T17:51:05.287Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/ef/d715f4cd2e947fddc4c8763be1c4099793caf38aa1a099b6d621ecfeb768/dependency_injector-4.49.1-cp310-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:ba7e94e4323219c93dac35aabba7efa4e91c9afeac044b1d50bdc66a00a07238", size = 1845636, upload-time = "2026-06-18T17:51:07.023Z" },
+    { url = "https://files.pythonhosted.org/packages/e7/32/03d1e5e0c6b79eaabf2ed4155302df05832e54789cc9f670cc62af20897b/dependency_injector-4.49.1-cp310-abi3-win32.whl", hash = "sha256:5a6e3a0df8cff636da3d7212473e30dff897c5bdbca2dd3049b5363012a495fa", size = 1548655, upload-time = "2026-06-18T17:51:08.721Z" },
+    { url = "https://files.pythonhosted.org/packages/93/51/ce3ca96314f93f44358523cb8cdf81c8c1e002b4e097141e460bc598c87f/dependency_injector-4.49.1-cp310-abi3-win_amd64.whl", hash = "sha256:153f6b8d1db35d1fc9b001e41564a47ab2a7708038fecefadf3afada8ec7f814", size = 1676934, upload-time = "2026-06-18T17:51:10.465Z" },
 ]
 
 [[package]]
@@ -953,7 +953,7 @@ requires-dist = [
     { name = "confluent-kafka", marker = "extra == 'kafka'", specifier = ">=2.12.0,<3.0.0" },
     { name = "cryptography", specifier = ">=50.0.0,<51.0.0" },
     { name = "deepdiff", specifier = ">=8.0.0,<10.0.0" },
-    { name = "dependency-injector", specifier = ">=4.48.3,<5.0.0" },
+    { name = "dependency-injector", specifier = ">=4.49.1,<5.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "jsonschema", specifier = ">=4.25.1,<5.0.0" },
     { name = "omnibase-spi", marker = "extra == 'full'", specifier = ">=0.20.2" },
