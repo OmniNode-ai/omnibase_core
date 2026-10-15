@@ -12,20 +12,25 @@ and is worthless.
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
+from dataclasses import replace
 from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_EXPLICIT_ALLOW,
     STATUS_EXPLICIT_FORBID,
     STATUS_EXPLICIT_IGNORE,
     STATUS_IMPLICIT_DEFAULT,
 )
+from omnibase_core.validators import pydantic_extra_forbid as extra_forbid
 from omnibase_core.validators.pydantic_extra_forbid import (
+    changed_line_ranges,
     load_baseline,
     load_waivers,
     main,
@@ -543,7 +548,13 @@ def test_absent_or_empty_mapping_baseline_and_waivers_are_explicit_empty_documen
 # ===========================================================================
 # Modified-model enforcement: touch a broken model -> you must fix it
 # ===========================================================================
-def _git(repo: Path, *args: str) -> None:
+def _git(
+    repo: Path,
+    *args: str,
+    index: Path | None = None,
+    worktree: Path | None = None,
+    input_data: bytes | None = None,
+) -> bytes:
     env = dict(os.environ)
     for key in tuple(env):
         if key.startswith("GIT_CONFIG"):
@@ -557,14 +568,19 @@ def _git(repo: Path, *args: str) -> None:
         "GIT_ALTERNATE_OBJECT_DIRECTORIES",
     ):
         env.pop(key, None)
-    subprocess.run(
+    if index is not None:
+        env["GIT_INDEX_FILE"] = str(index)
+    if worktree is not None:
+        env["GIT_DIR"] = str(repo / ".git")
+        env["GIT_WORK_TREE"] = str(worktree)
+    return subprocess.run(
         ["git", *args],
         cwd=repo,
         check=True,
         capture_output=True,
-        text=True,
+        input=input_data,
         env=env,
-    )
+    ).stdout
 
 
 @pytest.fixture
@@ -667,6 +683,316 @@ def test_modifying_a_baselined_model_fails(
     assert "ModelTouched" in err
     # The untouched sibling in the same file must NOT be dragged in.
     assert "ModelUntouched" not in err
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "model plain.py",
+        "model\nname.py",
+        "model\tname.py",
+        'model"name.py',
+        "model\\name.py",
+        ":(glob)model.py",
+        "model[1].py",
+        "model*.py",
+        "-model.py",
+        " model.py",
+    ],
+    ids=[
+        "space",
+        "newline",
+        "tab",
+        "quote",
+        "backslash",
+        "magic",
+        "bracket",
+        "star",
+        "dash",
+        "leading-space",
+    ],
+)
+@pytest.mark.parametrize("authority", ["normal", "alternate", "snapshot"])
+def test_modified_model_preserves_git_path_identity(
+    git_repo: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    filename: str,
+    authority: str,
+) -> None:
+    """OMN-17904: path bytes, selected index and resolved scan paths agree."""
+    module = git_repo / filename
+    original = (
+        "from pydantic import BaseModel\n\n"
+        "class ModelUntouched(BaseModel):\n    a: str\n\n"
+        "class ModelTouched(BaseModel):\n    b: str\n"
+    )
+    module.write_text(original, encoding="utf-8")
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    real_index = git_repo / ".git" / "index"
+    before = real_index.read_bytes()
+    selected_index = real_index
+    if authority != "normal":
+        selected_index = tmp_path / "selected-index"
+        selected_index.write_bytes(before)
+        monkeypatch.setenv("GIT_INDEX_FILE", str(selected_index))
+
+    module.write_text(original + "    c: int = 0\n", encoding="utf-8")
+    _git(git_repo, "--literal-pathspecs", "add", "--", filename, index=selected_index)
+    selected_before = Path(os.environ.get("GIT_INDEX_FILE", real_index)).read_bytes()
+    module.write_text(
+        (original + "    c: int = 0\n").replace("a: str", "a: str = 'unstaged'"),
+        encoding="utf-8",
+    )
+    scan_root = git_repo
+    if authority == "snapshot":
+        scan_root = tmp_path / "snapshot"
+        scan_root.mkdir()
+        _git(
+            git_repo,
+            "checkout-index",
+            "--all",
+            f"--prefix={scan_root}/",
+            index=selected_index,
+        )
+        monkeypatch.setenv("GIT_DIR", str(git_repo / ".git"))
+        monkeypatch.setenv("GIT_WORK_TREE", str(scan_root))
+        module = scan_root / filename
+    # A symlinked spelling exercises /var vs /private/var-style path identity
+    # on every runner rather than skipping non-macOS hosts.
+    alias = tmp_path / "scan-alias"
+    alias.symlink_to(scan_root, target_is_directory=True)
+    monkeypatch.chdir(alias)
+    findings = scan_paths([alias / filename], use_runtime=False)
+    baseline = tmp_path / "baseline.yaml"
+    baseline.write_text(
+        json.dumps({"violations": [finding.fqn for finding in findings]}),
+        encoding="utf-8",
+    )
+    args = [
+        str(alias / filename),
+        "--no-runtime",
+        "--baseline",
+        str(baseline),
+        "--waivers",
+        str(_empty_waivers(tmp_path / "waivers.yaml")),
+        "--enforce-modified",
+        ":staged",
+    ]
+    # Unchanged and unrelated baselined models remain a positive control.
+    ranges = changed_line_ranges(":staged", alias)
+    assert ranges == {module.resolve(): [(8, 8)]}
+    assert main(args) == 1
+    err = capsys.readouterr().err
+    assert "MODIFIED" in err
+    assert "ModelTouched" in err
+    assert "ModelUntouched" not in err
+    assert (
+        Path(os.environ.get("GIT_INDEX_FILE", real_index)).read_bytes()
+        == selected_before
+    )
+    if authority != "normal":
+        assert real_index.read_bytes() == before
+
+
+@pytest.mark.parametrize("ref", [":staged", "origin/dev"])
+def test_non_utf8_git_path_bytes_reach_modified_model_gate(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    ref: str,
+) -> None:
+    """Byte transport also runs on macOS filesystems rejecting non-UTF-8 names."""
+    raw_path = b"model_\xff.py"
+    path = tmp_path / os.fsdecode(raw_path)
+    source = _pkg(
+        tmp_path,
+        "source",
+        "from pydantic import BaseModel\nclass ModelTouched(BaseModel):\n    a: str\n",
+    )
+    finding = replace(scan_paths([source], use_runtime=False)[0], path=path)
+    calls: list[list[str]] = []
+
+    def git_bytes(args: list[str], cwd: Path) -> bytes:
+        calls.append(args)
+        if "--name-only" in args:
+            assert "-z" in args
+            return raw_path + b"\0"
+        if "rev-parse" in args:
+            return os.fsencode(tmp_path) + b"\n"
+        assert args[-2:] == ["--", os.fsdecode(raw_path)]
+        assert "--literal-pathspecs" in args
+        # Human-readable path and body bytes cannot participate in attribution.
+        return b'+++ "b/irrelevant\\377.py"\n@@ -2 +2 @@ context\xff\n-\xff\n+\xfe\n'
+
+    monkeypatch.setattr(extra_forbid, "_git_diff_bytes", git_bytes)
+    monkeypatch.setattr(extra_forbid, "scan_paths", lambda *args, **kwargs: [finding])
+    assert changed_line_ranges(ref, tmp_path) == {path.resolve(): [(2, 2)]}
+    baseline = _write_baseline(tmp_path / "baseline.yaml", [finding.fqn])
+    monkeypatch.chdir(tmp_path)
+    assert (
+        main(
+            [
+                str(source),
+                "--baseline",
+                str(baseline),
+                "--waivers",
+                str(_empty_waivers(tmp_path / "waivers.yaml")),
+                "--enforce-modified",
+                ref,
+            ]
+        )
+        == 1
+    )
+    assert "MODIFIED" in capsys.readouterr().err
+    comparison = "--cached" if ref == ":staged" else "origin/dev...HEAD"
+    assert all(comparison in args for args in calls if "diff" in args)
+
+
+@pytest.mark.parametrize("alternate", [False, True], ids=["normal", "alternate"])
+def test_non_utf8_selected_index_entry_is_modified(
+    git_repo: Path,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    alternate: bool,
+) -> None:
+    """Real Git trees/indexes hold raw filenames even on macOS without a checkout."""
+    filename = os.fsdecode(b"model_\xff.py")
+    original = (
+        "from pydantic import BaseModel\n\n"
+        "class ModelUntouched(BaseModel):\n    a: str\n\n"
+        "class ModelTouched(BaseModel):\n    b: str\n"
+    )
+    oid = (
+        _git(git_repo, "hash-object", "-w", "--stdin", input_data=original.encode())
+        .strip()
+        .decode("ascii")
+    )
+    _git(git_repo, "update-index", "--add", "--cacheinfo", f"100644,{oid},{filename}")
+    _git(git_repo, "commit", "-qm", "seed raw pathname")
+    real_index = git_repo / ".git" / "index"
+    before = real_index.read_bytes()
+    selected_index = real_index
+    if alternate:
+        selected_index = tmp_path / "selected-index"
+        selected_index.write_bytes(before)
+        monkeypatch.setenv("GIT_INDEX_FILE", str(selected_index))
+    modified = original.replace(
+        "class ModelTouched(BaseModel):", "class ModelTouched(BaseModel):  # changed"
+    )
+    oid = (
+        _git(git_repo, "hash-object", "-w", "--stdin", input_data=modified.encode())
+        .strip()
+        .decode("ascii")
+    )
+    _git(
+        git_repo,
+        "update-index",
+        "--cacheinfo",
+        f"100644,{oid},{filename}",
+        index=selected_index,
+    )
+    selected_before = selected_index.read_bytes()
+    source = _pkg(tmp_path, "source", modified)
+    findings = [
+        replace(finding, path=git_repo / filename, module=Path(filename).stem)
+        for finding in scan_paths([source], use_runtime=False)
+    ]
+    # A selected-index scanner supplies these findings; avoid attempting to
+    # check out a pathname rejected by the host filesystem.
+    monkeypatch.setattr(extra_forbid, "scan_paths", lambda *args, **kwargs: findings)
+    monkeypatch.chdir(git_repo)
+    assert changed_line_ranges(":staged", git_repo) == {
+        (git_repo / filename).resolve(): [(6, 6)]
+    }
+    baseline = tmp_path / "baseline.yaml"
+    baseline.write_text(
+        json.dumps({"violations": [finding.fqn for finding in findings]}),
+        encoding="utf-8",
+    )
+    assert (
+        main(
+            [
+                str(source),
+                "--baseline",
+                str(baseline),
+                "--waivers",
+                str(_empty_waivers(tmp_path / "waivers.yaml")),
+                "--enforce-modified",
+                ":staged",
+            ]
+        )
+        == 1
+    )
+    err = capsys.readouterr().err
+    assert "MODIFIED" in err
+    assert "ModelTouched" in err
+    assert "ModelUntouched" not in err
+    assert "\\udcff" in err
+    assert selected_index.read_bytes() == selected_before
+    if alternate:
+        assert real_index.read_bytes() == before
+
+
+@pytest.mark.parametrize(
+    ("names", "patch"),
+    [
+        (b"model.py", b""),
+        (b"\0", b""),
+        (b"../model.py\0", b""),
+        (b"/model.py\0", b""),
+        (b"model.py\0", b"@@ -2 +x @@\n"),
+        (b"model.py\0", b"@@ -2 +\xff @@\n"),
+        (b"model.py\0", b"@@ -2 +2\n"),
+        (b"model.py\0", b"@@ -2 +2 @@garbage\n"),
+    ],
+    ids=[
+        "unterminated-name",
+        "empty-name",
+        "parent-path",
+        "absolute-path",
+        "bad-hunk",
+        "undecodable-hunk",
+        "unterminated-hunk",
+        "bad-hunk-end",
+    ],
+)
+def test_malformed_git_diff_metadata_fails_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    names: bytes,
+    patch: bytes,
+) -> None:
+    def git_bytes(args: list[str], cwd: Path) -> bytes:
+        if "--name-only" in args:
+            return names
+        if "rev-parse" in args:
+            return os.fsencode(tmp_path) + b"\n"
+        return patch
+
+    monkeypatch.setattr(extra_forbid, "_git_diff_bytes", git_bytes)
+    with pytest.raises(ModelOnexError):
+        changed_line_ranges(":staged", tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert (
+        main(
+            [
+                str(tmp_path),
+                "--baseline",
+                str(_write_baseline(tmp_path / "baseline.yaml", [])),
+                "--waivers",
+                str(_empty_waivers(tmp_path / "waivers.yaml")),
+                "--enforce-modified",
+                ":staged",
+            ]
+        )
+        == 1
+    )
+    assert "failing closed" in capsys.readouterr().err
 
 
 def test_enforce_modified_fails_closed_on_bad_ref(

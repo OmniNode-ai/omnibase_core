@@ -1,0 +1,123 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17904
+title: Preserve Git pathname identity in extra-forbid modified-model enforcement
+summary: Enumerate changed paths with NUL delimiters and read hunks separately for each literal pathname.
+  Preserve the selected index and resolve scan and diff paths to the same physical root. Escape surrogate
+  characters at the diagnostic boundary.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17904-path-attribution
+    statement: Modified-model enforcement retains exact selected-index path identity and fails closed
+      on malformed metadata.
+    acceptance:
+      - id: AC1
+        statement: NUL-safe changed-path enumeration plus per-path hunk attribution preserves the exact
+          Git pathname end-to-end.
+      - id: AC2
+        statement: 'Regressions: spaces, newline, non-UTF-8/surrogate-escaped filename, and literal pathspec-special
+          characters such as `:(...)`, `[`, `*`, and leading dashes.'
+      - id: AC3
+        statement: A staged changed baselined Pydantic model at each valid pathname is reported MODIFIED
+          and returns 1.
+      - id: AC4
+        statement: Unchanged baselined sibling in the same file is not reported.
+      - id: AC5
+        statement: The selected index (including `GIT_INDEX_FILE` alternate index) remains the sole diff
+          authority; no mutation of the real index.
+      - id: AC6
+        statement: Malformed/undecodable diff metadata fails closed rather than silently returning no
+          ranges.
+      - id: AC7
+        statement: Focused test covers normal, alternate-index, and index-snapshot path identity on macOS
+          `/var` vs `/private/var`.
+evidence_requirements:
+  - kind: tests
+    description: Real Git path and index regressions, byte transport and malformed metadata controls through
+      the modified-model gate.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov --reruns
+      0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17904-ac1
+    description: Real Git C-quoted names retain changed line ranges under literal per-path selection.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k modified_model_preserves_git_path_identity
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn17904-ac2
+    description: Special pathspecs and whitespace use real files; raw non-UTF-8 names use real Git trees
+      and selected indexes without requiring a filesystem checkout.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'modified_model_preserves_git_path_identity or non_utf8'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn17904-ac3
+    description: The public gate entry point reports a modified baselined model and returns 1.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'modified_model_preserves_git_path_identity or non_utf8'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn17904-ac4
+    description: An untouched sibling and an unstaged sibling change are absent from MODIFIED diagnostics.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'modified_model_preserves_git_path_identity or non_utf8_selected_index_entry'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn17904-ac5
+    description: Alternate selected-index changes are detected while both indexes remain byte-for-byte
+      unchanged by validation.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'alternate and (modified_model_preserves_git_path_identity or non_utf8_selected_index_entry)'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
+  - id: dod-omn17904-ac6
+    description: Truncated NUL records, invalid paths and malformed or undecodable hunk coordinates return
+      a failing-closed gate result.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k malformed_git_diff_metadata
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC6]
+  - id: dod-omn17904-ac7
+    description: Normal, alternate-index and checkout-index snapshots resolve physical paths through symlink
+      aliases on every runner, including macOS temporary roots.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k modified_model_preserves_git_path_identity
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC7]
+  - id: dod-omn17904-hosted-deploy-probe
+    description: This library validator has no service rollout. The hosted probe exercises the gate entry
+      point against real staged path and index fixtures and rejects the original quoted-path bypass.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'modified_model_preserves_git_path_identity and newline and normal'
+        cwd: ${OMNI_HOME}/omnibase_core

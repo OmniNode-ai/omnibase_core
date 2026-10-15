@@ -79,6 +79,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import re
 import subprocess
 import sys
 from collections.abc import Iterator, Sequence
@@ -330,15 +332,66 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
     (CI, diffed as ``<ref>...HEAD``). Raises ``ModelOnexError`` on git failure — the
     caller fails closed rather than silently skipping the check.
     """
-    if ref == STAGED_REF:
-        args = ["git", "diff", "--cached", "--unified=0", "--no-color"]
-    else:
-        args = ["git", "diff", "--unified=0", "--no-color", f"{ref}...HEAD"]
-
-    try:
-        proc = subprocess.run(
-            args, cwd=cwd, capture_output=True, text=True, check=False
+    comparison = ["--cached"] if ref == STAGED_REF else [f"{ref}...HEAD"]
+    args = [
+        "git",
+        "--literal-pathspecs",
+        "diff",
+        "--no-ext-diff",
+        "--no-textconv",
+        "--no-renames",
+        "--no-relative",
+        "--no-color",
+        *comparison,
+    ]
+    # Patch headers are for display: even core.quotePath=false C-quotes control
+    # bytes. Enumerate exact names first and request each patch by literal path.
+    names = _git_diff_bytes(
+        [*args, "--name-only", "-z", "--diff-filter=ACMRT", "--"], cwd
+    )
+    if names and not names.endswith(b"\0"):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message="git changed paths are not NUL-terminated",
         )
+    top = _git_diff_bytes(["git", "rev-parse", "--show-toplevel"], cwd)
+    if not top.endswith(b"\n") or not Path(os.fsdecode(top[:-1])).is_absolute():
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message="could not resolve the git worktree root",
+        )
+    root = Path(os.fsdecode(top[:-1])).resolve()
+    ranges: dict[Path, list[tuple[int, int]]] = {}
+    for raw_path in names[:-1].split(b"\0") if names else ():
+        path = Path(os.fsdecode(raw_path))
+        if not raw_path or path.is_absolute() or ".." in path.parts:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                message="git returned an invalid changed path",
+            )
+        current = (root / path).resolve()
+        patch = _git_diff_bytes(
+            [*args, "--unified=0", "--", os.fsdecode(raw_path)], root
+        )
+        for line in patch.split(b"\n"):
+            if not line.startswith(b"@@"):
+                continue
+            # Only the hunk coordinates are ASCII metadata. File contents and
+            # optional function context may contain arbitrary bytes.
+            span = _parse_hunk(line.decode("ascii", errors="surrogateescape"))
+            if span is None:
+                raise ModelOnexError(
+                    error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                    message="git returned malformed hunk metadata",
+                )
+            ranges.setdefault(current, []).append(span)
+    return ranges
+
+
+def _git_diff_bytes(args: list[str], cwd: Path) -> bytes:
+    """Read Git without decoding pathname/content bytes or changing index authority."""
+    try:
+        proc = subprocess.run(args, cwd=cwd, capture_output=True, check=False)
     except OSError as exc:
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
@@ -349,55 +402,21 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=(
                 f"`{' '.join(args)}` failed (exit {proc.returncode}): "
-                f"{proc.stderr.strip() or 'no stderr'}"
+                f"{os.fsdecode(proc.stderr).strip() or 'no stderr'}"
             ),
         )
-
-    try:
-        top = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=True,
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.OPERATION_FAILED,
-            message=f"could not resolve the git worktree root: {exc}",
-        ) from exc
-
-    root = Path(top)
-    ranges: dict[Path, list[tuple[int, int]]] = {}
-    current: Path | None = None
-    for line in proc.stdout.splitlines():
-        if line.startswith("+++ "):
-            target = line[4:].strip()
-            if target == "/dev/null":
-                current = None
-            else:
-                current = (
-                    (root / target[2:]).resolve() if target.startswith("b/") else None
-                )
-        elif line.startswith("@@") and current is not None:
-            span = _parse_hunk(line)
-            if span is not None:
-                ranges.setdefault(current, []).append(span)
-    return ranges
+    return proc.stdout
 
 
 def _parse_hunk(line: str) -> tuple[int, int] | None:
     # @@ -12,0 +13,4 @@ optional trailing context
-    try:
-        plus = line.split("+", 1)[1].split("@@", 1)[0].strip()
-    except IndexError:
+    match = re.match(
+        r"^@@ -[0-9]+(?:,[0-9]+)? \+([0-9]+)(?:,([0-9]+))? @@(?: |$)", line
+    )
+    if match is None:
         return None
-    start_str, _, count_str = plus.partition(",")
-    try:
-        start = int(start_str)
-        count = int(count_str) if count_str else 1
-    except ValueError:
-        return None
+    start = int(match[1])
+    count = int(match[2]) if match[2] is not None else 1
     if count == 0:  # pure deletion; anchor on the surrounding line
         return start, start
     return start, start + count - 1

@@ -62,6 +62,10 @@ class ModelExtraForbidFinding:
     def format(self) -> str:
         reason = _STATUS_EXPLANATION.get(self.status, self.status)
         return (
-            f"{self.path}:{self.line}:{self.column + 1}: {self.class_name} "
-            f"{reason} [{self.status}, via {self.engine}]; fqn: {self.fqn}"
+            (
+                f"{self.path}:{self.line}:{self.column + 1}: {self.class_name} "
+                f"{reason} [{self.status}, via {self.engine}]; fqn: {self.fqn}"
+            )
+            .encode("utf-8", errors="backslashreplace")
+            .decode("utf-8")
         )
