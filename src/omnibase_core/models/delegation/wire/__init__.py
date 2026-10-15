@@ -61,6 +61,15 @@ if TYPE_CHECKING:
     from omnibase_core.models.delegation.wire.model_delegation_failed import (
         ModelDelegationFailed,
     )
+    from omnibase_core.models.delegation.wire.model_delegation_named_test_file import (
+        ModelDelegationNamedTestFile,
+    )
+    from omnibase_core.models.delegation.wire.model_delegation_named_test_run import (
+        ModelDelegationNamedTestRun,
+    )
+    from omnibase_core.models.delegation.wire.model_delegation_named_tests import (
+        ModelDelegationNamedTests,
+    )
     from omnibase_core.models.delegation.wire.model_delegation_output_refusal import (
         ModelDelegationOutputRefusal,
     )
@@ -172,6 +181,9 @@ __all__: list[str] = [
     "ModelDelegationDeliverableEvidence",
     "ModelDelegationRawResponse",
     "ModelDelegationOutputRefusal",
+    "ModelDelegationNamedTestFile",
+    "ModelDelegationNamedTestRun",
+    "ModelDelegationNamedTests",
     "ModelDelegationRequest",
     "ModelDelegationResult",
     "ModelDelegationProviderFailureCause",
@@ -385,6 +397,18 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "EnumQualityContractMode": (
         "omnibase_core.models.delegation.wire.model_delegation_wire_request",
         "EnumQualityContractMode",
+    ),
+    "ModelDelegationNamedTestFile": (
+        "omnibase_core.models.delegation.wire.model_delegation_named_test_file",
+        "ModelDelegationNamedTestFile",
+    ),
+    "ModelDelegationNamedTestRun": (
+        "omnibase_core.models.delegation.wire.model_delegation_named_test_run",
+        "ModelDelegationNamedTestRun",
+    ),
+    "ModelDelegationNamedTests": (
+        "omnibase_core.models.delegation.wire.model_delegation_named_tests",
+        "ModelDelegationNamedTests",
     ),
     "ModelDelegationRequest": (
         "omnibase_core.models.delegation.wire.model_delegation_wire_request",
