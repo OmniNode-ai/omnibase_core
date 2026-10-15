@@ -215,6 +215,35 @@ def test_baselined_finding_passes(
 
 
 @pytest.mark.unit
+def test_overlay_only_scan_preserves_baseline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The stricter policy refuses new example/launch models without baseline growth."""
+    monkeypatch.chdir(tmp_path)
+    source = "src/pkg/a.py"
+    line = f'HOST = "http://{LAB_HOST}:8000"'
+    _write(tmp_path, source, line + "\n")
+    rel = _baseline(
+        tmp_path,
+        [{"path": source, "family": "E-LAN", "content_sha1": _sha1(line)}],
+    )
+    baseline_before = (tmp_path / rel).read_bytes()
+    assert runtime.main(["--baseline", rel, source]) == 0
+    capsys.readouterr()
+
+    example = "config/lane.example.yaml"
+    launch = "deploy/systemd/serve.service"
+    _write(tmp_path, example, 'model: "qwen3-coder"\n')
+    _write(tmp_path, launch, 'ExecStart=/bin/serve --model "qwen3-coder"\n')
+    assert runtime.main(["--baseline", rel, source, example, launch]) == 1
+    out = capsys.readouterr().out
+    assert f"{example}:1: [M in EXAMPLE]" in out
+    assert f"{launch}:1: [M in LAUNCH]" in out
+    assert "2 new finding(s), 0 stale baseline entr(y/ies)" in out
+    assert (tmp_path / rel).read_bytes() == baseline_before
+
+
+@pytest.mark.unit
 def test_duplicate_line_needs_its_own_entry(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

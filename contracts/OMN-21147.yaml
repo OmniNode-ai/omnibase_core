@@ -24,30 +24,51 @@ requirements:
       - id: AC3
         statement: "AC3: the whole-tree guard passes against the unchanged baseline -- falsifier: uv run
           python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config --all
-          --baseline config/hardcoded_model_config_baseline.yaml"
+          --baseline config/hardcoded_model_config_baseline.yaml; the runtime still rejects unbaselined
+          model ids in example and launch files without changing existing baseline entries"
 evidence_requirements:
   - kind: tests
     description: Corpus, policy-shape and family D tests of the guard.
-    command: uv run pytest tests/unit/validation/hardcoded_model_config -q
+    command: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+      tests/unit/validation/hardcoded_model_config/test_lab_denylist_vocabulary.py -q
 dod_evidence:
   - id: dod-omn21147-guard-tests
     description: The guard's corpus, policy-shape and family D tests pass.
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          tests/unit/validation/hardcoded_model_config/test_lab_denylist_vocabulary.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
       - AC2
   - id: dod-omn21147-baseline-ratchet
-    description: The whole-tree guard passes against the committed baseline.
+    description: The whole-tree guard passes against the committed baseline, while the runtime rejects
+      new example and launch model ids without growing or rewriting that baseline.
     source: manual
     checks:
       - check_type: command
         check_value: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
           --all --baseline config/hardcoded_model_config_baseline.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k overlay_only_scan_preserves_baseline
+        cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
+  - id: dod-omn21147-deploy-hosted-runtime
+    description: Hosted deploy check for the library's packaged policy and runtime. An existing baseline
+      entry passes, but new example and launch model ids fail with family M findings and leave the baseline
+      bytes unchanged.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k overlay_only_scan_preserves_baseline
+        cwd: ${OMNI_HOME}/omnibase_core
 emergency_bypass:
   enabled: false
   justification: ''
