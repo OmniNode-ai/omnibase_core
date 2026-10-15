@@ -51,8 +51,28 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest -W error::UserWarning tests/unit/models/container tests/unit/container
-          -q -p no:randomly
+        check_value: uv run pytest -W error::UserWarning tests/unit/models/container/test_dependency_unavailable_preserves_subclass.py
+          tests/unit/models/container/test_get_service_sync_from_async.py tests/unit/models/container/test_model_base_container.py
+          tests/unit/models/container/test_model_enhanced_logger.py tests/unit/models/container/test_model_onex_container_service_registry.py
+          tests/unit/models/container/test_model_onex_container_spi_methods.py tests/unit/models/container/test_model_registry_status.py
+          tests/unit/models/container/test_model_service.py tests/unit/models/container/test_model_service_instance.py
+          tests/unit/models/container/test_model_service_registration.py tests/unit/models/container/test_model_workflow_coordinator.py
+          tests/unit/models/container/test_model_workflow_factory.py tests/unit/container/test_auto_config.py
+          tests/unit/container/test_container_service_resolver.py tests/unit/container/test_registry_raises_service_resolution_error.py
+          tests/unit/container/test_service_registry.py tests/unit/container/test_service_registry_disabled.py
+          tests/unit/container/test_service_registry_extended.py tests/unit/container/test_service_registry_factory.py
+          tests/unit/container/test_service_registry_memory.py tests/unit/container/test_service_registry_performance.py
+          tests/unit/container/test_service_registry_stress.py -q -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
+  - id: dod-omn17868-deploy-hosted-serialization
+    description: Hosted deploy probe. The registry-status serialization test dumps and reconstructs the
+      model with enum-keyed distributions, failing on serializer UserWarnings or changed round-trip values.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest -W error::UserWarning tests/unit/models/container/test_model_registry_status.py
+          -q -p no:randomly -k test_serialization_deserialization
+        cwd: ${OMNI_HOME}/omnibase_core
