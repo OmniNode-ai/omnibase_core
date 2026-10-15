@@ -1823,6 +1823,22 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # CI inherits from core (OMN-17427, RULING 2026-10-14T20:01:09Z). Same
+      # handler as the ci.yml "CI Inherits From Core" job: refuses a new
+      # `uses: OmniNode-ai/<repo>/...` reference to a repository other than
+      # omnibase_core, comparing the working tree's workflows with HEAD's.
+      - id: check-ci-inheritance
+        name: CI Inherits From Core (OMN-17427)
+        entry: >-
+          bash -c 'set -euo pipefail; base=$(mktemp -d); trap "rm -rf \"$base\"" EXIT; git archive HEAD
+          .github/workflows | tar -x -C "$base"; env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_ci_inheritance_cli
+          --base-dir "$base/.github/workflows" --head-dir .github/workflows'
+        language: system
+        files: ^\.github/workflows/.*\.ya?ml$
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
       # No raw sqlite3.connect() outside *_adapter.py (OMN-14659, self-wired
       # OMN-14665). The 1 pre-existing finding — the local-harness projection
       # store (harness_projection_store_sqlite.py), which IS a zero-infra
