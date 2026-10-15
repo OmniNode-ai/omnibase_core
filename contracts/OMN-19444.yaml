@@ -68,8 +68,9 @@ dod_evidence:
           probe_dir="$(mktemp -d)"
           trap 'rm -rf "$probe_dir"' EXIT
           uv sync --frozen
-          export PATH="$PWD/.venv/bin:$PATH"
-          python - "$probe_dir" <<'PY'
+          probe_env="${UV_PROJECT_ENVIRONMENT:-$PWD/.venv}"
+          export PATH="$probe_env/bin:$PATH"
+          "$probe_env/bin/python" - "$probe_dir" <<'PY'
           import sys
           from pathlib import Path
 
