@@ -223,7 +223,7 @@ def test_rename_baseline_untouched_accepted(repo: Path) -> None:
 
 def test_rename_with_edit_accepted(repo: Path) -> None:
     _baselined_tool(repo)
-    _rename(repo, NEW_TOOL, "added = 1\n")
+    _rename(repo, NEW_TOOL, "# added by the rename edit\n")
     _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
     _stage(repo)
     assert _rules(repo) == []
@@ -866,3 +866,89 @@ def test_read_blobs_fails_loud_when_cat_file_hangs(
 
     with pytest.raises(subprocess.TimeoutExpired):
         GitRepo(root=repo, env=env).read_blobs(INDEX, ["docs/any.md"])
+
+
+# --- mod-file-growth (OMN-20864; operator ruling 2026-10-15T08:14:15Z) ---------
+
+LEGACY_HOOK = "plugins/p/hooks/lib/legacy_hook.py"
+LEGACY_HOOK_TEXT = "# legacy hook\nA = 1\nB = 2\n\nC = 3\n"
+
+
+@pytest.fixture
+def mod_repo(repo: Path) -> Path:
+    """The base repo plus a baselined hook script, committed."""
+    _write(repo, LEGACY_HOOK, LEGACY_HOOK_TEXT)
+    _write(
+        repo,
+        DEFAULT_BASELINE,
+        render_baseline(["scripts/old_tool.py", LEGACY_HOOK]),
+    )
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "baselined hook")
+    return repo
+
+
+def test_mod_file_growth_refused(mod_repo: Path) -> None:
+    """Negative control: new logic in a baselined hook script is refused."""
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "D = 4\n")
+    _stage(mod_repo)
+    assert _rules(mod_repo) == ["mod-file-growth"]
+
+
+def test_mod_file_growth_names_the_node_route(mod_repo: Path) -> None:
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "D = 4\n")
+    _stage(mod_repo)
+    finding = check(GitRepo(root=mod_repo, env=_env()), INDEX, "HEAD")[0]
+    assert finding.path == LEGACY_HOOK
+    assert "3 -> 4" in finding.reason
+    assert "node" in finding.reason
+
+
+def test_mod_file_shrink_accepted(mod_repo: Path) -> None:
+    """Positive control: removing code from the baselined hook script passes."""
+    _write(mod_repo, LEGACY_HOOK, "# legacy hook\nA = 1\n")
+    _stage(mod_repo)
+    assert _rules(mod_repo) == []
+
+
+def test_mod_file_comment_and_blank_growth_accepted(mod_repo: Path) -> None:
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "\n\n# more prose\n")
+    _stage(mod_repo)
+    assert _rules(mod_repo) == []
+
+
+def test_mod_file_equal_size_edit_accepted(mod_repo: Path) -> None:
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT.replace("B = 2", "B = 20"))
+    _stage(mod_repo)
+    assert _rules(mod_repo) == []
+
+
+def test_mod_file_growth_in_renamed_file_refused(mod_repo: Path) -> None:
+    """A rename that also adds code carries the old file's size as its base."""
+    new_path = "plugins/p/hooks/lib/renamed_hook.py"
+    _git(mod_repo, "mv", LEGACY_HOOK, new_path)
+    _write(mod_repo, new_path, LEGACY_HOOK_TEXT + "D = 4\n")
+    _write(
+        mod_repo,
+        DEFAULT_BASELINE,
+        render_baseline(["scripts/old_tool.py", new_path]),
+    )
+    _stage(mod_repo)
+    assert _rules(mod_repo) == ["mod-file-growth"]
+
+
+def test_non_mod_baselined_file_growth_not_in_scope(mod_repo: Path) -> None:
+    """Scope control: the rule judges plugin and hook surfaces only."""
+    _write(mod_repo, "scripts/old_tool.py", "print('old')\nprint('more')\n")
+    _stage(mod_repo)
+    assert _rules(mod_repo) == []
+
+
+def test_mod_surface_paths() -> None:
+    surface = canonical_file_shape.is_mod_surface
+    assert surface("plugins/onex/hooks/lib/a.py")
+    assert surface("plugins/onex/skills/s/run.py")
+    assert surface(".claude/hooks/a.sh")
+    assert surface("hooks/a.sh")
+    assert not surface("scripts/a.py")
+    assert not surface("src/pkg/runtime/a.py")
