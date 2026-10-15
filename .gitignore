@@ -244,6 +244,7 @@ container_security_validation.json
 /backups/
 /reports/
 *_report*.json
+*.json.events.jsonl
 *_analysis*.json
 *_errors*.txt
 
