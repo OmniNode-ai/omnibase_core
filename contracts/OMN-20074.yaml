@@ -567,8 +567,8 @@ evidence_requirements:
   - kind: ci
     description: Hosted deploy check scoped to the CI caller configuration; the actual boundary-validation
       step must match the exact repository list audited for its action revision. No runtime service changes.
-    command: uv run pytest tests/unit/validation/test_ci_workflow_shape.py::test_cross_repo_boundary_validation_clones_all_boundary_repos
-      -q --no-cov -o addopts= -p no:randomly
+    command: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q --no-cov -o addopts= -p
+      no:randomly -k test_cross_repo_boundary_validation_clones_all_boundary_repos
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1009,6 +1009,6 @@ dod_evidence:
           -p no:randomly -k boundary_repo_contract
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py::test_cross_repo_boundary_validation_clones_all_boundary_repos
-          -q --no-cov -o addopts= -p no:randomly
+        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q --no-cov -o addopts=
+          -p no:randomly -k test_cross_repo_boundary_validation_clones_all_boundary_repos
         cwd: ${OMNI_HOME}/omnibase_core
