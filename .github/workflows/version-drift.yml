@@ -1,0 +1,197 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable version-drift-at-source checks for OmniNode repositories (OMN-19998).
+#
+# Two jobs, both run from this repository's own checkout against the CALLER's tree:
+#
+#   Version Floor Consumers -- a pull request that raises the floor on a sibling
+#     registry package (src/omnibase_core/contracts/repo_layers.yaml) fails while
+#     another registry repository that installs it is not ready: its exact pin or
+#     upper bound excludes the new floor, or it installs the caller and declares
+#     a lower floor. Consumers are read from their clones at their origin default
+#     branch; an unreadable consumer fails the raise. Runs only when the caller's
+#     pyproject.toml changed against the base.
+#
+#   Merge Queue Parity -- in every caller workflow that triggers on merge_group,
+#     a job the merge queue runs and pull request CI can skip fails, unless the
+#     caller's own baseline records it; the baseline may only shrink.
+#
+# Usage in a caller repo:
+#
+#   jobs:
+#     version-drift:
+#       name: Version Drift
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/version-drift.yml@<full sha>
+#       secrets: inherit   # ONEXBOT_OCC_APP_ID / ONEXBOT_OCC_PRIVATE_KEY for private consumers
+#
+# The validator version is the caller's pin: omnibase-core-ref defaults to
+# github.job_workflow_sha, the sha of this file as the caller pinned it.
+
+name: Version Drift
+
+on:
+  workflow_call:
+    inputs:
+      baseline-path:
+        description: The caller's merge-queue parity baseline, relative to its repository root.
+        required: false
+        type: string
+        default: .onex_ratchets/merge_queue_parity_baseline.yaml
+      repo:
+        description: >-
+          The caller's repository name as declared in contracts/repo_layers.yaml. Empty means
+          the name of the repository the workflow runs in.
+        required: false
+        type: string
+        default: ""
+      base-ref:
+        description: >-
+          The base the floor comparison and the baseline ratchet read. Empty means the pull
+          request base sha, or the merge-group base sha; a push event has none and both
+          base-relative checks are skipped.
+        required: false
+        type: string
+        default: ""
+      python-version:
+        description: Python version for the validator runtime.
+        required: false
+        type: string
+        default: "3.12"
+      uv-version:
+        description: uv version for the validator runtime.
+        required: false
+        type: string
+        default: "0.8.3"
+      omnibase-core-ref:
+        description: >-
+          omnibase_core ref containing the validators. Empty means the sha this workflow
+          file was called at.
+        required: false
+        type: string
+        default: ""
+    secrets:
+      ONEXBOT_OCC_APP_ID:
+        required: false
+      ONEXBOT_OCC_PRIVATE_KEY:
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  version-drift:
+    name: Version Drift
+    runs-on: >-
+      ${{
+        (github.event_name == 'pull_request' &&
+         github.event.pull_request.head.repo.full_name != github.repository)
+        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+      }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: target
+          fetch-depth: 0
+
+      - name: Checkout omnibase_core validator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ inputs['omnibase-core-ref'] || github.job_workflow_sha }}
+          path: omnibase_core
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ inputs['python-version'] }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
+        with:
+          version: ${{ inputs['uv-version'] }}
+
+      - name: Mint read-only token for registry consumer reads
+        id: consumer-read-token
+        if: >-
+          github.event_name != 'pull_request' || (
+            github.event.pull_request.head.repo.full_name == github.repository &&
+            !contains(fromJSON('["dependabot[bot]","github-actions[bot]"]'), github.event.pull_request.user.login)
+          )
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          permission-contents: read
+
+      - name: Install the validators
+        working-directory: omnibase_core
+        env:
+          UV_HTTP_TIMEOUT: "600"
+        run: |
+          git config --global http.version HTTP/1.1
+          for attempt in 1 2 3; do
+            uv sync --locked --no-dev && break
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::uv sync failed after ${attempt} attempts"
+              exit 1
+            fi
+            sleep $((10 * attempt))
+          done
+
+      - name: Merge queue parity
+        working-directory: omnibase_core
+        env:
+          BASELINE_PATH: ${{ inputs['baseline-path'] }}
+          BASE_REF: >-
+            ${{ inputs['base-ref']
+            || github.event.pull_request.base.sha
+            || github.event.merge_group.base_sha }}
+        run: |
+          args=(--root "$GITHUB_WORKSPACE/target" --baseline "$BASELINE_PATH"
+                --report-json "$GITHUB_WORKSPACE/merge-queue-parity-report.json")
+          if [ -n "$BASE_REF" ]; then
+            args+=(--ratchet-base-ref "$BASE_REF")
+          else
+            echo "::notice::no base ref (push event): baseline ratchet skipped"
+          fi
+          uv run --no-sync check-merge-queue-parity "${args[@]}"
+
+      - name: Version floor consumers
+        working-directory: omnibase_core
+        env:
+          TARGET_REPO: ${{ inputs.repo || github.event.repository.name }}
+          CONSUMER_READ_TOKEN: ${{ steps.consumer-read-token.outputs.token }}
+          BASE_REF: >-
+            ${{ inputs['base-ref']
+            || github.event.pull_request.base.sha
+            || github.event.merge_group.base_sha }}
+        run: |
+          target="$GITHUB_WORKSPACE/target"
+          if [ -z "$BASE_REF" ]; then
+            echo "::notice::no base ref (push event): version-floor check skipped"
+            exit 0
+          fi
+          if git -C "$target" diff --quiet "$BASE_REF" HEAD -- pyproject.toml; then
+            echo "pyproject.toml unchanged against the base: no floor raised"
+            exit 0
+          fi
+          consumers="$RUNNER_TEMP/registry-consumers"
+          mkdir -p "$consumers"
+          auth=()
+          if [ -n "${CONSUMER_READ_TOKEN:-}" ]; then
+            auth=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$CONSUMER_READ_TOKEN" | base64 | tr -d '\n')")
+          fi
+          for repo in $(uv run --no-sync python -c "from omnibase_core.handlers.handler_version_floor_consumers_cli import load_layer_map; print(' '.join(e.repo for e in load_layer_map().repos))"); do
+            [ "$repo" = "$TARGET_REPO" ] && continue
+            git "${auth[@]}" clone --quiet --depth 1 --no-checkout "https://github.com/OmniNode-ai/${repo}.git" "$consumers/$repo" \
+              || echo "::warning::registry consumer ${repo} is not readable from this runner; a floor raise fails until it is"
+          done
+          uv run --no-sync check-version-floor-consumers --root "$target" --repo "$TARGET_REPO" \
+            --base-ref "$BASE_REF" --consumers-root "$consumers" \
+            --report-json "$GITHUB_WORKSPACE/version-floor-report.json"

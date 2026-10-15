@@ -1162,3 +1162,34 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-version-floor-consumers
+  name: No floor raise ahead of registry consumers (OMN-19998)
+  description: >
+    Refuse a pyproject.toml change that raises the floor on a sibling registry package (one omnibase_core
+    src/omnibase_core/contracts/repo_layers.yaml lists) while another registry repository that installs
+    that package is not ready for it: its own exact pin or upper bound excludes the new floor, or it installs
+    the raising repository and declares a lower floor. Consumers are read from their clones at their origin
+    default branch, beside this repository's canonical clone; an unreadable consumer fails the raise.
+    The failure names each consumer pull request that must land first.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_version_floor_consumers_cli
+  files: (^|/)pyproject\.toml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-merge-queue-parity
+  name: Pull request CI runs every merge-queue job (OMN-19998)
+  description: >
+    In every workflow that triggers on merge_group, refuse a job the merge queue runs and pull request
+    CI can skip: no pull_request trigger, a pull_request path filter, a job if that can be true on merge_group
+    and false on pull_request, or a job gated on a needs output that its gate job computes from github.event_name.
+    Pre-existing violations recorded in the repository's .onex_ratchets/merge_queue_parity_baseline.yaml
+    warn; the baseline only shrinks against the base in CI through .github/workflows/version-drift.yml.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_merge_queue_parity_cli
+  files: ^\.github/workflows/[^/]+\.ya?ml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

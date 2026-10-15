@@ -28,6 +28,26 @@ requirements:
         statement: "AC3: The canonical-file-shape ratchet counts the baseline the check-dependency-direction
           hook declares with --baseline as a declared gate baseline, and still refuses an undeclared one.
           -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k dependency_direction"
+  - id: req-omn19998-version-drift-at-source
+    statement: A floor raise on a sibling registry package must fail while a registry consumer that installs
+      it is not ready, and pull request CI must run every job the merge queue runs.
+    acceptance:
+      - id: AC4
+        statement: "AC4: A pull request raising a sibling registry floor fails, naming each consumer pull
+          request needed, while a consumer's pin excludes the new floor, a consumer of the raising repository
+          declares a lower floor, or a consumer is unreadable; it passes once every consumer is ready.
+          -- falsifier: uv run pytest tests/unit/handlers/test_handler_version_floor_consumers.py -q"
+      - id: AC5
+        statement: "AC5: In a workflow triggered on merge_group, a missing pull_request trigger, a pull_request
+          path filter, a merge_group-only job if, or a job gated on an event-dependent needs output fails
+          unless baselined, and a draft-only skip passes. -- falsifier: uv run pytest tests/unit/handlers/test_handler_merge_queue_parity.py
+          -q"
+      - id: AC6
+        statement: "AC6: Both CLIs run over real git clones (consumers read at origin's default branch),
+          the parity baseline only shrinks, and the canonical-file-shape ratchet counts the hook-declared
+          baseline. -- falsifier: uv run pytest tests/unit/handlers/test_handler_version_drift_cli.py
+          tests/unit/validators/test_canonical_file_shape.py -q -k 'version_drift or merge_queue_parity
+          or floor_cli or parity_cli'"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -38,6 +58,15 @@ evidence_requirements:
   - kind: tests
     description: "The canonical-file-shape ratchet admits the declared gate baseline only."
     command: "uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k dependency_direction"
+  - kind: tests
+    description: "A floor raise ahead of a registry consumer fails and names the consumer."
+    command: "uv run pytest tests/unit/handlers/test_handler_version_floor_consumers.py -q"
+  - kind: tests
+    description: "Merge-queue-only jobs fail unless baselined."
+    command: "uv run pytest tests/unit/handlers/test_handler_merge_queue_parity.py -q"
+  - kind: tests
+    description: "Both CLIs over real git clones and the shrink-only parity baseline."
+    command: "uv run pytest tests/unit/handlers/test_handler_version_drift_cli.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -96,3 +125,43 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
+  - id: dod-omn-19998-floor-ahead-of-consumers
+    description: "A floor raise on a sibling registry package fails while a registry consumer is not ready,
+      names the consumer, and passes once every consumer is ready."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_version_floor_consumers.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn-19998-merge-queue-parity
+    description: "A job the merge queue runs and pull request CI can skip fails unless baselined."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_merge_queue_parity.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn-19998-version-drift-cli
+    description: "Both CLIs over real git clones; the parity baseline only shrinks."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_version_drift_cli.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn-19998-deploy-hosted-merge-queue-parity
+    description: Hosted deploy probe for the merge-queue parity check. Run omnibase_core's own workflows
+      through check-merge-queue-parity against its shrink-only baseline. A new merge-queue-only job, or
+      a missing console script, fails the probe.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run check-merge-queue-parity
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5

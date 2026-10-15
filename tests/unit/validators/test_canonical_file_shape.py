@@ -978,3 +978,24 @@ def test_dependency_direction_baseline_undeclared_still_refused(repo: Path) -> N
     _write(repo, DEPENDENCY_DIRECTION_BASELINE, "violations: []\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
+
+
+MERGE_QUEUE_PARITY_BASELINE = ".onex_ratchets/merge_queue_parity_baseline.yaml"
+
+
+def test_merge_queue_parity_gate_declares_its_baseline() -> None:
+    """OMN-19998: the merge-queue parity gate is a declared shrink-only gate."""
+    config = (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-merge-queue-parity\n"
+        f"        args: [--baseline, {MERGE_QUEUE_PARITY_BASELINE}]\n"
+    )
+    assert declared_gate_baselines(config) == frozenset({MERGE_QUEUE_PARITY_BASELINE})
+
+
+def test_merge_queue_parity_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, MERGE_QUEUE_PARITY_BASELINE, "violations: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]

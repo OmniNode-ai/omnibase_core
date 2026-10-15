@@ -698,6 +698,62 @@ jobs:
           fi
           uv run check-dependency-direction --repo omnibase_core "${args[@]}"
 
+      # Version drift at source (OMN-19998) — blocking. A floor raise on a
+      # sibling registry package fails while a registry consumer is not ready
+      # for it (consumers read from their public clones at origin), and a job
+      # the merge queue runs that pull request CI can skip fails unless
+      # .onex_ratchets/merge_queue_parity_baseline.yaml records it (shrink-only).
+      # Other repositories run both through .github/workflows/version-drift.yml.
+      # Read-only App installation token for the private registry consumers'
+      # pyproject reads below (the OMN-16373 pattern; no new credential). A
+      # fork or dependency-bot pull request has no App secrets: it reads the
+      # public consumers only, and an unreadable consumer fails a floor raise.
+      - name: Mint read-only token for registry consumer reads
+        id: consumer-read-token
+        if: >-
+          github.event_name != 'pull_request' || (
+            github.event.pull_request.head.repo.full_name == github.repository &&
+            !contains(fromJSON('["dependabot[bot]","github-actions[bot]"]'), github.event.pull_request.user.login)
+          )
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
+          private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
+          owner: OmniNode-ai
+          permission-contents: read
+
+      - name: Run merge-queue parity and version-floor checks
+        env:
+          RATCHET_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          CONSUMER_READ_TOKEN: ${{ steps.consumer-read-token.outputs.token }}
+        run: |
+          args=(--report-json merge-queue-parity-report.json)
+          if [ -n "$RATCHET_BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$RATCHET_BASE_REF"
+            args+=(--ratchet-base-ref "$RATCHET_BASE_REF")
+          fi
+          uv run check-merge-queue-parity "${args[@]}"
+          if [ -z "$RATCHET_BASE_REF" ]; then
+            echo "::notice::no base ref (push event): version-floor check skipped"
+            exit 0
+          fi
+          if git diff --quiet "$RATCHET_BASE_REF" HEAD -- pyproject.toml; then
+            echo "pyproject.toml unchanged against the base: no floor raised"
+            exit 0
+          fi
+          consumers="$RUNNER_TEMP/registry-consumers"
+          mkdir -p "$consumers"
+          auth=()
+          if [ -n "${CONSUMER_READ_TOKEN:-}" ]; then
+            auth=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$CONSUMER_READ_TOKEN" | base64 | tr -d '\n')")
+          fi
+          for repo in $(uv run python -c "from omnibase_core.handlers.handler_version_floor_consumers_cli import load_layer_map; print(' '.join(e.repo for e in load_layer_map().repos))"); do
+            git "${auth[@]}" clone --quiet --depth 1 --no-checkout "https://github.com/OmniNode-ai/${repo}.git" "$consumers/$repo" \
+              || echo "::warning::registry consumer ${repo} is not readable from this runner; a floor raise fails until it is"
+          done
+          uv run check-version-floor-consumers --repo omnibase_core --base-ref "$RATCHET_BASE_REF" \
+            --consumers-root "$consumers" --report-json version-floor-report.json
+
       # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210) — blocking.
       # import-linter's wildcard ignores are permissive; this freezes protocols->models
       # (65) and the utils/mixins/protocols hub-inbound sets non-increasing and hard-fails
