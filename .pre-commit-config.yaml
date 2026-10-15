@@ -691,15 +691,18 @@ repos:
       # OMN-14515: every Pydantic model must resolve to an explicit extra="forbid".
       # ABSENCE IS A VIOLATION — Pydantic's default is extra="ignore", which SILENTLY
       # DROPS unknown fields (four live data-loss bugs: OMN-14490/14506/14513/14514).
-      # New models block outright; --enforce-modified :staged also blocks a BASELINED
+      # New models block outright; --enforce-modified :worktree also blocks a BASELINED
       # model whose body you just edited — touching it is your chance to fix it.
+      # OMN-17572: :worktree diffs the working tree against HEAD (staged AND unstaged),
+      # so `pre-commit run --all-files` on an unstaged edit is as strict as a commit;
+      # :staged alone passed that run while the same edit staged failed.
       # language: system so the validator runs in the repo venv and can introspect the
       # real cls.model_config (which Pydantic has already merged down the MRO) instead
       # of approximating inheritance statically.
       - id: pydantic-extra-forbid
         name: Pydantic extra="forbid" ratchet (OMN-14515)
         entry: uv run --frozen python -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified
-          :staged src/omnibase_core
+          :worktree src/omnibase_core
         language: system
         types: [python]
         files: ^src/omnibase_core/.*\.py$

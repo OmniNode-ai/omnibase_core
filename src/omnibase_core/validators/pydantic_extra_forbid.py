@@ -60,9 +60,10 @@ model cannot be born broken.
 
 Usage::
 
-    # pre-commit (staged files) — full-tree ratchet + modified-model enforcement
+    # pre-commit (working tree vs. HEAD, so --all-files sees unstaged edits too) —
+    # full-tree ratchet + modified-model enforcement
     python -m omnibase_core.validators.pydantic_extra_forbid \
-        --enforce-modified :staged src/omnibase_core
+        --enforce-modified :worktree src/omnibase_core
 
     # CI — full scan, stale-entry enforcement, modified-model enforcement vs. dev
     python -m omnibase_core.validators.pydantic_extra_forbid \
@@ -106,6 +107,7 @@ DEFAULT_BASELINE_PATH = Path(__file__).with_name("extra_forbid_baseline.yaml")
 DEFAULT_WAIVERS_PATH = Path(__file__).with_name("extra_forbid_waivers.yaml")
 
 STAGED_REF = ":staged"
+WORKTREE_REF = ":worktree"
 from omnibase_core.validation.pydantic_module_index import (
     parse_module as _parse_module,
 )
@@ -327,25 +329,17 @@ def render_baseline(
 # ---------------------------------------------------------------------------
 # Modified-model enforcement (git diff -> changed line ranges)
 # ---------------------------------------------------------------------------
-def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]]:
-    """Map absolute file path -> changed line ranges for *ref*.
-
-    ``ref`` is either ``":staged"`` (pre-commit) or a git ref such as ``origin/dev``
-    (CI, diffed as ``<ref>...HEAD``). Raises ``ModelOnexError`` on git failure — the
-    caller fails closed rather than silently skipping the check.
-    """
-    if ref == STAGED_REF:
-        args = ["git", "diff", "--cached", "--unified=0", "--no-color"]
-    else:
-        args = ["git", "diff", "--unified=0", "--no-color", f"{ref}...HEAD"]
-
-    # One environment for every git call below: cwd is the only repository
-    # authority (OMN-17910), so an inherited GIT_DIR/GIT_WORK_TREE/GIT_CONFIG*
-    # cannot redirect the diff to another repository.
+def _run_git(args: Sequence[str], cwd: Path) -> str:
+    """Run ``git`` and return stdout; raise ``ModelOnexError`` on any failure."""
     env = scrubbed_git_env(cwd)
     try:
         proc = subprocess.run(
-            args, cwd=cwd, capture_output=True, text=True, check=False, env=env
+            ["git", *args],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            env=env,
         )
     except OSError as exc:
         raise ModelOnexError(
@@ -356,42 +350,61 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
         raise ModelOnexError(
             error_code=EnumCoreErrorCode.OPERATION_FAILED,
             message=(
-                f"`{' '.join(args)}` failed (exit {proc.returncode}): "
+                f"`git {' '.join(args)}` failed (exit {proc.returncode}): "
                 f"{proc.stderr.strip() or 'no stderr'}"
             ),
         )
+    return proc.stdout
 
-    try:
-        top = subprocess.run(
-            ["git", "rev-parse", "--show-toplevel"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=True,
-            env=env,
-        ).stdout.strip()
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise ModelOnexError(
-            error_code=EnumCoreErrorCode.OPERATION_FAILED,
-            message=f"could not resolve the git worktree root: {exc}",
-        ) from exc
 
-    root = Path(top)
+def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]]:
+    """Map absolute file path -> changed line ranges for *ref*.
+
+    ``ref`` is ``":staged"`` (index vs. HEAD), ``":worktree"`` (working tree vs. HEAD:
+    staged *and* unstaged edits, which is what ``pre-commit run --all-files`` sees), or
+    a git ref such as ``origin/dev`` (CI, diffed as ``<ref>...HEAD``). Neither
+    pseudo-ref reads or writes anything but the diff. Raises ``ModelOnexError`` on git
+    failure — the caller fails closed rather than silently skipping the check.
+
+    Changed files are listed NUL-delimited and diffed one at a time with literal
+    pathspecs, because git C-quotes a name containing a quote, tab, newline or
+    (by default) non-ASCII bytes in patch headers — a header parse would drop it.
+    """
+    if ref == STAGED_REF:
+        spec = ["--cached"]
+    elif ref == WORKTREE_REF:
+        spec = ["HEAD"]
+    else:
+        spec = [f"{ref}...HEAD"]
+
+    root = Path(_run_git(["rev-parse", "--show-toplevel"], cwd).strip())
+    names = _run_git(
+        ["diff", "--name-only", "-z", "--no-renames", "--no-color", *spec], cwd
+    )
+
     ranges: dict[Path, list[tuple[int, int]]] = {}
-    current: Path | None = None
-    for line in proc.stdout.splitlines():
-        if line.startswith("+++ "):
-            target = line[4:].strip()
-            if target == "/dev/null":
-                current = None
-            else:
-                current = (
-                    (root / target[2:]).resolve() if target.startswith("b/") else None
-                )
-        elif line.startswith("@@") and current is not None:
-            span = _parse_hunk(line)
-            if span is not None:
-                ranges.setdefault(current, []).append(span)
+    for name in names.split("\0"):
+        if not name.endswith(".py"):
+            continue
+        patch = _run_git(
+            [
+                "--literal-pathspecs",
+                "diff",
+                "--unified=0",
+                "--no-color",
+                "--no-renames",
+                *spec,
+                "--",
+                name,
+            ],
+            cwd,
+        )
+        current = (root / name).resolve()
+        for line in patch.splitlines():
+            if line.startswith("@@"):
+                span = _parse_hunk(line)
+                if span is not None:
+                    ranges.setdefault(current, []).append(span)
     return ranges
 
 
@@ -479,8 +492,10 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
         default=None,
         help=(
             "Also fail any BASELINED violation whose class body was touched by the "
-            f"diff. REF is a git ref (diffed as REF...HEAD) or '{STAGED_REF}' for the "
-            "staged diff. You may not edit a broken model and leave it broken."
+            f"diff. REF is a git ref (diffed as REF...HEAD), '{STAGED_REF}' for the "
+            f"staged diff, or '{WORKTREE_REF}' for the working tree against HEAD "
+            "(staged and unstaged edits). You may not edit a broken model and leave "
+            "it broken."
         ),
     )
     parser.add_argument(
@@ -520,6 +535,16 @@ def _write_json(path: Path, findings: Sequence[ModelExtraForbidFinding]) -> None
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(sys.argv[1:] if argv is None else argv)
+
+    missing = [path for path in args.paths if not path.exists()]
+    if missing:
+        # A supplied path that is not on disk would otherwise scan as "no models" and
+        # pass; fail closed instead of silently dropping it.
+        sys.stderr.write(
+            "pydantic-extra-forbid: path(s) to scan do not exist, failing closed: "
+            f"{', '.join(str(path) for path in missing)}\n"
+        )
+        return 1
 
     findings = scan_paths(args.paths, use_runtime=not args.no_runtime)
     violations = [f for f in findings if f.is_violation]
