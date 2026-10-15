@@ -242,6 +242,21 @@ def test_enum_context_factor_members() -> None:
         "local_failures",
         "architecture_patterns",
         "claude_md",
+        "operator_rulings",
+        "operator_words_unrecorded",
+        "orchestration_state",
+        "open_work",
+        "repo_state",
+        "conversation_tail",
+        "lane_rules",
+        "invariants",
+        "adrs",
+        "canonical_shapes",
+        "plan_excerpts",
+        "session_goal",
+        "capability_digest",
+        "transcript_extracts",
+        "tail_summary",
     }
 
 
