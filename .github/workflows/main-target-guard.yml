@@ -1,9 +1,13 @@
 # SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# OMN-12243: Block PRs targeting main unless they are promotion PRs
-# from dev or promotion/* with a promotion receipt.
-# OMN-12477: Removed the hotfix/* bypass — main accepts only promotions.
+# OMN-12243: Block PRs targeting main.
+# OMN-12477: Removed the hotfix/* bypass.
+# OMN-20074: Removed the promotion-receipt exception. main is release-synced:
+# release.yml ("Sync main to release tag") fast-forwards it to the published
+# tag and opens no pull request against it, so the change-control receipt the
+# exception read admitted nothing the release path uses. Every PR onto main is
+# refused. Pinned by tests/ci/test_main_target_guard_prepush_omn20780.py.
 
 name: Main target guard
 
@@ -33,7 +37,6 @@ jobs:
         env:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           HEAD_REF: ${{ github.event.pull_request.head.ref }}
-          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -euo pipefail
 
@@ -42,21 +45,7 @@ jobs:
             exit 0
           fi
 
-          echo "PR targets main. Checking head ref: '${HEAD_REF}'"
-
-          if [[ "${HEAD_REF}" == "dev" || "${HEAD_REF}" == promotion/* ]]; then
-            if echo "${PR_BODY}" | grep -qE 'promotion-receipt:[[:space:]]*OCC-[0-9]+'; then
-              echo "::notice::Promotion PR from '${HEAD_REF}' with valid promotion-receipt. Allowed."
-              exit 0
-            fi
-
-            echo "::error::Promotion PR from '${HEAD_REF}' is missing a promotion receipt."
-            echo "::error::Add a line matching: promotion-receipt: OCC-<number>"
-            echo "::error::Retarget this PR to dev; main accepts only promotion PRs."
-            exit 1
-          fi
-
-          echo "::error::PRs targeting main must come from dev or promotion/*."
-          echo "::error::Head ref '${HEAD_REF}' is not permitted to target main directly."
-          echo "::error::Retarget this PR to dev; main accepts only promotion PRs."
+          echo "::error::PR from '${HEAD_REF}' targets main, which is release-synced and never a pull-request target."
+          echo "::error::The release workflow moves main by fast-forwarding it to the published tag; it opens no PR against main."
+          echo "::error::Retarget this PR to dev."
           exit 1

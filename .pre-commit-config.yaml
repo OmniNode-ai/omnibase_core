@@ -862,7 +862,7 @@ repos:
       # Exclusions:
       # - typed_dict_demo.py: sample_id and ticket_id are external corpus identifiers, not internal UUIDs (OMN-1396)
       # - doctor_check_base.py: check_id is a semantic identifier ("kafka", "postgres"), not a version string
-      # - contracts/OMN-*.yaml: ticket-contract schema is owned by onex_change_control and currently requires string schema_version
+      # - contracts/OMN-*.yaml: the ticket-contract schema (omnibase_core ModelTicketContract) requires a string schema_version
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
         entry: uv run python scripts/validation/validate-string-versions.py

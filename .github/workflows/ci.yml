@@ -4966,11 +4966,11 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: OmniNode-ai/omnibase_core/.github/actions/validate-boundaries@de3398d1fcf7a6f48451f680b74b1a6c6c383b8a # omnibase_core dev (OMN-20074 H/F)
+      - uses: OmniNode-ai/omnibase_core/.github/actions/validate-boundaries@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1 # omnibase_core dev (OMN-20074): #1972, no change-control boundary
         with:
           checks: "boundary-parity"
           warn-only: "false"
-          repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket,onex_change_control"
+          repos: "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket"
 
   ci-summary:
     name: CI Summary

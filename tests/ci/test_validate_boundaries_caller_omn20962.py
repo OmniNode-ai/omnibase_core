@@ -74,6 +74,21 @@ def test_retired_action_reference_is_detected() -> None:
     assert _retired_references(old) == [old.strip()]
 
 
+def test_the_job_pins_the_action_whose_manifest_has_no_change_control_boundary() -> (
+    None
+):
+    """OMN-20074: with onex_change_control out of ``repos``, the pin must be #1972.
+
+    omnibase_core#1972 dropped the only boundary whose producer lived in the
+    change-control repository. The #1942 pin still lists it, so the parity
+    handler at that pin exits 1 on the missing producer once the repository is
+    no longer cloned: the pin and the ``repos`` input move together.
+    """
+    uses = [s["uses"].split(" ")[0] for s in _job()["steps"] if "uses" in s]
+
+    assert f"{ACTION}@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1" in uses
+
+
 def _core_action_file() -> Path:
     """The action.yml in this tree that the job's omnibase_core ``uses:`` line names."""
     prefix = "OmniNode-ai/omnibase_core/"
@@ -140,7 +155,7 @@ def test_inputs_job_name_and_required_context_are_unchanged() -> None:
     assert step["with"] == {
         "checks": "boundary-parity",
         "warn-only": "false",
-        "repos": "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket,onex_change_control",
+        "repos": "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket",
     }
     entries = yaml.safe_load(REQUIRED_CHECKS.read_text(encoding="utf-8"))
     required = [e for e in _entries(entries) if e.get("name") == CONTEXT]

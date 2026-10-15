@@ -403,6 +403,21 @@ requirements:
           and the reviewed #1972 action with seven repositories; missing peers, mismatched lists, unknown
           actions and duplicate peers fail -- falsifier: uv run pytest tests/unit/validation/test_ci_workflow_shape.py
           -q --no-cov -o addopts= -p no:randomly -k boundary_repo_contract'
+  - id: req-omn20074-core-residual-callers
+    statement: omnibase_core's boundary-validation job must not clone onex_change_control, and the main
+      target guard must not admit a pull request on a change-control promotion receipt; main is moved
+      only by the release workflow's fast-forward.
+    acceptance:
+      - id: AC52
+        statement: 'AC52: the boundary-validation job pins validate-boundaries at the omnibase_core#1972
+          merge and its repos input names no onex_change_control repository -- falsifier: uv run pytest
+          tests/ci/test_validate_boundaries_caller_omn20962.py -q --no-cov -p no:randomly fails at the
+          merge base'
+      - id: AC53
+        statement: 'AC53: main-target-guard refuses every pull request onto main, a dev or promotion/*
+          head carrying a promotion-receipt line included, and reads no change-control receipt, while
+          a pull request onto dev is admitted -- falsifier: uv run pytest tests/ci/test_main_target_guard_prepush_omn20780.py
+          -q --no-cov -p no:randomly fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -569,6 +584,13 @@ evidence_requirements:
       step must match the exact repository list audited for its action revision. No runtime service changes.
     command: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q --no-cov -o addopts= -p
       no:randomly -k test_cross_repo_boundary_validation_clones_all_boundary_repos
+  - kind: tests
+    description: The boundary-validation caller test finds the omnibase_core#1972 action pin and a repos
+      input with no change-control repository; the main-target-guard test runs the shipped step and finds
+      a promotion PR onto main refused whatever its body, with a PR onto dev admitted as the negative
+      control.
+    command: uv run pytest tests/ci/test_validate_boundaries_caller_omn20962.py tests/ci/test_main_target_guard_prepush_omn20780.py
+      -q --no-cov -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1012,3 +1034,27 @@ dod_evidence:
         check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q --no-cov -o addopts=
           -p no:randomly -k test_cross_repo_boundary_validation_clones_all_boundary_repos
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-20074-ac52
+    description: The caller test reads the parsed ci.yml and finds the validate-boundaries step pinned
+      at the omnibase_core#1972 merge with a repos input that names no change-control repository.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_validate_boundaries_caller_omn20962.py -q --no-cov -p
+          no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC52
+  - id: dod-omn-20074-ac53
+    description: The guard test runs the shipped main-target-guard step and finds every PR onto main refused,
+      a promotion-receipt body included, and a PR onto dev admitted.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_main_target_guard_prepush_omn20780.py -q --no-cov -p
+          no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC53
