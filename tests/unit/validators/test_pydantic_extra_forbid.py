@@ -25,6 +25,7 @@ from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_EXPLICIT_IGNORE,
     STATUS_IMPLICIT_DEFAULT,
 )
+from omnibase_core.validators import pydantic_extra_forbid as pyd
 from omnibase_core.validators.pydantic_extra_forbid import (
     load_baseline,
     load_waivers,
@@ -432,6 +433,58 @@ def test_render_baseline_is_deterministic(tmp_path: Path) -> None:
     first = render_baseline(findings, [module])
     second = render_baseline(list(reversed(findings)), [module])
     assert first == second
+
+
+def _header_count(text: str) -> int:
+    """Return the integer from the ``# count: N`` metadata line of a baseline."""
+    matches = [line for line in text.splitlines() if line.startswith("# count: ")]
+    assert len(matches) == 1
+    return int(matches[0].removeprefix("# count: "))
+
+
+def _entry_count(text: str) -> int:
+    return sum(1 for line in text.splitlines() if line.startswith("  - "))
+
+
+def test_rendered_baseline_count_header_matches_entries(tmp_path: Path) -> None:
+    """OMN-17885: the generated ``# count`` line must equal the rendered entries."""
+    module = _pkg(
+        tmp_path,
+        "mod_count",
+        "from pydantic import BaseModel\n"
+        "\n"
+        "class ModelA(BaseModel):\n    f: str\n"
+        "\n"
+        "class ModelB(BaseModel):\n    f: str\n",
+    )
+    findings = [f for f in scan_paths([module]) if f.is_violation]
+    rendered = render_baseline(findings, [module])
+    assert _entry_count(rendered) == 2
+    assert _header_count(rendered) == _entry_count(rendered)
+
+
+def test_rendered_baseline_preserves_spdx_and_document_marker(
+    tmp_path: Path,
+) -> None:
+    """OMN-17885: regeneration must not drop the SPDX header or the ``---`` marker."""
+    module = _pkg(
+        tmp_path,
+        "mod_spdx",
+        "from pydantic import BaseModel\n\nclass ModelA(BaseModel):\n    f: str\n",
+    )
+    findings = [f for f in scan_paths([module]) if f.is_violation]
+    lines = render_baseline(findings, [module]).splitlines()
+    assert lines[0].startswith("# SPDX-FileCopyrightText:")
+    assert lines[1] == "# SPDX-License-Identifier: MIT"
+    assert lines[2] == "---"
+
+
+def test_committed_baseline_count_header_matches_entries() -> None:
+    """OMN-17885: the committed baseline's ``# count`` must equal its entries."""
+    baseline = Path(pyd.__file__).with_name("extra_forbid_baseline.yaml")
+    text = baseline.read_text(encoding="utf-8")
+    assert _header_count(text) == _entry_count(text)
+    assert _entry_count(text) == len(load_baseline(baseline))
 
 
 # ===========================================================================
