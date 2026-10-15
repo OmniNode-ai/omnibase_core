@@ -107,6 +107,13 @@ def test_handler_is_a_typed_pure_compute(
         ("evidence/OMN-1/x.yaml", "HISTORICAL"),
         ("contracts/OMN-19252.yaml", "HISTORICAL"),
         ("src/omnibase_core/validation/hardcoded_model_config/policy.yaml", "GUARD"),
+        # OMN-21147: the work ledger is append-only history and is never rewritten; the
+        # private denylist names the retired values it exists to refuse.
+        ("docs/tracking/ROLLING_WORK_LEDGER.md", "HISTORICAL"),
+        ("docs/tracking/archive/ROLLING_WORK_LEDGER_2026-10-12-split.md", "HISTORICAL"),
+        ("vocabularies/hardcoded_model_config_lab_denylist.yaml", "GUARD"),
+        # A note beside the ledger is ordinary prose, not history.
+        ("docs/tracking/notes.md", "DOC"),
         ("config/lane.example.yaml", "EXAMPLE"),
         (".env.example", "EXAMPLE"),
         # OMN-21147: the former vendor-default files are ordinary source.

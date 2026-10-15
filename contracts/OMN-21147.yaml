@@ -47,6 +47,15 @@ requirements:
           gate baseline, from the core hook or the providing repository's own local hook, and still refuses
           it from a consumer's local hook or with no declaration -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py
           -q in omnibase_core"
+  - id: req-omn21147-history-paths
+    statement: The work ledger is append-only history and the private denylist names the retired values
+      it refuses, so neither is a finding of the guard in a repository that carries them.
+    acceptance:
+      - id: AC7
+        statement: "AC7: the policy classes a ROLLING_WORK_LEDGER file (live and archive rolls) as HISTORICAL
+          and the private lab denylist vocabulary as GUARD, while a note beside the ledger stays DOC --
+          falsifier: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k classify_path in omnibase_core"
 evidence_requirements:
   - kind: tests
     description: Corpus, policy-shape, family D, ratchet and gate-registration tests of the guard.
@@ -121,6 +130,17 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
+  - id: dod-omn21147-history-paths
+    description: The ledger rolls classify as HISTORICAL, the private denylist as GUARD, and a note beside
+      the ledger as DOC.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k classify_path
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
 emergency_bypass:
   enabled: false
   justification: ''
