@@ -15,6 +15,27 @@
 
 schema_version: 1
 entries:
+  - path: docs/evidence/hardcoded-localhost-url/hardcoded-localhost-url.generation.json
+    family: E
+    content_sha1: dbe6a960620180ec651dafd085a3086192820ea4
+  - path: docs/evidence/hardcoded-localhost-url/hardcoded-localhost-url.generation.json
+    family: E-LAN
+    content_sha1: dbe6a960620180ec651dafd085a3086192820ea4
+  - path: docs/evidence/hardcoded-localhost-url/hardcoded-localhost-url.generation.json
+    family: M
+    content_sha1: 4f0c1f026d51c0edd1d198ada35331f25adf9393
+  - path: docs/evidence/hardcoded-topic-string/hardcoded-topic-string.generation.json
+    family: E
+    content_sha1: dbe6a960620180ec651dafd085a3086192820ea4
+  - path: docs/evidence/hardcoded-topic-string/hardcoded-topic-string.generation.json
+    family: E-LAN
+    content_sha1: dbe6a960620180ec651dafd085a3086192820ea4
+  - path: docs/evidence/hardcoded-topic-string/hardcoded-topic-string.generation.json
+    family: M
+    content_sha1: 4f0c1f026d51c0edd1d198ada35331f25adf9393
+  - path: docs/evidence/pin-hygiene/pin-hygiene.generation.json
+    family: M
+    content_sha1: 4f0c1f026d51c0edd1d198ada35331f25adf9393
   - path: examples/demo/handlers/support_assistant/handler_anthropic.py
     family: M
     content_sha1: 83ef4f65080568b7365bb97b8a2a22c9fa929e0a
@@ -156,9 +177,210 @@ entries:
   - path: src/omnibase_core/models/routing/model_routing_decision.py
     family: M
     content_sha1: 55e2e27515a7cfd56dd6cab3fffa29d7689ce8e3
+  - path: src/omnibase_core/models/security/model_network_restrictions.py
+    family: E-LAN
+    content_sha1: 1f6d9639fed95a7700f6792ac64a67424a47cdeb
+  - path: src/omnibase_core/models/security/model_network_restrictions.py
+    family: E-LAN
+    content_sha1: 72895444c9dd7f22cd26b341a397abe155e4f1b5
+  - path: src/omnibase_core/models/security/model_network_restrictions.py
+    family: E-LAN
+    content_sha1: 918e48619edc5e526bb2658842a9764a0eb0de72
+  - path: src/omnibase_core/models/security/model_network_restrictions.py
+    family: E-LAN
+    content_sha1: 97cd938581717e24054a36b716508d10ee572ff0
+  - path: tests/fixtures/occ_imperative_contract_guard/trees/omnimemory/src/omnimemory/nodes/node_memory_retrieval_effect/adapters/adapter_embedding_client.py.txt
+    family: M
+    content_sha1: 12e0114769528c1cd3658c2b78b739580e7ff7d1
+  - path: tests/fixtures/validator_parity/no_env_fallbacks/corpus.json
+    family: E-LAN
+    content_sha1: 01c6f5cee2189fe7e11d29d54185cc95685c5f52
+  - path: tests/fixtures/validator_parity/no_env_fallbacks/corpus.json
+    family: E-LAN
+    content_sha1: 8cebba6ce63020b33c8fcb35e45bd9cfc962568a
+  - path: tests/fixtures/validator_parity/no_env_fallbacks/corpus.json
+    family: E-LAN
+    content_sha1: 9a96ee09c273e471114d23f6b6634f0a4b36f457
+  - path: tests/fixtures/validator_parity/no_env_fallbacks/corpus.json
+    family: E-LAN
+    content_sha1: f331dcee0c42354cdb94733d9339efcbaa6e7c3c
+  - path: tests/fixtures/validator_parity/no_env_fallbacks/golden.json
+    family: E-LAN
+    content_sha1: 490a9e24ecb9076ddcb1e935d013b2c2b7fbfe38
+  - path: tests/fixtures/validator_parity/no_env_fallbacks/golden.json
+    family: E-LAN
+    content_sha1: 6f46346fd325e65bde3e91e0a9b6e6311447a93e
+  - path: tests/fixtures/validator_parity/no_env_fallbacks/golden.json
+    family: E-LAN
+    content_sha1: ffbc651968ca3189d03cd01b89a023f1ab0099a5
+  - path: tests/integration/examples/demo/handlers/support_assistant/conftest.py
+    family: M
+    content_sha1: 394dbc71102e6e3646cd5b70dc7ff39ade927fad
+  - path: tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
+    family: M
+    content_sha1: 78d677b76d9d9ab6d8bdd8acd7904e91282dea78
+  - path: tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
+    family: M
+    content_sha1: 958003797ad35ed6e08a05b789814b5cf890535a
+  - path: tests/integration/models/observability/test_metrics_policy_integration.py
+    family: E-LAN
+    content_sha1: 16c477b711d3a90cdaf7a61e3a9be49139c539d5
+  - path: tests/integration/models/observability/test_metrics_policy_integration.py
+    family: E-LAN
+    content_sha1: 16c477b711d3a90cdaf7a61e3a9be49139c539d5
+  - path: tests/models/adr/test_adr_models.py
+    family: M
+    content_sha1: 15e722329ceb78fdbe9f84d8f6c6be5d1d565535
+  - path: tests/models/adr/test_adr_models.py
+    family: M
+    content_sha1: 458dd35f3968858ec1183946e3b90cc03743530b
+  - path: tests/models/adr/test_adr_models.py
+    family: M
+    content_sha1: 458dd35f3968858ec1183946e3b90cc03743530b
+  - path: tests/models/adr/test_adr_models.py
+    family: M
+    content_sha1: 458dd35f3968858ec1183946e3b90cc03743530b
+  - path: tests/models/adr/test_adr_models.py
+    family: M
+    content_sha1: 624c7117d2e828a7cca811913204ac8d4bf69de8
+  - path: tests/models/adr/test_adr_models.py
+    family: M
+    content_sha1: 6b29e17d01426e0d64a1669ef5c314c317e0527c
+  - path: tests/models/pack/test_context_pack_schema.py
+    family: M
+    content_sha1: 83c72b35d55787999e570bbfa0545aba139a0941
+  - path: tests/models/pack/test_context_pack_schema.py
+    family: M
+    content_sha1: 878f8850c6971b48000433564bd972cc7da9543d
+  - path: tests/models/pack/test_context_pack_schema.py
+    family: M
+    content_sha1: 8c78eae1de443b1365cae8e952b337d1dd601f5b
+  - path: tests/unit/backends/cache/test_sanitize_redis_url.py
+    family: E-LAN
+    content_sha1: 0257f60b796b6bf2634e80ba8342d7d5e4752fc2
   - path: tests/unit/backends/cache/test_sanitize_redis_url.py
     family: E-LAN
     content_sha1: de4dd7ceab9b30e8b0754aadd5e461f687a25e90
+  - path: tests/unit/canary/test_routing_authority_golden_canary.py
+    family: M
+    content_sha1: 1f72debdcb9f6a2b9005b43dd6d251185e42793c
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 05db70b37ad2cdbaff36964bddbfd12ae9df88c2
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 05db70b37ad2cdbaff36964bddbfd12ae9df88c2
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 085d30023671b7d610d2dd309fc8ac4285afe704
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 09fe14402be8315427f46f76b183229fe408d068
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 0e7b33acd8a11f2e522edda5a27ef5f6e1fb8a00
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 1dbe9406bb4f7e9ecbbc4ba037f3af0a1947f793
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 2832e2b2c9d7ee9c0c8ac61486ae108d725e547d
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 2bc675089394431ac0f2316eb1653482110175a5
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 4deb1557034873ca13dad395c395f729dca552c8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 4deb1557034873ca13dad395c395f729dca552c8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 4fc37935351a4b69aee6de868332da38c3cf19d8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 4fc37935351a4b69aee6de868332da38c3cf19d8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 4fc37935351a4b69aee6de868332da38c3cf19d8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 4fc37935351a4b69aee6de868332da38c3cf19d8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 56d4d01a8415cf863e1d713fc6c2057be9203eb8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 644af44afba81583cd7719a034cd8e3eda1f2822
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 680468794f172b5b96cfa0c363e8021716a12d46
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 755359ecacd420461c4617b46fb5b7469b757891
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 755359ecacd420461c4617b46fb5b7469b757891
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 79d1ea239f7250fd9b7456da73ab12e23e9af9a6
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 907b10e06fccbec2d1b542f422c1f9863662a601
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 97f9acf9b05c5c1e6b356ddf34556bf7b381742f
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: 97f9acf9b05c5c1e6b356ddf34556bf7b381742f
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: a793e2681f9e94586d287846125cce6238d152b6
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: a9df98ce7c7663e6af30e6f0a35c62e329a0c178
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: b564a18183561364f42f85d1b3ffd7d50aacb953
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: ba0951c320b11b40410858a8c40fc5ce7c572f24
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: c13f077b6b1c1b12228069d84fc6fae03522e7b1
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: ca810d947a9131c10ea3cacdfda509df420692a8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: ca810d947a9131c10ea3cacdfda509df420692a8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: ca810d947a9131c10ea3cacdfda509df420692a8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: ca810d947a9131c10ea3cacdfda509df420692a8
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: d583f6470d48a8f6cc5f406b4c8ef39894c90138
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: d9b7e8f3a990638eef76c05d29d433bbffd8ee14
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: d9b7e8f3a990638eef76c05d29d433bbffd8ee14
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: d9b7e8f3a990638eef76c05d29d433bbffd8ee14
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: d9b7e8f3a990638eef76c05d29d433bbffd8ee14
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: f06d10b076aa48c605f8853830e70f1dbb6a90c1
+  - path: tests/unit/contracts/test_decision_record.py
+    family: M
+    content_sha1: f9da36e3eff8d12c4464317cdee9a6360afaa31b
   - path: tests/unit/contracts/test_model_contract_config.py
     family: E-LAN
     content_sha1: 291ce7051af36d32751214e7244af5985c8f545f
@@ -174,6 +396,258 @@ entries:
   - path: tests/unit/contracts/test_model_contract_config.py
     family: E-LAN
     content_sha1: f92b23e05e491c388472b56d9f3f1e3f44439a9e
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: M
+    content_sha1: 559abf6320a6c51b495d1d41f7c8119517c5b696
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: M
+    content_sha1: 60e57624907a69b3d91acbd32c0639d0077fe4b3
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: M
+    content_sha1: a05c51b45b8a8b67ee3cca273888cca423cb0cce
+  - path: tests/unit/contracts/test_model_contract_config.py
+    family: M
+    content_sha1: df0d621ae1fa4a4b7c1f0ba40c54932e84f9f447
+  - path: tests/unit/enums/test_omnimemory_integration.py
+    family: M
+    content_sha1: 7a6d98263b00c14f39d52cd1f5e7d057b51057b9
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 00ae5ea987584ba2a6e4d967ce8df32cdb67541c
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 04a64a3543fdb7a5e61cee4f25344eca463ff87e
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 0570b9ba6e61b5387568b155cd49dcfb1e66468b
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 071df13108866801c524296e095bed9cd238a3a5
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 07ada33fa94497124c63cc1b33807e874942a591
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 07ada33fa94497124c63cc1b33807e874942a591
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 07ada33fa94497124c63cc1b33807e874942a591
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 11b4978a1278061ecb8070667020d7279d33741a
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 1633f4a01583e7610ccaf7f5205f7bbe006367e0
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 1633f4a01583e7610ccaf7f5205f7bbe006367e0
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 1dcc04faf8f580a86240be77101aeb1539a28fc8
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 30cde26169410fd8e5dd3425a333d06636634218
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 329d6810e069c77382c33e677316575892de4273
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 46ace3620c8dcdb076b299a013ba8c7e0d04c4f2
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 4933820149c2396a2c56bc5796bfb937b07fc3b4
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 4933820149c2396a2c56bc5796bfb937b07fc3b4
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 6781b5d10be19fd64b26c44b44415253cad55100
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 67b571beff896e8ae8db8da5af6ef8ee7d6c8237
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 67de28749bdac3e87c0886ca54284f323058206c
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 6bd37ebc74276000e140bf7f53cd7f021f8972e0
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 80db66d671364d109308b47a02b2a24a49be67be
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 80db66d671364d109308b47a02b2a24a49be67be
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 80db66d671364d109308b47a02b2a24a49be67be
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 80db66d671364d109308b47a02b2a24a49be67be
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 82a078d7b8c104538a5b09333ee71771646a0503
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 8856cb9bb38e48dd8657f1c8ad589a749062b4fc
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 8b625f949afdc4f4e9f21f9b5f0cd6a06adae40a
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 8b625f949afdc4f4e9f21f9b5f0cd6a06adae40a
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 8d20a33a46e5b6e6d42512b523a68a97ad2e909d
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 8d96246d2de31e8c04a806838fe43862cbb83a14
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: 8fd488d11d38c03368647eb8af75107a931b8a2a
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: a21f53ef78d209c7ea70c4e6a9a22c67ea74d9cc
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: ac350c2eada56e3a10d4b5f17638f5de445b6487
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: ac350c2eada56e3a10d4b5f17638f5de445b6487
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: ac350c2eada56e3a10d4b5f17638f5de445b6487
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: ac350c2eada56e3a10d4b5f17638f5de445b6487
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: ac350c2eada56e3a10d4b5f17638f5de445b6487
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: ac350c2eada56e3a10d4b5f17638f5de445b6487
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: e014b95cb73f6b0b729af7ce1d5fa0b4e57ab20d
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: e08ffde512799347864f63dc2b4a778ae6a3a593
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: e820a22958b4c265817e7fa635d85826c39828c3
+  - path: tests/unit/examples/demo/handlers/support_assistant/test_model_config.py
+    family: M
+    content_sha1: fb2890047d60122a81bf933a87e3c189a8beadf1
+  - path: tests/unit/models/benchmark/test_model_generation_benchmark.py
+    family: M
+    content_sha1: 7174a550ce40f5d4f53f4a432e38c1375c4e81f3
+  - path: tests/unit/models/configuration/test_model_per_user_limits.py
+    family: E-LAN
+    content_sha1: 909058b04f59bb618301938c48b7e077f27abff6
+  - path: tests/unit/models/configuration/test_model_per_user_limits.py
+    family: E-LAN
+    content_sha1: d4b26c9be7bc078b646b03494f37daa80220e030
+  - path: tests/unit/models/configuration/test_model_rate_limit_policy.py
+    family: E-LAN
+    content_sha1: 21c2bdd20131c7f051c5dbf9a54acb6319006a43
+  - path: tests/unit/models/configuration/test_model_rate_limit_policy.py
+    family: E-LAN
+    content_sha1: 225e9792a86a36d5c654f2cdbbf53831ee76790d
+  - path: tests/unit/models/configuration/test_model_rate_limit_policy.py
+    family: E-LAN
+    content_sha1: 675e59f43307c1f217a986fb1d486b528934957a
+  - path: tests/unit/models/configuration/test_model_rate_limit_policy.py
+    family: E-LAN
+    content_sha1: b4287e4ad29e7a795a2cab1255a6c682d67fa10b
+  - path: tests/unit/models/configuration/test_model_rate_limit_policy.py
+    family: E-LAN
+    content_sha1: b9e0f65059a7033f350e777878eaca88a8dfd9a1
+  - path: tests/unit/models/configuration/test_model_rate_limit_policy.py
+    family: E-LAN
+    content_sha1: f9fc6925548095a963cfb446099be361e63098ef
+  - path: tests/unit/models/configuration/test_session_affinity.py
+    family: E-LAN
+    content_sha1: 0d82572788194cadb21b13214b30084b7186d140
+  - path: tests/unit/models/configuration/test_session_affinity.py
+    family: E-LAN
+    content_sha1: 2994e666dfe95c17063754e00d0bfeb4f8dcd53f
+  - path: tests/unit/models/configuration/test_session_affinity.py
+    family: E-LAN
+    content_sha1: 69c4b30899fb64e5a512a57d0550b0e710cdb19d
+  - path: tests/unit/models/context/test_context_models.py
+    family: E-LAN
+    content_sha1: 0d12680973ab5cfa043881d84ac9a7f8c55eceb5
+  - path: tests/unit/models/context/test_context_models.py
+    family: E-LAN
+    content_sha1: 18853dc1052262770ec3e7bc01ed4a9c7a40bc31
+  - path: tests/unit/models/context/test_context_models.py
+    family: E-LAN
+    content_sha1: 22d013862804647cad180cb3f5905edb0ac3d680
+  - path: tests/unit/models/context/test_context_models.py
+    family: E-LAN
+    content_sha1: 2ad7f58575b66960df327ae34b47fc3c939295e3
+  - path: tests/unit/models/context/test_context_models.py
+    family: E-LAN
+    content_sha1: 3f31725c9ab63362b37d6014df6d9ef90b54763b
+  - path: tests/unit/models/context/test_context_models.py
+    family: E-LAN
+    content_sha1: 7bf523d21ecc3de570611a6969d0dc9cdb8fdf94
+  - path: tests/unit/models/context/test_context_models.py
+    family: E-LAN
+    content_sha1: aba9c8901635e06230ac52f046531047e2b0e06a
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 0412cc7070a8e067c23598d6e7fffd76a28d3efc
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 18853dc1052262770ec3e7bc01ed4a9c7a40bc31
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 5435f5a5da8a59a6bf8fc09608faf4c4a9f0198b
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 560060cb0eeef604ef0d950d1bbbad5f180fc498
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 69c4b30899fb64e5a512a57d0550b0e710cdb19d
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 69c4b30899fb64e5a512a57d0550b0e710cdb19d
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 69c4b30899fb64e5a512a57d0550b0e710cdb19d
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 6b027fe7c7a4d60e2b3527cbd86d074b2a72437a
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 76979b598590a799db5447fb28ba45a2c640c32b
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 77929202495a571688b55cb5ec48dfc1fc377b7f
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: 8b34ddedb40bd782aa5a5baf1d286b58b22eda07
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: adfadad71ab919a5ad0efd9efeca173069325819
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: bfe0e5d2056f26040f8dc30447aeeddd82dd8a97
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: c0cf028bcdde23ecd97304e199932250091729e6
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: cdd652dabc661ecfba67fb99420dbddb09ea01d2
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: d0f03774bdbe0dea8b4b126ba0885173a869271d
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: d3172f06091d0008e801bf1edb532a2aa93ce133
+  - path: tests/unit/models/context/test_model_session_context.py
+    family: E-LAN
+    content_sha1: ee91d5382ec8bedaca3717d1c0dac4102da62da6
   - path: tests/unit/models/contracts/test_model_behavior_proven_receipt.py
     family: E-LAN
     content_sha1: ad7f4f82cb35f37e9232abde3c23731e53bf2106
@@ -183,6 +657,9 @@ entries:
   - path: tests/unit/models/contracts/test_model_delegation_runtime_profile.py
     family: E-LAN
     content_sha1: 8be1781ed1400c97ae3ae87a8a59de57a82f9d5e
+  - path: tests/unit/models/contracts/test_model_delegation_runtime_profile.py
+    family: M
+    content_sha1: 34964251cc2360f016a5240972369250629b5406
   - path: tests/unit/models/contracts/test_runtime_sha_match.py
     family: E-LAN
     content_sha1: 7b1813f83f0a35e14940b36c5d073647ec26b430
@@ -207,12 +684,525 @@ entries:
   - path: tests/unit/models/contracts/test_runtime_sha_match_dod_gate.py
     family: E-LAN
     content_sha1: a46e911ee8bcc47288dac579a9eabfa6a6688e84
+  - path: tests/unit/models/delegation/test_delegation_models.py
+    family: M
+    content_sha1: a45f9fb413f69dd5942a6c8f40db17372a40c289
+  - path: tests/unit/models/delegation/test_delegation_models.py
+    family: M
+    content_sha1: a45f9fb413f69dd5942a6c8f40db17372a40c289
+  - path: tests/unit/models/delegation/test_delegation_models.py
+    family: M
+    content_sha1: a45f9fb413f69dd5942a6c8f40db17372a40c289
+  - path: tests/unit/models/delegation/test_delegation_models.py
+    family: M
+    content_sha1: e7111a30ecf5ec23fc967058694d95a227a30dea
+  - path: tests/unit/models/delegation/test_delegation_models.py
+    family: M
+    content_sha1: e7111a30ecf5ec23fc967058694d95a227a30dea
+  - path: tests/unit/models/delegation/test_delegation_models.py
+    family: M
+    content_sha1: e7111a30ecf5ec23fc967058694d95a227a30dea
+  - path: tests/unit/models/delegation/test_model_escalation_event.py
+    family: M
+    content_sha1: 011297e07eb8ffadff4f2bf96cea4b7022d534f7
+  - path: tests/unit/models/delegation/test_model_escalation_event.py
+    family: M
+    content_sha1: 048d6b672d9895bf7b498c67c34f2af009376be4
+  - path: tests/unit/models/delegation/test_model_escalation_event.py
+    family: M
+    content_sha1: abc08a8f2b09ac3e06e8e8fed31df619d7f55647
+  - path: tests/unit/models/delegation/test_model_escalation_event.py
+    family: M
+    content_sha1: e5d7a7f5fab5227d3fd8542032e6c7fa03d6b6f9
   - path: tests/unit/models/delegation/test_model_health_status.py
     family: E-LAN
     content_sha1: 8bff1b0b47ff1210e63a054aaf17b133420cc362
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: 0185b3a7896856f83c9492745107916a641298a3
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: 0185b3a7896856f83c9492745107916a641298a3
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/test_model_health_status.py
+    family: M
+    content_sha1: cabafccf913ff3eb340bd7718714c4bc2b00c038
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 21b2a20f5d464e6f26f2011c5d88983063699c02
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 2fc78cb8c724745b025b8c6af20b294b00b91c7e
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 2fc78cb8c724745b025b8c6af20b294b00b91c7e
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 2fc78cb8c724745b025b8c6af20b294b00b91c7e
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 2fc78cb8c724745b025b8c6af20b294b00b91c7e
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 2fc78cb8c724745b025b8c6af20b294b00b91c7e
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 2fc78cb8c724745b025b8c6af20b294b00b91c7e
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 3a3d6ffffbce3eeecf5b3c8fe18e3b707a228276
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 4da2434eb8c97104d756b86865ac4bb75f90f72b
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 5e2e33915b621d8116fd4fcf57382434b22499b0
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 69f1a9fbeb306405219c1591339d03f08b243d87
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 747b8bfd837ed51405a8b687245880dafe25d385
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 78da60b12430d88f5e320e6c37ec0faa6b9089ee
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 7c102faf6284c42f674e37e427a84cea590c1c6f
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 7c102faf6284c42f674e37e427a84cea590c1c6f
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 7c102faf6284c42f674e37e427a84cea590c1c6f
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 907907b67be1d33a7062c56fec5b61db3f6919f5
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 907907b67be1d33a7062c56fec5b61db3f6919f5
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 907907b67be1d33a7062c56fec5b61db3f6919f5
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: 95aed418b06fe0053639b9185173f15cf76e4c65
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: a6ebab3d8ca69a60b8b75fea97b2b3a3c1944e77
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: aea914275d6d2cfec32eb2d4e53623411e130ca4
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: b49d0d8a67816fb31fca3348fc21abc875e6ea9c
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: b49d0d8a67816fb31fca3348fc21abc875e6ea9c
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: b49d0d8a67816fb31fca3348fc21abc875e6ea9c
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: b49d0d8a67816fb31fca3348fc21abc875e6ea9c
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: b49d0d8a67816fb31fca3348fc21abc875e6ea9c
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: b49d0d8a67816fb31fca3348fc21abc875e6ea9c
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: d0f7a7be65b732a59c1fc9e285bc8195c7fc3059
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: dc314dfd327cc037ae7490b22b1a8fa4c34529ae
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_delegation_wire_models.py
+    family: M
+    content_sha1: e80eae095ba53c81d26940e12615bb53f875d24a
+  - path: tests/unit/models/delegation/wire/test_model_delegation_dispatch_result.py
+    family: M
+    content_sha1: 0c4768b7ce66bed71fce8c9d345e4f024bba6ef9
+  - path: tests/unit/models/delegation/wire/test_model_delegation_dispatch_result.py
+    family: M
+    content_sha1: 17d5bf3e5e84367e40e9a7c07fb862767fa25f5a
+  - path: tests/unit/models/delegation/wire/test_model_delegation_dispatch_result.py
+    family: M
+    content_sha1: 6776fcb51dd57984bef4c442dbd5693fab60f9bc
+  - path: tests/unit/models/delegation/wire/test_model_delegation_dispatch_result.py
+    family: M
+    content_sha1: b43d9e62f5a3f8076ff5d01e11303d74964bd142
+  - path: tests/unit/models/delegation/wire/test_model_delegation_terminal_v2.py
+    family: M
+    content_sha1: 3b28e2e1a50ef9713c73d114e6871897916f11db
+  - path: tests/unit/models/delegation/wire/test_omn18196_credential_source.py
+    family: M
+    content_sha1: af75311908988df7bac06139803a11fe7c04020b
+  - path: tests/unit/models/delegation/wire/test_omn18196_credential_source.py
+    family: M
+    content_sha1: af75311908988df7bac06139803a11fe7c04020b
+  - path: tests/unit/models/delegation/wire/test_omn18201_expected_credential_source.py
+    family: M
+    content_sha1: ea9cc48c8d2fd948b0f34654d66d51bbddc39673
+  - path: tests/unit/models/delegation/wire/test_omn18295_rule_evaluations.py
+    family: M
+    content_sha1: af75311908988df7bac06139803a11fe7c04020b
+  - path: tests/unit/models/demo/model_validate/conftest.py
+    family: M
+    content_sha1: 6b9a69b5a7294980602cf3f0a2b6e199156c3dbe
+  - path: tests/unit/models/demo/model_validate/conftest.py
+    family: M
+    content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
+  - path: tests/unit/models/demo/model_validate/test_model_support_classification.py
+    family: M
+    content_sha1: 4971d4c8d293bba0d8d64c982e0492474a372f5e
+  - path: tests/unit/models/dispatch/test_model_call_record.py
+    family: M
+    content_sha1: 8d69f7ee54310e19877b66867ccbed1bc8767a4c
+  - path: tests/unit/models/dispatch/test_model_call_record.py
+    family: M
+    content_sha1: 8d69f7ee54310e19877b66867ccbed1bc8767a4c
   - path: tests/unit/models/dispatch/test_model_dispatch_claim.py
     family: E-LAN
     content_sha1: 4c137bd5ca5c3a16c73b2033f38a31c791aa0d65
+  - path: tests/unit/models/dispatch/test_model_dispatch_eval_result.py
+    family: M
+    content_sha1: 8d69f7ee54310e19877b66867ccbed1bc8767a4c
+  - path: tests/unit/models/health/conftest.py
+    family: M
+    content_sha1: 8683cdbe991fe64ea1724182ad9f98b1a0d70c00
+  - path: tests/unit/models/health/test_model_baseline_health_report.py
+    family: M
+    content_sha1: 17a54eb26c5d5cbf2812040b6ce9f76b845d845c
+  - path: tests/unit/models/health/test_model_baseline_health_report.py
+    family: M
+    content_sha1: ace8ad8235c7ccf3c689ac7ea1973145cb03356e
+  - path: tests/unit/models/health/test_model_baseline_health_report.py
+    family: M
+    content_sha1: ee0a9ad7637a0b09e3a4146199bad814ba1998b0
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 06c8f712f13c976daf9751bf043fe705ef7cf454
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 0cec235afd3a746153b4468cd08af88b19de8b4e
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 250639ca111533a4fdb86b092075a62523c8189d
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 354efa7051c67849c24d10c8d86e85895f3c0585
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 50df9d52623f69b2ee85894ba8b871ca54e91d66
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 58e5945b2fbf435cf5af87c580537a5677c1c42d
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 631ea096c711f9323563287d6317661fdc982019
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: 9ba7e0dba6d35a22de6dbcff21ff4f1ae3f493f6
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: a34882dacdabbc62410ec551f9d7c5771035a53e
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: ca2003a43268e9a5db3287c051a90c70a64ad6f8
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_entry.py
+    family: M
+    content_sha1: f964e7c4722909fc7e7a90bbf7717ea5b86d3b76
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: 397c2a67c6c9a096247c3f1a6bcc356b6497c204
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: 397c2a67c6c9a096247c3f1a6bcc356b6497c204
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: 397c2a67c6c9a096247c3f1a6bcc356b6497c204
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_cost_ledger.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_decision_record.py
+    family: M
+    content_sha1: 1b79d75621009e9955bd4cb811f4dab2628b54f8
+  - path: tests/unit/models/omnimemory/test_model_decision_record.py
+    family: M
+    content_sha1: 354efa7051c67849c24d10c8d86e85895f3c0585
+  - path: tests/unit/models/omnimemory/test_model_decision_record.py
+    family: M
+    content_sha1: 679f33764f71fb29d9534fc536908fff425dd19a
+  - path: tests/unit/models/omnimemory/test_model_decision_record.py
+    family: M
+    content_sha1: e1a1be1549ff365a9da27755f803dbb1febfd7f6
+  - path: tests/unit/models/omnimemory/test_model_decision_record.py
+    family: M
+    content_sha1: e7254a6875cbc5d8ad785d543df329ec7f4f523a
+  - path: tests/unit/models/omnimemory/test_model_decision_record.py
+    family: M
+    content_sha1: f1eb4157a96e8dd5fcf76b718a121b1c6293ad61
+  - path: tests/unit/models/omnimemory/test_model_failure_record.py
+    family: M
+    content_sha1: 631ea096c711f9323563287d6317661fdc982019
+  - path: tests/unit/models/omnimemory/test_model_failure_record.py
+    family: M
+    content_sha1: a21def81a75b0e71770ae1c5a2cb7419da5e8c50
+  - path: tests/unit/models/omnimemory/test_model_memory_diff.py
+    family: M
+    content_sha1: 0e378167bfa12a75008372cb6b861f85a15b4c73
+  - path: tests/unit/models/omnimemory/test_model_memory_diff.py
+    family: M
+    content_sha1: 2a2cf1140fed6266d266a6795d5a248dc979c12e
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 0e378167bfa12a75008372cb6b861f85a15b4c73
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 0e378167bfa12a75008372cb6b861f85a15b4c73
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 0e378167bfa12a75008372cb6b861f85a15b4c73
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 2a2cf1140fed6266d266a6795d5a248dc979c12e
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 2a2cf1140fed6266d266a6795d5a248dc979c12e
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 2a2cf1140fed6266d266a6795d5a248dc979c12e
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 2a2cf1140fed6266d266a6795d5a248dc979c12e
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: 8b28d4018c4abb821fcd9c42fe0e0f9e6d01aa79
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: b3366876f0b8000940eb7f4fa11081d257997003
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: b3366876f0b8000940eb7f4fa11081d257997003
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
+  - path: tests/unit/models/omnimemory/test_model_memory_snapshot.py
+    family: M
+    content_sha1: e934ad05ec9c4d7fd705876c6adb18bc7909aad0
   - path: tests/unit/models/operations/test_model_change_proposal.py
     family: E-LAN
     content_sha1: 2293d92c52ecf6acc87749b6a4100b9e409ebc7f
@@ -225,9 +1215,240 @@ entries:
   - path: tests/unit/models/operations/test_model_change_proposal.py
     family: E-LAN
     content_sha1: f15582fca71e13c8fe986782a7544c008ea98edb
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 0a54ee73832a251019343dbb44466572e65a00c5
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 0a54ee73832a251019343dbb44466572e65a00c5
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 0c6807bdafb980351af6f0b84e89951ffcf1a0f7
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 10c4e8d35ae0be228c5720afadbaba66630732f6
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 1f2ed96af0085cdc5d3568fbc19b3072ea50189f
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 29b183f9d829e068c68bf42ae51d9b484b64f436
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 2bf05bf1f17743275bffc4366813529c32b26593
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 31f36387e1b5b42004668f56fd8d3147386d258b
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 3653410b9df8b19bf85db2136a6150ff7adb1a63
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 46d97035942ebce117762f66ed5ffabfcbd40000
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 533762349577775db9430a6e9c15180afff4d0d2
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 533762349577775db9430a6e9c15180afff4d0d2
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 5dfea2a8de26d75a5fd49d2ea678505c220037f9
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 85fb1b032097f10ad213bc7c65425f1bffba1682
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 89e2dcd3af11cfc8a704ac90f734737a752a13d9
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: 8ec05765608b3c3541f3e740a7dd5cd243b939f2
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: a45a621b8f138821fd9075b526cbc6f92bde695c
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: a932f4d5206d9e30cc4916e634abe5a6cefa2293
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: b7de75f52987c8e340f7e7095dcbc3bb940b00ab
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: bd3d4d91ae85782ffc019d9d5825228f2ed4ef7d
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: c087f33533fa62f630f7a7bfbb4e60418e24f77d
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: c087f33533fa62f630f7a7bfbb4e60418e24f77d
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: c087f33533fa62f630f7a7bfbb4e60418e24f77d
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: c087f33533fa62f630f7a7bfbb4e60418e24f77d
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: c087f33533fa62f630f7a7bfbb4e60418e24f77d
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: ca4300ed742d7534656a236bd23c8276811afeb9
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: dce27368b141b083ce5c3eea527fd52d2a004a72
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: dce27368b141b083ce5c3eea527fd52d2a004a72
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: dce27368b141b083ce5c3eea527fd52d2a004a72
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: dce27368b141b083ce5c3eea527fd52d2a004a72
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: dce27368b141b083ce5c3eea527fd52d2a004a72
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: dfe1f3e10152769a30cea26f3d3975b735c6a321
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: e8a807e1c19737b146f5fedf1b9c02d5724e29ea
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: f03148447140727643c5b6711a0a17f7dc6fc247
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: f03148447140727643c5b6711a0a17f7dc6fc247
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: f3244e59a51a6d11a7df118fa023dd5edbcf9fbc
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: f3244e59a51a6d11a7df118fa023dd5edbcf9fbc
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: f8a36662c5c7508101bedd9ee94f0813106d182f
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: f8c0814161b9730a0d18ff8d1be5512b2a7f03ff
+  - path: tests/unit/models/operations/test_model_change_proposal.py
+    family: M
+    content_sha1: fe1b8fd1505a4a1810e12bd4cb37f093f6b28efc
+  - path: tests/unit/models/operations/test_model_event_payload.py
+    family: E-LAN
+    content_sha1: 7fa5b3ec36230e6bae3024a86c7746eb239e00b3
+  - path: tests/unit/models/operations/test_model_event_payload.py
+    family: E-LAN
+    content_sha1: 883032b24617eea3a3f57000342d186ef0464fea
   - path: tests/unit/models/overlay/test_model_overlay_file.py
     family: E-LAN
     content_sha1: ddeb7a5e0678cdb71eebde412cd604e1ff76eafe
+  - path: tests/unit/models/reducer/payloads/test_model_payload_fsm.py
+    family: E-LAN
+    content_sha1: 2843bb4abd0cb7c828bad07f540490028bc2ee10
+  - path: tests/unit/models/reducer/payloads/test_model_payload_fsm.py
+    family: E-LAN
+    content_sha1: 33cf1db3bc60b2911abc2257859b017d80bae1f0
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 0ec2516fdc741f74f1cc8cfe0305368a26eb4c74
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 139c8e0032b315e148c6d77141d23734b2b68582
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 1d32fbfb091538d947cc29bb7124cc84e66bf4df
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 63aa4de6434a46ee36508fe6f6340c58a5a469aa
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 63aa4de6434a46ee36508fe6f6340c58a5a469aa
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 63aa4de6434a46ee36508fe6f6340c58a5a469aa
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 63aa4de6434a46ee36508fe6f6340c58a5a469aa
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 7014ce23843f11912ed9eaa50dc0e103e007654c
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 91e3e0a7e6329bb327da481d60d1a1ac5b028dd2
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: 9a980f305fc7628bb7363e5ea78de3c9b0e9112f
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: c7f2009e817f9b03f27610ed4486cd188f1d3ec6
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: c7f2009e817f9b03f27610ed4486cd188f1d3ec6
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: ecc0972bc471ba1ff3dbbd0682600602dcceb2d5
+  - path: tests/unit/models/routing/test_model_llm_route_events.py
+    family: M
+    content_sha1: f2fda18b22811acfafab192da5266eb224684f55
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: 547d716e55722da9ba3abe21efeaa3d00b698acd
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: 7f07bc5f78b2965ab1a8f61eea03c996a743418c
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: 870f47ae6799543053f02367c6ca69a60663e9c0
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: 9261823dffe6457bf37621208ed1774656e744c9
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: a657076dd19863c371a6071c3eb6ce5ab046ed54
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: e69b3b3e1e58cd4091a032ffac7d7af33bd18fd0
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: e69b3b3e1e58cd4091a032ffac7d7af33bd18fd0
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: e69b3b3e1e58cd4091a032ffac7d7af33bd18fd0
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: e69b3b3e1e58cd4091a032ffac7d7af33bd18fd0
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: f1dba1486196c040986bee6bfdf6a2ec87e3a162
+  - path: tests/unit/models/routing/test_routing_decision_and_degraded.py
+    family: M
+    content_sha1: f1dba1486196c040986bee6bfdf6a2ec87e3a162
+  - path: tests/unit/models/security/test_model_permission.py
+    family: E-LAN
+    content_sha1: 0e5af78182cc39c757ecc512d58a18c6140d472f
+  - path: tests/unit/models/security/test_model_permission.py
+    family: E-LAN
+    content_sha1: 20feaf7051fbaae7eb732cbad6d68d843062058b
+  - path: tests/unit/models/security/test_model_permission.py
+    family: E-LAN
+    content_sha1: 5bc8e74541d55b1740261fc8cf23d1c3bfdedd00
+  - path: tests/unit/models/security/test_model_permission.py
+    family: E-LAN
+    content_sha1: 8fa43688ac4deddb493782b75d5c8d00a9720572
+  - path: tests/unit/models/security/test_model_permission.py
+    family: E-LAN
+    content_sha1: a4620b0127c17b6d16e9b4b53ccac076621a8555
+  - path: tests/unit/models/security/test_model_permission.py
+    family: E-LAN
+    content_sha1: cc6e36e29e5f78a6d5aa0dc0be2a34071473c03b
+  - path: tests/unit/models/security/test_model_permission.py
+    family: E-LAN
+    content_sha1: efad59931a5b3a0bb7c6a9d9ccdfdf956baf47f5
+  - path: tests/unit/models/security/test_model_policy_value.py
+    family: E-LAN
+    content_sha1: 8b2f1117a4e10671c3129fa242cebfd70e7661ed
   - path: tests/unit/models/services/test_model_service_health.py
     family: E-LAN
     content_sha1: 5418b272dade4b2d9a9b4f02f2cd793c71a5d6b6
@@ -240,6 +1461,33 @@ entries:
   - path: tests/unit/models/validation/test_model_event_destination.py
     family: E-LAN
     content_sha1: 89ed4fb71b14b45ed018155e4412f4d540ccf99d
+  - path: tests/unit/models/validation/test_model_llm_reference_codegen_inputs.py
+    family: M
+    content_sha1: 0c220b61a711b803d3dbef13381550971ae8d9b7
+  - path: tests/unit/models/validation/test_model_llm_reference_codegen_inputs.py
+    family: M
+    content_sha1: 112154e324978674d3549534c9d67a9a6805a9d2
+  - path: tests/unit/models/workflow/test_model_workflow_state_snapshot_pii.py
+    family: E-LAN
+    content_sha1: 2773e6abdd5c2d7751d6b4babfd4179ce574e198
+  - path: tests/unit/models/workflow/test_model_workflow_state_snapshot_pii.py
+    family: E-LAN
+    content_sha1: 3a5db6366b54edf40cc46266d8c92429263db3b0
+  - path: tests/unit/models/workflow/test_model_workflow_state_snapshot_pii.py
+    family: E-LAN
+    content_sha1: 3a5db6366b54edf40cc46266d8c92429263db3b0
+  - path: tests/unit/models/workflow/test_model_workflow_state_snapshot_pii.py
+    family: E-LAN
+    content_sha1: 5cb55af0612f028009348586d972f16b7b17f537
+  - path: tests/unit/models/workflow/test_model_workflow_state_snapshot_pii.py
+    family: E-LAN
+    content_sha1: ac027fcb77220538c6afb8cd5e0170b084641f29
+  - path: tests/unit/models/workflow/test_model_workflow_state_snapshot_pii.py
+    family: E-LAN
+    content_sha1: ac027fcb77220538c6afb8cd5e0170b084641f29
+  - path: tests/unit/models/workflow/test_model_workflow_state_snapshot_pii.py
+    family: E-LAN
+    content_sha1: f0112b454814cd86e2b1694185d3ab45252a8139
   - path: tests/unit/nodes/node_no_env_fallbacks_check_compute/test_node_no_env_fallbacks_check_compute.py
     family: E-LAN
     content_sha1: 5c2d9cbda87bd7e1553a187b897a3da2b5079adc
@@ -257,7 +1505,28 @@ entries:
     content_sha1: 269f15a9a3ee7209b5e7827e0580d672d5d9e0d3
   - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
     family: E-LAN
+    content_sha1: 3d401e0c83970c036a94da9fca1d76717938a194
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 3ddb8a61b3640c96bdc9edca08654a34905d2293
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
     content_sha1: 886a45cc756dc8af12d7976f44b4435341fe19fe
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 8f4a1e8df0730f853f546882c66cc8543332c1c0
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 901de4deb6f1becccf9de08788029817456a640e
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: 92d13876426b2c72ffc5c3a29e07abc16abc3d91
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: b29ff22005b92d1358eb5dfadf136c9912bab951
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: c79f4dff3f50e793a3d27e97898d996bb54ff7cc
   - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
     family: E-LAN
     content_sha1: cf12324724d70faa46bff29e1c782ec9f5dbb281
@@ -270,6 +1539,9 @@ entries:
   - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
     family: E-LAN
     content_sha1: e2a65f0cbccd2d0fcf4623eed9e696eaf5033c20
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_node_no_hardcoded_ip_check_compute.py
+    family: E-LAN
+    content_sha1: f715b0df29d066c13863121398857fa4f033beb7
   - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
     family: E-LAN
     content_sha1: 777b42b3c1d1cf160e2440284a94a30517e6397a
@@ -281,6 +1553,9 @@ entries:
     content_sha1: a77ed50e63260c9a5708b5339796e201f573f33e
   - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
     family: E-LAN
+    content_sha1: b1cb2055d32b481be98d8f188ca1ab325fcdfb12
+  - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
+    family: E-LAN
     content_sha1: e6d8e74c14774a95845ecffa60dea48ebda134dd
   - path: tests/unit/nodes/node_no_hardcoded_ip_check_compute/test_runtime_no_hardcoded_ip_check.py
     family: E-LAN
@@ -290,28 +1565,148 @@ entries:
     content_sha1: fab8638345b1032f9aad2d5a618d980d5427d9c3
   - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
     family: E-LAN
+    content_sha1: 277d902b89d1f41e5db243c2044917c1b4fe5774
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 277d902b89d1f41e5db243c2044917c1b4fe5774
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
     content_sha1: 2c6f76790b93826be0e68f50ec7b5257cd12ecd1
   - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
     family: E-LAN
     content_sha1: 4672390a70832343a87da85297c36ed62c6e2cc2
   - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
     family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 67a83e7eb07eee72332f3e18307e32040bb67008
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: 9b041042745d6adb2d6dc4db931e0f0ef0d5c488
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: a045089e844b415968c441206537c209262ba08b
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
     content_sha1: d618388138c707ee1c0e287ae4bb6e554c700eea
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: d8ec7491b045836401499c431a5a8f19f7988ddf
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: d8ec7491b045836401499c431a5a8f19f7988ddf
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: d8ec7491b045836401499c431a5a8f19f7988ddf
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: d8ec7491b045836401499c431a5a8f19f7988ddf
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: d8ec7491b045836401499c431a5a8f19f7988ddf
+  - path: tests/unit/protocols/infrastructure/test_protocol_service_discovery.py
+    family: E-LAN
+    content_sha1: ddabad809fbd336375c33398ba4e98765ef2655e
+  - path: tests/unit/runtime/golden_chain/test_recorded_replay_transport.py
+    family: M
+    content_sha1: 42c59d865d929d8cc8698342a206361fed0bc45d
+  - path: tests/unit/runtime/golden_chain/test_recorded_replay_transport.py
+    family: M
+    content_sha1: df875f77cb67f7ed1c77b7a69e4ac10c61725c19
+  - path: tests/unit/runtime/test_canon_shape_rank1_cross_boundary.py
+    family: M
+    content_sha1: e47098e8af0c7ad036ac129212265b60422f0929
+  - path: tests/unit/security/test_input_validation_security.py
+    family: E-LAN
+    content_sha1: 9a7944e79972eff4c7a594b057e9ce11d7f85aff
+  - path: tests/unit/security/test_input_validation_security.py
+    family: E-LAN
+    content_sha1: c493dc34cfb7d124f82a99d415470220dc1369e6
+  - path: tests/unit/services/replay/test_service_config_override_injector.py
+    family: M
+    content_sha1: bb513eabcdc8da14012dba77a705eccac1872659
+  - path: tests/unit/services/replay/test_service_config_override_injector.py
+    family: M
+    content_sha1: f5fb3ed1729b75ba6bf6830368cc23460bd462d7
+  - path: tests/unit/test_no_model_literals_in_core.py
+    family: M
+    content_sha1: 8023ba7715341d032bacf4fa5ade6411b4c50a4c
   - path: tests/unit/validation/api_key_ref_discipline/test_handler_api_key_ref_discipline.py
     family: E-LAN
     content_sha1: 58335d941f96f6a31e6423cdc38cddfe5858717d
+  - path: tests/unit/validation/api_key_ref_discipline/test_handler_api_key_ref_discipline.py
+    family: M
+    content_sha1: d0cac46cddc853f9522f1e6b57f4728987f80b01
   - path: tests/unit/validation/delegation/test_validator_delegation_profile.py
     family: E-LAN
     content_sha1: 1a5bd7beb904fcf75373549e71b682e1ebe1fc6d
   - path: tests/unit/validation/delegation/test_validator_delegation_profile.py
     family: E-LAN
     content_sha1: 245d842867adb98af7df0ce5af55d9c7110a0ae9
+  - path: tests/unit/validation/delegation/test_validator_delegation_profile.py
+    family: M
+    content_sha1: c29187896f72f0478f9a57c211a581fa03b44320
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 0ef073f438727a3396f9d1741d01fb88ce307b2d
   - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
     family: E-LAN
     content_sha1: 10811c14d5202c53a72e2ccfb7ff8c5dae5f6c3a
   - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
     family: E-LAN
+    content_sha1: 2a3f6cef7e79b2129017aa540a71a2225609d880
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 4266ed233fb79b59a53d990ba4d88ae63ea3d9df
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 501ac9f5e2de79034394a35b742822495ba43534
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 5f7ff3c7b139ce3ec0cb2ffcbc6dfe360cf98ec5
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 82ab79395eb7ad11c515a649da76e35a677a4faa
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
     content_sha1: 8975afe41d3d8c7d1b232267742d0e912765d529
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: 9cb38203d143b7ebd5e0cf902f1903b83441a74d
   - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
     family: E-LAN
     content_sha1: a87f350422197237aa968e7d884ea80d5b840f11
@@ -320,7 +1715,94 @@ entries:
     content_sha1: b1e1fbdd584cdfecdd35d727ff816d57385de7cb
   - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
     family: E-LAN
+    content_sha1: e694355409fe306b96ad71770d8335a1f0ee41a3
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: e6f6bc09339a5716c052716c6c02748a3d3055fd
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
+    content_sha1: e97361df45dffc86ff45005ea1112c2c6134874c
+  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+    family: E-LAN
     content_sha1: ea803a56b35536e586e4c507f890c9c7a19d2f27
+  - path: tests/unit/validation/test_antipattern_checker.py
+    family: E-LAN
+    content_sha1: 867da7ca87a52de699b2117e9beaaedaccd49563
   - path: tests/unit/validation/test_receipt_honesty_validator.py
     family: E-LAN
     content_sha1: eebbb28fe53a69c9543ad9da2005cf25f72d077b
+  - path: tests/unit/validation/test_receipt_honesty_validator.py
+    family: M
+    content_sha1: 53a316d72c3086e1e467c8c4d4bccb127c5b6721
+  - path: tests/unit/validation/test_receipt_honesty_validator.py
+    family: M
+    content_sha1: 8675a97b673c108cce26c9044136bec049289c47
+  - path: tests/unit/validation/test_validate_secrets.py
+    family: E-LAN
+    content_sha1: 19a2c2c2b5018fdf7256392733b59a4728c21df1
+  - path: tests/unit/validation/test_validator_base_kb_extension_omn11920.py
+    family: E-LAN
+    content_sha1: 09ed51072b625636e508ac28b93829233c7b42fd
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: 4553fb2ac46abf15bc5c504c49c1379f3e2696e8
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: 5d666864325e8c50dfdb383ad635337475b77b07
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: 5d666864325e8c50dfdb383ad635337475b77b07
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: 7c5e2b199c601416151098da2f0fa11955acd859
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: 7c5e2b199c601416151098da2f0fa11955acd859
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: 98eb2b3280985139895d0c79546b9acdcd52e9e0
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: a1ed3906aff099c8ff3f6726302686646dc6d26f
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: a1ed3906aff099c8ff3f6726302686646dc6d26f
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: a1ed3906aff099c8ff3f6726302686646dc6d26f
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: c27e87bd034043fa4a05c4c2640e010a29d97177
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: c27e87bd034043fa4a05c4c2640e010a29d97177
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: ce92d8f2bee5fffae6143b4f66ef5c7e7fe1e2f8
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: d9c425c75569ad667e9cc5f96a49044779e8cc75
+  - path: tests/unit/validation/test_validator_duplicate_config_ids.py
+    family: M
+    content_sha1: d9c425c75569ad667e9cc5f96a49044779e8cc75
+  - path: tests/unit/validation/test_validator_url_authority.py
+    family: E-LAN
+    content_sha1: 77d3328ea6ef327bf3d94565687e528ea3bb94a7
+  - path: tests/validation/test_validator_routing_authority.py
+    family: M
+    content_sha1: 0207e9fd105df6d5b5fb52704d767ad2136d1058
+  - path: tests/validation/test_validator_routing_authority.py
+    family: M
+    content_sha1: 1f72debdcb9f6a2b9005b43dd6d251185e42793c
+  - path: tests/validation/test_validator_routing_authority.py
+    family: M
+    content_sha1: 1f72debdcb9f6a2b9005b43dd6d251185e42793c
+  - path: tests/validation/test_validator_routing_authority.py
+    family: M
+    content_sha1: 1f72debdcb9f6a2b9005b43dd6d251185e42793c
+  - path: tests/validation/test_validator_routing_authority.py
+    family: M
+    content_sha1: c00e7958c358562f8aa27829ba211e2fe48ebdfd
+  - path: tests/validation/test_validator_routing_authority.py
+    family: M
+    content_sha1: de5a36ff4616efc5b865481e7c0d359507ece9e9

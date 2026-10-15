@@ -21,10 +21,12 @@ fixtures:
   launch_retired.fixture: {path: deploy/systemd/vllm-gpu0.service, family: R}
   # OMN-21147: no class permits a model id; a model server takes it from an overlay.
   launch_model.fixture: {path: deploy/systemd/vllm-gpu1.service, family: M}
+  violation_m_test.fixture: {path: tests/unit/test_routing.py, family: M}
   violation_m_example.fixture: {path: config/lane.example.yaml, family: M}
   violation_m_vendor_default.fixture: {path: src/omnimarket/inference/openrouter_models.py, family: M}
+  violation_m_docs_code.fixture: {path: docs/tools/gen.py, family: M}
+  violation_elan_private_bare.fixture: {path: src/pkg/db.py, family: E-LAN}
   clean_docstring.fixture: {path: src/pkg/routing.py, family: null}
-  clean_test_host.fixture: {path: tests/unit/test_routing.py, family: null}
   clean_test_fixture_id.fixture: {path: tests/unit/test_routing.py, family: null}
   clean_health_port.fixture: {path: docker/docker-compose.dev-lane.yml, family: null}
   clean_example.fixture: {path: config/lane.example.yaml, family: null}

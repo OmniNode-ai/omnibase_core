@@ -40,12 +40,17 @@ This ratchet looks at every tracked file in the repository and refuses:
     the base revision.
 
 A declared shrink-only gate baseline is not an exception. The
-``check-direct-model-call`` (OMN-20295) and ``check-node-boundary-imports``
-(OMN-17427) hooks declare paths via ``--baseline`` in the repository's own
+``check-direct-model-call`` (OMN-20295), ``check-node-boundary-imports``
+(OMN-17427) and ``check-hardcoded-model-config-compute`` (OMN-21147) hooks
+declare paths via ``--baseline`` in the repository's own
 ``.pre-commit-config.yaml``. Only hooks taken from omnibase_core count; local
-hooks do not. The node-boundary hook without ``--baseline`` declares
-``.onex_ratchets/node_boundary_import_baseline.yaml``. The configuration is read
-from the head revision, and each gate enforces that its list only shrinks.
+hooks do not, except in the repository that provides the hook: there a local
+hook of a gate id counts when the head ``.pre-commit-hooks.yaml`` exports that
+id and the local ``entry`` runs the same module. The node-boundary hook without
+``--baseline`` declares ``.onex_ratchets/node_boundary_import_baseline.yaml``;
+the model-config hook with no ``args`` declares its manifest default
+``config/hardcoded_model_config_baseline.yaml``. The configuration is read from
+the head revision, and each gate enforces that its list only shrinks.
 A workflow job in a ``.github/workflows/*.yml`` or ``*.yaml`` file whose
 ``uses:`` is omnibase_core's own imperative contract guard reusable
 (``OmniNode-ai/omnibase_core/.github/workflows/imperative-contract-guard.yml@<ref>``,
@@ -113,8 +118,16 @@ NODE_HOME_BASELINE = ".onex_ratchets/node_home_baseline.txt"
 DEFAULT_BASELINE = ".onex_ratchets/canonical_file_shape_baseline.txt"
 TICKET = "OMN-20304"
 PRE_COMMIT_CONFIG = ".pre-commit-config.yaml"
-GATE_HOOK_IDS = ("check-direct-model-call", "check-node-boundary-imports")
+MODEL_CONFIG_HOOK_ID = "check-hardcoded-model-config-compute"
+GATE_HOOK_IDS = (
+    "check-direct-model-call",
+    "check-node-boundary-imports",
+    MODEL_CONFIG_HOOK_ID,
+)
 NODE_BOUNDARY_BASELINE = ".onex_ratchets/node_boundary_import_baseline.yaml"
+# The manifest default of the model-config hook's ``args`` (OMN-21147).
+MODEL_CONFIG_BASELINE = "config/hardcoded_model_config_baseline.yaml"
+HOOKS_MANIFEST = ".pre-commit-hooks.yaml"
 GATE_REPO_URL = re.compile(r"omnibase_core(\.git)?/?$")
 WORKFLOWS_DIR = ".github/workflows"
 GUARD_WORKFLOW_USES = re.compile(
@@ -326,12 +339,44 @@ def is_canonical_location(path: str) -> bool:
     return len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
 
 
-def declared_gate_baselines(text: str | None) -> frozenset[str]:
+def _entry_module(entry: object) -> str | None:
+    """The module a hook ``entry`` runs with ``-m``, or None."""
+    tokens = str(entry or "").split()
+    for i, token in enumerate(tokens[:-1]):
+        if token == "-m":
+            return tokens[i + 1]
+    return None
+
+
+def provided_gate_modules(text: str | None) -> dict[str, str]:
+    """Gate hook ids a ``.pre-commit-hooks.yaml`` exports, with the module each runs."""
+    if text is None:
+        return {}
+    try:
+        manifest = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return {}
+    if not isinstance(manifest, list):
+        return {}
+    provided: dict[str, str] = {}
+    for hook in manifest:
+        if not isinstance(hook, dict) or hook.get("id") not in GATE_HOOK_IDS:
+            continue
+        module = _entry_module(hook.get("entry"))
+        if module is not None:
+            provided[str(hook["id"])] = module
+    return provided
+
+
+def declared_gate_baselines(
+    text: str | None, provided: Mapping[str, str] | None = None
+) -> frozenset[str]:
     """Paths declared by core-provided shrink-only gate hooks.
 
     Read from a ``.pre-commit-config.yaml``. Only the hook that the
     omnibase_core repository provides counts; a local hook of the same id does
-    not.
+    not, unless ``provided`` (this repository's own exported gate hooks, id to
+    module) holds its id and the local ``entry`` runs that module.
     """
     if text is None:
         return frozenset()
@@ -341,16 +386,25 @@ def declared_gate_baselines(text: str | None) -> frozenset[str]:
         return frozenset()
     if not isinstance(config, dict):
         return frozenset()
+    provided = provided or {}
     declared: set[str] = set()
     for entry in config.get("repos") or []:
-        if not isinstance(entry, dict) or not GATE_REPO_URL.search(
-            str(entry.get("repo", ""))
-        ):
+        if not isinstance(entry, dict):
+            continue
+        repo_url = str(entry.get("repo", ""))
+        is_core = GATE_REPO_URL.search(repo_url) is not None
+        if not is_core and repo_url != "local":
             continue
         for hook in entry.get("hooks") or []:
             if not isinstance(hook, dict) or hook.get("id") not in GATE_HOOK_IDS:
                 continue
+            hook_id = str(hook["id"])
             args = [str(a) for a in hook.get("args") or []]
+            if not is_core:
+                module = _entry_module(hook.get("entry"))
+                if module is None or provided.get(hook_id) != module:
+                    continue
+                args = str(hook.get("entry")).split() + args
             has_baseline_arg = False
             for i, arg in enumerate(args):
                 if arg == "--baseline":
@@ -360,8 +414,12 @@ def declared_gate_baselines(text: str | None) -> frozenset[str]:
                 elif arg.startswith("--baseline="):
                     has_baseline_arg = True
                     declared.add(arg.split("=", 1)[1])
-            if hook.get("id") == "check-node-boundary-imports" and not has_baseline_arg:
+            if not is_core or has_baseline_arg:
+                continue
+            if hook_id == "check-node-boundary-imports":
                 declared.add(NODE_BOUNDARY_BASELINE)
+            elif hook_id == MODEL_CONFIG_HOOK_ID and "args" not in hook:
+                declared.add(MODEL_CONFIG_BASELINE)
     return frozenset(PurePosixPath(p).as_posix() for p in declared)
 
 
@@ -404,8 +462,11 @@ def declared_guard_allowlists(text: str | None) -> frozenset[str]:
 def declared_paths(repo: GitRepo, head: str) -> frozenset[str]:
     """Every shrink-only gate list the ``head`` revision declares."""
     workflows = [f for f in repo.list_files(head) if is_workflow_file(f)]
-    blobs = repo.read_blobs(head, [PRE_COMMIT_CONFIG, *workflows])
-    declared = declared_gate_baselines(_decode(blobs[PRE_COMMIT_CONFIG]))
+    blobs = repo.read_blobs(head, [PRE_COMMIT_CONFIG, HOOKS_MANIFEST, *workflows])
+    declared = declared_gate_baselines(
+        _decode(blobs[PRE_COMMIT_CONFIG]),
+        provided_gate_modules(_decode(blobs[HOOKS_MANIFEST])),
+    )
     for path in workflows:
         declared |= declared_guard_allowlists(_decode(blobs[path]))
     return declared

@@ -1,10 +1,12 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-21147
-title: The hardcoded-model guard refuses model ids and lab deployment facts outside a contract overlay
+title: The hardcoded-model guard refuses any model id or lab deployment fact outside a contract overlay
 summary: omnibase_core's hardcoded-model-config policy drops the VENDOR_DEFAULT class, refuses model ids
-  in example and launch files, and adds family D for lab deployment facts (lab host names and lab ports,
-  read from the private vocabulary; the shipped policy names none). The committed baseline does not change.
+  in tests, examples, launch files and code under docs/, refuses bare private addresses and lab deployment
+  facts (lab host names and lab ports, family D, read from the private vocabulary; the shipped policy
+  names none), and lets the shrink-only baseline take only lines that already stood at the base. The baseline
+  is regenerated from today's findings.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -22,15 +24,34 @@ requirements:
           in source, tests and launch files, and the shipped policy names none -- falsifier: the same
           pytest run"
       - id: AC3
-        statement: "AC3: the whole-tree guard passes against the unchanged baseline -- falsifier: uv run
+        statement: "AC3: the whole-tree guard passes against the committed baseline -- falsifier: uv run
           python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config --all
           --baseline config/hardcoded_model_config_baseline.yaml; the runtime still rejects unbaselined
-          model ids in example and launch files without changing existing baseline entries"
+          model ids in example and launch files"
+  - id: req-omn21147-shrink-only-gate
+    statement: No path class except HISTORICAL, GUARD and DOC permits a model id outside a contract overlay,
+      and the guard's baseline is a declared shrink-only gate baseline that takes only lines already in
+      the tree at the base.
+    acceptance:
+      - id: AC4
+        statement: "AC4: every class except HISTORICAL, GUARD and DOC refuses M, E-LAN, D and R; DOC is
+          prose only, so code under docs/ is SOURCE; a test file that names a real model id yields an
+          M finding and one that names a declared fixture id yields none; a bare RFC 1918 address is E-LAN
+          -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q in omnibase_core"
+      - id: AC5
+        statement: "AC5: the baseline may take only a line that already stood in its file at the base;
+          a line the change adds is refused -- falsifier: the same pytest run"
+      - id: AC6
+        statement: "AC6: the canonical-file-shape ratchet reads the guard's baseline as a declared shrink-only
+          gate baseline, from the core hook or the providing repository's own local hook, and still refuses
+          it from a consumer's local hook or with no declaration -- falsifier: uv run pytest tests/unit/validators/test_canonical_file_shape.py
+          -q in omnibase_core"
 evidence_requirements:
   - kind: tests
-    description: Corpus, policy-shape and family D tests of the guard.
-    command: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
-      tests/unit/validation/hardcoded_model_config/test_lab_denylist_vocabulary.py -q
+    description: Corpus, policy-shape, family D, ratchet and gate-registration tests of the guard.
+    command: uv run pytest tests/unit/validation/hardcoded_model_config tests/unit/validators/test_canonical_file_shape.py
+      -q
 dod_evidence:
   - id: dod-omn21147-guard-tests
     description: The guard's corpus, policy-shape and family D tests pass.
@@ -69,6 +90,37 @@ dod_evidence:
         check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
           -q -k overlay_only_scan_preserves_baseline
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21147-test-and-docs-classes
+    description: Tests, code under docs/ and bare private addresses are refused; declared fixture ids
+      in tests are not.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k "tests_may_use_only_declared_fixture_ids or violation_m_test or violation_m_docs_code
+          or violation_elan_private_bare"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21147-baseline-base-lines
+    description: The baseline may grow only by lines that already stood in their file at the base.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k baseline_may_take_a_line_that_existed_at_base
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21147-gate-registration
+    description: The canonical-file-shape ratchet treats the guard's baseline as a declared gate baseline.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k hardcoded_model_config
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
 emergency_bypass:
   enabled: false
   justification: ''
