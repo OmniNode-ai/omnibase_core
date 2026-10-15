@@ -1,0 +1,65 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-17866
+title: dependency-injector no longer emits a fatal Pydantic BaseSettings unraisable warning at import
+summary: omnibase_core fix for OMN-17866. dependency-injector 4.48.3 probes pydantic_settings at import
+  time and, with the package absent, falls back to pydantic.BaseSettings, which Pydantic 2 refuses from
+  inside PyObject_HasAttr(); pytest reports that as PytestUnraisableExceptionWarning and a warnings-as-errors
+  run fails. The pin moves to dependency-injector 4.49.1, which no longer touches BaseSettings on Pydantic
+  2, and the lock follows. No pydantic-settings dependency is added and no warning filter is loosened.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17866-clean-import
+    statement: Importing dependency-injector under Pydantic 2 leaves no unraisable exception, with the
+      PytestUnraisableExceptionWarning filter left fatal.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a pytest session that imports pydantic and then dependency_injector.providers
+          passes with -W error::pytest.PytestUnraisableExceptionWarning -- falsifier: `uv run pytest tests/unit/models/container/test_dependency_injector_import_teardown.py`
+          fails at the merge base and passes at the head.'
+      - id: AC2
+        statement: 'AC2: pyproject.toml pins dependency-injector>=4.49.1 and uv.lock resolves it, with
+          no pydantic-settings dependency added -- falsifier: the same test file fails if pydantic_settings
+          becomes importable in the test environment.'
+evidence_requirements:
+  - kind: tests
+    description: The regression runs a subprocess pytest session that imports dependency-injector with
+      unraisable-exception warnings fatal, and checks that pydantic_settings is absent.
+    command: uv run pytest tests/unit/models/container -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17866-ac1-clean-import
+    description: A session importing pydantic and dependency_injector.providers passes with unraisable
+      warnings fatal.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/container/test_dependency_injector_import_teardown.py
+          -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn17866-ac2-pin-and-lock
+    description: The pin and the lock both carry dependency-injector 4.49.1 and no pydantic-settings entry.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -q 'dependency-injector>=4.49.1' pyproject.toml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn17866-deploy-hosted-import
+    description: Hosted deploy probe. omnibase_core is a library, so the live surface for this change
+      is its tests on a hosted runner. The regression fails until dependency-injector 4.49.1 is resolved.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/models/container/test_dependency_injector_import_teardown.py
+          -q
+        cwd: ${OMNI_HOME}/omnibase_core
