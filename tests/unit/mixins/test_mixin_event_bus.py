@@ -53,6 +53,9 @@ class MockOutputState:
 class TestMixinNode(MixinEventBus[MockInputState, MockOutputState]):
     """Test node implementation using MixinEventBus with typed parameters."""
 
+    # Helper, not a test class: keep pytest from collecting it (OMN-17865).
+    __test__ = False
+
     def __init__(self) -> None:
         # MixinEventBus has no __init__ - uses lazy accessors
         pass
