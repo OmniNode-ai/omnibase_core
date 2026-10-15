@@ -1,0 +1,58 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17868
+title: "The registry-status unit test keys its distributions with enum members, so serialization raises
+  no Pydantic warning"
+summary: The ModelServiceRegistryStatus unit test assigned raw string keys to the health_summary, lifecycle_distribution
+  and scope_distribution fields, which are declared as dicts keyed by EnumHealthStatus, EnumServiceLifecycle
+  and EnumInjectionScope. Pydantic accepts the assignment and model_dump then warns, which fails the test
+  when warnings are errors. The test now uses the enum members, and the test class turns UserWarning into
+  an error so the defect cannot return unseen. The model and production construction in container_service_registry
+  are unchanged.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17868-enum-keys
+    statement: The registry-status unit test builds and mutates the enum-keyed distributions with enum
+      members only, and passes with UserWarning promoted to an error.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the focused registry-status test passes with UserWarning promoted to an error
+          -- falsifier: uv run pytest -W error::UserWarning tests/unit/models/container/test_model_registry_status.py
+          -q'
+      - id: AC2
+        statement: 'AC2: the container model and service suites are warning-clean under the same filter
+          -- falsifier: uv run pytest -W error::UserWarning tests/unit/models/container tests/unit/container
+          -q'
+evidence_requirements:
+  - kind: tests
+    description: The focused registry-status test passes at the head; on the base it fails in test_serialization_deserialization
+      with a Pydantic serializer UserWarning.
+    command: uv run pytest -W error::UserWarning tests/unit/models/container/test_model_registry_status.py
+      -q -p no:randomly
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17868-ac1
+    description: The 22 registry-status tests pass with UserWarning promoted to an error.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -W error::UserWarning tests/unit/models/container/test_model_registry_status.py
+          -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn17868-ac2
+    description: The container model and service suites pass with UserWarning promoted to an error.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -W error::UserWarning tests/unit/models/container tests/unit/container
+          -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
