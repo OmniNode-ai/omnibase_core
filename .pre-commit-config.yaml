@@ -693,9 +693,9 @@ repos:
       # DROPS unknown fields (four live data-loss bugs: OMN-14490/14506/14513/14514).
       # New models block outright; --enforce-modified :staged also blocks a BASELINED
       # model whose body you just edited — touching it is your chance to fix it.
-      # language: system so the validator runs in the repo venv and can introspect the
-      # real cls.model_config (which Pydantic has already merged down the MRO) instead
-      # of approximating inheritance statically.
+      # language: system uses the repo venv. Runtime introspection reads Pydantic's
+      # merged cls.model_config when imports succeed; the static fallback merges
+      # effective configs in direct-base order without importing model modules.
       - id: pydantic-extra-forbid
         name: Pydantic extra="forbid" ratchet (OMN-14515)
         entry: uv run --frozen python -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified

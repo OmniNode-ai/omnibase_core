@@ -105,7 +105,12 @@ class _StaticResolver:
     def resolve_extra(
         self, module: str, node: ast.ClassDef, seen: set[tuple[str, str]] | None = None
     ) -> tuple[str, str | None]:
-        """Return ``(status, effective_extra)`` using MRO-like base order."""
+        """Merge effective configs in direct-base order, as Pydantic does.
+
+        A later base's effective ``extra`` overrides an earlier one, including
+        values inherited from a shared ancestor. An absent key does not overwrite
+        anything; an unresolved base may overwrite it and must fail closed.
+        """
         seen = seen if seen is not None else set()
         key = (module, node.name)
         if key in seen:
@@ -116,22 +121,20 @@ class _StaticResolver:
         if own is not None:
             return _STATUS_BY_EXTRA.get(own, STATUS_UNRESOLVED), own
 
-        unresolved_base = False
+        result: tuple[str, str | None] = (STATUS_IMPLICIT_DEFAULT, None)
         for base_module, base_name, base_node in self._bases(module, node):
             if base_name in _PYDANTIC_MODEL_BASES:
                 continue
             if base_node is None:
-                unresolved_base = True
+                result = (STATUS_UNRESOLVED, None)
                 continue
-            status, extra = self.resolve_extra(base_module, base_node, seen)
-            if extra is not None:
-                return status, extra
-            if status == STATUS_UNRESOLVED:
-                unresolved_base = True
+            # Track the recursion path, not all visited classes: a diamond's
+            # second branch still contributes its complete inherited config.
+            status, extra = self.resolve_extra(base_module, base_node, seen.copy())
+            if extra is not None or status == STATUS_UNRESOLVED:
+                result = (status, extra)
 
-        if unresolved_base:
-            return STATUS_UNRESOLVED, None
-        return STATUS_IMPLICIT_DEFAULT, None
+        return result
 
     def _bases(
         self, module: str, node: ast.ClassDef
@@ -142,6 +145,7 @@ class _StaticResolver:
         for base in node.bases:
             name = _base_name(base)
             if name is None:
+                out.append((module, "<unresolved>", None))
                 continue
             simple = name.rsplit(".", maxsplit=1)[-1]
             if simple in _PYDANTIC_MODEL_BASES:
@@ -222,15 +226,26 @@ def _extra_from_class(node: ast.ClassDef) -> str | None:
 
 def _extra_from_config_value(node: ast.expr) -> str | None:
     if isinstance(node, ast.Call):
+        if _base_name(node.func) not in {"ConfigDict", "dict"}:
+            return _UNKNOWN_EXTRA
+        extra = _UNKNOWN_EXTRA if node.args else None
         for keyword in node.keywords:
-            if keyword.arg == "extra":
-                return _literal_str(keyword.value) or _UNKNOWN_EXTRA
-        return None
+            if keyword.arg is None:
+                extra = _UNKNOWN_EXTRA
+            elif keyword.arg == "extra":
+                extra = _literal_str(keyword.value) or _UNKNOWN_EXTRA
+        return extra
     if isinstance(node, ast.Dict):
+        extra = None
         for key, value in zip(node.keys, node.values, strict=False):
-            if isinstance(key, ast.Constant) and key.value == "extra":
-                return _literal_str(value) or _UNKNOWN_EXTRA
-    return None
+            if not isinstance(key, ast.Constant):
+                extra = _UNKNOWN_EXTRA
+            elif key.value == "extra":
+                extra = _literal_str(value) or _UNKNOWN_EXTRA
+        return extra
+    # A variable or computed config may supply extra, so it cannot be treated as
+    # an absent key when a later base's effective config is merged.
+    return _UNKNOWN_EXTRA
 
 
 def _literal_str(node: ast.expr) -> str | None:
