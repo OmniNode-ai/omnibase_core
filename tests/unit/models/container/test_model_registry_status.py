@@ -8,6 +8,11 @@ from uuid import uuid4
 
 import pytest
 
+from omnibase_core.enums import (
+    EnumHealthStatus,
+    EnumInjectionScope,
+    EnumServiceLifecycle,
+)
 from omnibase_core.models.container.model_registry_status import (
     ModelServiceRegistryStatus,
 )
@@ -24,6 +29,7 @@ def sample_status():
 
 
 @pytest.mark.unit
+@pytest.mark.filterwarnings("error::UserWarning")
 class TestModelServiceRegistryStatus:
     """Tests for ModelServiceRegistryStatus model."""
 
@@ -63,9 +69,15 @@ class TestModelServiceRegistryStatus:
             active_instances=5,
             failed_registrations=1,
             circular_dependencies=0,
-            lifecycle_distribution={"singleton": 5, "transient": 5},
-            scope_distribution={"global": 7, "request": 3},
-            health_summary={"healthy": 9, "degraded": 1},
+            lifecycle_distribution={
+                EnumServiceLifecycle.SINGLETON: 5,
+                EnumServiceLifecycle.TRANSIENT: 5,
+            },
+            scope_distribution={
+                EnumInjectionScope.GLOBAL: 7,
+                EnumInjectionScope.REQUEST: 3,
+            },
+            health_summary={EnumHealthStatus.HEALTHY: 9, EnumHealthStatus.DEGRADED: 1},
             memory_usage_bytes=1024000,
             average_resolution_time_ms=2.5,
             last_updated=last_updated,
@@ -74,9 +86,18 @@ class TestModelServiceRegistryStatus:
         assert status.total_registrations == 10
         assert status.active_instances == 5
         assert status.failed_registrations == 1
-        assert status.lifecycle_distribution == {"singleton": 5, "transient": 5}
-        assert status.scope_distribution == {"global": 7, "request": 3}
-        assert status.health_summary == {"healthy": 9, "degraded": 1}
+        assert status.lifecycle_distribution == {
+            EnumServiceLifecycle.SINGLETON: 5,
+            EnumServiceLifecycle.TRANSIENT: 5,
+        }
+        assert status.scope_distribution == {
+            EnumInjectionScope.GLOBAL: 7,
+            EnumInjectionScope.REQUEST: 3,
+        }
+        assert status.health_summary == {
+            EnumHealthStatus.HEALTHY: 9,
+            EnumHealthStatus.DEGRADED: 1,
+        }
         assert status.memory_usage_bytes == 1024000
         assert status.average_resolution_time_ms == 2.5
         assert status.last_updated == last_updated
@@ -124,70 +145,84 @@ class TestModelServiceRegistryStatus:
     def test_get_health_percentage_all_healthy(self, sample_status):
         """Test health percentage when all services healthy."""
         sample_status.total_registrations = 10
-        sample_status.health_summary = {"healthy": 10}
+        sample_status.health_summary = {EnumHealthStatus.HEALTHY: 10}
 
         assert sample_status.get_health_percentage() == 100.0
 
     def test_get_health_percentage_partial_healthy(self, sample_status):
         """Test health percentage with partial health."""
         sample_status.total_registrations = 10
-        sample_status.health_summary = {"healthy": 7, "degraded": 2, "unhealthy": 1}
+        sample_status.health_summary = {
+            EnumHealthStatus.HEALTHY: 7,
+            EnumHealthStatus.DEGRADED: 2,
+            EnumHealthStatus.UNHEALTHY: 1,
+        }
 
         assert sample_status.get_health_percentage() == 70.0
 
     def test_get_health_percentage_no_healthy(self, sample_status):
         """Test health percentage with no healthy services."""
         sample_status.total_registrations = 5
-        sample_status.health_summary = {"unhealthy": 3, "degraded": 2}
+        sample_status.health_summary = {
+            EnumHealthStatus.UNHEALTHY: 3,
+            EnumHealthStatus.DEGRADED: 2,
+        }
 
         assert sample_status.get_health_percentage() == 0.0
 
     def test_get_health_percentage_half_healthy(self, sample_status):
         """Test health percentage at 50%."""
         sample_status.total_registrations = 20
-        sample_status.health_summary = {"healthy": 10, "unhealthy": 10}
+        sample_status.health_summary = {
+            EnumHealthStatus.HEALTHY: 10,
+            EnumHealthStatus.UNHEALTHY: 10,
+        }
 
         assert sample_status.get_health_percentage() == 50.0
 
     def test_lifecycle_distribution_tracking(self, sample_status):
         """Test lifecycle distribution tracking."""
         sample_status.lifecycle_distribution = {
-            "singleton": 15,
-            "transient": 10,
-            "scoped": 5,
-            "pooled": 2,
+            EnumServiceLifecycle.SINGLETON: 15,
+            EnumServiceLifecycle.TRANSIENT: 10,
+            EnumServiceLifecycle.SCOPED: 5,
+            EnumServiceLifecycle.POOLED: 2,
         }
 
-        assert sample_status.lifecycle_distribution["singleton"] == 15
-        assert sample_status.lifecycle_distribution["transient"] == 10
-        assert sample_status.lifecycle_distribution["scoped"] == 5
-        assert sample_status.lifecycle_distribution["pooled"] == 2
+        assert (
+            sample_status.lifecycle_distribution[EnumServiceLifecycle.SINGLETON] == 15
+        )
+        assert (
+            sample_status.lifecycle_distribution[EnumServiceLifecycle.TRANSIENT] == 10
+        )
+        assert sample_status.lifecycle_distribution[EnumServiceLifecycle.SCOPED] == 5
+        assert sample_status.lifecycle_distribution[EnumServiceLifecycle.POOLED] == 2
 
     def test_scope_distribution_tracking(self, sample_status):
         """Test scope distribution tracking."""
         sample_status.scope_distribution = {
-            "global": 20,
-            "request": 8,
-            "session": 4,
+            EnumInjectionScope.GLOBAL: 20,
+            EnumInjectionScope.REQUEST: 8,
+            EnumInjectionScope.SESSION: 4,
         }
 
-        assert sample_status.scope_distribution["global"] == 20
-        assert sample_status.scope_distribution["request"] == 8
-        assert sample_status.scope_distribution["session"] == 4
+        assert sample_status.scope_distribution[EnumInjectionScope.GLOBAL] == 20
+        assert sample_status.scope_distribution[EnumInjectionScope.REQUEST] == 8
+        assert sample_status.scope_distribution[EnumInjectionScope.SESSION] == 4
 
     def test_health_summary_tracking(self, sample_status):
         """Test health summary tracking."""
         sample_status.health_summary = {
-            "healthy": 25,
-            "degraded": 3,
-            "unhealthy": 2,
-            "unknown": 1,
+            EnumHealthStatus.HEALTHY: 25,
+            EnumHealthStatus.DEGRADED: 3,
+            EnumHealthStatus.UNHEALTHY: 2,
+            EnumHealthStatus.UNKNOWN: 1,
         }
 
-        assert sample_status.health_summary["healthy"] == 25
-        assert sample_status.health_summary["degraded"] == 3
-        assert sample_status.health_summary["unhealthy"] == 2
-        assert sample_status.health_summary["unknown"] == 1
+        assert sample_status.health_summary[EnumHealthStatus.HEALTHY] == 25
+        assert sample_status.health_summary[EnumHealthStatus.DEGRADED] == 3
+        assert sample_status.health_summary[EnumHealthStatus.UNHEALTHY] == 2
+        assert sample_status.health_summary[EnumHealthStatus.UNKNOWN] == 1
 
     def test_performance_metrics(self, sample_status):
         """Test performance metrics tracking."""
@@ -211,7 +246,10 @@ class TestModelServiceRegistryStatus:
     def test_serialization_deserialization(self, sample_status):
         """Test model can be serialized and deserialized."""
         sample_status.total_registrations = 15
-        sample_status.health_summary = {"healthy": 10, "degraded": 5}
+        sample_status.health_summary = {
+            EnumHealthStatus.HEALTHY: 10,
+            EnumHealthStatus.DEGRADED: 5,
+        }
 
         # Serialize to dict
         data = sample_status.model_dump()
@@ -233,14 +271,14 @@ class TestModelServiceRegistryStatus:
         # Services registered
         sample_status.total_registrations = 10
         sample_status.active_instances = 10
-        sample_status.health_summary = {"healthy": 10}
+        sample_status.health_summary = {EnumHealthStatus.HEALTHY: 10}
         assert sample_status.is_healthy()
         assert sample_status.get_health_percentage() == 100.0
 
         # Growth continues
         sample_status.total_registrations = 25
         sample_status.active_instances = 30
-        sample_status.health_summary = {"healthy": 25}
+        sample_status.health_summary = {EnumHealthStatus.HEALTHY: 25}
         assert sample_status.is_healthy()
         assert sample_status.get_health_percentage() == 100.0
 
@@ -248,12 +286,15 @@ class TestModelServiceRegistryStatus:
         """Test registry status during degradation."""
         # Healthy initial state
         sample_status.total_registrations = 20
-        sample_status.health_summary = {"healthy": 20}
+        sample_status.health_summary = {EnumHealthStatus.HEALTHY: 20}
         assert sample_status.is_healthy()
         assert sample_status.get_health_percentage() == 100.0
 
         # Some services degrade
-        sample_status.health_summary = {"healthy": 15, "degraded": 5}
+        sample_status.health_summary = {
+            EnumHealthStatus.HEALTHY: 15,
+            EnumHealthStatus.DEGRADED: 5,
+        }
         assert sample_status.is_healthy()
         assert sample_status.get_health_percentage() == 75.0
 
@@ -272,7 +313,10 @@ class TestModelServiceRegistryStatus:
         sample_status.total_registrations = 10
         sample_status.failed_registrations = 3
         sample_status.circular_dependencies = 1
-        sample_status.health_summary = {"healthy": 5, "unhealthy": 5}
+        sample_status.health_summary = {
+            EnumHealthStatus.HEALTHY: 5,
+            EnumHealthStatus.UNHEALTHY: 5,
+        }
         assert not sample_status.is_healthy()
         assert sample_status.get_health_percentage() == 50.0
 
@@ -286,7 +330,10 @@ class TestModelServiceRegistryStatus:
         assert sample_status.is_healthy()
 
         # Health improved
-        sample_status.health_summary = {"healthy": 9, "degraded": 1}
+        sample_status.health_summary = {
+            EnumHealthStatus.HEALTHY: 9,
+            EnumHealthStatus.DEGRADED: 1,
+        }
         assert sample_status.is_healthy()
         assert sample_status.get_health_percentage() == 90.0
 
@@ -297,20 +344,20 @@ class TestModelServiceRegistryStatus:
         sample_status.failed_registrations = 0
         sample_status.circular_dependencies = 0
         sample_status.lifecycle_distribution = {
-            "singleton": 20,
-            "transient": 15,
-            "scoped": 10,
-            "pooled": 5,
+            EnumServiceLifecycle.SINGLETON: 20,
+            EnumServiceLifecycle.TRANSIENT: 15,
+            EnumServiceLifecycle.SCOPED: 10,
+            EnumServiceLifecycle.POOLED: 5,
         }
         sample_status.scope_distribution = {
-            "global": 30,
-            "request": 15,
-            "session": 5,
+            EnumInjectionScope.GLOBAL: 30,
+            EnumInjectionScope.REQUEST: 15,
+            EnumInjectionScope.SESSION: 5,
         }
         sample_status.health_summary = {
-            "healthy": 45,
-            "degraded": 3,
-            "unhealthy": 2,
+            EnumHealthStatus.HEALTHY: 45,
+            EnumHealthStatus.DEGRADED: 3,
+            EnumHealthStatus.UNHEALTHY: 2,
         }
         sample_status.memory_usage_bytes = 5242880  # 5MB
         sample_status.average_resolution_time_ms = 3.2
