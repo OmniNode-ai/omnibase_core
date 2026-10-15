@@ -17,6 +17,9 @@ from omnibase_core.enums.enum_quality_rule_enforcement import (
 from omnibase_core.models.delegation.wire.model_delegation_deliverable_evidence import (
     ModelDelegationDeliverableEvidence,
 )
+from omnibase_core.models.delegation.wire.model_delegation_named_test_run import (
+    ModelDelegationNamedTestRun,
+)
 from omnibase_core.models.delegation.wire.model_delegation_wire_request import (
     EnumQualityContractMode,
     validate_response_contract,
@@ -88,6 +91,23 @@ class ModelQualityGateInput(BaseModel):
             "Optional caller-declared JSON Schema used as the structural "
             "acceptance authority. None lets the consumer resolve the "
             "task-class default contract."
+        ),
+    )
+    named_test_run: ModelDelegationNamedTestRun | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "OMN-17427: executed evidence of the request's named tests run "
+            "against this response. None means no test ran."
+        ),
+    )
+    named_tests_requested: bool = Field(
+        default=False,
+        exclude_if=lambda value: not value,
+        description=(
+            "OMN-17427: the request named tests. With no named_test_run the gate "
+            "refuses a code answer as INSUFFICIENT; when false it decides the "
+            "answer UNTESTED."
         ),
     )
     grounding_source: str | None = Field(

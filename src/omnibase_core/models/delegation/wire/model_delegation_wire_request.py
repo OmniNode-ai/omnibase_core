@@ -14,6 +14,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from omnibase_core.models.delegation.wire.model_budget import ModelBudgetLimits
+from omnibase_core.models.delegation.wire.model_delegation_named_tests import (
+    ModelDelegationNamedTests,
+)
 from omnibase_core.models.delegation.wire.model_delegation_provenance import (
     ModelDelegationProvenance,
 )
@@ -328,6 +331,17 @@ class ModelDelegationRequest(BaseModel):
         description=(
             "Optional provider response-format directive. Distinct from the "
             "quality-gate response_contract."
+        ),
+    )
+
+    named_tests: ModelDelegationNamedTests | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "OMN-17427: the tests a code answer is graded on, with their sources "
+            "inline. The consumer runs them in a sandbox against the answer and "
+            "hands the run to the quality gate. None names no tests: the gate "
+            "decides a code answer UNTESTED and omits the key from the wire."
         ),
     )
 

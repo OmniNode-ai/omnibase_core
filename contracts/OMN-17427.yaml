@@ -27,6 +27,15 @@ requirements:
         statement: "AC6: Only an unproven writer app reaches the in-job classifier after verifier installation,
           and its exemption gates every later evidence step in dod-verify alone. -- falsifier: uv run
           pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
+  - id: req-omn17427-named-tests-on-the-wire
+    statement: The delegation request wire carries the tests a code answer is graded on, with their sources,
+      and the quality gate input carries the executed run, so the deployed lane can grade code.
+    acceptance:
+      - id: AC7
+        statement: "AC7: A delegation request carries named tests with inline sources, a gate input carries
+          the executed named-test run, unsafe or incomplete naming is refused, and a request naming none
+          keeps its wire shape. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_omn17427_named_tests_wire.py
+          -q"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -40,6 +49,10 @@ evidence_requirements:
     description: "Only an unproven writer app reaches the in-job classifier after verifier installation,
       and its exemption gates every later evidence step in dod-verify alone."
     command: "uv run pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py -q -k test_writer_pin_only_step_is_gated_and_gates_every_evidence_step"
+  - kind: tests
+    description: "The delegation request and quality gate input carry named tests and their executed run;
+      unsafe naming is refused and an unnamed request keeps its wire shape."
+    command: "uv run pytest tests/unit/models/delegation/wire/test_omn17427_named_tests_wire.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -78,3 +91,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
+  - id: dod-omn-17427-named-tests-on-the-wire
+    description: "A delegation request carries named tests with inline sources, a gate input carries the
+      executed named-test run, unsafe or incomplete naming is refused, and a request naming none keeps
+      its wire shape."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/delegation/wire/test_omn17427_named_tests_wire.py
+          -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
