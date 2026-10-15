@@ -362,6 +362,19 @@ def test_shipped_manifest_omnidash_onex_schema_compat_is_not_a_pin_site() -> Non
     ]
 
 
+def test_shipped_manifest_omnidash_has_one_pin_site_the_handshake() -> None:
+    """omnidash's type-sync and schema-compat workflows read the handshake's pin
+    (OMN-9050); declaring them again made the bot leave a second literal behind."""
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    manifest = load_manifest(manifest_path)
+    entry = next(r for r in manifest.repos if r.name == "omnidash")
+    assert [s.path for s in entry.pin_sites] == [
+        ".github/workflows/check-handshake.yml"
+    ]
+
+
 # --- banner indent (OMN-20525) -------------------------------------------------
 
 INDENT_OLD_SHA = OLD_SHA
