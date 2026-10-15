@@ -24,6 +24,7 @@ from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_EXPLICIT_FORBID,
     STATUS_EXPLICIT_IGNORE,
     STATUS_IMPLICIT_DEFAULT,
+    STATUS_UNRESOLVED,
 )
 from omnibase_core.validators import pydantic_extra_forbid as pyd
 from omnibase_core.validators.pydantic_extra_forbid import (
@@ -277,6 +278,168 @@ def test_rootmodel_is_exempt(tmp_path: Path) -> None:
     )
     assert scan_paths([module], use_runtime=True) == []
     assert scan_paths([module], use_runtime=False) == []
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+@pytest.mark.parametrize(
+    "classes",
+    [
+        "class ModelA(ModelB, BaseModel):\n    pass\nclass ModelB(ModelA):\n    pass\n",
+        "class ModelA(ModelA, BaseModel):\n    pass\n",
+        "class ModelA(ModelB, RootModel[int]):\n    pass\n"
+        "class ModelB(ModelA):\n    pass\n",
+        "class ModelA(RootModel[int], ModelB):\n    pass\n"
+        "class ModelB(ModelA):\n    pass\n",
+        "class ModelA(ModelB, BaseModel):\n"
+        "    model_config = ConfigDict(extra='forbid')\n"
+        "class ModelB(ModelA):\n    pass\n",
+        "class ModelStrict(BaseModel):\n"
+        "    model_config = ConfigDict(extra='forbid')\n"
+        "class ModelA(ModelB, ModelStrict):\n    pass\n"
+        "class ModelB(ModelA):\n    pass\n",
+    ],
+    ids=[
+        "two-class",
+        "self",
+        "root-last",
+        "root-first",
+        "own-config",
+        "strict-sibling",
+    ],
+)
+def test_cyclic_ancestry_is_unresolved(
+    tmp_path: Path, use_runtime: bool, classes: str
+) -> None:
+    """Cycles fail closed even beside RootModel or an explicit forbid config."""
+    module = _pkg(
+        tmp_path,
+        "mod_cycle",
+        "from pydantic import BaseModel, ConfigDict, RootModel\n\n" + classes,
+    )
+    for _ in range(2):
+        findings = scan_paths([module], use_runtime=use_runtime)
+        cyclic = [
+            finding for finding in findings if finding.class_name != "ModelStrict"
+        ]
+        assert {finding.class_name for finding in cyclic} == (
+            {"ModelA", "ModelB"} if "class ModelB" in classes else {"ModelA"}
+        )
+        assert all(finding.status == STATUS_UNRESOLVED for finding in cyclic)
+        assert all(finding.effective_extra is None for finding in cyclic)
+        assert all(finding.is_violation for finding in cyclic)
+
+
+def test_cyclic_ancestry_gate_fails_without_recursion_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    module = _pkg(
+        tmp_path,
+        "mod_cycle_gate",
+        "from pydantic import BaseModel\n"
+        "class ModelA(ModelB, BaseModel):\n    pass\n"
+        "class ModelB(ModelA):\n    pass\n",
+    )
+    assert (
+        main(
+            [
+                str(module),
+                "--baseline",
+                str(_write_baseline(tmp_path / "baseline.yaml", [])),
+                "--waivers",
+                str(_empty_waivers(tmp_path / "waivers.yaml")),
+            ]
+        )
+        == 1
+    )
+    stderr = capsys.readouterr().err
+    assert STATUS_UNRESOLVED in stderr
+    assert "RecursionError" not in stderr
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+@pytest.mark.parametrize("extra", ["forbid", "allow"])
+def test_conflicting_diamond_uses_last_base_config(
+    tmp_path: Path, use_runtime: bool, extra: str
+) -> None:
+    """Each branch inherits independently, then the rightmost config wins."""
+    module = _pkg(
+        tmp_path,
+        "mod_diamond",
+        "from pydantic import BaseModel, ConfigDict\n"
+        "class ModelTop(BaseModel):\n"
+        f"    model_config = ConfigDict(extra={extra!r})\n"
+        "class ModelLeft(ModelTop):\n"
+        f"    model_config = ConfigDict(extra={'allow' if extra == 'forbid' else 'forbid'!r})\n"
+        "class ModelRight(ModelTop):\n    pass\n"
+        "class ModelDiamond(ModelLeft, ModelRight):\n    pass\n",
+    )
+    findings = scan_paths([module], use_runtime=use_runtime)
+    diamond = next(
+        finding for finding in findings if finding.class_name == "ModelDiamond"
+    )
+    assert diamond.effective_extra == extra
+    assert diamond.status == (
+        STATUS_EXPLICIT_FORBID if extra == "forbid" else STATUS_EXPLICIT_ALLOW
+    )
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+@pytest.mark.parametrize("base", ["BaseModel", "RootModel[int]"])
+def test_noncyclic_diamond_revisits_shared_ancestor(
+    tmp_path: Path, use_runtime: bool, base: str
+) -> None:
+    module = _pkg(
+        tmp_path,
+        "mod_shared_ancestor",
+        "from pydantic import BaseModel, RootModel\n"
+        f"class ModelTop({base}):\n    pass\n"
+        "class ModelLeft(ModelTop):\n    pass\n"
+        "class ModelRight(ModelTop):\n    pass\n"
+        "class ModelDiamond(ModelLeft, ModelRight):\n    pass\n",
+    )
+    findings = scan_paths([module], use_runtime=use_runtime)
+    if base == "BaseModel":
+        assert len(findings) == 4
+        assert all(finding.status == STATUS_IMPLICIT_DEFAULT for finding in findings)
+    else:
+        assert findings == []
+
+
+@pytest.mark.parametrize("use_runtime", ENGINES)
+def test_cross_module_cycle_is_unresolved(tmp_path: Path, use_runtime: bool) -> None:
+    first = _pkg(
+        tmp_path,
+        "mod_cycle_first",
+        "from pydantic import BaseModel\n"
+        "from .mod_cycle_second import ModelB\n"
+        "class ModelA(ModelB, BaseModel):\n    pass\n",
+    )
+    second = _pkg(
+        tmp_path,
+        "mod_cycle_second",
+        "from .mod_cycle_first import ModelA\nclass ModelB(ModelA):\n    pass\n",
+    )
+    findings = scan_paths([first, second], use_runtime=use_runtime)
+    assert {finding.class_name for finding in findings} == {"ModelA", "ModelB"}
+    assert all(finding.status == STATUS_UNRESOLVED for finding in findings)
+    assert all(finding.effective_extra is None for finding in findings)
+
+
+@pytest.mark.parametrize("base", ["BaseModel", "RootModel[int]"])
+def test_unknown_ancestry_cannot_grant_config_or_exemption(
+    tmp_path: Path, base: str
+) -> None:
+    module = _pkg(
+        tmp_path,
+        "mod_unknown_ancestor",
+        "from pydantic import BaseModel, ConfigDict, RootModel\n"
+        f"class ModelUnknown({base}, MissingBase):\n"
+        "    model_config = ConfigDict(extra='forbid')\n",
+    )
+    findings = scan_paths([module], use_runtime=False)
+    assert len(findings) == 1
+    assert findings[0].status == STATUS_UNRESOLVED
+    assert findings[0].effective_extra is None
 
 
 def test_non_pydantic_classes_are_ignored(tmp_path: Path) -> None:
