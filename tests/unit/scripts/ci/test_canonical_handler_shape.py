@@ -19,6 +19,7 @@ from pathlib import Path
 import pytest
 
 import scripts.ci.canonical_handler_shape as mod
+from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 from scripts.ci.canonical_handler_shape import (
     ModelHandlerShapeFinding,
     _contract_bindings,
@@ -528,6 +529,181 @@ def test_cli_full_scan_default_package_unchanged() -> None:
     )
     assert proc.returncode == 0, proc.stdout + proc.stderr
     assert "ratchet OK" in proc.stdout
+
+
+# --------------------------------------------------------------------------- #
+# Live dirty scope — committed changes plus index, worktree and untracked paths
+# --------------------------------------------------------------------------- #
+
+
+@pytest.fixture
+def shape_git_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Isolate scope probes from the caller's linked-worktree environment."""
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / ".git"))
+    monkeypatch.setenv("GIT_WORK_TREE", str(tmp_path))
+    monkeypatch.setattr(mod, "REPO_ROOT", tmp_path)
+
+    def git(*args: str) -> str:
+        return subprocess.run(
+            ["git", *args],
+            cwd=tmp_path,
+            check=True,
+            capture_output=True,
+            text=True,
+            env=scrub_git_location_env(),
+        ).stdout.strip()
+
+    git("init", "--initial-branch=main")
+    (tmp_path / "tracked.py").write_text("original\n", encoding="utf-8")
+    (tmp_path / ".gitignore").write_text("ignored/\n", encoding="utf-8")
+    git("add", ".")
+    git(
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.org",
+        "commit",
+        "-m",
+        "base",
+    )
+    return tmp_path, git
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("state", ["unstaged", "staged", "untracked"])
+def test_git_changed_files_includes_dirty_paths_without_mutating_index(
+    shape_git_repo, state: str
+) -> None:
+    repo, git = shape_git_repo
+    path = "tracked.py" if state != "untracked" else "new integration.py"
+    (repo / path).write_text("changed\n", encoding="utf-8")
+    if state == "staged":
+        git("add", "--", path)
+    index_before = (repo / ".git/index").read_bytes()
+
+    assert mod._git_changed_files("HEAD") == [path]
+    assert (repo / ".git/index").read_bytes() == index_before
+
+
+@pytest.mark.unit
+def test_git_changed_files_preserves_committed_range_and_unusual_paths(
+    shape_git_repo,
+) -> None:
+    repo, git = shape_git_repo
+    base = git("rev-parse", "HEAD")
+    (repo / "tracked.py").write_text("committed\n", encoding="utf-8")
+    git("add", "tracked.py")
+    git(
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.org",
+        "commit",
+        "-m",
+        "change",
+    )
+    # Reverting the worktree to BASE must not erase the committed-range path.
+    (repo / "tracked.py").write_text("original\n", encoding="utf-8")
+    names = [" new name.py ", "line\nbreak.py", "tab\tname.py"]
+    for name in names:
+        (repo / name).write_text("untracked\n", encoding="utf-8")
+    (repo / "ignored").mkdir()
+    (repo / "ignored/file.py").write_text("ignored\n", encoding="utf-8")
+
+    assert mod._git_changed_files(base) == sorted(["tracked.py", *names])
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("failed_probe", ["range", "unstaged", "staged", "untracked"])
+def test_git_changed_files_fails_closed_on_any_probe_error(
+    monkeypatch: pytest.MonkeyPatch, failed_probe: str
+) -> None:
+    def run(command, **kwargs):
+        probe = (
+            "untracked"
+            if command[1] == "ls-files"
+            else (
+                "range"
+                if any("..." in arg for arg in command)
+                else ("staged" if "--cached" in command else "unstaged")
+            )
+        )
+        return subprocess.CompletedProcess(
+            command, 1 if probe == failed_probe else 0, b""
+        )
+
+    monkeypatch.setattr(subprocess, "run", run)
+    assert mod._git_changed_files("BASE") is None
+
+
+@pytest.mark.unit
+def test_git_changed_files_keeps_staged_change_cancelled_in_worktree(
+    shape_git_repo,
+) -> None:
+    repo, git = shape_git_repo
+    (repo / "tracked.py").write_text("staged\n", encoding="utf-8")
+    git("add", "tracked.py")
+    (repo / "tracked.py").write_text("original\n", encoding="utf-8")
+    assert mod._git_changed_files("HEAD") == ["tracked.py"]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("state", ["unstaged", "staged", "untracked"])
+@pytest.mark.parametrize("explicit_files", [False, True])
+def test_cli_dirty_node_is_checked_unless_explicit_scope_is_supplied(
+    shape_git_repo, monkeypatch: pytest.MonkeyPatch, state: str, explicit_files: bool
+) -> None:
+    repo, git = shape_git_repo
+    node = repo / "src/pkg/nodes/node_dirty"
+    node.mkdir(parents=True)
+    contract = node / "contract.yaml"
+    contract.write_text(
+        "handler:\n  module: pkg.nodes.node_dirty.handler\n  class: HandlerDirty\n",
+        encoding="utf-8",
+    )
+    handler = node / "handler.py"
+    handler.write_text(
+        "class HandlerDirty:\n    def handle(self, request): ...\n", encoding="utf-8"
+    )
+    if state != "untracked":
+        git("add", ".")
+        git(
+            "-c",
+            "user.name=Test",
+            "-c",
+            "user.email=test@example.org",
+            "commit",
+            "-m",
+            "canonical node",
+        )
+    handler.write_text(
+        "class HandlerDirty:\n    def execute(self, request): ...\n", encoding="utf-8"
+    )
+    if state == "staged":
+        git("add", ".")
+    # main() intentionally resolves its configuration into globals.
+    for name in (
+        "PACKAGE",
+        "SRC_ROOT",
+        "NODES_GLOB",
+        "BASELINE_PATH",
+        "RECEIPTS_DIR",
+        "BASE_REF",
+    ):
+        monkeypatch.setattr(mod, name, getattr(mod, name))
+    args = [
+        "--base-ref",
+        "HEAD",
+        "--package",
+        "pkg",
+        "--src-root",
+        str(repo / "src"),
+        "--baseline",
+        str(repo / "baseline.py"),
+    ]
+    if explicit_files:
+        args.append("tracked.py")
+    assert mod.main(args) == (0 if explicit_files else 1)
 
 
 # --------------------------------------------------------------------------- #
