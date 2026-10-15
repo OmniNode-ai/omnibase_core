@@ -42,6 +42,10 @@ NO_TERMINAL_WIRE_VALUE = "no_terminal"
 # as a literal for the same reason as the values above.
 RUNTIME_SHUTDOWN_WIRE_VALUE = "runtime_shutdown"
 
+# OMN-19448: the wire value for a request refused before any dispatch, spelled
+# as a literal for the same reason as the values above.
+REFUSED_BEFORE_DISPATCH_WIRE_VALUE = "refused_before_dispatch"
+
 # Every member and the exact wire string it serialises to. Adding a member here
 # is deliberate: this constant is what makes a silent vocabulary change fail.
 EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
@@ -59,6 +63,7 @@ EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
 EXPECTED_WIRE_VALUES: set[str] = {
     *EXPECTED_MEMBERS.values(),
     RUNTIME_SHUTDOWN_WIRE_VALUE,
+    REFUSED_BEFORE_DISPATCH_WIRE_VALUE,
 }
 
 
@@ -212,6 +217,30 @@ class TestEnumDelegationTerminalFailureCause:
         assert shutdown not in provider_causes
         assert shutdown is not EnumDelegationTerminalFailureCause.TIMEOUT
         assert shutdown is not EnumDelegationTerminalFailureCause.NO_TERMINAL
+
+    def test_a_request_refused_before_dispatch_has_a_member(self) -> None:
+        """OMN-19448: a refusal before any dispatch must land on a typed cause.
+
+        Measured on the .201 dev lane: correlation
+        ``252a8269-bcbc-44f1-a47e-c1fbfa036649`` (written 2026-10-15T00:48:35Z)
+        asked for 300 seconds against a task-class ceiling of 240 and was
+        refused before dispatch. Its ``delegation_events`` row carried a failed
+        outcome with a null cause, an empty attempt history and an empty
+        outcome and verdict, and was the one row that failed the acceptance
+        falsifier "no failed row has a null cause". Credential-absent refusals
+        (2026-10-14T02:25:49Z) have the same shape. No ladder rung ran, so no
+        provider, gate, clock or runtime member names what decided the run.
+        """
+        refused = EnumDelegationTerminalFailureCause(REFUSED_BEFORE_DISPATCH_WIRE_VALUE)
+        provider_causes = {
+            EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED,
+            EnumDelegationTerminalFailureCause.AUTH_FAILED,
+            EnumDelegationTerminalFailureCause.PROVIDER_ERROR,
+        }
+        assert refused not in provider_causes
+        assert not refused.value.startswith("provider_")
+        assert refused is not EnumDelegationTerminalFailureCause.TIMEOUT
+        assert refused is not EnumDelegationTerminalFailureCause.NO_TERMINAL
 
     def test_enum_is_a_string_enum(self) -> None:
         """Members must be ``str`` so they serialise without a custom encoder."""
