@@ -17,6 +17,9 @@ Families (the policy decides which apply to a path):
   ``/v1/...`` paths, a URL-valued literal assigned to one of the policy's
   endpoint keys, or a URL default of ``os.getenv``/``os.environ.get``.
 * ``E-LAN``: an RFC 1918 host inside a URL, or any literal on our own lab subnet.
+* ``D``: a lab deployment fact, a lab host name or a lab port the policy carries
+  (OMN-21147), matched as a whole value in code. Comments and docstrings are
+  skipped.
 * ``R``: an exact retired lab value. Matched in comments too.
 * ``L``: a ``.example.`` file handed to a loader (``open``, ``read_text``,
   ``safe_load``, ``json.load``) in Python source.
@@ -57,7 +60,14 @@ __all__ = [
     "scan",
 ]
 
-_FAMILY_ORDER: Final[dict[str, int]] = {"M": 0, "E": 1, "E-LAN": 2, "R": 3, "L": 4}
+_FAMILY_ORDER: Final[dict[str, int]] = {
+    "M": 0,
+    "E": 1,
+    "E-LAN": 2,
+    "D": 3,
+    "R": 4,
+    "L": 5,
+}
 
 _PYTHON_SUFFIXES: Final[frozenset[str]] = frozenset({".py", ".pyi"})
 _SLASH_COMMENT_SUFFIXES: Final[frozenset[str]] = frozenset(
@@ -239,6 +249,19 @@ def _generic_views(
 
 
 @lru_cache(maxsize=8)
+def _deployment_fact(policy: ModelHardcodedModelConfigPolicy) -> re.Pattern[str] | None:
+    """Family D: any lab host name or lab port as a whole value, or None."""
+    parts: list[str] = []
+    if policy.lab_host_names:
+        names = "|".join(re.escape(n) for n in policy.lab_host_names)
+        parts.append(r"(?<![\w.\-])(?:" + names + r")(?![\w\-])")
+    if policy.lab_ports:
+        ports = "|".join(str(p) for p in policy.lab_ports)
+        parts.append(r"(?<![\w.])(?:" + ports + r")(?![\w.])")
+    return re.compile("|".join(parts), re.IGNORECASE) if parts else None
+
+
+@lru_cache(maxsize=8)
 def _compiled(
     policy: ModelHardcodedModelConfigPolicy,
 ) -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str], re.Pattern[str]]:
@@ -296,8 +319,9 @@ def scan(
                     record(n, "R", value)
                     break
 
-    if families & {"M", "E", "E-LAN", "L"}:
+    if families & {"M", "E", "E-LAN", "D", "L"}:
         model_id, endpoint_url, endpoint_key, lab_subnet = _compiled(policy)
+        fact = _deployment_fact(policy)
         is_python = _suffix(path) in _PYTHON_SUFFIXES
         views = _python_views(text, lines) if is_python else None
         if views is None:
@@ -332,6 +356,10 @@ def scan(
                     if host or lab:
                         record(n, "E-LAN", host or (lab.group(0) if lab else ""))
                         break
+            if "D" in families and fact is not None:
+                d = fact.search(line_code)
+                if d:
+                    record(n, "D", d.group(0))
             if "L" in families and is_python:
                 if _LOADER_CALL.search(line_code) and any(
                     _EXAMPLE_MARK in literal for literal in line_literals
@@ -366,6 +394,7 @@ def compare_with_baseline(
     baseline: Sequence[ModelHardcodedModelConfigBaselineEntry],
     scanned_paths: frozenset[str],
     missing_paths: frozenset[str],
+    unjudged_families: frozenset[str] = frozenset(),
 ) -> tuple[
     list[ModelHardcodedModelConfigFinding], list[ModelHardcodedModelConfigBaselineEntry]
 ]:
@@ -374,7 +403,9 @@ def compare_with_baseline(
     A finding is new when its key occurs more often than the baseline allows. A
     retired-value finding is always new. An entry is stale when its file was
     scanned (or no longer exists) and its key occurs less often than recorded.
-    Entries for files this run did not read are not judged.
+    Entries for files this run did not read are not judged, nor entries of a
+    family this run cannot detect (``unjudged_families``: D without the
+    private vocabulary).
     """
     allowed: Counter[tuple[str, str, str]] = Counter(e.key() for e in baseline)
     seen: Counter[tuple[str, str, str]] = Counter()
@@ -389,6 +420,8 @@ def compare_with_baseline(
     for key, count in sorted(allowed.items()):
         path = key[0]
         if path not in scanned_paths and path not in missing_paths:
+            continue
+        if key[1] in unjudged_families:
             continue
         excess = count - seen[key]
         stale.extend([by_key[key]] * max(excess, 0))

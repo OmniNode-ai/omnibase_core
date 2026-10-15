@@ -18,13 +18,16 @@ fixtures:
   violation_r.fixture: {path: src/pkg/notes.py, family: R}
   violation_l.fixture: {path: src/pkg/loader.py, family: L}
   marker_ignored.fixture: {path: src/pkg/endpoints.py, family: E-LAN}
-  vendor_default_lan.fixture: {path: src/omnimarket/configs/bifrost_delegation.yaml, family: E-LAN}
   launch_retired.fixture: {path: deploy/systemd/vllm-gpu0.service, family: R}
+  # OMN-21147: no class permits a model id; a model server takes it from an overlay.
+  launch_model.fixture: {path: deploy/systemd/vllm-gpu1.service, family: M}
+  violation_m_example.fixture: {path: config/lane.example.yaml, family: M}
+  violation_m_vendor_default.fixture: {path: src/omnimarket/inference/openrouter_models.py, family: M}
   clean_docstring.fixture: {path: src/pkg/routing.py, family: null}
   clean_test_host.fixture: {path: tests/unit/test_routing.py, family: null}
+  clean_test_fixture_id.fixture: {path: tests/unit/test_routing.py, family: null}
   clean_health_port.fixture: {path: docker/docker-compose.dev-lane.yml, family: null}
   clean_example.fixture: {path: config/lane.example.yaml, family: null}
   clean_evidence.fixture: {path: evidence/OMN-1/run.yaml, family: null}
-  clean_vendor_default.fixture: {path: src/omnimarket/inference/openrouter_models.py, family: null}
   clean_public_ip.fixture: {path: src/pkg/constants.py, family: null}
   clean_doc.fixture: {path: docs/guide.md, family: null}

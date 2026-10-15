@@ -108,10 +108,10 @@ def test_handler_is_a_typed_pure_compute(
         ("src/omnibase_core/validation/hardcoded_model_config/policy.yaml", "GUARD"),
         ("config/lane.example.yaml", "EXAMPLE"),
         (".env.example", "EXAMPLE"),
-        ("src/omnimarket/configs/bifrost_delegation.yaml", "VENDOR_DEFAULT"),
-        ("src/omnimarket/configs/other_delegation.yaml", "SOURCE"),
-        ("plugins/onex/skills/_bin/lab-onboarding.sh", "VENDOR_DEFAULT"),
-        ("plugins/onex/skills/_bin/other-script.sh", "SOURCE"),
+        # OMN-21147: the former vendor-default files are ordinary source.
+        ("src/omnimarket/configs/bifrost_delegation.yaml", "SOURCE"),
+        ("src/omnimarket/inference/openrouter_models.py", "SOURCE"),
+        ("plugins/onex/skills/_bin/lab-onboarding.sh", "SOURCE"),
         ("deploy/systemd/vllm-gpu0.service", "LAUNCH"),
         ("README.md", "DOC"),
         ("app/(marketing)/page.tsx", "DOC"),
@@ -127,16 +127,34 @@ def test_classify_path(
 
 
 @pytest.mark.unit
-def test_vendor_default_membership_is_by_name_only(
+def test_no_path_class_admits_a_named_file(
     policy: ModelHardcodedModelConfigPolicy,
 ) -> None:
-    vendor = [c for c in policy.path_classes if c.name == "VENDOR_DEFAULT"]
-    assert len(vendor) == 1
-    assert vendor[0].globs == ()
-    assert vendor[0].files
-    assert "M" not in vendor[0].families
-    assert "E-LAN" in vendor[0].families
-    assert "R" in vendor[0].families
+    """OMN-21147: no file is named into a class; VENDOR_DEFAULT is gone."""
+    assert "VENDOR_DEFAULT" not in {c.name for c in policy.path_classes}
+    assert all(c.files == () for c in policy.path_classes)
+
+
+@pytest.mark.unit
+def test_every_scanned_class_refuses_model_ids_and_lab_facts(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    """OMN-21147: a model id belongs in a contract overlay, never in the tree.
+
+    HISTORICAL (records) and GUARD (this guard's own policy and corpus) scan
+    nothing. DOC refuses retired values. TEST refuses private and lab-subnet
+    hosts (E-LAN), lab deployment facts (D) and retired values; its model ids
+    wait on a follow-up. Every other class refuses model ids (M) as well.
+    """
+    for path_class in policy.path_classes:
+        if path_class.name in ("HISTORICAL", "GUARD"):
+            assert path_class.families == ()
+        elif path_class.name == "DOC":
+            assert set(path_class.families) == {"R"}
+        elif path_class.name == "TEST":
+            assert set(path_class.families) == {"E-LAN", "D", "R"}
+        else:
+            assert {"M", "E-LAN", "D", "R"} <= set(path_class.families), path_class.name
 
 
 @pytest.mark.unit

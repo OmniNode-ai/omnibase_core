@@ -26,15 +26,15 @@ __all__ = [
     "ModelHardcodedModelConfigScanResult",
 ]
 
-# M: model id. E: endpoint. E-LAN: a private or lab-subnet host. R: a retired lab
+# M: model id. E: endpoint. E-LAN: a private or lab-subnet host. D: a lab
+# deployment fact (lab host name or lab port, OMN-21147). R: a retired lab
 # value. L: an example file loaded by code.
-LiteralFamily = Literal["M", "E", "E-LAN", "R", "L"]
+LiteralFamily = Literal["M", "E", "E-LAN", "D", "R", "L"]
 
 LiteralPathClass = Literal[
     "HISTORICAL",
     "GUARD",
     "EXAMPLE",
-    "VENDOR_DEFAULT",
     "LAUNCH",
     "DOC",
     "TEST",
@@ -82,16 +82,26 @@ class ModelHardcodedModelConfigPolicy(BaseModel):
     lab_subnet_pattern: str = Field(
         description="Regex for any literal on our own lab subnet (E-LAN)"
     )
+    lab_host_names: tuple[str, ...] = Field(
+        default=(),
+        description="Lab host names (D); empty in the shipped policy",
+    )
+    lab_ports: tuple[int, ...] = Field(
+        default=(),
+        description="Lab ports (D); empty in the shipped policy",
+    )
     retired_values: tuple[str, ...] = Field(
         description="Exact retired lab strings (R); matched in comments too"
     )
 
 
 class ModelHardcodedModelConfigLabDenylist(BaseModel):
-    """The operator's private list of dead endpoints (OMN-20939).
+    """The operator's private list of dead endpoints (OMN-20939) and lab
+    deployment facts (OMN-21147).
 
     Lives outside this repository, in the workspace config root's vocabularies,
-    and is added to the policy's ``retired_values`` when present.
+    and is added to the policy's ``retired_values``, ``lab_host_names`` and
+    ``lab_ports`` when present.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -100,6 +110,10 @@ class ModelHardcodedModelConfigLabDenylist(BaseModel):
     retired_values: tuple[str, ...] = Field(
         min_length=1, description="Exact retired endpoint strings (family R)"
     )
+    lab_host_names: tuple[str, ...] = Field(
+        default=(), description="Lab host names (family D)"
+    )
+    lab_ports: tuple[int, ...] = Field(default=(), description="Lab ports (family D)")
 
 
 class ModelHardcodedModelConfigScanInput(BaseModel):
