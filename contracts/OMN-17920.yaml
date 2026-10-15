@@ -119,9 +119,16 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: uv run ruff check src/omnibase_core/validation tests/unit/validators/test_pydantic_extra_forbid.py
-          && uv run mypy src/omnibase_core/validation/pydantic_module_index.py src/omnibase_core/validation/pydantic_static_resolver.py
-          && uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q && uv run --frozen python
-          -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified :staged src/omnibase_core
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run mypy src/omnibase_core/validation/pydantic_module_index.py src/omnibase_core/validation/pydantic_static_resolver.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run --frozen python -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified
+          :staged src/omnibase_core
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC7
