@@ -4348,7 +4348,9 @@ jobs:
           archive="yamlfmt_0.21.0_Linux_${arch}.tar.gz"
           dest="$RUNNER_TEMP/yamlfmt-bin"
           mkdir -p "$dest"
-          curl -fsSL --retry 3 -o "$RUNNER_TEMP/$archive" \
+          # OMN-17427: a release-download 504 outlasted curl's default 7s
+          # backoff and failed splits 11 and 24 of dev push run 38784521172.
+          curl -fsSL --retry 8 --retry-delay 10 --retry-max-time 180 -o "$RUNNER_TEMP/$archive" \
             "https://github.com/google/yamlfmt/releases/download/v0.21.0/$archive"
           echo "$digest  $RUNNER_TEMP/$archive" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/$archive" -C "$dest" yamlfmt
