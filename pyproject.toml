@@ -198,13 +198,13 @@ sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
 # Declared as its own extra rather than folded into a consumer's existing
 # dev dependencies -- pytest/pytest-asyncio become a real import-time
 # dependency of that one submodule, so the wheel metadata says so honestly.
-testing = ["pytest>=8.4.0", "pytest-asyncio>=1.3.0"]
-full = ["omnibase-spi>=0.20.2", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0", "pytest>=8.4.0", "pytest-asyncio>=1.3.0"]
+testing = ["pytest>=8.4.0", "pytest-asyncio>=1.4,<2"]
+full = ["omnibase-spi>=0.20.2", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0", "pytest>=8.4.0", "pytest-asyncio>=1.4,<2"]
 
 [dependency-groups]
 dev = [
     "pytest>=8.4.0",
-    "pytest-asyncio>=1.3.0",
+    "pytest-asyncio>=1.4,<2",
     "mypy>=1.19.1",
     "pyright>=1.1.408",
     "ruff>=0.14.13,<0.18.0",
