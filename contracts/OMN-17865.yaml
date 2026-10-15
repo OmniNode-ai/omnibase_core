@@ -41,10 +41,33 @@ emergency_bypass:
   follow_up_ticket_id: ''
 dod_evidence:
   - id: dod-omn17865-ac1-helper-markers
-    description: Each helper class carries __test__ = False, so collecting the three modules with collection
-      warnings as errors exits zero.
+    description: Inspect the committed helper sources, before the control overlays test files, to check
+      that only the three helpers opt out. Also run the collection regression with warnings as errors.
+      The committed-source assertion fails at the merge base even when its test files are overlaid.
     source: manual
     checks:
+      - check_type: command
+        check_value: |
+          uv run python -c '
+          import ast
+          import subprocess
+          helpers = {
+              "test_mixin_contract_state_reducer": "TestNode",
+              "test_mixin_effect_execution": "TestNode",
+              "test_mixin_event_bus": "TestMixinNode",
+          }
+          for module, helper in helpers.items():
+              path = f"tests/unit/mixins/{module}.py"
+              tree = ast.parse(subprocess.check_output(["git", "show", f"HEAD:{path}"], text=True))
+              def excluded(body):
+                  return any(isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "__test__" for target in node.targets) and isinstance(node.value, ast.Constant) and node.value.value is False for node in body)
+              classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+              assert not excluded(tree.body), f"{path}: module suppressed"
+              assert {node.name for node in classes if excluded(node.body)} == {helper}, f"{path}: only the helper must opt out"
+              real = [node for node in classes if node.name.startswith("Test") and node.name != helper]
+              assert real and all(any(isinstance(test, (ast.FunctionDef, ast.AsyncFunctionDef)) and test.name.startswith("test_") for test in node.body) for node in real), f"{path}: real tests missing"
+          '
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run pytest tests/unit/mixins/test_mixin_helper_collection_omn17865.py -q
         cwd: ${OMNI_HOME}/omnibase_core
@@ -52,9 +75,33 @@ dod_evidence:
       - AC1
       - AC3
   - id: dod-omn17865-ac2-real-tests-run
-    description: The three modules' own tests still collect and pass.
+    description: The committed sources exclude only the helper classes and retain real test methods. The
+      three modules' own tests also collect and pass. Checking the committed sources keeps the merge-base
+      control sensitive to the helper fix despite its test-file overlay.
     source: manual
     checks:
+      - check_type: command
+        check_value: |
+          uv run python -c '
+          import ast
+          import subprocess
+          helpers = {
+              "test_mixin_contract_state_reducer": "TestNode",
+              "test_mixin_effect_execution": "TestNode",
+              "test_mixin_event_bus": "TestMixinNode",
+          }
+          for module, helper in helpers.items():
+              path = f"tests/unit/mixins/{module}.py"
+              tree = ast.parse(subprocess.check_output(["git", "show", f"HEAD:{path}"], text=True))
+              def excluded(body):
+                  return any(isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "__test__" for target in node.targets) and isinstance(node.value, ast.Constant) and node.value.value is False for node in body)
+              classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]
+              assert not excluded(tree.body), f"{path}: module suppressed"
+              assert {node.name for node in classes if excluded(node.body)} == {helper}, f"{path}: only the helper must opt out"
+              real = [node for node in classes if node.name.startswith("Test") and node.name != helper]
+              assert real and all(any(isinstance(test, (ast.FunctionDef, ast.AsyncFunctionDef)) and test.name.startswith("test_") for test in node.body) for node in real), f"{path}: real tests missing"
+          '
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run pytest tests/unit/mixins/test_mixin_contract_state_reducer.py tests/unit/mixins/test_mixin_effect_execution.py
           tests/unit/mixins/test_mixin_event_bus.py -q
