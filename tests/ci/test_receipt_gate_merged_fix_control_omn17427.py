@@ -38,6 +38,8 @@ dod_evidence:
     checks:
       - check_value: x
 """
+# The contract a merged fix shipped: its evidence id is the merge base's, not the binding's.
+FIX_CONTRACT = CONTRACT.replace("dod-omn-1-ac1", "dod-omn-1-shipped-with-fix")
 PRODUCT_TEST = """\
 from pathlib import Path
 
@@ -101,6 +103,8 @@ def _repository(
     fix_subject: str = "fix(OMN-1): the product is fixed (#7)",
     later: bool = False,
     note_after_fix: bool = False,
+    fix_contract: bool = False,
+    contract_amended_after_fix: bool = False,
 ) -> _GitFixture:
     workspace = tmp_path / "ws"
     head_tree = workspace / ".dod-verify" / "head_home" / "omnimarket"
@@ -130,7 +134,13 @@ def _repository(
     repo.commits["initial"] = repo.commit("chore: initial")
     repo.write("src/product.py", "BROKEN = False\n")
     repo.write("tests/test_product.py", PRODUCT_TEST)
+    if fix_contract:
+        # A squash-merged fix ships its own contract beside the product change.
+        repo.write("contracts/OMN-1.yaml", FIX_CONTRACT)
     repo.commits["fix"] = repo.commit(fix_subject)
+    if contract_amended_after_fix:
+        repo.write("contracts/OMN-1.yaml", FIX_CONTRACT + "# amended on the base\n")
+        repo.commits["amend"] = repo.commit("docs(OMN-1): amend the contract")
     if note_after_fix:
         repo.write("src/notes.txt", "The product was fixed.\n")
         repo.commits["note"] = repo.commit("docs(OMN-1): note")
@@ -263,6 +273,51 @@ def test_contract_only_binding_fails_with_the_merged_fix_reverted(
         "OMN-1 base control: passed; every bound check failed [dod-omn-1-ac1]"
         in control.stdout
     )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    "amended", [False, True], ids=["contract-unchanged", "contract-amended-on-base"]
+)
+def test_merged_fix_contract_is_not_reverted_as_a_product_path(
+    tmp_path: Path, amended: bool
+) -> None:
+    repo = _repository(tmp_path, fix_contract=True, contract_amended_after_fix=amended)
+    _bind(repo, [f"OMN-1 {repo.commits['fix']}"])
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert f"Reverted from {repo.commits['fix']}: src/product.py" in prepare.stdout
+    assert "contracts/OMN-1.yaml" not in "".join(
+        line for line in prepare.stdout.splitlines() if line.startswith("Reverted from")
+    )
+    assert control is not None
+    _assert_success(control)
+    assert (
+        "OMN-1 base control: passed; every bound check failed [dod-omn-1-ac1]"
+        in control.stdout
+    )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_merged_fix_with_only_test_and_contract_changes_is_refused(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path)
+    repo.write("tests/test_more.py", PRODUCT_TEST)
+    repo.write("contracts/OMN-1.yaml", CONTRACT + "# shipped with the tests\n")
+    named = repo.commit("test(OMN-1): more tests and the contract")
+    repo.commits["merge_base"] = named
+    repo.env["BASE_SHA"] = named
+    _bind(repo, [f"OMN-1 {named}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::merged fix {named} changes no product path, so reverting it "
+        "cannot make a bound test fail"
+    ) in prepare.stdout
+    assert control is None
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")

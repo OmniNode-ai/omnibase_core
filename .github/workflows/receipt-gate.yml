@@ -1019,7 +1019,7 @@ jobs:
           git -C "$head_tree" worktree prune
           TEST_SIDE='^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$'
           # prepare_control HOME LABEL [FIX]: check the merge base out at HOME/$REPO_SHORT,
-          # revert FIX's product (non-test) changes there when one is named, and lay
+          # revert FIX's product (non-test, non-contract) changes there when one is named, and lay
           # over it every test-side path and cited contract this pull request changed.
           prepare_control() {
             local control_home="$1" label="$2" fix="${3:-}"
@@ -1046,7 +1046,10 @@ jobs:
                   echo "::error::unsafe revert path refused"
                   exit 1
                 fi
-                if [[ ! "$path" =~ $TEST_SIDE ]]; then
+                # A contract is evidence, not product: the fix's own contract
+                # change is never reverted, and a later amendment on the base
+                # would make it fail to revert (OMN-17427).
+                if [[ ! "$path" =~ $TEST_SIDE|^contracts/OMN-[0-9]+\.yaml$ ]]; then
                   product+=("$path")
                 fi
               done < <(git -C "$head_tree" diff --name-only --no-renames -z "$fix^1" "$fix")
