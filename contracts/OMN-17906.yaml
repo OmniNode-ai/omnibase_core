@@ -104,12 +104,20 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
           -n0 --reruns 0
         cwd: ${OMNI_HOME}/omnibase_core
+      # Each command receives the verifier's per-check budget independently.
       - check_type: command
-        check_value: >-
-          uv run --frozen ruff check src/omnibase_core/validation/pydantic_static_resolver.py tests/unit/validators/test_pydantic_extra_forbid.py
-          && uv run --frozen ruff format --check src/omnibase_core/validation/pydantic_static_resolver.py
-          tests/unit/validators/test_pydantic_extra_forbid.py && uv run --frozen mypy --strict src/omnibase_core/validation/pydantic_static_resolver.py
-          && git diff --check
+        check_value: uv run --frozen ruff check src/omnibase_core/validation/pydantic_static_resolver.py
+          tests/unit/validators/test_pydantic_extra_forbid.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run --frozen ruff format --check src/omnibase_core/validation/pydantic_static_resolver.py
+          tests/unit/validators/test_pydantic_extra_forbid.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run --frozen mypy --strict src/omnibase_core/validation/pydantic_static_resolver.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: git diff --check
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn17906-ac7-fail-closed
     description: Cycles with explicit forbid or RootModel ancestry and unknown bases remain UNRESOLVED
