@@ -15,7 +15,7 @@ These tests assert three things:
    pass — including the boundary cases (localhost, RFC5737 doc IPs, example.com,
    env-var forms, the decimal/SemVer near-misses, the suppression marker).
 2. The PATH-based exemptions the text-only corpus could not express:
-   ``OMN-<digits>`` is exempt under ``onex_change_control/`` and ``contracts/`` but
+   ``OMN-<digits>`` is exempt under ``contracts/`` but
    local-env rules still apply there; the line/file suppression markers work.
 3. The generated COMPUTE handler is shaped canonically (ProtocolMessageHandler,
    COMPUTE kind, returns ``result``, pure) and runs over the in-memory bus — the
@@ -229,12 +229,11 @@ def test_rfc5737_and_loopback_are_not_lan_ip() -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        "onex_change_control/grants/prod.md",
         "docs/contracts/OMN-1.yaml.md",
         "repo/contracts/spec.md",
     ],
 )
-def test_ticket_reference_exempt_under_governance_and_contract_trees(path: str) -> None:
+def test_ticket_reference_exempt_under_contract_trees(path: str) -> None:
     # OMN-<digits> is exempt under these trees.
     assert scan_source("see OMN-1234 for context", path=path).flagged is False
 
@@ -244,10 +243,19 @@ def test_local_env_rules_still_apply_under_exempt_trees() -> None:
     # The path exemption is ONLY for ticket refs — a LAN IP still flags there.
     result = scan_source(
         "deployed to 192.168.86.201",
-        path="onex_change_control/notes.md",
+        path="repo/contracts/notes.md",
     )
     assert result.flagged is True
     assert result.findings[0].violation_type is EnumDocViolationType.LAN_IP
+
+
+@pytest.mark.unit
+def test_ticket_reference_flagged_under_a_change_control_tree() -> None:
+    # OMN-20074: the change-control repository is retired and no tracked path
+    # here sits under it, so its tree no longer exempts ticket references.
+    result = scan_source("see OMN-1234", path="onex_change_control/grants/prod.md")
+    assert result.flagged is True
+    assert result.findings[0].violation_type is EnumDocViolationType.TICKET_REFERENCE
 
 
 @pytest.mark.unit

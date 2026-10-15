@@ -46,7 +46,7 @@ class ModelDocContentScanInput(BaseModel):
     ``content`` is the raw file text; ``path`` is the file's path. ``path`` is used
     for two pure decisions only — selecting the docs-only glob is the EFFECT
     boundary's job, but the path also drives the ``OMN-<digits>`` exemptions
-    (files under ``onex_change_control/`` or ``contracts/`` keep ticket refs) — and
+    (files under ``contracts/`` keep ticket refs) — and
     to label findings. It is a plain label string, not a filesystem handle; the
     handler never opens it.
     """
@@ -58,7 +58,7 @@ class ModelDocContentScanInput(BaseModel):
         default="<input>",
         description=(
             "Label for the source (e.g. file path) used in findings AND for the "
-            "OMN-<digits> path exemptions (onex_change_control/ and contracts/)"
+            "OMN-<digits> path exemption (contracts/)"
         ),
     )
 

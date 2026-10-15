@@ -418,6 +418,11 @@ requirements:
           head carrying a promotion-receipt line included, and reads no change-control receipt, while
           a pull request onto dev is admitted -- falsifier: uv run pytest tests/ci/test_main_target_guard_prepush_omn20780.py
           -q --no-cov -p no:randomly fails at the merge base'
+      - id: AC54
+        statement: 'AC54: the doc-content scan exempts OMN ticket references under contracts/ only, so
+          a ticket reference under an onex_change_control/ path is flagged and the local-environment rules
+          still apply under contracts/ -- falsifier: uv run pytest tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+          -q --no-cov -p no:randomly fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -590,6 +595,11 @@ evidence_requirements:
       a promotion PR onto main refused whatever its body, with a PR onto dev admitted as the negative
       control.
     command: uv run pytest tests/ci/test_validate_boundaries_caller_omn20962.py tests/ci/test_main_target_guard_prepush_omn20780.py
+      -q --no-cov -p no:randomly
+  - kind: tests
+    description: The doc-content scan tests find a ticket reference under an onex_change_control/ path
+      flagged and the contracts/ exemption kept, with the local-environment rules applied under contracts/.
+    command: uv run pytest tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
       -q --no-cov -p no:randomly
 emergency_bypass:
   enabled: false
@@ -1058,3 +1068,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC53
+  - id: dod-omn-20074-ac54
+    description: The doc-content scan test finds a ticket reference under an onex_change_control/ path
+      flagged, ticket references under contracts/ exempt, and a LAN IP under contracts/ flagged.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+          -q --no-cov -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC54
