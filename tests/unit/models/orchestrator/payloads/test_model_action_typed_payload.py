@@ -79,6 +79,7 @@ class TestGetRecommendedPayloads:
                 [
                     ModelDataActionPayload,
                     ModelFilesystemActionPayload,
+                    ModelOperationalActionPayload,
                 ],
             ),
             (
