@@ -143,6 +143,7 @@ _ACTION_TYPE_TO_PAYLOAD_RECOMMENDATIONS: dict[
         ModelFilesystemActionPayload,  # scan, watch, sync
         ModelRegistryActionPayload,  # register, unregister, discover
         ModelLifecycleActionPayload,  # health_check, initialize, shutdown
+        ModelOperationalActionPayload,  # execute, run (the EFFECT default)
     ],
     EnumActionType.REDUCE: [
         ModelOperationalActionPayload,  # aggregate, reduce

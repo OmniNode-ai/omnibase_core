@@ -1,0 +1,75 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-17869
+title: Effect workflow steps no longer emit a Werror-fatal payload recommendation warning
+summary: A ModelWorkflowStep with step_type effect maps to EnumActionType.EFFECT and is given the factory
+  default payload for EFFECT (ModelOperationalActionPayload, semantic action execute). EFFECT did not
+  list that payload among its recommended types, so ModelAction warned and a run under warnings-as-errors
+  marked the workflow failed. The recommendation table for EFFECT now lists ModelOperationalActionPayload,
+  the payload the EFFECT default has always produced.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17869-effect-payload-recommended
+    statement: The payload built for an effect workflow step is among the payloads ModelAction recommends
+      for EFFECT, and the warning is neither suppressed nor weakened.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: building the action for an effect step raises no warning when warnings are errors
+          -- falsifier: `_create_action_for_step` on an effect step raises a UserWarning under `warnings.simplefilter("error")`.'
+      - id: AC2
+        statement: 'AC2: a sequential workflow and a parallel workflow made of effect steps complete under
+          warnings-as-errors -- falsifier: either reports `execution_status == "failed"`.'
+      - id: AC3
+        statement: 'AC3: the EFFECT recommendation list contains `ModelOperationalActionPayload`, and
+          the warning in `ModelAction` is unchanged -- falsifier: the recommendation test fails, or a
+          non-recommended payload no longer warns.'
+evidence_requirements:
+  - kind: tests
+    description: Effect-step Werror coverage and the recommendation table test.
+    command: uv run pytest tests/unit/utils/test_workflow_executor_effect_werror.py tests/unit/models/orchestrator/payloads/test_model_action_typed_payload.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17869-ac1-effect-action-no-warning
+    description: The action for an effect step is built without a warning when warnings are errors.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/utils/test_workflow_executor_effect_werror.py -q -k 'test_effect_step_action_emits_no_warning'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn17869-ac2-effect-workflows-werror
+    description: Sequential and parallel effect-step workflows complete with warnings as errors.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/utils/test_workflow_executor_effect_werror.py -q -k 'completes_under_werror'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn17869-ac3-recommendation-table
+    description: ModelOperationalActionPayload is in the EFFECT recommendations.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/orchestrator/payloads/test_model_action_typed_payload.py
+          -q -k 'test_recommended_payloads'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn17869-deploy-hosted-readback
+    description: Hosted deploy probe. omnibase_core is a library with no runtime lane; the effect-step
+      workflow tests run the executor as production wires it (execute_workflow over effect steps) with
+      warnings as errors and assert completion.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/utils/test_workflow_executor_effect_werror.py -q -k 'completes_under_werror'
+        cwd: ${OMNI_HOME}/omnibase_core
