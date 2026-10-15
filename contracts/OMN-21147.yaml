@@ -4,8 +4,8 @@ ticket_id: OMN-21147
 title: The hardcoded-model guard refuses any model id or lab deployment fact outside a contract overlay
 summary: omnibase_core's hardcoded-model-config policy drops the VENDOR_DEFAULT class, refuses model ids
   in tests, examples, launch files and code under docs/, refuses bare private addresses and lab deployment
-  facts (lab host names and lab ports, family D, read from the private vocabulary; the shipped policy names
-  none), and lets the shrink-only baseline take only lines that already stood at the base. The baseline
+  facts (lab host names and lab ports, family D, read from the private vocabulary; the shipped policy
+  names none), and lets the shrink-only baseline take only lines that already stood at the base. The baseline
   is regenerated from today's findings.
 is_seam_ticket: false
 interface_change: false
@@ -36,8 +36,8 @@ requirements:
       - id: AC4
         statement: "AC4: every class except HISTORICAL, GUARD and DOC refuses M, E-LAN, D and R; DOC is
           prose only, so code under docs/ is SOURCE; a test file that names a real model id yields an
-          M finding and one that names a declared fixture id yields none; a bare RFC 1918 address is
-          E-LAN -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          M finding and one that names a declared fixture id yields none; a bare RFC 1918 address is E-LAN
+          -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
           -q in omnibase_core"
       - id: AC5
         statement: "AC5: the baseline may take only a line that already stood in its file at the base;
@@ -97,8 +97,8 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
-          -q -k "tests_may_use_only_declared_fixture_ids or violation_m_test or violation_m_docs_code or
-          violation_elan_private_bare"
+          -q -k "tests_may_use_only_declared_fixture_ids or violation_m_test or violation_m_docs_code
+          or violation_elan_private_bare"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC4
