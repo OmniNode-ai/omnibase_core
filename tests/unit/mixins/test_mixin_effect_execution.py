@@ -73,6 +73,9 @@ class MockContainer:
 class TestNode(MixinEffectExecution):
     """Test node class using effect execution mixin."""
 
+    # Helper, not a test class: keep pytest from collecting it (OMN-17865).
+    __test__ = False
+
     def __init__(self, container: MockContainer | None = None) -> None:
         """Initialize test node with mock container."""
         self.node_id: UUID = uuid4()

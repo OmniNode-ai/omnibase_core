@@ -1,0 +1,85 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-17865
+title: Warnings-as-errors fails on collectable mixin helper classes
+summary: Three test-only mixin helper classes are named Test* and carry a constructor, so pytest tries
+  to collect them and raises PytestCollectionWarning, which fails collection once warnings are errors.
+  The three helpers opt out with a class-local __test__ = False, and a collection regression proves the
+  three modules collect without warnings and still run their real tests.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17865-helper-not-collected
+    statement: The three mixin test helper classes are not collected, and no other class or module is
+      excluded from collection.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: `TestNode` in test_mixin_contract_state_reducer.py, `TestNode` in test_mixin_effect_execution.py
+          and `TestMixinNode` in test_mixin_event_bus.py each carry a class-local `__test__ = False` --
+          falsifier: collecting any of the three modules with PytestCollectionWarning promoted to an error
+          fails.'
+      - id: AC2
+        statement: 'AC2: the real `Test...` classes in those modules are still collected and run -- falsifier:
+          a module collects no test functions, or a legitimate test class is renamed or suppressed.'
+  - id: req-omn17865-collection-regression
+    statement: A focused collection regression proves the three modules collect without warnings.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: a regression test collects each of the three modules with `-W error::pytest.PytestCollectionWarning`
+          and asserts a zero exit, no helper class in the collection tree and the real test classes present
+          -- falsifier: reverting any one marker makes the regression fail.'
+evidence_requirements:
+  - kind: tests
+    description: Collection regression for the three mixin helper classes, and the three modules' own
+      tests.
+    command: uv run pytest tests/unit/mixins/test_mixin_helper_collection_omn17865.py tests/unit/mixins/test_mixin_contract_state_reducer.py
+      tests/unit/mixins/test_mixin_effect_execution.py tests/unit/mixins/test_mixin_event_bus.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17865-ac1-helper-markers
+    description: Each helper class carries __test__ = False, so collecting the three modules with collection
+      warnings as errors exits zero.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/mixins/test_mixin_helper_collection_omn17865.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+      - AC3
+  - id: dod-omn17865-ac2-real-tests-run
+    description: The three modules' own tests still collect and pass.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/mixins/test_mixin_contract_state_reducer.py tests/unit/mixins/test_mixin_effect_execution.py
+          tests/unit/mixins/test_mixin_event_bus.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn17865-deploy-readback-on-dev
+    description: Deploy probe. omnibase_core is a library, so the live surface for this change is its
+      dev branch. The probe counts the three markers on dev and fails until all three are there. Run at
+      the local done gate, after merge.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: bash -c 'test "$(for f in test_mixin_contract_state_reducer test_mixin_effect_execution
+          test_mixin_event_bus; do git show origin/dev:tests/unit/mixins/$f.py; done | grep -c "__test__
+          = False")" -eq 3'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17865-deploy-hosted-readback
+    description: Hosted deploy probe. The collection regression runs pytest as production wires it (a
+      collect-only run per module with PytestCollectionWarning as an error) and fails if any helper is
+      collectable.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/mixins/test_mixin_helper_collection_omn17865.py -q
+        cwd: ${OMNI_HOME}/omnibase_core

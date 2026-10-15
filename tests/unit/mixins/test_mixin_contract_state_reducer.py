@@ -24,6 +24,9 @@ from omnibase_core.mixins.mixin_contract_state_reducer import MixinContractState
 class TestNode(MixinContractStateReducer):
     """Test node class using contract state reducer mixin."""
 
+    # Helper, not a test class: keep pytest from collecting it (OMN-17865).
+    __test__ = False
+
     def __init__(self, node_name: str = "test_node") -> None:
         """Initialize test node."""
         super().__init__()
