@@ -59,11 +59,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn17885-ac3-ratchet
-    description: The stale-entry check still passes against the baseline.
+    description: The stale-entry check still passes against the baseline, and the committed header count
+      equals the entries loaded by the ratchet.
     source: manual
     checks:
       - check_type: command
         check_value: uv run python -m omnibase_core.validators.pydantic_extra_forbid --no-runtime --check-stale
           src/omnibase_core
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -n 0 -q --no-cov
+          -k "committed_baseline_count_header"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
