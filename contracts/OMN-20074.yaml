@@ -394,6 +394,15 @@ requirements:
           ai-slop scope fixture, while validator_receipt_gate.py and validator_occ_merge_eligibility.py
           are present -- falsifier: uv run pytest tests/ci/test_occ_unused_validators_deleted_omn20074.py
           -q -p no:randomly fails at the merge base'
+  - id: req-omn20074-boundary-clone-check-pin-pair
+    statement: The workflow shape check must audit the boundary action revision together with its exact
+      repository list, retaining every required peer for each reviewed revision.
+    acceptance:
+      - id: AC55
+        statement: 'AC55: the workflow shape check accepts the reviewed #1942 action with eight repositories
+          and the reviewed #1972 action with seven repositories; missing peers, mismatched lists, unknown
+          actions and duplicate peers fail -- falsifier: uv run pytest tests/unit/validation/test_ci_workflow_shape.py
+          -q --no-cov -o addopts= -p no:randomly -k boundary_repo_contract'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -550,6 +559,16 @@ evidence_requirements:
       CLI gone from the tree and every registry, with the two validators other repositories import still
       present as positive controls.
     command: uv run pytest tests/ci/test_occ_unused_validators_deleted_omn20074.py -q -p no:randomly
+  - kind: tests
+    description: Check both reviewed boundary action and clone-list pairs, and refuse every missing peer,
+      mismatched lists, unknown action revisions or owners, and duplicate peers.
+    command: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q --no-cov -o addopts= -p
+      no:randomly -k boundary_repo_contract
+  - kind: ci
+    description: Hosted deploy check scoped to the CI caller configuration; the actual boundary-validation
+      step must match the exact repository list audited for its action revision. No runtime service changes.
+    command: uv run pytest tests/unit/validation/test_ci_workflow_shape.py::test_cross_repo_boundary_validation_clones_all_boundary_repos
+      -q --no-cov -o addopts= -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -977,3 +996,19 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC49
+  - id: dod-omn20074-boundary-clone-check-pin-pair-l8729
+    description: Exercise the two reviewed action and clone-list pairs and negative controls for every
+      missing peer, mismatched lists, unknown actions and duplicate peers. The hosted deploy check also
+      reads the real workflow caller and enforces its pin-specific clone list.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC55]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py -q --no-cov -o addopts=
+          -p no:randomly -k boundary_repo_contract
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ci_workflow_shape.py::test_cross_repo_boundary_validation_clones_all_boundary_repos
+          -q --no-cov -o addopts= -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core

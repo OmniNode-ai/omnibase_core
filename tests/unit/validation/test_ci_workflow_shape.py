@@ -846,20 +846,106 @@ def test_cross_repo_boundary_validation_action_is_not_warn_only() -> None:
     assert step["with"]["warn-only"] == "false"
 
 
-def test_cross_repo_boundary_validation_clones_all_boundary_repos() -> None:
-    step = _boundary_validation_step()
+_BOUNDARY_ACTION = "OmniNode-ai/omnibase_core/.github/actions/validate-boundaries"
+_BOUNDARY_REPOS = {
+    "omniclaude",
+    "omnidash",
+    "omniintelligence",
+    "omnibase_infra",
+    "omnibase_core",
+    "omnimemory",
+    "omnimarket",
+}
+# #1942 still packages the change-control boundary; #1972 removes it.
+# Audit the action pin and its exact clone list together, so neither an unknown
+# action nor a missing peer is admitted by the retirement of that boundary.
+_AUDITED_BOUNDARY_ACTION_REPOS = {
+    f"{_BOUNDARY_ACTION}@de3398d1fcf7a6f48451f680b74b1a6c6c383b8a": (
+        _BOUNDARY_REPOS | {"onex_change_control"}
+    ),
+    f"{_BOUNDARY_ACTION}@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1": _BOUNDARY_REPOS,
+}
 
-    repos = {repo.strip() for repo in step["with"]["repos"].split(",")}
-    assert repos == {
-        "omniclaude",
-        "omnidash",
-        "omniintelligence",
-        "omnibase_infra",
-        "omnibase_core",
-        "omnimemory",
-        "omnimarket",
-        "onex_change_control",
-    }
+
+def _assert_boundary_repo_contract(step: dict[str, object]) -> None:
+    uses = step["uses"]
+    assert isinstance(uses, str)
+    assert uses in _AUDITED_BOUNDARY_ACTION_REPOS, "unreviewed boundary action"
+    inputs = step["with"]
+    assert isinstance(inputs, dict)
+    raw_repos = inputs["repos"]
+    assert isinstance(raw_repos, str)
+    repos = [repo.strip() for repo in raw_repos.split(",")]
+    assert len(repos) == len(set(repos)), "duplicate boundary repository"
+    assert set(repos) == _AUDITED_BOUNDARY_ACTION_REPOS[uses]
+
+
+def test_cross_repo_boundary_validation_clones_all_boundary_repos() -> None:
+    _assert_boundary_repo_contract(_boundary_validation_step())
+
+
+@pytest.mark.parametrize("uses", sorted(_AUDITED_BOUNDARY_ACTION_REPOS))
+def test_boundary_repo_contract_accepts_reviewed_pin_and_clone_list(uses: str) -> None:
+    step = copy.deepcopy(_boundary_validation_step())
+    step["uses"] = uses
+    step["with"]["repos"] = ",".join(sorted(_AUDITED_BOUNDARY_ACTION_REPOS[uses]))
+
+    _assert_boundary_repo_contract(step)
+
+
+@pytest.mark.parametrize(
+    ("uses", "missing_repo"),
+    [
+        (uses, repo)
+        for uses, repos in sorted(_AUDITED_BOUNDARY_ACTION_REPOS.items())
+        for repo in sorted(repos)
+    ],
+)
+def test_boundary_repo_contract_refuses_every_missing_peer(
+    uses: str, missing_repo: str
+) -> None:
+    step = copy.deepcopy(_boundary_validation_step())
+    step["uses"] = uses
+    step["with"]["repos"] = ",".join(
+        sorted(_AUDITED_BOUNDARY_ACTION_REPOS[uses] - {missing_repo})
+    )
+
+    with pytest.raises(AssertionError):
+        _assert_boundary_repo_contract(step)
+
+
+@pytest.mark.parametrize("uses", sorted(_AUDITED_BOUNDARY_ACTION_REPOS))
+def test_boundary_repo_contract_refuses_mismatched_clone_list(uses: str) -> None:
+    step = copy.deepcopy(_boundary_validation_step())
+    step["uses"] = uses
+    other = next(pin for pin in _AUDITED_BOUNDARY_ACTION_REPOS if pin != uses)
+    step["with"]["repos"] = ",".join(sorted(_AUDITED_BOUNDARY_ACTION_REPOS[other]))
+
+    with pytest.raises(AssertionError):
+        _assert_boundary_repo_contract(step)
+
+
+@pytest.mark.parametrize(
+    "uses",
+    [
+        f"{_BOUNDARY_ACTION}@unreviewed",
+        next(iter(_AUDITED_BOUNDARY_ACTION_REPOS)).replace("OmniNode-ai", "unreviewed"),
+    ],
+)
+def test_boundary_repo_contract_refuses_unreviewed_action(uses: str) -> None:
+    step = copy.deepcopy(_boundary_validation_step())
+    step["uses"] = uses
+
+    with pytest.raises(AssertionError, match="unreviewed boundary action"):
+        _assert_boundary_repo_contract(step)
+
+
+def test_boundary_repo_contract_refuses_duplicate_peer() -> None:
+    step = copy.deepcopy(_boundary_validation_step())
+    step["with"]["repos"] += ",omniclaude"
+
+    with pytest.raises(AssertionError, match="duplicate boundary repository"):
+        _assert_boundary_repo_contract(step)
 
 
 def test_ci_summary_is_hosted_no_needs_poller() -> None:
