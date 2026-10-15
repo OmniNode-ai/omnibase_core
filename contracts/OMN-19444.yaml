@@ -1,0 +1,104 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19444
+title: onex delegate --help loads only the requested subcommand
+summary: The onex CLI registers onex.cli extensions by name and loads one on first resolution of its name,
+  so onex delegate --help no longer imports every advertised extension. Name collisions still raise at
+  import and a malformed extension still raises when resolved or listed.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19444-lazy-cli
+    statement: onex delegate --help is fast because the CLI loads only the subcommand it was asked for.
+    acceptance:
+      - id: AC1
+        statement: onex delegate --help median wall time is under 1 s on a co-installed omnibase_infra.
+      - id: AC2
+        statement: Resolving one onex.cli extension does not load the other advertised extensions, and
+          a malformed extension still raises instead of being skipped.
+evidence_requirements:
+  - kind: tests
+    description: Hosted CI tests register synthetic entry points and assert that registration and the
+      resolution of one name load no other extension, that collisions raise before any load, and that
+      an unloadable or non-click extension raises on resolution and on the root listing.
+    command: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py
+      tests/unit/cli/test_lazy_cli_loading_omn19444.py -q --no-cov
+  - kind: ci
+    description: Focused unit coverage for selective extension resolution supplements the installed CLI
+      deploy probe below.
+    command: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py::test_resolving_one_extension_loads_only_that_extension
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19444-ac1-delegate-help-latency
+    description: Lab readback on host h202 against the omnibase_infra virtualenv, five runs of onex delegate
+      --help each with the installed omnibase_core and with this branch on PYTHONPATH. The wall times
+      are in the pull request body.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py::test_invoking_a_subcommand_help_loads_only_that_extension
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn19444-ac2-lazy-extensions
+    description: Registration loads no extension, resolving one name loads only that one, collisions raise
+      before any load, and a malformed extension raises on resolution and on the root listing.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/cli/test_lazy_cli_extensions_omn19444.py tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn19444-deploy-cli-extension-help
+    description: Hosted-runner CLI smoke probe using the installed onex entry point and real temporary
+      extension metadata. Delegate help must resolve only its extension; requesting an unloadable sibling
+      must report its import error. This checks CLI loading, not co-installed infra latency.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: command
+        check_value: |
+          set -eu
+          probe_dir="$(mktemp -d)"
+          trap 'rm -rf "$probe_dir"' EXIT
+          uv sync --frozen
+          probe_env="${UV_PROJECT_ENVIRONMENT:-$PWD/.venv}"
+          export PATH="$probe_env/bin:$PATH"
+          "$probe_env/bin/python" - "$probe_dir" <<'PY'
+          import sys
+          from pathlib import Path
+
+          root = Path(sys.argv[1])
+          metadata = root / "omn19444_cli_probe-1.0.dist-info"
+          metadata.mkdir()
+          (metadata / "METADATA").write_text(
+              "Metadata-Version: 2.1\nName: omn19444-cli-probe\nVersion: 1.0\n"
+          )
+          (metadata / "entry_points.txt").write_text(
+              "[onex.cli]\n"
+              "delegate = omn19444_cli_probe:delegate\n"
+              "omn19444-broken = omn19444_missing_extension:command\n"
+          )
+          (root / "omn19444_cli_probe.py").write_text(
+              "import click\n"
+              "@click.command(help='Lazy extension deploy probe')\n"
+              "def delegate():\n"
+              "    pass\n"
+          )
+          PY
+          export PYTHONPATH="$probe_dir${PYTHONPATH:+:$PYTHONPATH}"
+          help_output="$(onex delegate --help)"
+          printf '%s\n' "$help_output" | grep -Fq 'Lazy extension deploy probe'
+          if onex omn19444-broken --help >"$probe_dir/broken.log" 2>&1; then
+            printf '%s\n' 'Resolving the broken extension unexpectedly succeeded' >&2
+            exit 1
+          fi
+          grep -Fq 'omn19444_missing_extension' "$probe_dir/broken.log"
+          printf '%s\n' 'OMN-19444 CLI deploy probe passed'
+        cwd: .
