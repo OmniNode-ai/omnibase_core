@@ -27,7 +27,13 @@ evidence_requirements:
   - kind: tests
     description: Run the direct-model-call check node's unit tests, which plant each refused sample and
       the expired and ticketless baseline entries.
-    command: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute -q -n 0 --no-cov
+    command: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute/test_node_direct_model_call_check_compute.py
+      -q --no-cov
+  - kind: ci
+    description: Hosted-runner deploy check for the CLI's baseline-file admission behavior. The CLI must
+      accept a valid ticketed entry and refuse ticketless and expired entries in temporary repositories.
+    command: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute/test_node_direct_model_call_check_compute.py
+      -q --no-cov -k "cli_baseline_file_with_a_ticket or cli_refuses_a_baseline_file_entry"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -39,8 +45,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute -q -n 0 --no-cov
-          -k "audit_sample_is_refused or cli_refuses_planted_sample or clean_sample"
+        check_value: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute/test_node_direct_model_call_check_compute.py
+          -q --no-cov -k "audit_sample_is_refused or cli_refuses_planted_sample or clean_sample"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn20295-ac2-expired
@@ -50,8 +56,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute -q -n 0 --no-cov
-          -k "expired_baseline_entry or past_its_expiry"
+        check_value: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute/test_node_direct_model_call_check_compute.py
+          -q --no-cov -k "expired_baseline_entry or past_its_expiry"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn20295-ac2-no-ticket
@@ -60,7 +66,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute -q -n 0 --no-cov
-          -k "without_a_ticket or with_no_ticket"
+        check_value: uv run pytest tests/unit/nodes/node_direct_model_call_check_compute/test_node_direct_model_call_check_compute.py
+          -q --no-cov -k "without_a_ticket or with_no_ticket"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
