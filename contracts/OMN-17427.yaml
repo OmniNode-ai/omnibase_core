@@ -46,6 +46,15 @@ requirements:
           fix that changes only tests and a contract is still refused as changing no product path. --
           falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -k \"merged_fix_contract_is_not_reverted
           or only_test_and_contract\""
+  - id: req-omn17427-ci-inherits-from-core
+    statement: A change to omnibase_core's workflows must not add a reusable workflow or action reference
+      to an organization repository other than omnibase_core, so the CI hosted outside core only shrinks.
+    acceptance:
+      - id: AC9
+        statement: "AC9: The ci-inheritance check fails a change that adds a reusable workflow or action
+          reference to an organization repository other than the host, and passes a pin bump, a move between
+          files, a removal or a reference to the host. -- falsifier: uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py
+          tests/unit/handlers/test_handler_ci_inheritance_cli.py -q"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -68,6 +77,11 @@ evidence_requirements:
       also when the base amended that contract, and a test-and-contract-only fix is refused."
     command: "uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -k \"merged_fix_contract_is_not_reverted
       or only_test_and_contract\""
+  - kind: tests
+    description: "The ci-inheritance check fails an added non-host reference and passes a pin bump, a
+      move, a removal or a host reference."
+    command: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
+      -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -130,3 +144,39 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
+  - id: dod-omn-17427-ci-inherits-from-core
+    description: "The ci-inheritance check fails a change that adds a reusable workflow or action reference
+      to an organization repository other than the host, and passes a pin bump, a move between files,
+      a removal or a reference to the host."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
+          -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC9
+  - id: dod-omn-17427-deploy-hosted-ci-inheritance
+    description: Hosted deploy probe for the library's CI-inheritance handler and CLI. Read both published
+      source files at the immutable PR implementation commit and compare their bytes with the checked-out
+      product, then exercise rejection of new references and acceptance of existing references. A missing
+      published file, different implementation or incorrect handler behavior fails the probe.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/a8b2509915d6fee19d3a5a26bcae016aaddfcf29/src/omnibase_core/handlers/handler_ci_inheritance.py
+          | cmp - src/omnibase_core/handlers/handler_ci_inheritance.py'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/a8b2509915d6fee19d3a5a26bcae016aaddfcf29/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
+          | cmp - src/omnibase_core/handlers/handler_ci_inheritance_cli.py'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC9

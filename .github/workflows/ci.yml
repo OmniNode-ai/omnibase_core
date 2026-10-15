@@ -3011,6 +3011,84 @@ jobs:
             omnibase_core.nodes.node_no_raw_sqlite3_check_compute.runtime_no_raw_sqlite3_check \
             --root src
 
+  # CI inherits from core (OMN-17427, RULING 2026-10-14T20:01:09Z: "all CI
+  # should be in core and everything should essentially inherit from that").
+  # Refuses a change that ADDS a `uses: OmniNode-ai/<repo>/...` reference to a
+  # repository other than omnibase_core; references the base already carries
+  # are printed as existing, never allowed by a list. Unconditional job under
+  # the required "CI Summary" rollup; the same pure handler backs the
+  # check-ci-inheritance pre-commit hook.
+  ci-inheritance-check:
+    name: CI Inherits From Core (OMN-17427)
+    runs-on: >-
+      ${{
+        github.event_name != 'pull_request'
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+      }}
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Run validator unit tests
+        run: |
+          uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py -v
+
+      - name: Materialize the base workflows
+        id: base
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          set -euo pipefail
+          case "$EVENT_NAME" in
+            pull_request) base_sha="$PR_BASE_SHA" ;;
+            merge_group) base_sha="$MERGE_GROUP_BASE_SHA" ;;
+            push) base_sha="$PUSH_BEFORE" ;;
+            *) base_sha="" ;;
+          esac
+          base_dir="$RUNNER_TEMP/ci-inheritance-base"
+          mkdir -p "$base_dir"
+          if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
+            echo "Event '$EVENT_NAME' carries no base commit; comparing the tree with itself (no reference can be new)."
+            cp -R .github/workflows "$base_dir/workflows"
+          else
+            git fetch --no-tags --depth=1 "$REPO_URL" "$base_sha"
+            mkdir -p "$base_dir/archive"
+            git archive "$base_sha" .github/workflows | tar -x -C "$base_dir/archive"
+            mv "$base_dir/archive/.github/workflows" "$base_dir/workflows"
+            echo "Base for the comparison: $base_sha"
+          fi
+          echo "dir=$base_dir/workflows" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse new CI references hosted outside omnibase_core (blocking)
+        env:
+          BASE_DIR: ${{ steps.base.outputs.dir }}
+        run: |
+          env -u PYTHONPATH uv run python -m \
+            omnibase_core.handlers.handler_ci_inheritance_cli \
+            --base-dir "$BASE_DIR" --head-dir .github/workflows
+
   # Migrated from validator-operation-match.yml (OMN-14877,
   # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"
   # rollup — closes the --no-verify pre-commit bypass and retires the standalone
