@@ -62,4 +62,5 @@ class TestEnumContextFactor:
     def test_no_member_duplicates_patterns_or_exemplars(self) -> None:
         """Patterns and exemplars reuse ARCHITECTURE_PATTERNS and EXEMPLAR."""
         added = [m.name for m in EnumContextFactor][len(EXISTING_FACTORS) :]
+        assert added == list(SESSION_FACTORS + TIER_FACTORS)
         assert not [n for n in added if "PATTERN" in n or "EXEMPLAR" in n]

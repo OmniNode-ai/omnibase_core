@@ -29,7 +29,7 @@ evidence_requirements:
   - kind: tests
     description: Enum order, value and no-duplicate tests, and the pack schema member set.
     command: uv run pytest tests/unit/enums/test_enum_context_factor.py tests/models/pack/test_context_pack_schema.py
-      -q -n 0 --no-cov
+      -q -o addopts= --no-cov
 emergency_bypass:
   enabled: false
   justification: ''
@@ -41,25 +41,47 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -n 0 --no-cov -k "members_in_order
-          or value_is_lower_case_name or existing_members_keep"
+        check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -o addopts= --no-cov
+          -k "members_in_order or value_is_lower_case_name or existing_members_keep"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn18531-ta2-no-duplicates
-    description: No added member is named for patterns or exemplars.
+    description: All fifteen additions exist, and none is named for patterns or exemplars.
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -n 0 --no-cov -k no_member_duplicates
+        check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -o addopts= --no-cov
+          -k no_member_duplicates
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn18531-ta2-roi-runner
-    description: The omnimarket node_context_roi_runner tests pass against this core.
+    description: The expanded enum is present, and the unchanged omnimarket node_context_roi_runner tests
+      pass against this core. The expansion prerequisite makes the compatibility check fail against the
+      original five-member enum instead of accepting a run without the new factors.
     source: manual
-    execution_scope: local_done_gate
+    execution_scope: hosted_and_local
     checks:
-      - check_type: command
-        check_value: cd ${OMNI_HOME}/omnimarket && OMNIMARKET_ALLOW_PYTHONPATH_OVERRIDE=1 PYTHONPATH=${OMNI_HOME}/omnibase_core/src
-          .venv/bin/python -m pytest tests/nodes/node_context_roi_runner -q -n0 -p no:cacheprovider
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py -q -o addopts= --no-cov
+          -k members_in_order
         cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: OMNIMARKET_ALLOW_PYTHONPATH_OVERRIDE=1 PYTHONPATH=${OMNI_HOME}/omnibase_core/src
+          uv run --frozen pytest tests/nodes/node_context_roi_runner/test_handler_context_roi_runner.py
+          tests/nodes/node_context_roi_runner/test_golden_chain_context_roi_runner.py tests/nodes/node_context_roi_runner/test_handle_async_non_blocking.py
+          tests/nodes/node_context_roi_runner/test_failed_terminal_routing.py tests/nodes/node_context_roi_runner/test_dispatch_envelope_unwrap.py
+          tests/nodes/node_context_roi_runner/test_register_before_publish.py tests/nodes/node_context_roi_runner/test_extract_row_envelope_unwrap.py
+          tests/nodes/node_context_roi_runner/test_context_roi_runner_emits_runtime_observed_rows.py -q
+          -o addopts= --no-cov -p no:cacheprovider
+        cwd: ${OMNI_HOME}/omnimarket
     binds_ac: [AC3]
+  - id: dod-omn18531-deploy-hosted-pack-schema
+    description: Hosted deploy probe for the library. The pack schema and enum tests exercise the twenty
+      factors and serialization of the existing context pack surface against this checkout.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/enums/test_enum_context_factor.py tests/models/pack/test_context_pack_schema.py
+          -q -o addopts= --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
