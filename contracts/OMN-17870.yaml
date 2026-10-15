@@ -57,13 +57,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn17870-ac3-no-suppression
-    description: The diff adds no ignore of ResourceWarning or PytestUnraisableExceptionWarning to the
-      pytest configuration.
+    description: The pytest configuration contains no ignore of ResourceWarning or PytestUnraisableExceptionWarning,
+      and the fresh-process Werror regression passes without those suppressions. The same combined check
+      fails with the leaking dependency at the merge base.
     source: manual
     checks:
       - check_type: command
-        check_value: "! grep -n 'ignore.*ResourceWarning\\|ignore.*PytestUnraisableExceptionWarning' pyproject.toml
-          tests/pytest.ini"
+        check_value: "test -r pyproject.toml && test -r tests/pytest.ini && ! grep -n 'ignore.*ResourceWarning\\|ignore.*PytestUnraisableExceptionWarning'
+          pyproject.toml tests/pytest.ini && uv run pytest tests/unit/models/container/test_werror_event_loop_teardown.py
+          -q --no-cov"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
   - id: dod-omn17870-deploy-hosted-readback
