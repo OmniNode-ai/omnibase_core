@@ -79,24 +79,43 @@ class _StaticResolver:
         return self._reaches_model_base(module, node, set())
 
     def is_exempt(self, module: str, node: ast.ClassDef) -> bool:
-        for base_module, base_name, base_node in self._bases(module, node):
-            if base_name in _EXEMPT_BASES:
-                return True
-            if base_node is not None and self.is_exempt(base_module, base_node):
-                return True
-        return False
+        # A RootModel on one branch cannot exempt an invalid sibling branch.
+        if self._has_unresolved_ancestry(module, node, set()):
+            return False
+        return self._reaches_model_base(module, node, set(), _EXEMPT_BASES)
 
     def _reaches_model_base(
-        self, module: str, node: ast.ClassDef, seen: set[tuple[str, str]]
+        self,
+        module: str,
+        node: ast.ClassDef,
+        seen: set[tuple[str, str]],
+        targets: frozenset[str] = _PYDANTIC_MODEL_BASES,
     ) -> bool:
         key = (module, node.name)
         if key in seen:
             return False
-        seen.add(key)
+        seen = seen | {key}
         for base_module, base_name, base_node in self._bases(module, node):
-            if base_name in _PYDANTIC_MODEL_BASES:
+            if base_name in targets:
                 return True
             if base_node is not None and self._reaches_model_base(
+                base_module, base_node, seen, targets
+            ):
+                return True
+        return False
+
+    def _has_unresolved_ancestry(
+        self, module: str, node: ast.ClassDef, seen: set[tuple[str, str]]
+    ) -> bool:
+        """Reject cycles and unknown bases before granting a config or exemption."""
+        key = (module, node.name)
+        if key in seen:
+            return True
+        seen = seen | {key}
+        for base_module, base_name, base_node in self._bases(module, node):
+            if base_name in _PYDANTIC_MODEL_BASES:
+                continue
+            if base_node is None or self._has_unresolved_ancestry(
                 base_module, base_node, seen
             ):
                 return True
@@ -105,18 +124,21 @@ class _StaticResolver:
     def resolve_extra(
         self, module: str, node: ast.ClassDef, seen: set[tuple[str, str]] | None = None
     ) -> tuple[str, str | None]:
-        """Return ``(status, effective_extra)`` using MRO-like base order."""
+        """Return ``(status, effective_extra)`` using Pydantic's ordered config merge."""
+        if seen is None and self._has_unresolved_ancestry(module, node, set()):
+            return STATUS_UNRESOLVED, None
         seen = seen if seen is not None else set()
         key = (module, node.name)
         if key in seen:
             return STATUS_UNRESOLVED, None
-        seen.add(key)
+        seen = seen | {key}
 
         own = _extra_from_class(node)
         if own is not None:
             return _STATUS_BY_EXTRA.get(own, STATUS_UNRESOLVED), own
 
         unresolved_base = False
+        inherited: tuple[str, str | None] = (STATUS_IMPLICIT_DEFAULT, None)
         for base_module, base_name, base_node in self._bases(module, node):
             if base_name in _PYDANTIC_MODEL_BASES:
                 continue
@@ -125,13 +147,13 @@ class _StaticResolver:
                 continue
             status, extra = self.resolve_extra(base_module, base_node, seen)
             if extra is not None:
-                return status, extra
+                inherited = status, extra
             if status == STATUS_UNRESOLVED:
                 unresolved_base = True
 
         if unresolved_base:
             return STATUS_UNRESOLVED, None
-        return STATUS_IMPLICIT_DEFAULT, None
+        return inherited
 
     def _bases(
         self, module: str, node: ast.ClassDef

@@ -1,0 +1,133 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17906
+title: Make static extra-forbid inheritance resolution cycle-safe
+summary: >-
+  Static extra-forbid scanning rejects cyclic or unknown ancestry before granting a RootModel exemption
+  or accepting a declared config. Each inheritance branch has its own recursion state, and inherited configs
+  merge in base declaration order with the last explicit value winning.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17906-static-inheritance
+    statement: Static inheritance resolution fails closed without recursion exhaustion.
+    acceptance:
+      - id: AC1
+        statement: Regression reproduces the two-class cycle and receives deterministic UNRESOLVED findings/nonzero
+          gate behavior without RecursionError.
+      - id: AC2
+        statement: is_exempt(), model-root reachability, and extra resolution use cycle-safe semantics.
+      - id: AC3
+        statement: A cycle involving or adjacent to RootModel cannot create a false exemption.
+      - id: AC4
+        statement: Non-cyclic diamonds still resolve independently on each branch.
+      - id: AC5
+        statement: Ordered config merging has a conflicting-diamond precedence regression, not only identical
+          inherited configs.
+      - id: AC6
+        statement: Focused/full validator tests, Ruff, strict mypy, and diff checks pass.
+      - id: AC7
+        statement: No baseline/waiver padding or fail-open fallback.
+evidence_requirements:
+  - kind: tests
+    description: Full validator test file including static and runtime-fallback cycle and diamond cases.
+    command: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n0
+      --reruns 0
+  - kind: ci
+    description: Ruff lint and formatting, strict resolver typing, and whitespace checks.
+    command: >-
+      uv run --frozen ruff check src/omnibase_core/validation/pydantic_static_resolver.py tests/unit/validators/test_pydantic_extra_forbid.py
+      && uv run --frozen ruff format --check src/omnibase_core/validation/pydantic_static_resolver.py
+      tests/unit/validators/test_pydantic_extra_forbid.py && uv run --frozen mypy --strict src/omnibase_core/validation/pydantic_static_resolver.py
+      && git diff --check
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17906-ac1-cycle-gate
+    description: Two-class cycles produce UNRESOLVED violations and exit 1 through the gate entry point.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0 -k 'cyclic_ancestry or cross_module_cycle'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17906-ac2-cycle-walks
+    description: Self, two-class, cross-module, and config-bearing cycles exercise all static inheritance
+      walks.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0 -k 'cyclic_ancestry or cross_module_cycle'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17906-ac3-rootmodel
+    description: RootModel before or after a cyclic branch cannot exempt it; an ordinary RootModel remains
+      exempt.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0 -k 'rootmodel or cyclic_ancestry or unknown_ancestry'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17906-ac4-branch-state
+    description: Both branches of a non-cyclic diamond can revisit their shared ancestor, including RootModel
+      ancestry.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0 -k noncyclic_diamond
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17906-ac5-precedence
+    description: Conflicting diamonds match runtime Pydantic precedence in both permissive and strict
+      directions.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0 -k conflicting_diamond
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17906-ac6-validation
+    description: Full validator tests, Ruff lint and formatting, strict mypy, and diff checks.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          uv run --frozen ruff check src/omnibase_core/validation/pydantic_static_resolver.py tests/unit/validators/test_pydantic_extra_forbid.py
+          && uv run --frozen ruff format --check src/omnibase_core/validation/pydantic_static_resolver.py
+          tests/unit/validators/test_pydantic_extra_forbid.py && uv run --frozen mypy --strict src/omnibase_core/validation/pydantic_static_resolver.py
+          && git diff --check
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17906-ac7-fail-closed
+    description: Cycles with explicit forbid or RootModel ancestry and unknown bases remain UNRESOLVED
+      violations.
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0 -k 'cyclic_ancestry or unknown_ancestry'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17906-deploy-static-gate
+    description: Hosted-runner gate smoke check must reject cyclic ancestry without RecursionError and
+      retain valid diamond precedence.
+    source: manual
+    binds_ac: [AC1, AC5]
+    checks:
+      - check_type: command
+        check_value: uv run --frozen pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov
+          -n0 --reruns 0 -k 'cyclic_ancestry_gate or conflicting_diamond'
+        cwd: .
