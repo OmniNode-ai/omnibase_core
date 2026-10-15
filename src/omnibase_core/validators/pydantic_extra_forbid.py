@@ -99,6 +99,7 @@ from omnibase_core.models.validation.model_violation_waivers_document import (
     ModelViolationWaiversDocument,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.validators.no_unguarded_git_subprocess import scrubbed_git_env
 
 DEFAULT_SCAN_ROOT = Path("src/omnibase_core")
 DEFAULT_BASELINE_PATH = Path(__file__).with_name("extra_forbid_baseline.yaml")
@@ -338,9 +339,13 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
     else:
         args = ["git", "diff", "--unified=0", "--no-color", f"{ref}...HEAD"]
 
+    # One environment for every git call below: cwd is the only repository
+    # authority (OMN-17910), so an inherited GIT_DIR/GIT_WORK_TREE/GIT_CONFIG*
+    # cannot redirect the diff to another repository.
+    env = scrubbed_git_env(cwd)
     try:
         proc = subprocess.run(
-            args, cwd=cwd, capture_output=True, text=True, check=False
+            args, cwd=cwd, capture_output=True, text=True, check=False, env=env
         )
     except OSError as exc:
         raise ModelOnexError(
@@ -363,6 +368,7 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
             capture_output=True,
             text=True,
             check=True,
+            env=env,
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError) as exc:
         raise ModelOnexError(

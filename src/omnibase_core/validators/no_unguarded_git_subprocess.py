@@ -136,6 +136,26 @@ def scrub_git_location_env(
     return scrubbed
 
 
+def scrubbed_git_env(
+    cwd: Path,
+    environ: Mapping[str, str] | None = None,
+) -> dict[str, str]:
+    """Return an env that makes ``cwd`` the only repository authority (OMN-17910).
+
+    Same scrub as :func:`scrub_git_location_env`, except an explicit
+    ``GIT_INDEX_FILE`` survives: a git hook for ``git commit <path>`` exports a
+    temporary index that holds the content actually being committed, so a reader
+    of "the staged side" must use it. The kept value is made absolute against
+    ``cwd`` so every git call built from this env resolves it identically.
+    """
+    source = os.environ if environ is None else environ
+    scrubbed = scrub_git_location_env(source)
+    index_file = source.get("GIT_INDEX_FILE")
+    if index_file:
+        scrubbed["GIT_INDEX_FILE"] = str(Path(cwd).resolve() / index_file)
+    return scrubbed
+
+
 def strip_git_location_env(environ: MutableMapping[str, str]) -> tuple[str, ...]:
     """Remove inherited git overrides from ``environ`` IN PLACE.
 

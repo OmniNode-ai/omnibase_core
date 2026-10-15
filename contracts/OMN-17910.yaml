@@ -1,0 +1,88 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17910
+title: The extra-forbid diff reader takes its Git repository authority from cwd, not the inherited environment
+summary: The pydantic-extra-forbid validator ran its Git subprocesses with the inherited environment,
+  so an exported GIT_DIR, GIT_WORK_TREE, GIT_COMMON_DIR, object-directory or GIT_CONFIG* variable made
+  it read another repository's index, refs, objects or config while reporting the target as the root.
+  Every Git call in the validator now runs under one environment built from the requested cwd; an explicit
+  GIT_INDEX_FILE (a hook's temporary index) is kept and resolved against cwd.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17910-cwd-git-authority
+    statement: The validator's Git subprocesses never read repository, object or config authority from
+      the inherited environment, and still honour an explicit GIT_INDEX_FILE.
+    acceptance:
+      - id: AC1
+        statement: "AC1: with GIT_DIR pointing at another repository, the staged and the ref...HEAD diff
+          and the --enforce-modified gate still judge the target repository -- falsifier: the GIT_DIR
+          test passes with the env= argument removed from the diff call"
+      - id: AC2
+        statement: "AC2: inherited GIT_WORK_TREE, GIT_COMMON_DIR, GIT_OBJECT_DIRECTORY, GIT_ALTERNATE_OBJECT_DIRECTORIES
+          and GIT_CONFIG* variables do not change the result -- falsifier: any of those cases passes with
+          the env= argument removed"
+      - id: AC3
+        statement: "AC3: an explicit absolute or relative GIT_INDEX_FILE still selects the staged side,
+          resolved against cwd even when GIT_DIR points at another repository, and the real and alternate
+          index bytes are unchanged -- falsifier: the alternate-index test passes when GIT_INDEX_FILE
+          is scrubbed or inherited GIT_DIR is kept"
+      - id: AC4
+        statement: "AC4: the shared helper drops every location, discovery and GIT_CONFIG* variable, keeps
+          identity and PATH, and makes a kept GIT_INDEX_FILE absolute -- falsifier: the helper test passes
+          when the helper returns os.environ unchanged"
+evidence_requirements:
+  - kind: tests
+    description: Run the extra-forbid validator and Git-guard tests, which build throwaway two-repository
+      fixtures with the inherited variables set.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py tests/unit/validators/test_no_unguarded_git_subprocess.py
+      -q --no-cov -n 0
+  - kind: ci
+    description: Hosted-runner deploy check; the tests build their own temporary git repositories.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py tests/unit/validators/test_no_unguarded_git_subprocess.py
+      -q --no-cov -n 0 -k "inherited or explicit_git_index or scrubbed_git_env or ignores_inherited"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17910-ac1-git-dir
+    description: A GIT_DIR pointing at another repository does not redirect the staged diff, the ref diff
+      or the --enforce-modified gate.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "inherited_repository_authority and GIT_DIR or ref_mode_ignores or main_enforce_modified_ignores"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn17910-ac2-selectors
+    description: Work-tree, common-dir, object-directory, alternate-object and GIT_CONFIG* injections
+      do not change the result.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "inherited_repository_authority"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn17910-ac3-index
+    description: An explicit absolute or relative GIT_INDEX_FILE still selects the staged side even with
+      GIT_DIR pointing at another repository, and no index bytes change.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "explicit_git_index_file"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn17910-ac4-helper
+    description: The shared scrubbed_git_env helper keeps only identity, PATH and an absolute index file.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_no_unguarded_git_subprocess.py -q --no-cov
+          -n 0 -k "scrubbed_git_env"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
