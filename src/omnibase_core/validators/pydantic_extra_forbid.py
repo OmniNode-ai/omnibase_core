@@ -302,6 +302,9 @@ def render_baseline(
     fqns = sorted({finding.fqn for finding in violations})
     roots = ", ".join(str(root) for root in scan_roots)
     lines = [
+        "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.",
+        "# SPDX-License-Identifier: MIT",
+        "---",
         '# Frozen baseline for the extra="forbid" ratchet (OMN-14515).',
         "#",
         "# This is NOT an allowlist. It is a shrink-only ratchet of models that predate",

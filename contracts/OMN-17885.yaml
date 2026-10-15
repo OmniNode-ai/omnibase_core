@@ -1,0 +1,69 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17885
+title: The generated extra-forbid baseline header count matches the entries it lists
+summary: The shrink-only extra-forbid baseline carried a "# count" header line that no longer matched
+  its entry count, because entries were removed by hand without regenerating the file. This change corrects
+  the header through the generator, makes the generator emit the SPDX header and the YAML document marker
+  so a regeneration keeps them, and adds tests that pin the rendered count and the committed baseline's
+  count to their entries.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17885-baseline-header-count
+    statement: The extra-forbid baseline header states the number of violation entries the file lists,
+      and regenerating the baseline keeps the SPDX header and document marker.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the committed baseline's count header equals its entry count, produced by the
+          generator -- falsifier: regenerating the baseline changes any line other than the count line"
+      - id: AC2
+        statement: "AC2: a test asserts the rendered count header equals the rendered entries, and the
+          committed baseline's header equals its entries -- falsifier: the test passes against the baseline
+          whose header read 1101 over 984 entries"
+      - id: AC3
+        statement: "AC3: the ratchet is unchanged -- falsifier: the check-stale run reports a different
+          baselined-violation count than the entries listed"
+evidence_requirements:
+  - kind: tests
+    description: Run the extra-forbid validator unit tests, which render a baseline and compare the count
+      header to its entries.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -n 0 -q --no-cov
+  - kind: ci
+    description: Hosted-runner deploy check that the committed baseline header equals its entry count.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -n 0 -q --no-cov -k "count_header_matches_entries"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17885-ac1-header
+    description: The committed baseline header equals its entry count and the generator reproduces the
+      file byte for byte.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -n 0 -q --no-cov
+          -k "committed_baseline_count_header"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn17885-ac2-render
+    description: The rendered count header equals the rendered entries and the SPDX header and document
+      marker are preserved.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -n 0 -q --no-cov
+          -k "rendered_baseline"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn17885-ac3-ratchet
+    description: The stale-entry check still passes against the baseline.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validators.pydantic_extra_forbid --no-runtime --check-stale
+          src/omnibase_core
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
