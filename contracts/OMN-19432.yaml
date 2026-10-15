@@ -1,0 +1,40 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19432
+title: The hardcoded-model-config family regex no longer names the retired gpt-oss model
+summary: The model_id_pattern in the hardcoded-model-config policy listed gpt-oss among the model families
+  still in use. gpt-oss-120b left the lab on 2026-10-08, so the alternative is removed and a test pins
+  that the pattern names no gpt-oss spelling while still matching the families that remain.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19432-no-retired-model-in-family-regex
+    statement: The family M regex of the hardcoded-model-config policy lists only model families still
+      in use and keeps matching them.
+    acceptance:
+      - id: AC1
+        statement: "AC1: policy.yaml model_id_pattern carries no gpt-oss alternative and still matches
+          qwen and gpt-4 ids -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q --no-cov -n 0 -k retired_gpt"
+evidence_requirements:
+  - kind: tests
+    description: The focused policy test passes at the head and fails at the merge base, where the pattern
+      names gpt-oss.
+    command: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+      -q --no-cov -n 0 -k retired_gpt
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19432-ac1-family-regex
+    description: The policy's model_id_pattern names no gpt-oss spelling and still matches the remaining
+      families.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q --no-cov -n 0 -k retired_gpt
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]

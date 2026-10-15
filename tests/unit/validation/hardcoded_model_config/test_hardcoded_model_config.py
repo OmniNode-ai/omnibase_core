@@ -15,6 +15,7 @@ base.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -353,3 +354,18 @@ def test_no_bypass_option_exists() -> None:
         "--write-baseline",
         "--base",
     }
+
+
+@pytest.mark.unit
+def test_model_id_pattern_does_not_name_the_retired_gpt_oss_model(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    """OMN-19432: the family regex lists only model families still in use.
+
+    gpt-oss-120b left the lab on 2026-10-08. The positive control proves the
+    regex still matches the families that remain.
+    """
+    pattern = re.compile(policy.model_id_pattern, re.IGNORECASE)
+    assert pattern.search("qwen3-coder") is not None
+    assert pattern.search("gpt-4o") is not None
+    assert "oss" not in policy.model_id_pattern.lower()
