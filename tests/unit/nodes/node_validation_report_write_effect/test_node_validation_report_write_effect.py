@@ -10,6 +10,7 @@ filesystem writes (the no-io-outside-effects gate).
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -65,3 +66,33 @@ def test_creates_missing_parent_directories(tmp_path: Path) -> None:
     )
 
     assert target.is_file()
+
+
+def test_writes_run_and_fire_events_beside_the_report(tmp_path: Path) -> None:
+    target = tmp_path / "out" / "report.json"
+    report = _report()
+
+    output = NodeValidationReportWriteEffect().handle(
+        ModelValidationReportWriteInput(report_path=str(target), report=report)
+    )
+
+    events_path = Path(output.events_path)
+    assert events_path == tmp_path / "out" / "report.json.events.jsonl"
+    lines = [json.loads(line) for line in events_path.read_text().splitlines()]
+    assert [line["kind"] for line in lines] == ["run", "fire"]
+    assert {line["report_ref"] for line in lines} == {report.report_id}
+    assert lines[0]["verdict"] == "FAIL"
+    assert output.events_written == 2
+
+
+def test_a_second_run_appends_to_the_events_file(tmp_path: Path) -> None:
+    target = tmp_path / "report.json"
+    effect = NodeValidationReportWriteEffect()
+    request = ModelValidationReportWriteInput(report_path=str(target), report=_report())
+
+    effect.handle(request)
+    effect.handle(request)
+
+    events_path = tmp_path / "report.json.events.jsonl"
+    kinds = [json.loads(line)["kind"] for line in events_path.read_text().splitlines()]
+    assert kinds == ["run", "fire", "run", "fire"]

@@ -11,9 +11,11 @@ __all__ = ["ModelValidationReportWriteOutput"]
 
 
 class ModelValidationReportWriteOutput(BaseModel):
-    """Where the report was written and how many bytes it holds."""
+    """Where the report was written, how many bytes it holds, and its events."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     report_path: str
     bytes_written: int
+    events_path: str
+    events_written: int
