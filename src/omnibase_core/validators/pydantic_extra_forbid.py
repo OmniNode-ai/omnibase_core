@@ -53,6 +53,9 @@ Ratchet, not allowlist
 * The only sanctioned suppression is an **expiring waiver** keyed to an open ticket AND
   PR (``extra_forbid_waivers.yaml``). An expired waiver is a hard failure, so a waiver
   cannot rot into an allowlist entry.
+* Staged enforcement rejects unmerged index entries and index symlinks in the scan,
+  baseline and waiver scopes before reading their content. The selected index is
+  inspected as NUL-delimited bytes without checkout or temporary materialization.
 
 The existing violations are NOT burned down by hand: RSD regenerates the corpus with
 ``extra="forbid"`` emitted by construction. This gate exists so the *next* hand-written
@@ -79,6 +82,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from collections.abc import Iterator, Sequence
@@ -323,6 +327,71 @@ def render_baseline(
 # ---------------------------------------------------------------------------
 # Modified-model enforcement (git diff -> changed line ranges)
 # ---------------------------------------------------------------------------
+def _validate_staged_inputs(paths: Sequence[Path], cwd: Path) -> None:
+    """Reject unmerged or symlink index authority before evaluating any content.
+
+    Keep index paths as bytes: Git's NUL-delimited format permits tabs, newlines
+    and non-UTF-8 filenames. Preserve ``GIT_INDEX_FILE`` so hooks validate the
+    caller's selected index. Read-only commands never materialize a partial tree.
+    """
+    try:
+        root_output = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=cwd,
+            capture_output=True,
+            check=True,
+        ).stdout
+        root = root_output.removesuffix(b"\n")
+        payload = subprocess.run(
+            ["git", "ls-files", "--full-name", "--stage", "-z", "--", ":/"],
+            cwd=cwd,
+            capture_output=True,
+            check=True,
+        ).stdout
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message=f"could not read selected index: {exc}",
+        ) from exc
+
+    # Normalize lexically: resolving a worktree symlink would hide its index path.
+    selected = [os.fsencode(os.path.normpath(cwd / path)) for path in paths]
+    if payload and not payload.endswith(b"\0"):
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.OPERATION_FAILED,
+            message="selected index listing is not NUL-terminated",
+        )
+    for record in payload.split(b"\0")[:-1]:
+        header, separator, path = record.partition(b"\t")
+        parts = header.split(b" ")
+        if not separator or not path or len(parts) != 3:
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                message="malformed selected index entry",
+            )
+        absolute = root + b"/" + path
+        for scope in selected:
+            if absolute == scope:
+                break
+            if absolute.startswith(scope + b"/"):
+                break
+            if scope.startswith(absolute + b"/"):
+                break
+        else:
+            continue
+        mode, _, stage = parts
+        if stage != b"0":
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                message=f"unmerged selected index entry at stage {stage!r}: {path!r}",
+            )
+        if mode == b"120000":
+            raise ModelOnexError(
+                error_code=EnumCoreErrorCode.OPERATION_FAILED,
+                message=f"symlink selected index entry: {path!r}",
+            )
+
+
 def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]]:
     """Map absolute file path -> changed line ranges for *ref*.
 
@@ -511,6 +580,17 @@ def _write_json(path: Path, findings: Sequence[ModelExtraForbidFinding]) -> None
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parse_args(sys.argv[1:] if argv is None else argv)
+
+    if args.enforce_modified == STAGED_REF:
+        try:
+            _validate_staged_inputs(
+                [*args.paths, args.baseline, args.waivers], Path.cwd()
+            )
+        except ModelOnexError as exc:
+            sys.stderr.write(
+                f"pydantic-extra-forbid: invalid selected index, failing closed: {exc}\n"
+            )
+            return 1
 
     findings = scan_paths(args.paths, use_runtime=not args.no_runtime)
     violations = [f for f in findings if f.is_violation]

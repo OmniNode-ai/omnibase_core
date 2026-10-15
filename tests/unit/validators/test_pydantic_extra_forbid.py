@@ -16,6 +16,7 @@ import os
 import subprocess
 from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -744,3 +745,269 @@ def test_waiver_expiring_within_horizon_fails_the_pull_request(tmp_path: Path) -
     expired_active, expired = load_waivers(waivers, date(2026, 10, 1))
     assert expired_active == set()
     assert any("EXPIRED" in error for error in expired)
+
+
+# ===========================================================================
+# Selected index authority must be merged before any input is evaluated.
+# ===========================================================================
+def _index_git(repo: Path, *args: str, payload: bytes | None = None) -> bytes:
+    """Operate on the fixture's selected index, preserving alternate-index selection."""
+    from omnibase_core.validators.no_unguarded_git_subprocess import (
+        scrub_git_location_env,
+    )
+
+    scrubbed_git_env = scrub_git_location_env()
+    # The session fixture removed hook authority; this is the test's own selection.
+    if "GIT_INDEX_FILE" in os.environ:
+        scrubbed_git_env["GIT_INDEX_FILE"] = os.environ["GIT_INDEX_FILE"]
+    return subprocess.run(
+        ["git", *args],
+        cwd=repo,
+        input=payload,
+        capture_output=True,
+        check=True,
+        env=scrubbed_git_env,
+    ).stdout
+
+
+@pytest.mark.parametrize("stages", [(1,), (2,), (3,), (1, 2, 3)])
+@pytest.mark.parametrize(
+    "target",
+    ["pkg/conflicted.py", "pkg/deep/nonmodel.txt", "baseline.yaml", "waivers.yaml"],
+)
+@pytest.mark.parametrize("alternate", [False, True])
+def test_staged_index_rejects_unmerged_before_reading_inputs(
+    git_repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    stages: tuple[int, ...],
+    target: str,
+    alternate: bool,
+) -> None:
+    """Real stages cannot be hidden by a clean worktree or an ordinary sibling."""
+    from omnibase_core.validators import pydantic_extra_forbid as validator
+
+    (git_repo / "pkg" / "ordinary.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (git_repo / "pkg" / "conflicted.py").write_text("VALUE = 2\n", encoding="utf-8")
+    baseline = _write_baseline(git_repo / "baseline.yaml", [])
+    waivers = _empty_waivers(git_repo / "waivers.yaml")
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    real_index = git_repo / ".git" / "index"
+    real_before = real_index.read_bytes()
+    selected_index = real_index
+    if alternate:
+        selected_index = git_repo / "alternate.index"
+        selected_index.write_bytes(real_before)
+        monkeypatch.setenv("GIT_INDEX_FILE", str(selected_index))
+    oid = _index_git(
+        git_repo, "hash-object", "-w", "--stdin", payload=b"conflict\n"
+    ).strip()
+    path = os.fsencode(target)
+    records = b"0 " + b"0" * 40 + b"\t" + path + b"\0"
+    records += b"".join(
+        b"100644 " + oid + f" {stage}\t".encode() + path + b"\0" for stage in stages
+    )
+    _index_git(git_repo, "update-index", "-z", "--index-info", payload=records)
+    selected_before = selected_index.read_bytes()
+    listing = _index_git(git_repo, "ls-files", "--stage", "-z")
+    for stage in stages:
+        assert b"100644 " + oid + f" {stage}\t".encode() + path + b"\0" in listing
+    assert b" 0\tpkg/ordinary.py\0" in listing
+    files_before = set(git_repo.rglob("*"))
+
+    def unread(*args: object, **kwargs: object) -> None:
+        pytest.fail("unmerged authority reached content evaluation")
+
+    monkeypatch.setattr(validator, "scan_paths", unread)
+    monkeypatch.setattr(validator, "load_baseline", unread)
+    monkeypatch.setattr(validator, "load_waivers", unread)
+    # A policy input outside the invocation directory is still selected authority.
+    monkeypatch.chdir(git_repo / "pkg" if target == "baseline.yaml" else git_repo)
+    if alternate:
+        # Git resolves a relative index name from the repository root.
+        monkeypatch.setenv("GIT_INDEX_FILE", os.path.relpath(selected_index, git_repo))
+    assert (
+        _index_git(Path.cwd(), "ls-files", "--full-name", "--stage", "-z", "--", ":/")
+        == listing
+    )
+    with patch.object(validator.subprocess, "run", wraps=subprocess.run) as git_run:
+        result = main(
+            [
+                str(git_repo / "pkg"),
+                "--baseline",
+                str(baseline),
+                "--waivers",
+                str(waivers),
+                "--enforce-modified",
+                ":staged",
+            ]
+        )
+    assert not any("checkout-index" in call.args[0] for call in git_run.call_args_list)
+    assert result == 1
+    assert "unmerged" in capsys.readouterr().err
+    assert selected_index.read_bytes() == selected_before
+    if alternate:
+        assert real_index.read_bytes() == real_before
+    assert set(git_repo.rglob("*")) == files_before
+
+
+@pytest.mark.parametrize("single_file", [False, True])
+@pytest.mark.parametrize("alternate", [False, True])
+@pytest.mark.parametrize(
+    "filename",
+    [b"ordinary.py", b"space name.py", b"line\nname.py"],
+)
+def test_staged_index_stage_zero_paths_remain_supported(
+    git_repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    single_file: bool,
+    alternate: bool,
+    filename: bytes,
+) -> None:
+    """Stage-zero selection is byte-safe and does not change either index."""
+    module = git_repo / "pkg" / os.fsdecode(filename)
+    module.write_text(
+        "from pydantic import BaseModel\n"
+        "class ModelGood(BaseModel, extra='forbid'):\n    value: int\n",
+        encoding="utf-8",
+    )
+    baseline = _write_baseline(git_repo / "baseline.yaml", [])
+    waivers = _empty_waivers(git_repo / "waivers.yaml")
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    real_index = git_repo / ".git" / "index"
+    real_before = real_index.read_bytes()
+    selected_index = real_index
+    if alternate:
+        selected_index = git_repo / "alternate.index"
+        selected_index.write_bytes(real_before)
+        monkeypatch.setenv("GIT_INDEX_FILE", str(selected_index))
+    selected_before = selected_index.read_bytes()
+    assert b" 0\tpkg/" + filename + b"\0" in _index_git(
+        git_repo, "ls-files", "--stage", "-z"
+    )
+    monkeypatch.chdir(git_repo)
+    if alternate:
+        monkeypatch.setenv("GIT_INDEX_FILE", "alternate.index")
+    assert (
+        main(
+            [
+                str(module) if single_file else "pkg",
+                "--baseline",
+                str(baseline),
+                "--waivers",
+                str(waivers),
+                "--enforce-modified",
+                ":staged",
+                "--no-runtime",
+            ]
+        )
+        == 0
+    )
+    assert real_index.read_bytes() == real_before
+    assert selected_index.read_bytes() == selected_before
+
+
+@pytest.mark.parametrize(
+    "target",
+    [
+        "pkg/line\nlink.py",
+        os.fsdecode(b"pkg/non-utf8-\xff.py"),
+        "baseline.yaml",
+        "waivers.yaml",
+        "pkg",
+    ],
+)
+def test_staged_index_symlinks_are_rejected_separately(
+    git_repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    target: str,
+) -> None:
+    """A stage-zero symlink, including a scan ancestor, is invalid authority."""
+    from omnibase_core.validators import pydantic_extra_forbid as validator
+
+    baseline = _write_baseline(git_repo / "baseline.yaml", [])
+    waivers = _empty_waivers(git_repo / "waivers.yaml")
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    oid = _index_git(
+        git_repo, "hash-object", "-w", "--stdin", payload=b"elsewhere"
+    ).strip()
+    _index_git(
+        git_repo,
+        "update-index",
+        "-z",
+        "--index-info",
+        payload=b"120000 " + oid + b" 0\t" + os.fsencode(target) + b"\0",
+    )
+    before = (git_repo / ".git" / "index").read_bytes()
+    monkeypatch.chdir(git_repo)
+
+    def unread(*args: object, **kwargs: object) -> None:
+        pytest.fail("symlink authority reached content evaluation")
+
+    monkeypatch.setattr(validator, "scan_paths", unread)
+    scope = "pkg/child.py" if target == "pkg" else "pkg"
+    assert (
+        main(
+            [
+                scope,
+                "--baseline",
+                str(baseline),
+                "--waivers",
+                str(waivers),
+                "--enforce-modified",
+                ":staged",
+            ]
+        )
+        == 1
+    )
+    error = capsys.readouterr().err
+    assert "symlink" in error
+    assert "unmerged" not in error
+    assert (git_repo / ".git" / "index").read_bytes() == before
+
+
+@pytest.mark.parametrize("stage", [0, 1, 2, 3])
+@pytest.mark.parametrize("alternate", [False, True])
+def test_staged_index_non_utf8_paths_are_byte_safe(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, stage: int, alternate: bool
+) -> None:
+    """Git can store non-UTF-8 paths even on a filesystem that cannot create them."""
+    from omnibase_core.errors.model_onex_error import ModelOnexError
+    from omnibase_core.validators.pydantic_extra_forbid import _validate_staged_inputs
+
+    _git(git_repo, "add", "-A")
+    _git(git_repo, "commit", "-qm", "seed")
+    real_index = git_repo / ".git" / "index"
+    real_before = real_index.read_bytes()
+    selected_index = real_index
+    if alternate:
+        selected_index = git_repo / "alternate.index"
+        selected_index.write_bytes(real_before)
+        monkeypatch.setenv("GIT_INDEX_FILE", str(selected_index))
+    oid = _index_git(
+        git_repo, "hash-object", "-w", "--stdin", payload=b"VALUE = 1\n"
+    ).strip()
+    path = b"pkg/non-utf8-\xff\t\n.py"
+    _index_git(
+        git_repo,
+        "update-index",
+        "-z",
+        "--index-info",
+        payload=b"100644 " + oid + f" {stage}\t".encode() + path + b"\0",
+    )
+    before = selected_index.read_bytes()
+    assert path in _index_git(git_repo, "ls-files", "--stage", "-z")
+    scopes = [git_repo / "pkg", git_repo / os.fsdecode(path)]
+    for scope in scopes:
+        if stage == 0:
+            _validate_staged_inputs([scope], git_repo)
+        else:
+            with pytest.raises(ModelOnexError, match="unmerged"):
+                _validate_staged_inputs([scope], git_repo)
+    assert selected_index.read_bytes() == before
+    if alternate:
+        assert real_index.read_bytes() == real_before

@@ -1,0 +1,124 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-17905
+title: Reject unmerged extra-forbid index authority before content evaluation
+summary: Staged enforcement checks the selected index before scanning or loading policy inputs. Nonzero
+  stages and symlink entries in scan, baseline and waiver scopes fail closed. Current dev scans working-tree
+  content and has no checkout-index snapshot implementation; this change creates no temporary authority.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17905-selected-index
+    statement: Validate selected index authority before evaluating model or policy content.
+    acceptance:
+      - id: AC1
+        statement: Deterministic unmerged-index tests construct real stage 1/2/3 entries under a scan
+          root containing at least one ordinary staged file; validator returns 1 before scanning.
+      - id: AC2
+        statement: A conflicting baseline or waiver is rejected before content is read.
+      - id: AC3
+        statement: Stage 0 regular-file directory, single-file, spaces/newlines/non-UTF-8 pathnames, and
+          alternate `GIT_INDEX_FILE` remain supported.
+      - id: AC4
+        statement: Rejection occurs before `git checkout-index`; no partial snapshot is evaluated.
+      - id: AC5
+        statement: Tests prove real index bytes are unchanged and temporary authority is cleaned up.
+      - id: AC6
+        statement: Symlink/reparse rejection remains byte-safe and separate from stage validation.
+      - id: AC7
+        statement: No merge-conflict state can produce a green extra-forbid pre-commit result.
+evidence_requirements:
+  - kind: tests
+    description: Real index stages, stage-zero inputs, alternate indexes, byte-safe names and independent
+      symlink rejection.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov --reruns
+      0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17905-ac1
+    description: Deterministic unmerged-index tests construct real stage 1/2/3 entries under a scan root
+      containing at least one ordinary staged file; validator returns 1 before scanning.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'test_staged_index_rejects_unmerged_before_reading_inputs'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn17905-ac2
+    description: A conflicting baseline or waiver is rejected before content is read.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'test_staged_index_rejects_unmerged_before_reading_inputs'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn17905-ac3
+    description: Stage 0 regular-file directory, single-file, spaces/newlines/non-UTF-8 pathnames, and
+      alternate `GIT_INDEX_FILE` remain supported.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'test_staged_index_stage_zero_paths_remain_supported or test_staged_index_non_utf8_paths_are_byte_safe'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn17905-ac4
+    description: Rejection occurs before `git checkout-index`; no partial snapshot is evaluated.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'test_staged_index_rejects_unmerged_before_reading_inputs'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn17905-ac5
+    description: Conflict rejection leaves selected and real index bytes unchanged and creates no temporary
+      authority; the fixture filesystem inventory is unchanged.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'staged_index'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn17905-ac6
+    description: Symlink/reparse rejection remains byte-safe and separate from stage validation.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'test_staged_index_symlinks_are_rejected_separately'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn17905-ac7
+    description: No merge-conflict state can produce a green extra-forbid pre-commit result.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'test_staged_index_rejects_unmerged_before_reading_inputs'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn17905-deploy-hosted
+    description: Hosted library probe exercises the pre-commit validator main entry against real unmerged
+      indexes and policy conflicts; evaluation is refused before reading content.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q -n 0 --no-cov
+          --reruns 0 -k 'test_staged_index_rejects_unmerged_before_reading_inputs'
+        cwd: ${OMNI_HOME}/omnibase_core
