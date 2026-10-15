@@ -952,3 +952,29 @@ def test_mod_surface_paths() -> None:
     assert surface("hooks/a.sh")
     assert not surface("scripts/a.py")
     assert not surface("src/pkg/runtime/a.py")
+
+
+DEPENDENCY_DIRECTION_BASELINE = ".onex_ratchets/dependency_direction_baseline.yaml"
+
+
+def _dependency_direction_config(args: str) -> str:
+    return (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-dependency-direction\n" + args
+    )
+
+
+def test_dependency_direction_gate_declares_its_baseline() -> None:
+    """OMN-19998: the dependency-direction gate is a declared shrink-only gate."""
+    config = _dependency_direction_config(
+        f"        args: [--baseline, {DEPENDENCY_DIRECTION_BASELINE}]\n"
+    )
+    assert declared_gate_baselines(config) == frozenset({DEPENDENCY_DIRECTION_BASELINE})
+
+
+def test_dependency_direction_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, DEPENDENCY_DIRECTION_BASELINE, "violations: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]

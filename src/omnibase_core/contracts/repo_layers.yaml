@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Declared repository layer order for the cross-repository dependency-direction
+# check (OMN-19998). Data, not code: the check reads this file and nothing else
+# to decide direction.
+#
+# A repository may depend only on repositories at a STRICTLY LOWER layer, through
+# any channel (Python imports, pyproject dependencies, extras, groups and uv
+# sources, requirements files, Dockerfile installs and clones, workflow
+# checkouts, pins and uses:, and scripts that install, clone or fetch). Two
+# repositories on the same layer may not depend on each other.
+#
+# Provenance of the order:
+#   layers 0-3  registry Operating Rule 7, "compat -> core -> spi -> infra".
+#   omnimarket above omnibase_infra  operator ruling 2026-10-15T21:52:44Z
+#     ("Market depends on infra, not the other way around").
+#   the rest    each repository's declared [project] dependencies at origin/dev
+#     on 2026-10-15: omnimarket requires omninode-memory, omniintelligence
+#     requires omnimarket, omniclaude requires omnimarket, omnibase_internal
+#     requires omnimarket, omninode_infra's lab-operator group requires
+#     omnibase-internal.
+#   onex_change_control requires only omnibase-core and is being retired.
+
+github_org: OmniNode-ai
+
+repos:
+  - repo: omnibase_compat
+    layer: 0
+    python_modules: [omnibase_compat]
+    distributions: [omnibase-compat]
+  - repo: omnibase_core
+    layer: 1
+    python_modules: [omnibase_core]
+    distributions: [omnibase-core]
+  - repo: omnibase_spi
+    layer: 2
+    python_modules: [omnibase_spi]
+    distributions: [omnibase-spi]
+  - repo: onex_change_control
+    layer: 2
+    python_modules: [onex_change_control]
+    distributions: [onex-change-control]
+  - repo: omnibase_infra
+    layer: 3
+    python_modules: [omnibase_infra]
+    distributions: [omnibase-infra]
+  - repo: omnimemory
+    layer: 4
+    python_modules: [omnimemory]
+    distributions: [omninode-memory]
+  - repo: omnimarket
+    layer: 5
+    python_modules: [omnimarket]
+    distributions: [omnimarket]
+  - repo: omniintelligence
+    layer: 6
+    python_modules: [omniintelligence]
+    distributions: [omninode-intelligence]
+  - repo: omniclaude
+    layer: 7
+    python_modules: [omniclaude]
+    distributions: [omninode-claude]
+  - repo: omnigemini
+    layer: 7
+  - repo: omnidash
+    layer: 8
+  - repo: omniweb
+    layer: 8
+  - repo: omnibase_internal
+    layer: 9
+    python_modules: [omnibase_internal]
+    distributions: [omnibase-internal]
+  - repo: omninode_infra
+    layer: 10
+    distributions: [omninode-infra]

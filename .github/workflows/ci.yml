@@ -677,6 +677,27 @@ jobs:
       - name: Run import-linter (intra-core dependency layering)
         run: uv run lint-imports
 
+      # Cross-repository dependency direction (OMN-19998) — blocking. lint-imports
+      # covers direction INSIDE core; this covers direction ACROSS repositories:
+      # core may depend only on repositories at a lower layer of the declared
+      # order (src/omnibase_core/contracts/repo_layers.yaml), through
+      # imports, pyproject, Dockerfiles, workflow checkouts and scripts. Existing
+      # violations live in .onex_ratchets/dependency_direction_baseline.yaml, which may only
+      # shrink against the pull request's base. Other repositories run the same
+      # node through .github/workflows/dependency-direction.yml.
+      - name: Run cross-repository dependency-direction check
+        env:
+          RATCHET_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          args=(--report-json dependency-direction-report.json)
+          if [ -n "$RATCHET_BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$RATCHET_BASE_REF"
+            args+=(--ratchet-base-ref "$RATCHET_BASE_REF")
+          else
+            echo "::notice::no ratchet base ref (push event): baseline ratchet skipped"
+          fi
+          uv run check-dependency-direction --repo omnibase_core "${args[@]}"
+
       # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210) — blocking.
       # import-linter's wildcard ignores are permissive; this freezes protocols->models
       # (65) and the utils/mixins/protocols hub-inbound sets non-increasing and hard-fails

@@ -1,0 +1,52 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Cross-repository dependency-direction baseline (OMN-19998).
+# Shrink-only: CI refuses an entry the base branch does not have.
+# Each entry is a pre-existing violation and the ticket that removes it.
+repo: omnibase_core
+violations:
+  - path: .github/workflows/ci.yml
+    channel: workflow
+    target: omnibase_spi
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    channel: workflow
+    target: omniclaude
+    ticket: OMN-19998
+  - path: .github/workflows/dependency-cascade.yml
+    channel: workflow
+    target: omnibase_infra
+    ticket: OMN-19998
+  - path: .github/workflows/handshake-policy-gate.yml
+    channel: workflow
+    target: omnimarket
+    ticket: OMN-19998
+  - path: .github/workflows/pr-title-check.yml
+    channel: workflow
+    target: omnimarket
+    ticket: OMN-19998
+  - path: .github/workflows/receipt-gate.yml
+    channel: workflow
+    target: omnimarket
+    ticket: OMN-19998
+  - path: .github/workflows/validator-pin-hygiene.yml
+    channel: workflow
+    target: omnibase_spi
+    ticket: OMN-19998
+  - path: pyproject.toml
+    channel: pyproject
+    target: omnibase_spi
+    ticket: OMN-19998
+  - path: scripts/validation/validate-downstream.py
+    channel: python_import
+    target: omnibase_spi
+    ticket: OMN-19998
+  - path: scripts/validation/validate-imports.py
+    channel: python_import
+    target: omnibase_spi
+    ticket: OMN-19998
+  - path: src/omnibase_core/services/service_protocol_auditor.py
+    channel: python_import
+    target: omnibase_spi
+    ticket: OMN-19998
