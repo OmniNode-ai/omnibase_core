@@ -89,7 +89,7 @@ path_classes:
 
 # Family M: the plan's P1 model-family regex, applied case-insensitively.
 model_id_pattern: >-
-  qwen[0-9]|qwen-|qwen2|qwen3|deepseek-(v|r|coder|chat)|glm-[0-9]|gpt-oss|gpt-4|gpt-5|gpt-3\.5|o[134]-mini|claude-(opus|sonnet|haiku|3|4|5)|gemini-[0-9]|llama-?[0-9]|llama3|mistral-|nemotron|phi-[0-9]|codestral|devstral|text-embedding-|nomic-embed|bge-|gte-qwen|kimi-k|minimax-m
+  qwen[0-9]|qwen-|qwen2|qwen3|deepseek-(v|r|coder|chat)|glm-[0-9]|gpt-4|gpt-5|gpt-3\.5|o[134]-mini|claude-(opus|sonnet|haiku|3|4|5)|gemini-[0-9]|llama-?[0-9]|llama3|mistral-|nemotron|phi-[0-9]|codestral|devstral|text-embedding-|nomic-embed|bge-|gte-qwen|kimi-k|minimax-m
 
 # Family E: a URL literal whose path ends in one of these, or a URL-valued
 # literal assigned to one of these keys, or a URL default of an environment read.
