@@ -42,6 +42,8 @@ NO_TERMINAL_WIRE_VALUE = "no_terminal"
 # as a literal for the same reason as the values above.
 RUNTIME_SHUTDOWN_WIRE_VALUE = "runtime_shutdown"
 
+PRE_DISPATCH_REFUSED_WIRE_VALUE = "pre_dispatch_refused"
+
 # Every member and the exact wire string it serialises to. Adding a member here
 # is deliberate: this constant is what makes a silent vocabulary change fail.
 EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
@@ -59,6 +61,7 @@ EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
 EXPECTED_WIRE_VALUES: set[str] = {
     *EXPECTED_MEMBERS.values(),
     RUNTIME_SHUTDOWN_WIRE_VALUE,
+    PRE_DISPATCH_REFUSED_WIRE_VALUE,
 }
 
 
@@ -217,6 +220,15 @@ class TestEnumDelegationTerminalFailureCause:
         """Members must be ``str`` so they serialise without a custom encoder."""
         assert issubclass(EnumDelegationTerminalFailureCause, str)
         assert issubclass(EnumDelegationTerminalFailureCause, Enum)
+
+    def test_pre_dispatch_refusal_has_a_distinct_wire_cause(self) -> None:
+        """OMN-19448: a refusal before dispatch is neither a provider fault nor timeout."""
+        cause = EnumDelegationTerminalFailureCause(PRE_DISPATCH_REFUSED_WIRE_VALUE)
+
+        assert cause.name == "PRE_DISPATCH_REFUSED"
+        assert json.loads(json.dumps(cause)) == PRE_DISPATCH_REFUSED_WIRE_VALUE
+        assert cause not in EXPECTED_MEMBERS
+        assert cause is not EnumDelegationTerminalFailureCause.RUNTIME_SHUTDOWN
 
     def test_unrecognised_wire_value_is_rejected(self) -> None:
         """An unknown cause fails loudly rather than coercing to a member.

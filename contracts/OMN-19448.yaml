@@ -1,0 +1,77 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19448
+title: Typed terminal cause for refusals before delegation dispatch
+summary: >-
+  Core prerequisite for OMN-19448. Adds pre_dispatch_refused to the terminal failure vocabulary, permits
+  it on a zero-attempt boundary failure and refuses it on the routed provider-failure branch. These library
+  checks do not establish the ticket's projection, migration or deployed database acceptance criteria.
+  The producer must adopt the released vocabulary before the lab database readback can establish that
+  failed rows have no null cause.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: core-pre-dispatch-cause
+    statement: A pre-dispatch refusal has its own wire cause and survives terminal serialization.
+    acceptance:
+      - id: core-vocabulary
+        statement: The pre_dispatch_refused wire value names PRE_DISPATCH_REFUSED and is distinct from
+          existing causes.
+      - id: core-zero-attempt-terminal
+        statement: A zero-attempt boundary failure preserves pre_dispatch_refused while continuing to
+          reject every existing cause.
+      - id: core-provider-distinction
+        statement: The routed provider-failure branch rejects pre_dispatch_refused and continues to accept
+          the three provider causes.
+evidence_requirements:
+  - kind: tests
+    description: The enum tests pin the vocabulary and refusal wire value.
+    command: uv run pytest tests/unit/enums/test_enum_delegation_terminal_failure_cause.py -q -n 0 --reruns
+      0
+  - kind: tests
+    description: Dispatch and terminal round trips, zero-attempt constraints and provider-branch distinction.
+    command: uv run pytest tests/unit/models/delegation/wire/test_pre_dispatch_refusal.py -q -n 0 --reruns
+      0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: core-vocabulary
+    description: Library vocabulary prerequisite; this check does not bind a ticket acceptance criterion.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/enums/test_enum_delegation_terminal_failure_cause.py -q
+          -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: core-zero-attempt-terminal
+    description: Library wire prerequisite; this check does not establish database row contents.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_pre_dispatch_refusal.py -q -n
+          0 --reruns 0 -k 'dispatch_result or zero_attempt'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: core-provider-distinction
+    description: Pre-dispatch refusals cannot be serialized as routed provider failures.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_pre_dispatch_refusal.py -q -n
+          0 --reruns 0 -k provider
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: deploy-hosted-core-wire
+    description: >-
+      Hosted library probe: construction and serialization of a zero-attempt pre-dispatch refusal fails
+      without the enum member and validator change. This does not replace the downstream deployed database
+      readback.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_pre_dispatch_refusal.py -q -n
+          0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core

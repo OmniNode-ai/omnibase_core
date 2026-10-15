@@ -389,7 +389,10 @@ class ModelDelegationResult(BaseModel):
             if self.quality_score is not None:
                 msg = "zero attempts cannot carry quality_score"
                 raise ValueError(msg)
-            if self.terminal_failure_cause is not None:
+            if self.terminal_failure_cause not in (
+                None,
+                EnumDelegationTerminalFailureCause.PRE_DISPATCH_REFUSED,
+            ):
                 msg = "zero attempts cannot claim a provider failure cause"
                 raise ValueError(msg)
 

@@ -69,7 +69,7 @@ class ModelDelegationProviderFailureCause(BaseModel):
 
     @model_validator(mode="after")
     def validate_cause_is_a_provider_cause(self) -> Self:
-        """Refuse a provider-kind failure whose cause says the gate decided it.
+        """Refuse a provider-kind failure decided before dispatch or by the gate.
 
         This union already separates the two subsystems structurally: a
         provider fault is this branch, and a gate refusal is
@@ -85,6 +85,12 @@ class ModelDelegationProviderFailureCause(BaseModel):
         from has moved the ambiguity rather than removed it, which is the shape
         of defect this member exists to close.
         """
+        if self.cause is EnumDelegationTerminalFailureCause.PRE_DISPATCH_REFUSED:
+            msg = (
+                "provider failure cause cannot be pre_dispatch_refused; "
+                "no provider was dispatched"
+            )
+            raise ValueError(msg)
         if self.cause is EnumDelegationTerminalFailureCause.QUALITY_GATE_REFUSED:
             msg = (
                 "provider failure cause cannot be quality_gate_refused; a run "

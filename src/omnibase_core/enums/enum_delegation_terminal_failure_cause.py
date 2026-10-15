@@ -66,6 +66,16 @@ class EnumDelegationTerminalFailureCause(str, Enum):
     been decided by three gate refusals.
     """
 
+    PRE_DISPATCH_REFUSED = "pre_dispatch_refused"
+    """The request was refused before delegation dispatch began (OMN-19448).
+
+    Names a failed pre-dispatch check, including a task-class timeout ceiling,
+    missing credential or missing identity. No provider was called and no
+    quality gate evaluated a response. Distinct from ``TIMEOUT``: a ceiling
+    refusal rejects the requested budget before execution, rather than
+    cancelling a run whose execution budget elapsed.
+    """
+
     TIMEOUT = "timeout"
     """The run was cancelled for exceeding its execution budget.
 
