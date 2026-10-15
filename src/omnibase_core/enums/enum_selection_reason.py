@@ -21,6 +21,9 @@ Semantics:
   reason is reserved here; the bandit logic lands in M4.
 * ``FALLBACK_NO_SCORE`` — the candidate has no M2 score yet. Explicit, not
   silent: ``effectiveness_score`` is ``None`` only with this reason.
+* ``POLICY_SCOPE_RULE`` — admitted by a profile-declared scope rule (a condition
+  over the request's typed caller scope), not by a score or a cohort. Appended
+  last so the existing members keep their values and order (OMN-18531 / TC.1).
 """
 
 from __future__ import annotations
@@ -36,6 +39,7 @@ class EnumSelectionReason(StrEnum):
     EXPERIMENT_ASSIGNMENT = "experiment_assignment"
     EXPLORATION = "exploration"
     FALLBACK_NO_SCORE = "fallback_no_score"
+    POLICY_SCOPE_RULE = "policy_scope_rule"
 
 
 __all__ = [
