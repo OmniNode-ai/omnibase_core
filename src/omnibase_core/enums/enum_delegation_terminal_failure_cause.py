@@ -103,5 +103,22 @@ class EnumDelegationTerminalFailureCause(str, Enum):
     was at fault. The run can be retried as is.
     """
 
+    REFUSED_BEFORE_DISPATCH = "refused_before_dispatch"
+    """The request was refused before any rung of the ladder was dispatched.
+
+    Emitted when the handler declines a request on its own terms -- a
+    requested timeout above the task class ceiling, a credential reference
+    with no value -- so no provider, gate, clock or runtime decided the run
+    (OMN-19448). Measured on the .201 dev lane: correlation
+    ``252a8269-bcbc-44f1-a47e-c1fbfa036649`` asked for 300 seconds against a
+    ceiling of 240 and its ``delegation_events`` row carried a failed outcome
+    with a null cause, the one row that broke "no failed row has a null
+    cause". Distinct from every provider member, because nothing was sent to a
+    provider; from ``TIMEOUT``, because the run's own budget never started; and
+    from ``NO_TERMINAL``, because the run does report itself. The refusal's own
+    typed reason stays on the terminal's refusal field; this member only
+    names that the request never ran.
+    """
+
 
 __all__: list[str] = ["EnumDelegationTerminalFailureCause"]
