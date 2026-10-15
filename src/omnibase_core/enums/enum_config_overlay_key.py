@@ -18,6 +18,10 @@ overlay document exists, never because a package names it.
 ``broker.principal_grants``, ``host.settings`` and ``lane.services``
 (OMN-19933) declare deployment-owned broker access, host configuration and
 lane services. Core owns their schemas without naming deployment values.
+
+``developer.principal`` (OMN-19975, plan task T4.2 of knowledge-base-internal
+``beta/plans/2026-09-28-local-mvp-plan.md``) declares which developer machines
+hold a broker principal. It holds identities only; their grants are derived.
 """
 
 from __future__ import annotations
@@ -39,6 +43,7 @@ class EnumConfigOverlayKey(StrEnum):
     BROKER_PRINCIPAL_GRANTS = "broker.principal_grants"
     HOST_SETTINGS = "host.settings"
     LANE_SERVICES = "lane.services"
+    DEVELOPER_PRINCIPAL = "developer.principal"
 
     @property
     def schema_ref(self) -> str:
@@ -60,6 +65,7 @@ _SCHEMA_REFS: dict[EnumConfigOverlayKey, str] = {
     EnumConfigOverlayKey.BROKER_PRINCIPAL_GRANTS: "omnibase_core:broker_principal_grants",
     EnumConfigOverlayKey.HOST_SETTINGS: "omnibase_core:host_settings",
     EnumConfigOverlayKey.LANE_SERVICES: "omnibase_core:lane_services",
+    EnumConfigOverlayKey.DEVELOPER_PRINCIPAL: "omnibase_core:developer_principal",
 }
 
 

@@ -15,6 +15,10 @@ no lane.
 ``broker.principal_grants``, ``host.settings`` and ``lane.services``
 (OMN-19933) declare broker access, host settings and lane services. Observations
 record the state read from a deployment surface and any read failure.
+
+``developer.principal`` (OMN-19975) declares the developer machines that hold a
+broker principal. It carries no grant: grants are derived from the declaration it
+names.
 """
 
 from __future__ import annotations
@@ -40,6 +44,12 @@ if TYPE_CHECKING:
     )
     from omnibase_core.models.config_overlay.model_declared_state_observation import (
         ModelDeclaredStateObservation,
+    )
+    from omnibase_core.models.config_overlay.model_developer_principal_declaration import (
+        ModelDeveloperPrincipalDeclaration,
+    )
+    from omnibase_core.models.config_overlay.model_developer_principal_overlay import (
+        ModelDeveloperPrincipalOverlay,
     )
     from omnibase_core.models.config_overlay.model_embedding_endpoint_overlay import (
         ModelEmbeddingEndpointOverlay,
@@ -102,6 +112,8 @@ __all__ = [
     "ModelBrokerPrincipalDeclaration",
     "ModelBrokerPrincipalGrantsOverlay",
     "ModelDeclaredStateObservation",
+    "ModelDeveloperPrincipalDeclaration",
+    "ModelDeveloperPrincipalOverlay",
     "ModelHostDeclaration",
     "ModelHostNetworkInterfaceSetting",
     "ModelHostSettingsOverlay",
@@ -153,6 +165,14 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelDeclaredStateObservation": (
         "omnibase_core.models.config_overlay.model_declared_state_observation",
         "ModelDeclaredStateObservation",
+    ),
+    "ModelDeveloperPrincipalDeclaration": (
+        "omnibase_core.models.config_overlay.model_developer_principal_declaration",
+        "ModelDeveloperPrincipalDeclaration",
+    ),
+    "ModelDeveloperPrincipalOverlay": (
+        "omnibase_core.models.config_overlay.model_developer_principal_overlay",
+        "ModelDeveloperPrincipalOverlay",
     ),
     "ModelEmbeddingEndpointOverlay": (
         "omnibase_core.models.config_overlay.model_embedding_endpoint_overlay",

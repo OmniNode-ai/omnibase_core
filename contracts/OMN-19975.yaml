@@ -1,0 +1,56 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-19975
+title: A deployment declares each developer machine's broker principal under the developer.principal overlay
+  key, and the document has no field that can carry a grant
+summary: omnibase_core half of OMN-19975. Adds the developer.principal config-store overlay key, its typed
+  document (ModelDeveloperPrincipalOverlay, one ModelDeveloperPrincipalDeclaration row per login and device)
+  and the JSON Schema export. A row names the principal, the login and the device; the document names
+  the declaration the grants are derived from. Both models forbid extra fields, so a grant cannot be typed
+  into the overlay. The lab readback of a developer principal's ACLs against the derived rows, and the
+  issuer reading these rows, are not part of this change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19975-developer-principal-key
+    statement: The developer.principal overlay key has a typed, grant-free document and a committed schema.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: EnumConfigOverlayKey has developer.principal owned by omnibase_core, its document
+          refuses any grant-bearing field, a blank or malformed principal row and a duplicated principal
+          or login-device pair, and the committed JSON Schema equals the model''s -- falsifier: `uv run
+          pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py` fails at the merge
+          base and passes at the head.'
+evidence_requirements:
+  - kind: tests
+    description: The overlay document tests pin the key and its owner, the refusal of a grant field, malformed
+      and duplicate rows, and the schema export round trip.
+    command: uv run pytest tests/unit/models/config_overlay -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19975-ac1-developer-principal-document
+    description: The developer.principal key and its grant-free document validate valid rows and refuse
+      grant fields, malformed rows and duplicates.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn19975-deploy-hosted-document
+    description: Hosted deploy probe. omnibase_core is a library, so the live surface for this change
+      is its tests on a hosted runner. They fail until the developer.principal key, its document and its
+      committed schema are present together.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          tests/unit/models/config_overlay/test_overlay_models.py -q
+        cwd: ${OMNI_HOME}/omnibase_core

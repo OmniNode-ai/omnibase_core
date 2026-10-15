@@ -12,7 +12,8 @@
         "runtime.bus_lane",
         "broker.principal_grants",
         "host.settings",
-        "lane.services"
+        "lane.services",
+        "developer.principal"
       ],
       "title": "EnumConfigOverlayKey",
       "type": "string"
