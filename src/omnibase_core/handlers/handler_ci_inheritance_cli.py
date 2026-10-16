@@ -1,11 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI of the ci-inheritance check (OMN-17427): the EFFECT boundary of its handler.
+"""CLI for CI reference inheritance and repository-specific jobs (OMN-17427).
 
-The pre-commit hook and the ci.yml job both run the SAME pure handler
-(:class:`HandlerCiInheritance`); this module owns only the filesystem read,
-through the ``node_source_file_gather_effect`` EFFECT node, and the output.
+The pre-commit hook and the ci.yml job both run the same pure handlers
+(:class:`HandlerCiInheritance` and :class:`HandlerCiRepositoryJobs`); this
+module owns the filesystem read through the ``node_source_file_gather_effect``
+EFFECT node, report merging, and output for both rules.
 
 The caller materializes the base workflows in a directory (CI: ``git archive``
 of the pull request's base; pre-commit: of ``HEAD``) and passes it with
@@ -33,6 +34,13 @@ from omnibase_core.handlers.handler_ci_inheritance import (
     VALIDATOR_ID,
     HandlerCiInheritance,
 )
+from omnibase_core.handlers.handler_ci_repository_jobs import (
+    VALIDATOR_ID as JOBS_VALIDATOR_ID,
+)
+from omnibase_core.handlers.handler_ci_repository_jobs import (
+    HandlerCiRepositoryJobs,
+    repository_specific_jobs,
+)
 from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input import (
     ModelCiInheritanceCheckInput,
 )
@@ -47,6 +55,7 @@ from omnibase_core.models.nodes.validation_report_write.model_validation_report_
 )
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
+    ModelValidationRequestRef,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
@@ -92,7 +101,8 @@ def main(argv: list[str] | None = None) -> int:
         prog="check-ci-inheritance",
         description=(
             "Refuse a change that adds a reusable workflow or action reference to an "
-            "organization repository other than the CI host (OMN-17427)."
+            "organization repository other than the CI host, or adds a "
+            "repository-specific CI job (OMN-17427)."
         ),
     )
     parser.add_argument("--base-dir", required=True, help="Base workflow directory.")
@@ -101,6 +111,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--organization", default=_DEFAULT_ORGANIZATION)
     parser.add_argument("--host-repository", default=_DEFAULT_HOST)
+    parser.add_argument(
+        "--repository",
+        default=None,
+        help="Repository whose workflows are checked; defaults to the CI host.",
+    )
     parser.add_argument(
         "--report-json",
         default=None,
@@ -134,36 +149,73 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(f"ERROR: {error}\n")
         return 1
 
-    report = HandlerCiInheritance().handle(
-        ModelCiInheritanceCheckInput(
-            organization=parsed.organization,
-            host_repository=parsed.host_repository,
-            base_files=base_files,
-            head_files=head_files,
-        )
+    request = ModelCiInheritanceCheckInput(
+        organization=parsed.organization,
+        host_repository=parsed.host_repository,
+        repository=parsed.repository,
+        base_files=base_files,
+        head_files=head_files,
+    )
+    inheritance_report = HandlerCiInheritance().handle(request)
+    jobs_report = HandlerCiRepositoryJobs().handle(request)
+    report = ModelValidationReport.from_findings(
+        findings=inheritance_report.findings + jobs_report.findings,
+        request=ModelValidationRequestRef(profile="default"),
+        validators_run=(VALIDATOR_ID, JOBS_VALIDATOR_ID),
     )
     _write_report(parsed.report_json, report)
 
-    fails = [f for f in report.findings if f.severity in ("FAIL", "ERROR")]
-    existing = [f for f in report.findings if f.severity == "WARN"]
+    references = [f for f in report.findings if f.validator_id == VALIDATOR_ID]
+    jobs = [f for f in report.findings if f.validator_id == JOBS_VALIDATOR_ID]
+    fails = [f for f in references if f.severity in ("FAIL", "ERROR")]
+    existing = [f for f in references if f.severity == "WARN"]
     if not fails:
         sys.stdout.write(
             f"OK: no new reusable CI reference outside {parsed.host_repository} "
             f"({len(existing)} existing reference(s) still hosted elsewhere)\n"
         )
-        return 0
+    else:
+        sys.stdout.write(
+            f"FAIL: {len(fails)} new reusable CI reference(s) hosted outside "
+            f"{parsed.host_repository}:\n"
+        )
+        for finding in fails:
+            sys.stdout.write(f"  {finding.message}\n")
+        sys.stdout.write(
+            f"\nShared CI lives in {parsed.organization}/{parsed.host_repository} and every "
+            "repository inherits it from there (RULING 2026-10-14T20:01:09Z, OMN-17427).\n"
+        )
 
-    sys.stdout.write(
-        f"FAIL: {len(fails)} new reusable CI reference(s) hosted outside "
-        f"{parsed.host_repository}:\n"
-    )
-    for finding in fails:
-        sys.stdout.write(f"  {finding.message}\n")
-    sys.stdout.write(
-        f"\nShared CI lives in {parsed.organization}/{parsed.host_repository} and every "
-        "repository inherits it from there (RULING 2026-10-14T20:01:09Z, OMN-17427).\n"
-    )
-    return 1
+    job_fails = [f for f in jobs if f.severity in ("FAIL", "ERROR")]
+    if not job_fails:
+        repository = (
+            request.host_repository
+            if request.repository is None
+            else request.repository
+        )
+        counts = [
+            len(
+                repository_specific_jobs(
+                    file.source, file.path, repository, request.host_repository
+                )
+            )
+            for file in request.head_files
+        ]
+        sys.stdout.write(
+            "OK: no new repository-specific CI job "
+            f"({sum(counts)} existing repository-specific job(s) across "
+            f"{sum(count > 0 for count in counts)} file(s))\n"
+        )
+    else:
+        sys.stdout.write(f"FAIL: {len(job_fails)} new repository-specific CI job(s):\n")
+        for finding in job_fails:
+            sys.stdout.write(f"  {finding.message}\n")
+        sys.stdout.write(
+            "\nRepositories of the same type run the same CI, hosted in "
+            f"{parsed.organization}/{parsed.host_repository} "
+            "(RULINGs 2026-10-14T19:54:41Z and 2026-10-14T20:01:09Z, OMN-17427).\n"
+        )
+    return 1 if fails or job_fails else 0
 
 
 if __name__ == "__main__":

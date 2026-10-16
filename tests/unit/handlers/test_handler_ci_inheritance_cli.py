@@ -85,3 +85,63 @@ def test_main_errors_when_base_dir_is_missing(
 
     assert exit_code == 1
     assert "ERROR" in capsys.readouterr().out
+
+
+_CI_LINT = (
+    "on:\n  pull_request:\njobs:\n  lint:\n    runs-on: ubuntu-latest\n"
+    "    steps:\n      - run: ruff check\n"
+)
+_NEW_JOB = "  typecheck:\n    runs-on: ubuntu-latest\n    steps:\n      - run: mypy\n"
+
+
+def test_main_fails_on_added_repository_specific_job(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base, head = _dirs(tmp_path)
+    (base / "ci.yml").write_text(_CI_LINT)
+    (head / "ci.yml").write_text(_CI_LINT + _NEW_JOB)
+
+    exit_code = main(["--base-dir", str(base), "--head-dir", str(head)])
+
+    assert exit_code == 1
+    out = capsys.readouterr().out
+    assert "FAIL: 1 new repository-specific CI job(s)" in out
+    assert "ci.yml:jobs.typecheck" in out
+
+
+def test_main_passes_with_existing_repository_specific_jobs(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base, head = _dirs(tmp_path)
+    (base / "ci.yml").write_text(_CI_LINT)
+    (head / "ci.yml").write_text(_CI_LINT.replace("ruff check", "ruff check --fix"))
+
+    exit_code = main(["--base-dir", str(base), "--head-dir", str(head)])
+
+    assert exit_code == 0
+    out = capsys.readouterr().out
+    assert "1 existing repository-specific job(s)" in out
+
+
+def test_main_repository_flag_judges_a_non_host_reusable(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base, head = _dirs(tmp_path)
+    reusable = _CI_LINT.replace("on:\n  pull_request:\n", "on:\n  workflow_call:\n")
+    (head / "lint-reusable.yml").write_text(reusable)
+
+    host_exit = main(["--base-dir", str(base), "--head-dir", str(head)])
+    other_exit = main(
+        [
+            "--base-dir",
+            str(base),
+            "--head-dir",
+            str(head),
+            "--repository",
+            "omnibase_spi",
+        ]
+    )
+
+    assert host_exit == 0
+    assert other_exit == 1
+    assert "lint-reusable.yml:jobs.lint" in capsys.readouterr().out

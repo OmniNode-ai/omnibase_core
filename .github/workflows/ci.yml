@@ -3092,9 +3092,14 @@ jobs:
   # should be in core and everything should essentially inherit from that").
   # Refuses a change that ADDS a `uses: OmniNode-ai/<repo>/...` reference to a
   # repository other than omnibase_core; references the base already carries
-  # are printed as existing, never allowed by a list. Unconditional job under
-  # the required "CI Summary" rollup; the same pure handler backs the
-  # check-ci-inheritance pre-commit hook.
+  # are printed as existing, never allowed by a list. The same run also refuses
+  # a change that ADDS a job defined inline in a repository's own workflow
+  # (RULING 2026-10-14T19:54:41Z: repositories of the same type run the same
+  # CI); only a job of a reusable (on: workflow_call) workflow in omnibase_core,
+  # or a job that calls a reusable workflow, is new CI a repository may gain.
+  # Inline jobs the base already carries are counted, never allowed by a list.
+  # Unconditional job under the required "CI Summary" rollup; the same pure
+  # handlers back the check-ci-inheritance pre-commit hook.
   ci-inheritance-check:
     name: CI Inherits From Core (OMN-17427)
     runs-on: >-
@@ -3126,7 +3131,7 @@ jobs:
 
       - name: Run validator unit tests
         run: |
-          uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py -v
+          uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py tests/unit/handlers/test_handler_ci_repository_jobs.py -v
 
       - name: Materialize the base workflows
         id: base

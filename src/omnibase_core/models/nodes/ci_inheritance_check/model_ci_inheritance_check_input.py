@@ -26,5 +26,9 @@ class ModelCiInheritanceCheckInput(BaseModel):
 
     organization: str = Field(min_length=1)
     host_repository: str = Field(min_length=1)
+    repository: str | None = Field(
+        default=None,
+        description="Repository whose workflows are checked; None means the host repository.",
+    )
     base_files: list[ModelSourceFile] = Field(default_factory=list)
     head_files: list[ModelSourceFile] = Field(default_factory=list)
