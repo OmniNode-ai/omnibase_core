@@ -92,6 +92,9 @@ def _run(
             None,
         ),
         ("${{ fromJSON('[\"ubuntu-latest\"]') }}", None),
+        ('${{ fromJSON(\'["ubuntu-latest", "macos-14"]\') }}', None),
+        ('${{ fromJSON(\'["ubuntu-latest", "omnibase-ci"]\') }}', "computed"),
+        ("${{ fromJSON('[\"\"]') }}", "computed"),
         (COMPUTED, "computed"),
         ("${{ fromJSON(vars.LAB_PROBE_RUNS_ON_JSON) }}", "computed"),
         ("${{ fromJSON(needs.route.outputs.labels) }}", "computed"),
@@ -105,6 +108,16 @@ def _run(
 )
 def test_runs_on_kind(runs_on: object, kind: str | None) -> None:
     assert runs_on_kind(runs_on) == kind
+
+
+@pytest.mark.timeout(2)
+@pytest.mark.parametrize(("ending", "kind"), [("", None), ("]", "computed")])
+def test_runs_on_json_array_repeated_empty_labels(
+    ending: str, kind: str | None
+) -> None:
+    array = '[""' + ' ""' * 10_000 + ending
+    expression = "${{ fromJSON('" + array + "') }}"
+    assert runs_on_kind(expression) == kind
 
 
 def test_reusable_workflow_call_has_no_runs_on() -> None:

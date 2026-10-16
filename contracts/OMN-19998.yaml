@@ -208,7 +208,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
-  - id: dod-omn-19998-deploy-hosted-public-runner-placement
+  - id: dod-omn-19998-deploy-public-runner-placement
     description: Hosted deploy probe for the public runner placement check. Run omnibase_core's own workflows
       through check-public-runner-placement against the shipped shrink-only baseline. A new self-hosted
       job, or a missing console script, fails the probe.

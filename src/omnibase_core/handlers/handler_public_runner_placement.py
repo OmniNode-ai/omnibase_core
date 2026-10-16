@@ -64,7 +64,9 @@ _UNPROVABLE = re.compile(
 )
 # A quoted value an expression can return: after `&&`, `||`, `?` or `:`.
 _RETURNED_LITERAL = re.compile(r"""(?:&&|\|\||\?|:)\s*['"]([^'"]+)['"]""")
-_JSON_ARRAY_LITERAL = re.compile(r"""\[\s*(?:"[^"]*"\s*,?\s*)+\]""")
+# Each token owns its whitespace; failed arrays must not repartition it while
+# backtracking through repeated empty labels (CodeQL, OMN-19998).
+_JSON_ARRAY_LITERAL = re.compile(r"""\[\s*+(?:"[^"]*+"\s*+,?+\s*+)++\]""")
 _MAX_LISTED: Final[int] = 10
 _REMEDIATION: Final[str] = (
     "Run the job on a GitHub-hosted label (ubuntu-latest), or move it to a bus "
