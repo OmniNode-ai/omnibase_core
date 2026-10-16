@@ -862,7 +862,7 @@ repos:
       # Exclusions:
       # - typed_dict_demo.py: sample_id and ticket_id are external corpus identifiers, not internal UUIDs (OMN-1396)
       # - doctor_check_base.py: check_id is a semantic identifier ("kafka", "postgres"), not a version string
-      # - contracts/OMN-*.yaml: ticket-contract schema is owned by onex_change_control and currently requires string schema_version
+      # - contracts/OMN-*.yaml: the ticket-contract schema (omnibase_core ModelTicketContract) requires a string schema_version
       - id: validate-string-versions
         name: ONEX String Version Anti-Pattern Detection
         entry: uv run python scripts/validation/validate-string-versions.py
@@ -1654,8 +1654,7 @@ repos:
       # DOCUMENTATION files, executed as a COMPUTE node over the in-memory event
       # bus (same two-transport seam as check-private-ip-compute; Kafka backend
       # in CI). Generated + corpus-accepted (OMN-13569). Exemptions (OMN-13572):
-      # onex_change_control/ paths exempt from the OMN-<digits> rule only
-      # (local-env rules still apply); contracts/ excluded from the OMN rule; a
+      # contracts/ excluded from the OMN rule (local-env rules still apply); a
       # SKILL.md `ticket: OMN-NNNN` frontmatter field is exempt. BLOCKING (no
       # warn-only). Suppress a line with `doc-content-ok`; suppress a doc whose
       # subject IS these traces with `doc-content-file-ok`. The runner's EFFECT

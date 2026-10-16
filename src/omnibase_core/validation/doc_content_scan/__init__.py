@@ -15,7 +15,7 @@ Invariant: a documentation file (``*.md`` / ``.mdx`` / ``.rst`` / ``.txt`` /
 user@host`` lines, personal e-mail) or Linear ticket references (``OMN-<digits>``),
 except where exempt (``localhost`` / loopback / RFC5737 doc IPs / ``example.com`` /
 portable env-var forms; ``doc-content-ok`` / ``doc-content-file-ok`` suppression;
-``OMN-<digits>`` under ``onex_change_control/`` or ``contracts/``).
+``OMN-<digits>`` under ``contracts/``).
 
 Architecture (§1A — validator = COMPUTE node over a swappable bus), mirroring the
 private-IP validator:

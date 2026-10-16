@@ -47,13 +47,15 @@ def _guard_program() -> str:
     return str(named[0]["run"])
 
 
-def _run_guard(base: str, head: str) -> subprocess.CompletedProcess[str]:
+def _run_guard(
+    base: str, head: str, body: str = ""
+) -> subprocess.CompletedProcess[str]:
     """Run the guard the way Actions does: ``bash -e`` over the step script."""
     env = {
         "PATH": os.defpath,
         "BASE_REF": base,
         "HEAD_REF": head,
-        "PR_BODY": "",
+        "PR_BODY": body,
     }
     return subprocess.run(
         ["bash", "-e", "-c", _guard_program()],
@@ -76,6 +78,26 @@ def test_a_feature_pr_onto_main_is_refused() -> None:
     )
     assert "::error::" in result.stdout
     assert "dev" in result.stdout, "the refusal must name dev as the base to use"
+
+
+@pytest.mark.parametrize("head", ["dev", "promotion/v0.1.0"])
+def test_a_promotion_pr_onto_main_is_refused_whatever_its_body(head: str) -> None:
+    """OMN-20074: no change-control promotion receipt admits a PR onto main.
+
+    release.yml moves main by fast-forwarding it to the release tag and opens no
+    pull request against it, so the receipt exception admitted nothing the
+    release path uses and named a retired repository's numbering.
+    """
+    result = _run_guard("main", head, "promotion-receipt: OCC-123\n")
+    assert result.returncode != 0, f"{head} onto main was admitted:\n{result.stdout}"
+    assert "::error::" in result.stdout
+    assert "OCC-" not in result.stdout, "the refusal must not ask for a receipt"
+
+
+def test_the_guard_reads_no_change_control_receipt() -> None:
+    program = _guard_program()
+    assert "promotion-receipt" not in program
+    assert "OCC-" not in program
 
 
 def test_a_feature_pr_onto_dev_is_admitted() -> None:

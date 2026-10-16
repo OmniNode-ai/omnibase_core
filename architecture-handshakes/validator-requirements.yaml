@@ -621,12 +621,10 @@ required_validators:
       private-IP / hardcoded-topic validators.
 
       EXEMPTIONS (operator-set, OMN-13572):
-        * onex_change_control/ paths are exempt from the OMN-<digits> rule only —
-          the governance ledger legitimately cites ticket ids; the
-          local-environment rules (LAN IP / host / personal path / ssh / e-mail)
-          still apply there.
         * contracts/ paths are excluded from the OMN-<digits> rule (contract
-          fixtures cite ticket ids).
+          fixtures cite ticket ids); the local-environment rules (LAN IP / host /
+          personal path / ssh / e-mail) still apply there. OMN-20074 removed the
+          change-control repository's tree from the exemption.
         * a SKILL.md YAML-frontmatter field `ticket: OMN-NNNN` is exempt (a
           machine-readable skill→ticket binding, not a leaked prose reference).
       Suppress a line with `doc-content-ok`; suppress a doc whose subject IS these

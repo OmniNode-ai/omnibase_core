@@ -34,8 +34,8 @@ drop-in):
   emits at most one finding per (line, class) in a stable source order so the
   verdict is order-independent regardless of dispatch backend (§1A).
 * Added the PATH-based ``OMN-<digits>`` exemptions the corpus (text-only) could not
-  express: a file under ``onex_change_control/`` or ``contracts/`` keeps its ticket
-  references (governance ledgers + contract fixtures legitimately cite OMN ids),
+  express: a file under ``contracts/`` keeps its ticket
+  references (contract fixtures legitimately cite OMN ids),
   but the local-environment rules (LAN IP / host shorthand / personal path / ssh /
   e-mail) still apply everywhere. This is a pure decision over the ``path`` LABEL
   string — the handler never opens the path.
@@ -135,11 +135,12 @@ _SUPPRESSION_MARKER: Final[str] = "doc-content-ok"
 # before any line-marker check (the file marker also contains "doc-content-ok").
 _FILE_SUPPRESSION_MARKER: Final[str] = "doc-content-file-ok"
 
-# Path prefixes under which an ``OMN-<digits>`` ticket reference is EXEMPT: the
-# governance ledger repo and contract-fixture trees legitimately cite ticket ids.
-# The local-environment rules still apply under these paths. Matched as a path
-# segment so a substring elsewhere does not accidentally exempt.
-_TICKET_EXEMPT_SEGMENTS: Final[tuple[str, ...]] = ("onex_change_control", "contracts")
+# Path prefixes under which an ``OMN-<digits>`` ticket reference is EXEMPT:
+# contract-fixture trees legitimately cite ticket ids. The local-environment
+# rules still apply under these paths. Matched as a path segment so a substring
+# elsewhere does not accidentally exempt. OMN-20074 removed the change-control
+# repository's tree: that repository is retired and no tracked path sits under it.
+_TICKET_EXEMPT_SEGMENTS: Final[tuple[str, ...]] = ("contracts",)
 
 
 def _lan_ip_match(o1: int, o2: int, o3: int, o4: int) -> bool:
@@ -183,8 +184,8 @@ def scan_source(content: str, path: str = "<input>") -> ModelDocContentScanResul
 
     Pure and deterministic. A line containing ``doc-content-ok`` is skipped; a file
     containing ``doc-content-file-ok`` is suppressed entirely. ``OMN-<digits>``
-    references are skipped when ``path`` is under ``onex_change_control/`` or
-    ``contracts/`` (the local-environment rules still apply there). Findings are
+    references are skipped when ``path`` is under ``contracts/`` (the
+    local-environment rules still apply there). Findings are
     emitted in a stable order (line, then class order, then column) so the verdict
     is order-independent regardless of dispatch backend (§1A).
     """
