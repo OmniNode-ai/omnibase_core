@@ -1,0 +1,49 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21093
+title: Claude Code binding install models move to core (the core half of the skill-mapping entry)
+summary: >-
+  Relocates the Claude Code binding install wire family from omnimarket to omnibase_core: ModelClientBinding
+  with its ModelClientArgument and the EnumBindingKind, EnumClientMaxMode and EnumClientVerdictAction
+  enums, plus ModelBindingInstallRequest and ModelBindingInstallResult, verbatim (same fields, types,
+  constraints and defaults, OMN-18531 shapes). Shared wire models must sit below the node boundary: omnibase_infra's
+  skill mapping names ModelBindingInstallResult, and a cross-repo reference into an omnimarket node package
+  is a seam the node-boundary gate refuses (OMN-17427/OMN-20703, shrink-only baseline). omnimarket re-exports
+  the classes from their former module paths in the follow-up PR against the core release that carries
+  them; the omnibase_infra skill_mapping entry for claude_code_binding_install lands last, naming the
+  core result model.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - omnibase_core.models.claude_code_binding.ModelBindingInstallRequest
+  - omnibase_core.models.claude_code_binding.ModelBindingInstallResult
+requirements:
+  - id: req-omn21093-binding-models-in-core
+    statement: The binding install wire family lives in core with its omnimarket shapes unchanged.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: every moved model is frozen with extra="forbid", the binding row keeps its defaults
+          (kind REPLACING, unverified_action NATIVE, the fixed deny text and never-started pattern), deadline_ms
+          stays positive-only, and the install request keeps the onex-claude-code-bindings plugin default
+          -- falsifier: the contract tests construct each shape and pin fields, defaults, refusals and
+          freeze behavior, failing at the merge base where the package does not exist.'
+evidence_requirements:
+  - kind: tests
+    description: Contract tests over the relocated family in tests/unit/models/claude_code_binding.
+    command: uv run pytest tests/unit/models/claude_code_binding -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21093-ac1-models-in-core
+    description: >-
+      The family is importable from omnibase_core.models.claude_code_binding with the omnimarket shapes
+      pinned verbatim: round-trips, defaults, deadline positivity, extra-field refusal and frozen mutation
+      refusal. Fails at the merge base with ImportError (the package does not exist there).
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/claude_code_binding/test_binding_install_contract_models.py
+          -q
+    binds_ac: ["AC1"]
