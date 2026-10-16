@@ -133,6 +133,7 @@ GATE_HOOK_IDS = (
     "check-node-boundary-imports",
     MODEL_CONFIG_HOOK_ID,
     "check-dependency-direction",
+    "check-merge-queue-parity",
 )
 NODE_BOUNDARY_BASELINE = ".onex_ratchets/node_boundary_import_baseline.yaml"
 # The manifest default of the model-config hook's ``args`` (OMN-21147).

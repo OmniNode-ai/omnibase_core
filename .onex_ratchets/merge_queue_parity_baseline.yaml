@@ -1,0 +1,96 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Merge-queue parity baseline (OMN-19998): jobs the merge queue runs and pull
+# request CI can skip, recorded when check-merge-queue-parity was introduced.
+# Shrink-only: CI refuses an entry the base branch does not have.
+repo: omnibase_core
+violations:
+  - path: .github/workflows/ci.yml
+    job: pyright
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: exports-validation
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: lint-imports
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: check-deterministic-skills
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: docs-validation
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: node-purity-check
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: contract-config-compliance
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: breaking-schema-change
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: no-env-fallbacks
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: detect-secrets
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: sdk-boundary-check
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: demo-path-topic-coherence
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: dispatch-surface-test-required
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: no-noncanonical-lifecycle-classes
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: pydantic-extra-forbid
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: pull-request-workflow-ratchet
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: handshake-policy-gate
+    rule: merge_queue_only_if
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: detect-changes
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: test-parallel
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: shadow-compare
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/ci.yml
+    job: tests-integration
+    rule: event_dependent_gate
+    ticket: OMN-19998
+  - path: .github/workflows/merge-group-pr-scoped-contexts.yml
+    job: '*'
+    rule: no_pull_request_trigger
+    ticket: OMN-19998
