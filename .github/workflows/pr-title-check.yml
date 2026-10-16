@@ -1,29 +1,42 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-# OMN-6912
+#
+# Reusable PR title check for OmniNode repositories (OMN-17427).
+#
+# Repositories of the same type run the same CI from omnibase_core: this is the
+# one copy of the title check that omnibase_core, omnimarket, omnibase_infra,
+# omnimemory and omniintelligence each carried inline. It runs omnimarket's
+# node_pr_title_check_compute from a pinned published release installed with
+# --no-deps as a tool. No checkout: the decision reads only the event's title
+# and author. The node exits 0 (admit), 1 (refuse) or 2 (malformed request).
+#
+# Usage in a caller repo (the caller job id `pr-title` and this file's job id
+# `check-title` compose the required context `pr-title / check-title`, so
+# branch protection does not move):
+#
+#   jobs:
+#     pr-title:
+#       permissions:
+#         contents: read
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/pr-title-check.yml@<full sha>
+#       with:
+#         omnimarket-version: "0.4.310"
+#
+# A caller that also triggers on merge_group gets the same context there: the
+# title was decided on the pull request before enqueue, so that run accepts.
 
 name: PR Title Check
 
 on:
-  pull_request:
-    types: [opened, edited, synchronize, reopened]
-
-# OMN-19639: cancel only superseded pull request runs.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
-
+  workflow_call:
+    inputs:
+      omnimarket-version:
+        description: Published omnimarket release that carries node_pr_title_check_compute.
+        required: true
+        type: string
 
 jobs:
-  pr-title:
-    # OMN-21008: the decision moved out of the change-control repository's
-    # pr-title-check-reusable.yml into omnimarket's node_pr_title_check_compute,
-    # run here from a pinned published omnimarket release installed with
-    # --no-deps as a tool (nothing under src/ imports omnimarket). The job keeps
-    # the id `pr-title` and the name the reusable call produced, so the required
-    # context `pr-title / check-title` does not move. The node exits 0 (admit),
-    # 1 (refuse) or 2 (malformed request).
-    name: pr-title / check-title
+  check-title:
     runs-on: >-
       ${{
         (github.event_name == 'pull_request' &&
@@ -34,16 +47,22 @@ jobs:
     timeout-minutes: 10
     permissions:
       contents: read
-    # No checkout: the decision reads only the event's title and author.
     steps:
+      - name: Accept merge-group title check
+        if: github.event_name == 'merge_group'
+        run: |
+          echo "PR title validation is enforced on pull_request opened/edited before enqueue."
+
       - name: Install uv
+        if: github.event_name != 'merge_group'
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
 
       - name: Check PR title for ticket reference
+        if: github.event_name != 'merge_group'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-          OMNIMARKET_VERSION: "0.4.310"
+          OMNIMARKET_VERSION: ${{ inputs.omnimarket-version }}
         run: |
           set -euo pipefail
           venv="${RUNNER_TEMP}/pr-title-check"

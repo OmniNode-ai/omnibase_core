@@ -9,6 +9,12 @@ pinned omnimarket release installed with ``--no-deps`` as a tool. Nothing under
 ``src/`` imports omnimarket. The context name must not move, or branch protection
 would need a change: the job keeps its id ``pr-title`` and is named
 ``pr-title / check-title``, the name the reusable call produced.
+
+OMN-17427: ``pr-title-check.yml`` is now the reusable that holds the job body,
+so every repository of the same type runs one copy of it. omnibase_core's own
+caller is ``pr-title-check-caller.yml``. The caller job
+``pr-title`` calls it with only the omnimarket version, and the reusable's job
+``check-title`` composes the same context, ``pr-title / check-title``.
 """
 
 from __future__ import annotations
@@ -26,7 +32,8 @@ import yaml
 pytestmark = [pytest.mark.unit, pytest.mark.timeout(180)]
 
 ROOT = Path(__file__).resolve().parents[2]
-WORKFLOW = ROOT / ".github/workflows/pr-title-check.yml"
+WORKFLOW = ROOT / ".github/workflows/pr-title-check-caller.yml"
+REUSABLE = ROOT / ".github/workflows/pr-title-check.yml"
 MANIFEST = ROOT / ".github/required-checks.yaml"
 NODE_DEPENDENCY = "pydantic>=2.11"
 CONTEXT = "pr-title / check-title"
@@ -59,33 +66,68 @@ def _workflow() -> dict[Any, Any]:
     return loaded
 
 
-def _job() -> dict[str, Any]:
+def _reusable() -> dict[Any, Any]:
+    loaded: dict[Any, Any] = yaml.safe_load(REUSABLE.read_text(encoding="utf-8"))
+    return loaded
+
+
+def _caller() -> dict[str, Any]:
     job: dict[str, Any] = _workflow()["jobs"]["pr-title"]
     return job
 
 
+def _job() -> dict[str, Any]:
+    job: dict[str, Any] = _reusable()["jobs"]["check-title"]
+    return job
+
+
 def _environment() -> dict[str, str]:
-    return {
+    env = {
         key: value
         for step in _job()["steps"]
         for key, value in (step.get("env") or {}).items()
     }
+    # The version is the caller's one parameter; resolve it as the call does.
+    if env.get("OMNIMARKET_VERSION") == "${{ inputs.omnimarket-version }}":
+        env["OMNIMARKET_VERSION"] = _caller()["with"]["omnimarket-version"]
+    return env
 
 
 def test_workflow_no_longer_calls_change_control() -> None:
     assert "onex_change_control" not in WORKFLOW.read_text(encoding="utf-8")
-    assert "uses" not in _job()
+    assert "onex_change_control" not in REUSABLE.read_text(encoding="utf-8")
+
+
+def test_caller_passes_only_its_parameters_to_the_core_reusable() -> None:
+    caller = _caller()
+    assert caller["uses"] == "./.github/workflows/pr-title-check.yml"
+    assert set(caller["with"]) == {"omnimarket-version"}
+    assert "steps" not in caller
+    assert "runs-on" not in caller
+    assert caller["permissions"] == {"contents": "read"}
+    inputs = _reusable()[True]["workflow_call"]["inputs"]
+    assert set(inputs) == {"omnimarket-version"}
+    assert inputs["omnimarket-version"]["required"] is True
+
+
+def test_call_composes_the_unchanged_required_context() -> None:
+    caller = _caller()
+    jobs = _reusable()["jobs"]
+    assert list(jobs) == ["check-title"]
+    caller_part = caller.get("name", "pr-title")
+    callee_part = jobs["check-title"].get("name", "check-title")
+    assert f"{caller_part} / {callee_part}" == CONTEXT
 
 
 def test_workflow_keeps_context_triggers_and_runner() -> None:
     job = _job()
-    assert job["name"] == CONTEXT
     assert job["runs-on"] == RUNNER
     assert job["timeout-minutes"] == 10
     assert job["permissions"] == {"contents": "read"}
     # OMN-20074 retired the occ-preflight caller job, so pr-title waits on nothing.
+    assert "needs" not in _caller()
+    assert "if" not in _caller()
     assert "needs" not in job
-    assert "if" not in job
     assert "occ-preflight" not in _workflow()["jobs"]
     assert _workflow()[True]["pull_request"]["types"] == [
         "opened",
@@ -95,8 +137,27 @@ def test_workflow_keeps_context_triggers_and_runner() -> None:
     ]
 
 
-def test_workflow_runs_the_pinned_node_without_a_checkout() -> None:
+def test_merge_group_call_accepts_without_running_the_node() -> None:
+    """A caller that also triggers on merge_group gets the same context there.
+
+    The title was decided on the pull request before enqueue, so the merge-group
+    run only accepts; the node steps are gated to pull_request events.
+    """
     steps = _job()["steps"]
+    accept = [s for s in steps if s.get("if") == "github.event_name == 'merge_group'"]
+    assert len(accept) == 1
+    assert "-m omnimarket" not in accept[0]["run"]
+    node_steps = [s for s in steps if s is not accept[0]]
+    assert node_steps
+    assert all(s.get("if") == "github.event_name != 'merge_group'" for s in node_steps)
+
+
+def test_workflow_runs_the_pinned_node_without_a_checkout() -> None:
+    steps = [
+        s
+        for s in _job()["steps"]
+        if s.get("if") != "github.event_name == 'merge_group'"
+    ]
     assert len(steps) == 2
     assert steps[0]["uses"] in (
         "astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78",
@@ -122,10 +183,13 @@ def test_manifest_names_the_local_producer() -> None:
     row = next(gate for gate in gates if gate["name"] == CONTEXT)
     assert row["mode"] == "REQUIRED"
     assert row["producer_kind"] == "local"
-    assert row["workflow"] == "pr-title-check.yml"
-    assert row["job_path"] == ["pr-title"]
+    assert row["caller_workflow"] == "pr-title-check-caller.yml"
+    assert row["caller_job"] == "pr-title"
+    assert row["reusable_workflow"] == "pr-title-check.yml"
+    assert row["reusable_job"] == "check-title"
+    assert row["job_path"] == ["pr-title", "check-title"]
     assert row["skip_semantics"] == "never"
-    assert not {"cross_repo_ref", "caller_job", "caller_workflow"} & row.keys()
+    assert "cross_repo_ref" not in row
     assert "onex_change_control" not in row["rationale"]
 
 

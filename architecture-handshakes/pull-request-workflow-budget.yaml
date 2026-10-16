@@ -71,7 +71,9 @@ allowlisted_workflows:
   - main-target-guard.yml
   - no-faked-boundary.yml
   - omni-standards-compliance.yml
-  - pr-title-check.yml
+  # OMN-17427: pr-title-check.yml became the core reusable (workflow_call only);
+  # its caller takes the freed slot, budget unchanged.
+  - pr-title-check-caller.yml
   - precommit-parity-gate.yml
   - product-readiness-shadow.yml
   - propagate-config.yml

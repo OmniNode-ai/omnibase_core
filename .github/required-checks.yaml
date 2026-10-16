@@ -207,12 +207,16 @@ gates:
   - name: "pr-title / check-title"
     mode: REQUIRED
     producer_kind: local
-    workflow: pr-title-check.yml
-    job_path: ["pr-title"]
+    caller_workflow: pr-title-check-caller.yml
+    caller_job: pr-title
+    reusable_workflow: pr-title-check.yml
+    reusable_job: check-title
+    job_path: ["pr-title", "check-title"]
     skip_semantics: never
-    rationale: "Live required status check on omnibase_core dev branch protection. OMN-21008: the job
-      pr-title runs omnimarket's node_pr_title_check_compute from a pinned published release under the
-      context name the former reusable call produced."
+    rationale: "Live required status check on omnibase_core dev branch protection. OMN-21008: the check
+      runs omnimarket's node_pr_title_check_compute from a pinned published release. OMN-17427: the job
+      lives in the core reusable pr-title-check.yml that every repository of the same type calls; caller
+      job pr-title and reusable job check-title compose the unchanged context."
 
   - name: "no-plugin-daemon-classes"
     mode: REQUIRED

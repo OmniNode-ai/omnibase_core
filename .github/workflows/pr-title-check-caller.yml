@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-6912
+
+name: PR Title Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+# OMN-19639: cancel only superseded pull request runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+
+jobs:
+  pr-title:
+    # OMN-17427: the check runs from the core reusable every repository of the
+    # same type calls. The caller job id `pr-title` and the reusable's job
+    # `check-title` compose the required context `pr-title / check-title`.
+    permissions:
+      contents: read
+    uses: ./.github/workflows/pr-title-check.yml
+    with:
+      omnimarket-version: "0.4.310"

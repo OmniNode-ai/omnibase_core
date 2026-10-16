@@ -917,7 +917,7 @@ DIRECT_REQUIRED_JOB_CONTEXTS: dict[tuple[str, str], tuple[str, ...]] = {
     ("omni-standards-compliance.yml", "ci-naming-convention"): (
         "CI Naming Convention",
     ),
-    ("pr-title-check.yml", "pr-title"): ("pr-title / check-title",),
+    ("pr-title-check-caller.yml", "pr-title"): ("pr-title / check-title",),
     ("precommit-parity-gate.yml", "precommit-parity-gate"): ("Precommit Parity Gate",),
     ("product-readiness-shadow.yml", "lint-shadow"): ("lint (shadow)",),
     ("product-readiness-shadow.yml", "typecheck-shadow"): ("typecheck (shadow)",),
