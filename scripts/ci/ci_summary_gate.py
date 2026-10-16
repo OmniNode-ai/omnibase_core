@@ -430,6 +430,31 @@ class JobState:
     completed_at: str | None = None
 
 
+def _row_status(raw: dict[str, object]) -> str:
+    """Return a job or check-run row's status, reading a ghost row as completed.
+
+    OMN-19998: GitHub can leave a finished row at ``in_progress`` while its
+    ``conclusion`` and ``completed_at`` are already set. On 2026-10-16 the
+    "Doc-Content Scan" row of a dev push run sat that way (conclusion success,
+    completed_at 07:54:33Z) for the whole 130m poll window, so CI Summary failed
+    closed on a job that had passed. A row carrying BOTH terminal fields is
+    judged as completed under the unchanged rules; a row missing either one
+    stays running.
+    """
+    status = str(raw.get("status") or "")
+    conclusion = raw.get("conclusion")
+    completed_at = raw.get("completed_at")
+    if (
+        status != "completed"
+        and isinstance(conclusion, str)
+        and conclusion
+        and isinstance(completed_at, str)
+        and completed_at
+    ):
+        return "completed"
+    return status
+
+
 def _job_states(
     jobs: list[dict[str, object]],
     *,
@@ -463,7 +488,7 @@ def _job_states(
         states.append(
             JobState(
                 name=name,
-                status=str(raw.get("status") or ""),
+                status=_row_status(raw),
                 conclusion=None if conclusion is None else str(conclusion),
                 run_attempt=attempt,
             )
@@ -507,7 +532,7 @@ def _is_skipped_row(raw: dict[str, object]) -> bool:
     """True for a completed check-run whose conclusion is ``skipped``."""
 
     return (
-        str(raw.get("status") or "") == "completed"
+        _row_status(raw) == "completed"
         and str(raw.get("conclusion") or "") == "skipped"
     )
 
@@ -635,7 +660,7 @@ def _external_check_states(
         ordering[name] = key
         best[name] = JobState(
             name=name,
-            status=str(raw.get("status") or ""),
+            status=_row_status(raw),
             conclusion=None if conclusion is None else str(conclusion),
             run_attempt=1,
             completed_at=None if completed_at is None else str(completed_at),
@@ -754,7 +779,7 @@ def _suite_rerun_in_flight(
     if suite_id is None or completed is None:
         return False
     for raw in check_runs:
-        if str(raw.get("status") or "") == "completed":
+        if _row_status(raw) == "completed":
             continue
         if _check_suite_id(raw) != suite_id:
             continue
@@ -858,7 +883,7 @@ def _find_check_run(
             for raw in check_runs
             if str(raw.get("name") or "") == name
             and str(raw.get("completed_at") or "") == (state.completed_at or "")
-            and str(raw.get("status") or "") == state.status
+            and _row_status(raw) == state.status
         ),
         None,
     )

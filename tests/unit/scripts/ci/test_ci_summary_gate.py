@@ -59,14 +59,22 @@ PRODUCER_TRIGGER_ALIASES: dict[str, str] = {"pull_request_target": "pull_request
 
 
 def _job(
-    name: str, conclusion: str | None, *, status: str = "completed", attempt: int = 1
+    name: str,
+    conclusion: str | None,
+    *,
+    status: str = "completed",
+    attempt: int = 1,
+    completed_at: str | None = None,
 ) -> dict:
-    return {
+    row = {
         "name": name,
         "status": status,
         "conclusion": conclusion,
         "run_attempt": attempt,
     }
+    if completed_at is not None:
+        row["completed_at"] = completed_at
+    return row
 
 
 def _check_run(
@@ -76,15 +84,19 @@ def _check_run(
     status: str = "completed",
     started_at: str = "",
     head_sha: str = "",
+    completed_at: str | None = None,
 ) -> dict:
     """Build a ``commits/{sha}/check-runs`` row (L4 external-context fixture)."""
-    return {
+    row = {
         "name": name,
         "status": status,
         "conclusion": conclusion,
         "started_at": started_at,
         "head_sha": head_sha,
     }
+    if completed_at is not None:
+        row["completed_at"] = completed_at
+    return row
 
 
 def _all_gates(conclusion: str = "success") -> list[dict]:
@@ -107,6 +119,83 @@ def _all_good() -> list[dict]:
 # intent unchanged. Tests that specifically exercise the L4 layer itself live
 # in TestExpectedExternalContexts and control external_check_runs directly.
 _ALL_EXTERNAL_GREEN = [_check_run(n, "success") for n in EXPECTED_EXTERNAL_CONTEXTS]
+
+
+class TestGhostRunningRowWithConclusionOmn19998:
+    """Ghost running rows need both a conclusion and completion timestamp."""
+
+    def test_ghost_success_passes(self) -> None:
+        jobs = _all_good() + [
+            _job(
+                "Doc-Content Scan",
+                "success",
+                status="in_progress",
+                completed_at="2026-10-16T07:54:33Z",
+            )
+        ]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_SUCCESS, report
+        assert "still running" not in report
+
+    def test_ghost_failure_fails_default_deny_sweep(self) -> None:
+        jobs = _all_good() + [
+            _job(
+                "Doc-Content Scan",
+                "failure",
+                status="in_progress",
+                completed_at="2026-10-16T07:54:33Z",
+            )
+        ]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_FAILURE, report
+        assert "default-deny sweep failures: Doc-Content Scan" in report
+
+    def test_success_without_completed_at_stays_pending(self) -> None:
+        jobs = _all_good() + [_job("Doc-Content Scan", "success", status="in_progress")]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_PENDING, report
+        assert "default-deny sweep rows still running" in report
+
+    def test_completed_at_without_conclusion_stays_pending(self) -> None:
+        jobs = _all_good() + [
+            _job(
+                "Doc-Content Scan",
+                None,
+                status="in_progress",
+                completed_at="2026-10-16T07:54:33Z",
+            )
+        ]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_PENDING, report
+        assert "default-deny sweep rows still running" in report
+
+    def test_ghost_required_validator_success_passes(self) -> None:
+        name = SPEC_REQUIRED_VALIDATOR_JOBS[0]
+        jobs = [job for job in _all_good() if job["name"] != name] + [
+            _job(
+                name,
+                "success",
+                status="in_progress",
+                completed_at="2026-10-16T07:54:33Z",
+            )
+        ]
+        code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_SUCCESS, report
+
+    def test_ghost_external_context_success_passes(self) -> None:
+        code, report = evaluate(_all_good(), external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_SUCCESS, report
+        name = EXPECTED_EXTERNAL_CONTEXTS[0]
+        checks = [row for row in _ALL_EXTERNAL_GREEN if row["name"] != name] + [
+            _check_run(
+                name,
+                "success",
+                status="in_progress",
+                completed_at="2026-10-16T07:54:33Z",
+            )
+        ]
+        code, report = evaluate(_all_good(), external_check_runs=checks)
+        assert code == EXIT_SUCCESS, report
 
 
 class TestRunningRowsHoldTheVerdictOmn20066:
