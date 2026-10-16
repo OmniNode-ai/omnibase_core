@@ -1,3 +1,24 @@
+## v0.47.45 (2026-10-16)
+
+### Release
+- Cut omnibase-core from dev at 0.47.45 by the scheduled release train.
+- 12 release-relevant commit(s) merged since v0.47.44.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.44
+- feat: refuse new repository-specific CI jobs so same-type repositories run the same CI (#2014)
+- feat: add version floor and merge queue parity checks (#2013)
+- ci: take omnibase_core's last live callers and the doc-scan exemption off onex_change_control (#2009)
+- feat: cross-repository dependency-direction check every repository inherits (#2012)
+- feat: classify work ledgers as HISTORICAL and lab denylist as GUARD (#2011)
+- feat: the canonical-file-shape ratchet refuses growth of a baselined mod script (#2006)
+- feat: emit validator run and fire events from validation reports (#2005)
+- feat: add REFUSED_BEFORE_DISPATCH failure cause (#2004)
+- feat: refuse new CI inherited from outside omnibase_core (#2003)
+- feat: register the model-config guard as a shrink-only gate and tighten it (#2002)
+- fix: remove gpt-oss from the hardcoded-model-config family regex (#2001)
+- feat: drop VENDOR_DEFAULT, refuse lab facts in model guard (#2000)
+
 ## v0.47.44 (2026-10-15)
 
 ### Release
