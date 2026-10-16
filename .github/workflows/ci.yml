@@ -718,7 +718,7 @@ jobs:
           else
             echo "::notice::no base ref (push event): base comparison and baseline ratchet skipped"
           fi
-          uv run check-public-runner-placement "${args[@]}"
+          uv run python -m omnibase_core.handlers.handler_public_runner_placement_cli "${args[@]}"
 
       # Version drift at source (OMN-19998) — blocking. A floor raise on a
       # sibling registry package fails while a registry consumer is not ready
