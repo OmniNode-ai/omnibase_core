@@ -15,8 +15,7 @@ summary: >-
 is_seam_ticket: true
 interface_change: true
 interfaces_touched:
-  - omnibase_core.models.claude_code_binding.ModelBindingInstallRequest
-  - omnibase_core.models.claude_code_binding.ModelBindingInstallResult
+  - public_api
 requirements:
   - id: req-omn21093-binding-models-in-core
     statement: The binding install wire family lives in core with its omnimarket shapes unchanged.
