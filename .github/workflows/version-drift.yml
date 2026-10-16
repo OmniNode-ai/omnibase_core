@@ -3,7 +3,7 @@
 #
 # Reusable version-drift-at-source checks for OmniNode repositories (OMN-19998).
 #
-# Two jobs, both run from this repository's own checkout against the CALLER's tree:
+# Three checks, all run from this repository's own checkout against the CALLER's tree:
 #
 #   Version Floor Consumers -- a pull request that raises the floor on a sibling
 #     registry package (src/omnibase_core/contracts/repo_layers.yaml) fails while
@@ -16,6 +16,13 @@
 #   Merge Queue Parity -- in every caller workflow that triggers on merge_group,
 #     a job the merge queue runs and pull request CI can skip fails, unless the
 #     caller's own baseline records it; the baseline may only shrink.
+#
+#   Public Runner Placement -- a PUBLIC repository may not ADD a job whose runs-on is, or
+#     can resolve to, a self-hosted label (RULING 2026-10-16T07:07:09Z: "Ci runners
+#     should be for private repos only"). The jobs it already runs there are the
+#     shrink-only baseline shipped in omnibase_core
+#     (src/omnibase_core/contracts/public_runner_placement_baseline.yaml), which the
+#     caller reads from the pinned checkout and cannot edit. A private caller passes.
 #
 # Usage in a caller repo:
 #
@@ -161,6 +168,25 @@ jobs:
             echo "::notice::no base ref (push event): baseline ratchet skipped"
           fi
           uv run --no-sync check-merge-queue-parity "${args[@]}"
+
+      - name: Public runner placement
+        working-directory: omnibase_core
+        env:
+          TARGET_REPO: ${{ inputs.repo || github.event.repository.name }}
+          VISIBILITY: ${{ github.event.repository.private && 'private' || 'public' }}
+          BASE_REF: >-
+            ${{ inputs['base-ref']
+            || github.event.pull_request.base.sha
+            || github.event.merge_group.base_sha }}
+        run: |
+          args=(--root "$GITHUB_WORKSPACE/target" --repo "$TARGET_REPO" --visibility "$VISIBILITY"
+                --report-json "$GITHUB_WORKSPACE/public-runner-placement-report.json")
+          if [ -n "$BASE_REF" ]; then
+            args+=(--base-ref "$BASE_REF")
+          else
+            echo "::notice::no base ref (push event): base comparison skipped"
+          fi
+          uv run --no-sync check-public-runner-placement "${args[@]}"
 
       - name: Version floor consumers
         working-directory: omnibase_core

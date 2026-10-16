@@ -18,6 +18,12 @@ from omnibase_core.models.version_drift.model_merge_queue_parity_baseline_entry 
 from omnibase_core.models.version_drift.model_merge_queue_parity_input import (
     ModelMergeQueueParityInput,
 )
+from omnibase_core.models.version_drift.model_public_runner_baseline import (
+    ModelPublicRunnerBaseline,
+)
+from omnibase_core.models.version_drift.model_public_runner_placement_input import (
+    ModelPublicRunnerPlacementInput,
+)
 from omnibase_core.models.version_drift.model_version_floor_check_input import (
     ModelVersionFloorCheckInput,
 )
@@ -28,5 +34,7 @@ __all__ = [
     "ModelMergeQueueParityBaseline",
     "ModelMergeQueueParityBaselineEntry",
     "ModelMergeQueueParityInput",
+    "ModelPublicRunnerBaseline",
+    "ModelPublicRunnerPlacementInput",
     "ModelVersionFloorCheckInput",
 ]

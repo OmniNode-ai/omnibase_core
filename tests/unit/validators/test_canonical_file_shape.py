@@ -999,3 +999,26 @@ def test_merge_queue_parity_baseline_undeclared_still_refused(repo: Path) -> Non
     _write(repo, MERGE_QUEUE_PARITY_BASELINE, "violations: []\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
+
+
+PUBLIC_RUNNER_BASELINE = (
+    "src/omnibase_core/contracts/public_runner_placement_baseline.yaml"
+)
+
+
+def test_public_runner_placement_gate_declares_its_baseline() -> None:
+    """OMN-19998: the public-runner placement gate is a declared shrink-only gate."""
+    config = (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-public-runner-placement\n"
+        f"        args: [--baseline, {PUBLIC_RUNNER_BASELINE}]\n"
+    )
+    assert declared_gate_baselines(config) == frozenset({PUBLIC_RUNNER_BASELINE})
+
+
+def test_public_runner_placement_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, PUBLIC_RUNNER_BASELINE, "repos: {}\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]

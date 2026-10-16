@@ -698,6 +698,28 @@ jobs:
           fi
           uv run check-dependency-direction --repo omnibase_core "${args[@]}"
 
+      # Public-repository runner placement (OMN-19998, RULING 2026-10-16T07:07:09Z:
+      # "Ci runners should be for private repos only") — blocking. A public
+      # repository may not ADD a job whose runs-on is, or can resolve to, a
+      # self-hosted label. The jobs it already runs there are the shrink-only
+      # baseline src/omnibase_core/contracts/public_runner_placement_baseline.yaml:
+      # removing one is allowed, adding one is not, and a baselined job that is
+      # new or newly self-hosted against the base still fails. Other
+      # repositories run the same node through .github/workflows/version-drift.yml.
+      - name: Run public-repository runner placement check
+        env:
+          RATCHET_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          VISIBILITY: ${{ github.event.repository.private && 'private' || 'public' }}
+        run: |
+          args=(--repo omnibase_core --visibility "$VISIBILITY" --report-json public-runner-placement-report.json)
+          if [ -n "$RATCHET_BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$RATCHET_BASE_REF"
+            args+=(--base-ref "$RATCHET_BASE_REF" --baseline-ratchet-base-ref "$RATCHET_BASE_REF")
+          else
+            echo "::notice::no base ref (push event): base comparison and baseline ratchet skipped"
+          fi
+          uv run check-public-runner-placement "${args[@]}"
+
       # Version drift at source (OMN-19998) — blocking. A floor raise on a
       # sibling registry package fails while a registry consumer is not ready
       # for it (consumers read from their public clones at origin), and a job
