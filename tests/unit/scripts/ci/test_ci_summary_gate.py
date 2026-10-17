@@ -15,12 +15,14 @@ import json
 import subprocess
 import sys
 import tempfile
-from datetime import UTC, datetime
+from dataclasses import FrozenInstanceError, replace
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 import yaml
 
+from scripts.ci import ci_summary_gate as gate
 from scripts.ci.ci_summary_gate import (
     EXIT_FAILURE,
     EXIT_PENDING,
@@ -1352,3 +1354,708 @@ class TestSuiteRerunInFlightOmn20427:
         runs[-1]["check_suite"] = {"id": 1}
         failures, _missing = evaluate_external(runs, now=self.NOW)
         assert failures == [EXPECTED_EXTERNAL_CONTEXTS[0]]
+
+
+class TestExternalDefaultDenySweep:
+    """OMN-17427: an unregistered external verdict must reach CI Summary."""
+
+    NOW = datetime(2026, 10, 17, 12, tzinfo=UTC)
+
+    def test_red_unregistered_context_fails_and_green_passes(self) -> None:
+        for conclusion, expected in [
+            ("failure", EXIT_FAILURE),
+            ("success", EXIT_SUCCESS),
+        ]:
+            code, report = evaluate(
+                _all_good(),
+                external_check_runs=[
+                    *_ALL_EXTERNAL_GREEN,
+                    _check_run("Unregistered Gate", conclusion),
+                ],
+                now=self.NOW,
+            )
+            assert code == expected, report
+            assert (
+                "external default-deny sweep: 1 unregistered context(s) judged"
+                in report
+            )
+            if conclusion == "failure":
+                assert "Unregistered Gate (failure)" in report
+
+    @pytest.mark.parametrize(
+        "conclusion",
+        [
+            "skipped",
+            "neutral",
+            "cancelled",
+            "failure",
+            "timed_out",
+            "action_required",
+            "startup_failure",
+            "stale",
+            None,
+        ],
+    )
+    def test_only_success_passes(self, conclusion: str | None) -> None:
+        assert frozenset({"success"}) == gate.SWEEP_GOOD_CONCLUSIONS
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[
+                *_ALL_EXTERNAL_GREEN,
+                _check_run("Unregistered Gate", conclusion),
+            ],
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        reason = (
+            "cancelled_without_replacement"
+            if conclusion == "cancelled"
+            else str(conclusion)
+        )
+        assert f"Unregistered Gate ({reason}" in report
+
+    @pytest.mark.parametrize("status", ["queued", "in_progress", "waiting"])
+    def test_running_rows_hold_pending_until_success(self, status: str) -> None:
+        row = _check_run("Unregistered Gate", None, status=status)
+        code, report = evaluate(
+            _all_good(), external_check_runs=[*_ALL_EXTERNAL_GREEN, row], now=self.NOW
+        )
+        assert code == EXIT_PENDING, report
+        assert (
+            "external sweep rows still running (PENDING, re-polled): Unregistered Gate"
+            in report
+        )
+        row.update(status="completed", conclusion="success")
+        assert (
+            evaluate(
+                _all_good(),
+                external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+                now=self.NOW,
+            )[0]
+            == EXIT_SUCCESS
+        )
+
+    @pytest.mark.parametrize(
+        ("conclusion", "expected"),
+        [("success", EXIT_SUCCESS), ("failure", EXIT_FAILURE)],
+    )
+    def test_ghost_rows_reuse_core_normalization(
+        self, conclusion: str, expected: int
+    ) -> None:
+        row = _check_run(
+            "Unregistered Gate",
+            conclusion,
+            status="in_progress",
+            completed_at="2026-10-16T12:00:00Z",
+        )
+        code, report = evaluate(
+            _all_good(), external_check_runs=[*_ALL_EXTERNAL_GREEN, row], now=self.NOW
+        )
+        assert code == expected, report
+        assert "external sweep rows still running" not in report
+        row.pop("completed_at")
+        assert (
+            evaluate(
+                _all_good(),
+                external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+                now=self.NOW,
+            )[0]
+            == EXIT_PENDING
+        )
+
+    @pytest.mark.parametrize("conclusion", ["skipped", "cancelled", "failure"])
+    def test_provisional_grace_is_pending_then_fails_and_requires_a_clock(
+        self, conclusion: str
+    ) -> None:
+        row = _check_run(
+            "Unregistered Gate", conclusion, completed_at="2026-10-17T11:59:30Z"
+        )
+        rows = [*_ALL_EXTERNAL_GREEN, row]
+        code, report = evaluate(_all_good(), external_check_runs=rows, now=self.NOW)
+        assert code == EXIT_PENDING, report
+        assert "external sweep rows awaiting an automatic replacement" in report
+        for observation in [None, self.NOW + timedelta(days=1)]:
+            code, report = evaluate(
+                _all_good(), external_check_runs=rows, now=observation
+            )
+            assert code == EXIT_FAILURE, report
+            if conclusion == "cancelled":
+                assert "cancelled_without_replacement" in report
+                assert "re-run" in report
+
+    def test_existing_skip_supersession_and_latest_wins_are_preserved(self) -> None:
+        original = _check_run(
+            "Unregistered Gate", "success", head_sha=_HEAD_A, started_at=_T0
+        )
+        for conclusion, expected in [
+            ("skipped", EXIT_SUCCESS),
+            ("failure", EXIT_FAILURE),
+            ("cancelled", EXIT_FAILURE),
+            (None, EXIT_PENDING),
+        ]:
+            replacement = _check_run(
+                "Unregistered Gate",
+                conclusion,
+                status="in_progress" if conclusion is None else "completed",
+                head_sha=_HEAD_A,
+                started_at=_T0_PLUS_64,
+            )
+            code, report = evaluate(
+                _all_good(),
+                external_check_runs=[*_ALL_EXTERNAL_GREEN, original, replacement],
+                now=self.NOW,
+            )
+            assert code == expected, report
+        # Same-second rows retain core's check-run id tie-break.
+        original["id"] = 2
+        replacement = {**original, "id": 1, "conclusion": "failure"}
+        assert (
+            evaluate(
+                _all_good(),
+                external_check_runs=[*_ALL_EXTERNAL_GREEN, original, replacement],
+                now=self.NOW,
+            )[0]
+            == EXIT_SUCCESS
+        )
+        replacement["id"] = 3
+        assert (
+            evaluate(
+                _all_good(),
+                external_check_runs=[*_ALL_EXTERNAL_GREEN, original, replacement],
+                now=self.NOW,
+            )[0]
+            == EXIT_FAILURE
+        )
+
+    def test_accounted_names_are_not_double_judged(self) -> None:
+        rows = [
+            *_ALL_EXTERNAL_GREEN,
+            *[_check_run(name, "skipped") for name in GATE_JOBS],
+            _check_run("CI Summary", None, status="in_progress"),
+        ]
+        rows += [_check_run(name, "failure") for name in SOFT_ALLOWLIST]
+        code, report = evaluate(_all_good(), external_check_runs=rows, now=self.NOW)
+        assert code == EXIT_SUCCESS, report
+        assert "external default-deny sweep: 0 unregistered context(s) judged" in report
+        rows.append(_check_run("Unregistered Gate", "failure"))
+        assert (
+            evaluate(_all_good(), external_check_runs=rows, now=self.NOW)[0]
+            == EXIT_FAILURE
+        )
+
+    def test_active_contexts_are_accounted_but_inactive_names_are_swept(self) -> None:
+        name = EXPECTED_EXTERNAL_CONTEXTS[0]
+        rows = [_check_run(name, "skipped")]
+        code, report = evaluate(
+            _all_good(), external_check_runs=rows, external_contexts=(), now=self.NOW
+        )
+        assert code == EXIT_FAILURE, report
+        assert f"{name} (skipped)" in report
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[_check_run(name, "success")],
+            external_contexts=(name,),
+            now=self.NOW,
+        )
+        assert code == EXIT_SUCCESS, report
+        assert "external default-deny sweep: 0 unregistered context(s) judged" in report
+
+    def test_own_run_rows_not_yet_in_jobs_are_not_external(self) -> None:
+        jobs = [{**row, "run_id": 7} for row in _all_good()]
+        row = {
+            **_check_run("Late own job", "skipped"),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/7/job/9",
+        }
+        code, report = evaluate(
+            jobs, external_check_runs=[*_ALL_EXTERNAL_GREEN, row], now=self.NOW
+        )
+        assert code == EXIT_SUCCESS, report
+        row["details_url"] = row["details_url"].replace("runs/7/", "runs/8/")
+        assert (
+            evaluate(
+                jobs, external_check_runs=[*_ALL_EXTERNAL_GREEN, row], now=self.NOW
+            )[0]
+            == EXIT_FAILURE
+        )
+
+    @pytest.mark.parametrize("event", sorted(gate.SWEEP_NON_PR_EVENTS))
+    def test_known_non_pr_events_are_exempt_with_pr_positive_control(
+        self, event: str
+    ) -> None:
+        row = {
+            **_check_run("Unregistered Gate", "failure"),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/777/job/9",
+        }
+        for observed, expected in [
+            (event, EXIT_SUCCESS),
+            ("pull_request", EXIT_FAILURE),
+        ]:
+            code, report = evaluate(
+                _all_good(),
+                external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+                workflow_runs=[{"id": 777, "event": observed}],
+                now=self.NOW,
+            )
+            assert code == expected, report
+
+    @pytest.mark.parametrize(
+        "event", ["pull_request", "pull_request_target", "dynamic", "new_event"]
+    )
+    def test_deny_list_polarity_sweeps_other_events(self, event: str) -> None:
+        row = {
+            **_check_run("Unregistered Gate", "failure"),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/777/job/9",
+        }
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+            workflow_runs=[{"id": 777, "event": event}],
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+
+    @pytest.mark.parametrize("provenance", ["app", "absent", "bad_url", "no_index"])
+    def test_unresolved_events_are_swept(self, provenance: str) -> None:
+        row = _check_run("Unregistered Gate", "failure")
+        runs = [{"id": 777, "event": "schedule"}]
+        if provenance != "app":
+            row["details_url"] = (
+                "unparseable"
+                if provenance == "bad_url"
+                else "https://github.com/OmniNode-ai/omnibase_core/actions/runs/888/job/9"
+            )
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+            workflow_runs=None if provenance == "no_index" else runs,
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        assert "Unregistered Gate (failure)" in report
+
+    def test_event_resolution_reads_urls_and_suite_and_rejects_bad_ids(self) -> None:
+        events = gate.check_run_event_index(
+            [
+                {"id": "42", "event": "push"},
+                {"id": 0, "event": "push"},
+                {"id": "bad", "event": "push"},
+                {"id": 43},
+            ]
+        )
+        assert events == {42: "push"}
+        url = "https://github.com/OmniNode-ai/omnibase_core/actions/runs/42/job/9"
+        for row in [
+            {"html_url": url},
+            {"details_url": url},
+            {"check_suite": {"workflow_run": {"id": 42}}},
+            {"check_suite": {"workflow_run_id": 42}},
+        ]:
+            assert gate.check_run_workflow_run_id(row) == 42
+            assert gate.resolve_check_run_event(row, events) == "push"
+        for row in [
+            {},
+            {"details_url": "unreadable"},
+            {"check_suite": {"workflow_run_id": "bad"}},
+        ]:
+            assert gate.resolve_check_run_event(row, events) is None
+        assert gate.check_run_event_index(None) == {}
+
+    def test_non_pr_row_cannot_hide_a_pr_verdict_with_the_same_name(self) -> None:
+        pr = {
+            **_check_run("Shared Gate", "failure", started_at=_T0),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/7/job/9",
+        }
+        push = {
+            **_check_run("Shared Gate", "success", started_at=_T0_PLUS_64),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/8/job/9",
+        }
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, pr, push],
+            workflow_runs=[
+                {"id": 7, "event": "pull_request"},
+                {"id": 8, "event": "push"},
+            ],
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        assert "Shared Gate (failure)" in report
+
+    def test_same_suite_rerun_holds_stale_verdict_until_settled(self) -> None:
+        row = {
+            **_check_run(
+                "Unregistered Gate", "skipped", completed_at="2026-10-16T12:00:00Z"
+            ),
+            "check_suite": {"id": 1},
+        }
+        sibling = {
+            **_check_run(
+                sorted(SOFT_ALLOWLIST)[0],
+                None,
+                status="in_progress",
+                started_at="2026-10-17T11:59:30Z",
+            ),
+            "check_suite": {"id": 1},
+        }
+        rows = [*_ALL_EXTERNAL_GREEN, row, sibling]
+        code, report = evaluate(_all_good(), external_check_runs=rows, now=self.NOW)
+        assert code == EXIT_PENDING, report
+        sibling.update(status="completed", conclusion="success")
+        assert (
+            evaluate(_all_good(), external_check_runs=rows, now=self.NOW)[0]
+            == EXIT_FAILURE
+        )
+
+    def test_newer_producer_run_holds_stale_verdict_until_settled(self) -> None:
+        row = {
+            **_check_run(
+                "Unregistered Gate",
+                "cancelled",
+                completed_at="2026-10-16T12:00:00Z",
+                head_sha=_HEAD_A,
+            ),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/7/job/9",
+        }
+        runs = [
+            {
+                "id": run_id,
+                "workflow_id": 42,
+                "event": "pull_request",
+                "head_sha": _HEAD_A,
+                "status": status,
+            }
+            for run_id, status in [(7, "completed"), (8, "in_progress")]
+        ]
+        rows = [*_ALL_EXTERNAL_GREEN, row]
+        code, report = evaluate(
+            _all_good(), external_check_runs=rows, workflow_runs=runs, now=self.NOW
+        )
+        assert code == EXIT_PENDING, report
+        runs[1]["status"] = "completed"
+        assert (
+            evaluate(
+                _all_good(), external_check_runs=rows, workflow_runs=runs, now=self.NOW
+            )[0]
+            == EXIT_FAILURE
+        )
+
+    def test_failure_takes_precedence_over_pending(self) -> None:
+        rows = [
+            *_ALL_EXTERNAL_GREEN,
+            _check_run("Running Gate", None, status="in_progress"),
+            _check_run("Red Gate", "failure"),
+        ]
+        code, report = evaluate(_all_good(), external_check_runs=rows, now=self.NOW)
+        assert code == EXIT_FAILURE, report
+        assert "Red Gate (failure)" in report
+        assert (
+            "external sweep rows still running (PENDING, re-polled): Running Gate"
+            in report
+        )
+
+
+class TestExternalSweepExclusions:
+    """OMN-17427: every tolerance is bounded, validated and visible."""
+
+    NOW = datetime(2026, 10, 17, 12, tzinfo=UTC)
+    ENTRY = gate.SweepExclusion(
+        "Owned exception", "OMN-17427", "2026-10-17", "2026-12-20"
+    )
+
+    def test_registry_contains_exactly_the_measured_valid_unexpired_entries(
+        self,
+    ) -> None:
+        assert set(gate.EXTERNAL_SWEEP_EXCLUSIONS) == {
+            "handshake-policy-gate",
+            "Enable Auto-Merge",
+        }
+        assert gate.validate_sweep_exclusions(gate.EXTERNAL_SWEEP_EXCLUSIONS) == []
+        active, expired = gate.active_sweep_exclusions(
+            gate.EXTERNAL_SWEEP_EXCLUSIONS, now=self.NOW
+        )
+        assert active == frozenset(gate.EXTERNAL_SWEEP_EXCLUSIONS)
+        assert expired == ()
+        assert not active.intersection(EXPECTED_EXTERNAL_CONTEXTS)
+        for entry in gate.EXTERNAL_SWEEP_EXCLUSIONS.values():
+            assert entry.reason.strip()
+            assert entry.ticket == "OMN-17427"
+            assert entry.added == "2026-10-17"
+            assert entry.expires == "2026-12-20"
+        with pytest.raises(FrozenInstanceError):
+            self.ENTRY.reason = "changed"
+
+    @pytest.mark.parametrize("name", ["handshake-policy-gate", "Enable Auto-Merge"])
+    def test_shipped_exclusions_admit_skips_but_not_unregistered_reds(
+        self, name: str
+    ) -> None:
+        rows = [*_ALL_EXTERNAL_GREEN, _check_run(name, "skipped")]
+        code, report = evaluate(_all_good(), external_check_runs=rows, now=self.NOW)
+        assert code == EXIT_SUCCESS, report
+        assert f"exclusions applied: {name}" in report
+        rows.append(_check_run("Unregistered Gate", "failure"))
+        code, report = evaluate(_all_good(), external_check_runs=rows, now=self.NOW)
+        assert code == EXIT_FAILURE, report
+        assert "Unregistered Gate (failure)" in report
+
+    @pytest.mark.parametrize(
+        ("fields", "fragment"),
+        [
+            ({"reason": "  "}, "reason is empty"),
+            ({"ticket": "no ticket"}, "is not an OMN-<number> reference"),
+            ({"ticket": "OMN-17427junk"}, "is not an OMN-<number> reference"),
+            ({"added": "soon"}, "added 'soon'"),
+            ({"added": "2026-02-30"}, "added '2026-02-30'"),
+            ({"expires": ""}, "expires ''"),
+            ({"expires": "2026-13-20"}, "expires '2026-13-20'"),
+            ({"expires": "2026-10-17"}, "is not after added"),
+            ({"expires": "2026-10-16"}, "is not after added"),
+            ({"expires": "2027-10-17"}, "exceeds the 90d cap"),
+            ({"reason": None}, "reason is empty"),
+            ({"ticket": None}, "is not an OMN-<number> reference"),
+            ({"added": None}, "not a YYYY-MM-DD date"),
+        ],
+    )
+    def test_malformed_fields_fail_the_gate(self, fields: dict, fragment: str) -> None:
+        entry = replace(self.ENTRY, **fields)
+        findings = gate.validate_sweep_exclusions({"X": entry})
+        assert any(fragment in finding for finding in findings), findings
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=_ALL_EXTERNAL_GREEN,
+            sweep_exclusions={"X": entry},
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        assert "external sweep exclusion registry REFUSED" in report
+        assert fragment in report
+
+    def test_wrong_entry_type_is_refused_without_crashing(self) -> None:
+        registry = {"X": {"reason": "untyped exception"}}
+        assert gate.validate_sweep_exclusions(registry) == [
+            "X: not a SweepExclusion instance"
+        ]
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=_ALL_EXTERNAL_GREEN,
+            sweep_exclusions=registry,
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        assert "external sweep exclusion registry REFUSED" in report
+
+    @pytest.mark.parametrize(("days", "valid"), [(90, True), (91, False)])
+    def test_window_cap_boundary(self, days: int, valid: bool) -> None:
+        assert gate.SWEEP_EXCLUSION_MAX_DAYS == 90
+        expiry = (self.NOW + timedelta(days=days)).date().isoformat()
+        findings = gate.validate_sweep_exclusions(
+            {"X": replace(self.ENTRY, expires=expiry)}
+        )
+        assert (not findings) == valid
+
+    @pytest.mark.parametrize(
+        ("observation", "expected"),
+        [
+            (datetime(2026, 12, 19, 23, 59, 59, tzinfo=UTC), EXIT_SUCCESS),
+            (datetime(2026, 12, 20, tzinfo=UTC), EXIT_FAILURE),
+            (datetime(2026, 12, 21, tzinfo=UTC), EXIT_FAILURE),
+            (None, EXIT_FAILURE),
+        ],
+    )
+    def test_expiry_and_missing_clock_rearm_the_sweep(
+        self, observation: datetime | None, expected: int
+    ) -> None:
+        rows = [*_ALL_EXTERNAL_GREEN, _check_run("Unregistered Gate", "failure")]
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=rows,
+            sweep_exclusions={"Unregistered Gate": self.ENTRY},
+            now=observation,
+        )
+        assert code == expected, report
+        if expected == EXIT_FAILURE:
+            assert "EXPIRED (no longer excluding): Unregistered Gate" in report
+            assert "Unregistered Gate (failure)" in report
+        else:
+            assert "exclusions applied: Unregistered Gate" in report
+
+    def test_exclusion_cannot_override_layer_four(self) -> None:
+        name = EXPECTED_EXTERNAL_CONTEXTS[0]
+        rows = [
+            _check_run(n, "failure" if n == name else "success")
+            for n in EXPECTED_EXTERNAL_CONTEXTS
+        ]
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=rows,
+            sweep_exclusions={name: self.ENTRY},
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        assert f"L4 external contexts not success (coverage gap): {name}" in report
+
+
+class TestSweepIsWiredIntoProductionPoller:
+    """OMN-17427: fixture files must exercise layer 5 through main()."""
+
+    @staticmethod
+    def _main(tmp_path: Path, rows: list[dict], runs: object) -> int:
+        jobs_file = tmp_path / "jobs.json"
+        checks_file = tmp_path / "check_runs.json"
+        runs_file = tmp_path / "workflow_runs.json"
+        jobs_file.write_text(json.dumps(_all_good()), encoding="utf-8")
+        checks_file.write_text(json.dumps({"check_runs": rows}), encoding="utf-8")
+        runs_file.write_text(json.dumps(runs), encoding="utf-8")
+        return gate.main(
+            [
+                "--jobs-file",
+                str(jobs_file),
+                "--external-check-runs-file",
+                str(checks_file),
+                "--workflow-runs-file",
+                str(runs_file),
+                "--event-name",
+                "pull_request",
+            ]
+        )
+
+    @pytest.mark.parametrize("wrapped", [False, True])
+    def test_red_pr_check_fails_and_green_or_non_pr_passes(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str], wrapped: bool
+    ) -> None:
+        row = {
+            **_check_run("Unregistered Gate", "failure"),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/777/job/9",
+        }
+        for event, conclusion, expected in [
+            ("pull_request", "failure", EXIT_FAILURE),
+            ("pull_request", "success", EXIT_SUCCESS),
+            ("schedule", "failure", EXIT_SUCCESS),
+        ]:
+            row["conclusion"] = conclusion
+            runs = [{"id": 777, "event": event}]
+            code = self._main(
+                tmp_path,
+                [*_ALL_EXTERNAL_GREEN, row],
+                {"workflow_runs": runs} if wrapped else runs,
+            )
+            report = capsys.readouterr().out
+            assert code == expected, report
+            if expected == EXIT_FAILURE:
+                assert "Unregistered Gate (failure)" in report
+
+    @pytest.mark.parametrize(
+        "runs", [None, {"workflow_runs": "bad"}, [{"id": 888, "event": "schedule"}]]
+    )
+    def test_unusable_or_missing_index_cannot_exempt_red(
+        self, tmp_path: Path, runs: object
+    ) -> None:
+        row = {
+            **_check_run("Unregistered Gate", "failure"),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/777/job/9",
+        }
+        assert self._main(tmp_path, [*_ALL_EXTERNAL_GREEN, row], runs) == EXIT_FAILURE
+
+    def test_main_passes_its_clock_to_both_exclusions_and_grace(
+        self,
+        tmp_path: Path,
+        monkeypatch: pytest.MonkeyPatch,
+        capsys: pytest.CaptureFixture[str],
+    ) -> None:
+        observation = datetime(2026, 10, 17, 12, tzinfo=UTC)
+
+        class FixedClock(datetime):
+            @classmethod
+            def now(cls, tz: object = None) -> datetime:
+                assert tz is UTC
+                return observation
+
+        monkeypatch.setattr(gate, "datetime", FixedClock)
+        excluded = _check_run("Enable Auto-Merge", "skipped")
+        rows = [*_ALL_EXTERNAL_GREEN, excluded]
+        # Without a clock the same exclusion is deliberately inactive.
+        assert evaluate(_all_good(), external_check_runs=rows)[0] == EXIT_FAILURE
+        assert self._main(tmp_path, rows, []) == EXIT_SUCCESS
+        row = _check_run(
+            "Unregistered Gate", "cancelled", completed_at="2026-10-17T11:59:30Z"
+        )
+        rows.append(row)
+        assert evaluate(_all_good(), external_check_runs=rows)[0] == EXIT_FAILURE
+        assert self._main(tmp_path, rows, []) == EXIT_PENDING
+        assert (
+            "external sweep rows awaiting an automatic replacement"
+            in capsys.readouterr().out
+        )
+        row["completed_at"] = "2026-10-16T12:00:00Z"
+        assert self._main(tmp_path, rows, []) == EXIT_FAILURE
+
+    def test_workflow_fetches_full_head_pages_and_passes_both_files(self) -> None:
+        workflow = yaml.safe_load(CI_YML.read_text())
+        step = next(
+            step["run"]
+            for step in workflow["jobs"]["ci-summary"]["steps"]
+            if "ci_summary_gate.py" in str(step.get("run", ""))
+        )
+        lines = step.splitlines()
+        for endpoint in [
+            "commits/${COMMIT_SHA}/check-runs?per_page=100",
+            "actions/runs?head_sha=${COMMIT_SHA}&per_page=100",
+        ]:
+            endpoint_line = next(i for i, line in enumerate(lines) if endpoint in line)
+            assert "fetch_with_budget api --paginate" in lines[endpoint_line - 1]
+        assert "--external-check-runs-file external_check_runs.json" in step
+        assert "--workflow-runs-file workflow_runs.json" in step
+
+    def test_cli_exit_code_matches_the_swept_verdict(self, tmp_path: Path) -> None:
+        row = _check_run("Unregistered Gate", "failure")
+        for conclusion, expected in [
+            ("failure", EXIT_FAILURE),
+            ("success", EXIT_SUCCESS),
+        ]:
+            row["conclusion"] = conclusion
+            assert self._main(tmp_path, [*_ALL_EXTERNAL_GREEN, row], []) == expected
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "scripts/ci/ci_summary_gate.py",
+                    "--jobs-file",
+                    str(tmp_path / "jobs.json"),
+                    "--external-check-runs-file",
+                    str(tmp_path / "check_runs.json"),
+                    "--workflow-runs-file",
+                    str(tmp_path / "workflow_runs.json"),
+                    "--event-name",
+                    "pull_request",
+                ],
+                cwd=REPO_ROOT,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            assert result.returncode == expected, result.stdout + result.stderr
+
+    @pytest.mark.parametrize("contents", [None, "invalid JSON"])
+    def test_unreadable_runs_file_still_sweeps(
+        self, tmp_path: Path, contents: str | None
+    ) -> None:
+        row = _check_run("Unregistered Gate", "failure")
+        assert self._main(tmp_path, [*_ALL_EXTERNAL_GREEN, row], []) == EXIT_FAILURE
+        path = tmp_path / "workflow_runs.json"
+        if contents is None:
+            path.unlink()
+        else:
+            path.write_text(contents, encoding="utf-8")
+        assert (
+            gate.main(
+                [
+                    "--jobs-file",
+                    str(tmp_path / "jobs.json"),
+                    "--external-check-runs-file",
+                    str(tmp_path / "check_runs.json"),
+                    "--workflow-runs-file",
+                    str(path),
+                    "--event-name",
+                    "pull_request",
+                ]
+            )
+            == EXIT_FAILURE
+        )
