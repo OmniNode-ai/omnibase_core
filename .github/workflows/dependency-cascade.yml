@@ -84,13 +84,13 @@ permissions:
 jobs:
   compute-matrix:
     name: Compute Downstream Matrix
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         (github.event_name == 'pull_request' &&
          github.event.pull_request.head.repo.full_name != github.repository)
         && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
       }}
     outputs:
       repos: ${{ steps.matrix.outputs.repos }}
@@ -123,13 +123,13 @@ jobs:
   open-bump-pr:
     name: Bump ${{ matrix.repo }}
     needs: compute-matrix
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         (github.event_name == 'pull_request' &&
          github.event.pull_request.head.repo.full_name != github.repository)
         && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
       }}
     strategy:
       fail-fast: false

@@ -57,7 +57,6 @@ repos:
       - gitignore-baseline-validator
       - hardcoded-model-config-ratchet
       - hardcoded-topic-validator
-      - lint
       - lint-imports
       - mypy-validation-scripts
       - naming-conventions
@@ -94,7 +93,6 @@ repos:
       - tests-integration
       - todo-marker-validator
       - typed-bootstrap-environment-boundary
-      - wheel-content-parity
       - zone-filter
     .github/workflows/codeql-reusable.yml:
       - analyze

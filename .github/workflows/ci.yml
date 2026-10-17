@@ -251,8 +251,9 @@ jobs:
     # failure-to-run, and a packaging change can arrive on any diff shape.
     needs: [route]
     name: Wheel Content Parity (OMN-18865)
-    # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
-    runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
+    # OMN-19998: a public repository runs CI on GitHub-hosted runners only
+    # (RULING 2026-10-16T07:07:09Z); the route job's decision is no longer read.
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -279,8 +280,9 @@ jobs:
     needs: [route]
     name: Code Quality
     if: always()
-    # OMNI_RUNNER_SELECTOR_V2 - placement comes from the route job's decision.
-    runs-on: ${{ fromJSON(needs.route.outputs.runs_on) }}
+    # OMN-19998: a public repository runs CI on GitHub-hosted runners only
+    # (RULING 2026-10-16T07:07:09Z); the route job's decision is no longer read.
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -329,11 +331,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -393,11 +395,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
@@ -423,11 +425,11 @@ jobs:
   # Rationale: These scripts are CI tooling, not core library code
   mypy-validation-scripts:
     name: Mypy Validation Scripts
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: timeout-minutes raised (was 5-10m depending on job) to a
@@ -597,11 +599,11 @@ jobs:
   # Complements the Python-based check in mypy-validation-scripts with a simple grep scan
   core-infra-boundary:
     name: Core-Infra Boundary
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
@@ -646,11 +648,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -879,11 +881,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
@@ -941,11 +943,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1000,11 +1002,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
@@ -1043,11 +1045,11 @@ jobs:
   # - Use StrValueHelper for string serialization
   enum-governance:
     name: Enum Governance Check
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1100,11 +1102,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1158,11 +1160,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 7
@@ -1211,11 +1213,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 20
@@ -1270,11 +1272,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 6
@@ -1407,7 +1409,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1445,11 +1447,11 @@ jobs:
   # Conditional: only runs if the `onex compliance` command is available.
   compliance:
     name: Contract Compliance
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -1490,11 +1492,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 7
@@ -1550,11 +1552,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 7
@@ -1614,11 +1616,11 @@ jobs:
   # omni-standards-compliance `validate_class_naming.py` invocation.
   naming-conventions:
     name: Naming Conventions
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
@@ -1644,11 +1646,11 @@ jobs:
   # validator and feeds quality-gate so it gates the required rollup.
   pydantic-patterns:
     name: Pydantic Patterns
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 5
@@ -1689,11 +1691,11 @@ jobs:
   # this workflow all scan the full tracked tree.
   aislop-patterns:
     name: AI Slop Patterns
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1772,11 +1774,11 @@ jobs:
   # avoids the merge_group / no-diff exit-0 hole on the required path.
   doc-content-scan:
     name: Doc-Content Scan
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1831,11 +1833,11 @@ jobs:
   # merge_group / no-diff exit-0 hole on the required path.
   spdx-headers:
     name: SPDX Headers
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1887,11 +1889,11 @@ jobs:
   # closed, while the default validator mode remains strict for raw access.
   typed-bootstrap-environment-boundary:
     name: Typed Bootstrap Environment Boundary (OMN-17744)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -1964,11 +1966,11 @@ jobs:
   # measurement.
   precommit-suite:
     name: Pre-commit Suite (OMN-18899)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 30
@@ -2042,11 +2044,11 @@ jobs:
   # named but cannot be fetched fails the job.
   hardcoded-model-config-ratchet:
     name: Hardcoded Model Config Ratchet (OMN-19252)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 15
@@ -2121,11 +2123,11 @@ jobs:
   # success/failure, listed in SPEC_REQUIRED_VALIDATOR_JOBS.
   duplicate-registry-ids:
     name: Duplicate Registry Ids
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2173,11 +2175,11 @@ jobs:
   # success/failure, listed in SPEC_REQUIRED_VALIDATOR_JOBS.
   hardcoded-topic-validator:
     name: Hardcoded Topic Validator
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2228,11 +2230,11 @@ jobs:
   # listed in SPEC_REQUIRED_VALIDATOR_JOBS.
   shape-gate-independence:
     name: Shape-Gate Independence (OMN-20298)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 20
@@ -2280,7 +2282,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2342,11 +2344,11 @@ jobs:
   # (scripts/ci/ci_summary_gate.py) so a red run turns "CI Summary" red.
   runtime-identity-validator:
     name: Runtime Identity Validator
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 20
@@ -2406,11 +2408,11 @@ jobs:
   # sample on every run and fails unless the ratchet refuses it.
   canonical-file-shape:
     name: Canonical File Shape (OMN-20304)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 20
@@ -2529,7 +2531,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2592,7 +2594,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2644,7 +2646,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2688,7 +2690,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2730,7 +2732,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -2773,7 +2775,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2817,7 +2819,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -2860,7 +2862,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -2901,7 +2903,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -2943,7 +2945,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -2987,7 +2989,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -3032,7 +3034,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -3076,7 +3078,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -3127,7 +3129,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -3202,7 +3204,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -3242,7 +3244,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 15
@@ -3307,7 +3309,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -3355,7 +3357,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 20
@@ -3400,7 +3402,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -3487,11 +3489,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 7
@@ -3544,11 +3546,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -3606,11 +3608,11 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
@@ -3679,7 +3681,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 10
@@ -3811,7 +3813,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
@@ -3892,11 +3894,11 @@ jobs:
 
   quality-gate:
     name: Quality Gate
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-13574 (Model B): naming-conventions / pydantic-patterns /
@@ -4112,7 +4114,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     outputs:
@@ -4212,7 +4214,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
@@ -4356,11 +4358,11 @@ jobs:
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
     needs: [quality-gate, zone-filter, detect-changes]
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # OMN-16215: draft-state CI admission gate (org-wide fan-out of the
@@ -4560,7 +4562,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # Run whenever the actual test-parallel run was a full suite (the only case
@@ -4670,11 +4672,11 @@ jobs:
   tests-integration:
     name: Integration Tests (Split ${{ matrix.split }}/4)
     needs: [quality-gate, zone-filter, detect-changes]
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     timeout-minutes: 30
@@ -4762,11 +4764,11 @@ jobs:
   # so this gate works for any matrix size (1, 4, 5, or 40 shards). No hardcoded count needed.
   tests-gate:
     name: Tests Gate
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     # zone-filter is in `needs:` so this gate can re-evaluate the SAME
@@ -4902,11 +4904,11 @@ jobs:
     permissions:
       contents: read
       actions: read
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to self-hosted omnibase-ci; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
@@ -5045,7 +5047,7 @@ jobs:
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["self-hosted","omnibase-ci"]')
+        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:

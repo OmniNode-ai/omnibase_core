@@ -76,6 +76,16 @@ requirements:
           handler module omnibase_core.handlers.handler_dependency_direction_cli, and a step that runs
           only the console script alias fails the check. -- falsifier: uv run pytest tests/ci/test_dependency_direction_wiring_omn19998.py
           -q"
+  - id: req-omn19998-core-hosted-fallbacks
+    statement: omnibase_core is public, so no workflow falls back to the self-hosted omnibase-ci fleet
+      for a public caller, and the jobs that read the route decision run on a GitHub-hosted runner.
+    acceptance:
+      - id: AC10
+        statement: "AC10: No workflow's OMNI_TRUSTED_CI_RUNS_ON_JSON fallback names the self-hosted fleet
+          except a reusable workflow's private-caller branch, lint and wheel-content-parity run on ubuntu-latest
+          and are out of the shipped baseline, and the placement check is a lint-imports step under quality-gate
+          and a pre-commit hook. -- falsifier: uv run pytest tests/ci/test_public_runner_placement_omn19998.py
+          -q"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -101,6 +111,9 @@ evidence_requirements:
   - kind: tests
     description: "The dependency-direction step and hook run the handler module."
     command: "uv run pytest tests/ci/test_dependency_direction_wiring_omn19998.py -q"
+  - kind: tests
+    description: "Public workflows fall back to hosted runners; the placement hook and job are wired."
+    command: "uv run pytest tests/ci/test_public_runner_placement_omn19998.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -255,3 +268,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
+  - id: dod-omn-19998-core-hosted-fallbacks
+    description: "No workflow falls back to the self-hosted fleet for a public caller, the route consumers
+      run on ubuntu-latest and leave the baseline, and the placement check is wired as a job step and
+      a hook."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_public_runner_placement_omn19998.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC10

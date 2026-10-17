@@ -78,31 +78,31 @@ NO_DEV_WORKFLOW_EXECUTION_CONTRACT = "cc8d80029ade3512b57b1d5f28a86923defe1570e5
 # diff first; this deliberately avoids another partial execution-surface list.
 AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     "exports-validation": (
-        "992688f96b514d884eed9932a5f3676ebc4c1fb2c633e626a7eb5c9fa6348c75"  # pragma: allowlist secret
+        "fe068a1dec0fe112f9e39ef9dcc9f9c0174ed35d6d14f7331ac74624433c468e"  # pragma: allowlist secret
     ),
     "mypy-validation-scripts": (
-        "2423622dc22413cc48dc86c623484359251b1046235dc61d3b8fd947512cd69e"  # pragma: allowlist secret
+        "4eb3345c5dd52a6a6175720191cd83f0d2306d7fd9756d5c5ccc1329f35cc7b4"  # pragma: allowlist secret
     ),
     "core-infra-boundary": (
-        "a6fa1e4ffb7740fc365e526a88e488cccf2d1f08474c6e6b2f2cbe8bdb95f85d"  # pragma: allowlist secret
+        "f2a6495e4adfb13bddb45ccfce8697cf088b6bb1062d2e91d80e30531cbf1c72"  # pragma: allowlist secret
     ),
     "check-deterministic-skills": (
-        "2a5e1946265d5b3c049848df322df4e4892713c8f8e3ae7bbf2dcb719e27e1a5"  # pragma: allowlist secret
+        "5aafe2d295526b1e845239c53a6ffc26c97d0bb912a95713e1a13c57322835a8"  # pragma: allowlist secret
     ),
     "node-purity-check": (
-        "11a091eb4a9382801797ca89fef8090e43385b5b1c991949d7b4ed13afef3b06"  # pragma: allowlist secret
+        "96e028a9854e4ea4f9663da882db7ff05e290389c3ae1669139ef7b384d13641"  # pragma: allowlist secret
     ),
     "enum-governance": (
-        "a46c3a30ecb40d58ad032a1920f24b93cef38716bccecd708e7a41014499727b"  # pragma: allowlist secret
+        "d2a1dca15ce326591873f78c09eddb2bdf456e9a7cbefe95ab39c08f57427cea"  # pragma: allowlist secret
     ),
     "contract-config-compliance": (
-        "e37fad25fe594d66ccb0bd113e5be34a418301a06121500936ad8d8eb11e677c"  # pragma: allowlist secret
+        "79a42645cef2ce8defbf01a9d8bb0f9f0a4fa9788f089d05b5d86eafda519160"  # pragma: allowlist secret
     ),
     "breaking-schema-change": (
-        "9409004bc80f756cb90e51d387dc888fd3a2f62b70d45ea0d87bb32dcbc68389"  # pragma: allowlist secret
+        "d7a35232fa1221cfee6690b6517bfe2b46edc5be791d75f73e21ccbd746e9252"  # pragma: allowlist secret
     ),
     "no-env-fallbacks": (
-        "4d415f97d90287f833debf4ac085aa3b8b42d76c791a77297a7c3a43ace152e9"  # pragma: allowlist secret
+        "bc2b6b83195a0f16f2a406b757563a0a286d41499059559c801cf368fb0c82be"  # pragma: allowlist secret
     ),
     # OMN-19252: + --exclude-files for config/hardcoded_model_config_baseline.yaml
     # (sha1 line keys are 40-hex digests; Hex High Entropy fires on every one).
@@ -111,44 +111,44 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
     # OMN-19612: the hook runs under `xargs -n 100 -P "$(nproc)"`, so a full-tree
     # scan no longer holds the quality gate (and the 40 test shards) for minutes.
     "detect-secrets": (
-        "2c509f50622476c3c9278fbcac8dcb899b565ab5c0fd61e54cb89972a55c1d00"  # pragma: allowlist secret
+        "be8baae66cc0406faea4ef085d8c286b2ab594acfab5fe2ea439d8093168ef25"  # pragma: allowlist secret
     ),
     "sdk-boundary-check": (
-        "30800b3a56c20e4c0d8b0365b17cb847f6c8149264aa03a8fe8e254136fc6cba"  # pragma: allowlist secret
+        "82c0a8222d3d1028742889d34868dd9126555b87b25a0b49d6fcd514868ea9a6"  # pragma: allowlist secret
     ),
     "demo-path-topic-coherence": (
-        "8ff2f91d5081d541f624c2e55562b05dd1945d6c0a6913a26c5099b4dd455e72"  # pragma: allowlist secret
+        "324b5e04e94a6f26e4150f37a8a26c0447b384cb92a1ba550bf481ed0e7e39ee"  # pragma: allowlist secret
     ),
     "dispatch-surface-test-required": (
-        "6392730ab2e8a48efa83053c3dbb571a4f52c271e188b8e038a8be31535bedc4"  # pragma: allowlist secret
+        "5df5086455b18c63afde520c8fecf3c121df64ab73c4c543c9a3f45d602b0afd"  # pragma: allowlist secret
     ),
     "naming-conventions": (
-        "4c018ad075660fc1c8d68c65c84c00b5c7bcd82ba4a70267baa7f6e2ce377aa7"  # pragma: allowlist secret
+        "771e64503b780ab39fc999b0f903f58b52a2540ce69acb951b8365c458997ad8"  # pragma: allowlist secret
     ),
     "pydantic-patterns": (
-        "0c69ccc1414177fc6b8ce43a34990d8fbd3c63de3ad58a0dc0eb735cf95d8f1b"  # pragma: allowlist secret
+        "ad7c24c09aea8239c925a638c9d935d5f5d15ad19d18d40eff3b57e58514989b"  # pragma: allowlist secret
     ),
     # OMN-19614: pull_request scans only the PR diff via ci_scan_scope.py.
     "aislop-patterns": (
-        "20d6bc342ddadb705df3f81c137f059ee75b2f7f1d1291183efe532575c0479b"  # pragma: allowlist secret
+        "c13c810f603244ed1abab430e8462fdf3032e7482628a21ca29e1ff77de876e7"  # pragma: allowlist secret
     ),
     "doc-content-scan": (
-        "1e8c24ae8e37648af73bfabb75575112632b8cd4ac169045d4ac8b5b9664e7cc"  # pragma: allowlist secret
+        "89c0197b5d084dbd59d2db730b8beccc421d14f91de1d3b8ec0c3cbe50c867e4"  # pragma: allowlist secret
     ),
     "spdx-headers": (
-        "edf4e953ec7d15aa9a54551ff7b6f160b91d8d3e79d8b029f66657b81b0a6b91"  # pragma: allowlist secret
+        "c5bc2a3d05198b8ab9deb2f21206243ab22b65170001ac53537a34899c3d0317"  # pragma: allowlist secret
     ),
     "typed-bootstrap-environment-boundary": (
-        "4e5f299d132f8ff7cff549f17626e3876a7525c5d28aec150b0b5a86d480aad5"  # pragma: allowlist secret
+        "8d3303bc95d69ca9f8853804bde1bf80c0303a05e88015b6c902f4e8eac172f0"  # pragma: allowlist secret
     ),
     "duplicate-registry-ids": (
-        "6d4d2c5bb43d103924a336575a5022d17cedf8e086ceff477121255d52e71dca"  # pragma: allowlist secret
+        "5efce939ca4bde5238aa8399e81d31391a5fb812a41622938994349b878dfc33"  # pragma: allowlist secret
     ),
     "no-noncanonical-lifecycle-classes": (
-        "1b72b1142f9e17cff1a1299435b989685423de14563cf081fbb9f6323f929264"  # pragma: allowlist secret
+        "f0878d986d40678b76a62f8e5d1a71ad8749a4f65bdae29a5b026b32755847d8"  # pragma: allowlist secret
     ),
     "pull-request-workflow-ratchet": (
-        "fe67a135dbeae73e46d4908920ba75b4419cb4ccd181b4d4c12d559f5f216a1f"  # pragma: allowlist secret
+        "9b90fb73567d5f8d2119d8dea9ccade9fe8573fc423a739dc2d793072ec2148d"  # pragma: allowlist secret
     ),
 }
 
