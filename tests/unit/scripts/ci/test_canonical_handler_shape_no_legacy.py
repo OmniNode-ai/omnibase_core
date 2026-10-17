@@ -363,3 +363,63 @@ def test_existing_handler_path_unchanged(repo: tuple[Path, str]) -> None:
     assert reason.startswith(("adequacy:", "proof:"))
     assert "no equivalence-replay" in reason
     assert "no hand-flip proof" in reason
+
+
+@pytest.mark.unit
+def test_landed_no_legacy_receipt_remains_valid_on_descendants(
+    repo: tuple[Path, str],
+) -> None:
+    root, base = repo
+    _write_receipt(root, base)
+    _commit(root, "Land the canonical handler with its no-legacy receipt")
+    _git(root, "branch", "-f", "dev", "HEAD")
+    (root / "unrelated.txt").write_text("unrelated change\n", encoding="utf-8")
+    _commit(root, "Unrelated descendant change")
+
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert ok is True, reason
+    assert "contract-tests-executed-green" in reason
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("change", ["receipt", "handler"])
+def test_landed_no_legacy_proof_cannot_be_replaced(
+    repo: tuple[Path, str], change: str
+) -> None:
+    root, base = repo
+    receipt = _write_receipt(root, base)
+    _commit(root, "Land the canonical handler with its no-legacy receipt")
+    _git(root, "branch", "-f", "dev", "HEAD")
+    if change == "handler":
+        handler = root / NODE_REL / "handlers/handler_a.py"
+        handler.write_text(CANONICAL_HANDLER.replace("y=request.x", "y=request.x + 1"))
+        _write_receipt(root, base)
+    else:
+        raw = json.loads(receipt.read_text(encoding="utf-8"))
+        raw["recorded_at"] = "2026-10-17T00:00:00Z"
+        receipt.write_text(json.dumps(raw), encoding="utf-8")
+    _commit(root, "Replace previously landed proof inputs")
+
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert ok is False
+    assert "live merge base" in reason
+
+
+@pytest.mark.unit
+def test_landed_no_legacy_receipt_still_executes_contract_tests(
+    repo: tuple[Path, str],
+) -> None:
+    root, base = repo
+    _write_receipt(root, base)
+    _commit(root, "Land the canonical handler with its no-legacy receipt")
+    _git(root, "branch", "-f", "dev", "HEAD")
+
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor(green=False)
+    )
+    assert ok is False
+    assert "NOT GREEN" in reason
