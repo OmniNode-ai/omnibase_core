@@ -158,6 +158,15 @@ requirements:
           merge and drops from the baseline as a proven flip, while a handler on the base before the receipt
           landed, a node changed after it landed and a receipt that never landed are refused. -- falsifier:
           uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -k landed"
+  - id: req-omn17427-ledger-row-required-cells
+    statement: The typed work-ledger renderer writes the cells the ledger row grammar requires, so a rendered
+      CLAIM carries worktree= and a rendered RULING carries question=.
+    acceptance:
+      - id: AC21
+        statement: "AC21: A rendered CLAIM carries a worktree= cell (the claim's own worktree, else none),
+          a rendered RULING carries a question= cell (its own question, else the question it answers),
+          and a ruling naming neither is refused. -- falsifier: uv run pytest tests/unit/models/events/work/test_work_ledger_render.py
+          -q -k \"golden_row_per_kind or worktree or question\""
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -218,6 +227,10 @@ evidence_requirements:
     description: "A landed no-legacy flip passes after merge; a pre-existing base handler, a later node
       change and an unlanded receipt are refused."
     command: "uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -k landed"
+  - kind: tests
+    description: "A rendered CLAIM carries worktree=, a rendered RULING carries question=, and a ruling
+      with no question is refused."
+    command: "uv run pytest tests/unit/models/events/work/test_work_ledger_render.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -483,3 +496,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC20
+  - id: dod-omn-17427-ledger-row-required-cells
+    description: "A rendered CLAIM carries worktree=, a rendered RULING carries question=, and a ruling
+      with no question is refused."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/work/test_work_ledger_render.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC21

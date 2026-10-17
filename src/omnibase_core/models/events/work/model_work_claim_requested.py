@@ -109,6 +109,16 @@ class ModelWorkClaimRequested(ModelWorkEventBase):
         default=None,
         description="event_id of the work.consent.recorded that authorizes this work.",
     )
+    worktree: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=500,
+        description=(
+            "The worktree path the claimed work writes in, or the literal 'none' "
+            "when it writes in no worktree. The md claim row must carry a "
+            "worktree= cell (OMN-20148), so an unset value renders worktree=none."
+        ),
+    )
 
     @field_validator(
         "contract_schema_version",
@@ -194,6 +204,15 @@ class ModelWorkClaimRequested(ModelWorkEventBase):
     def _contract_digest_is_canonical(cls, value: str | None) -> str | None:
         if value is not None and not re.fullmatch(r"^sha256:[0-9a-f]{64}$", value):
             raise ValueError("contract_sha256 must use sha256:<64 lowercase hex>")
+        return value
+
+    @field_validator("worktree")
+    @classmethod
+    def _worktree_is_one_cell_value(cls, value: str | None) -> str | None:
+        if value is not None and (value != value.strip() or re.search(r"[\s|]", value)):
+            raise ValueError(
+                "worktree must be one path or 'none', with no whitespace or '|'"
+            )
         return value
 
     @field_serializer("prs")

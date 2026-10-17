@@ -34,6 +34,16 @@ class ModelWorkRulingRecorded(ModelWorkEventBase):
         max_length=SUMMARY_MAX_LENGTH,
         description="The operator's words, verbatim. Never read by a checker.",
     )
+    question: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=SUMMARY_MAX_LENGTH,
+        description=(
+            "The question or options the operator's words answer. The md ruling row "
+            "must carry a question= cell (OMN-20656). When unset, the renderer reads "
+            "it from the work.question.asked events named in 'answers'."
+        ),
+    )
     amends: uuid.UUID | None = Field(
         default=None,
         description="event_id of the ruling this one amends, when it amends one.",
@@ -59,6 +69,13 @@ class ModelWorkRulingRecorded(ModelWorkEventBase):
             "Narrative operator_words are never parsed for this decision."
         ),
     )
+
+    @field_validator("question")
+    @classmethod
+    def _reject_blank_question(cls, raw: str | None) -> str | None:
+        if raw is not None and not raw.strip():
+            raise ValueError("question must not be blank or whitespace-only")
+        return raw
 
     @field_validator("operator_words")
     @classmethod
