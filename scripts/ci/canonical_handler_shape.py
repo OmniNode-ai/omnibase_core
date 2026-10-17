@@ -1368,8 +1368,8 @@ def verify_no_legacy_flip(
       * ``base_node_files`` equals ``git ls-tree`` of the node directory at
         ``base_ref`` (the evidence is the listing at that commit);
       * no handler existed at ``base_ref`` NOR at the live merge base of HEAD with
-        ``BASE_REF`` (so an older handler-less commit cannot be cited past a handler
-        that exists on the base today);
+        ``BASE_REF``, unless that base already carries this exact receipt and
+        handler (an unchanged, previously landed flip is not a new legacy flip);
       * the new handler module's sha256 is fresh;
       * every declared ``contract_tests`` file names the node package, and the ids
         are EXECUTED green on HEAD (a recorded status is not evidence).
@@ -1429,10 +1429,30 @@ def verify_no_legacy_flip(
     if live_base is not None and live_base != base_ref:
         _, live_evidence = _legacy_handler_evidence(repo_root, live_base, node_id)
         if live_evidence is not None:
-            return (
-                False,
-                f"legacy handler existed at the live merge base: {live_evidence}",
+            # A no-legacy flip introduces a handler. Once it lands, the live
+            # merge base necessarily has that handler, so descendants must be
+            # able to retain the original proof. Only accept the identical
+            # receipt AND handler already on the trusted base; an older
+            # handlerless commit still cannot justify replacing a live handler.
+            module_rel = _module_repo_rel(module)
+            try:
+                receipt_rel = receipt_path.resolve().relative_to(repo_root.resolve())
+            except ValueError:
+                receipt_rel = None
+            already_landed = (
+                receipt_rel is not None
+                and module_rel is not None
+                and _git_is_ancestor(repo_root, base_ref, live_base)
+                and _git_show(repo_root, live_base, receipt_rel.as_posix())
+                == receipt_path.read_text(encoding="utf-8")
+                and _git_show(repo_root, live_base, module_rel[1])
+                == module_file.read_text(encoding="utf-8")
             )
+            if not already_landed:
+                return (
+                    False,
+                    f"legacy handler existed at the live merge base: {live_evidence}",
+                )
 
     tests_raw = raw.get("contract_tests")
     test_ids = tuple(str(t) for t in tests_raw) if isinstance(tests_raw, list) else ()

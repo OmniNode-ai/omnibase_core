@@ -1,0 +1,62 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20935
+title: Canonical Handler-Shape Ratchet retains previously landed no-legacy proofs
+summary: The no-legacy verifier accepts a previously landed receipt only when the live merge base contains
+  the identical receipt and handler source and the original handlerless base is its ancestor. Original-base
+  verification, handler hashing and execution of contract tests remain required.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20935-landed-no-legacy-proof
+    statement: Previously landed no-legacy flips remain valid on unrelated descendants without permitting
+      replacement proofs or bypassing contract tests.
+    acceptance:
+      - id: AC1
+        statement: An unchanged receipt and handler already at the live merge base remain valid on an
+          unrelated descendant.
+      - id: AC2
+        statement: A replaced receipt or handler and an old handlerless commit cited past a different
+          live handler remain rejected.
+      - id: AC3
+        statement: A previously landed receipt still requires execution of green contract tests.
+evidence_requirements:
+  - kind: tests
+    description: Real-git regressions cover landed receipts, changed inputs and contract-test execution.
+    command: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -o addopts=
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20935-ac1-landed-proof
+    description: A previously landed proof remains valid on an unrelated descendant.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
+          -o addopts= -k test_landed_no_legacy_receipt_remains_valid_on_descendants
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn20935-ac2-replaced-inputs
+    description: Changed proof inputs and legacy handlers are refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
+          -o addopts= -k 'test_landed_no_legacy_proof_cannot_be_replaced or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn20935-ac3-contract-tests
+    description: Previously landed receipts do not bypass failing contract tests.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
+          -o addopts= -k test_landed_no_legacy_receipt_still_executes_contract_tests
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
