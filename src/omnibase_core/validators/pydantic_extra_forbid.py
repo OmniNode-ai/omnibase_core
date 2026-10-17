@@ -48,6 +48,10 @@ Ratchet, not allowlist
 * Any violation NOT in the frozen baseline fails — new models are blocked on day one.
 * ``--enforce-modified <ref>`` also fails any *baselined* violation whose class body was
   touched by the diff: you may not edit a broken model and leave it broken.
+* ``--enforce-modified <ref>`` also fails when the baseline GREW against the authority
+  the ref selects (OMN-17914): ``:staged`` and ``:worktree`` compare against ``HEAD``,
+  a git ref compares against its merge base with ``HEAD``. ``:staged`` reads the new
+  side from the index (an explicit ``GIT_INDEX_FILE`` included), the others from disk.
 * ``--check-stale`` fails when a baselined FQN is now compliant/absent — the baseline
   may only shrink, never coast.
 * The only sanctioned suppression is an **expiring waiver** keyed to an open ticket AND
@@ -206,10 +210,16 @@ def load_baseline(path: Path) -> set[str]:
     is then treated as NEW.
     """
     try:
-        data = load_yaml_content_as_model(
-            path.read_text(encoding="utf-8"), ModelExtraForbidBaseline
-        )
-    except (ModelOnexError, UnicodeDecodeError, OSError):
+        return parse_baseline(path.read_text(encoding="utf-8"))
+    except (UnicodeDecodeError, OSError):
+        return set()
+
+
+def parse_baseline(text: str) -> set[str]:
+    """Parse baseline YAML *text*; unparseable text yields the empty set (fail-closed)."""
+    try:
+        data = load_yaml_content_as_model(text, ModelExtraForbidBaseline)
+    except ModelOnexError:
         return set()
     return set(data.violations)
 
@@ -408,6 +418,59 @@ def changed_line_ranges(ref: str, cwd: Path) -> dict[Path, list[tuple[int, int]]
     return ranges
 
 
+def _git_blob(rev_path: str, cwd: Path) -> str | None:
+    """Return the text of ``<rev>:<path>`` (or ``:<path>`` for the index), None if absent.
+
+    A bad revision raises ``ModelOnexError``; only a path that does not exist at a valid
+    revision is "no authority" and reads as ``None``.
+    """
+    rev, _, rel = rev_path.partition(":")
+    if rev:
+        listed = _run_git(
+            ["--literal-pathspecs", "ls-tree", "--name-only", "-z", rev, "--", rel], cwd
+        )
+    else:
+        listed = _run_git(
+            ["--literal-pathspecs", "ls-files", "--cached", "-z", "--", rel], cwd
+        )
+    if not listed:
+        return None
+    return _run_git(["show", rev_path], cwd)
+
+
+def baseline_growth(ref: str, baseline: Path, cwd: Path) -> list[str]:
+    """FQNs the baseline gained against the authority that *ref* selects (OMN-17914).
+
+    * ``:staged`` — index vs. ``HEAD``. The index is whichever git resolves for *cwd*,
+      so an explicit ``GIT_INDEX_FILE`` (``git commit <path>`` hooks) is honoured.
+    * ``:worktree`` — the file on disk vs. ``HEAD``.
+    * a git ref — the file on disk vs. the merge base of the ref and ``HEAD``, the same
+      base ``changed_line_ranges`` diffs against.
+
+    A baseline that is not tracked in the authority has nothing to grow from and reads
+    as no growth. Raises ``ModelOnexError`` on git failure — the caller fails closed.
+    """
+    root = Path(_run_git(["rev-parse", "--show-toplevel"], cwd).strip()).resolve()
+    resolved = baseline.resolve()
+    if not resolved.is_relative_to(root):
+        return []
+    rel = resolved.relative_to(root).as_posix()
+    if ref in (STAGED_REF, WORKTREE_REF):
+        base_rev = "HEAD"
+    else:
+        base_rev = _run_git(["merge-base", ref, "HEAD"], cwd).strip()
+    base_text = _git_blob(f"{base_rev}:{rel}", cwd)
+    if base_text is None:
+        return []
+    if ref == STAGED_REF:
+        new_text = _git_blob(f":{rel}", cwd)
+    else:
+        new_text = resolved.read_text(encoding="utf-8") if resolved.exists() else None
+    if new_text is None:
+        return []
+    return sorted(parse_baseline(new_text) - parse_baseline(base_text))
+
+
 def _parse_hunk(line: str) -> tuple[int, int] | None:
     # @@ -12,0 +13,4 @@ optional trailing context
     try:
@@ -576,9 +639,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     ]
 
     modified_violations: list[ModelExtraForbidFinding] = []
+    grown: list[str] = []
     if args.enforce_modified:
         try:
             ranges = changed_line_ranges(args.enforce_modified, Path.cwd())
+            grown = baseline_growth(args.enforce_modified, args.baseline, Path.cwd())
         except ModelOnexError as exc:
             sys.stderr.write(
                 f"pydantic-extra-forbid: --enforce-modified could not read the diff, "
@@ -627,6 +692,17 @@ def main(argv: Sequence[str] | None = None) -> int:
             '  model_config = ConfigDict(extra="forbid") and remove the FQN from\n'
             f"  {args.baseline} so the ratchet counts down.\n\n"
         )
+
+    if grown:
+        exit_code = 1
+        sys.stderr.write(
+            f"pydantic-extra-forbid: the baseline GREW against {args.enforce_modified} "
+            "— it may only shrink; remove these entr(y/ies) and fix the model(s) "
+            "instead:\n"
+        )
+        for fqn in grown:
+            sys.stderr.write(f"  {fqn}\n")
+        sys.stderr.write("\n")
 
     if waiver_errors:
         exit_code = 1

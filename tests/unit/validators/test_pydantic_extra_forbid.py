@@ -19,6 +19,7 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_extra_forbid_finding import (
     STATUS_EXPLICIT_ALLOW,
     STATUS_EXPLICIT_FORBID,
@@ -1808,3 +1809,157 @@ def test_omn17920_static_and_runtime_modes_agree_on_named_bases(
     assert _model_findings(paths, use_runtime=False) == _model_findings(
         paths, use_runtime=True
     )
+
+
+# ===========================================================================
+# Baseline growth: every --enforce-modified mode has its own authority (OMN-17914)
+# ===========================================================================
+def _seed_tracked_baseline(git_repo: Path) -> tuple[Path, Path, str]:
+    """Commit the seeded baseline plus a droppable entry; returns ``(baseline, waivers, grown_fqn)``."""
+    _, baseline, waivers = _seed_baselined(git_repo)
+    grown_fqn = baseline.read_text(encoding="utf-8").splitlines()[1].split('"')[1]
+    prefix = grown_fqn.rsplit(":", 1)[0]
+    grown_fqn = f"{prefix}:ModelAdded"
+    _grow(baseline, f"{prefix}:ModelGone")  # an entry for _shrink to remove
+    _git(git_repo, "add", "baseline.yaml")
+    _git(git_repo, "commit", "-qm", "baseline")
+    return baseline, waivers, grown_fqn
+
+
+def _grow(baseline: Path, fqn: str) -> None:
+    baseline.write_text(
+        baseline.read_text(encoding="utf-8") + f'  - "{fqn}"\n', encoding="utf-8"
+    )
+
+
+def _shrink(baseline: Path) -> None:
+    lines = baseline.read_text(encoding="utf-8").splitlines(keepends=True)
+    baseline.write_text("".join(lines[:-1]), encoding="utf-8")
+
+
+def test_baseline_growth_on_disk_fails_under_worktree_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    baseline, waivers, grown = _seed_tracked_baseline(git_repo)
+    monkeypatch.chdir(git_repo)
+    assert _run_gate(baseline, waivers, ":worktree") == 0
+
+    _grow(baseline, grown)  # unstaged
+
+    assert _run_gate(baseline, waivers, ":worktree") == 1
+    err = capsys.readouterr().err
+    assert "GREW" in err
+    assert grown in err
+
+
+def test_baseline_shrinkage_passes_in_every_mode(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    baseline, waivers, _ = _seed_tracked_baseline(git_repo)
+    _git(git_repo, "branch", "base")
+    monkeypatch.chdir(git_repo)
+    _shrink(baseline)
+    _git(git_repo, "add", "baseline.yaml")
+
+    for ref in (":worktree", ":staged", "base"):
+        assert _run_gate(baseline, waivers, ref) == 0, ref
+
+
+def test_staged_ref_reads_the_index_not_the_disk(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    baseline, waivers, grown = _seed_tracked_baseline(git_repo)
+    monkeypatch.chdir(git_repo)
+
+    # Disk grows, index does not: :staged passes, :worktree fails.
+    _grow(baseline, grown)
+    assert _run_gate(baseline, waivers, ":staged") == 0
+    assert _run_gate(baseline, waivers, ":worktree") == 1
+
+    # Index grows, disk reverted: :staged fails, :worktree passes.
+    _git(git_repo, "add", "baseline.yaml")
+    _shrink(baseline)
+    capsys.readouterr()
+    assert _run_gate(baseline, waivers, ":worktree") == 0
+    assert _run_gate(baseline, waivers, ":staged") == 1
+    assert grown in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("relative", [False, True], ids=["absolute", "relative"])
+def test_staged_ref_honours_an_explicit_git_index_file(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, relative: bool
+) -> None:
+    """A ``git commit <path>`` hook's temporary index is the staged side."""
+    baseline, waivers, grown = _seed_tracked_baseline(git_repo)
+    real_index = git_repo / ".git" / "index"
+    alt_index = git_repo / ".git" / "alt-index"
+    alt_index.write_bytes(real_index.read_bytes())
+    _grow(baseline, grown)
+    _git(
+        git_repo,
+        "add",
+        "baseline.yaml",
+        extra_env={"GIT_INDEX_FILE": str(alt_index)},
+    )
+    _shrink(baseline)  # disk and the real index are clean
+    real_before = real_index.read_bytes()
+    monkeypatch.chdir(git_repo)
+
+    assert _run_gate(baseline, waivers, ":staged") == 0
+
+    monkeypatch.setenv(
+        "GIT_INDEX_FILE", ".git/alt-index" if relative else str(alt_index)
+    )
+    assert _run_gate(baseline, waivers, ":staged") == 1
+    assert real_index.read_bytes() == real_before
+
+
+def test_explicit_ref_compares_against_the_merge_base(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    baseline, waivers, grown = _seed_tracked_baseline(git_repo)
+    _git(git_repo, "branch", "base")
+    _git(git_repo, "checkout", "-q", "-b", "feature")
+    monkeypatch.chdir(git_repo)
+    assert _run_gate(baseline, waivers, "base") == 0
+
+    _grow(baseline, grown)
+    _git(git_repo, "commit", "-qam", "grow")  # committed, so only the ref sees it
+    assert _run_gate(baseline, waivers, ":worktree") == 0
+    assert _run_gate(baseline, waivers, "base") == 1
+    assert grown in capsys.readouterr().err
+
+
+def test_explicit_ref_authority_is_the_merge_base_not_the_ref_tip(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The ref shrank its baseline after the branch point; the branch did not grow."""
+    baseline, waivers, _ = _seed_tracked_baseline(git_repo)
+    _git(git_repo, "branch", "feature")
+    _shrink(baseline)
+    _git(git_repo, "commit", "-qam", "base shrinks")
+    _git(git_repo, "branch", "-f", "base")
+    _git(git_repo, "checkout", "-q", "feature")
+    monkeypatch.chdir(git_repo)
+
+    assert _run_gate(baseline, waivers, "base") == 0
+
+
+def test_baseline_untracked_in_the_authority_has_nothing_to_grow_from(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, baseline, waivers = _seed_baselined(git_repo)  # baseline never committed
+    monkeypatch.chdir(git_repo)
+
+    for ref in (":worktree", ":staged"):
+        assert _run_gate(baseline, waivers, ref) == 0, ref
+
+
+def test_baseline_growth_fails_closed_on_a_bad_ref(
+    git_repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    baseline, _, _ = _seed_tracked_baseline(git_repo)
+    monkeypatch.chdir(git_repo)
+
+    with pytest.raises(ModelOnexError):
+        pyd.baseline_growth("no-such-ref", baseline, git_repo)
