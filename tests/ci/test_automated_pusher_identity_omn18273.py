@@ -94,6 +94,11 @@ EXEMPT: dict[str, str] = {
         "their own callers; asserting the App-token property here would fail over "
         "a file this repository no longer executes"
     ),
+    "hook-push-rehearsal.yml": (
+        "pushes only to a local bare remote it creates under RUNNER_TEMP, to rehearse "
+        "the pre-push hook set (OMN-17427); it never pushes to GitHub, mints no token "
+        "and creates no commit outside the throwaway runner tree"
+    ),
 }
 
 TRAILER_WORKFLOW = "Onex-Workflow:"

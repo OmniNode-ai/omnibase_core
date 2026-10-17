@@ -112,6 +112,15 @@ requirements:
           and the contract_compliance_check primitives return the onex_change_control originals' recorded
           verdicts on every case of the parity corpus. -- falsifier: uv run pytest tests/unit/handlers/test_occ_contract_checks_parity.py
           -q"
+  - id: req-omn17427-hook-push-rehearsal
+    statement: A pull request that changes a hook, hook script, preflight or push path rehearses the repository's
+      pre-push set as a controller worker pushes, before a worker push is refused.
+    acceptance:
+      - id: AC16
+        statement: "AC16: hook-push-rehearsal.yml pushes a sample commit through the installed pre-push
+          hook to a local bare remote on a matching pull request only, and fails when the push is refused,
+          runs past the timeout or a hook leaves a file in the work tree. -- falsifier: uv run pytest
+          tests/unit/scripts/ci/test_hook_push_rehearsal_workflow_omn17427.py -q"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -160,6 +169,10 @@ evidence_requirements:
   - kind: tests
     description: "receipt-gate.yml sets evidence-source caller as its only accepted value in its own header."
     command: "uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -k test_receipt_gate_states_its_single_mode_as_evidence_source_caller"
+  - kind: tests
+    description: "The hook push rehearsal pushes a sample commit through the pre-push set on a matching
+      pull request only and fails a refused, timed-out or tree-dirtying push."
+    command: "uv run pytest tests/unit/scripts/ci/test_hook_push_rehearsal_workflow_omn17427.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -365,3 +378,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC15
+  - id: dod-omn-17427-hook-push-rehearsal
+    description: "hook-push-rehearsal.yml pushes a sample commit through the installed pre-push hook to
+      a local bare remote on a pull request whose changed paths match path-regex, and fails a refused
+      push, a push past the timeout and a hook that leaves a file in the work tree."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_hook_push_rehearsal_workflow_omn17427.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC16
