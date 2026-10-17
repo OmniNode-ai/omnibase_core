@@ -1,0 +1,37 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-14420
+title: Test collection in omnibase_core aborts when an ambient PYTHONPATH shadows the checkout
+summary: tests/conftest.py now refuses to collect when omnibase_core resolves outside the repository checkout,
+  so a worktree test run can no longer silently execute canonical-clone source through an ambient PYTHONPATH.
+  The failure message names the cause and the env -u PYTHONPATH remedy. The same guard is already in omnibase_infra
+  and omnimarket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-hermetic-import-guard
+    statement: Collecting the omnibase_core test suite must fail with an explicit message when omnibase_core
+      imports from outside the checkout, and must collect normally otherwise.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: pytest collection exits non-zero with "Hermetic import guard failed" when a PYTHONPATH
+          entry holds a copy of omnibase_core, and exits zero without it. -- falsifier: env -u PYTHONPATH
+          uv run pytest tests/unit/test_hermetic_import_guard_omn14420.py -n 0 -q'
+evidence_requirements:
+  - kind: tests
+    description: The guard tests pass at the head and the shadowing case fails at the merge base.
+    command: env -u PYTHONPATH uv run pytest tests/unit/test_hermetic_import_guard_omn14420.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-hermetic-import-guard-ac1
+    description: Collection aborts under a shadowing PYTHONPATH and succeeds without one.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/test_hermetic_import_guard_omn14420.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]

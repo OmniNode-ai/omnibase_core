@@ -58,10 +58,18 @@ from unittest.mock import MagicMock
 
 import pytest
 
+import omnibase_core
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     GIT_DISCOVERY_ENV_VARS,
     GIT_LOCATION_ENV_VARS,
     strip_git_location_env,
+)
+from tests.fixtures.hermetic_import import assert_hermetic_import
+
+# OMN-14420: an ambient PYTHONPATH naming a canonical clone's src/ would make this run import
+# that clone's omnibase_core instead of the checkout under test. Abort collection with the fix.
+assert_hermetic_import(
+    "omnibase_core", omnibase_core.__file__, Path(__file__).resolve().parent.parent
 )
 
 # Configure logging to reduce memory overhead
