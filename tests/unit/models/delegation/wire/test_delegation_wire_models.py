@@ -8,6 +8,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import get_args
 
 import pytest
 from pydantic import ValidationError
@@ -1658,27 +1659,32 @@ class TestModelBifrostDelegationConfig:
             ModelDelegationBackendConfig(backend_id="local_qwen3", tier="unknown")
 
     def test_all_live_tier_values_accepted(self) -> None:
-        """All tier values present in live bifrost_delegation.yaml must be valid (OMN-12663).
+        """The six tiers in the live bifrost_delegation.yaml are the whole accepted set.
 
-        Verified against bifrost_delegation.yaml and routing_tiers.yaml in omnimarket
-        and omnibase_infra; values confirmed in D3 trace (OMN-12642).
+        The set is spelled here because omnibase_core cannot read the omnimarket
+        config; comparing the field's own Literal to it keeps the test from
+        passing on a stale list (OMN-17122, DR-17).
         """
         live_tiers = (
             "local",
             "frontier_api",
             "cheap_cloud",
             "cheap_frontier",
-            "cli_agents",
+            "judge",
+            "typed_decision",
         )
+        declared = get_args(
+            ModelDelegationBackendConfig.model_fields["tier"].annotation
+        )
+        assert set(declared) == set(live_tiers)
         for tier in live_tiers:
             backend = ModelDelegationBackendConfig(backend_id=f"test-{tier}", tier=tier)
             assert backend.tier == tier, f"tier={tier!r} round-trip failed"
 
-    def test_previously_missing_tiers_now_accepted(self) -> None:
-        """cheap_cloud, cheap_frontier, and cli_agents were the three missing values (OMN-12663)."""
-        for tier in ("cheap_cloud", "cheap_frontier", "cli_agents"):
-            backend = ModelDelegationBackendConfig(backend_id=f"test-{tier}", tier=tier)
-            assert backend.tier == tier
+    def test_removed_cli_agents_tier_rejected(self) -> None:
+        """cli_agents was removed from the live config (OMN-17122, DR-17)."""
+        with pytest.raises(ValidationError):
+            ModelDelegationBackendConfig(backend_id="test-cli", tier="cli_agents")
 
 
 @pytest.mark.unit
