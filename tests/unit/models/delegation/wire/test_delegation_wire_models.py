@@ -59,6 +59,7 @@ from omnibase_core.models.delegation.wire import (
 _CANONICAL_DELEGATION_TASK_TYPES = frozenset(
     {
         "agent_delegation",
+        "brief_drafting",
         "code_generation",
         "code_review",
         "complex_reasoning",
@@ -376,7 +377,7 @@ class TestModelDelegationRequest:
         """Every Market-authoritative task class crosses the Core wire.
 
         OMN-15651 keeps this consumer mechanically coherent with the Market-owned
-        15-class authority through cross-repository admission. Core intentionally
+        16-class authority through cross-repository admission. Core intentionally
         does not import Market at runtime.
         """
         r = self._make(task_type=task_type)
