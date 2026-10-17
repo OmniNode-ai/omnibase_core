@@ -1,0 +1,93 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17914
+title: The pydantic-extra-forbid validator rejects baseline growth against the authority its mode selects
+summary: With --enforce-modified the validator now compares the baseline against the authority the chosen
+  reference selects, and fails when the baseline gained an entry. :staged compares the index (an explicit
+  GIT_INDEX_FILE included) with HEAD, :worktree compares the file on disk with HEAD, and a git reference
+  compares the file on disk with the merge base of the reference and HEAD. Shrinkage still passes.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17914-per-mode-baseline-authority
+    statement: The validator rejects baseline growth in every enforce-modified mode against that mode's
+      own authority, and still accepts shrinkage.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a baseline entry added on disk fails the validator under :worktree and a removed
+          entry passes in :worktree, :staged and explicit-reference modes -- falsifier: the growth test
+          passes with the validator at origin/dev"
+      - id: AC2
+        statement: "AC2: under :staged the validator reads the index side, so growth that is only on disk
+          passes and growth that is only in the index fails -- falsifier: the index-versus-disk test passes
+          with the disk file read in :staged mode"
+      - id: AC3
+        statement: "AC3: an explicit GIT_INDEX_FILE, absolute or relative, is the staged side and the
+          real index bytes are unchanged -- falsifier: the alternate-index test passes with the variable
+          scrubbed"
+      - id: AC4
+        statement: "AC4: an explicit reference compares against the merge base of the reference and HEAD,
+          not the reference tip -- falsifier: the merge-base test passes with the tip as the authority"
+      - id: AC5
+        statement: "AC5: a baseline that is not tracked in the authority reads as no growth, and a bad
+          reference fails closed -- falsifier: the bad-reference test passes with git errors swallowed"
+evidence_requirements:
+  - kind: tests
+    description: Run the pydantic extra-forbid validator tests, which build throwaway git repositories
+      for each mode.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n 0
+  - kind: ci
+    description: Hosted-runner deploy check; the tests build their own temporary git repositories.
+    command: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n 0 -k "baseline_growth
+      or baseline_shrinkage or staged_ref or explicit_ref or untracked_in_the_authority"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17914-ac1-growth-and-shrinkage
+    description: Growth fails under :worktree and shrinkage passes in every mode.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "baseline_growth_on_disk or baseline_shrinkage"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn17914-ac2-index
+    description: The staged mode reads the index, not the disk.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "staged_ref_reads_the_index"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn17914-ac3-alternate-index
+    description: An explicit GIT_INDEX_FILE is the staged side and the real index is untouched.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "explicit_git_index_file"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn17914-ac4-merge-base
+    description: An explicit reference compares against the merge base, not the reference tip.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "explicit_ref"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn17914-ac5-no-authority-and-bad-ref
+    description: An untracked baseline reads as no growth and a bad reference fails closed.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_pydantic_extra_forbid.py -q --no-cov -n
+          0 -k "untracked_in_the_authority or growth_fails_closed"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
