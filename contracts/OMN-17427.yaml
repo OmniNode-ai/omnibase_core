@@ -140,6 +140,14 @@ requirements:
           manifest carries the context gate / CodeRabbit Thread Check only as a RETIRED row, and the CI
           Summary gate does not anchor it. -- falsifier: uv run pytest tests/ci/test_coderabbit_gate_removed_omn17427.py
           -q"
+  - id: req-omn17427-brief-drafting-wire
+    statement: The delegation wire request admits the brief_drafting task class, so a request for lane
+      brief drafting is deliverable once the Market task-class contract declares it.
+    acceptance:
+      - id: AC19
+        statement: "AC19: ModelDelegationRequest accepts task_type brief_drafting and its JSON schema
+          enum is exactly the canonical sixteen classes. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py
+          -q -k canonical"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -437,3 +445,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC18
+  - id: dod-omn-17427-brief-drafting-wire
+    description: "The delegation wire request admits the brief_drafting task class and its schema enum
+      is the canonical sixteen."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q
+          -k canonical -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC19
