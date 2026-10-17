@@ -3,13 +3,11 @@
 
 """OMN-20074: verification gates folded into ci.yml under CI Summary.
 
-Three standalone workflow jobs were verification gates whose only enforcing
+Two standalone workflow jobs were verification gates whose only enforcing
 context was the occ-preflight they embedded. With that preflight gone each one
 is a check that runs and cannot fail, so each is folded into ci.yml, whose
 required ``CI Summary`` poller fails on any non-allowlisted job of the run:
 
-* ``gate`` (cr-thread-gate-caller.yml), a ``uses:`` caller whose composed
-  context ``gate / CodeRabbit Thread Check`` is unchanged;
 * ``policy-gate`` (handshake-policy-gate.yml), reached from ci.yml on
   ``merge_group`` only, the one pull-request-reachable event it ever ran on;
 * ``dry-run-ci-check`` (propagate-config.yml), now ``propagate-dry-run`` with
@@ -46,14 +44,10 @@ WORKFLOWS_DIR = REPO_ROOT / ".github" / "workflows"
 CI_YML = WORKFLOWS_DIR / "ci.yml"
 PROPAGATE_YML = WORKFLOWS_DIR / "propagate-config.yml"
 HANDSHAKE_YML = WORKFLOWS_DIR / "handshake-policy-gate.yml"
-CR_CALLER_YML = WORKFLOWS_DIR / "cr-thread-gate-caller.yml"
-CR_REUSABLE_YML = WORKFLOWS_DIR / "cr-thread-gate.yml"
-REQUIRED_CHECKS = REPO_ROOT / ".github" / "required-checks.yaml"
 
-CR_CONTEXT = "gate / CodeRabbit Thread Check"
 DRY_RUN_NAME = "Propagate Config Dry-run (OMN-20074)"
 HANDSHAKE_CONTEXT = "handshake-policy-gate / Check handshake compliance across repos"
-ANCHORED_FOLDS = (CR_CONTEXT, DRY_RUN_NAME)
+ANCHORED_FOLDS = (DRY_RUN_NAME,)
 ALL_FOLDS = (*ANCHORED_FOLDS, HANDSHAKE_CONTEXT)
 
 
@@ -87,39 +81,6 @@ _EXTERNAL_GREEN: list[dict[str, object]] = [
     {"name": n, "status": "completed", "conclusion": "success", "started_at": ""}
     for n in EXPECTED_EXTERNAL_CONTEXTS
 ]
-
-
-# --------------------------------------------------------------------------- #
-# gate (cr-thread-gate-caller.yml)
-# --------------------------------------------------------------------------- #
-
-
-def test_cr_thread_gate_caller_workflow_is_gone() -> None:
-    assert not CR_CALLER_YML.exists(), (
-        "the standalone caller produces the same context as the ci.yml job: a "
-        "duplicate producer in a second concurrency group"
-    )
-
-
-def test_cr_thread_gate_is_an_unconditional_caller_in_ci_yml() -> None:
-    job = _ci_jobs()["gate"]
-    assert job["uses"] == "./.github/workflows/cr-thread-gate.yml"
-    # A skipped `uses:` caller never invokes the reusable, so the composed
-    # context would not exist at all (OMN-15120/OMN-14864 vector 3).
-    assert "if" not in job
-    assert "needs" not in job, "no occ-preflight or any other dependency"
-    assert "pr-number" in job["with"]
-    assert job["secrets"] == {"CROSS_REPO_PAT": "${{ secrets.CROSS_REPO_PAT }}"}
-
-
-def test_cr_thread_gate_composed_context_is_unchanged() -> None:
-    job = _ci_jobs()["gate"]
-    inner = _load(CR_REUSABLE_YML)["jobs"]["gate"]["name"]
-    assert f"{job.get('name', 'gate')} / {inner}" == CR_CONTEXT
-    manifest = yaml.safe_load(REQUIRED_CHECKS.read_text(encoding="utf-8"))
-    row = next(g for g in manifest["gates"] if g["name"] == CR_CONTEXT)
-    assert row["workflow"] == "ci.yml", "the manifest row must follow the producer"
-    assert row["job_path"] == ["gate", "gate"]
 
 
 # --------------------------------------------------------------------------- #
@@ -370,5 +331,3 @@ def test_an_absent_anchored_fold_holds_pending(name: str) -> None:
 def test_the_anchored_names_are_the_names_the_jobs_api_reports() -> None:
     jobs = _ci_jobs()
     assert jobs["propagate-dry-run"]["name"] == DRY_RUN_NAME
-    inner = _load(CR_REUSABLE_YML)["jobs"]["gate"]["name"]
-    assert f"gate / {inner}" == CR_CONTEXT

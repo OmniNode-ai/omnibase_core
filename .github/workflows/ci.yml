@@ -3776,32 +3776,15 @@ jobs:
   # ===========================================================================
   # OMN-20074: verification gates folded in from standalone workflows.
   # ---------------------------------------------------------------------------
-  # Each of these three jobs used to be reachable only through the occ-preflight
+  # Each of these two jobs used to be reachable only through the occ-preflight
   # it embedded; with that preflight retired a job of this shape runs and cannot
   # fail. They run in THIS workflow so the required "CI Summary" poller
   # (scripts/ci/ci_summary_gate.py) fails on them through its default-deny
   # sweep, with no new required context, annotation, allowlist or baseline
-  # entry. The unconditional two are also registered in GATE_JOBS and
+  # entry. The unconditional one is also registered in GATE_JOBS and
   # STRICT_SUCCESS_JOBS there so deleting one cannot read as a green run.
   # Pinned by tests/ci/test_ci_fold_gates_omn20074.py.
   # ===========================================================================
-
-  # Folded from cr-thread-gate-caller.yml, which is deleted: leaving it would
-  # produce this same context from a second workflow. The caller job id stays
-  # `gate` and the reusable's job name stays `CodeRabbit Thread Check`, so the
-  # composed context `gate / CodeRabbit Thread Check` is unchanged byte for
-  # byte (.github/required-checks.yaml row repointed to this file). The caller
-  # MUST stay unconditional: a skipped `uses:` caller never invokes the
-  # reusable, so no composed check-run exists (OMN-15120/OMN-14864 vector 3).
-  # The reusable is a no-op while CodeRabbit is retired, so the review and
-  # comment events the standalone caller also listened on had nothing to
-  # re-evaluate and are not carried over.
-  gate:
-    uses: ./.github/workflows/cr-thread-gate.yml
-    with:
-      pr-number: ${{ format('{0}', github.event.pull_request.number || 0) }}
-    secrets:
-      CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
 
   # Folded from handshake-policy-gate.yml's `merge_group` trigger, the only
   # pull-request-reachable event that workflow ever had. It stays a separate

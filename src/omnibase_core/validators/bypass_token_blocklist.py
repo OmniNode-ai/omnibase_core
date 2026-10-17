@@ -19,7 +19,7 @@ imperfectly.  The nine families are:
   4. skip-ci (GitHub form)      — CI skip
   5. ci-skip (Travis/Jenkins)   — CI skip
   6. dod-sweep skip prefix      — DoD sweep bypass
-  7. cr-gate skip prefix        — CodeRabbit gate bypass
+  7. cr-gate skip prefix        — retired review-thread gate bypass (spelling stays banned)
   8. deploy-gate-bypass prefix  — deploy-gate bypass
   9. receipt-gate-bypass        — receipt-gate bypass (bare variant)
 

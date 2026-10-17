@@ -6,7 +6,7 @@
 # for manual enrollment.
 #
 # OMN-7786: Re-trigger on review and check_suite events so the workflow
-# re-attempts auto-merge after CodeRabbit review finishes and branch
+# re-attempts auto-merge after a review finishes and branch
 # protection gates clear. Silent continue-on-error removed; "already
 # enqueued" races are tolerated but real failures surface.
 #
@@ -111,7 +111,7 @@
 # {"name":"CROSS_REPO_PAT","created_at":"2026-03-03T19:03:03Z",
 # "visibility":"all"}), and this repo ALREADY consumes it in ci.yml,
 # release.yml, propagate-config.yml, publish-downstream-pin-bump.yml,
-# cr-thread-gate.yml, cr-thread-gate-caller.yml and dependency-cascade.yml.
+# and dependency-cascade.yml.
 #
 # NO FALLBACK EXPRESSION (`|| secrets.GITHUB_TOKEN`) is used: a fallback would
 # restore the defect silently on any run where the PAT is unavailable, which is

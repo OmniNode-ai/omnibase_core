@@ -16,8 +16,7 @@ contract fail closed at runtime startup::
     RuntimeLocal: result=failed
 
 This is the regression that took down the headless automation fleet
-(merge_sweep, ci_watch, auto_merge, build_loop, coderabbit_triage,
-create_ticket) after omnibase_core 0.46.0 hardened ``_validate_routing``.
+(merge_sweep, ci_watch, auto_merge, build_loop, create_ticket) after omnibase_core 0.46.0 hardened ``_validate_routing``.
 
 This validator is the enforcement gate: it scans ``contract.yaml`` files and
 fails if any operation-routed handler entry lacks a non-empty ``operation``. Wire

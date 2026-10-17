@@ -27,7 +27,7 @@ pytestmark = pytest.mark.unit
 
 _SUBSTANTIVE_SUMMARY = (
     "Squash-merged PR #4821 into main after CI went green on the second push; "
-    "no conflicts, no CodeRabbit threads outstanding."
+    "no conflicts, no review threads outstanding."
 )
 
 _MERGE_SHA = "c" * 40

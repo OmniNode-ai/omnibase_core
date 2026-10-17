@@ -98,8 +98,6 @@ repos:
       - analyze
     .github/workflows/contract-validation.yml:
       - contract-validation
-    .github/workflows/cr-thread-gate.yml:
-      - gate
     .github/workflows/cross-repo-validation.yml:
       - cross-repo-validation
     .github/workflows/dependency-cascade.yml:
