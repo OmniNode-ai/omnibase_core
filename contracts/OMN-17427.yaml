@@ -102,6 +102,16 @@ requirements:
         statement: "AC14: receipt-gate.yml sets `evidence-source: caller` as its only accepted value in
           its own header, and the pattern that reads that line does not match the old wording. -- falsifier:
           uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -k test_receipt_gate_states_its_single_mode_as_evidence_source_caller"
+  - id: req-omn17427-occ-contract-checks-in-core
+    statement: omnibase_core must ship the check-value lint, the substance floor and the compliance-check
+      primitives that omnimarket's parity tests import from onex_change_control, answering as the originals
+      do.
+    acceptance:
+      - id: AC15
+        statement: "AC15: The core ports of lint_contract_check_values, check_contract_substance_floor
+          and the contract_compliance_check primitives return the onex_change_control originals' recorded
+          verdicts on every case of the parity corpus. -- falsifier: uv run pytest tests/unit/handlers/test_occ_contract_checks_parity.py
+          -q"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -344,3 +354,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC14
+  - id: dod-omn-17427-occ-contract-checks-parity
+    description: "The core ports of the three onex_change_control contract checks return the originals'
+      recorded verdicts on the parity corpus."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_occ_contract_checks_parity.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC15
