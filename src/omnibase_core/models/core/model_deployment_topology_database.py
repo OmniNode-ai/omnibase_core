@@ -135,10 +135,10 @@ class ModelDeploymentTopologyDatabase(BaseModel):
                 f"checksum_ledger references unknown ledger '{self.checksum_ledger}'"
             )
         for ledger_ref, ledger in self.checksum_ledgers.items():
-            if ledger.schema not in self.schemas:
+            if ledger.schema_name not in self.schemas:
                 # error-ok: Pydantic validators require ValueError to produce ValidationError.
                 raise ValueError(
                     f"Checksum ledger '{ledger_ref}' references unknown schema "
-                    f"'{ledger.schema}'"
+                    f"'{ledger.schema_name}'"
                 )
         return self

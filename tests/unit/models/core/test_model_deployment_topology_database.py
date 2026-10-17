@@ -333,3 +333,56 @@ def test_schema_field_shadow_warning_suppressed_on_fresh_import() -> None:
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+_LEDGER_MODULE = (
+    "omnibase_core.models.core.model_deployment_topology_database_migration_ledger"
+)
+
+
+def test_migration_ledger_import_emits_no_warning_and_installs_no_filter() -> None:
+    """OMN-17427: the migration-ledger module must not produce the pydantic
+    ``schema`` field-shadow ``UserWarning`` at all, rather than hide it with a
+    process-global ``warnings.filterwarnings`` call. The subprocess records every
+    ``filterwarnings`` call made from the ledger module and turns the call into a
+    no-op, so a suppression cannot mask the warning; ``-W error::UserWarning``
+    then fails the import if the warning is produced.
+    """
+    script = (
+        "import sys, warnings\n"
+        "calls = []\n"
+        "def recorder(*args, **kwargs):\n"
+        "    caller = sys._getframe(1).f_globals.get('__name__')\n"
+        f"    if caller == {_LEDGER_MODULE!r}:\n"
+        "        calls.append(caller)\n"
+        "warnings.filterwarnings = recorder\n"
+        f"import {_LEDGER_MODULE}\n"
+        "assert not calls, 'ledger module called warnings.filterwarnings'\n"
+    )
+    result = subprocess.run(
+        [sys.executable, "-W", "error::UserWarning", "-c", script],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stderr == ""
+
+
+def test_migration_ledger_schema_key_round_trips_by_alias() -> None:
+    from omnibase_core.models.core.model_deployment_topology_database_migration_ledger import (
+        ModelDeploymentTopologyDatabaseMigrationLedger,
+    )
+
+    payload = _database_payload()["checksum_ledgers"]["canonical"]
+    ledger = ModelDeploymentTopologyDatabaseMigrationLedger.model_validate(payload)
+
+    assert ledger.schema_name == "platform_catalog"
+    dumped = ledger.model_dump(by_alias=True)
+    assert dumped["schema"] == "platform_catalog"
+    assert "schema_name" not in dumped
+    assert (
+        ModelDeploymentTopologyDatabaseMigrationLedger.model_validate(dumped) == ledger
+    )
+    assert "schema" in ledger.model_dump_json(by_alias=True)

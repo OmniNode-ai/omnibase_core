@@ -121,6 +121,16 @@ requirements:
           hook to a local bare remote on a matching pull request only, and fails when the push is refused,
           runs past the timeout or a hook leaves a file in the work tree. -- falsifier: uv run pytest
           tests/unit/scripts/ci/test_hook_push_rehearsal_workflow_omn17427.py -q"
+  - id: req-omn17427-mac-migration-ledger-schema-alias
+    statement: The deployment-topology migration-ledger model imports without the pydantic field-shadow
+      warning and without a process-global warning filter, while a contract key `schema` still validates
+      and serializes by alias.
+    acceptance:
+      - id: AC17
+        statement: "AC17: Importing the migration-ledger module in a fresh interpreter under -W error::UserWarning
+          succeeds with empty stderr and without the module calling warnings.filterwarnings, and a payload
+          keyed `schema` validates to schema_name and dumps back to `schema`. -- falsifier: uv run pytest
+          tests/unit/models/core/test_model_deployment_topology_database.py -q -k migration_ledger"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -391,3 +401,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC16
+  - id: dod-omn-17427-mac-migration-ledger-schema-alias
+    description: "The migration-ledger model imports with no field-shadow warning and no module-level
+      warning filter, and a contract key `schema` round-trips by alias."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/core/test_model_deployment_topology_database.py -q
+          -k migration_ledger -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC17
