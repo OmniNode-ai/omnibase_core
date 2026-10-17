@@ -16,7 +16,6 @@
     "Canonical Inference Gate",
     "No Faked Boundary Gate",
     "reason-graph",
-    "gate / CodeRabbit Thread Check",
     "pr-title / check-title",
     "no-plugin-daemon-classes",
     "receipt-honesty",

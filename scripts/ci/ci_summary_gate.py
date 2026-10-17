@@ -130,19 +130,16 @@ GATE_JOBS: tuple[str, ...] = (
     # workflows that were reachable only through their embedded occ-preflight.
     # Registered on the identical reasoning as the entries above: the
     # default-deny sweep fails when one FAILS, but an unregistered job that is
-    # `skipped` or ABSENT yields SUCCESS, so without these lines deleting a fold
-    # from ci.yml would read as a green run. Both are unconditional in ci.yml
-    # (no `if:`, no `needs:`), hence the paired STRICT_SUCCESS_JOBS entries.
-    # `gate` is a `uses:` caller, so the jobs API reports "<caller> / <inner
-    # job name>", the context cr-thread-gate-caller.yml always produced; the
-    # dry-run is an ordinary job reported by its own name, and its path filter
-    # runs in its steps so the job itself always reports.
+    # `skipped` or ABSENT yields SUCCESS, so without this line deleting a fold
+    # from ci.yml would read as a green run. It is unconditional in ci.yml
+    # (no `if:`, no `needs:`), hence the paired STRICT_SUCCESS_JOBS entry.
+    # The dry-run is an ordinary job reported by its own name, and its path
+    # filter runs in its steps so the job itself always reports.
     # `handshake-policy-gate` (merge_group only, skipped on every
     # pull_request run) is deliberately NOT here: a skipped `uses:` caller posts
     # no job under its composed name, so an anchor would hold every pull request
     # PENDING. The default-deny sweep covers its failure.
     # Pinned by tests/ci/test_ci_fold_gates_omn20074.py.
-    "gate / CodeRabbit Thread Check",
     "Propagate Config Dry-run (OMN-20074)",
 )
 
@@ -174,11 +171,10 @@ STRICT_SUCCESS_JOBS: frozenset[str] = frozenset(
         # out.
         "Skip Count Ratchet (OMN-18776)",
         'Pydantic extra="forbid" Baseline One-way (OMN-19677) / anti-growth-baseline',
-        # OMN-20074: paired with the GATE_JOBS entries above, same reasoning --
+        # OMN-20074: paired with the GATE_JOBS entry above, same reasoning --
         # GATE_JOBS' anchor accepts ``skipped`` as complete, so this is the half
-        # that makes a SKIPPED (or CANCELLED) fold fail closed. Neither job has
-        # an `if:` or a `needs:`, so a skip is a failure-to-run, never an opt-out.
-        "gate / CodeRabbit Thread Check",
+        # that makes a SKIPPED (or CANCELLED) fold fail closed. The job has
+        # no `if:` or `needs:`, so a skip is a failure-to-run, never an opt-out.
         "Propagate Config Dry-run (OMN-20074)",
     }
 )

@@ -94,7 +94,7 @@ allowlisted_workflows:
 # net-negative rule). A past-expiry waiver fails the gate. Empty at baseline —
 # the sanctioned default is retire-one, not waive.
 waivers:
-  # OMN-20074: cr-thread-gate-caller.yml retired into ci.yml's `gate` job; budget 30 -> 29.
+  # OMN-20074: cr-thread-gate-caller.yml retired (its `gate` job was later removed with CodeRabbit, OMN-17427); budget 30 -> 29.
   # OMN-20074: call-receipt-gate.yml retired with the OCC callers; budget 29 -> 28.
   # OMN-20074: call-occ-autobind.yml deleted; its OMN-14160 waiver permanently closed.
   # OMN-20074: occ-companion-merge-heal.yml deleted (not PR-triggered; no budget slot).

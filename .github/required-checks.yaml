@@ -182,27 +182,14 @@ gates:
     rationale: "Live required status check on omnibase_core dev branch protection."
 
   - name: "gate / CodeRabbit Thread Check"
-    mode: REQUIRED
+    mode: RETIRED
     producer_kind: local
     workflow: ci.yml
     job_path: ["gate", "gate"]
     skip_semantics: never
-    rationale: "OMN-20074: the caller job moved from cr-thread-gate-caller.yml into ci.yml, keeping the
-      job id `gate` and the reusable's job name, so the composed context is unchanged; the standalone
-      caller was deleted so this context has one producer. OMN-15120/OMN-14864 repair (docs/diagnoses/2026-08-06-omnibase-core-1548-missing-required-
-      contexts.md): the caller job 'gate' previously had an ungated `if:` (github.actor != 'dependabot[bot]',
-      among other clauses) — vector-3, a skipped caller job produces NO check run at all, which permanently
-      wedged this required context on Dependabot PRs (live case: omnibase_core#1548). The `if:` is now
-      removed entirely; the caller always invokes the reusable, and the former non-PR issue_comment guard
-      moved into the pr-number input (resolves to 0, which the reusable already no-ops on). A SECOND,
-      independently-discovered instance of the same vector-3 shape was found live on this repair's own
-      verification PR (omnibase_core#1549, CodeRabbit finding + confirmed via check-run inspection): `needs:
-      occ-preflight` with no `if: always()` also implicitly skips this caller job (and therefore the composed
-      context) whenever occ-preflight fails -- the ordinary state of ANY fresh non-exempt PR before its
-      OCC companion is minted, not Dependabot-specific. Fixed by adding `if: always()`, matching the convention
-      every other required `needs: occ-preflight` caller in this repo already follows. The reusable (cr-thread-gate.yml)
-      carries no job-level `if:` of its own, so this context now always completes success/failure — never
-      skipped — hence skip_semantics: never."
+    rationale: "OMN-17427: CodeRabbit is retired. The producer (the ci.yml gate caller of cr-thread-gate.yml,
+      a no-op since OMN-17146) was deleted. Live dev branch protection does not list this context (read
+      2026-10-17 through pr_state_local --settings), so there is no branch-protection change to make."
 
   - name: "pr-title / check-title"
     mode: REQUIRED
