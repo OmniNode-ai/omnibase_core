@@ -1037,6 +1037,23 @@ jobs:
           echo "- No class-level mutable state" >> $GITHUB_STEP_SUMMARY
           echo "- No caching decorators that introduce state" >> $GITHUB_STEP_SUMMARY
 
+  # OMN-17427: hook push rehearsal. A controller worker's push runs the pre-push hook set, and a
+  # refused push loses the fix. On a pull request that changes .pre-commit-config.yaml, a hook
+  # script or the rehearsal itself, this job pushes a sample commit through the pre-push set with
+  # the worker's environment (PYTHONDONTWRITEBYTECODE=1) and its 1,800 s timeout, and fails when
+  # the push is refused.
+  # Every other pull request and event passes without a push, so the context always reports.
+  # No `needs` and no `if`: ci-summary fails on any job that is not green, so this job gates the
+  # pull request without an entry in scripts/ci/ci_summary_gate.py. The reusable is GitHub-hosted
+  # (this repository is public, OMN-19998 runner rule); the other repositories call the same file.
+  hook-push-rehearsal:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/hook-push-rehearsal.yml
+    with:
+      path-regex: '^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml|\.pre-commit-hooks/|scripts/ci/verify_flip_bundle\.py|scripts/validate_class_naming\.py|scripts/check_node_purity\.py|\.github/workflows/hook-push-rehearsal\.yml)'
+      sample-file: src/omnibase_core/utils/util_uuid_utilities.py
+
   # Phase 1 validation job - runs in parallel with all other Phase 1 jobs
   # Enum Governance Validation (OMN-1313)
   # Ensures all enums follow architectural standards:

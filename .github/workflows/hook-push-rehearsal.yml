@@ -1,0 +1,172 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable hook push rehearsal for OmniNode repositories (OMN-17427).
+#
+# A controller fix worker pushes its commit through the repository's pre-push hooks, and a
+# refused push loses the fix. A pull request that changes a hook can make every later worker push
+# fail (a suite past the push timeout, a hook that refuses, a hook that leaves a file behind), and
+# no check ran the pre-push set until a worker pushed.
+#
+# This workflow runs that set the way a worker does, before the hook change merges. It installs
+# the pre-push hook and pushes a sample commit with `git push` to a local bare remote that
+# already holds the pull request head, so the pushed range is the remote-head..sample-commit range
+# of a worker's fast-forward push. The environment is the worker's (PYTHONDONTWRITEBYTECODE=1,
+# PYTHONPATH unset, the lane variables set) and so is the timeout (1,800 s). The job fails when
+# the push is refused, when it runs past the timeout, or when a hook leaves a file in the work tree.
+#
+# It runs the push only when the pull request changes a path matched by `path-regex`; on any other
+# pull request and on any other event it succeeds without a push, so the context always reports and
+# a caller can be a required check.
+#
+# Placement: this repository is public, so the job runs on a GitHub-hosted runner (RULING
+# 2026-10-16T07:07:09Z, OMN-19998: CI runners are for private repositories only). Every caller
+# gets the same runner and the same hook outcome.
+#
+# Usage (the caller job id and this file's job id `rehearse` compose the context
+# `hook-push-rehearsal / rehearse`):
+#
+#   jobs:
+#     hook-push-rehearsal:
+#       permissions:
+#         contents: read
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/hook-push-rehearsal.yml@<full sha>
+#       with:
+#         path-regex: '^(\.pre-commit-config\.yaml|scripts/hooks/)'
+#         sample-file: src/<package>/<module>.py
+
+name: Hook Push Rehearsal
+
+on:
+  workflow_call:
+    inputs:
+      path-regex:
+        description: >-
+          Extended regular expression over the repository-relative paths the pull request
+          changes. A match runs the rehearsal.
+        required: true
+        type: string
+      sample-file:
+        description: >-
+          A tracked Python source file. The sample commit appends one comment to it, so the
+          pushed range holds a Python change and the file-filtered hooks run.
+        required: true
+        type: string
+      push-timeout-seconds:
+        description: The controller worker's push timeout (PUSH_TIMEOUT_S in landing_worker_run.py).
+        required: false
+        type: string
+        default: "1800"
+
+jobs:
+  rehearse:
+    name: rehearse
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout the pull request head with its history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Decide whether this pull request changes a hook path
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PATH_REGEX: ${{ inputs.path-regex }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" != "pull_request" ]; then
+            echo "touched=false" >> "$GITHUB_OUTPUT"
+            echo "event $EVENT_NAME is not a pull request: the pull request run rehearsed the push"
+            exit 0
+          fi
+          changed="$(git diff --name-only "$BASE_SHA...$HEAD_SHA")"
+          matched="$(printf '%s\n' "$changed" | grep -E -e "$PATH_REGEX" || true)"
+          if [ -z "$matched" ]; then
+            echo "touched=false" >> "$GITHUB_OUTPUT"
+            echo "no changed path matches $PATH_REGEX: no hook, hook script, preflight or push path changed"
+            exit 0
+          fi
+          echo "touched=true" >> "$GITHUB_OUTPUT"
+          echo "changed hook paths:"
+          printf '%s\n' "$matched"
+
+      - name: Install the pre-push hook and push a sample commit through it
+        if: steps.detect.outputs.touched == 'true'
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          SAMPLE_FILE: ${{ inputs.sample-file }}
+          PUSH_TIMEOUT_S: ${{ inputs.push-timeout-seconds }}
+        run: |
+          set -euo pipefail
+          # The controller worker's push environment (landing_worker_run.py remote_push_script).
+          export PYTHONDONTWRITEBYTECODE=1
+          unset PYTHONPATH
+          export GIT_TERMINAL_PROMPT=0
+          export ONEX_LANE=hook-push-rehearsal
+          export ONEX_RUN_ID="rehearsal-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          uv tool install --quiet pre-commit
+          PATH="$(uv tool dir --bin):$PATH"
+          export PATH
+
+          test -f .pre-commit-config.yaml || { echo "::error::no .pre-commit-config.yaml"; exit 1; }
+          git ls-files --error-unmatch -- "$SAMPLE_FILE" >/dev/null \
+            || { echo "::error::sample-file $SAMPLE_FILE is not a tracked file"; exit 1; }
+
+          # The remote already holds the pull request head, as it does when a worker fixes an open
+          # pull request; no hook is installed yet, so this push is not judged.
+          remote="$RUNNER_TEMP/hook-push-rehearsal-remote.git"
+          rm -rf "$remote"
+          git init -q --bare "$remote"
+          git checkout -q --detach "$HEAD_SHA"
+          git push -q "$remote" "$HEAD_SHA:refs/heads/rehearsal"
+
+          # The sample change: one appended comment, two blank lines before it so a formatter
+          # check on the file finds nothing to say.
+          printf '\n\n# hook-push-rehearsal sample\n' >> "$SAMPLE_FILE"
+          git add -- "$SAMPLE_FILE"
+          git -c user.name=hook-push-rehearsal -c user.email=hook-push-rehearsal@users.noreply.github.com \
+            commit -q -m "hook push rehearsal sample change"
+
+          if ! pre-commit install -t pre-push; then
+            echo "::error::LANDING-PRE-PUSH-HOOK-NOT-INSTALLED: a worker pushes nothing without the repository's pre-push suite"
+            exit 95
+          fi
+
+          log="$RUNNER_TEMP/hook-push-rehearsal-push.log"
+          start="$(date +%s)"
+          set +e
+          timeout --kill-after=30 "$PUSH_TIMEOUT_S" git push "$remote" "HEAD:refs/heads/rehearsal" 2>&1 | tee "$log"
+          rc="${PIPESTATUS[0]}"
+          set -e
+          elapsed="$(( $(date +%s) - start ))"
+          echo "pre-push set finished in ${elapsed}s (rc=$rc, timeout ${PUSH_TIMEOUT_S}s)"
+
+          if [ "$rc" -eq 124 ] || [ "$rc" -eq 137 ]; then
+            echo "::error::the pre-push set ran past the ${PUSH_TIMEOUT_S}s push timeout: a controller worker's push would be killed and the fix lost"
+            exit 1
+          fi
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::the pre-push set refused the sample push (rc=$rc): a controller worker's push would be refused"
+            exit 1
+          fi
+
+          # validate-clean-root: a hook that leaves a file behind (a root __pycache__, a rewritten
+          # lock file) refuses the next push from the same tree.
+          left="$(git status --porcelain --untracked-files=all)"
+          if [ -n "$left" ]; then
+            echo "::error::the pre-push set left files in the work tree"
+            printf '%s\n' "$left"
+            exit 1
+          fi
+          echo "a controller worker's push of a sample change would be accepted"
