@@ -160,6 +160,7 @@ def _claim() -> ModelWorkClaimRequested:
         est_lane_hours=Decimal("2.0"),
         displaces="nothing",
         consent_ref=CONSENT_ID,
+        worktree="omni_worktrees/OMN-16182/omnibase_core",
     )
 
 
@@ -325,6 +326,7 @@ def _ruling() -> ModelWorkRulingRecorded:
         summary="plan decisions ruled",
         ticket_id="OMN-16176",
         operator_words="stick with your recommendations. update the plan then stop.",
+        question="Which of the plan's open decisions stand?",
         amends=_id(99),
     )
 
@@ -448,6 +450,7 @@ GOLDEN: dict[str, str] = {
         "2026-09-24T12:01:00Z | CLAIM | lane=lane-a | actor=session:lane-a"
         " | ticket=OMN-16182 | pr=omnibase_core#1700,omnibase_core#1756"
         " | consent-event=00000000-0000-4000-8000-000000000015"
+        " | worktree=omni_worktrees/OMN-16182/omnibase_core"
         " | scope=renderer only. OUT OF SCOPE: T7"
         " | est ~2 lane-hours; displaces nothing; (OMN-16182)"
         f" | {EV}000000000002 | src=typed | plan T6 renderer"
@@ -532,6 +535,7 @@ GOLDEN: dict[str, str] = {
     "ruling": (
         "2026-09-24T12:12:00Z | RULING | lane=omni-skill-fixes | ticket=OMN-16176"
         " | amends=00000000-0000-4000-8000-000000000099"
+        ' | question="Which of the plan\'s open decisions stand?"'
         ' | "stick with your recommendations. update the plan then stop."'
         f" | {EV}000000000013 | src=typed | plan decisions ruled"
     ),
@@ -578,6 +582,7 @@ GOLDEN: dict[str, str] = {
         "2026-09-24T12:18:00Z | RULING | lane=merge-drain-83"
         " | answers=2026-09-24T12:16:00Z-m4-triage"
         " | answers-events=00000000-0000-4000-8000-000000000017"
+        ' | question="Re-scope AC2 ¦ or hold the ticket?"'
         ' | "re-scope it"'
         f" | {EV}000000000019 | src=typed | the operator answered"
     ),
@@ -772,6 +777,43 @@ def test_correction_naming_nothing_is_refused() -> None:
     )
     with pytest.raises(WorkLedgerRenderError, match="corrects"):
         render_ledger_row(correction, {})
+
+
+def test_claim_without_a_worktree_renders_worktree_none() -> None:
+    event = _claim().model_copy(update={"worktree": None})
+    row = render_ledger_row(event, index_events(_all_events()))
+    assert " | worktree=none | " in row
+
+
+@pytest.mark.parametrize("value", ["two words", "a|b", " lead", ""])
+def test_claim_worktree_that_is_not_one_cell_value_is_refused(value: str) -> None:
+    with pytest.raises(ValueError, match="worktree"):
+        ModelWorkClaimRequested(
+            **{**_claim().model_dump(), "worktree": value},
+        )
+
+
+def test_ruling_takes_its_question_from_the_question_it_answers() -> None:
+    row = render_ledger_row(_answer(), index_events(_all_events()))
+    assert ' | question="Re-scope AC2 ¦ or hold the ticket?" | ' in row
+
+
+def test_ruling_own_question_wins_over_the_answered_one() -> None:
+    event = _answer().model_copy(update={"question": "Is the scope narrowed?"})
+    row = render_ledger_row(event, index_events(_all_events()))
+    assert ' | question="Is the scope narrowed?" | ' in row
+    assert "Re-scope AC2" not in row.split(" | question=")[1].split(" | ")[0]
+
+
+def test_ruling_naming_no_question_is_refused() -> None:
+    event = _ruling().model_copy(update={"question": None})
+    with pytest.raises(WorkLedgerRenderError, match="names no question"):
+        render_ledger_row(event, index_events(_all_events()))
+
+
+def test_ruling_blank_question_is_refused() -> None:
+    with pytest.raises(ValueError, match="question"):
+        ModelWorkRulingRecorded(**{**_ruling().model_dump(), "question": "  "})
 
 
 def test_lane_that_is_not_one_token_is_refused() -> None:

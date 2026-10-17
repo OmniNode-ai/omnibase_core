@@ -254,6 +254,7 @@ def _claim_cells(event: ModelWorkClaimRequested) -> list[str]:
         cells.append(f"contract-schema={event.contract_schema_version}")
     if event.dod_evidence:
         cells.append(f"dod-evidence={_contract_json(event.dod_evidence)}")
+    cells.append(f"worktree={_text(event.worktree or 'none')}")
     if event.scope_text is not None:
         cells.append(f"scope={_text(event.scope_text)}")
     if event.est_lane_hours is not None:
@@ -486,8 +487,30 @@ def _ruling_cells(
             f"heads:{competing};selected:{resolution.selected_revision_id}"
         )
     cells.extend(_answers_cells(event.answers, index))
+    cells.append(f"question={_quoted(_ruling_question(event, index))}")
     cells.append(_quoted(event.operator_words))
     return cells
+
+
+def _ruling_question(
+    event: ModelWorkRulingRecorded, index: Mapping[uuid.UUID, ModelWorkEvent]
+) -> str:
+    """The question the ruling answers: its own field, else the questions it names.
+
+    A ruling row without a question= cell is refused by the grammar (OMN-20656),
+    and the renderer never guesses, so a ruling with neither source is refused.
+    """
+    if event.question is not None:
+        return event.question
+    if event.answers:
+        return " / ".join(
+            _question(index, qid, "answers").question
+            for qid in sorted(event.answers, key=str)
+        )
+    raise WorkLedgerRenderError(
+        f"ruling {event.event_id} names no question: set question, or name the "
+        "work.question.asked events it answers in answers"
+    )
 
 
 def _consent_cells(
