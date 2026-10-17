@@ -63,10 +63,76 @@ def test_sync_test_after_asyncio_run():
     assert True
 """
 
+_SESSION_FINISH_CONTROL = """\
+import sys
+import warnings
+
+import pytest
+
+
+class WarningControl:
+    @pytest.hookimpl(trylast=True)
+    def pytest_sessionfinish(self):
+        for category in (ResourceWarning, pytest.PytestUnraisableExceptionWarning):
+            with pytest.raises(category, match="session-finish warning control"):
+                warnings.warn("session-finish warning control", category)
+        print("SESSION_FINISH_WARNINGS_REMAIN_ERRORS")
+
+
+raise SystemExit(pytest.main(sys.argv[1:], plugins=[WarningControl()]))
+"""
+
 
 @pytest.mark.unit
 class TestWerrorEventLoopTeardown:
     """The test lifecycle closes every loop it opens, so Werror teardown is clean."""
+
+    def test_service_resolution_session_finishes_with_werror_enabled(self) -> None:
+        """Observe real container tests through session teardown, including warnings.
+
+        The obsolete models session hook ignored ResourceWarning and accessed an
+        implicit event loop after pytest-asyncio had already closed its loops.
+        A final hook checks that warnings still raise, so suppression cannot make
+        the subprocess appear clean.
+        """
+        repo_root = Path(__file__).resolve().parents[4]
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                _SESSION_FINISH_CONTROL,
+                "-c",
+                str(repo_root / "pyproject.toml"),
+                "-o",
+                "addopts=",
+                "-p",
+                "no:cacheprovider",
+                "-p",
+                "no:randomly",
+                "-W",
+                "error",
+                "-q",
+                str(
+                    Path(__file__).with_name(
+                        "test_dependency_unavailable_preserves_subclass.py"
+                    )
+                ),
+            ],
+            cwd=repo_root,
+            env={"PYTHONWARNINGS": "error"},
+            capture_output=True,
+            text=True,
+            timeout=60,
+            check=False,
+        )
+
+        output = completed.stdout + completed.stderr
+        assert completed.returncode == 0, output
+        assert "2 passed" in output, output
+        assert "SESSION_FINISH_WARNINGS_REMAIN_ERRORS" in output, output
+        assert "[Session Cleanup]" not in output, output
+        assert "unclosed" not in output, output
+        assert "PytestUnraisableExceptionWarning" not in output, output
 
     def test_async_then_asyncio_run_tears_down_without_unraisable_warnings(
         self, tmp_path: Path

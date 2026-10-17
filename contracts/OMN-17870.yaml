@@ -6,7 +6,8 @@ summary: Under PYTHONWARNINGS=error the teardown of the service-resolution regre
   unclosed AF_UNIX socket warnings and one unclosed event loop warning. The owner is pytest-asyncio below
   1.4, which creates an implicit event loop while installing its temporary loop policy and never closes
   it. The fix raises the pytest-asyncio constraint to >=1.4,<2 (locked at 1.4.0) and adds a behavioral
-  Werror regression that runs a fresh pytest process. No warning filter is added.
+  Werror regression that runs a fresh pytest process. The obsolete models session-finish hook is removed
+  so it cannot install warning suppression or access an implicit loop after pytest-asyncio teardown.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -26,6 +27,11 @@ requirements:
       - id: AC3
         statement: "AC3: no warning filter, Werror setting or conftest hook is loosened to pass -- falsifier:
           the diff adds an ignore for ResourceWarning or PytestUnraisableExceptionWarning"
+      - id: AC4
+        statement: "AC4: the real service-resolution regression finishes its pytest session under Werror
+          without implicit-loop cleanup errors, and ResourceWarning and PytestUnraisableExceptionWarning
+          still raise at session finish -- falsifier: the obsolete models session hook suppresses the
+          ResourceWarning positive control"
 evidence_requirements:
   - kind: tests
     description: Run the Werror event loop teardown regression.
@@ -77,3 +83,14 @@ dod_evidence:
       - check_type: command
         check_value: uv run pytest tests/unit/models/container/test_werror_event_loop_teardown.py -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17870-ac4-session-finish-werror
+    description: A fresh pytest process runs both real service-resolution tests and checks at session
+      finish that resource and unraisable warnings still raise. Restoring the obsolete models session
+      hook fails the ResourceWarning positive control after the service-resolution assertions pass.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --locked pytest -c pyproject.toml tests/unit/models/container/test_werror_event_loop_teardown.py
+          -n0 -q --no-cov --reruns=0 -W error
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
