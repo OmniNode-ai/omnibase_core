@@ -1264,6 +1264,110 @@ def _git_merge_base(repo_root: Path, ref_a: str, ref_b: str = "HEAD") -> str | N
     return proc.stdout.strip() or None
 
 
+def _git_lines(repo_root: Path, *args: str) -> list[str] | None:
+    """Stripped non-empty stdout lines of ``git <args>``; None on any error."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(repo_root), *args],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    if proc.returncode != 0:
+        return None
+    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+
+
+def _git_no_diff(repo_root: Path, *args: str) -> bool:
+    """True only when ``git diff --quiet <args>`` reports no difference."""
+    import subprocess
+
+    try:
+        proc = subprocess.run(
+            ["git", "-C", str(repo_root), "diff", "--quiet", *args],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    return proc.returncode == 0
+
+
+def _landed_no_legacy_flip(
+    repo_root: Path, live_base: str, base_ref: str, node_id: str, receipt_path: Path
+) -> tuple[bool, str]:
+    """Whether the live merge base already carries this exact no-legacy flip.
+
+    After a no-legacy flip merges, the live merge base holds the flip's own new
+    handler, so the live-base check refuses the receipt on every later run until
+    the baseline drops the node, and the change that drops it is refused for the
+    same reason. The flip is accepted as landed only when every claim is
+    re-derived from git:
+      * the receipt was added by a commit ``L`` on the live merge base's history;
+      * the node directory and the receipt are unchanged from ``L`` through the
+        live merge base to the working tree, with no untracked file in the node
+        directory (this run changes nothing the landed flip did not);
+      * ``base_ref`` is an ancestor of ``L``, and every commit from ``base_ref``
+        to ``L`` that changed the node either had no handler or already held the
+        node exactly as ``L`` landed it (the flip's own handler commit).
+    A different handler that existed on the base before the receipt landed is
+    still refused, and so is any change to the node made after it landed.
+    """
+    src_rel = _src_rel(repo_root)
+    if src_rel is None:
+        return False, "SRC_ROOT is outside the git repo"
+    try:
+        receipt_rel = str(
+            receipt_path.resolve().relative_to(repo_root.resolve())
+        ).replace(os.sep, "/")
+    except ValueError:
+        return False, "receipt is outside the git repo"
+    node_rel = "/".join(p for p in (src_rel, node_id.replace(".", "/")) if p)
+
+    added = _git_lines(
+        repo_root,
+        "log",
+        "-n1",
+        "--diff-filter=A",
+        "--format=%H",
+        live_base,
+        "--",
+        receipt_rel,
+    )
+    if not added:
+        return False, "the receipt did not land on the live merge base"
+    landed = added[0]
+    if not _git_no_diff(repo_root, landed, live_base, "--", node_rel, receipt_rel):
+        return False, f"node or receipt changed between {landed[:12]} and the base"
+    if not _git_no_diff(repo_root, landed, "--", node_rel, receipt_rel):
+        return False, f"node or receipt changed since {landed[:12]} landed"
+    untracked = _git_lines(
+        repo_root, "ls-files", "--others", "--exclude-standard", "--", node_rel
+    )
+    if untracked is None or untracked:
+        return False, "untracked files in the node directory"
+    if not _git_is_ancestor(repo_root, base_ref, landed):
+        return False, f"receipt base_ref is not an ancestor of {landed[:12]}"
+    landed_tree = _git_lines(repo_root, "rev-parse", f"{landed}:{node_rel}")
+    touching = _git_lines(
+        repo_root, "rev-list", "--full-history", f"{base_ref}..{landed}", "--", node_rel
+    )
+    if landed_tree is None or touching is None:
+        return False, f"cannot read the node history from base_ref to {landed[:12]}"
+    for commit in touching:
+        _, evidence = _legacy_handler_evidence(repo_root, commit, node_id)
+        if evidence is None:
+            continue
+        if _git_lines(repo_root, "rev-parse", f"{commit}:{node_rel}") != landed_tree:
+            return False, f"before the receipt landed: {evidence}"
+    return True, f"flip landed at {landed[:12]} with no other handler before it"
+
+
 def _src_rel(repo_root: Path) -> str | None:
     """``SRC_ROOT`` relative to ``repo_root`` (posix), or None if outside it."""
     try:
@@ -1368,8 +1472,9 @@ def verify_no_legacy_flip(
       * ``base_node_files`` equals ``git ls-tree`` of the node directory at
         ``base_ref`` (the evidence is the listing at that commit);
       * no handler existed at ``base_ref`` NOR at the live merge base of HEAD with
-        ``BASE_REF``, unless that base already carries this exact receipt and
-        handler (an unchanged, previously landed flip is not a new legacy flip);
+        ``BASE_REF`` (so an older handler-less commit cannot be cited past a handler
+        that exists on the base today), unless that handler is this flip's own,
+        already landed with no handler before it (``_landed_no_legacy_flip``);
       * the new handler module's sha256 is fresh;
       * every declared ``contract_tests`` file names the node package, and the ids
         are EXECUTED green on HEAD (a recorded status is not evidence).
@@ -1429,6 +1534,15 @@ def verify_no_legacy_flip(
     if live_base is not None and live_base != base_ref:
         _, live_evidence = _legacy_handler_evidence(repo_root, live_base, node_id)
         if live_evidence is not None:
+            landed, landed_reason = _landed_no_legacy_flip(
+                repo_root, live_base, base_ref, node_id, receipt_path
+            )
+            if not landed:
+                return (
+                    False,
+                    f"legacy handler existed at the live merge base: {live_evidence} "
+                    f"(not a landed no-legacy flip: {landed_reason})",
+                )
             # A no-legacy flip introduces a handler. Once it lands, the live
             # merge base necessarily has that handler, so descendants must be
             # able to retain the original proof. Only accept the identical

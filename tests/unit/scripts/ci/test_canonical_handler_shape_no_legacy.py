@@ -423,3 +423,102 @@ def test_landed_no_legacy_receipt_still_executes_contract_tests(
     )
     assert ok is False
     assert "NOT GREEN" in reason
+
+
+def _land_flip(root: Path, base: str) -> str:
+    """Squash the receipt into the flip commit and move dev onto it (a merged flip)."""
+    _write_receipt(root, base)
+    _git(root, "add", "--all")
+    _git(
+        root,
+        "-c",
+        "user.email=t@example.com",
+        "-c",
+        "user.name=t",
+        "-c",
+        "commit.gpgsign=false",
+        "commit",
+        "-q",
+        "--amend",
+        "--no-edit",
+    )
+    landed = _git(root, "rev-parse", "HEAD")
+    _git(root, "branch", "-f", "dev", landed)
+    return landed
+
+
+@pytest.mark.unit
+def test_landed_no_legacy_flip_passes_after_merge(
+    repo: tuple[Path, str], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, base = repo
+    _land_flip(root, base)
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert ok is True, reason
+
+    # The change that drops the landed node from the baseline is a proven flip.
+    monkeypatch.setattr(mod, "default_parity_executor", _executor())
+    result = mod.evaluate([_canon()], baseline=[], base_baseline=[NODE_ID])
+    assert result.failed is False
+    assert NODE_ID in result.proven_flips
+
+
+@pytest.mark.unit
+def test_landed_flip_over_a_base_handler_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, base = _build_repo(tmp_path / "repo", monkeypatch, live_handler=True)
+    _land_flip(root, base)
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert ok is False
+    assert "live merge base" in reason
+    assert "before the receipt landed" in reason
+
+
+@pytest.mark.unit
+def test_receipt_landed_after_a_different_handler_is_refused(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, base = _build_repo(tmp_path / "repo", monkeypatch, live_handler=True)
+    _write_receipt(root, base)
+    landed = _commit(root, "Receipt lands after a legacy and a canonical handler")
+    _git(root, "branch", "-f", "dev", landed)
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert ok is False
+    assert "before the receipt landed" in reason
+
+
+@pytest.mark.unit
+def test_node_changed_after_the_flip_landed_is_refused(
+    repo: tuple[Path, str],
+) -> None:
+    root, base = repo
+    _land_flip(root, base)
+    (root / NODE_REL / "extra.py").write_text("X = 1\n", encoding="utf-8")
+    _commit(root, "Change the node after the flip landed")
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert ok is False
+    assert "changed since" in reason
+
+
+@pytest.mark.unit
+def test_unlanded_receipt_keeps_the_live_base_refusal(
+    repo: tuple[Path, str],
+) -> None:
+    root, base = repo
+    # dev already holds the handler commit, but the receipt never landed there.
+    _git(root, "branch", "-f", "dev", "HEAD")
+    _write_receipt(root, base)
+    ok, reason = mod.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert ok is False
+    assert "did not land on the live merge base" in reason
