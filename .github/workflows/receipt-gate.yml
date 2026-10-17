@@ -15,8 +15,9 @@
 # branch protection still names `<job> / verify` keeps a concluded context.
 #
 # Inputs:
-#   evidence-source: must be "caller" (the default). Any other value fails
-#                   dod-verify; callers still pass it explicitly.
+#   evidence-source: caller is the only accepted value, and the default. Any
+#                   other value fails dod-verify; callers still pass it
+#                   explicitly.
 #   verifier-version: pinned omnimarket PyPI release (default: 0.4.305; must be
 #                   numeric MAJOR.MINOR.PATCH and at or above the install
 #                   step's VERIFIER_FLOOR, OMN-20032).

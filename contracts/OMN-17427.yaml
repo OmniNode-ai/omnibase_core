@@ -94,6 +94,14 @@ requirements:
           only omnimarket-version, the call composes pr-title / check-title and a merge_group call accepts
           without the node. -- falsifier: uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py
           -q"
+  - id: req-omn17427-receipt-gate-states-caller-mode
+    statement: The receipt-gate reusable states in its own header that evidence-source caller is the only
+      accepted mode, so omnibase_core carries no live use of the change-control repository.
+    acceptance:
+      - id: AC14
+        statement: "AC14: receipt-gate.yml sets `evidence-source: caller` as its only accepted value in
+          its own header, and the pattern that reads that line does not match the old wording. -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -k test_receipt_gate_states_its_single_mode_as_evidence_source_caller"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -139,6 +147,9 @@ evidence_requirements:
     description: "The PR title check runs from the core reusable workflow that each caller calls with
       only its omnimarket version, under the unchanged required context."
     command: "uv run pytest tests/ci/test_pr_title_check_omnimarket_node.py -q"
+  - kind: tests
+    description: "receipt-gate.yml sets evidence-source caller as its only accepted value in its own header."
+    command: "uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -k test_receipt_gate_states_its_single_mode_as_evidence_source_caller"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -321,3 +332,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC13
+  - id: dod-omn-17427-receipt-gate-states-caller-mode
+    description: "receipt-gate.yml sets `evidence-source: caller` as its only accepted value in its own
+      header, and the pattern that reads that line does not match the old wording."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -q -k test_receipt_gate_states_its_single_mode_as_evidence_source_caller
+          -o addopts=''"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC14
