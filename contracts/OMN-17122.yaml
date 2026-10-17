@@ -1,0 +1,56 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17122
+title: Delegation backend tier Literal matches the live bifrost tiers (DR-17)
+summary: The backend tier Literal of ModelDelegationBackendConfig drops the removed cli_agents tier and
+  accepts the live typed_decision tier. The live judge tier is left out because core names no lab lane.
+  Its test compares the field's own Literal to the live set and rejects cli_agents, so a stale list can
+  no longer pass.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17122-dr17-tier-literal
+    statement: The backend tier Literal lists the live bifrost delegation tiers that core may name, which
+      excludes judge.
+    acceptance:
+      - id: AC1
+        statement: The tier Literal lists local, frontier_api, cheap_cloud, cheap_frontier and typed_decision
+          and no other value.
+      - id: AC2
+        statement: The tier test reads the field's own Literal, and a backend with tier cli_agents is
+          rejected.
+evidence_requirements:
+  - kind: tests
+    description: Focused tests cover the declared tier set, each live tier and the rejected cli_agents
+      tier.
+    command: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q -o addopts=
+      -k tier
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17122-ac1-live-tier-set
+    description: The declared Literal equals the live tier set that core may name and every live tier
+      round-trips. No lab services are required.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q
+          -o addopts= -k test_all_live_tier_values_accepted
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn17122-ac2-cli-agents-rejected
+    description: A backend declaring the removed cli_agents tier fails validation.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q
+          -o addopts= -k test_removed_cli_agents_tier_rejected
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
