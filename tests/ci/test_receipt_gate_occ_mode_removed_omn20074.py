@@ -14,6 +14,7 @@ unreadable input.
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 from typing import Any
 
@@ -64,6 +65,23 @@ def test_receipt_gate_declares_only_caller_inputs() -> None:
     inputs = _workflow_call_inputs(_receipt_gate())
     assert set(inputs) == CALLER_INPUTS
     assert inputs["evidence-source"]["default"] == "caller"
+
+
+def test_receipt_gate_states_its_single_mode_as_evidence_source_caller() -> None:
+    # OMN-17427: the queue-status `occ refs` reader treats a workflow file named
+    # for the receipt gate as live change-control use unless the file itself
+    # sets `evidence-source: caller`. The reusable accepts that one mode only, so
+    # it says so in its own header, where the reader (and a caller's author)
+    # finds it.
+    text = RECEIPT_GATE.read_text(encoding="utf-8")
+    assert re.search(r"evidence-source\s*:\s*[\"']?caller\b", text), (
+        "receipt-gate.yml must state `evidence-source: caller` as its only mode"
+    )
+    # Negative control: the reader's pattern does not match a line that only
+    # says the value must be caller.
+    assert not re.search(
+        r"evidence-source\s*:\s*[\"']?caller\b", 'evidence-source: must be "caller"'
+    )
 
 
 def test_receipt_gate_names_no_change_control_checkout_or_probe() -> None:
