@@ -242,3 +242,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC9
+  - id: dod-omn-19998-runner-placement-module-call
+    description: The placement workflow exposes its handler module to mechanism audits and forwards its
+      arguments. Its module invocation passes hosted public and self-hosted private jobs and refuses an
+      unbaselined public self-hosted job. These tests fail on the console-script workflow at the merge
+      base.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_runner_placement_module_call_omn19854.py -q -o addopts=
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC8
