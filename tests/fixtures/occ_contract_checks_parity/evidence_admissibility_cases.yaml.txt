@@ -1,0 +1,223 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-15309 — the SHARED admissibility case corpus.
+#
+# This file is the seam between the two consumers of the single OMN-14505
+# predicate. It is executed against BOTH implementations:
+#
+#   1. onex_change_control.validation.evidence_admissibility.classify_evidence
+#      (tests/test_evidence_admissibility.py — every case, both profiles)
+#   2. omniclaude/.github/actions/deploy-gate/validate_pr_deploy_required.py
+#      ::classify_check_value  (the `predicate-parity` step of the
+#      contract-compliance CI job — `live` profile only, which is that gate's
+#      contract: it never executes the value, so it can only admit commands
+#      whose exit status must come from a deployed system)
+#
+# If the two ever disagree on a `live` case, CI goes RED. That is the mechanism
+# that stops a second definition of "admissible evidence" from being minted.
+#
+# Fields per case:
+#   id            stable identifier, referenced in test failure output
+#   check_value   the raw dod_evidence check_value under test
+#   live          expected admissibility under LIVE_PROBE_COMMANDS only
+#                 (the deploy-gate profile — text-only gate)
+#   runner        expected admissibility under
+#                 LIVE_PROBE_COMMANDS | EXECUTED_HERMETIC_COMMANDS
+#                 (the contract-compliance profile — actually executes)
+#   rule          expected EnumAdmissibilityRule under the `runner` profile
+#   changed_paths optional; PR-modified paths for the OUTSIDE-ITS-OWN-DIFF rule
+#   why           the defect class this case pins
+
+cases:
+  # --- wave-18 exhibit 1: the self-authored receipt grep -------------------
+  - id: self-authored-receipt-grep-omn14487
+    check_value: >-
+      grep -q '^status: PASS$' drift/dod_receipts/OMN-14487/dod-deploy-assessment-head-f973c737/command.yaml
+      && grep -qi 'no live deploy' drift/dod_receipts/OMN-14487/dod-deploy-assessment-head-f973c737/command.yaml
+    live: false
+    runner: false
+    rule: INSIDE_OWN_DIFF
+    why: >-
+      The exact value that closed deploy-gate on omnibase_infra#2279 via OCC #4067. It greps its own receipt
+      for text its own author wrote into it, so it can never go RED (OMN-14505 live proof). #magic___^_^___line
+  - id: contract-repo-dir-receipt-grep
+    check_value: >-
+      grep -q '^status: PASS$' "$CONTRACT_REPO_DIR/drift/dod_receipts/OMN-15309/dod-deploy/command.yaml"
+    live: false
+    runner: false
+    rule: INSIDE_OWN_DIFF
+    why: >-
+      The shape contract_compliance_check.py itself PRESCRIBED at lines 111-116 while its own _INERT_CHECK_PATTERNS
+      unconditionally demoted it. This case is the OMN-15309 contradiction, pinned so it cannot be re-prescribed.
+
+  - id: own-contract-grep
+    check_value: grep -q 'dod_evidence' contracts/OMN-15309.yaml
+    live: false
+    runner: false
+    rule: INSIDE_OWN_DIFF
+    why: Reads back the ticket's own contract file, authored by the same PR.
+
+  # --- wave-18 exhibit 2: the embed trap ----------------------------------
+  - id: embed-trap-quoted-probe-name
+    check_value: >-
+      echo 'docker exec omninode-runtime true' && grep -q '^status: PASS$' drift/dod_receipts/OMN-14487/dod-deploy/command.yaml
+    live: false
+    runner: false
+    rule: INSIDE_OWN_DIFF
+    why: >-
+      66 check_values in the wild embed a real-probe keyword as QUOTED TEXT beside a circular grep. A
+      substring matcher passes all 66; command-position lexing makes `docker` an argument of `echo`, and
+      the DENY half fires first. #magic___^_^___line
+  # --- non-falsifiable shapes ---------------------------------------------
+  - id: echo-literal-only
+    check_value: echo 'deploy verified by operator'
+    live: false
+    runner: false
+    rule: NOT_FALSIFIABLE
+    why: An attestation, not an execution. Any exit code is manufacturable.
+
+  - id: true-noop
+    check_value: "true"
+    live: false
+    runner: false
+    rule: NOT_FALSIFIABLE
+    why: Exit status is fixed by the text the author typed.
+
+  - id: test-f-existence-probe
+    check_value: test -f src/path/touched_by_this_pr.py
+    live: false
+    runner: false
+    rule: NOT_FALSIFIABLE
+    why: >-
+      Named as GOOD by the runner's own pre-OMN-15309 BLOCK message. It cannot go RED once the PR that
+      adds the file is applied, so it proves the PR exists, not that anything works. #magic___^_^___line
+  - id: pr-existence-probe
+    check_value: gh pr view 1927 --repo OmniNode-ai/omnimarket --json number,state
+    live: false
+    runner: false
+    rule: NOT_EXECUTED
+    why: >-
+      Also named as GOOD by the runner's own pre-OMN-15309 BLOCK message (`gh api .../pulls/<n> --jq .merged`
+      is the same class). `gh pr view` is the generated self-bind check on almost every ticket; admitting
+      bare `gh` would reclassify hundreds of non-substantive checks as falsifiable. #magic___^_^___line
+  - id: gh-api-pr-merged-metadata
+    check_value: gh api repos/OmniNode-ai/omnimarket/pulls/1927 --jq .merged
+    live: false
+    runner: false
+    rule: INSIDE_OWN_DIFF
+    parity_divergence: OMN-15357
+    why: >-
+      The one KNOWN, TICKETED divergence from the omniclaude source. That implementation admits `gh api`
+      on the `api` subcommand alone without looking at the endpoint, so this PR-existence probe passes
+      it — even though OMN-14505's own acceptance list names PR-existence probes as a class that must
+      go RED. Found by EXECUTION while building this corpus. This predicate is STRICTER; the parity check
+      asserts the direction (OCC may refuse what deploy-gate admits, never the reverse) so it cannot silently
+      invert. Retire this field when OMN-15357 ports the fix upstream. #magic___^_^___line
+  - id: gh-api-pr-files-diff-read
+    check_value: gh api repos/OmniNode-ai/omnimarket/pulls/1927/files --jq '.[].filename' | grep -q 'src/omnimarket/occ_contention.py'
+    live: true
+    runner: true
+    rule: ADMISSIBLE
+    why: >-
+      Discriminating partner to gh-api-pr-merged-metadata: /files returns the actual diff, not merely
+      the fact that a PR exists, so the endpoint rule must NOT reject it. Without this case the metadata
+      rule could be implemented as a blanket "/pulls/" ban and still look correct. #magic___^_^___line
+  - id: command-v-lookup
+    check_value: command -v docker
+    live: false
+    runner: false
+    rule: NOT_EXECUTED
+    why: >-
+      A PATH lookup, not execution. Unwrapping it to `docker` would let a lookup-only check pass as a
+      live probe. #magic___^_^___line
+  - id: empty-value
+    check_value: ""
+    live: false
+    runner: false
+    rule: NOT_EXECUTED
+    why: Fails CLOSED — nothing executes.
+
+  # --- wave-18 exhibit 3: a real probe that only reads its own diff --------
+  - id: grep-inside-own-diff
+    check_value: grep -q 'def classify_evidence' src/onex_change_control/validation/evidence_admissibility.py
+    changed_paths:
+      - src/onex_change_control/validation/evidence_admissibility.py
+    live: false
+    runner: false
+    rule: INSIDE_OWN_DIFF
+    why: >-
+      The Receipt Honesty Gate accepts greps targeting the PR's own diff. The command genuinely executes
+      and genuinely greps, but every path it reads is a file this same change writes, so it cannot go
+      RED against the state it claims to prove. #magic___^_^___line
+  - id: grep-outside-own-diff
+    check_value: grep -q 'def classify_evidence' src/onex_change_control/validation/evidence_admissibility.py
+    changed_paths:
+      - src/onex_change_control/scripts/contract_compliance_check.py
+    live: false
+    runner: true
+    rule: ADMISSIBLE
+    why: >-
+      Identical command, different diff. This is the discriminating pair that proves the OUTSIDE-ITS-OWN-DIFF
+      rule is non-vacuous — the verdict flips on the changed-file set alone, not on the text of the check.
+
+  # --- admissible shapes ---------------------------------------------------
+  - id: gh-api-content-read-at-ref
+    check_value: >-
+      gh api repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/validator_receipt_honesty.py?ref=7e23a0bc1ba24299904bf6b5baf974767f218d1c
+      --jq .content | base64 -d | grep -q 'EnumHonestyRule'
+    live: true
+    runner: true
+    rule: ADMISSIBLE
+    why: >-
+      The hermetic admissible form for a compute-only fact — executed on any CI runner, reads the product
+      repo at a pinned merge SHA (outside the OCC diff that authors the evidence), RED if the symbol is
+      absent. #magic___^_^___line
+  - id: docker-exec-live-probe
+    check_value: docker exec omninode-runtime python -c 'import omnibase_core.validation.evidence_admissibility'
+    live: true
+    runner: true
+    rule: ADMISSIBLE
+    why: A genuine live-surface probe; exit status comes from the deployed system.
+
+  - id: rpk-consume-live-probe
+    check_value: rpk topic consume onex.evt.node.completed.v1 -n 1 --brokers localhost:19092
+    live: true
+    runner: true
+    rule: ADMISSIBLE
+    why: Broker state decides the verdict, not the contract text.
+
+  - id: env-wrapped-docker
+    check_value: env -u PYTHONPATH timeout 30 docker exec omninode-runtime true
+    live: true
+    runner: true
+    rule: ADMISSIBLE
+    why: >-
+      Transparent wrappers must unwrap to the real command, or a probe becomes invisible to the predicate
+      by prefixing `env`. #magic___^_^___line
+  - id: bash-c-wrapped-kubectl
+    check_value: bash -c 'kubectl get pods -n onex-dev -o json | jq -e ".items | length > 0"'
+    live: true
+    runner: true
+    rule: ADMISSIBLE
+    why: The -c argument is a script, not an argument; probes execute inside it.
+
+  - id: command-substitution-probe
+    check_value: test "$(docker inspect -f '{{.State.Running}}' omninode-runtime)" = "true"
+    live: true
+    runner: true
+    rule: ADMISSIBLE
+    why: >-
+      Commands inside $(...) ARE executed. Stripping the substitution before lexing (rather than recursing
+      into it) would drop a real probe. #magic___^_^___line
+  # --- the documented consumer difference ---------------------------------
+  - id: uv-run-pytest
+    check_value: uv run pytest tests/test_evidence_admissibility.py -q
+    live: false
+    runner: true
+    rule: ADMISSIBLE
+    why: >-
+      The ONLY class where the two profiles legitimately differ, and the reason the ALLOW vocabulary is
+      a parameter rather than a second predicate. deploy-gate never executes the value, so it cannot tell
+      `uv run pytest` from the words "uv run pytest" and must refuse. The compliance runner does execute
+      it, so it is genuinely executed and genuinely falsifiable there.
