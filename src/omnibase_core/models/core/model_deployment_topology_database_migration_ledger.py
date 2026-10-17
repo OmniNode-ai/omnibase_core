@@ -3,36 +3,32 @@
 
 """Checksum-aware migration-ledger declaration for a deployment database."""
 
-import warnings
-
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 __all__ = ["ModelDeploymentTopologyDatabaseMigrationLedger"]
 
 _SQL_IDENTIFIER_PATTERN = r"^[a-z_][a-z0-9_]*$"
 
-# OMN-16415: `schema` is the correct SQL-domain field name here (a database
-# schema reference); pydantic v2 still emits a UserWarning at class-definition
-# time because the name shadows BaseModel's deprecated `.schema()` classmethod.
-# Renaming would ripple into every deployment-topology YAML contract that
-# declares `schema:` across consuming repos for zero behavioral benefit, so the
-# warning is suppressed narrowly by message pattern at its emission point
-# (class definition) instead of a blanket ignore.
-warnings.filterwarnings(
-    "ignore",
-    message=r'Field name "schema" in ".*" shadows an attribute in parent "BaseModel"',
-    category=UserWarning,
-)
-
 
 class ModelDeploymentTopologyDatabaseMigrationLedger(BaseModel):
     """Typed shape of an existing ledger selected for a migration stream."""
 
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
+    )
 
-    # Pydantic v2 keeps BaseModel.schema as a deprecated compatibility callable.
-    schema: str = Field(  # type: ignore[assignment]
-        ..., min_length=1, max_length=63, pattern=_SQL_IDENTIFIER_PATTERN
+    # OMN-17427: the contract key stays `schema`; the Python attribute is
+    # `schema_name` because `schema` shadows pydantic's BaseModel.schema().
+    schema_name: str = Field(
+        ...,
+        alias="schema",
+        min_length=1,
+        max_length=63,
+        pattern=_SQL_IDENTIFIER_PATTERN,
     )
     relation: str = Field(
         ..., min_length=1, max_length=63, pattern=_SQL_IDENTIFIER_PATTERN
