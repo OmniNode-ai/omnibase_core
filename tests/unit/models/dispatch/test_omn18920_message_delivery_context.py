@@ -107,7 +107,7 @@ def test_this_step_is_inert_nothing_imports_it_yet() -> None:
     # under a pre-push hook this walk would silently search the wrong tree
     # and the inertness claim would pass against nothing.
     found = subprocess.run(
-        ["git", "grep", "-l", "ModelMessageDeliveryContext"],
+        ["git", "grep", "-l", "ModelMessageDeliveryContext", "--", "*.py"],
         cwd=repo_root,
         capture_output=True,
         text=True,

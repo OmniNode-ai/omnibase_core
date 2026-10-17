@@ -191,8 +191,11 @@ _EXECUTABLE_RE = re.compile(
 # `diff`, `onex` inside a URL are no longer in command position), and a bare
 # `gh api .../pulls/1` still derives L0 via the default-reject branch. This rule
 # is therefore a narrow, explicit statement of intent, not the load-bearing fix.
+# The optional value token excludes anything that starts a flag, so a flag
+# followed by a flag parses only one way (the original `(\s+\S+)?` let a
+# `--a --b` tail split two ways inside the repeated group). Same language.
 _GH_API_CONTENTS_RE = re.compile(
-    r"\s*gh\s+api\s+\S*contents/\S*(\s+--\S+(\s+\S+)?)*\s*"
+    r"\s*gh\s+api\s+\S*contents/\S*(?:\s+--\S+(?:\s+(?!--\S)\S+)?)*\s*"
 )
 
 # A diff assertion: `gh pr view --json files --jq '[.files[].path]'` names the
