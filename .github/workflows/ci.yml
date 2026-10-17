@@ -696,7 +696,7 @@ jobs:
           else
             echo "::notice::no ratchet base ref (push event): baseline ratchet skipped"
           fi
-          uv run check-dependency-direction --repo omnibase_core "${args[@]}"
+          uv run python -m omnibase_core.handlers.handler_dependency_direction_cli --repo omnibase_core "${args[@]}"
 
       # Public-repository runner placement (OMN-19998, RULING 2026-10-16T07:07:09Z:
       # "Ci runners should be for private repos only") — blocking. A public
