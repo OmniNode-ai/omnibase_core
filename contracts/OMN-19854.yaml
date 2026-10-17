@@ -1,0 +1,50 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19854
+title: Expose the public runner placement handler module in CI
+summary: The existing placement step invokes the handler module explicitly so mechanism audits can identify
+  the workflow that runs it, while preserving argument forwarding and placement decisions.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19854-module-call
+    statement: The existing runner placement step must expose its handler module and preserve enforcement.
+    acceptance:
+      - id: AC1
+        statement: The workflow command names the handler module explicitly and forwards the args array.
+      - id: AC2
+        statement: The workflow's module invocation passes a hosted public job and a private self-hosted
+          job, and refuses an unbaselined public self-hosted job.
+evidence_requirements:
+  - kind: tests
+    description: The workflow exposes the module and preserves the placement decisions.
+    command: uv run pytest tests/ci/test_runner_placement_module_call_omn19854.py -q -o addopts=
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19854-module-discovery
+    description: Read the real workflow command and require the explicit handler module and args forwarding.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_runner_placement_module_call_omn19854.py -q -o addopts=
+          -k module_is_visible
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn19854-deploy-module-enforcement
+    description: Hosted deployment probe of the workflow's module invocation. Execute the module against
+      hosted public, self-hosted public and self-hosted private jobs; a missing module, hidden alias,
+      lost arguments or wrong placement decision fails the probe. No lab services are required.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_runner_placement_module_call_omn19854.py -q -o addopts=
+          -k workflow_module_enforces
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
