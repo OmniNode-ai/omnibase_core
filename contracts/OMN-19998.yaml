@@ -67,6 +67,15 @@ requirements:
           passes. -- falsifier: uv run pytest tests/unit/handlers/test_handler_public_runner_placement.py
           tests/unit/validators/test_canonical_file_shape.py -q -k 'public_runner or runs_on or negative_control
           or cli_ or shipped_baseline or omnibase_core_passes'"
+  - id: req-omn19998-dependency-direction-wired
+    statement: The dependency-direction check must be run by a required CI job and a pre-commit hook through
+      its handler module, the name a workflow and hook audit reads.
+    acceptance:
+      - id: AC9
+        statement: "AC9: The lint-imports job step and the check-dependency-direction hook both run the
+          handler module omnibase_core.handlers.handler_dependency_direction_cli, and a step that runs
+          only the console script alias fails the check. -- falsifier: uv run pytest tests/ci/test_dependency_direction_wiring_omn19998.py
+          -q"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -89,6 +98,9 @@ evidence_requirements:
   - kind: tests
     description: "A public repository adding a self-hosted job fails; the baseline only shrinks."
     command: "uv run pytest tests/unit/handlers/test_handler_public_runner_placement.py -q"
+  - kind: tests
+    description: "The dependency-direction step and hook run the handler module."
+    command: "uv run pytest tests/ci/test_dependency_direction_wiring_omn19998.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -220,3 +232,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
+  - id: dod-omn-19998-dep-direction-wiring
+    description: "The lint-imports step and the pre-commit hook run the dependency-direction handler module,
+      and a console-script-only step fails."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_dependency_direction_wiring_omn19998.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC9
