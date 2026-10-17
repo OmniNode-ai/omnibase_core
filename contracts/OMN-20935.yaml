@@ -31,8 +31,10 @@ emergency_bypass:
   follow_up_ticket_id: ''
 dod_evidence:
   - id: dod-omn20935-ac1-landed-proof
-    description: A previously landed proof remains valid on an unrelated descendant.
+    description: Hosted deployment probe of the verifier on a real git descendant. A previously landed
+      proof must remain valid with green contract-test execution; no lab services are required.
     source: manual
+    execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
@@ -41,12 +43,14 @@ dod_evidence:
     binds_ac:
       - AC1
   - id: dod-omn20935-ac2-replaced-inputs
-    description: Changed proof inputs and legacy handlers are refused.
+    description: Unchanged landed proof inputs are accepted while changed proof inputs and legacy handlers
+      are refused. The positive control fails when the verifier rejects every landed proof.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
-          -o addopts= -k 'test_landed_no_legacy_proof_cannot_be_replaced or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler'
+          -o addopts= -k 'test_landed_no_legacy_receipt_remains_valid_on_descendants or test_landed_no_legacy_proof_cannot_be_replaced
+          or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
