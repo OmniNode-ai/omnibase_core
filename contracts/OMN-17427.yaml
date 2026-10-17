@@ -148,6 +148,16 @@ requirements:
         statement: "AC19: ModelDelegationRequest accepts task_type brief_drafting and its JSON schema
           enum is exactly the canonical sixteen classes. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py
           -q -k canonical"
+  - id: req-omn17427-no-legacy-landed-flip
+    statement: The canonical handler-shape ratchet accepts a no-legacy flip that already landed on the
+      live merge base, so a merged flip and the change that drops it from the baseline are not refused
+      by the flip's own handler.
+    acceptance:
+      - id: AC20
+        statement: "AC20: A no-legacy receipt whose flip landed with no handler before it passes after
+          merge and drops from the baseline as a proven flip, while a handler on the base before the receipt
+          landed, a node changed after it landed and a receipt that never landed are refused. -- falsifier:
+          uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -k landed"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -204,6 +214,10 @@ evidence_requirements:
     description: "The CodeRabbit review-thread gate workflow, its ci.yml caller, its required-checks row
       and its CI Summary anchors are removed."
     command: "uv run pytest tests/ci/test_coderabbit_gate_removed_omn17427.py -q"
+  - kind: tests
+    description: "A landed no-legacy flip passes after merge; a pre-existing base handler, a later node
+      change and an unlanded receipt are refused."
+    command: "uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -k landed"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -457,3 +471,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC19
+  - id: dod-omn-17427-no-legacy-landed-flip
+    description: "A landed no-legacy flip passes after merge; a pre-existing base handler, a later node
+      change and an unlanded receipt are refused."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
+          -k landed -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC20
