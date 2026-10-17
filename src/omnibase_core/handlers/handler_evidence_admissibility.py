@@ -61,7 +61,6 @@ import re
 import shlex
 from dataclasses import dataclass
 from pathlib import Path
-from re import Pattern
 from typing import TYPE_CHECKING
 
 from omnibase_core.enums.ticket.enum_admissibility_rule import EnumAdmissibilityRule
@@ -234,7 +233,7 @@ EXECUTED_CHECK_TYPES: frozenset[str] = frozenset({"test_passes", "endpoint"})
 #: check_value that reads these back is circular: its verdict is decided by text
 #: the author typed. Verbatim parity with
 #: ``validate_pr_deploy_required.SELF_REFERENTIAL_PATTERNS``.
-SELF_REFERENTIAL_PATTERNS: tuple[Pattern[str], ...] = (
+SELF_REFERENTIAL_PATTERNS: tuple[re.Pattern[str], ...] = (
     # the DoD receipt tree — drift/dod_receipts/OMN-X/<item>/command.yaml
     re.compile(r"dod_receipts", re.IGNORECASE),
     # $CONTRACT_REPO_DIR / ${CONTRACT_REPO_DIR} — the OCC checkout root
@@ -244,7 +243,7 @@ SELF_REFERENTIAL_PATTERNS: tuple[Pattern[str], ...] = (
 )
 
 
-def is_self_referential(value: str) -> Pattern[str] | None:
+def is_self_referential(value: str) -> re.Pattern[str] | None:
     """Return the matching DENY pattern, or ``None`` when the value is clean."""
     for pattern in SELF_REFERENTIAL_PATTERNS:
         if pattern.search(value):

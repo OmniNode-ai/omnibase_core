@@ -71,7 +71,7 @@ def test_corpus_is_non_vacuous() -> None:
         verdicts = {bool(c[profile]) for c in CASES}
         assert verdicts == {True, False}, (
             f"corpus is vacuous for the {profile!r} profile: every case expects "
-            f"{verdicts.pop()}"
+            f"{verdicts}"
         )
 
 

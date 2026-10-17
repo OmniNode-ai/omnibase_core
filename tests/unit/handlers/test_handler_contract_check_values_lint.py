@@ -511,8 +511,7 @@ def test_rule_a_catches_prose_receipt_prefix_pipe_variant(tmp_path: Path) -> Non
         'case "${REPO}" in foo) true ;; *) false ;; esac',
         ": ${PR_NUMBER}; gh pr diff $PR_NUMBER --repo OmniNode-ai/omnimarket",
         "PRODUCT_PR_NUMBER=1721 gh pr view $PRODUCT_PR_NUMBER --repo OmniNode-ai/x",
-        "state=$(gh pr view {pr} --repo {repo} --json state -q .state); "
-        '[ "$state" = "OPEN" ]',
+        'state=$(gh pr view {pr} --repo {repo} --json state -q .state); [ "$state" = "OPEN" ]',
         'f="$(mktemp)" && gh api foo --jq .bar > "$f" && grep -q x "$f"',
     ],
 )
