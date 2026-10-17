@@ -1,3 +1,17 @@
+## v0.47.46 (2026-10-17)
+
+### Release
+- Cut omnibase-core from dev at 0.47.46 by the scheduled release train.
+- 5 release-relevant commit(s) merged since v0.47.45.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.45
+- feat: port the OCC contract checks into omnibase_core (#2023)
+- feat: move the Claude Code binding install models into core (#2019)
+- feat: refuse new self-hosted CI jobs in public repositories against a shrink-only baseline (#2018)
+- feat: run the PR title check from one core reusable workflow that same-type repositories call (#2017)
+- fix: read a ghost in_progress row with a conclusion and completed_at as completed in CI Summary (#2016)
+
 ## v0.47.45 (2026-10-16)
 
 ### Release
