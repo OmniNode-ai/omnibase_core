@@ -167,6 +167,17 @@ requirements:
           a rendered RULING carries a question= cell (its own question, else the question it answers),
           and a ruling naming neither is refused. -- falsifier: uv run pytest tests/unit/models/events/work/test_work_ledger_render.py
           -q -k \"golden_row_per_kind or worktree or question\""
+  - id: req-omn17427-external-default-deny
+    statement: CI Summary fails on any external check-run on the head that no other layer accounts for
+      unless it carries a dated, ticketed, expiring exclusion, so an unregistered context cannot go red
+      while the umbrella reads green.
+    acceptance:
+      - id: AC22
+        statement: "AC22: CI Summary judges every pull-request-event check-run outside this run and the
+          registered contexts and passes only success, holds a running row pending, exempts only a row
+          whose run event is a known non-pull-request event, and refuses a malformed or spent exclusion
+          registry. -- falsifier: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k \"ExternalDefaultDenySweep
+          or ExternalSweepExclusions or SweepIsWired\""
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -231,6 +242,11 @@ evidence_requirements:
     description: "A rendered CLAIM carries worktree=, a rendered RULING carries question=, and a ruling
       with no question is refused."
     command: "uv run pytest tests/unit/models/events/work/test_work_ledger_render.py -q"
+  - kind: tests
+    description: "CI Summary sweeps every unregistered external check-run default-deny with a strict success
+      bar, event scoping and an expiring exclusion registry."
+    command: "uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k \"ExternalDefaultDenySweep
+      or ExternalSweepExclusions or SweepIsWired\""
 emergency_bypass:
   enabled: false
   justification: ''
@@ -507,3 +523,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC21
+  - id: dod-omn-17427-external-default-deny
+    description: "CI Summary layer 5 sweeps every unregistered external check-run default-deny: only success
+      passes, a running row holds the verdict, known non-pull-request events are exempt, and the exclusion
+      registry is validated and expires. The tests fail at the merge base, where the layer does not exist."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k "ExternalDefaultDenySweep
+          or ExternalSweepExclusions or SweepIsWired" -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC22
