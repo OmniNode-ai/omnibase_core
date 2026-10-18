@@ -215,6 +215,21 @@ requirements:
       - id: AC26
         statement: "AC26: The retained README has no broken local documentation links after the prose
           documents are removed. -- falsifier: uv run onex-validate-links --verbose"
+  - id: req-omn17427-shared-token-quota
+    statement: Same-repository reads use the run token and new shared-token uses require exact exceptions.
+    acceptance:
+      - id: AC27
+        statement: "AC27: The enqueue shell reads repository metadata and PR state with the run token
+          while retaining the existing identity for mutations and branch-protection reads. -- falsifier:
+          uv run pytest tests/unit/validation/test_ci_shared_token_quota.py -q -k enqueue -o addopts=''"
+      - id: AC28
+        statement: "AC28: The shared-token policy node refuses unlisted, repeated, dynamic and stale-exception
+          uses through its event-bus adapter. -- falsifier: uv run pytest tests/unit/validation/test_ci_shared_token_quota.py
+          -q -o addopts=''"
+      - id: AC29
+        statement: "AC29: Required CI, the exported pre-commit hook and the reusable workflow invoke the
+          same policy node without the shared token. -- falsifier: uv run pytest tests/unit/validation/test_ci_shared_token_quota.py
+          -q -k surfaces -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -653,3 +668,16 @@ dod_evidence:
         check_value: uv run onex-validate-links --verbose
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC26]
+  - id: dod-omn17427-shared-token-quota
+    description: "The deployed enqueue shell separates read and mutation credentials, and the policy node
+      rejects new shared-token uses through CI, pre-commit and its event-bus adapter."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ci_shared_token_quota.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC27
+      - AC28
+      - AC29

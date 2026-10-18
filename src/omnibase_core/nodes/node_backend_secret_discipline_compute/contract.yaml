@@ -23,6 +23,16 @@ description: >
   as missing a reference and api_key_env beside a real reference is reported as migration debt. Returns
   a ModelBackendSecretDisciplineOutput verdict. #magic___^_^___line
 handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: shared_token_policy
+      handler:
+        name: HandlerSharedTokenPolicyCompute
+        module: omnibase_core.nodes.node_backend_secret_discipline_compute.handler_shared_token_policy
+      event_model:
+        name: ModelSharedTokenPolicyRequest
+        module: omnibase_core.models.validation.model_shared_token_policy_request
   default_handler: handler:NodeBackendSecretDisciplineCompute
 
 input_model: omnibase_core.validation.validator_backend_secret_discipline.ModelBackendSecretDisciplineInput
@@ -33,3 +43,42 @@ descriptor:
   purity: pure
   idempotent: true
   timeout_ms: 10000
+
+# OMN-17427: shared workflow credential policy uses the existing secret-discipline node.
+runtime_profiles: [local-dev]
+event_bus:
+  version: {major: 1, minor: 0, patch: 0}
+  subscribe_topics: [onex.cmd.omnibase-core.shared-token-policy-requested.v1]
+  publish_topics: [onex.evt.omnibase-core.shared-token-policy-completed.v1]
+shared_token_policy:
+  entries:
+    - workflow: .github/workflows/auto-merge.yml
+      location: /jobs/auto-merge/steps/2/env/GH_TOKEN
+      reference: CROSS_REPO_PAT
+      count: 1
+      reason: Auto-merge and branch-update mutations must preserve downstream workflow events; the protection
+        read requires administration scope.
+    - workflow: .github/workflows/auto-merge.yml
+      location: /jobs/auto-merge/steps/3/env/GH_TOKEN
+      reference: CROSS_REPO_PAT
+      count: 1
+      reason: Auto-merge and branch-update mutations must preserve downstream workflow events; the protection
+        read requires administration scope.
+    - workflow: .github/workflows/ci.yml
+      location: /jobs/route/secrets/CROSS_REPO_PAT
+      reference: CROSS_REPO_PAT
+      count: 1
+      reason: Org runner inventory is outside the caller repository; the reusable probes organization
+        runner capacity.
+    - workflow: .github/workflows/advisory-job-gate.yml
+      location: /jobs/advisory-job-gate/secrets
+      reference: SECRETS_INHERIT
+      count: 1
+      reason: The pinned reusable requires inherited org App credentials for administration reads and
+        declares no named secret inputs.
+    - workflow: .github/workflows/ci.yml
+      location: /jobs/public-repo-hygiene/secrets
+      reference: SECRETS_INHERIT
+      count: 1
+      reason: The pinned reusable requires inherited org App credentials to read private vocabulary and
+        declares no named secret inputs.

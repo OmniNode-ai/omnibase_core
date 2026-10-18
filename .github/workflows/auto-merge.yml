@@ -462,6 +462,8 @@ jobs:
           # the enqueue path exits early; the PAT here is for the
           # update-branch push and for the day a queue returns.)
           GH_TOKEN: ${{ secrets.CROSS_REPO_PAT }}
+          # OMN-17427: same-repository metadata reads use the run quota.
+          GH_READ_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ needs.pre-check.outputs.pr }}
         run: |
@@ -476,7 +478,9 @@ jobs:
 
           # Is the target (default) branch strict-update? On strict repos a BEHIND
           # PR cannot enqueue until its branch is updated.
-          DEFAULT_BRANCH="$(gh repo view "$GH_REPO" --json defaultBranchRef --jq '.defaultBranchRef.name')"
+          DEFAULT_BRANCH="$(GH_TOKEN="$GH_READ_TOKEN" gh repo view "$GH_REPO" --json defaultBranchRef --jq '.defaultBranchRef.name')"
+          # Reading branch protection requires administration scope, unavailable
+          # to the run token. Keep this read on the mutation credential.
           STRICT="$(gh api "repos/${GH_REPO}/branches/${DEFAULT_BRANCH}/protection/required_status_checks" \
             --jq '.strict' 2>/dev/null || echo "false")"
           [ "$STRICT" = "true" ] || STRICT="false"
@@ -486,7 +490,7 @@ jobs:
             # isInMergeQueue is only on the GraphQL PullRequest object, NOT a
             # `gh pr view --json` field, so fetch PR state via GraphQL.
             # shellcheck disable=SC2016  # $owner/$name/$number are GraphQL vars, not shell vars
-            gh api graphql \
+            GH_TOKEN="$GH_READ_TOKEN" gh api graphql \
               -f owner="$OWNER" \
               -f name="$NAME" \
               -F number="$PR" \
@@ -540,7 +544,7 @@ jobs:
               ;;
           esac
 
-          PR_ID="$(gh api graphql -f query='{repository(owner:"'"$OWNER"'",name:"'"$NAME"'"){pullRequest(number:'"$PR"'){id}}}' --jq '.data.repository.pullRequest.id')"
+          PR_ID="$(GH_TOKEN="$GH_READ_TOKEN" gh api graphql -f query='{repository(owner:"'"$OWNER"'",name:"'"$NAME"'"){pullRequest(number:'"$PR"'){id}}}' --jq '.data.repository.pullRequest.id')"
           if [ -z "$PR_ID" ] || [ "$PR_ID" = "null" ]; then
             echo "::error::could not resolve PR node id for #${PR}"
             exit 1

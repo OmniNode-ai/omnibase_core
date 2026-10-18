@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-17427: one shared-token policy for every caller; no inherited secrets.
+name: Shared GitHub Token Policy
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Resolve the immutable reusable workflow revision
+        id: policy-pin
+        env:
+          CORE_REF: ${{ job.workflow_sha }}
+          CORE_REPOSITORY: ${{ job.workflow_repository }}
+        run: |
+          set -euo pipefail
+          [[ "$CORE_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$CORE_REPOSITORY" == "OmniNode-ai/omnibase_core" ]]
+          echo "sha=$CORE_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout caller workflows and exception policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: candidate
+          persist-credentials: false
+          token: ${{ github.token }}
+
+      - name: Checkout the public policy implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ steps.policy-pin.outputs.sha }}
+          path: policy-core
+          persist-credentials: false
+          token: ${{ github.token }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
+
+      - name: Evaluate caller shared-token policy
+        run: >-
+          uv run --project "$GITHUB_WORKSPACE/policy-core" --frozen python
+          -m omnibase_core.nodes.node_source_file_gather_effect.runtime_shared_token_policy
+          --root "$GITHUB_WORKSPACE/candidate"

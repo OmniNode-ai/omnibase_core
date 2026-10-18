@@ -32,6 +32,11 @@ on:
     # Weekly on Monday at 08:00 UTC
     - cron: '0 8 * * 1'
   workflow_call:
+    secrets:
+      ONEXBOT_APP_ID:
+        required: true
+      ONEXBOT_APP_PRIVATE_KEY:
+        required: true
   workflow_dispatch:
 
 permissions:

@@ -1747,6 +1747,15 @@ repos:
       # one, OMN-17931: only-api_key_env fails, api_key_env beside a real ref is
       # migration debt). ADC and
       # API-key auth are mutually exclusive per backend. No warn-only mode.
+      - id: shared-token-policy
+        name: Shared GitHub Token Policy (OMN-17427)
+        entry: uv run python -m omnibase_core.nodes.node_source_file_gather_effect.runtime_shared_token_policy
+        language: system
+        files: ^(\.github/|src/omnibase_core/(nodes/node_backend_secret_discipline_compute|nodes/node_source_file_gather_effect/runtime_shared_token_policy|models/validation/model_shared_token)|\.pre-commit)
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
       - id: check-backend-secret-discipline
         name: Backend Secret-Ref Discipline Gate (OMN-13305)
         entry: uv run python -m omnibase_core.validation.validator_backend_secret_discipline
