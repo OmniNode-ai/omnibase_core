@@ -109,16 +109,23 @@ def _load_config(path: Path) -> ModelMarkdownLinkConfig:
     )
 
 
+def _excluded(relative: Path, patterns: tuple[str, ...]) -> bool:
+    # A directory pattern such as ".pytest_cache/**" also excludes that directory
+    # nested below the root (tests/.pytest_cache/README.md), so each sub-path is matched.
+    parts = relative.parts
+    return any(
+        fnmatch.fnmatch("/".join(parts[index:]), pattern)
+        for index in range(len(parts))
+        for pattern in patterns
+    )
+
+
 def _discover(root: Path, config: ModelMarkdownLinkConfig) -> list[Path]:
     return [
         path
         for path in root.rglob("*.md")
         if path.is_file()
-        and not any(
-            fnmatch.fnmatch(str(path.relative_to(root)), pattern)
-            or fnmatch.fnmatch(path.name, pattern)
-            for pattern in config.exclude_files
-        )
+        and not _excluded(path.relative_to(root), tuple(config.exclude_files))
     ]
 
 

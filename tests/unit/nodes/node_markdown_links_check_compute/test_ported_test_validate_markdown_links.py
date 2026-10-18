@@ -469,6 +469,26 @@ class TestMarkdownLinkConfigExclusions:
         assert broken not in found
         assert "1 files, 0 links checked" in output
 
+    def test_nested_pytest_cache_excluded(
+        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        cache_readme = _write(
+            tmp_path,
+            "tests/.pytest_cache/README.md",
+            "[pytest](https://docs.pytest.org/en/stable/how-to/cache.html)\n",
+        )
+        real_doc = _write(tmp_path, "README.md", "# Repo root\n\nContent.\n")
+        _write(
+            tmp_path,
+            ".markdown-link-check.json",
+            json.dumps({"excludeFiles": [".pytest_cache/**"]}),
+        )
+        request, _, output = _run(tmp_path, capsys, 0)
+        found = {Path(file.path) for file in request.files}
+        assert real_doc in found
+        assert cache_readme not in found
+        assert "1 files, 0 links checked" in output
+
     def test_normal_docs_not_excluded(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
