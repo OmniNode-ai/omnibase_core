@@ -99,6 +99,16 @@ EXEMPT: dict[str, str] = {
         "the pre-push hook set (OMN-17427); it never pushes to GitHub, mints no token "
         "and creates no commit outside the throwaway runner tree"
     ),
+    "dev-merge-tag-reusable.yml": (
+        "Pushes a lightweight dev-<UTC>-<sha12> tag on every push to dev "
+        "(OMN-19998). It uses the workflow token on purpose: a tag pushed with "
+        "that token starts no workflow, and nothing should start from a dev-* "
+        "tag. Consumers find the tags by polling `git ls-remote`, and "
+        "`release.yml` only listens for v* tags, so the App token would add "
+        "nothing but the chance of a dev merge fanning out extra runs. "
+        "tests/ci/test_dev_merge_tag_workflow_omn19998.py pins its trigger, "
+        "name and idempotency."
+    ),
 }
 
 TRAILER_WORKFLOW = "Onex-Workflow:"

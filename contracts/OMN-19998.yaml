@@ -97,6 +97,19 @@ requirements:
           Tests Gate admits the skip only with a named producing run; the marker is uploaded only after
           a full pass or a verified reuse. -- falsifier: uv run pytest tests/ci/test_full_suite_reuse_omn19998.py
           -q"
+  - id: "req-omn19998-omnibase_core-dev-merge-tag"
+    statement: "Operator RULING 2026-10-16T09:35:49Z: tags replace releases, made automatic. omnibase_core,
+      a sibling another platform repository consumes, tags every push to dev with a lightweight dev-<UTC
+      YYYYMMDDHHMMSS>-<sha12> tag on the pushed commit, idempotent per commit, with no tag on any other
+      ref, so a consumer can pin it through a uv git source."
+    acceptance:
+      - id: "AC12"
+        statement: "AC12: .github/workflows/dev-merge-tag.yml triggers only on push to dev, and its tag
+          step, run against a throwaway repository with a +05:30 committer date, pushes one lightweight
+          tag named dev-<committer time in UTC>-<sha12> at the commit, pushes nothing on a second run
+          or when a dev tag for that sha already exists, pushes nothing in a dry run, and refuses a value
+          that is not a full sha -- falsifier: uv run pytest tests/ci/test_dev_merge_tag_workflow_omn19998.py
+          -q -n 0 fails at the merge base, where the workflow does not exist"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -308,3 +321,24 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC11
+  - id: "dod-omn19998-omnibase_core-dev-merge-tag"
+    description: "The dev merge tag tests pass at the head; at the merge base the workflow file does not
+      exist and every test fails."
+    source: "manual"
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/ci/test_dev_merge_tag_workflow_omn19998.py tests/ci/test_automated_pusher_identity_omn18273.py
+          -q -n 0"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC12"]
+  - id: "dod-omn19998-omnibase_core-dev-merge-tag-deploy-probe"
+    description: "Hosted-runner probe reads the dev merge tag workflow at this commit and requires its
+      push-to-dev trigger and its tag push; the base has no such file and the probe fails."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: >-
+          gh api "repos/OmniNode-ai/omnibase_core/contents/.github/workflows/dev-merge-tag.yml?ref=$(git
+          rev-parse HEAD)" --jq .content | base64 -d | awk '/branches: \[dev\]/{a=1} /git push origin
+          "refs\/tags\//{b=1} END{exit !(a&&b)}'
+        cwd: "."

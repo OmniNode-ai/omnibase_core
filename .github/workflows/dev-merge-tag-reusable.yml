@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# dev-merge-tag-reusable.yml (OMN-19998)
+#
+# The one dev merge tag job, hosted here so that every repository of the same
+# type inherits it with `uses:` (RULINGs 2026-10-14T19:54:41Z and
+# 2026-10-14T20:01:09Z). A caller triggers on `push` to `dev` only, grants
+# `contents: write` and calls this file; dev-merge-tag.yml is this
+# repository's own caller.
+#
+# Every push to dev gets a lightweight tag dev-<UTC YYYYMMDDHHMMSS>-<sha12> on
+# the pushed commit. omnibase_core is a sibling consumed by omnibase_spi,
+# omnibase_infra, omnimarket, omniintelligence, omnimemory and omniclaude: a
+# consumer can read it through a uv git source pinned to one of these tags
+# instead of waiting for a PyPI release, and a release is cut only when an
+# outside user needs one (RULING 2026-10-16T09:35:49Z). The tag is made here
+# so that it exists for every dev merge without anyone remembering to cut it.
+# Same mechanism as omnimarket's and omnibase_infra's dev-merge-tag.yml.
+#
+# The timestamp is the commit's committer time in UTC, not the run's clock, so
+# a rerun for the same commit computes the same name. The step is idempotent on
+# the sha: when any dev-*-<sha12> tag already exists on the remote it pushes
+# nothing. Names sort by time, so the newest tag is the last in a plain sort.
+#
+# No tag on main, on a pull request branch or on any other ref: the caller's
+# trigger is `push` to `dev` only and the job repeats that check.
+#
+# The push uses the job's workflow token on purpose. A tag pushed with that
+# token starts no workflow, and nothing should start from a dev-* tag:
+# consumers read the tags by polling, and `release.yml` only listens for v*
+# tags. A dev merge therefore cannot fan out into extra runs.
+#
+# tests/ci/test_dev_merge_tag_workflow_omn19998.py runs the tag step below
+# against a throwaway repository and pins the name, idempotency and dry run.
+name: Dev Merge Tag (reusable)
+
+on:
+  workflow_call:
+
+jobs:
+  dev-merge-tag:
+    if: github.ref == 'refs/heads/dev'
+    # GitHub-hosted by literal: this is a public repository and CI runners are
+    # for private repositories only (RULING 2026-10-16T07:07:09Z, OMN-19998).
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 1
+
+      - name: Create the dev merge tag
+        id: tag
+        env:
+          SHA: ${{ github.sha }}
+          DRY_RUN: 'false'
+        run: |
+          set -euo pipefail
+
+          if ! [[ "${SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::not a full commit sha: '${SHA}'"
+            exit 1
+          fi
+          SHA12="${SHA:0:12}"
+
+          STAMP=$(TZ=UTC0 git log -1 --format=%cd --date=format-local:%Y%m%d%H%M%S "${SHA}")
+          TAG="dev-${STAMP}-${SHA12}"
+
+          emit() {
+            if [ -n "${GITHUB_OUTPUT:-}" ]; then
+              printf 'tag=%s\ncreated=%s\n' "$1" "$2" >> "${GITHUB_OUTPUT}"
+            fi
+          }
+
+          EXISTING=$(git ls-remote --tags origin 'refs/tags/dev-*' |
+            awk -v suffix="-${SHA12}" '
+              length($2) > length(suffix) &&
+              substr($2, length($2) - length(suffix) + 1) == suffix {
+                sub(/^refs\/tags\//, "", $2); print $2
+              }' | LC_ALL=C sort | head -n 1)
+          if [ -n "${EXISTING}" ]; then
+            echo "dev tag ${EXISTING} already names ${SHA}; nothing to push"
+            emit "${EXISTING}" false
+            exit 0
+          fi
+
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "dry run: would push lightweight tag ${TAG} -> ${SHA}"
+            emit "${TAG}" false
+            exit 0
+          fi
+
+          git tag "${TAG}" "${SHA}"
+          PUSH_STATUS=0
+          git push origin "refs/tags/${TAG}" || PUSH_STATUS=$?
+          if [ "${PUSH_STATUS}" -ne 0 ]; then
+            # A concurrent run for the same commit may have pushed the same name.
+            REMOTE_SHA=$(git ls-remote --tags origin "refs/tags/${TAG}" | awk '{print $1}')
+            if [ "${REMOTE_SHA}" != "${SHA}" ]; then
+              echo "::error::push of ${TAG} failed (exit ${PUSH_STATUS}) and the remote does not hold it at ${SHA}"
+              exit 1
+            fi
+            echo "${TAG} was pushed by a concurrent run; nothing to do"
+            emit "${TAG}" false
+            exit 0
+          fi
+
+          echo "pushed lightweight tag ${TAG} -> ${SHA}"
+          emit "${TAG}" true
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then
+            echo "Dev merge tag: \`${TAG}\`" >> "${GITHUB_STEP_SUMMARY}"
+          fi
