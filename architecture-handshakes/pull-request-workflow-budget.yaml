@@ -51,7 +51,7 @@ schema_version: 1
 # Count lock. MUST equal len(allowlisted_workflows). Frozen a second time as
 # EXPECTED_BUDGET in the test suite. Intended to move DOWN only.
 # baseline captured 2026-07-21 at origin/dev@d09128fc.
-budget: 28
+budget: 27
 
 # Every live `.github/workflows/*.yml` that triggers on pull_request /
 # pull_request_target as of the baseline. This is the frozen ratchet floor: a new
@@ -76,7 +76,6 @@ allowlisted_workflows:
   - pr-title-check-caller.yml
   - precommit-parity-gate.yml
   - product-readiness-shadow.yml
-  - propagate-config.yml
   - receipt-honesty.yml
   - required-check-skip-guard-caller.yml
   - security-scan.yml
@@ -96,6 +95,7 @@ allowlisted_workflows:
 waivers:
   # OMN-20074: cr-thread-gate-caller.yml retired (its `gate` job was later removed with CodeRabbit, OMN-17427); budget 30 -> 29.
   # OMN-20074: call-receipt-gate.yml retired with the OCC callers; budget 29 -> 28.
+  # OMN-19998: propagate-config.yml dropped its pull_request and push triggers (the dry-run lives in ci.yml); budget 28 -> 27.
   # OMN-20074: call-occ-autobind.yml deleted; its OMN-14160 waiver permanently closed.
   # OMN-20074: occ-companion-merge-heal.yml deleted (not PR-triggered; no budget slot).
   # OMN-20074: the ci.yml occ-companion-effect job is also retired; its closed waiver stays closed.

@@ -110,6 +110,17 @@ requirements:
           or when a dev tag for that sha already exists, pushes nothing in a dry run, and refuses a value
           that is not a full sha -- falsifier: uv run pytest tests/ci/test_dev_merge_tag_workflow_omn19998.py
           -q -n 0 fails at the merge base, where the workflow does not exist"
+  - id: "req-omn19998-propagate-config-no-pr-run"
+    statement: "A pull request that touches a config-propagation path must not turn the required CI Summary
+      red through the skipped placeholder row that propagate-config.yml posts on pull_request. The propagate
+      job runs on release and dispatch only; the dry-run for pull requests lives in ci.yml."
+    acceptance:
+      - id: "AC13"
+        statement: "AC13: .github/workflows/propagate-config.yml triggers only on release and workflow_dispatch,
+          so a pull_request touching a propagation path posts no skipped Propagate row for CI Summary's
+          external sweep to refuse, and ci.yml's propagate-dry-run still watches the same five paths --
+          falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -n 0 -k 'no_pull_request_or_push_trigger'
+          fails at the merge base, where the file still triggers on pull_request and push"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -344,3 +355,15 @@ dod_evidence:
           'workflow_runs_only_on_push_to_dev or reusable_is_called_only_and_repeats_the_dev_check or tag_name_is_dev_utc_committer_time_and_sha12'"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC12"]
+  - id: "dod-omn19998-omnibase_core-propagate-config-no-pr-run"
+    description: "propagate-config.yml carries only the release and workflow_dispatch triggers, the ci.yml
+      dry-run still watches the five propagation paths, and the pull-request workflow ratchet budget is
+      the lowered 27. The trigger test fails at the merge base."
+    source: "manual"
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/ci/test_ci_fold_gates_omn20074.py tests/validation/test_pull_request_workflow_ratchet.py
+          -q -n 0 -o addopts="
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC13"]

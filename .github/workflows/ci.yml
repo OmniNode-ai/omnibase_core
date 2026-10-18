@@ -3821,7 +3821,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Same five paths as propagate-config.yml's `on.pull_request.paths`.
+      # The five paths propagate-config.yml's `on.pull_request.paths` filtered on
+      # before OMN-19998 removed that trigger.
       # pull_request and push compare against their base; a manual dispatch
       # always runs, as the standalone job did; merge_group and schedule never
       # ran it. When no diff can be computed the check runs: failing open to
