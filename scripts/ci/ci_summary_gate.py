@@ -463,6 +463,16 @@ EXTERNAL_SWEEP_EXCLUSIONS: dict[str, SweepExclusion] = {
         added="2026-10-17",
         expires="2026-12-20",
     ),
+    # Measured on omnibase_core#2047 (run 39119407826): a PR touching one of
+    # propagate-config.yml's pull_request paths (.pre-commit-hooks.yaml) posts
+    # this unrendered-name row, skipped because the job runs only on release or
+    # workflow_dispatch; its PR-time dry-run is ci.yml's propagate-dry-run.
+    "Propagate ${{ (inputs.propagation_name || 'release-triggered') }}": SweepExclusion(
+        reason="Release/workflow_dispatch-only propagator leaves a skipped placeholder on path-matched PRs.",
+        ticket="OMN-17427",
+        added="2026-10-18",
+        expires="2026-12-20",
+    ),
 }
 
 _SWEEP_TICKET_RE = re.compile(r"^OMN-\d+$")

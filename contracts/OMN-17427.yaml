@@ -186,6 +186,15 @@ requirements:
         statement: "AC23: The four unused prose guides and two unused evidence logs are absent and README.md
           has three to five lines including the public knowledge_base link; machine-read handshakes, changelog,
           templates and fixtures remain available."
+  - id: req-omn17427-sweep-excludes-propagate-placeholder
+    statement: CI Summary's external sweep excludes the skipped placeholder row propagate-config.yml posts
+      on a path-matched pull request, with a dated, ticketed, expiring exclusion.
+    acceptance:
+      - id: AC30
+        statement: "AC30: A skipped Propagate placeholder row on a pull request leaves CI Summary green
+          and is reported as an applied exclusion, while an unregistered failing row beside it still fails
+          the gate. -- falsifier: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k ExternalSweepExclusions
+          -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -565,3 +574,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC23
+  - id: dod-omn17427-sweep-excludes-propagate-placeholder
+    description: "CI Summary's sweep registry carries the Propagate placeholder exclusion and admits its
+      skipped row while still failing an unregistered red; the tests fail at the merge base, where the
+      registry holds two entries."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k ExternalSweepExclusions
+          -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC30
