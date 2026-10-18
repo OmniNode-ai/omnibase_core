@@ -230,6 +230,15 @@ requirements:
         statement: "AC29: Required CI, the exported pre-commit hook and the reusable workflow invoke the
           same policy node without the shared token. -- falsifier: uv run pytest tests/unit/validation/test_ci_shared_token_quota.py
           -q -k surfaces -o addopts=''"
+  - id: req-repo-evidence-caller-verifier-floor
+    statement: The Repo Evidence Gate caller pins a verifier-version at or above the floor the evidence
+      job needs, and a pre-commit hook refuses a lower pin.
+    acceptance:
+      - id: AC31
+        statement: "AC31: The Repo Evidence Gate caller passes a verifier-version at or above 0.4.303;
+          0.4.280 and 0.4.302 are refused and 0.4.303 and 0.4.305 are admitted; the call-repo-evidence-gate
+          caller verifier floor pre-commit hook runs this check. -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_verifier_floor_omn17427.py
+          -q -p no:randomly --no-cov fails when the caller's verifier-version is below 0.4.303"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -681,3 +690,15 @@ dod_evidence:
       - AC27
       - AC28
       - AC29
+  - id: dod-repo-evidence-caller-verifier-floor
+    description: The Repo Evidence Gate caller passes a verifier-version at or above 0.4.303, the check
+      refuses 0.4.280 and 0.4.302 and admits 0.4.303 and 0.4.305, and a pre-commit hook runs it.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_repo_evidence_caller_verifier_floor_omn17427.py -q -p
+          no:randomly --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC31
