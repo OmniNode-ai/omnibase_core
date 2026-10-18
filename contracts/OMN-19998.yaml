@@ -331,14 +331,16 @@ dod_evidence:
           -q -n 0"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC12"]
-  - id: "dod-omn19998-omnibase_core-dev-merge-tag-deploy-probe"
-    description: "Hosted-runner probe reads the dev merge tag workflow at this commit and requires its
-      push-to-dev trigger and its tag push; the base has no such file and the probe fails."
+  - id: "dod-omn19998-core-dev-tag-deploy-probe"
+    description: "Hosted-runner probe executes the checked-out caller and reusable workflow tests. It
+      requires the push-to-dev trigger, the reusable call and dev guard, and a lightweight tag at the
+      commit with the UTC committer timestamp and sha12. A missing workflow, wrong trigger or wrong tag
+      fails the probe; no lab services or GitHub API access are required."
     source: "manual"
+    execution_scope: hosted_and_local
     checks:
-      - check_type: "command"
-        check_value: >-
-          gh api "repos/OmniNode-ai/omnibase_core/contents/.github/workflows/dev-merge-tag.yml?ref=$(git
-          rev-parse HEAD)" --jq .content | base64 -d | awk '/branches: \[dev\]/{a=1} /git push origin
-          "refs\/tags\//{b=1} END{exit !(a&&b)}'
-        cwd: "."
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/ci/test_dev_merge_tag_workflow_omn19998.py -q -o addopts= -k
+          'workflow_runs_only_on_push_to_dev or reusable_is_called_only_and_repeats_the_dev_check or tag_name_is_dev_utc_committer_time_and_sha12'"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC12"]
