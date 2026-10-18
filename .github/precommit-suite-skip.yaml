@@ -56,11 +56,12 @@
 # environments only for the hooks it will execute, so a skipped hook is never
 # cloned.
 #
-# Residual, stated: these two have no assertion from this job. Covering them
+# Residual, stated: this one has no assertion from this job. Covering it
 # means arranging a credential for pre-commit's own clone, which is a separate
-# decision with its own blast radius. (no-untracked-todos used to be a third; it
-# now runs this repository's own handler, so it left this list — OMN-20068.)
-- kb-doc-gate
+# decision with its own blast radius. (no-untracked-todos used to be another; it
+# now runs this repository's own handler, so it left this list — OMN-20068.
+# kb-doc-gate left with its hook: the local readme-only-docs hook replaced it,
+# so this job now runs it — OMN-17427.)
 - secrets-baseline-wired
 
 # (4) Green locally, cannot run here, and ALREADY MIRRORED so nothing is lost.

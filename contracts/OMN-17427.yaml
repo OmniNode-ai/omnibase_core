@@ -633,7 +633,8 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC25]
   - id: dod-omn17427-readme-links
-    description: The retained README links resolve and no longer target the five removed prose documents.
+    description: The five removed prose documents, including CHANGELOG.md which this pull request deletes,
+      are absent and the retained README links resolve without targeting any of them.
     source: manual
     execution_scope: hosted_and_local
     checks:
@@ -642,10 +643,11 @@ dod_evidence:
           uv run python -c 'import posixpath; from pathlib import Path; from urllib.parse import unquote;
           from omnibase_core.nodes.node_markdown_links_check_compute.matcher_markdown_links import extract_links_from_markdown;
           removed = {".github/CODE_OF_CONDUCT.md", ".github/CONTRIBUTING.md", "CHANGELOG.md", "SECURITY.md",
-          "tests/fixtures/README.md"}; targets = {posixpath.normpath(unquote(link.url.split("#", 1)[0]))
-          for link in extract_links_from_markdown(Path("README.md").read_text(), "README.md")}; assert
-          not (removed & targets), "README links to removed prose documents: " + str(sorted(removed &
-          targets))'
+          "tests/fixtures/README.md"}; present = sorted(p for p in removed if Path(p).exists()); assert
+          not present, "removed prose documents still tracked: " + str(present); targets = {posixpath.normpath(unquote(link.url.split("#",
+          1)[0])) for link in extract_links_from_markdown(Path("README.md").read_text(), "README.md")};
+          assert not (removed & targets), "README links to removed prose documents: " + str(sorted(removed
+          & targets))'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run onex-validate-links --verbose
