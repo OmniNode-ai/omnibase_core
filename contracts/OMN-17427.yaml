@@ -634,7 +634,6 @@ dod_evidence:
     binds_ac: [AC25]
   - id: dod-omn17427-readme-links
     description: The retained README links resolve and no longer target the five removed prose documents.
-      The removed-target assertion fails at the merge base even while those documents still exist there.
     source: manual
     execution_scope: hosted_and_local
     checks:

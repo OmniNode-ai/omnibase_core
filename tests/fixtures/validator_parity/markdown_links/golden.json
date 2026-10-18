@@ -103,7 +103,7 @@
   "repository": {
     "exit_code": 0,
     "findings": [],
-    "stdout": "Markdown Links: PASS (13 files, 17 links checked, 17 skipped)\n",
+    "stdout": "Markdown Links: PASS (12 files, 13 links checked, 13 skipped)\n",
     "files_checked": 18
   },
   "decoded": {
