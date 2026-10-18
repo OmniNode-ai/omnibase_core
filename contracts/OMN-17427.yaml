@@ -178,6 +178,14 @@ requirements:
           whose run event is a known non-pull-request event, and refuses a malformed or spent exclusion
           registry. -- falsifier: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k \"ExternalDefaultDenySweep
           or ExternalSweepExclusions or SweepIsWired\""
+  - id: req-omn17427-remove-repository-prose
+    statement: Repository prose lives in the public knowledge base; remove the unused contribution, conduct,
+      security and fixture guides and retain a short root README signpost.
+    acceptance:
+      - id: AC23
+        statement: "AC23: The four unused prose guides and two unused evidence logs are absent and README.md
+          has three to five lines including the public knowledge_base link; machine-read handshakes, changelog,
+          templates and fixtures remain available."
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -536,3 +544,20 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC22
+  - id: dod-omn-17427-remove-repository-prose
+    description: The unused prose guides and evidence logs are absent and the root README links to the
+      public knowledge base.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run python -c 'from pathlib import Path; removed=[".github/CODE_OF_CONDUCT.md", ".github/CONTRIBUTING.md",
+          "SECURITY.md", "tests/fixtures/README.md", ".onex_state/evidence/OMN-13132/deterministic-ir-evidence.txt",
+          ".onex_state/evidence/deterministic-ir/deterministic-ir-evidence.txt"]; assert all(not Path(p).exists()
+          for p in removed); lines=Path("README.md").read_text().splitlines(); assert 3 <= len(lines)
+          <= 5; assert "https://github.com/OmniNode-ai/knowledge_base" in "\n".join(lines); print("documentation
+          removal and README checks passed")'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC23

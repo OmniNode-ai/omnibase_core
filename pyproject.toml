@@ -69,7 +69,7 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/OmniNode-ai/omnibase_core"
 Repository = "https://github.com/OmniNode-ai/omnibase_core"
-Documentation = "https://github.com/OmniNode-ai/omnibase_core/tree/main/docs"
+Documentation = "https://github.com/OmniNode-ai/knowledge_base"
 
 [project.scripts]
 onex = "omnibase_core.cli.cli_commands:cli"

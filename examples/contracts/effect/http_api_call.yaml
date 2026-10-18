@@ -53,7 +53,7 @@
 # - Consider data masking for sensitive fields in observability outputs
 # - Review and follow your organization's data handling policies
 #
-# 📚 For comprehensive security guidance, see: SECURITY.md in this directory
+# Security guidance: https://github.com/OmniNode-ai/knowledge_base
 #
 # v1.1.0 Contract Schema Version
 # ============================================================================
