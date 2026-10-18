@@ -559,5 +559,9 @@ dod_evidence:
           <= 5; assert "https://github.com/OmniNode-ai/knowledge_base" in "\n".join(lines); print("documentation
           removal and README checks passed")'
         cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_markdown_links_check_compute/test_parity_markdown_links_golden.py
+          -q -o addopts='' -k test_parity_markdown_links_repository_golden
+        cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC23
