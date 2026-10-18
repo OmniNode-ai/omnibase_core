@@ -1,0 +1,206 @@
+name: Full Suite Reuse (Reusable)
+
+# OMN-19998: run the heavy test suites once per change, not once per event.
+#
+# A full-suite pass is recorded by the caller as an artifact named
+# `<artifact-prefix>-<tree sha>` (see the `full-suite-pass-marker` job in
+# omnibase_core's ci.yml). This workflow looks for such a marker for the tree
+# the current run would test, and reports `reuse=true` only when the run that
+# uploaded it tested one of the heads this event is landing:
+#
+#   push          the pushed commit itself (a merge-queue merge fast-forwards
+#                 dev to the exact commit its merge_group run tested), or the
+#                 head of the pull request whose merge commit this push is
+#   merge_group   the merge group commit itself (a rerun), or the head of the
+#                 queued pull request (`.../pr-<n>-<base sha>`): a queue of
+#                 one on an unchanged base tests the same tree the pull
+#                 request's own full-suite run tested
+#   pull_request  the same pull request head (an `edited` or
+#                 `ready_for_review` rerun of a tree that already passed)
+#
+# The tree sha binds the content, the producer's head sha binds who produced
+# it: a marker another pull request uploads for a tree it computed is refused
+# because that run did not test this event's head. The producer must also be a
+# run of the same workflow file. schedule and workflow_dispatch never reuse.
+#
+# Every lookup failure reports reuse=false, so the caller runs the full suite
+# exactly as it did before this workflow existed; this job never fails a run.
+#
+# mode: mark is the producer half. The caller passes the probe's tree and
+# whether this run earned a marker (a full selection whose matrices both
+# passed, or a reuse the probe verified); the marker is uploaded only then.
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: "probe (look for a reusable pass) or mark (record this run's pass)"
+        required: false
+        default: "probe"
+        type: string
+      tree:
+        description: "mark: tree sha the probe reported for this run"
+        required: false
+        default: ""
+        type: string
+      reused-from:
+        description: "mark: run id the probe reused, empty when the suites ran here"
+        required: false
+        default: ""
+        type: string
+      eligible:
+        description: "mark: true when this run passed the full suite on this tree or reused a verified pass"
+        required: false
+        default: false
+        type: boolean
+      artifact-prefix:
+        description: "Name prefix of the full-suite pass marker artifact"
+        required: false
+        default: "full-suite-pass"
+        type: string
+    outputs:
+      reuse:
+        description: "true when a full-suite pass of this exact tree, produced by a run of a head this event lands, already exists"
+        value: ${{ jobs.probe.outputs.reuse }}
+      tree:
+        description: "Tree sha of the commit this run tests (empty when it could not be read)"
+        value: ${{ jobs.probe.outputs.tree }}
+      producer_run:
+        description: "Run id that uploaded the reused marker (empty unless reuse=true)"
+        value: ${{ jobs.probe.outputs.producer_run }}
+
+jobs:
+  probe:
+    name: Full Suite Reuse Probe
+    if: inputs.mode == 'probe'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    outputs:
+      reuse: ${{ steps.probe.outputs.reuse }}
+      tree: ${{ steps.probe.outputs.tree }}
+      producer_run: ${{ steps.probe.outputs.producer_run }}
+    steps:
+      - name: Look for a full-suite pass of this tree
+        id: probe
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_SHA: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          ARTIFACT_PREFIX: ${{ inputs.artifact-prefix }}
+        run: |
+          set -u
+          out="${GITHUB_OUTPUT:-/dev/stdout}"
+          err="$(mktemp)"
+          reuse=false
+          producer=""
+          finish() {
+            echo "reuse=$reuse" >> "$out"
+            echo "producer_run=$producer" >> "$out"
+            echo "Full-suite reuse: reuse=$reuse producer_run=${producer:-none} reason=$1"
+            exit 0
+          }
+
+          tree="$(gh api "repos/$REPO/git/commits/$RUN_SHA" --jq .tree.sha 2>"$err")"
+          if ! printf '%s' "$tree" | grep -Eqx '[0-9a-f]{40}'; then
+            cat "$err"
+            echo "tree=" >> "$out"
+            finish "tree-unreadable"
+          fi
+          echo "tree=$tree" >> "$out"
+          echo "Testing tree $tree of $RUN_SHA ($EVENT_NAME)"
+
+          heads=""
+          case "$EVENT_NAME" in
+            push)
+              heads="$RUN_SHA"
+              merged_heads="$(gh api "repos/$REPO/commits/$RUN_SHA/pulls" \
+                --jq ".[] | select(.merge_commit_sha == \"$RUN_SHA\") | .head.sha" 2>"$err")" \
+                && heads="$heads $merged_heads" \
+                || { echo "pull requests of $RUN_SHA unreadable:"; cat "$err"; }
+              ;;
+            merge_group)
+              heads="$RUN_SHA"
+              pr_number="$(printf '%s\n' "$MERGE_GROUP_HEAD_REF" \
+                | sed -n 's#^.*/pr-\([0-9][0-9]*\)-[0-9a-f]\{40\}$#\1#p')"
+              if [ -n "$pr_number" ]; then
+                pr_head="$(gh api "repos/$REPO/pulls/$pr_number" --jq .head.sha 2>"$err")" \
+                  && heads="$heads $pr_head" \
+                  || { echo "pull request $pr_number unreadable:"; cat "$err"; }
+              fi
+              ;;
+            pull_request)
+              heads="$PR_HEAD_SHA"
+              ;;
+            *)
+              finish "event-$EVENT_NAME-always-runs"
+              ;;
+          esac
+          echo "Heads whose own run may vouch for this tree: $heads"
+
+          markers="$(gh api "repos/$REPO/actions/artifacts?name=$ARTIFACT_PREFIX-$tree&per_page=100" \
+            --jq '.artifacts[] | select(.expired == false) | "\(.workflow_run.id) \(.workflow_run.head_sha)"' 2>"$err")" \
+            || { cat "$err"; finish "markers-unreadable"; }
+          [ -n "$markers" ] || finish "no-marker"
+
+          own_path="$(gh api "repos/$REPO/actions/runs/$RUN_ID" --jq .path 2>"$err")" \
+            || { cat "$err"; finish "own-run-unreadable"; }
+
+          while read -r marker_run marker_head; do
+            [ -n "$marker_run" ] || continue
+            [ "$marker_run" != "$RUN_ID" ] || continue
+            case " $heads " in
+              *" $marker_head "*) ;;
+              *) echo "marker from run $marker_run tested $marker_head, not a head of this event"; continue ;;
+            esac
+            marker_path="$(gh api "repos/$REPO/actions/runs/$marker_run" --jq .path 2>"$err")" \
+              || { echo "run $marker_run unreadable:"; cat "$err"; continue; }
+            if [ "$marker_path" != "$own_path" ]; then
+              echo "marker from run $marker_run came from $marker_path, not $own_path"
+              continue
+            fi
+            reuse=true
+            producer="$marker_run"
+            finish "tree-passed-in-run-$marker_run"
+          done <<< "$markers"
+          finish "no-marker-from-a-head-of-this-event"
+
+  mark:
+    name: Full Suite Pass Marker
+    if: inputs.mode == 'mark'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Write the marker
+        id: marker
+        env:
+          TREE: ${{ inputs.tree }}
+          ELIGIBLE: ${{ inputs.eligible }}
+          REUSED_FROM: ${{ inputs.reused-from }}
+        run: |
+          if [ "$ELIGIBLE" != "true" ] || ! printf '%s' "$TREE" | grep -Eqx '[0-9a-f]{40}'; then
+            echo "upload=false" >> "$GITHUB_OUTPUT"
+            echo "No marker: eligible=$ELIGIBLE tree=${TREE:-unset}"
+            exit 0
+          fi
+          printf '{"tree": "%s", "sha": "%s", "run_id": "%s", "event": "%s", "reused_from": "%s"}\n' \
+            "$TREE" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_EVENT_NAME" "$REUSED_FROM" > full-suite-pass.json
+          cat full-suite-pass.json
+          echo "upload=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the marker
+        if: steps.marker.outputs.upload == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ inputs.artifact-prefix }}-${{ inputs.tree }}
+          path: full-suite-pass.json
+          retention-days: 7

@@ -4097,6 +4097,22 @@ jobs:
   # this PR cannot be called by required CI until it exists on main, because
   # GitHub cannot materialize jobs for a new local workflow_call target.
   #
+  # OMN-19998: the heavy suites run once per change. A full-suite pass is
+  # recorded as an artifact named for the tested tree (full-suite-pass-marker
+  # below); this probe reports reuse=true only when a run of a head this event
+  # lands already passed that exact tree (the push of a commit its merge_group
+  # run tested, a queue of one on an unchanged base, a PR rerun on the same
+  # head). The test matrices then skip and Tests Gate admits the skip naming
+  # the producing run. Any lookup failure reports reuse=false and the suites
+  # run as before; schedule and workflow_dispatch never reuse.
+  full-suite-reuse:
+    name: Full Suite Reuse (OMN-19998)
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/full-suite-reuse.yml
+
   # OMN-16625: detached from `needs: [quality-gate]`. This job used to run
   # AFTER quality-gate's ~26 leaf validators finished -- too late to gate
   # those leaves themselves on docs_only, only useful for the Phase 2 test
@@ -4357,7 +4373,7 @@ jobs:
   #   - This ensures quality failures are caught BEFORE spawning N test runners
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
-    needs: [quality-gate, zone-filter, detect-changes]
+    needs: [quality-gate, zone-filter, detect-changes, full-suite-reuse]
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -4383,6 +4399,7 @@ jobs:
       always() && needs.quality-gate.result == 'success' &&
       needs.zone-filter.outputs.docs_only != 'true' &&
       (github.event_name != 'pull_request' || github.base_ref != 'dev' || !github.event.pull_request.draft)
+      && needs.full-suite-reuse.outputs.reuse != 'true'
     # Self-hosted runners can slow sharply under memory pressure when the
     # duration cache is cold; keep the full-suite split timeout above the
     # observed 20-minute saturation boundary.
@@ -4558,7 +4575,7 @@ jobs:
   # is harvested to the durable ci-shadow-metrics branch by a separate workflow.
   shadow-compare:
     name: Shadow Selection Compare
-    needs: [detect-changes, test-parallel]
+    needs: [detect-changes, test-parallel, full-suite-reuse]
     runs-on: >-
       ${{
         github.event_name != 'pull_request'
@@ -4572,6 +4589,7 @@ jobs:
       always()
       && needs.detect-changes.result == 'success'
       && (vars.ENABLE_SMART_TESTS != 'true' || needs.detect-changes.outputs.is_full_suite == 'true')
+      && needs.full-suite-reuse.outputs.reuse != 'true'
     continue-on-error: true
     steps:
       - name: Checkout code
@@ -4671,7 +4689,7 @@ jobs:
   # ---------------------------------------------------------------------------
   tests-integration:
     name: Integration Tests (Split ${{ matrix.split }}/4)
-    needs: [quality-gate, zone-filter, detect-changes]
+    needs: [quality-gate, zone-filter, detect-changes, full-suite-reuse]
     # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
     runs-on: >-
       ${{
@@ -4689,6 +4707,7 @@ jobs:
       always() && needs.quality-gate.result == 'success' &&
       needs.zone-filter.outputs.docs_only != 'true' &&
       (github.event_name != 'pull_request' || github.base_ref != 'dev' || !github.event.pull_request.draft)
+      && needs.full-suite-reuse.outputs.reuse != 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -4783,7 +4802,7 @@ jobs:
     # skips test-parallel/tests-integration via their own `quality-gate ==
     # success` precondition. Without this, that skip would be indistinguishable
     # from a legitimate docs-only skip and this gate would wrongly pass.
-    needs: [test-parallel, tests-integration, zone-filter, quality-gate]
+    needs: [test-parallel, tests-integration, zone-filter, quality-gate, full-suite-reuse]
     if: always()
 
     steps:
@@ -4796,6 +4815,8 @@ jobs:
           integration="${{ needs.tests-integration.result }}"
           docs_only="${{ needs.zone-filter.outputs.docs_only }}"
           quality="${{ needs.quality-gate.result }}"
+          reuse="${{ needs.full-suite-reuse.outputs.reuse }}"
+          reuse_run="${{ needs.full-suite-reuse.outputs.producer_run }}"
 
           echo "| Check | Result |" >> "$GITHUB_STEP_SUMMARY"
           echo "|-------|--------|" >> "$GITHUB_STEP_SUMMARY"
@@ -4803,6 +4824,7 @@ jobs:
           echo "| Integration Tests (4 splits) | $integration |" >> "$GITHUB_STEP_SUMMARY"
           echo "| zone-filter docs_only | ${docs_only:-(unset)} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| quality-gate | $quality |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| full-suite reuse (OMN-19998) | ${reuse:-(unset)} ${reuse_run:+run $reuse_run} |" >> "$GITHUB_STEP_SUMMARY"
 
           # OMN-15315 (OMN-15304 vector 6 — result triage). The previous pass
           # condition admitted `success` OR `skipped` for both upstreams, so a
@@ -4842,6 +4864,14 @@ jobs:
                 echo "$NAME: success"
                 ;;
               skipped)
+                # OMN-19998: the second legitimate skip. The probe found a
+                # full-suite pass of this exact tree from a run of a head this
+                # event lands; quality-gate must still have passed here.
+                if [ "$reuse" = "true" ] && [ -n "$reuse_run" ] && [ "$quality" = "success" ]; then
+                  echo "$NAME: skipped (full suite already passed this tree in run $reuse_run)"
+                  echo "$NAME reused: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/$reuse_run" >> "$GITHUB_STEP_SUMMARY"
+                  continue
+                fi
                 if [ "$docs_only" != "true" ] || [ "$quality" != "success" ]; then
                   echo "**Tests Gate: FAILED**" >> "$GITHUB_STEP_SUMMARY"
                   echo "::error::$NAME was SKIPPED but the docs-only precondition does not hold (zone-filter docs_only='${docs_only:-unset}', quality-gate result='${quality:-unset}') — the absence of a test result is not a passing one."
@@ -4865,6 +4895,31 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Tests Gate: PASSED** (unit=$parallel integration=$integration)" >> "$GITHUB_STEP_SUMMARY"
           echo "Test matrix result: unit=$parallel integration=$integration"
+
+  # OMN-19998: record a full-suite pass of this tree for full-suite-reuse.
+  # Uploaded only when Tests Gate passed on a full selection that ran both
+  # matrices, or on a reuse the probe already verified, so a marker always
+  # traces back to a run that executed the full suite on this exact tree.
+  full-suite-pass-marker:
+    name: Full Suite Pass Marker (OMN-19998)
+    needs: [full-suite-reuse, detect-changes, test-parallel, tests-integration, tests-gate]
+    if: always() && needs.tests-gate.result == 'success'
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    uses: ./.github/workflows/full-suite-reuse.yml
+    with:
+      mode: mark
+      tree: ${{ needs.full-suite-reuse.outputs.tree }}
+      reused-from: ${{ needs.full-suite-reuse.outputs.producer_run }}
+      eligible: >-
+        ${{
+          needs.full-suite-reuse.outputs.reuse == 'true'
+          || (needs.detect-changes.outputs.is_full_suite == 'true'
+              && needs.test-parallel.result == 'success'
+              && needs.tests-integration.result == 'success')
+        }}
 
   # ============================================================================
   # OMN-18790 — skip-count baseline ratchet (epic OMN-18775, ported from the
