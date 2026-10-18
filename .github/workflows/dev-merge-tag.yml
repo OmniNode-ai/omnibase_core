@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# dev-merge-tag.yml (OMN-19998)
+#
+# Every push to dev gets a lightweight tag dev-<UTC YYYYMMDDHHMMSS>-<sha12> on
+# the pushed commit, so a consumer can pin omnibase_core through a uv git
+# source at that tag instead of waiting for a PyPI release (RULING
+# 2026-10-16T09:35:49Z). The job lives in dev-merge-tag-reusable.yml, which
+# every repository of the same type calls; this file is omnibase_core's own
+# caller. See the reusable for the name, idempotency and token.
+#
+# tests/ci/test_dev_merge_tag_workflow_omn19998.py pins this trigger and runs
+# the reusable's tag step against a throwaway repository.
+name: Dev Merge Tag
+
+on:
+  push:
+    branches: [dev]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.sha }}
+  cancel-in-progress: false
+
+jobs:
+  dev-merge-tag:
+    if: github.ref == 'refs/heads/dev'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/dev-merge-tag-reusable.yml
