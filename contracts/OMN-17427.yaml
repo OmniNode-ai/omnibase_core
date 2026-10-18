@@ -561,7 +561,6 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/models/events/work/test_work_ledger_render.py -q -o addopts=''
-          -k "golden_row_per_kind or worktree or question"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC21
