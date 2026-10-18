@@ -212,6 +212,9 @@ requirements:
           the reusable resolves its immutable validator revision and retains report/event artifacts even
           on failure. -- falsifier: uv run pytest tests/unit/nodes/node_readme_only_docs_effect/test_readme_only_docs.py
           -q -o addopts='' -k core_ci"
+      - id: AC26
+        statement: "AC26: The retained README has no broken local documentation links after the prose
+          documents are removed. -- falsifier: uv run onex-validate-links --verbose"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -629,3 +632,12 @@ dod_evidence:
           -q -o addopts='' -k core_ci
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC25]
+  - id: dod-omn17427-readme-links
+    description: The retained README links resolve after removal of the local prose documents.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run onex-validate-links --verbose
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC26]
