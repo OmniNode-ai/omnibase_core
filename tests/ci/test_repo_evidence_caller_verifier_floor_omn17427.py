@@ -23,12 +23,10 @@ import yaml
 
 pytestmark = pytest.mark.unit
 
-CALLER_PATH = (
-    Path(__file__).resolve().parents[2]
-    / ".github"
-    / "workflows"
-    / "call-repo-evidence-gate.yml"
-)
+REPO_ROOT = Path(__file__).resolve().parents[2]
+CALLER_PATH = REPO_ROOT / ".github" / "workflows" / "call-repo-evidence-gate.yml"
+PRECOMMIT_CONFIG = REPO_ROOT / ".pre-commit-config.yaml"
+HOOK_ID = "call-repo-evidence-gate-verifier-floor"
 
 # omnimarket#3511: the first release that refuses a contract leaving an
 # acceptance criterion unbound.
@@ -53,6 +51,19 @@ def _job(path: Path = CALLER_PATH) -> dict[str, Any]:
     assert "repo-evidence" in jobs, "the caller must declare a repo-evidence job"
     job: dict[str, Any] = jobs["repo-evidence"]
     return job
+
+
+def _hook() -> dict[str, Any]:
+    config = yaml.safe_load(PRECOMMIT_CONFIG.read_text(encoding="utf-8"))
+    hooks = [
+        hook
+        for repo in config["repos"]
+        for hook in repo.get("hooks", [])
+        if hook.get("id") == HOOK_ID
+    ]
+    assert len(hooks) == 1, f"exactly one pre-commit hook must be declared as {HOOK_ID}"
+    hook: dict[str, Any] = hooks[0]
+    return hook
 
 
 def _verifier_version(job: dict[str, Any]) -> str:
@@ -98,3 +109,15 @@ def test_floor_comparison_has_a_refusing_and_an_admitting_case(
     version: str, expected: bool
 ) -> None:
     assert _admits(version) is expected
+
+
+def test_a_pre_commit_hook_runs_this_check_on_the_caller() -> None:
+    hook = _hook()
+    this_test = Path(__file__).relative_to(REPO_ROOT).as_posix()
+    assert this_test in hook["entry"], f"{HOOK_ID} must run {this_test}"
+    assert hook.get("pass_filenames") is False
+    assert hook.get("stages") == ["pre-commit"]
+    files = re.compile(hook["files"])
+    assert files.search(".github/workflows/call-repo-evidence-gate.yml"), (
+        f"{HOOK_ID} must fire when the caller changes"
+    )
