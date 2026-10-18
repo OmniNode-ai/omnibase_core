@@ -93,8 +93,10 @@ def test_handshake_policy_gate_runs_from_ci_yml_on_merge_group_only() -> None:
     assert job["uses"] == "./.github/workflows/handshake-policy-gate.yml"
     assert job["if"] == "github.event_name == 'merge_group'"
     assert job["permissions"] == {"contents": "read", "actions": "read"}
-    inherited = job["secrets"]
-    assert inherited == "inherit", "the App-token mint reads org secrets"
+    assert job["secrets"] == {
+        "ONEXBOT_APP_ID": "${{ secrets.ONEXBOT_APP_ID }}",
+        "ONEXBOT_APP_PRIVATE_KEY": "${{ secrets.ONEXBOT_APP_PRIVATE_KEY }}",
+    }, "the App-token mint reads exactly the two App secrets, not the org's"
     assert "needs" not in job
 
 

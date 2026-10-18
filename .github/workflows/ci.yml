@@ -2319,6 +2319,10 @@ jobs:
         run: |
           uv run pytest tests/unit/validators/test_backend_secret_discipline.py -v
 
+      # OMN-17427: blocking shared-token policy, mirrored by the pre-commit hook.
+      - name: Refuse unreviewed shared GitHub token uses
+        run: uv run python -m omnibase_core.nodes.node_source_file_gather_effect.runtime_shared_token_policy
+
       - name: Self-scan omnibase_core config (literal credentials + backend refs)
         run: |
           uv run python -m omnibase_core.validators.backend_secret_discipline src/
@@ -3791,7 +3795,10 @@ jobs:
     permissions:
       contents: read
       actions: read
-    secrets: inherit
+    # OMN-17427: pass only the App signing inputs this reusable needs.
+    secrets:
+      ONEXBOT_APP_ID: ${{ secrets.ONEXBOT_APP_ID }}
+      ONEXBOT_APP_PRIVATE_KEY: ${{ secrets.ONEXBOT_APP_PRIVATE_KEY }}
 
   # Folded from propagate-config.yml's `dry-run-ci-check`. That workflow filtered
   # `push` and `pull_request` on five paths; here the same five are matched

@@ -39,4 +39,4 @@ permissions:
 jobs:
   call-reject-skip-token:
     uses: OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@4358450ccbba0cee11e390208dd0b8b1728e94ab # OMN-20074: omniclaude#2540 squash on omniclaude dev; the scan runs with no nested change-control preflight
-    secrets: inherit
+    # OMN-17427: the pinned scanner reads this repository with github.token.
