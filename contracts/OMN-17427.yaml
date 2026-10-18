@@ -195,6 +195,26 @@ requirements:
           and is reported as an applied exclusion, while an unregistered failing row beside it still fails
           the gate. -- falsifier: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k ExternalSweepExclusions
           -o addopts=''"
+  - id: req-omn17427-readme-only-docs
+    statement: Every tracked documentation format outside root README.md is refused except explicit reasoned
+      machine inputs, requirements txt is always refused, the root README remains tracked, and knowledge-base
+      repositories are exempt.
+    acceptance:
+      - id: AC24
+        statement: "AC24: The strict documentation node refuses md, mdx, rst, adoc and txt files including
+          a renamed extension and nested README, refuses requirements txt despite an exception, validates
+          reasoned machine-input policy from the index, preserves the root README, exempts knowledge-base
+          repositories and emits run/fire events on pass, fail and error. -- falsifier: uv run pytest
+          tests/unit/nodes/node_readme_only_docs_effect/test_readme_only_docs.py -q -o addopts=''"
+      - id: AC25
+        statement: "AC25: The exported hook and core's reusable workflow invoke the same documentation
+          node on the entire tracked tree without an outcome filter; core preserves kb-doc-gate / kb-doc-gate,
+          the reusable resolves its immutable validator revision and retains report/event artifacts even
+          on failure. -- falsifier: uv run pytest tests/unit/nodes/node_readme_only_docs_effect/test_readme_only_docs.py
+          -q -o addopts='' -k core_ci"
+      - id: AC26
+        statement: "AC26: The retained README has no broken local documentation links after the prose
+          documents are removed. -- falsifier: uv run onex-validate-links --verbose"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -264,6 +284,10 @@ evidence_requirements:
       bar, event scoping and an expiring exclusion registry."
     command: "uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k \"ExternalDefaultDenySweep
       or ExternalSweepExclusions or SweepIsWired\""
+  - kind: tests
+    description: The documentation node and shared workflow acceptance corpus runs without lab services.
+    command: uv run pytest tests/unit/nodes/node_readme_only_docs_effect/test_readme_only_docs.py -q -o
+      addopts=''
 emergency_bypass:
   enabled: false
   justification: ''
@@ -587,3 +611,45 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC30
+  - id: dod-omn17427-readme-only-docs
+    description: Strict documentation, reasoned machine inputs, uv-only dependencies and validator events.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_readme_only_docs_effect/test_readme_only_docs.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC24]
+  - id: dod-omn17427-readme-only-docs-wiring
+    description: The exported hook and immutable reusable share the strict node and preserve the required
+      context.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_readme_only_docs_effect/test_readme_only_docs.py
+          -q -o addopts='' -k core_ci
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC25]
+  - id: dod-omn17427-readme-links
+    description: The five removed prose documents, including CHANGELOG.md which this pull request deletes,
+      are absent and the retained README links resolve without targeting any of them.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run python -c 'import posixpath; from pathlib import Path; from urllib.parse import unquote;
+          from omnibase_core.nodes.node_markdown_links_check_compute.matcher_markdown_links import extract_links_from_markdown;
+          removed = {".github/CODE_OF_CONDUCT.md", ".github/CONTRIBUTING.md", "CHANGELOG.md", "SECURITY.md",
+          "tests/fixtures/README.md"}; present = sorted(p for p in removed if Path(p).exists()); assert
+          not present, "removed prose documents still tracked: " + str(present); targets = {posixpath.normpath(unquote(link.url.split("#",
+          1)[0])) for link in extract_links_from_markdown(Path("README.md").read_text(), "README.md")};
+          assert not (removed & targets), "README links to removed prose documents: " + str(sorted(removed
+          & targets))'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run onex-validate-links --verbose
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC26]
