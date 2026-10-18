@@ -1234,3 +1234,14 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+# OMN-17427: one shared strict check for every consuming repository.
+- id: readme-only-docs
+  name: Root README only documentation gate
+  description: Refuse tracked prose outside root README.md and reasoned machine inputs; require uv metadata.
+  entry: python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
+  language: python
+  pass_filenames: false
+  always_run: true
+  require_serial: true
+  stages: [pre-commit]

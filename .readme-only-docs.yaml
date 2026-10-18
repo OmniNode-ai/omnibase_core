@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-17427: only machine-consumed inputs, never general prose documentation.
+---
+exceptions:
+  - path: CLAUDE.md
+    reason: Coding agents load the repository execution policy.
+  - path: .claude/architecture-handshake.md
+    reason: The handshake checker reads the source digest from this installed contract.
+  - path: architecture-handshakes/repos/*.md
+    reason: Downstream handshake checks load these digest-bound source contracts.
+  - path: .github/PULL_REQUEST_TEMPLATE.md
+    reason: GitHub loads the pull request submission template.
+  - path: .onex_ratchets/*.txt
+    reason: Whole-tree ratchet validators read these machine baseline inventories.
+  - path: .onex_state/evidence/OMN-13132/deterministic-ir-evidence.txt
+    reason: Deterministic IR verification consumes this captured evidence fixture.
+  - path: .onex_state/evidence/deterministic-ir/deterministic-ir-evidence.txt
+    reason: Deterministic IR verification consumes this captured evidence fixture.
+  - path: tests/fixtures/*.txt
+    reason: Tests read these deliberately valid and invalid input fixtures as data.
+  - path: tests/unit/nodes/node_direct_model_call_check_compute/samples/*.txt
+    reason: Model-call validator tests parse these source samples as input data.
+  - path: tests/unit/nodes/node_work_ledger_state_compute/adversarial_wordings.txt
+    reason: Ledger state tests load these adversarial classification samples.

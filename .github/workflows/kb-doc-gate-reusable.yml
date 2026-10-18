@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# OMN-17427: shared strict gate; preserves the required kb-doc-gate / kb-doc-gate context.
+name: Root README Only Documentation Gate
+on:
+  workflow_call: {}
+permissions:
+  contents: read
+jobs:
+  kb-doc-gate:
+    name: kb-doc-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository under validation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          path: repository
+          persist-credentials: false
+      - name: Resolve the immutable shared validator revision
+        id: pin
+        env:
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$WORKFLOW_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The shared documentation workflow has no immutable revision."
+            exit 1
+          fi
+          if [[ "$WORKFLOW_REPOSITORY" != "OmniNode-ai/omnibase_core" ]]; then
+            echo "::error::The shared documentation workflow must come from omnibase_core."
+            exit 1
+          fi
+          echo "sha=$WORKFLOW_SHA" >> "$GITHUB_OUTPUT"
+      - name: Checkout shared validator at the called workflow revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ steps.pin.outputs.sha }}
+          path: validator
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+        with:
+          python-version: "3.12"
+      - name: Set up uv
+        uses: astral-sh/setup-uv@b627d85691ead579b598a36169571b1c7123526f
+        with:
+          version: "0.8.3"
+      - name: Refuse tracked documentation and requirements txt
+        env:
+          UV_FROZEN: "true"
+        run: >-
+          uv run --project "$GITHUB_WORKSPACE/validator" --no-dev
+          python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
+          --root "$GITHUB_WORKSPACE/repository"
+          --report-json "$GITHUB_WORKSPACE/readme-only-docs-report.json"
+      - name: Collect validator report and run/fire events
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: readme-only-docs-report
+          path: readme-only-docs-report.json*
+          if-no-files-found: error

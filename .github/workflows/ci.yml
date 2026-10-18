@@ -167,22 +167,11 @@ jobs:
       RUNNER_FLEET_STATUS_TOKEN: ${{ secrets.RUNNER_FLEET_STATUS_TOKEN }}
       CROSS_REPO_PAT: ${{ secrets.CROSS_REPO_PAT }}
 
-  # OMN-16589: migrated from kb-doc-gate.yml to permanently close its expired
-  # pull-request-workflow-budget waiver. The caller job id deliberately remains
-  # `kb-doc-gate` and the reusable's job name remains `kb-doc-gate`, preserving
-  # the live required dev context byte-for-byte as `kb-doc-gate / kb-doc-gate`.
-  # The `if:` exactly preserves the retired workflow's trigger surface: it is
-  # always true for pull requests targeting dev, where the context is required,
-  # and false for every other ci.yml event (including PRs targeting main, where
-  # no required context is expected). No `needs:` means an unrelated failure
-  # cannot prevent the required check from being created. The immutable caller
-  # pin remains the reusable validator's single source of truth because the
-  # reusable checks its validator out at `github.job_workflow_sha`.
+  # OMN-17427: strict README-only validation in core's shared reusable.
+  # Keep the existing required kb-doc-gate / kb-doc-gate context and run on
+  # every CI event, including merge_group, without a path or outcome filter.
   kb-doc-gate:
-    if: github.event_name == 'pull_request' && github.base_ref == 'dev'
-    uses: OmniNode-ai/omniclaude/.github/workflows/kb-doc-gate-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
-    with:
-      mode: diff
+    uses: ./.github/workflows/kb-doc-gate-reusable.yml
     permissions:
       contents: read
 
