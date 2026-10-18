@@ -32,6 +32,7 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
         target_tool: Identifier of target tool (or None)
         event_type: Dot-path routing key (or None)
         tenant_id: Tenant attribution recorded by the producer (or None)
+        producer: Producing node identity recorded by the producer (or None)
         payload_type: Pydantic model class name (or None)
         payload_schema_version: Schema version string (or None)
         priority: Request priority (1-10)
@@ -56,6 +57,7 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
     event_type: str | None
     # string-id-ok: tenant_id is a named tenant slug, not a UUID
     tenant_id: str | None
+    producer: str | None
     payload_type: str | None
     payload_schema_version: str | None
     priority: int

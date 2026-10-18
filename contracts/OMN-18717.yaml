@@ -1,0 +1,60 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-18717
+title: The event envelope carries the producing node's identity
+summary: >-
+  The work-events projection attributes every row to the session actor because the envelope records nothing
+  about which node produced an event, and the producer cannot be recovered from the topic for 27.4 percent
+  of rows. Add an optional producer to the envelope, shaped exactly like the tenant dimension: attribution
+  only, blank refused, serialized in the lazy dict and the typed dict. This is the omnibase_core half;
+  a release and the projection write-through in omnimarket follow.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - envelopes
+requirements:
+  - id: req-omn18717-producer-field
+    statement: An event envelope can record the producing node and a reader can read it back.
+    acceptance:
+      - id: AC1
+        statement: A supplied producer is carried through model_dump, the lazy dict and a JSON round trip.
+      - id: AC2
+        statement: An omitted producer reads as an explicit absence and a blank one is refused.
+      - id: AC3
+        statement: envelope_version moves to 2.3.0 to signal the added field.
+evidence_requirements:
+  - kind: tests
+    description: The producer tests fail on the previous envelope and pass on this one.
+    command: uv run pytest tests/unit/models/events/test_model_event_envelope_producer.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn18717-ac1-carried
+    description: Carried, serialized and round-tripped; runs from the checkout without lab services.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/test_model_event_envelope_producer.py -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18717-ac2-absence-and-blank
+    description: Absence is explicit and a blank value is refused.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/test_model_event_envelope_producer.py -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18717-ac3-version
+    description: The schema version signals the additive field.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/test_model_event_envelope_producer.py -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

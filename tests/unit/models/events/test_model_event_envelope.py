@@ -76,7 +76,8 @@ class TestModelEventEnvelopeInstantiation:
         assert envelope.parent_envelope_id is None
         assert envelope.onex_version == ModelSemVer(major=1, minor=0, patch=0)
         # 2.1.0 -> 2.2.0 (OMN-18116): the schema gained `parent_envelope_id`.
-        assert envelope.envelope_version == ModelSemVer(major=2, minor=2, patch=0)
+        # 2.2.0 -> 2.3.0 (OMN-18717): the schema gained `producer`.
+        assert envelope.envelope_version == ModelSemVer(major=2, minor=3, patch=0)
 
     def test_instantiation_with_all_fields(self):
         """Test envelope creation with all fields provided."""

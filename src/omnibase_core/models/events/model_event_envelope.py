@@ -80,6 +80,10 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         # Tenancy
         tenant_id: Tenant this event belongs to, recorded at write time
 
+        # Producer identity
+        producer: Identity of the node that produced this event, recorded
+            at write time
+
         # ONEX Compliance
         onex_version: ONEX standard version
         envelope_version: Envelope schema version
@@ -223,10 +227,43 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "Attribution only -- never proof of entitlement."
         ),
     )
+    # OMN-18717 (M4): the producer identity -- WHICH NODE made this event,
+    # recorded by the producer at write time.
+    #
+    # Before this field the envelope carried no statement of who produced it, so
+    # a reader had to infer the producer from the topic. That inference fails for
+    # the events whose topic is not exclusive to one node and leaves every
+    # work-events row attributed to the session actor. The same shape as the
+    # tenant dimension above: optional (an event with no producing node says so
+    # by omitting it), ATTRIBUTION only (a claim the producer made, never proof
+    # of authority), and a blank value is refused. Additive, so `envelope_version`
+    # moves to 2.3.0; `extra="forbid"` means a consumer pinned below this release
+    # rejects an envelope carrying it, so producers stamp it only after the fleet
+    # has re-pinned past the release that adds it.
+    producer: str | None = Field(
+        default=None,
+        description=(
+            "Identity of the node that produced this event, recorded at write "
+            "time. Attribution only -- never proof of authority."
+        ),
+    )
     onex_version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="ONEX standard version",
     )
+
+    @field_validator("producer")
+    @classmethod
+    def _producer_is_recorded_or_absent(cls, value: str | None) -> str | None:
+        """Reject a blank producer: it reads as recorded but attributes nothing."""
+        if value is None:
+            return None
+        if not value.strip():
+            raise ValueError(
+                "producer must be a real node identity or omitted entirely; "
+                "a blank value records an attribution that attributes nothing"
+            )
+        return value
 
     @field_validator("tenant_id")
     @classmethod
@@ -251,7 +288,8 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         # `parent_envelope_id` field. Additive, but not silently so -- this
         # model is `extra="forbid"`, so an older reader rejects the new key
         # instead of dropping it. The minor bump is the signal for that.
-        default_factory=lambda: ModelSemVer(major=2, minor=2, patch=0),
+        # 2.2.0 -> 2.3.0 (OMN-18717): the schema gained `producer`.
+        default_factory=lambda: ModelSemVer(major=2, minor=3, patch=0),
         description="Envelope schema version",
     )
 
@@ -594,6 +632,7 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "target_tool": self.target_tool,
             "event_type": self.event_type,
             "tenant_id": self.tenant_id,
+            "producer": self.producer,
             "payload_type": self.payload_type,
             "payload_schema_version": (
                 str(self.payload_schema_version)
