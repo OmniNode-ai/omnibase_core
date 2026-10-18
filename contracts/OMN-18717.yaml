@@ -11,7 +11,7 @@ summary: >-
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
-  - ModelEventEnvelope
+  - envelopes
 requirements:
   - id: req-omn18717-producer-field
     statement: An event envelope can record the producing node and a reader can read it back.
