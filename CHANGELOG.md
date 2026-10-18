@@ -1,3 +1,15 @@
+## v0.47.48 (2026-10-18)
+
+### Release
+- Cut omnibase-core from dev at 0.47.48 by the scheduled release train.
+- 3 release-relevant commit(s) merged since v0.47.47.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.47
+- docs: remove unused repository documentation (#2044)
+- feat: the delegation wire request admits the context-service role task classes (#2043)
+- feat: the event envelope carries the producing node's identity (#2040)
+
 ## v0.47.47 (2026-10-17)
 
 ### Release
