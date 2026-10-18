@@ -20,21 +20,11 @@
 
 name: Propagate config across downstream repos
 
+# OMN-19998: no push or pull_request trigger. A pull_request run of this file
+# only ever posted a skipped placeholder for the propagate job (it runs on
+# release and dispatch alone), and CI Summary's external sweep fails a skipped
+# row it does not know, so every PR touching a propagation path went red.
 on:
-  push:
-    paths:
-      - .github/workflows/propagate-config.yml
-      - .github/propagation-targets.yaml
-      - .pre-commit-hooks.yaml
-      - scripts/propagate-config.sh
-      - tests/scripts/test_propagate_config.py
-  pull_request:
-    paths:
-      - .github/workflows/propagate-config.yml
-      - .github/propagation-targets.yaml
-      - .pre-commit-hooks.yaml
-      - scripts/propagate-config.sh
-      - tests/scripts/test_propagate_config.py
   release:
     types: [published]
   workflow_dispatch:

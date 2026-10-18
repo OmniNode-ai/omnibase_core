@@ -965,12 +965,6 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "triggers only on pull_request closed -- post-merge tag automation, "
         "structurally cannot gate the merge it fires after."
     ),
-    ("propagate-config.yml", "propagate"): (
-        "config-propagation automation scoped via on.pull_request.paths to "
-        "its own script/config files -- there is nothing to propagate-dry-run "
-        "when those paths are untouched, unlike a drift check meaningful on "
-        "every PR; not flagged as a required validator by this audit."
-    ),
     ("todo-audit-on-merge.yml", "todo-audit"): (
         "triggers only on pull_request closed -- post-merge TODO/ticket "
         "audit, structurally cannot be a merge gate (same class as "
