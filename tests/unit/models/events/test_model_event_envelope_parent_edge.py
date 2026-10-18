@@ -140,7 +140,7 @@ class TestParentEnvelopeIdField:
         version is the signal that a reader must be on a core that declares it.
         """
         envelope = ModelEventEnvelope[_Payload](payload=_Payload(message="x"))
-        assert (envelope.envelope_version.major, envelope.envelope_version.minor) == (
-            2,
-            2,
-        )
+        # `>=`, not `==`: later additive fields move the minor again (2.3.0 added
+        # `producer`, OMN-18717); this test pins that the edge's bump was not undone.
+        assert envelope.envelope_version.major == 2
+        assert envelope.envelope_version.minor >= 2
