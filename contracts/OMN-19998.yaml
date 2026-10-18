@@ -355,7 +355,7 @@ dod_evidence:
           'workflow_runs_only_on_push_to_dev or reusable_is_called_only_and_repeats_the_dev_check or tag_name_is_dev_utc_committer_time_and_sha12'"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC12"]
-  - id: "dod-omn19998-omnibase_core-propagate-config-no-pr-run"
+  - id: "dod-omn19998-propagate-config-no-pr-run"
     description: "propagate-config.yml carries only the release and workflow_dispatch triggers, the ci.yml
       dry-run still watches the five propagation paths, and the pull-request workflow ratchet budget is
       the lowered 27. The trigger test fails at the merge base."
