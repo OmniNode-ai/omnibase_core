@@ -1,0 +1,42 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-21140"
+title: "Delegation wire request admits the context-service role task classes"
+summary: >-
+  Admit extraction_proposer, tail_summary and context_selection in the delegation wire request and keep
+  its JSON schema enum exactly the canonical nineteen classes.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched: ["events"]
+requirements:
+  - id: "req-omn21140-context-role-wire"
+    statement: >-
+      The delegation wire request admits the extraction_proposer, tail_summary and context_selection task
+      classes used by the context-service roles.
+    acceptance:
+      - id: "AC1"
+        statement: "AC1: ModelDelegationRequest accepts task_type extraction_proposer, tail_summary and
+          context_selection and its JSON schema enum is exactly the canonical nineteen classes -- falsifier:
+          uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q -k canonical"
+evidence_requirements:
+  - kind: "tests"
+    description: "The three context-service role task classes cross the wire and its schema enum is exactly
+      the canonical nineteen classes."
+    command: "uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q -k canonical
+      -o addopts=''"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-omn21140-context-role-wire"
+    description: "The delegation wire request admits the three context-service role task classes and its
+      schema enum is the canonical nineteen."
+    source: "manual"
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q
+          -k canonical -o addopts=''"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC1"]
