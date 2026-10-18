@@ -86,6 +86,17 @@ requirements:
           and are out of the shipped baseline, and the placement check is a lint-imports step under quality-gate
           and a pre-commit hook. -- falsifier: uv run pytest tests/ci/test_public_runner_placement_omn19998.py
           -q"
+  - id: req-omn19998-full-suite-once
+    statement: The heavy test suites run once per change. A run whose tree already passed the full suite
+      in a run of a head the event lands reuses that pass instead of rerunning both matrices.
+    acceptance:
+      - id: AC11
+        statement: "AC11: full-suite-reuse reports reuse only for a marker of the exact tree uploaded
+          by a run of the same workflow that tested the pushed commit, the queued pull request head or
+          the same pull request head; schedule, workflow_dispatch and every lookup failure run the suites;
+          Tests Gate admits the skip only with a named producing run; the marker is uploaded only after
+          a full pass or a verified reuse. -- falsifier: uv run pytest tests/ci/test_full_suite_reuse_omn19998.py
+          -q"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -114,6 +125,10 @@ evidence_requirements:
   - kind: tests
     description: "Public workflows fall back to hosted runners; the placement hook and job are wired."
     command: "uv run pytest tests/ci/test_public_runner_placement_omn19998.py -q"
+  - kind: tests
+    description: "The full-suite reuse probe and marker refuse every unbound marker and run the suites
+      on failure."
+    command: "uv run pytest tests/ci/test_full_suite_reuse_omn19998.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -280,3 +295,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC10
+  - id: dod-omn-19998-full-suite-once
+    description: "The reuse probe runs against a fake gh and accepts only a marker from a run of a head
+      this event lands, the test matrices skip only on reuse, Tests Gate names the producing run, and
+      the marker is uploaded only after a full pass. These tests fail on the merge base, which has no
+      probe."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_full_suite_reuse_omn19998.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC11
