@@ -1,3 +1,17 @@
+## v0.47.47 (2026-10-17)
+
+### Release
+- Cut omnibase-core from dev at 0.47.47 by the scheduled release train.
+- 5 release-relevant commit(s) merged since v0.47.46.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.46
+- fix: Canonical Handler-Shape Ratchet rejects previously landed flips wrongly (#2032)
+- feat: the delegation wire request admits the brief_drafting task class (#2029)
+- chore: remove the CodeRabbit review-thread gate from omnibase_core (#2028)
+- fix: migration-ledger model names its schema field schema_name with alias schema (#2027)
+- ci: fall back public-repo CI runners to ubuntu-latest (#2026)
+
 ## v0.47.46 (2026-10-17)
 
 ### Release
