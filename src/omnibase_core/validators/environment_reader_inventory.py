@@ -91,8 +91,6 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "tests/fixtures/validation/exports/star_import.py",
         "tests/fixtures/validation/exports/syntax_error.py",
         "tests/integration/ci/test_workflow_uses_refs_resolve_live.py",
-        "tests/integration/examples/demo/handlers/support_assistant/conftest.py",
-        "tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py",
         "tests/integration/models/agents/test_agent_yaml_validation.py",
         "tests/integration/test_validation_integration.py",
         "tests/performance/conftest.py",

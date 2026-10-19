@@ -280,6 +280,21 @@ requirements:
         statement: "AC37: The Skip summary states the locked released version instead of already uses
           the latest version. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py
           -q -k skip_summary_states_the_locked_version_not_latest"
+  - id: req-omn17427-demo-test-contract-endpoint
+    statement: The support-assistant demo integration test takes its local endpoint and model only from
+      the contract-aware configuration boundary, with no direct environment reads and no endpoint, host,
+      port or model fallback.
+    acceptance:
+      - id: AC34
+        statement: "AC34: Neither the demo integration test module nor a conftest beside it reads os.getenv
+          or os.environ or names a default host. -- falsifier: uv run pytest tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
+          -q -k test_module_reads_no_environment_and_names_no_default_host"
+      - id: AC35
+        statement: "AC35: An unset endpoint yields no config and a skip reason naming LOCAL_LLM_ENDPOINT,
+          a set endpoint is used verbatim with the contract's model name, and an endpoint without an http
+          or https scheme, host or explicit port raises CONFIGURATION_ERROR. -- falsifier: uv run pytest
+          tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py -q -k
+          TestLocalEndpointConfiguration"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -357,6 +372,10 @@ evidence_requirements:
     description: "A cascade leg capped below the released version fails, and a no-change leg is skipped
       only when uv.lock locks the released version."
     command: "uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py -q"
+  - kind: tests
+    description: The demo integration test's endpoint configuration tests run without a local LLM server.
+    command: uv run pytest tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
+      -q -k TestLocalEndpointConfiguration
 emergency_bypass:
   enabled: false
   justification: ''
@@ -787,3 +806,16 @@ dod_evidence:
       - AC35
       - AC36
       - AC37
+  - id: dod-omn17427-demo-test-contract-endpoint
+    description: The demo integration test reads no environment and names no default host, and its endpoint
+      comes from the contract boundary with missing, malformed and explicit endpoints covered.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
+          -q -k TestLocalEndpointConfiguration
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC34
+      - AC35
