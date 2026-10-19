@@ -258,6 +258,28 @@ requirements:
           0.4.280 and 0.4.302 are refused and 0.4.303 and 0.4.305 are admitted; the call-repo-evidence-gate
           caller verifier floor pre-commit hook runs this check. -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_verifier_floor_omn17427.py
           -q -p no:randomly --no-cov fails when the caller's verifier-version is below 0.4.303"
+  - id: req-omn16926-cascade-range-cap-fails-the-leg
+    statement: A dependency cascade leg whose pyproject.toml constraint does not admit the released version
+      fails, and a leg with no lockfile change is reported as skipped only when uv.lock locks exactly
+      the released version.
+    acceptance:
+      - id: AC34
+        statement: "AC34: The cascade movable guard receives the released version as --target-version.
+          -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py -q -k
+          movable_guard_receives_the_released_version_as_target"
+      - id: AC35
+        statement: "AC35: The exact-pin rewrite runs before the movable guard, which runs before the lockfile
+          upgrade. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py
+          -q -k pin_rewrite_runs_before_the_movable_guard"
+      - id: AC36
+        statement: "AC36: After the lockfile upgrade, a step not gated on SKIP passes only when uv.lock
+          locks the released version, and fails naming both versions when it locks another version or
+          does not lock the package. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py
+          -q -k verify_step"
+      - id: AC37
+        statement: "AC37: The Skip summary states the locked released version instead of already uses
+          the latest version. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py
+          -q -k skip_summary_states_the_locked_version_not_latest"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -331,6 +353,10 @@ evidence_requirements:
     description: The documentation node and shared workflow acceptance corpus runs without lab services.
     command: uv run pytest tests/unit/nodes/node_readme_only_docs_effect/test_readme_only_docs.py -q -o
       addopts=''
+  - kind: tests
+    description: "A cascade leg capped below the released version fails, and a no-change leg is skipped
+      only when uv.lock locks the released version."
+    command: "uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -745,3 +771,19 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC31
+  - id: dod-omn16926-cascade-range-cap-fails-the-leg
+    description: "The cascade movable guard receives the released version as --target-version after the
+      exact-pin rewrite; a step after the lockfile upgrade fails the leg unless uv.lock locks the released
+      version, and the Skip summary states that locked version."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_dependency_cascade_range_cap_omn16926.py -q -p no:randomly
+          --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC34
+      - AC35
+      - AC36
+      - AC37
