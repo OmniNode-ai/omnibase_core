@@ -167,6 +167,13 @@ requirements:
         statement: "AC38: ModelDelegationRequest accepts task_type context_compaction and its JSON schema
           enum is exactly the canonical twenty-one classes. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py
           -q -k canonical"
+  - id: req-omn17427-lazy-node-exports
+    statement: Importing the work-ledger runtime does not initialize unrelated base node implementations.
+    acceptance:
+      - id: AC39
+        statement: "AC39: A fresh interpreter imports the ledger runtime without loading the four base
+          node implementation modules; every public node package export retains its concrete identity
+          and is cached on access, and unknown exports raise AttributeError."
   - id: req-omn17427-evidence-comment-wire
     statement: The delegation wire request admits the evidence_comment task class, so a request for a
       done-evidence comment draft is deliverable once the Market task-class contract declares it.
@@ -661,6 +668,17 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC38
+  - id: dod-omn-17427-deploy-hosted-lazy-node-exports
+    description: Hosted library startup probe imports the work-ledger runtime in a fresh interpreter and
+      refuses eager base node imports, changed export identities or missing attribute errors.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/test_lazy_node_exports.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC39
   - id: dod-omn-17427-evidence-comment-wire
     description: "The delegation wire request admits the evidence_comment task class and its schema enum
       is the canonical twenty."
