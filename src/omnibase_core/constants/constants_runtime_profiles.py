@@ -86,6 +86,10 @@ REGISTERED_RUNTIME_PROFILES: frozenset[str] = frozenset(
         "projection-writer-hook-ledger",
         "projection-writer-live-events",
         "projection-writer-registration",
+        # OMN-19972: the run-trace writer becomes a standalone runner like the
+        # savings writer, so its contract names this profile and no shared
+        # runtime also claims it (operator reply on OMN-19972, 2026-10-19).
+        "projection-writer-run-trace",
         "projection-writer-savings",
         "projection-writer-tenant-credentials",
         "projection-writer-tenant-registry",
@@ -119,6 +123,10 @@ CONSUMER_ATTACHED_RUNTIME_PROFILES: frozenset[str] = frozenset(
         "projection-writer-hook-ledger",
         "projection-writer-live-events",
         "projection-writer-registration",
+        # OMN-19972: a subscribing projection archetype naming ONLY this
+        # profile, so it must be consumer-attached or `_check_no_consumer_lane`
+        # flags the contract as registered-but-undrained.
+        "projection-writer-run-trace",
         "projection-writer-savings",
         "projection-writer-tenant-credentials",
         "projection-writer-tenant-registry",
