@@ -139,7 +139,12 @@ class _StaticResolver:
     def resolve_extra(
         self, module: str, node: ast.ClassDef, seen: set[tuple[str, str]] | None = None
     ) -> tuple[str, str | None]:
-        """Return ``(status, effective_extra)`` using Pydantic's ordered config merge."""
+        """Merge each direct base's effective config in declaration order.
+
+        Later bases override earlier ones, including values inherited through a
+        shared ancestor. An absent key does not override; an unknown config or
+        ancestry cannot establish compliance and fails closed.
+        """
         if seen is None and self._has_unresolved_ancestry(module, node, set()):
             return STATUS_UNRESOLVED, None
         seen = seen if seen is not None else set()
@@ -179,6 +184,7 @@ class _StaticResolver:
         for base in node.bases:
             name = _base_name(base)
             if name is None:
+                out.append((module, "<unresolved>", None))
                 continue
             resolved = self._resolve_base(module, index, name, node.lineno, 0)
             if resolved is not None:
@@ -305,15 +311,25 @@ def _extra_from_class(node: ast.ClassDef) -> str | None:
 
 def _extra_from_config_value(node: ast.expr) -> str | None:
     if isinstance(node, ast.Call):
+        if _base_name(node.func) not in {"ConfigDict", "dict"}:
+            return _UNKNOWN_EXTRA
+        extra = _UNKNOWN_EXTRA if node.args else None
         for keyword in node.keywords:
-            if keyword.arg == "extra":
-                return _literal_str(keyword.value) or _UNKNOWN_EXTRA
-        return None
+            if keyword.arg is None:
+                extra = _UNKNOWN_EXTRA
+            elif keyword.arg == "extra":
+                extra = _literal_str(keyword.value) or _UNKNOWN_EXTRA
+        return extra
     if isinstance(node, ast.Dict):
+        extra = None
         for key, value in zip(node.keys, node.values, strict=False):
-            if isinstance(key, ast.Constant) and key.value == "extra":
-                return _literal_str(value) or _UNKNOWN_EXTRA
-    return None
+            if not isinstance(key, ast.Constant):
+                extra = _UNKNOWN_EXTRA
+            elif key.value == "extra":
+                extra = _literal_str(value) or _UNKNOWN_EXTRA
+        return extra
+    # Variables and computed configs may supply extra; they are not absent keys.
+    return _UNKNOWN_EXTRA
 
 
 def _literal_str(node: ast.expr) -> str | None:

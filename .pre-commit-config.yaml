@@ -706,9 +706,10 @@ repos:
       # OMN-17572: :worktree diffs the working tree against HEAD (staged AND unstaged),
       # so `pre-commit run --all-files` on an unstaged edit is as strict as a commit;
       # :staged alone passed that run while the same edit staged failed.
-      # language: system so the validator runs in the repo venv and can introspect the
-      # real cls.model_config (which Pydantic has already merged down the MRO) instead
-      # of approximating inheritance statically.
+      # language: system uses the repo venv. Runtime introspection reads Pydantic's
+      # merged cls.model_config when imports succeed; static scans merge direct-base
+      # configs in declaration order and reject unresolved configs or ancestry.
+      # --no-runtime scans an index snapshot without importing worktree modules.
       - id: pydantic-extra-forbid
         name: Pydantic extra="forbid" ratchet (OMN-14515)
         entry: uv run --frozen python -m omnibase_core.validators.pydantic_extra_forbid --enforce-modified
