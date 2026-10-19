@@ -59,8 +59,10 @@ Enforcement (mirrors the import-layering ratchet, OMN-14340):
 Scope (change-aware, O(changed) on the hot path):
 
 * default ``--scope changed`` classifies only the nodes owning the diff's files
-  (pre-commit passes staged filenames; CI diffs ``--base-ref``). A change to the
-  classifier, the baseline, or a module the classifier resolves THROUGH (the
+  (pre-commit passes staged filenames; otherwise the committed ``--base-ref``
+  range is combined with staged, unstaged and non-ignored untracked paths,
+  without mutating the index). A change to the classifier, the baseline, or a
+  module the classifier resolves THROUGH (the
   runtime adapter / envelope mixin / a shared module) FAIL-CLOSED escalates to a
   full scan.
 * ``--full`` / ``--scope full`` scans the whole repository (baseline generation,
@@ -1845,21 +1847,36 @@ def _load_shared_modules() -> frozenset[str]:
 
 
 def _git_changed_files(base_ref: str) -> list[str] | None:
+    """Union the committed range and live dirty paths without writing the index.
+
+    Keep the three-dot range semantics for committed work. Probe staged and
+    unstaged changes separately so a staged change reverted only in the worktree
+    still participates. NUL-delimited bytes preserve whitespace and newlines in
+    paths; any failed probe leaves the scope unknown and triggers a full scan.
+    """
     import subprocess
 
-    try:
-        proc = subprocess.run(
-            ["git", "diff", "--name-only", f"{base_ref}...HEAD"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return None
-    if proc.returncode != 0:
-        return None
-    return [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+    commands = (
+        ["git", "diff", "--name-only", "-z", f"{base_ref}...HEAD", "--"],
+        ["git", "diff", "--name-only", "-z", "--"],
+        ["git", "diff", "--cached", "--name-only", "-z", "HEAD", "--"],
+        ["git", "ls-files", "--others", "--exclude-standard", "-z"],
+    )
+    changed: set[str] = set()
+    for command in commands:
+        try:
+            proc = subprocess.run(
+                command,
+                cwd=REPO_ROOT,
+                capture_output=True,
+                check=False,
+            )
+        except OSError:
+            return None
+        if proc.returncode != 0:
+            return None
+        changed.update(os.fsdecode(path) for path in proc.stdout.split(b"\0") if path)
+    return sorted(changed)
 
 
 def _touched_node_ids(changed_files: list[str]) -> set[str]:
@@ -1959,7 +1976,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--base-ref",
         default="origin/dev",
-        help="Diff base for --scope changed when no files are passed (CI path).",
+        help="Committed-range base for --scope changed when no files are passed; "
+        "the scope also includes staged, unstaged and untracked paths.",
     )
     parser.add_argument(
         "--baseline",
@@ -2064,7 +2082,7 @@ def main(argv: list[str] | None = None) -> int:
         scope_label = "full (escalated: baseline changed vs base)"
 
     if not full:
-        # Derive the changed-file set: explicit args (pre-commit) else git diff (CI).
+        # Explicit filenames keep their scope; otherwise include the live dirty tree.
         changed = args.files if args.files else _git_changed_files(args.base_ref)
         if changed is None:
             # fail-closed: cannot compute the diff -> full scan (fallthrough below)

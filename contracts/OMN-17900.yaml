@@ -1,0 +1,95 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-17900
+title: Canonical handler-shape selection includes live dirty paths
+summary: The fallback scope combines the committed range with staged, unstaged and non-ignored untracked
+  paths using NUL-delimited Git output, without changing the index. Explicit filename scope stays unchanged.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17900-live-dirty-scope
+    statement: The canonical handler-shape gate selects the live dirty tree when no explicit filenames
+      are supplied.
+    acceptance:
+      - id: AC1
+        statement: Accept an explicit live dirty manifest, or define a full live dirty scope, without
+          mutating the real Git index.
+      - id: AC2
+        statement: Add deterministic tests covering both a tracked unstaged edit and an untracked integration
+          file.
+      - id: AC3
+        statement: Preserve existing committed-range semantics and explicit/staged filename semantics.
+      - id: AC4
+        statement: Never silently treat an empty committed diff as proof that the dirty tree has no relevant
+          changes; fail closed when the requested scope cannot be determined.
+      - id: AC5
+        statement: Keep path handling deterministic and safe for spaces/newlines.
+evidence_requirements:
+  - kind: tests
+    description: Real Git fixtures and the CLI exercise dirty nodes, filename safety, index preservation
+      and fail-closed selection.
+    command: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py -n 0 --reruns 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17900-ac1-live-scope-index
+    description: Staged, unstaged and untracked paths enter fallback selection without changing index
+      bytes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py -n 0 --reruns
+          0 -q -k includes_dirty_paths_without_mutating_index
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn17900-ac2-dirty-cli
+    description: The CLI rejects dirty invalid handlers in tracked unstaged, staged and untracked nodes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py -n 0 --reruns
+          0 -q -k cli_dirty_node
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn17900-ac3-range-and-explicit
+    description: Committed paths remain selected and explicit filename scope is preserved.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py -n 0 --reruns
+          0 -q -k 'preserves_committed_range or cli_dirty_node or keeps_staged_change'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn17900-ac4-fail-closed
+    description: A failed committed, staged, unstaged or untracked probe leaves scope unknown; an empty
+      range still selects dirty nodes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py -n 0 --reruns
+          0 -q -k 'fails_closed_on_any_probe_error or cli_dirty_node'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn17900-ac5-path-safety
+    description: Paths containing surrounding spaces, tabs and newlines survive as sorted, deduplicated
+      names.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py -n 0 --reruns
+          0 -q -k preserves_committed_range_and_unusual_paths
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
+  - id: dod-omn17900-hosted-gate-probe
+    description: Hosted library probe runs the canonical gate CLI against real Git repositories containing
+      invalid dirty handlers.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py -n 0 --reruns
+          0 -q -k cli_dirty_node
+        cwd: ${OMNI_HOME}/omnibase_core
