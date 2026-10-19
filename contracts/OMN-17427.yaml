@@ -148,6 +148,14 @@ requirements:
         statement: "AC19: ModelDelegationRequest accepts task_type brief_drafting and its JSON schema
           enum is exactly the canonical sixteen classes. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py
           -q -k canonical"
+  - id: req-omn17427-evidence-comment-wire
+    statement: The delegation wire request admits the evidence_comment task class, so a request for a
+      done-evidence comment draft is deliverable once the Market task-class contract declares it.
+    acceptance:
+      - id: AC32
+        statement: "AC32: ModelDelegationRequest accepts task_type evidence_comment and its JSON schema
+          enum is exactly the canonical twenty classes. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py
+          -q -k canonical"
   - id: req-omn17427-no-legacy-landed-flip
     statement: The canonical handler-shape ratchet accepts a no-legacy flip that already landed on the
       live merge base, so a merged flip and the change that drops it from the baseline are not refused
@@ -565,6 +573,18 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC19
+  - id: dod-omn-17427-evidence-comment-wire
+    description: "The delegation wire request admits the evidence_comment task class and its schema enum
+      is the canonical twenty."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q
+          -k canonical -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC32
   - id: dod-omn-17427-no-legacy-landed-flip
     description: "A landed no-legacy flip passes after merge; a pre-existing base handler, a later node
       change and an unlanded receipt are refused."
