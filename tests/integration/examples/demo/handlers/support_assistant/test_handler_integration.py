@@ -8,71 +8,117 @@ Tests are marked with @pytest.mark.integration and may be skipped if the
 local model is unavailable.
 
 Note:
-    These tests require a running local LLM server at the configured endpoint.
-    Default endpoint: http://localhost:8200 (configurable via LLM_LOCAL_URL env var).
+    The endpoint comes from the variable named by
+    metadata.provider_config.local.endpoint_env in
+    examples/demo/handlers/support_assistant/support_assistant.yaml, currently
+    LOCAL_LLM_ENDPOINT. Tests that need a server are skipped when it is unset.
 
     To run these tests:
-        uv run pytest tests/integration/examples/demo/handlers/support_assistant/ -v
+        LOCAL_LLM_ENDPOINT=<scheme>://<host>:<port> uv run pytest tests/integration/examples/demo/handlers/support_assistant/ -v
 
     To skip if server unavailable:
         These tests will be automatically skipped if the local server is not reachable.
 """
 
+import ast
 import asyncio
 import json
-import os
 import socket
+from pathlib import Path
 from typing import Any
 from unittest.mock import MagicMock
 from urllib.parse import urlparse
 
 import pytest
+from pydantic import ValidationError
 
 from examples.demo.handlers.support_assistant import SupportRequest, SupportResponse
 from examples.demo.handlers.support_assistant.handler_local import LocalLLMClient
 from examples.demo.handlers.support_assistant.handler_support_assistant import (
     SupportAssistantHandler,
 )
+from examples.demo.handlers.support_assistant.model_config import (
+    ModelConfig,
+    load_config_from_contract,
+)
 from examples.demo.handlers.support_assistant.protocol_llm_client import (
     ProtocolLLMClient,
 )
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import ModelOnexError
 
-# Configuration - use localhost for portability, override via LLM_LOCAL_URL env var
-LOCAL_LLM_URL = os.getenv("LLM_LOCAL_URL", "http://localhost:8200")
+# Must equal the contract's provider_config.local.endpoint_env.
+_LOCAL_ENDPOINT_ENV = "LOCAL_LLM_ENDPOINT"
 INTEGRATION_TEST_TIMEOUT_SECONDS = 120  # LLM calls can be slow
 
 
-def is_local_server_available() -> bool:
+def resolve_local_config() -> tuple[ModelConfig | None, str]:
+    """Resolve local configuration through the contract-aware boundary."""
+    try:
+        return load_config_from_contract("local"), ""
+    except ValidationError:
+        raise
+    except ValueError as exc:
+        return None, str(exc)
+
+
+def endpoint_socket_address(endpoint_url: str) -> tuple[str, int]:
+    """Extract the required host and explicit port from an HTTP endpoint."""
+    try:
+        parsed = urlparse(endpoint_url)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise ModelOnexError(
+            message="Local LLM endpoint must have a valid hostname and explicit port",
+            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+            context={"endpoint_url": endpoint_url},
+        ) from exc
+
+    if parsed.scheme not in {"http", "https"} or hostname is None or port is None:
+        raise ModelOnexError(
+            message="Local LLM endpoint requires HTTP or HTTPS, a hostname and explicit port",
+            error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
+            context={"endpoint_url": endpoint_url},
+        )
+    return hostname, port
+
+
+def is_local_server_available(config: ModelConfig | None) -> bool:
     """Check if the local LLM server is reachable.
 
     Returns:
         True if server responds to health check, False otherwise.
     """
+    if config is None or config.endpoint_url is None:
+        return False
+    host, port = endpoint_socket_address(config.endpoint_url)
+
     try:
         # Synchronous check for pytest.mark.skipif
-        # Use urlparse for robust URL handling
-        parsed = urlparse(LOCAL_LLM_URL)
-        host = parsed.hostname or "localhost"
-        port = parsed.port or (443 if parsed.scheme == "https" else 80)
-
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.settimeout(2)
             result = sock.connect_ex((host, port))
             return result == 0
-    except (OSError, ValueError):
+    except OSError:
         # boundary-ok: availability check must not crash pytest collection
         return False
 
 
-# Skip all tests if local server is not available
+LOCAL_CONFIG, _LOCAL_CONFIG_REASON = resolve_local_config()
+requires_local_server = pytest.mark.skipif(
+    not is_local_server_available(LOCAL_CONFIG),
+    reason=_LOCAL_CONFIG_REASON
+    or (
+        f"Local LLM server not reachable at {LOCAL_CONFIG.endpoint_url}"
+        if LOCAL_CONFIG is not None
+        else "Local LLM configuration is unavailable"
+    ),
+)
+
 pytestmark = [
     pytest.mark.integration,
     pytest.mark.timeout(INTEGRATION_TEST_TIMEOUT_SECONDS),
-    pytest.mark.skipif(
-        not is_local_server_available(),
-        reason=f"Local LLM server not available at {LOCAL_LLM_URL}",
-    ),
 ]
 
 
@@ -83,12 +129,9 @@ def local_llm_client() -> LocalLLMClient:
     Returns:
         Configured LocalLLMClient instance.
     """
-    return LocalLLMClient(
-        endpoint_url=LOCAL_LLM_URL,
-        model_name=os.getenv("LLM_LOCAL_MODEL", "qwen2.5-14b"),
-        temperature=0.7,
-        max_tokens=500,
-    )
+    config = LOCAL_CONFIG
+    assert config is not None
+    return LocalLLMClient.from_config(config)
 
 
 @pytest.fixture
@@ -135,6 +178,7 @@ def sample_technical_request() -> SupportRequest:
     )
 
 
+@requires_local_server
 class TestLocalModelIntegration:
     """Integration tests verifying local LLM server connectivity and responses."""
 
@@ -164,6 +208,7 @@ class TestLocalModelIntegration:
         assert isinstance(local_llm_client, ProtocolLLMClient)
 
 
+@requires_local_server
 class TestHandlerWithLocalModel:
     """Integration tests for SupportAssistantHandler with local LLM."""
 
@@ -235,6 +280,7 @@ class TestHandlerWithLocalModel:
             assert len(action) > 5  # Not just "ok" or "yes"
 
 
+@requires_local_server
 class TestJSONResponseQuality:
     """Tests for JSON response quality from local LLM."""
 
@@ -299,6 +345,7 @@ class TestProviderClientCreation:
             LocalLLMClient.from_config(OPENAI_CONFIG)
 
 
+@requires_local_server
 class TestErrorRecovery:
     """Tests for error recovery with local model."""
 
@@ -309,8 +356,12 @@ class TestErrorRecovery:
         which is the expected ONEX error handling pattern.
         """
         # Create client with very short timeout to force timeout error
+        config = LOCAL_CONFIG
+        assert config is not None
+        assert config.endpoint_url is not None
         client = LocalLLMClient(
-            endpoint_url=LOCAL_LLM_URL,
+            endpoint_url=config.endpoint_url,
+            model_name=config.model_name,
             timeout=0.001,  # Nearly instant timeout
         )
 
@@ -333,3 +384,82 @@ class TestErrorRecovery:
         # for ONEX structured error handling
         with pytest.raises(ModelOnexError):
             asyncio.run(handler.handle(request))
+
+
+class TestLocalEndpointConfiguration:
+    """The local endpoint comes from the contract-aware config boundary only.
+
+    These tests need no server: they cover the missing, malformed and explicit
+    endpoint paths of the configuration this module runs against.
+    """
+
+    def test_module_reads_no_environment_and_names_no_default_host(self) -> None:
+        """Neither this module nor its conftest reads the environment or a default host."""
+        package_dir = Path(__file__).parent
+        # Joined so this guard does not itself carry the host name it refuses.
+        default_host = "".join(("local", "host"))
+        for source_path in (Path(__file__), package_dir / "conftest.py"):
+            if not source_path.exists():
+                continue
+            tree = ast.parse(source_path.read_text(encoding="utf-8"))
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Attribute) and node.attr in {
+                    "getenv",
+                    "environ",
+                }:
+                    pytest.fail(
+                        f"{source_path.name}:{node.lineno} reads os.{node.attr}"
+                    )
+                if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                    assert default_host not in node.value, (
+                        f"{source_path.name}:{node.lineno} names a default host"
+                    )
+
+    def test_missing_endpoint_resolves_to_no_config_with_reason(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """An unset endpoint variable yields no config and names the variable."""
+        monkeypatch.delenv(_LOCAL_ENDPOINT_ENV, raising=False)
+
+        config, reason = resolve_local_config()
+
+        assert config is None
+        assert _LOCAL_ENDPOINT_ENV in reason
+        assert is_local_server_available(config) is False
+
+    def test_explicit_endpoint_is_taken_from_contract_boundary(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """A set endpoint is used verbatim with the contract's model name."""
+        monkeypatch.setenv(_LOCAL_ENDPOINT_ENV, "https://llm.example.test:8200")
+
+        config, reason = resolve_local_config()
+
+        assert reason == ""
+        assert config is not None
+        assert config.endpoint_url == "https://llm.example.test:8200"
+        assert config.model_name == load_config_from_contract("local").model_name
+        assert endpoint_socket_address(config.endpoint_url) == (
+            "llm.example.test",
+            8200,
+        )
+
+    @pytest.mark.parametrize(
+        "endpoint_url",
+        [
+            "llm.example.test:8200",
+            "ftp://llm.example.test:8200",
+            "http://:8200",
+            "https://llm.example.test",
+            "https://llm.example.test:port",
+            "",
+        ],
+    )
+    def test_malformed_endpoint_raises_configuration_error(
+        self, endpoint_url: str
+    ) -> None:
+        """An endpoint without scheme, host or explicit port is refused, not defaulted."""
+        with pytest.raises(ModelOnexError) as exc_info:
+            endpoint_socket_address(endpoint_url)
+
+        assert exc_info.value.error_code == EnumCoreErrorCode.CONFIGURATION_ERROR

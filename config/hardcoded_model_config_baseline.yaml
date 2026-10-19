@@ -213,15 +213,9 @@ entries:
   - path: tests/fixtures/validator_parity/no_env_fallbacks/golden.json
     family: E-LAN
     content_sha1: ffbc651968ca3189d03cd01b89a023f1ab0099a5
-  - path: tests/integration/examples/demo/handlers/support_assistant/conftest.py
-    family: M
-    content_sha1: 394dbc71102e6e3646cd5b70dc7ff39ade927fad
   - path: tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
     family: M
     content_sha1: 78d677b76d9d9ab6d8bdd8acd7904e91282dea78
-  - path: tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
-    family: M
-    content_sha1: 958003797ad35ed6e08a05b789814b5cf890535a
   - path: tests/integration/models/observability/test_metrics_policy_integration.py
     family: E-LAN
     content_sha1: 16c477b711d3a90cdaf7a61e3a9be49139c539d5
