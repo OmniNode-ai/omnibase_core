@@ -11,6 +11,7 @@ and every release, sha or branch form of the same pin fails.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,7 @@ import yaml
 from omnibase_core.handlers import handler_internal_sibling_pins_cli as cli
 from omnibase_core.handlers.handler_internal_sibling_pins import (
     HandlerInternalSiblingPins,
+    classify_ref,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
@@ -68,6 +70,34 @@ def test_dev_tag_source_passes() -> None:
     )
     assert report.overall_status == "PASS"
     assert report.findings == ()
+
+
+@pytest.mark.parametrize(
+    ("ref", "rule"),
+    [
+        ("v0.47.48", "release_tag"),
+        ("1.2", "release_tag"),
+        ("1.2.3rc1", "release_tag"),
+        ("1.2alpha4-post2", "release_tag"),
+        ("1.2.\u0660rc1", "release_tag"),
+        ("1.2--rc1", "not_dev_tag"),
+        ("1.2.", "not_dev_tag"),
+        ("v1", "not_dev_tag"),
+        (DEV_TAG, None),
+    ],
+)
+def test_release_ref_classification(ref: str, rule: str | None) -> None:
+    assert classify_ref(ref, re.compile(cli.load_contract().dev_tag_pattern)) == rule
+
+
+@pytest.mark.timeout(5)
+@pytest.mark.parametrize("suffix", ["0" * 10_000, "a" * 10_000, ".0" * 10_000])
+def test_long_invalid_release_ref_is_rejected(suffix: str) -> None:
+    ref = "0.0" + suffix + "!"
+    report = _judge(
+        _pyproject(f'omnibase-core = {{ git = "{CORE_GIT}", tag = "{ref}" }}')
+    )
+    assert _rules(report) == ["not_dev_tag"]
 
 
 @pytest.mark.parametrize(

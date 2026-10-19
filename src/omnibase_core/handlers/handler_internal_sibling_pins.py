@@ -65,7 +65,8 @@ _PROFILE: Final[Literal["strict", "default", "advisory"]] = "default"
 
 _NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
 _SHA = re.compile(r"^[0-9a-f]{7,40}$")
-_RELEASE_TAG = re.compile(r"^v?\d+(?:\.\d+)+(?:[.-]?[A-Za-z0-9]+)*$")
+# Consume each numeric component and suffix once; never repartition a failed ref.
+_RELEASE_TAG = re.compile(r"^v?\d++(?:\.\d++)++(?:[.-]?[A-Za-z0-9]++)*+$")
 # An exact version clause: == or === followed by a version with no wildcard.
 _EXACT = re.compile(r"(?:^|[,\s(])===?\s*[^,;\s*]+(?=\s*(?:[,;)]|$))")
 _GIT_URL = re.compile(r"^git\+(?P<url>[^@#\s]+?)(?:@(?P<ref>[^#\s]+))?(?:#.*)?$")

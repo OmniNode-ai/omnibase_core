@@ -135,6 +135,11 @@ requirements:
           and the check-internal-sibling-pins hook run the handler module -- falsifier: uv run pytest
           tests/unit/handlers/test_handler_internal_sibling_pins.py -q -n 0 fails at the merge base, where
           the handler does not exist"
+      - id: "AC15"
+        statement: "AC15: Release refs retain their classification, while invalid refs containing 10,000
+          repeated digits, letters or dotted numeric components are rejected within five seconds per case
+          -- falsifier: uv run pytest tests/unit/handlers/test_handler_internal_sibling_pins.py -q -o
+          addopts= -k 'release_ref'"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -396,3 +401,16 @@ dod_evidence:
           -o addopts="
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC14"]
+  - id: "dod-omn19998-deploy-internal-sibling-release-refs"
+    description: "Hosted deploy probe exercises release-ref classification through the checked-out handler.
+      Ordinary release refs remain release_tag, a dev merge tag passes, and long invalid refs fail as
+      not_dev_tag within a five-second test timeout. The tests require no network or lab services and
+      fail on the exponential-backtracking implementation."
+    source: "manual"
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/handlers/test_handler_internal_sibling_pins.py -q -o addopts=
+          -k 'release_ref'"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC15"]
