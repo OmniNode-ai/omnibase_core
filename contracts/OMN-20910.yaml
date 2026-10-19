@@ -27,10 +27,37 @@ evidence_requirements:
   - kind: tests
     description: Corpus, policy-shape, overlay-class and ratchet tests of the guard.
     command: uv run pytest tests/unit/validation/hardcoded_model_config -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
 dod_evidence:
-  - id: dod-omn20910-overlay-class-tests
-    description: The guard's overlay-class, policy-shape and ratchet tests pass.
+  - id: dod-omn20910-ac1-overlay-class
+    description: A path under config/onex/overlays/ classes OVERLAY with family R only; look-alike paths
+      class SOURCE.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k 'classify_path or every_scanned_class'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn20910-ac2-overlay-passes-source-fails
+    description: An endpoint and a model id pass in an overlay and fail in a shipped source file, in the
+      scan and in the ratchet runner; a retired value in an overlay is still refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k overlay
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn20910-hosted-guard-probe
+    description: Hosted probe runs the guard's overlay and ratchet tests.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k overlay
+        cwd: ${OMNI_HOME}/omnibase_core
