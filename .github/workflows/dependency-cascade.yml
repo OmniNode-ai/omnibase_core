@@ -307,6 +307,10 @@ jobs:
       # rewrite a stale exact `==` pin to the target first or every exact-pin
       # leg would fail. A range cap is untouched by the exact-only regex and
       # still fails this guard.
+      # OMN-17427: release run 39298434472 failed in omnibase_infra because
+      # project-aware `uv run` re-locked the rewritten exact pin before the
+      # index wait. This text-only check needs only packaging, so run outside
+      # the downstream project to avoid syncing or re-locking it.
       - name: Check dependency is movable
         if: steps.token_check.outputs.has_token == 'true'
         env:
@@ -314,7 +318,7 @@ jobs:
           TARGET_VERSION: ${{ steps.vars.outputs.version }}
           REPO_NAME: ${{ matrix.repo }}
         run: |
-          if ! uv run python "${GITHUB_WORKSPACE}/_dep_provenance_gate/scripts/check_dep_provenance.py" \
+          if ! uv run --no-project --with packaging python "${GITHUB_WORKSPACE}/_dep_provenance_gate/scripts/check_dep_provenance.py" \
             --pyproject pyproject.toml \
             --check-movable "$PKG_HYPHEN" \
             --target-version "$TARGET_VERSION"; then
@@ -408,6 +412,8 @@ jobs:
         if: steps.token_check.outputs.has_token == 'true'
         env:
           BUMP_PACKAGE: ${{ steps.vars.outputs.package }}
+          PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
+          RESOLVED: ${{ steps.vars.outputs.version }}
           REPO_NAME: ${{ matrix.repo }}
           # Explicitly cleared so no ambient runner-level mirror config
           # (env var OR user/project uv.toml, once --no-config is also
@@ -422,6 +428,11 @@ jobs:
           # this can now actually resolve to the new version instead of
           # being capped by a stale `==` requirement.
           #
+          # OMN-17427: in release run 39298434472, omnimemory's index probe
+          # passed but uv still selected 0.47.48 instead of the admitted
+          # 0.47.49. Request the exact release and retry only on uv's own
+          # "no version of <pkg>==<version>" answer, not a blind retry.
+          #
           # --no-config: ignore any ambient uv.toml (user- or
           # workspace-level) on the runner -- the sanitized env vars above
           # only clear the ENV channel, not a config-file channel.
@@ -434,7 +445,35 @@ jobs:
           # observed the version present. uv documents that --upgrade-package
           # implies --refresh-package; the explicit flag keeps this guarantee
           # from depending on that implication.
-          uv lock --no-config --default-index https://pypi.org/simple --upgrade-package "$BUMP_PACKAGE" --refresh-package "$BUMP_PACKAGE"
+          CASCADE_WAIT_INTERVAL_S="${CASCADE_WAIT_INTERVAL_S:-10}"
+          CASCADE_WAIT_TOTAL_S="${CASCADE_WAIT_TOTAL_S:-600}"
+          started_us="${EPOCHREALTIME/[.,]/}"
+          while true; do
+            if out=$(
+              uv lock --no-config --default-index https://pypi.org/simple --upgrade-package "${BUMP_PACKAGE}==${RESOLVED}" --refresh-package "$BUMP_PACKAGE" 2>&1
+            ); then
+              status=0
+            else
+              status=$?
+            fi
+            printf '%s\n' "$out"
+            now_us="${EPOCHREALTIME/[.,]/}"
+            waited=$(( (now_us - started_us) / 1000000 ))
+            if [ "$status" -eq 0 ]; then
+              echo "CASCADE-UV-INDEX-WAIT-OK package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
+              break
+            fi
+            normalized=$(printf '%s' "$out" | tr '[:space:]' ' ' | tr -s ' ')
+            if [[ "$normalized" != *"no version of ${PKG_HYPHEN}==${RESOLVED}"* ]]; then
+              exit "$status"
+            fi
+            if [ "$waited" -ge "$CASCADE_WAIT_TOTAL_S" ]; then
+              echo "CASCADE-UV-INDEX-WAIT-TIMEOUT package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
+              echo "::error::uv cannot resolve released version ${PKG_HYPHEN}==${RESOLVED} after ${waited} seconds."
+              exit 1
+            fi
+            sleep "$CASCADE_WAIT_INTERVAL_S"
+          done
 
           # Check if anything changed in either file -- a pin-only bump with
           # no lockfile delta (or vice versa) is still a real change to land.

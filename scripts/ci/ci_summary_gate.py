@@ -473,6 +473,14 @@ EXTERNAL_SWEEP_EXCLUSIONS: dict[str, SweepExclusion] = {
         added="2026-10-18",
         expires="2026-12-20",
     ),
+    # Measured on CI run 39298561187 (main push of bf1a16372): the workflow_run
+    # harvester posts a skipped row because it runs only for pull_request CI.
+    "Harvest shadow records": SweepExclusion(
+        reason="workflow_run harvester runs only for pull_request CI and leaves a skipped row on pushed heads.",
+        ticket="OMN-17427",
+        added="2026-10-19",
+        expires="2026-12-20",
+    ),
 }
 
 _SWEEP_TICKET_RE = re.compile(r"^OMN-\d+$")

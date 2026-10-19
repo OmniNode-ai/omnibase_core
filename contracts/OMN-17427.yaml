@@ -310,6 +310,28 @@ requirements:
           or https scheme, host or explicit port raises CONFIGURATION_ERROR. -- falsifier: uv run pytest
           tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py -q -k
           TestLocalEndpointConfiguration"
+  - id: req-omn17427-dev-red-cascade-uv-index-and-harvest-sweep
+    statement: A dependency cascade leg resolves the released version without re-locking the downstream
+      project in its movable guard and waits only on uv's own missing-version answer, and CI Summary's
+      external sweep admits the skipped Harvest shadow records row on pushed heads.
+    acceptance:
+      - id: AC38
+        statement: "AC38: The cascade movable guard runs check_dep_provenance.py with uv run --no-project
+          --with packaging, never a project-aware uv run. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_uv_index_omn17427.py
+          -q -k movable_check_runs_outside_the_downstream_project"
+      - id: AC39
+        statement: "AC39: The lockfile upgrade requests the exact released version and retries only while
+          uv answers no version of the package at that version, up to a bounded total, then fails with
+          CASCADE-UV-INDEX-WAIT-TIMEOUT. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_uv_index_omn17427.py
+          -q -k 'wrapped_uv_index_errors or times_out_within_bound'"
+      - id: AC40
+        statement: "AC40: Any other uv lock failure exits at once with uv's status, and a successful lock
+          with no file change sets SKIP=true. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_uv_index_omn17427.py
+          -q -k 'unrelated_uv_failure or without_changes'"
+      - id: AC41
+        statement: "AC41: The external sweep exclusion registry carries Harvest shadow records, whose
+          skipped row passes CI Summary while an unregistered red still fails it. -- falsifier: uv run
+          pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k TestExternalSweepExclusions"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -391,6 +413,12 @@ evidence_requirements:
     description: The demo integration test's endpoint configuration tests run without a local LLM server.
     command: uv run pytest tests/integration/examples/demo/handlers/support_assistant/test_handler_integration.py
       -q -k TestLocalEndpointConfiguration
+  - kind: tests
+    description: "The cascade movable guard runs outside the downstream project, the lockfile upgrade
+      waits only on uv's missing-version answer, and CI Summary admits the skipped Harvest shadow records
+      row."
+    command: "uv run pytest tests/scripts/test_dependency_cascade_uv_index_omn17427.py tests/unit/scripts/ci/test_ci_summary_gate.py
+      -q -k 'omn17427 or uv_index or movable or unrelated or without_changes or TestExternalSweepExclusions'"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -857,3 +885,23 @@ dod_evidence:
     binds_ac:
       - AC34
       - AC35
+  - id: dod-omn17427-cascade-uv-index-harvest-sweep
+    description: "The cascade movable guard runs outside the downstream project; the lockfile upgrade
+      requests the exact released version and retries only on uv's missing-version answer; CI Summary's
+      external sweep admits the skipped Harvest shadow records row."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_dependency_cascade_uv_index_omn17427.py -q -p no:randomly
+          --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -p no:randomly --no-cov
+          -k TestExternalSweepExclusions
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC38
+      - AC39
+      - AC40
+      - AC41
