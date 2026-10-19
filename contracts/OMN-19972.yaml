@@ -1,0 +1,47 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19972
+title: The run-trace writer has its own registered, consumer-attached runtime profile
+summary: projection-writer-run-trace is registered in REGISTERED_RUNTIME_PROFILES and CONSUMER_ATTACHED_RUNTIME_PROFILES
+  beside projection-writer-savings, so a standalone run-trace writer contract can name it and no shared
+  runtime also claims it. This is the omnibase_core slice of OMN-19972; the omnimarket and compose parts
+  land in their own PRs.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19972-core-run-trace-profile
+    statement: The run-trace writer profile is a registered runtime profile and a consumer-attached lane.
+    acceptance:
+      - id: AC1
+        statement: "AC1: projection-writer-run-trace is in REGISTERED_RUNTIME_PROFILES and CONSUMER_ATTACHED_RUNTIME_PROFILES,
+          hyphenated with no underscore twin -- falsifier: uv run pytest tests/unit/constants/test_constants_runtime_profiles_projection_writers.py
+          -q in omnibase_core"
+evidence_requirements:
+  - kind: tests
+    description: Registry membership, consumer-attached membership and name-shape tests.
+    command: uv run pytest tests/unit/constants -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19972-core1-run-trace-profile
+    description: The run-trace profile is registered, consumer-attached, hyphenated, and the consumer-attached
+      set stays a subset of the registered set.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/constants/test_constants_runtime_profiles_projection_writers.py
+          -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn19972-hosted-profile-probe
+    description: Hosted probe runs the profile registry tests.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/constants/test_constants_runtime_profiles_projection_writers.py
+          -q
+        cwd: ${OMNI_HOME}/omnibase_core

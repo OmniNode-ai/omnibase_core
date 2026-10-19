@@ -44,6 +44,10 @@ Both sets, per name, deliberately:
    ``_check_no_consumer_lane``. Membership is a statement of measured fact
    about a deployed process that holds a broker-issued partition assignment,
    not a validator workaround.
+
+``projection-writer-run-trace`` (OMN-19972) joins the seven as a standalone
+runner like savings: its contract names its own profile so no shared runtime
+also claims it, and it is consumer-attached for the same reason as the rest.
 """
 
 from __future__ import annotations
@@ -62,6 +66,7 @@ PROJECTION_WRITER_PROFILES: tuple[str, ...] = (
     "projection-writer-hook-ledger",
     "projection-writer-live-events",
     "projection-writer-registration",
+    "projection-writer-run-trace",
     "projection-writer-savings",
     "projection-writer-tenant-credentials",
     "projection-writer-tenant-registry",
