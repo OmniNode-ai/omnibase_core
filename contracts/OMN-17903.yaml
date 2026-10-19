@@ -50,31 +50,33 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn17903-ac2-reverse
-    description: Both direct base orders are checked against Pydantic, including the compliant reverse
-      order.
+    description: Both direct base orders are checked against Pydantic, including computed base configs
+      that must not be treated as absent and the compliant reverse order.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
-          -q -n 0 --no-cov -k later
+          -q -n 0 --no-cov -k 'later or unresolved_base_config'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn17903-ac3-ancestors
-    description: Indirect inheritance and diamonds merge each direct base's effective config independently.
+    description: Indirect inheritance and diamonds merge each direct base's effective config independently;
+      computed base configs exercise the same resolver's fail-closed boundary.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
-          -q -n 0 --no-cov -k 'indirect or diamond'
+          -q -n 0 --no-cov -k 'indirect or diamond or unresolved_base_config'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
   - id: dod-omn17903-ac4-oracle
-    description: Each statically resolvable multi-base case reads its oracle from a real Pydantic class.
+    description: Literal and computed multi-base cases read their oracle from a real Pydantic class; unresolved
+      configs and base expressions cannot silently pass as compliant.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
-          -q -n 0 --no-cov -k matches_pydantic
+          -q -n 0 --no-cov -k 'matches_pydantic or unresolved_base_config or unresolved_base_expression'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC4]
   - id: dod-omn17903-ac5-snapshot
