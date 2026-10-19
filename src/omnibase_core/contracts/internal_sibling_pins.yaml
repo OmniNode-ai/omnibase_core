@@ -1,0 +1,32 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Internal sibling pin form (OMN-19998). Data, not code: the internal sibling
+# pin check reads this file and nothing else to decide which packages are
+# internal siblings and what a dev merge tag looks like.
+#
+# RULINGs 2026-10-16T07:34:18Z ("Why can't we just use branch pins or tag tags
+# there? There's no reason we need to wait for a release.") and
+# 2026-10-16T09:35:49Z ("... using tags instead of releases? / Yes / And let's
+# make sure it becomes part of the process, not up to for somebody to
+# remember."). Every sibling below runs dev-merge-tag.yml, which tags each dev
+# push dev-<UTC YYYYMMDDHHMMSS>-<sha12>. A consumer pins each sibling it
+# declares in [tool.uv.sources] to one of those tags; the PyPI range in
+# [project] dependencies stays for external installs only.
+
+github_org: OmniNode-ai
+dev_tag_pattern: '^dev-[0-9]{14}-[0-9a-f]{12}$'
+
+siblings:
+  - repo: omnibase_core
+    distribution: omnibase-core
+  - repo: omnibase_spi
+    distribution: omnibase-spi
+  - repo: omnibase_infra
+    distribution: omnibase-infra
+  - repo: omnimemory
+    distribution: omninode-memory
+  - repo: omnimarket
+    distribution: omnimarket
+  - repo: omniintelligence
+    distribution: omninode-intelligence
