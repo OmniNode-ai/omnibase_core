@@ -34,6 +34,7 @@ LiteralFamily = Literal["M", "E", "E-LAN", "D", "R", "L"]
 LiteralPathClass = Literal[
     "HISTORICAL",
     "GUARD",
+    "OVERLAY",
     "EXAMPLE",
     "LAUNCH",
     "DOC",

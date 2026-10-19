@@ -15,9 +15,9 @@
 # class of named files is gone, and tests, examples and launch files refuse
 # model ids (M), private and lab-subnet hosts (E-LAN) and lab deployment facts
 # (D) like source does. A test declares its own fixture ids. HISTORICAL records
-# and this guard's own corpus scan nothing; DOC is prose and refuses retired
-# values only. Pre-existing findings sit in each repository's shrink-only
-# baseline.
+# and this guard's own corpus scan nothing; DOC is prose and OVERLAY is the
+# contract overlay tree itself, and both refuse retired values only.
+# Pre-existing findings sit in each repository's shrink-only baseline.
 
 schema_version: 1
 
@@ -48,6 +48,16 @@ path_classes:
       # it names them by construction.
       - "vocabularies/hardcoded_model_config_lab_denylist.yaml"
     families: []
+
+  # The contract overlay tree is the sanctioned home of deployment facts: model
+  # ids, endpoints, lab hosts and ports (OMN-20910; operator rulings
+  # 2026-09-26, 2026-09-30 and 2026-10-10, and OMN-21147's "it lives in a
+  # contract overlay"). It is not source, so it refuses retired values only.
+  # Only the tree at the repository root: a look-alike deeper down is source.
+  - name: OVERLAY
+    globs:
+      - "config/onex/overlays/**"
+    families: [R]
 
   - name: EXAMPLE
     globs:

@@ -129,6 +129,13 @@ def test_handler_is_a_typed_pure_compute(
         ("tests/unit/test_x.py", "TEST"),
         ("src/pkg/tests/data.yaml", "TEST"),
         ("src/pkg/router.py", "SOURCE"),
+        # OMN-20910: the contract overlay tree is where a deployment fact belongs.
+        ("config/onex/overlays/node_x_compute/overlay.yaml", "OVERLAY"),
+        ("config/onex/overlays/README.md", "OVERLAY"),
+        # Only that tree, from the repository root: a look-alike is source.
+        ("src/pkg/config/onex/overlays/node_x_compute/overlay.yaml", "SOURCE"),
+        ("config/onex/overlay.yaml", "SOURCE"),
+        ("config/onex/node_x_compute/overlay.yaml", "SOURCE"),
     ],
 )
 def test_classify_path(
@@ -160,6 +167,12 @@ def test_every_scanned_class_refuses_model_ids_and_lab_facts(
     for path_class in policy.path_classes:
         if path_class.name in ("HISTORICAL", "GUARD"):
             assert path_class.families == ()
+        elif path_class.name == "OVERLAY":
+            # OMN-20910: the overlay is the sanctioned home of model ids,
+            # endpoints and lab facts, so it refuses retired values only, and
+            # the class covers the contract overlay tree and nothing else.
+            assert set(path_class.families) == {"R"}
+            assert path_class.globs == ("config/onex/overlays/**",)
         elif path_class.name == "DOC":
             assert set(path_class.families) == {"R"}
             assert all(g.endswith((".md", ".mdx", ".rst")) for g in path_class.globs), (
@@ -178,6 +191,58 @@ def test_tests_may_use_only_declared_fixture_ids(
     real = 'MODEL = "gpt-5-mini"\n'
     found = scan("tests/unit/test_router.py", real, policy)
     assert [f.family for f in found] == ["M"]
+
+
+def _overlay_lines() -> str:
+    """A review-voter overlay entry: an endpoint on the lab subnet and a model id."""
+    return (
+        "voters:\n"
+        "  - voter_id: correctness\n"
+        f'    endpoint_url: "http://{LAB_HOST}:8000/v1/chat/completions"\n'
+        '    api_model_id: "qwen3-coder"\n'
+    )
+
+
+@pytest.mark.unit
+def test_an_overlay_may_name_an_endpoint_and_a_model(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    """OMN-20910: deployment facts belong in a contract overlay, so the overlay
+    tree is not source; the same lines in a shipped file are still refused."""
+    overlay = "config/onex/overlays/node_review_voters_overlay_compute/overlay.yaml"
+    assert scan(overlay, _overlay_lines(), policy) == []
+    shipped = "src/pkg/configs/review_voters.yaml"
+    families = sorted({f.family for f in scan(shipped, _overlay_lines(), policy)})
+    assert families == ["E", "E-LAN", "M"]
+
+
+@pytest.mark.unit
+def test_an_overlay_still_refuses_a_retired_value(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    overlay = "config/onex/overlays/node_x_compute/overlay.yaml"
+    retired = policy.retired_values[0]
+    found = scan(overlay, f'model: "{retired}"\n', policy)
+    assert [f.family for f in found] == ["R"]
+
+
+@pytest.mark.unit
+def test_ratchet_passes_an_overlay_and_refuses_the_same_lines_in_source(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    overlay = "config/onex/overlays/node_review_voters_overlay_compute/overlay.yaml"
+    shipped = "src/pkg/configs/review_voters.yaml"
+    _write(tmp_path, overlay, _overlay_lines())
+    _write(tmp_path, shipped, _overlay_lines())
+    rel = _baseline(tmp_path, [])
+    assert runtime.main(["--baseline", rel, overlay]) == 0
+    capsys.readouterr()
+    assert runtime.main(["--baseline", rel, overlay, shipped]) == 1
+    out = capsys.readouterr().out
+    assert f"{shipped}:3: [E in SOURCE]" in out
+    assert f"{shipped}:3: [E-LAN in SOURCE]" in out
+    assert overlay not in out
 
 
 @pytest.mark.unit
