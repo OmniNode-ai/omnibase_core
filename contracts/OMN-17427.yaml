@@ -159,6 +159,14 @@ requirements:
         statement: "AC19: ModelDelegationRequest accepts task_type brief_drafting and its JSON schema
           enum is exactly the canonical sixteen classes. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py
           -q -k canonical"
+  - id: req-omn17427-context-compaction-wire
+    statement: The delegation wire request admits the context_compaction task class, so the model-written
+      section of a compaction package is deliverable once the Market task-class contract declares it.
+    acceptance:
+      - id: AC38
+        statement: "AC38: ModelDelegationRequest accepts task_type context_compaction and its JSON schema
+          enum is exactly the canonical twenty-one classes. -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py
+          -q -k canonical"
   - id: req-omn17427-evidence-comment-wire
     statement: The delegation wire request admits the evidence_comment task class, so a request for a
       done-evidence comment draft is deliverable once the Market task-class contract declares it.
@@ -641,6 +649,18 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC19
+  - id: dod-omn-17427-context-compaction-wire
+    description: "The delegation wire request admits the context_compaction task class and its schema
+      enum is the canonical twenty-one."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_delegation_wire_models.py -q
+          -k canonical -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC38
   - id: dod-omn-17427-evidence-comment-wire
     description: "The delegation wire request admits the evidence_comment task class and its schema enum
       is the canonical twenty."

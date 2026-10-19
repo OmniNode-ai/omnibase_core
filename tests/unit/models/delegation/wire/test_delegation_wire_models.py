@@ -64,6 +64,7 @@ _CANONICAL_DELEGATION_TASK_TYPES = frozenset(
         "code_generation",
         "code_review",
         "complex_reasoning",
+        "context_compaction",
         "context_selection",
         "document",
         "documentation",
@@ -382,7 +383,7 @@ class TestModelDelegationRequest:
         """Every Market-authoritative task class crosses the Core wire.
 
         OMN-15651 keeps this consumer mechanically coherent with the Market-owned
-        20-class authority through cross-repository admission. Core intentionally
+        21-class authority through cross-repository admission. Core intentionally
         does not import Market at runtime.
         """
         r = self._make(task_type=task_type)
