@@ -13,8 +13,8 @@ requirements:
   - id: req-omn19972-core-run-trace-profile
     statement: The run-trace writer profile is a registered runtime profile and a consumer-attached lane.
     acceptance:
-      - id: CORE1
-        statement: "CORE1: projection-writer-run-trace is in REGISTERED_RUNTIME_PROFILES and CONSUMER_ATTACHED_RUNTIME_PROFILES,
+      - id: AC1
+        statement: "AC1: projection-writer-run-trace is in REGISTERED_RUNTIME_PROFILES and CONSUMER_ATTACHED_RUNTIME_PROFILES,
           hyphenated with no underscore twin -- falsifier: uv run pytest tests/unit/constants/test_constants_runtime_profiles_projection_writers.py
           -q in omnibase_core"
 evidence_requirements:
@@ -35,7 +35,7 @@ dod_evidence:
         check_value: uv run pytest tests/unit/constants/test_constants_runtime_profiles_projection_writers.py
           -q
         cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac: [CORE1]
+    binds_ac: [AC1]
   - id: dod-omn19972-hosted-profile-probe
     description: Hosted probe runs the profile registry tests.
     source: manual
