@@ -281,7 +281,9 @@ def test_check_dep_provenance_movable_guard_runs_before_uv_lock() -> None:
 
     lock_script = _step_run("Upgrade lockfile")
     assert "uv lock" in lock_script, lock_script
-    assert '--upgrade-package "$BUMP_PACKAGE"' in lock_script, lock_script
+    assert '--upgrade-package "${BUMP_PACKAGE}==${RESOLVED}"' in lock_script, (
+        lock_script
+    )
 
 
 @pytest.mark.unit

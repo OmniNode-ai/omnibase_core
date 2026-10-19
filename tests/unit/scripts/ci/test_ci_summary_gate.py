@@ -1770,6 +1770,7 @@ class TestExternalSweepExclusions:
             "handshake-policy-gate",
             "Enable Auto-Merge",
             PROPAGATE_PLACEHOLDER,
+            "Harvest shadow records",
         }
         assert gate.validate_sweep_exclusions(gate.EXTERNAL_SWEEP_EXCLUSIONS) == []
         active, expired = gate.active_sweep_exclusions(
@@ -1781,13 +1782,19 @@ class TestExternalSweepExclusions:
         for entry in gate.EXTERNAL_SWEEP_EXCLUSIONS.values():
             assert entry.reason.strip()
             assert entry.ticket == "OMN-17427"
-            assert entry.added in {"2026-10-17", "2026-10-18"}
+            assert entry.added in {"2026-10-17", "2026-10-18", "2026-10-19"}
             assert entry.expires == "2026-12-20"
         with pytest.raises(FrozenInstanceError):
             self.ENTRY.reason = "changed"
 
     @pytest.mark.parametrize(
-        "name", ["handshake-policy-gate", "Enable Auto-Merge", PROPAGATE_PLACEHOLDER]
+        "name",
+        [
+            "handshake-policy-gate",
+            "Enable Auto-Merge",
+            PROPAGATE_PLACEHOLDER,
+            "Harvest shadow records",
+        ],
     )
     def test_shipped_exclusions_admit_skips_but_not_unregistered_reds(
         self, name: str
