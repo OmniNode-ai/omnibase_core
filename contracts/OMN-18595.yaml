@@ -18,6 +18,10 @@ requirements:
       - id: AC2
         statement: The project and editable omnibase-core lock entry both declare version 0.47.49.
 evidence_requirements:
+  - kind: tests
+    description: Release-cut identity tests, then the canonical documentation scan and package-identity
+      probe on a hosted runner.
+    command: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q
   - kind: ci
     description: Run the canonical documentation scan and package-identity probe on a hosted runner.
     command: uv run --locked python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
@@ -32,6 +36,9 @@ dod_evidence:
     source: manual
     binds_ac: [AC1]
     checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k changelog
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run --locked python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
           --root .
@@ -41,6 +48,9 @@ dod_evidence:
     source: manual
     binds_ac: [AC2]
     checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k version
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
           uv run --locked python -c 'import pathlib, tomllib; project = tomllib.loads(pathlib.Path("pyproject.toml").read_text());
