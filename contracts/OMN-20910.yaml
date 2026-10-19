@@ -1,0 +1,63 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20910
+title: Review-voter models are declared in a contract overlay, not repo variables or workflow files
+summary: The hardcoded-model-config policy classes the contract overlay tree (config/onex/overlays/ at
+  the repository root) as OVERLAY, the sanctioned home of model ids, endpoints and lab facts, so a review-voter
+  endpoint declared in its overlay is not a finding. The class refuses retired values only; the same lines
+  in any shipped file stay refused, and a look-alike tree deeper down is source.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20910-overlay-path-class
+    statement: The contract overlay tree is not source to the hardcoded-model-config guard; every other
+      class keeps its families.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a path under config/onex/overlays/ classes OVERLAY, which refuses family R only,
+          and a look-alike path elsewhere classes SOURCE -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k 'classify_path or every_scanned_class' in omnibase_core"
+      - id: AC2
+        statement: "AC2: an endpoint on the lab subnet and a model id pass in an overlay and are E, E-LAN
+          and M findings in a shipped source file, both in the pure scan and in the ratchet runner; a
+          retired value in an overlay is still an R finding -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k overlay in omnibase_core"
+evidence_requirements:
+  - kind: tests
+    description: Corpus, policy-shape, overlay-class and ratchet tests of the guard.
+    command: uv run pytest tests/unit/validation/hardcoded_model_config -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn20910-ac1-overlay-class
+    description: A path under config/onex/overlays/ classes OVERLAY with family R only; look-alike paths
+      class SOURCE.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k 'classify_path or every_scanned_class'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn20910-ac2-overlay-passes-source-fails
+    description: An endpoint and a model id pass in an overlay and fail in a shipped source file, in the
+      scan and in the ratchet runner; a retired value in an overlay is still refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k overlay
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn20910-hosted-guard-probe
+    description: Hosted probe runs the guard's overlay and ratchet tests.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -k overlay
+        cwd: ${OMNI_HOME}/omnibase_core
