@@ -847,7 +847,7 @@ dod_evidence:
     binds_ac:
       - AC34
       - AC35
-  - id: dod-omn17427-dev-red-cascade-uv-index-and-harvest-sweep
+  - id: dod-omn17427-cascade-uv-index-harvest-sweep
     description: "The cascade movable guard runs outside the downstream project; the lockfile upgrade
       requests the exact released version and retries only on uv's missing-version answer; CI Summary's
       external sweep admits the skipped Harvest shadow records row."
