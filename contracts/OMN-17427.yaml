@@ -46,6 +46,17 @@ requirements:
           fix that changes only tests and a contract is still refused as changing no product path. --
           falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -k \"merged_fix_contract_is_not_reverted
           or only_test_and_contract\""
+  - id: req-omn17427-merged-fix-revert-skips-version-bookkeeping
+    statement: The merged-fix control does not revert a path whose every changed line only sets a quoted
+      version or digest value, so a fix whose release bump the base later moved still yields a control.
+    acceptance:
+      - id: AC33
+        statement: "AC33: A Binds-Merged-Fix control reverts the merged fix's product change and not its
+          version-only or digest-only lines, also when a later release moved them on the base; a fix whose
+          pyproject.toml also changes a dependency still reverts that file as product, and a merged fix
+          that changes only tests and version lines is refused as changing no product path. -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -k \"version_bookkeeping
+          or dependency_change_is_reverted\""
   - id: req-omn17427-ci-inherits-from-core
     statement: A change to omnibase_core's workflows must not add a reusable workflow or action reference
       to an organization repository other than omnibase_core, so the CI hosted outside core only shrinks.
@@ -382,6 +393,18 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
+  - id: dod-omn-17427-merged-fix-skips-version-lines
+    description: "A Binds-Merged-Fix control reverts the merged fix's product change and not its version-only
+      or digest-only lines, also when a later release moved them on the base; a dependency change is still
+      product, and a fix with only tests and version lines is refused as changing no product path."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -k \"version_bookkeeping
+          or dependency_change_is_reverted\""
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC33
   - id: dod-omn-17427-ci-inherits-from-core
     description: "The ci-inheritance check fails a change that adds a reusable workflow or action reference
       to an organization repository other than the host, and passes a pin bump, a move between files,

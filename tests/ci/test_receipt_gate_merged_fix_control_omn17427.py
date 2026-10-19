@@ -49,6 +49,27 @@ def test_product():
 """
 
 
+def _pyproject(version: str, dependency: str) -> str:
+    return dedent(f"""\
+        [project]
+        name = "product"
+        version = "{version}"
+        dependencies = [
+            "{dependency}",
+        ]
+        """)
+
+
+def _lock(version: str, digest: str) -> str:
+    return dedent(f"""\
+        {{
+          "package_version": "{version}",
+          "identity_digest": "{digest}",
+          "protocol_count": 1
+        }}
+        """)
+
+
 def _script(name: str) -> str:
     workflow = yaml.safe_load(WORKFLOW_PATH.read_text())
     script = next(
@@ -105,6 +126,9 @@ def _repository(
     note_after_fix: bool = False,
     fix_contract: bool = False,
     contract_amended_after_fix: bool = False,
+    version_bump: bool = False,
+    dependency_change: bool = False,
+    released_after_fix: bool = False,
 ) -> _GitFixture:
     workspace = tmp_path / "ws"
     head_tree = workspace / ".dod-verify" / "head_home" / "omnimarket"
@@ -131,9 +155,18 @@ def _repository(
     repo = _GitFixture(head_tree, dod_dir, env, {})
     repo.git("init")
     repo.write("src/product.py", "BROKEN = True\n")
+    repo.write("pyproject.toml", _pyproject("0.1.0", "dep>=1"))
+    repo.write("contracts/runtime/protocol.lock.json", _lock("0.1.0", "aaa"))
     repo.commits["initial"] = repo.commit("chore: initial")
     repo.write("src/product.py", "BROKEN = False\n")
     repo.write("tests/test_product.py", PRODUCT_TEST)
+    if version_bump:
+        # A squash-merged fix carries the release bump beside the product change.
+        repo.write(
+            "pyproject.toml",
+            _pyproject("0.1.1", "dep>=2" if dependency_change else "dep>=1"),
+        )
+        repo.write("contracts/runtime/protocol.lock.json", _lock("0.1.1", "bbb"))
     if fix_contract:
         # A squash-merged fix ships its own contract beside the product change.
         repo.write("contracts/OMN-1.yaml", FIX_CONTRACT)
@@ -141,6 +174,13 @@ def _repository(
     if contract_amended_after_fix:
         repo.write("contracts/OMN-1.yaml", FIX_CONTRACT + "# amended on the base\n")
         repo.commits["amend"] = repo.commit("docs(OMN-1): amend the contract")
+    if released_after_fix:
+        repo.write(
+            "pyproject.toml",
+            _pyproject("0.1.2", "dep>=2" if dependency_change else "dep>=1"),
+        )
+        repo.write("contracts/runtime/protocol.lock.json", _lock("0.1.2", "ccc"))
+        repo.commits["release"] = repo.commit("chore(release): 0.1.2")
     if note_after_fix:
         repo.write("src/notes.txt", "The product was fixed.\n")
         repo.commits["note"] = repo.commit("docs(OMN-1): note")
@@ -297,6 +337,79 @@ def test_merged_fix_contract_is_not_reverted_as_a_product_path(
         "OMN-1 base control: passed; every bound check failed [dod-omn-1-ac1]"
         in control.stdout
     )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    "released", [False, True], ids=["version-unchanged", "released-on-base"]
+)
+def test_merged_fix_version_bookkeeping_is_not_reverted(
+    tmp_path: Path, released: bool
+) -> None:
+    repo = _repository(tmp_path, version_bump=True, released_after_fix=released)
+    _bind(repo, [f"OMN-1 {repo.commits['fix']}"])
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    fix = repo.commits["fix"]
+    assert f"Reverted from {fix}: src/product.py" in prepare.stdout
+    for path in ("pyproject.toml", "contracts/runtime/protocol.lock.json"):
+        assert f"Reverted from {fix}: {path}" not in prepare.stdout
+        assert (
+            f"Not reverted from {fix} (release version bookkeeping): {path}"
+            in prepare.stdout
+        )
+    assert control is not None
+    _assert_success(control)
+    assert (
+        "OMN-1 base control: passed; every bound check failed [dod-omn-1-ac1]"
+        in control.stdout
+    )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_merged_fix_dependency_change_is_reverted_as_a_product_path(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(
+        tmp_path, version_bump=True, dependency_change=True, released_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::the product changes of merged fix {fix} do not revert cleanly "
+        "at the merge base, so the control cannot run"
+    ) in prepare.stdout
+    assert "Not reverted" not in "".join(
+        line
+        for line in prepare.stdout.splitlines()
+        if line.endswith(": pyproject.toml")
+    )
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_merged_fix_with_only_tests_and_version_bookkeeping_is_refused(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path)
+    repo.write("tests/test_more.py", PRODUCT_TEST)
+    repo.write("pyproject.toml", _pyproject("0.1.1", "dep>=1"))
+    named = repo.commit("test(OMN-1): more tests and the release bump")
+    repo.commits["merge_base"] = named
+    repo.env["BASE_SHA"] = named
+    _bind(repo, [f"OMN-1 {named}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::merged fix {named} changes no product path, so reverting it "
+        "cannot make a bound test fail"
+    ) in prepare.stdout
+    assert control is None
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")

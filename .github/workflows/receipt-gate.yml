@@ -1019,9 +1019,30 @@ jobs:
           rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home" "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home"
           git -C "$head_tree" worktree prune
           TEST_SIDE='^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$'
+          # A release bump is bookkeeping, not product (OMN-17427): a path whose every
+          # line the fix changed only sets a quoted version or digest value is never
+          # reverted, and a later release on the base would make it fail to revert.
+          # Keeping a path unreverted can only make the must-fail control harder to fail.
+          VERSION_BOOKKEEPING='^[-+][[:space:]]*"?[A-Za-z_]*(version|_digest)"?[[:space:]]*[:=][[:space:]]*"[^"]*"[[:space:]]*,?[[:space:]]*$'
+          version_bookkeeping_only() {
+            local fix="$1" path="$2" line in_hunk=0 changed=0
+            while IFS= read -r line; do
+              if [[ "$line" == @@* ]]; then
+                in_hunk=1
+                continue
+              fi
+              if [ "$in_hunk" -eq 0 ] || [[ "$line" != [-+]* ]]; then
+                continue
+              fi
+              [[ "$line" =~ $VERSION_BOOKKEEPING ]] || return 1
+              changed=1
+            done < <(git -C "$head_tree" diff --no-renames --unified=0 "$fix^1" "$fix" -- "$path")
+            [ "$changed" -eq 1 ]
+          }
           # prepare_control HOME LABEL [FIX]: check the merge base out at HOME/$REPO_SHORT,
-          # revert FIX's product (non-test, non-contract) changes there when one is named, and lay
-          # over it every test-side path and cited contract this pull request changed.
+          # revert FIX's product (non-test, non-contract, non-bookkeeping) changes there when
+          # one is named, and lay over it every test-side path and cited contract this pull
+          # request changed.
           prepare_control() {
             local control_home="$1" label="$2" fix="${3:-}"
             local control_tree="$control_home/$REPO_SHORT" overlay_paths
@@ -1050,9 +1071,14 @@ jobs:
                 # A contract is evidence, not product: the fix's own contract
                 # change is never reverted, and a later amendment on the base
                 # would make it fail to revert (OMN-17427).
-                if [[ ! "$path" =~ $TEST_SIDE|^contracts/OMN-[0-9]+\.yaml$ ]]; then
-                  product+=("$path")
+                if [[ "$path" =~ $TEST_SIDE|^contracts/OMN-[0-9]+\.yaml$ ]]; then
+                  continue
                 fi
+                if version_bookkeeping_only "$fix" "$path"; then
+                  printf 'Not reverted from %s (release version bookkeeping): %s\n' "$fix" "$path"
+                  continue
+                fi
+                product+=("$path")
               done < <(git -C "$head_tree" diff --name-only --no-renames -z "$fix^1" "$fix")
               if [ "${#product[@]}" -eq 0 ]; then
                 echo "::error::merged fix $fix changes no product path, so reverting it cannot make a bound test fail"
