@@ -261,28 +261,6 @@ jobs:
         run: |
           git checkout -b "$BRANCH"
 
-      # OMN-16286 / OMN-15604 AC4: `uv lock --upgrade-package` cannot move a
-      # [tool.uv.sources] git pin -- uv always prefers an explicit source
-      # override over registry resolution, so re-locking against the SAME
-      # override typically re-resolves to a byte-identical uv.lock. Left
-      # unchecked, the SKIP check below would misreport that as "already on
-      # latest" when this repo is actually still stuck on the git pin (this
-      # is exactly what produced omniintelligence PR #827's untrustworthy
-      # ~54% full-file uv.lock rewrite). Fail loud and explicit BEFORE
-      # attempting the (guaranteed no-op / suspicious) lock, instead of after.
-      - name: Check dependency is movable
-        if: steps.token_check.outputs.has_token == 'true'
-        env:
-          PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
-          REPO_NAME: ${{ matrix.repo }}
-        run: |
-          if ! uv run python "${GITHUB_WORKSPACE}/_dep_provenance_gate/scripts/check_dep_provenance.py" \
-            --pyproject pyproject.toml \
-            --check-movable "$PKG_HYPHEN"; then
-            echo "::error::Dependency cascade cannot move ${PKG_HYPHEN} in ${REPO_NAME} -- it is pinned via a [tool.uv.sources] git override. 'uv lock --upgrade-package' will silently re-resolve against the SAME override and report no lockfile change, masking a no-op cascade (OMN-15604). Remove the [tool.uv.sources] override for ${PKG_HYPHEN} in ${REPO_NAME}'s pyproject.toml first, then re-run this cascade."
-            exit 1
-          fi
-
       # OMN-16286 (CodeRabbit finding): keep an exact pyproject.toml pin
       # (`==X.Y.Z`) in sync with the lockfile BEFORE running
       # `uv lock --upgrade-package`, not after. `uv lock --upgrade-package`
@@ -315,6 +293,34 @@ jobs:
           )
           open("pyproject.toml", "w").write(updated)
           PYEOF
+
+      # OMN-16286 / OMN-15604 AC4: `uv lock --upgrade-package` cannot move a
+      # [tool.uv.sources] git pin -- uv always prefers an explicit source
+      # override over registry resolution, so re-locking against the SAME
+      # override typically re-resolves to a byte-identical uv.lock. Left
+      # unchecked, the SKIP check below would misreport that as "already on
+      # latest" when this repo is actually still stuck on the git pin (this
+      # is exactly what produced omniintelligence PR #827's untrustworthy
+      # ~54% full-file uv.lock rewrite). Fail loud and explicit BEFORE
+      # attempting the (guaranteed no-op / suspicious) lock, instead of after.
+      # OMN-16926: the range-cap channel reads the committed constraint, so
+      # rewrite a stale exact `==` pin to the target first or every exact-pin
+      # leg would fail. A range cap is untouched by the exact-only regex and
+      # still fails this guard.
+      - name: Check dependency is movable
+        if: steps.token_check.outputs.has_token == 'true'
+        env:
+          PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
+          TARGET_VERSION: ${{ steps.vars.outputs.version }}
+          REPO_NAME: ${{ matrix.repo }}
+        run: |
+          if ! uv run python "${GITHUB_WORKSPACE}/_dep_provenance_gate/scripts/check_dep_provenance.py" \
+            --pyproject pyproject.toml \
+            --check-movable "$PKG_HYPHEN" \
+            --target-version "$TARGET_VERSION"; then
+            echo "::error::Dependency cascade leg for ${PKG_HYPHEN} in ${REPO_NAME} cannot reach ${TARGET_VERSION}: either a [tool.uv.sources] git override or a pyproject.toml constraint that does not admit ${TARGET_VERSION} (a range cap such as '<0.47.0'). The cascade does not widen caps. Remove the override or update the constraint before re-running this cascade (OMN-15604, OMN-16926)."
+            exit 1
+          fi
 
       # OMN-18941: wait on the named condition "this exact version is listed
       # on the index the lock resolves against", not a blind retry of uv lock.
@@ -434,11 +440,60 @@ jobs:
           # no lockfile delta (or vice versa) is still a real change to land.
           if git diff --quiet uv.lock pyproject.toml; then
             echo "SKIP=true" >> $GITHUB_ENV
-            echo "No lockfile/pin changes -- ${REPO_NAME} already on latest ${BUMP_PACKAGE}"
+            echo "No lockfile/pin changes -- the next step verifies ${REPO_NAME} already locks the target version"
           else
             echo "SKIP=false" >> $GITHUB_ENV
             echo "Lockfile/pin updated with new ${BUMP_PACKAGE} version"
           fi
+
+      # OMN-16926: a no-diff lock is "already on the target" only when uv.lock
+      # locks exactly the released version. Anything else fails the leg rather
+      # than reporting a skip.
+      - name: Verify locked version is the target
+        if: steps.token_check.outputs.has_token == 'true'
+        env:
+          PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
+          RESOLVED: ${{ steps.vars.outputs.version }}
+          REPO_NAME: ${{ matrix.repo }}
+        run: |
+          uv run --no-project python - <<'PYEOF'
+          import os
+          import re
+          import sys
+          import tomllib
+
+          pkg = os.environ["PKG_HYPHEN"]
+          target = os.environ["RESOLVED"]
+          repo = os.environ["REPO_NAME"]
+
+          def normalize(name):
+              return re.sub(r"[-_.]+", "-", name.lower())
+
+          try:
+              with open("./uv.lock", "rb") as lockfile:
+                  lock = tomllib.load(lockfile)
+          except (OSError, tomllib.TOMLDecodeError) as exc:
+              print(f"::error::Cannot read uv.lock for {pkg} in {repo}: {exc}")
+              sys.exit(1)
+
+          package = next(
+              (entry for entry in lock.get("package", [])
+               if normalize(entry["name"]) == normalize(pkg)),
+              None,
+          )
+          if package is None:
+              print(f"::error::Package {pkg} is not in uv.lock for {repo}; expected target {target}.")
+              sys.exit(1)
+
+          locked = package.get("version")
+          if locked == target:
+              print(f"CASCADE-LOCKED-VERSION-OK package={pkg} version={locked} repo={repo}")
+              sys.exit(0)
+
+          print(f"CASCADE-LOCKED-VERSION-MISMATCH package={pkg} locked={locked} target={target} repo={repo}")
+          print(f"::error::{pkg} in {repo} locks {locked}, target {target}: uv lock --upgrade-package did not reach the target (a cap or override the movable guard did not catch), so this leg is not already on the released version.")
+          sys.exit(1)
+          PYEOF
 
       - name: Commit and push
         if: steps.token_check.outputs.has_token == 'true' && env.SKIP == 'false'
@@ -556,8 +611,9 @@ jobs:
         env:
           REPO_NAME: ${{ matrix.repo }}
           BUMP_PACKAGE: ${{ steps.vars.outputs.package }}
+          RESOLVED: ${{ steps.vars.outputs.version }}
         run: |
           echo "### Skipped: ${REPO_NAME}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "${REPO_NAME} already uses the latest version of ${BUMP_PACKAGE}." >> $GITHUB_STEP_SUMMARY
+          echo "${REPO_NAME} already locks ${BUMP_PACKAGE} ${RESOLVED}, the released version (verified against uv.lock)." >> $GITHUB_STEP_SUMMARY
           echo "No lockfile changes needed." >> $GITHUB_STEP_SUMMARY
