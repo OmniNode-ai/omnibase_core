@@ -1,0 +1,122 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17903
+title: Static extra-forbid resolution follows Pydantic multi-base config merging
+summary: Preserve ordered base-config merging and fail closed on computed configs and unresolved base
+  expressions. Compare the selected-index snapshot verdict with Pydantic without importing worktree modules.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17903-config-merge
+    statement: The static extra-forbid gate must use Pydantic-equivalent multi-base configuration precedence.
+    acceptance:
+      - id: AC1
+        statement: "Red → PASS regression covering `A(forbid), B(ignore), C(A, B)`: index-mode gate rejects
+          the new `C`."
+      - id: AC2
+        statement: "Reverse order `C(B, A)` is independently tested and matches Pydantic."
+      - id: AC3
+        statement: "Grandparent/indirect multiple-inheritance cases match Pydantic effective config."
+      - id: AC4
+        statement: "Tests assert the validator result against `C.model_config[\"extra\"]`, not a hand-authored
+          expectation alone."
+      - id: AC5
+        statement: "Index snapshot remains authoritative: a divergent worktree module or cached module
+          cannot affect the verdict."
+      - id: AC6
+        statement: "No baseline/waiver padding, no fail-open fallback, and no invocation that mutates
+          the user's real index."
+      - id: AC7
+        statement: "Correct the hook comment claiming index-mode uses real `cls.model_config` if the final
+          design does not do so."
+evidence_requirements:
+  - kind: tests
+    description: Compare static findings and the snapshot CLI verdict against real Pydantic merged configs.
+    command: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+      -q -n 0 --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17903-ac1-reject
+    description: The snapshot CLI refuses the new C(A, B) while only B is baselined in the isolated fixture.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+          -q -n 0 --no-cov -k snapshot
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn17903-ac2-reverse
+    description: Both direct base orders are checked against Pydantic, including the compliant reverse
+      order.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+          -q -n 0 --no-cov -k later
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn17903-ac3-ancestors
+    description: Indirect inheritance and diamonds merge each direct base's effective config independently.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+          -q -n 0 --no-cov -k 'indirect or diamond'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn17903-ac4-oracle
+    description: Each statically resolvable multi-base case reads its oracle from a real Pydantic class.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+          -q -n 0 --no-cov -k matches_pydantic
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn17903-ac5-snapshot
+    description: A Git-index snapshot supplies cross-file bases despite a divergent worktree and poisoned
+      module cache.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+          -q -n 0 --no-cov -k snapshot
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
+  - id: dod-omn17903-ac6-closed
+    description: Unresolved configs and base expressions remain violations; scanning normal and alternate
+      index snapshots leaves both fixture indexes unchanged.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+          -q -n 0 --no-cov -k 'unresolved or snapshot'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC6]
+  - id: dod-omn17903-ac7-comment
+    description: The hook documents runtime introspection and the static fallback rather than claiming
+      runtime-only inheritance.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run python -c 'from pathlib import Path; text = Path(".pre-commit-config.yaml").read_text();
+          block = text.split("# language: system uses the repo venv.", 1)[1].split("- id: pydantic-extra-forbid",
+          1)[0]; assert "static scans merge direct-base" in block; assert "--no-runtime scans an index
+          snapshot" in block; assert "instead" not in block'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC7]
+  - id: dod-omn17903-deploy-snapshot-cli
+    description: Hosted probe exercises the shipped validator CLI over an isolated selected-index snapshot,
+      rejecting ignore and accepting forbid while a divergent worktree and module cache are present.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest -c pyproject.toml tests/unit/validators/test_pydantic_multibase_extra_forbid.py
+          -q -n 0 --no-cov -k snapshot
+        cwd: ${OMNI_HOME}/omnibase_core
