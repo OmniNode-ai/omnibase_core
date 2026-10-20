@@ -775,6 +775,9 @@ dod_evidence:
         check_value: uv run pytest tests/unit/nodes/node_markdown_links_check_compute/test_parity_markdown_links_golden.py
           -q -o addopts='' -k test_parity_markdown_links_repository_golden
         cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_readme_signpost_omn17427.py -n 0 -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC23
   - id: dod-omn17427-sweep-excludes-propagate-placeholder
