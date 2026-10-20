@@ -351,6 +351,18 @@ requirements:
         statement: "AC44: The lockfile upgrade sends the token only to the found repos' URLs, masks the
           header and never prints the token, and sets no header when no token is given. -- falsifier:
           uv run pytest tests/scripts/test_dependency_cascade_private_git_source_omn17427.py -q -k lock_auth_is_scoped"
+  - id: req-omn17427-terminal-subscriptions-join-concurrently
+    statement: RuntimeLocal subscribes to every declared terminal topic concurrently, so a Kafka delegation
+      pays one consumer-group join before it publishes instead of one join per terminal.
+    acceptance:
+      - id: AC45
+        statement: "AC45: The declared terminal subscriptions are in flight together, in declared order
+          with distinct group ids, and the run still completes on its success terminal. -- falsifier:
+          uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py -q -k test_terminal_subscriptions_join_concurrently"
+      - id: AC46
+        statement: "AC46: A first declared terminal that cannot be subscribed still fails the run at once,
+          and leaves no later terminal subscription bound. -- falsifier: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py
+          -q -k test_a_fatal_first_terminal_leaves_no_extra_terminal_bound"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -442,6 +454,10 @@ evidence_requirements:
     description: "A cascade leg locking a private OmniNode git source gets a read-only token scoped to
       that source for its lockfile upgrade; a leg with only public git sources gets none."
     command: "uv run pytest tests/scripts/test_dependency_cascade_private_git_source_omn17427.py -q"
+  - kind: tests
+    description: "RuntimeLocal joins the declared terminal subscriptions concurrently, and a fatal first
+      terminal leaves no later terminal bound."
+    command: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py -q
 emergency_bypass:
   enabled: false
   justification: ''
@@ -945,3 +961,26 @@ dod_evidence:
       - AC42
       - AC43
       - AC44
+  - id: dod-omn17427-terminal-subscribe-concurrently
+    description: Hosted library deploy probe for RuntimeLocal. The checked-out runtime must start all
+      terminal subscriptions together, retain distinct group ids and complete on the success terminal.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py -q -o addopts=''
+          -k test_terminal_subscriptions_join_concurrently
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC45
+  - id: dod-omn17427-terminal-subscribe-cleanup
+    description: A fatal first terminal subscription leaves no later terminal bound.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py -q -o addopts=''
+          -k test_a_fatal_first_terminal_leaves_no_extra_terminal_bound
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC46
