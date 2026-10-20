@@ -218,8 +218,9 @@ requirements:
     acceptance:
       - id: AC23
         statement: "AC23: The four unused prose guides and two unused evidence logs are absent and README.md
-          has three to five lines including the public knowledge_base link; machine-read handshakes, changelog,
-          templates and fixtures remain available."
+          opens with a three-to-five-line signpost including the public knowledge_base link, ahead of
+          any release notes the release train retains; machine-read handshakes, changelog, templates and
+          fixtures remain available."
   - id: req-omn17427-sweep-excludes-propagate-placeholder
     statement: CI Summary's external sweep excludes the skipped placeholder row propagate-config.yml posts
       on a path-matched pull request, with a dated, ticketed, expiring exclusion.
@@ -756,19 +757,19 @@ dod_evidence:
     binds_ac:
       - AC22
   - id: dod-omn-17427-remove-repository-prose
-    description: The unused prose guides and evidence logs are absent and the root README links to the
-      public knowledge base.
+    description: The unused prose guides and evidence logs are absent and the root README opens with a
+      short signpost linking the public knowledge base, ahead of any release notes the release train retains.
     source: manual
     execution_scope: hosted_and_local
     checks:
       - check_type: command
         check_value: >-
-          uv run python -c 'from pathlib import Path; removed=[".github/CODE_OF_CONDUCT.md", ".github/CONTRIBUTING.md",
-          "SECURITY.md", "tests/fixtures/README.md", ".onex_state/evidence/OMN-13132/deterministic-ir-evidence.txt",
+          uv run python -c 'from pathlib import Path; from itertools import takewhile; removed=[".github/CODE_OF_CONDUCT.md",
+          ".github/CONTRIBUTING.md", "SECURITY.md", "tests/fixtures/README.md", ".onex_state/evidence/OMN-13132/deterministic-ir-evidence.txt",
           ".onex_state/evidence/deterministic-ir/deterministic-ir-evidence.txt"]; assert all(not Path(p).exists()
-          for p in removed); lines=Path("README.md").read_text().splitlines(); assert 3 <= len(lines)
-          <= 5; assert "https://github.com/OmniNode-ai/knowledge_base" in "\n".join(lines); print("documentation
-          removal and README checks passed")'
+          for p in removed); lines=Path("README.md").read_text().splitlines(); signpost=list(takewhile(lambda
+          line: not line.startswith("## "), lines)); assert 3 <= len(signpost) <= 5; assert "https://github.com/OmniNode-ai/knowledge_base"
+          in "\n".join(signpost); print("documentation removal and README checks passed")'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run pytest tests/unit/nodes/node_markdown_links_check_compute/test_parity_markdown_links_golden.py
