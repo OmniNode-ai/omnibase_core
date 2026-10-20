@@ -68,3 +68,18 @@ def test_project_version_matches_locked_editable_package() -> None:
     assert len(packages) == 1
     assert packages[0]["source"] == {"editable": "."}
     assert packages[0]["version"] == project["project"]["version"]
+
+
+def test_release_changelog_retains_version_0_47_50_in_root_readme() -> None:
+    """Keep this cut's public notes while rejecting a standalone changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.50 (2026-10-20)" in readme
+    assert "### Included Since v0.47.49" in readme
+    assert (
+        "- fix: cascade legs and CI Summary stop going red on a release head (#2062)"
+        in readme
+    )
+    assert (
+        "- feat: the delegation wire request admits the context_compaction task class (#2061)"
+        in readme
+    )

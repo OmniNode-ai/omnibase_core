@@ -1,9 +1,10 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-18595
-title: Release 0.47.49 respects the repository documentation policy
-summary: Remove the release-generated CHANGELOG.md that the README-only documentation policy refuses,
-  and retain the 0.47.49 package identity in pyproject.toml and uv.lock.
+title: Release 0.47.50 respects the repository documentation policy
+summary: Retain the release notes in root README.md instead of the release-generated CHANGELOG.md that
+  the README-only documentation policy refuses, and retain the 0.47.50 package identity in pyproject.toml
+  and uv.lock.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -16,7 +17,7 @@ requirements:
         statement: The canonical README-only documentation validator accepts the release tree; restoring
           the generated CHANGELOG.md makes the validator fail.
       - id: AC2
-        statement: The project and editable omnibase-core lock entry both declare version 0.47.49.
+        statement: The project and editable omnibase-core lock entry both declare version 0.47.50.
 evidence_requirements:
   - kind: tests
     description: Release-cut identity tests, then the canonical documentation scan and package-identity
@@ -55,9 +56,9 @@ dod_evidence:
         check_value: >-
           uv run --locked python -c 'import pathlib, tomllib; project = tomllib.loads(pathlib.Path("pyproject.toml").read_text());
           lock = tomllib.loads(pathlib.Path("uv.lock").read_text()); assert project["project"]["version"]
-          == "0.47.49"; packages = [p for p in lock["package"] if p["name"] == "omnibase-core"]; assert
-          len(packages) == 1 and packages[0]["version"] == "0.47.49" and packages[0]["source"] == {"editable":
-          "."}'
+          == "0.47.50"; assert "## v0.47.50 (2026-10-20)" in pathlib.Path("README.md").read_text(); packages
+          = [p for p in lock["package"] if p["name"] == "omnibase-core"]; assert len(packages) == 1 and
+          packages[0]["version"] == "0.47.50" and packages[0]["source"] == {"editable": "."}'
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-deploy-hosted-readback
     description: Hosted deployment probe for this release-only change scans the actual indexed tree; restoring
