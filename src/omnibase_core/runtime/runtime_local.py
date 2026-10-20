@@ -1725,17 +1725,41 @@ class RuntimeLocal:
         # each additional terminal gets its own group under the same prefix,
         # because two members of one group declaring different subscriptions is
         # a coordinator hazard, not a saving.
-        for index, declared_terminal in enumerate(terminal_topics):
-            group_node = (
-                terminal_group_node if index == 0 else f"{terminal_group_node}_t{index}"
-            )
-            try:
-                unsub = await bus.subscribe(
+        # OMN-17427: each fresh run-scoped group join costs about 3 s on the
+        # dev broker. Three trials on 2026-10-20 measured 6.11–6.18 s sequentially
+        # versus 3.05–3.09 s concurrently for the two delegate terminals.
+        # EventBusKafka.subscribe joins outside its lock, so gather lets these
+        # independent subscriptions join concurrently.
+        terminal_subscriptions = await asyncio.gather(
+            *(
+                bus.subscribe(
                     declared_terminal.topic,
                     on_message=_terminal_listener(declared_terminal),
-                    group_id=derive_runtime_local_group_id(group_node),
+                    group_id=derive_runtime_local_group_id(
+                        terminal_group_node
+                        if index == 0
+                        else f"{terminal_group_node}_t{index}"
+                    ),
                 )
-            except Exception:  # fallback-ok: an unwatchable ADDITIONAL terminal degrades coverage, it does not fail the run
+                for index, declared_terminal in enumerate(terminal_topics)
+            ),
+            return_exceptions=True,
+        )
+        for index, (declared_terminal, subscription) in enumerate(
+            zip(terminal_topics, terminal_subscriptions, strict=True)
+        ):
+            if isinstance(subscription, BaseException):
+                if index == 0 or not isinstance(subscription, Exception):
+                    await asyncio.gather(
+                        *(
+                            subscribed()
+                            for subscribed in terminal_subscriptions
+                            if not isinstance(subscribed, BaseException)
+                        ),
+                        return_exceptions=True,
+                    )
+                    raise subscription
+                # fallback-ok: an unwatchable ADDITIONAL terminal degrades coverage, it does not fail the run
                 # The FIRST declared terminal is the one this runtime has always
                 # watched, so a failure to subscribe to it stays fatal — nothing
                 # about its handling changes here. Every LATER terminal is new
@@ -1751,8 +1775,6 @@ class RuntimeLocal:
                 # this ticket exists to remove, with no way to tell "the lane
                 # said nothing" from "the lane answered where I could not
                 # listen".
-                if index == 0:
-                    raise
                 self._record_event(f"(terminal:unwatchable:{declared_terminal.topic})")
                 self._last_error = (
                     f"could not watch the contract's declared "
@@ -1760,9 +1782,11 @@ class RuntimeLocal:
                     f"'{declared_terminal.topic}' — a terminal published there "
                     f"will not reach this run"
                 )
-                logger.warning("RuntimeLocal: %s", self._last_error, exc_info=True)
+                logger.warning(
+                    "RuntimeLocal: %s", self._last_error, exc_info=subscription
+                )
                 continue
-            unsubscribe_handles.append(unsub)
+            unsubscribe_handles.append(subscription)
             logger.info(
                 "RuntimeLocal: watching terminal '%s' (declared %s)",
                 declared_terminal.topic,

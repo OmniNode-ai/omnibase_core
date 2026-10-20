@@ -625,3 +625,74 @@ async def test_an_unwatchable_first_terminal_is_still_fatal(tmp_path: Path) -> N
     assert not any(
         key.startswith("(terminal:unwatchable") for key in runtime._events_received
     )
+
+
+class _SlowJoinBus(_Bus):
+    """Track overlapping subscriptions while each broker join is in flight."""
+
+    def __init__(self, broker: _Broker) -> None:
+        super().__init__(broker)
+        self.in_flight = 0
+        self.max_in_flight = 0
+
+    async def subscribe(
+        self,
+        topic: str,
+        *,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+        group_id: str,
+    ) -> Callable[[], Awaitable[None]]:
+        self.in_flight += 1
+        self.max_in_flight = max(self.max_in_flight, self.in_flight)
+        await asyncio.sleep(0.2)
+        self.in_flight -= 1
+        return await super().subscribe(topic, on_message=on_message, group_id=group_id)
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_terminal_subscriptions_join_concurrently(tmp_path: Path) -> None:
+    """Both terminal joins overlap while preserving order and distinct groups."""
+    broker = _Broker()
+    correlation_id = uuid.uuid4()
+    bus = _SlowJoinBus(broker)
+    runtime = _build_runtime(tmp_path / "run", correlation_id=correlation_id, timeout=5)
+    _bind(runtime, bus)
+
+    success = {
+        "envelope_id": str(uuid.uuid4()),
+        "correlation_id": str(correlation_id),
+        "payload": {"correlation_id": str(correlation_id), "status": "success"},
+    }
+    publisher = asyncio.create_task(
+        _publish_after(broker, _SUCCESS_TOPIC, success, delay=0.3)
+    )
+    result = await runtime.run_async()
+    await publisher
+
+    assert result is EnumWorkflowResult.COMPLETED
+    assert bus.max_in_flight == 2
+    assert bus.subscribed_topics == [_SUCCESS_TOPIC, _FAILURE_TOPIC]
+    assert bus.subscriptions[0][1] != bus.subscriptions[1][1]
+
+
+@pytest.mark.unit
+@pytest.mark.asyncio
+async def test_a_fatal_first_terminal_leaves_no_extra_terminal_bound(
+    tmp_path: Path,
+) -> None:
+    """A concurrent extra subscription is removed before fatal failure returns."""
+    broker = _Broker()
+    bus = _RefusingBus(broker, refuse=_SUCCESS_TOPIC)
+    runtime = _build_runtime(tmp_path / "run", correlation_id=uuid.uuid4(), timeout=30)
+    _bind(runtime, bus)
+
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    result = await runtime.run_async()
+    elapsed = loop.time() - started
+
+    assert result is EnumWorkflowResult.FAILED
+    assert elapsed < 5.0, "a fatal subscribe must not be paid for at the timeout"
+    assert bus.subscribed_topics == [_FAILURE_TOPIC]
+    assert not any(topic == _FAILURE_TOPIC for topic, _, _ in broker.subscribers)
