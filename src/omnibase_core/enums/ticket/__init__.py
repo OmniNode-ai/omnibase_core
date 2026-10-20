@@ -3,6 +3,9 @@
 
 """Ticket workflow enums for contract-driven execution."""
 
+from omnibase_core.enums.ticket.enum_ac_binding_retirement_reason import (
+    EnumAcBindingRetirementReason,
+)
 from omnibase_core.enums.ticket.enum_contract_interface_surface import (
     EnumContractInterfaceSurface,
 )
@@ -78,6 +81,8 @@ __all__ = [
     "EnumDodCheckType",
     # OMN-15392: explicit hosted/local evidence execution audience
     "EnumDodEvidenceExecutionScope",
+    # OMN-21220: why a contract retires an acceptance-criterion binding
+    "EnumAcBindingRetirementReason",
     # OMN-13338: tiered proof-packet enums
     "EnumProofTier",
     "EnumTicketClass",

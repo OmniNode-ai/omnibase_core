@@ -41,6 +41,9 @@ from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
 from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
     SOLE_FILE_EXISTS_ERROR_TOKEN,
 )
+from omnibase_core.models.ticket.model_contract_ac_binding_retirement import (
+    ModelContractAcBindingRetirement,
+)
 
 _MAX_STRING_LENGTH = 10000
 _MAX_LIST_ITEMS = 1000
@@ -114,6 +117,18 @@ class ModelContractDodItem(BaseModel):
             "Acceptance-criterion labels (`AC1`, `DoD2`) from the ticket body "
             "that this evidence item claims to prove. Empty means it claims "
             "none, which is a coverage gap rather than a pass."
+        ),
+    )
+    # OMN-21220: the append-only way to withdraw a binding a merged item makes,
+    # so a product-repo contract can retire a criterion the ticket no longer
+    # carries without OCC. Each entry names another item in this contract.
+    supersedes_ac_binding: tuple[ModelContractAcBindingRetirement, ...] = Field(
+        default=(),
+        max_length=_MAX_LIST_ITEMS,
+        description=(
+            "Bindings on OTHER evidence items in this contract that this item "
+            "retires, each naming the item, the criterion label, and why that "
+            "item's checks cannot settle that criterion."
         ),
     )
     linear_dod_text: str | None = Field(
