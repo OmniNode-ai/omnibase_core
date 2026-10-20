@@ -1,0 +1,45 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21222
+title: omnibase_core's ticket contract item declares supersedes_ac_binding, so a product-repo contract
+  can retire a binding
+summary: ModelContractDodItem declares supersedes_ac_binding as typed retirements carried over from onex_change_control,
+  so a product-repo ticket contract can withdraw a merged item's binding on a criterion the live ticket
+  no longer carries without an OCC tree. The verifier derives the item fields it owns from this model,
+  so a core release carrying it also lets dod_verify read the entry.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21222-retirement-field
+    statement: A product-repo ticket contract item can carry supersedes_ac_binding, validated by core
+      alone.
+    acceptance:
+      - id: AC1
+        statement: "AC1: ModelContractDodItem declares supersedes_ac_binding as typed retirements (item,
+          label, reason, reason_kind, superseded_by, retired_by, retired_at, carried over from OCC), a
+          ticket contract carrying one validates, a malformed one is refused naming the rule, and any
+          other unknown item key is still refused -- falsifier: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_retirements_omn21220.py
+          -q in omnibase_core"
+evidence_requirements:
+  - kind: tests
+    description: The retirement field and its refusals on the ticket contract model.
+    command: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_retirements_omn21220.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21222-ac1
+    description: A ticket contract carrying a typed retirement validates, each malformed retirement is
+      refused naming its rule, an untyped merged retirement still parses, and any other unknown item key
+      is refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_retirements_omn21220.py
+          -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1

@@ -48,6 +48,9 @@ if TYPE_CHECKING:
         ClarifyingQuestion,
         ModelClarifyingQuestion,
     )
+    from omnibase_core.models.ticket.model_contract_ac_binding_retirement import (
+        ModelContractAcBindingRetirement,
+    )
     from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
     from omnibase_core.models.ticket.model_emergency_bypass import ModelEmergencyBypass
     from omnibase_core.models.ticket.model_evidence_requirement import (
@@ -163,6 +166,8 @@ __all__ = [
     "ModelTCBProvenance",
     # OMN-10064: OCC-origin merged models
     "ModelContractDodItem",
+    # OMN-21220: the binding retirement a product-repo contract can carry
+    "ModelContractAcBindingRetirement",
     "ModelEmergencyBypass",
     "ModelEvidenceRequirement",
     "ModelGoldenPath",
@@ -208,6 +213,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelClarifyingQuestion": (
         "omnibase_core.models.ticket.model_clarifying_question",
         "ModelClarifyingQuestion",
+    ),
+    "ModelContractAcBindingRetirement": (
+        "omnibase_core.models.ticket.model_contract_ac_binding_retirement",
+        "ModelContractAcBindingRetirement",
     ),
     "ModelContractDodItem": (
         "omnibase_core.models.ticket.model_contract_dod_item",
