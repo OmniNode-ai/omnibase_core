@@ -332,6 +332,24 @@ requirements:
         statement: "AC41: The external sweep exclusion registry carries Harvest shadow records, whose
           skipped row passes CI Summary while an unregistered red still fails it. -- falsifier: uv run
           pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q -k TestExternalSweepExclusions"
+  - id: req-omn17427-cascade-private-git-source-token
+    statement: A dependency cascade leg whose downstream repo locks a private OmniNode git source gets
+      a read-only app token scoped to those private sources for its lockfile upgrade, and a leg with only
+      public git sources gets no token.
+    acceptance:
+      - id: AC42
+        statement: "AC42: The find step collects OmniNode git sources from pyproject.toml and uv.lock,
+          skips the downstream repo itself and plain project URLs, probes each anonymously outside the
+          checkout, and outputs only the private ones. -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_private_git_source_omn17427.py
+          -q -k 'find_private or only_public or no_git_sources'"
+      - id: AC43
+        statement: "AC43: The private-source token is minted with contents read only, for the found repos
+          only, and only when one was found, and the lockfile upgrade step receives it. -- falsifier:
+          uv run pytest tests/scripts/test_dependency_cascade_private_git_source_omn17427.py -q -k token_wiring"
+      - id: AC44
+        statement: "AC44: The lockfile upgrade sends the token only to the found repos' URLs, masks the
+          header and never prints the token, and sets no header when no token is given. -- falsifier:
+          uv run pytest tests/scripts/test_dependency_cascade_private_git_source_omn17427.py -q -k lock_auth_is_scoped"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -419,6 +437,10 @@ evidence_requirements:
       row."
     command: "uv run pytest tests/scripts/test_dependency_cascade_uv_index_omn17427.py tests/unit/scripts/ci/test_ci_summary_gate.py
       -q -k 'omn17427 or uv_index or movable or unrelated or without_changes or TestExternalSweepExclusions'"
+  - kind: tests
+    description: "A cascade leg locking a private OmniNode git source gets a read-only token scoped to
+      that source for its lockfile upgrade; a leg with only public git sources gets none."
+    command: "uv run pytest tests/scripts/test_dependency_cascade_private_git_source_omn17427.py -q"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -905,3 +927,17 @@ dod_evidence:
       - AC39
       - AC40
       - AC41
+  - id: dod-omn17427-cascade-private-git-source-token
+    description: "A cascade leg locking a private OmniNode git source gets a read-only token scoped to
+      that source for its lockfile upgrade; a leg with only public git sources gets none."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_dependency_cascade_private_git_source_omn17427.py
+          -q -p no:randomly --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC42
+      - AC43
+      - AC44
