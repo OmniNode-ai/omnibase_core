@@ -83,3 +83,14 @@ def test_release_changelog_retains_version_0_47_50_in_root_readme() -> None:
         "- feat: the delegation wire request admits the context_compaction task class (#2061)"
         in readme
     )
+
+
+def test_release_changelog_retains_version_0_47_51_in_root_readme() -> None:
+    """Keep the 0.47.51 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.51 (2026-10-20)" in readme
+    assert "### Included Since v0.47.50" in readme
+    assert (
+        "- feat: the ticket contract item declares supersedes_ac_binding (#2067)"
+        in readme
+    )
