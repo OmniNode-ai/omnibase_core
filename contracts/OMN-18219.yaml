@@ -1,0 +1,47 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-18219"
+title: "Autobind OCC evidence for OMN-18219"
+summary: >
+  OCC contract authored by node_occ_companion_compute (OMN-14285) for OmniNode-ai/omnibase_core PR #1684.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1684 CI checks green"
+    command: "gh pr checks ${PR_NUMBER} --repo ${REPO}"
+  - kind: "tests"
+    description: |-
+      Behavior proof for PR #1684 on OmniNode-ai/omnibase_core, derived from the PR's own diff: the test target(s) it adds or changes. Bound as dod_evidence item `dod-occ-diff-derived-behavior-proof`, executed at cwd `${OMNI_HOME}/omnibase_core`.
+    command: |-
+      uv run pytest tests/unit/models/ticket/test_model_ticket_contract.py tests/unit/models/ticket/test_model_ticket_contract_merged.py -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1684"
+    description: "PR #1684 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/contents/tests/unit/models/ticket/test_model_ticket_contract_merged.py?ref=9ca4c55ea52e6fb9fb65b2ce4c6d167d81cefc81 --jq '.content' | base64 -d | grep -c 'def test_dod_evidence_ledger_accepts_live_occ_observation_volume'
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/pulls/1684/files --paginate --jq '.[].filename' | grep -cFx 'pyproject.toml'
+  - id: "dod-occ-diff-derived-behavior-proof"
+    description: "PR #1684 on OmniNode-ai/omnibase_core — diff-derived behavior proof (OMN-16434)."
+    source: "generated"
+    checks:
+      - check_type: "test_passes"
+        check_value: |-
+          uv run pytest tests/unit/models/ticket/test_model_ticket_contract.py tests/unit/models/ticket/test_model_ticket_contract_merged.py -q
+        cwd: "${OMNI_HOME}/omnibase_core"
+  - id: "occ-self-bind-pr-9237"
+    description: "Binds OMN-18219 to OCC companion PR #9237 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 9237 --repo OmniNode-ai/onex_change_control --json number,state"

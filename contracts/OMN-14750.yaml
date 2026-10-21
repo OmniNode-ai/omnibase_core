@@ -1,0 +1,43 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-14750"
+title: "B4 (omnibase_core): backfill agent_source on ModelClaudeCodeHookEvent + retype Cursor str->EnumAgentSource"
+summary: >
+  OCC evidence companion for OmniNode-ai/omnibase_core PR #1551 (B4 of the Claude/Cursor agent_source
+  parity seam, epic OMN-14749). Org-authored per OMN-15214 — the work-PR author (andywu42) cannot self-author
+  companion evidence.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1551 CI checks green"
+    command: "gh pr checks ${PR_NUMBER} --repo ${REPO}"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1551"
+    description: >
+      PR #1551 on OmniNode-ai/omnibase_core — backfill agent_source on ModelClaudeCodeHookEvent (default
+      CLAUDE) and retype ModelCursorHookEvent.agent_source str->EnumAgentSource (default CURSOR), both
+      str-accepting via a mode="before" validator per the sanctioned B4 seam shape.
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1551 --repo OmniNode-ai/omnibase_core --json number,state,headRefName,files"
+  - id: "dod-omnicursor-c3-runtime-receipt"
+    description: >
+      C3 runtime receipt — a canonical Cursor event consumed end-to-end on a live stack with agent_source=cursor
+      carried through to the emitted intent event.
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh api repos/OmniNode-ai/omnicursor/issues/comments/5098283862 --jq '{id,html_url}'"
+  - id: "occ-self-bind-pr-6544"
+    description: "Binds OMN-14750 to OCC companion PR #6544 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 6544 --repo OmniNode-ai/onex_change_control --json number,state"

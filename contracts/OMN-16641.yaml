@@ -1,0 +1,39 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-16641"
+title: "Autobind OCC evidence for OMN-16641"
+summary: >
+  OCC contract authored by node_occ_companion_compute (OMN-14285) for OmniNode-ai/omnibase_core PR #1596.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1596 CI checks green"
+    command: "gh pr checks ${PR_NUMBER} --repo ${REPO}"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1596"
+    description: "PR #1596 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1596 --repo OmniNode-ai/omnibase_core --json number,state"
+      - check_type: "command"
+        check_value: "gh pr view 1596 --repo OmniNode-ai/omnibase_core --json files"
+  - id: "dod-occ-evidence-admissibility-validator"
+    description: "Hosted OCC evidence admissibility validator (OMN-15247)."
+    source: "generated"
+    evidence_artifact: "supersedes_dod_evidence:dod-OmniNode-ai-omnibase_core-pr-1596"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/test_evidence_admissibility.py -q"
+  - id: "occ-self-bind-pr-7201"
+    description: "Binds OMN-16641 to OCC companion PR #7201 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7201 --repo OmniNode-ai/onex_change_control --json number,state"

@@ -1,0 +1,135 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-16451"
+title: "Autobind OCC evidence for OMN-16451"
+summary: >
+  OCC contract authored by node_occ_companion_compute (OMN-14285) for OmniNode-ai/omnibase_core PR #1585.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1585 CI checks green"
+    command: "gh pr checks ${PR_NUMBER} --repo ${REPO}"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1585"
+    description: "PR #1585 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_intent_consumption.py?ref=7a7062eed0e627e8ee6c85e5a0a5ac5fe89f48d3 --jq '.content' | base64 -d | grep -c 'class ModelContractIntentConsumption'
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_intent_consumption.py?ref=7a7062eed0e627e8ee6c85e5a0a5ac5fe89f48d3 --jq '.content' | base64 -d | grep -c 'class ModelContractIntentConsumption'
+  - id: "dod-deploy-assessment"
+    description: "Deploy-scope DoD so PR #1585 clears the deploy-gate (F-05)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_intent_consumption.py?ref=7a7062eed0e627e8ee6c85e5a0a5ac5fe89f48d3 --jq '.content' | base64 -d | grep -c 'class ModelContractIntentConsumption'
+  - id: "dod-occ-evidence-admissibility-validator"
+    description: "Hosted OCC evidence admissibility validator (OMN-15247)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/test_evidence_admissibility.py -q"
+  - id: "occ-self-bind-pr-7036"
+    description: "Binds OMN-16451 to OCC companion PR #7036 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7036 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omniintelligence-pr-841"
+    description: "PR #841 on OmniNode-ai/omniintelligence — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omniintelligence/contents/uv.lock?ref=d5ef12f0a5b6b6b23a79cfb4192e33e63d3a6930 --jq '.content' | base64 -d | grep -cF 'http://omninode-pc.tail75df5e.ts.net:3141/root/pypi/+simple/'
+  - id: "dod-OmniNode-ai-omniintelligence-pr-841-ci"
+    description: "PR #841 on OmniNode-ai/omniintelligence — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 841 --repo OmniNode-ai/omniintelligence --json files"
+  - id: "occ-self-bind-pr-7041"
+    description: "OCC companion PR #7041 — self-bind for OMN-16451 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7041 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-onex_change_control-pr-7038"
+    description: "PR #7038 on OmniNode-ai/onex_change_control — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/onex_change_control/contents/uv.lock?ref=25403511061f398fb0d7f8d8b6b72d2b49f3ad86 --jq '.content' | base64 -d | grep -cF 'https://files.pythonhosted.org/packages/52/b2/de9610eea72fb24f54dd5682eeafebf126e9783b492d4216be25b07923ba/omnibase_core-0.46.12.tar.gz'
+  - id: "dod-OmniNode-ai-onex_change_control-pr-7038-ci"
+    description: "PR #7038 on OmniNode-ai/onex_change_control — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7038 --repo OmniNode-ai/onex_change_control --json files"
+  - id: "occ-self-bind-pr-7064"
+    description: "OCC companion PR #7064 — self-bind for OMN-16451 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7064 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "occ-self-bind-pr-7065"
+    description: "OCC companion PR #7065 — self-bind for OMN-16451 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7065 --repo OmniNode-ai/onex_change_control --json number,state,headRefName"
+  - id: "occ-self-bind-pr-7039"
+    description: "OCC companion PR #7039 — self-bind for OMN-16451 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7039 --repo OmniNode-ai/onex_change_control --json number,state,headRefName"
+  - id: "occ-self-bind-pr-7067"
+    description: "OCC companion PR #7067 — self-bind for OMN-16451 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7067 --repo OmniNode-ai/onex_change_control --json number,state,headRefName"
+  - id: "dod-OmniNode-ai-omniclaude-pr-2032"
+    description: "PR #2032 on OmniNode-ai/omniclaude — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omniclaude/contents/uv.lock?ref=4ff2a7de84163f49847e167411c729844f82c1d5 --jq '.content' | base64 -d | grep -cF 'http://omninode-pc.tail75df5e.ts.net:3141/root/pypi/+simple/'
+  - id: "dod-OmniNode-ai-omniclaude-pr-2032-ci"
+    description: "PR #2032 on OmniNode-ai/omniclaude — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2032 --repo OmniNode-ai/omniclaude --json files"
+  - id: "dod-OmniNode-ai-omnibase_infra-pr-2876"
+    description: "PR #2876 on OmniNode-ai/omnibase_infra — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_infra/contents/uv.lock?ref=504b60adc6558d5a68af5e1e5dea614e63faf0de --jq '.content' | base64 -d | grep -cF 'http://omninode-pc.tail75df5e.ts.net:3141/root/pypi/+simple/'
+  - id: "dod-OmniNode-ai-omnibase_infra-pr-2876-ci"
+    description: "PR #2876 on OmniNode-ai/omnibase_infra — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2876 --repo OmniNode-ai/omnibase_infra --json files"
+  - id: "occ-self-bind-pr-7040"
+    description: "OCC companion PR #7040 — self-bind for OMN-16451 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7040 --repo OmniNode-ai/onex_change_control --json number,state"

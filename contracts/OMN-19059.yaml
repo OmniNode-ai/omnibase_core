@@ -1,0 +1,44 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-19059"
+title: "Autobind OCC evidence for OMN-19059"
+summary: |-
+  OCC contract authored by node_occ_companion_compute (OMN-14285) for OmniNode-ai/omnibase_core PR #1734.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1734 CI checks green"
+    command: "gh pr checks ${PR_NUMBER} --repo ${REPO}"
+  - kind: "tests"
+    description: |-
+      OWED, not claimed. PR #1734 on OmniNode-ai/omnibase_core changes no pytest target, so this producer cannot derive a behavior-class check from its diff and mints none - the changed surface (.github/CODEOWNERS) is unproven by this contract. A behavior proof must be hand-authored as a `source: manual` dod_evidence item before OMN-15911's flip conjunct can be satisfied. Recorded here rather than papered over with a ticket-independent suite that would read as proof (OMN-16434).
+    command: "uv run pytest <hand-authored target> -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1734"
+    description: "PR #1734 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1734 --repo OmniNode-ai/omnibase_core --json number,state"
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/pulls/1734/files --paginate --jq '.[].filename' | grep -cFx '.github/CODEOWNERS'
+  - id: "dod-occ-evidence-admissibility-validator"
+    description: "Hosted OCC evidence admissibility validator (OMN-15247)."
+    source: "generated"
+    evidence_artifact: "supersedes_dod_evidence:dod-OmniNode-ai-omnibase_core-pr-1734"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/test_evidence_admissibility.py -q"
+  - id: "occ-self-bind-pr-10714"
+    description: "Binds OMN-19059 to OCC companion PR #10714 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 10714 --repo OmniNode-ai/onex_change_control --json number,state"

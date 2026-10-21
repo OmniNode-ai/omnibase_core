@@ -1,0 +1,45 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-19041"
+title: "Core CI Summary external-context applicability by workflow event"
+summary: >-
+  Child follow-up under OMN-18928. Make Core CI Summary select only external check contexts whose producer
+  workflow fires for the current GitHub event. Pull-request protection remains strict; push and other
+  event runs must not wait forever for a pull-request-only advisory context.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+contract_completeness: ENRICHED
+proof_class: live-readback
+evidence_requirements:
+  - kind: tests
+    description: >-
+      The pinned omnibase_core source commit passes the focused CI Summary and workflow-shape tests covering
+      the explicit event map, strict pull-request advisory requirement, push success with only push producers,
+      unknown and missing event rejection, and parity with the three producer workflow trigger declarations.
+    command: >-
+      uv run --frozen pytest -q tests/unit/scripts/ci/test_ci_summary_gate.py tests/unit/validation/test_ci_workflow_shape.py
+  - kind: manual
+    description: >-
+      The Core source commit and retained proof log must be supplied at receipt time. This contract does
+      not assert release, runtime, Market, Infra, or the parent OMN-18928 K1 acceptance.
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "core-ci-summary-event-contexts"
+    description: >-
+      Core-only behavior proof for OMN-19041. The implementation passes github.event_name explicitly to
+      the CI Summary CLI for both the polling and deadline report paths. Its applicability map is pull_request
+      = DB ownership + LLM refs + advisory; push/workflow_dispatch = DB ownership + LLM refs; merge_group/schedule
+      = no current external producers; unknown or missing event = fail closed. Tests must retain strict
+      success-only evaluation for applicable contexts and prove producer-trigger parity from the three
+      workflow files.
+    source: manual
+    status: pending
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest -q tests/unit/scripts/ci/test_ci_summary_gate.py tests/unit/validation/test_ci_workflow_shape.py
+        cwd: "${OMNI_HOME}/omnibase_core"
