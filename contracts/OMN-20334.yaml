@@ -1,0 +1,59 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-20334"
+title: "no-unguarded-git-subprocess hook stops invoking a bare python"
+summary: "Hand-authored OCC evidence (OMN-15247) for OmniNode-ai/omnibase_core#1841: the no-unguarded-git-subprocess
+  hook entry in .pre-commit-hooks.yaml runs through uv run python instead of a bare python."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1841 product diff scope present"
+    command: "gh pr view ${PR_NUMBER} --repo ${REPO} --json files"
+  - kind: "tests"
+    description: "The hook entry in .pre-commit-hooks.yaml at the PR head invokes uv run python"
+    command: "gh api 'repos/OmniNode-ai/omnibase_core/contents/.pre-commit-hooks.yaml?ref=8e783f51d92b59b09a2fe4cb0bfb803c6155f06f'
+      --jq '.content' | base64 -d | grep -c 'entry: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess
+      tests'"
+  - kind: "ci"
+    description: "PR #2483 product diff scope present"
+    command: "gh pr view 2483 --repo OmniNode-ai/omniclaude --json files"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1841-ci"
+    description: "PR #1841 on OmniNode-ai/omnibase_core — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1841 --repo OmniNode-ai/omnibase_core --json files"
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1841"
+    description: >-
+      PR #1841 on OmniNode-ai/omnibase_core, hand-authored companion (OMN-15247): occ-autobind found no
+      candidate for .pre-commit-hooks.yaml. The check reads that file at the PR head 8e783f51d92b59b09a2fe4cb0bfb803c6155f06f
+      and counts the lines holding the new hook entry: 1 there.
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api 'repos/OmniNode-ai/omnibase_core/contents/.pre-commit-hooks.yaml?ref=8e783f51d92b59b09a2fe4cb0bfb803c6155f06f' --jq '.content' | base64 -d | grep -c 'entry: uv run python -m omnibase_core.validators.no_unguarded_git_subprocess tests'
+  - id: "dod-OmniNode-ai-omniclaude-pr-2483-ci"
+    description: "PR #2483 on OmniNode-ai/omniclaude: product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2483 --repo OmniNode-ai/omniclaude --json files"
+  - id: "dod-OmniNode-ai-omniclaude-pr-2483"
+    description: >-
+      PR #2483 on OmniNode-ai/omniclaude, hand-authored companion: the diff changes the entry of three
+      language:system hooks in .pre-commit-config.yaml to run through scripts/uv-run-worktree-safe.sh.
+      The check reads that file at the PR head and counts the entries of those three hooks that use the
+      wrapper (3).
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api -H 'Accept: application/vnd.github.raw' "repos/OmniNode-ai/omniclaude/contents/.pre-commit-config.yaml?ref=c58143a97337868c545a0737a20271a376e72004" | grep -cE 'entry: bash scripts/uv-run-worktree-safe.sh python scripts/(validation/validate_no_blocking_primitive_without_tests|ci/run_aislop_precommit|validate_frontmatter)\.py'

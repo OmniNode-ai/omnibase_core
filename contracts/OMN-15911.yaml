@@ -1,0 +1,77 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-15911"
+title: "Autobind OCC evidence for OMN-15911"
+summary: >
+  OCC contract authored by node_occ_companion_compute (OMN-14285) for OmniNode-ai/omnibase_core PR #1559.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1559 CI checks green"
+    command: "gh pr checks ${PR_NUMBER} --repo ${REPO}"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1559"
+    description: "PR #1559 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1559 --repo OmniNode-ai/omnibase_core --json number,state"
+      - check_type: "command"
+        check_value: "gh pr view 1559 --repo OmniNode-ai/omnibase_core --json files"
+  - id: "dod-occ-evidence-admissibility-validator"
+    description: "Hosted OCC evidence admissibility validator (OMN-15247)."
+    source: "generated"
+    evidence_artifact: "supersedes_dod_evidence:dod-OmniNode-ai-omnibase_core-pr-1559"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/test_evidence_admissibility.py -q"
+  - id: "occ-self-bind-pr-6619"
+    description: "Binds OMN-15911 to OCC companion PR #6619 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 6619 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2170"
+    description: "PR #2170 on OmniNode-ai/omnimarket — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/contents/src/omnimarket/enums/enum_check_proof_class.py?ref=f061c768879779b5c285498f175cdff6f098fbf9 --jq '.content' | base64 -d | grep -c 'class EnumCheckProofClass'
+  - id: "dod-OmniNode-ai-omnimarket-pr-2170-ci"
+    description: "PR #2170 on OmniNode-ai/omnimarket — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2170 --repo OmniNode-ai/omnimarket --json files"
+  - id: "occ-self-bind-pr-7333"
+    description: "OCC companion PR #7333 — self-bind for OMN-15911 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7333 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnibase_infra-pr-2947"
+    description: "PR #2947 on OmniNode-ai/omnibase_infra — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_infra/contents/src/omnibase_infra/nodes/node_evidence_autoclose_sweep_effect/handlers/handler_evidence_autoclose_sweep.py?ref=aa345f5eb6814fa4d876ed02ad33e7ff5a4783f0 --jq '.content' | base64 -d | grep -c 'def _behavior_proof_outcome'
+  - id: "dod-OmniNode-ai-omnibase_infra-pr-2947-ci"
+    description: "PR #2947 on OmniNode-ai/omnibase_infra — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2947 --repo OmniNode-ai/omnibase_infra --json files"
+  - id: "occ-self-bind-pr-7338"
+    description: "OCC companion PR #7338 — self-bind for OMN-15911 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 7338 --repo OmniNode-ai/onex_change_control --json number,state"

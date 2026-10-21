@@ -1,0 +1,98 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-16359"
+title: "Autobind OCC evidence for OMN-16359"
+summary: >
+  OCC contract authored by node_occ_companion_compute (OMN-14285) for OmniNode-ai/omnibase_core PR #1576.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1576 CI checks green"
+    command: "gh pr checks ${PR_NUMBER} --repo ${REPO}"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1576"
+    description: "PR #1576 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1576 --repo OmniNode-ai/omnibase_core --json number,state"
+      - check_type: "command"
+        check_value: "gh pr view 1576 --repo OmniNode-ai/omnibase_core --json files"
+  - id: "dod-occ-evidence-admissibility-validator"
+    description: "Hosted OCC evidence admissibility validator (OMN-15247)."
+    source: "generated"
+    evidence_artifact: "supersedes_dod_evidence:dod-OmniNode-ai-omnibase_core-pr-1576"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/test_evidence_admissibility.py -q"
+  - id: "occ-self-bind-pr-6841"
+    description: "Binds OMN-16359 to OCC companion PR #6841 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 6841 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1731"
+    description: "PR #1731 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1731 --repo OmniNode-ai/omnibase_core --json number,state"
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/pulls/1731/files --paginate --jq '.[].filename' | grep -cFx 'architecture-handshakes/pull-request-workflow-budget.yaml'
+  - id: "occ-self-bind-pr-10683"
+    description: "Binds OMN-16359 to OCC companion PR #10683 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 10683 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1785"
+    description: "PR #1785 on OmniNode-ai/omnibase_core — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/contents/tests/unit/test_occ_companion_effect_edited_trigger_omn_18334.py?ref=9faebe99e6f18d4506590875988430f15920bd2e --jq '.content' | base64 -d | grep -c 'def test_standalone_companion_caller_is_not_restored'
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1785-ci"
+    description: "PR #1785 on OmniNode-ai/omnibase_core — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1785 --repo OmniNode-ai/omnibase_core --json files"
+  - id: "dod-occ-diff-derived-behavior-proof-pr-1785"
+    description: "PR #1785 on OmniNode-ai/omnibase_core — diff-derived behavior proof (OMN-16434)."
+    source: "generated"
+    checks:
+      - check_type: "test_passes"
+        check_value: |-
+          uv run pytest tests/ci/test_occ_manual_replay_entrypoint.py tests/unit/scripts/ci/test_ci_summary_gate.py tests/unit/test_occ_companion_effect_edited_trigger_omn_18334.py -q
+        cwd: "${OMNI_HOME}/omnibase_core"
+  - id: "occ-self-bind-pr-11449"
+    description: "OCC companion PR #11449 — self-bind for OMN-16359 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 11449 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "occ-admissibility-omn16359-rb-skip"
+    description: >-
+      Disclosed-skip supersession of dod-occ-evidence-admissibility-validator, appended by hand. That
+      item's only check is 'uv run pytest tests/test_evidence_admissibility.py -q' with no declared cwd.
+      The test file exists only in onex_change_control, so the check exits 5 (no tests ran) in every product
+      workspace, which is what omnibase_core#1785's Contract Compliance Check read (run 36239062010, job
+      108396757650, head 9faebe99e6f18d4506590875988430f15920bd2e, evidence tree 006cbaf46). The pinned
+      runner (OCC 91f5b691) has no cwd or execution_scope field, so no declaration can route that check
+      to an OCC checkout. Same shape as occ-admissibility-omn19639-rb-skip in contracts/OMN-19639.yaml
+      and the OMN-19384 supersessions in contracts/OMN-18595.yaml. The product item the generated item
+      superseded, dod-OmniNode-ai-omnibase_core-pr-1576, is not restored: its two checks only read the
+      existence and file list of the earlier PR #1576, and the omnibase_core#1785 fact is carried by the
+      dod-OmniNode-ai-omnibase_core-pr-1785 items, which still execute. The admissibility suite itself
+      stays covered by OCC's own required CI on every OCC PR. Nothing here produces a PASS.
+    source: "manual"
+    status: "skipped"
+    evidence_artifact: "supersedes_dod_evidence:dod-occ-evidence-admissibility-validator"

@@ -1,0 +1,79 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-15392
+title: Declare the execution audience for credential-limited DoD evidence
+summary: >-
+  Add a typed evidence execution scope and make hosted contract compliance report local Done-gate evidence
+  as NOT-EVALUATED without executing or crediting it.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+evidence_requirements:
+  - kind: tests
+    description: >-
+      Hosted compliance skips local Done-gate evidence loudly, preserves the hosted proof floor, and rejects
+      unknown execution scopes.
+    command: >-
+      uv run pytest tests/test_contract_compliance_check.py tests/test_dod_evidence_schema.py -q
+  - kind: manual
+    description: >-
+      An independent local Done-gate run must execute a credential-limited positive control and keep a
+      wrong evidence identifier RED.
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-hosted-execution-policy
+    description: >-
+      Hosted compliance does not execute local_done_gate checks, reports them as NOT-EVALUATED, and does
+      not credit them toward the hosted proof floor.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run pytest tests/test_contract_compliance_check.py tests/test_dod_evidence_schema.py -q
+  - id: dod-execution-scope-fails-closed
+    description: >-
+      The evidence-item schema and hosted evaluator default compatibly and reject unknown or malformed
+      execution scopes without running them.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run pytest tests/test_contract_compliance_check.py tests/test_dod_evidence_schema.py -q
+  - id: dod-core1531-execution-scope-enum
+    description: >-
+      omnibase_core PR #1531 carries the typed DoD evidence execution-scope enum at exact product head
+      5a907b71c5cf321ed6407cd0509ec406afc81ff5.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          test "$(gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/enums/ticket/enum_dod_evidence_execution_scope.py?ref=5a907b71c5cf321ed6407cd0509ec406afc81ff5'
+          --jq .content | base64 -d | grep -c 'LOCAL_DONE_GATE = "local_done_gate"')" = "1" && test "$(gh
+          api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/enums/ticket/__init__.py?ref=5a907b71c5cf321ed6407cd0509ec406afc81ff5'
+          --jq .content | base64 -d | grep -c 'EnumDodEvidenceExecutionScope')" = "2" && printf 'core1531
+          execution-scope enum PASS\n'
+  - id: dod-core1531-contract-item-field
+    description: >-
+      omnibase_core PR #1531 wires ModelContractDodItem.execution_scope to the typed enum with the backwards-compatible
+      hosted_and_local default at exact product head 5a907b71c5cf321ed6407cd0509ec406afc81ff5.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          body="$(gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/ticket/model_contract_dod_item.py?ref=5a907b71c5cf321ed6407cd0509ec406afc81ff5'
+          --jq .content | base64 -d)" && printf '%s' "$body" | grep -q 'execution_scope: EnumDodEvidenceExecutionScope'
+          && printf '%s' "$body" | grep -q 'EnumDodEvidenceExecutionScope.HOSTED_AND_LOCAL' && printf
+          'core1531 contract-item execution_scope PASS\n'
+  - id: dod-occ5675-self-bind-core1531
+    description: >-
+      onex_change_control PR #5675 carries the OMN-15392 core#1531 product-bound receipt companion.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          test "$(gh api repos/OmniNode-ai/onex_change_control/commits/dbcabdeaa45d42a4490bf81012aa115c9ed9f288
+          --jq .sha)" = "dbcabdeaa45d42a4490bf81012aa115c9ed9f288" && printf 'occ5675 self-bind PASS\n'

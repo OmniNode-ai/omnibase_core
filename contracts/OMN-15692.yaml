@@ -1,0 +1,52 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-15692"
+title: "OCC companion for OMN-15692 (MSK gateway-only enforcement, round #3 remediation)"
+summary: >
+  OCC evidence companion for OmniNode-ai/omnibase_core PR #1547 — remediates 7 verifier-round-#3 defects
+  against the msk-direct-broker-endpoint url-authority rule (baseline self-defeat, anti-gaming repo-scope
+  blind spot, .env/.json/.tf/Dockerfile file-selection gaps, test-path substring exemption evasions).
+  Ruling 39, operator 2026-08-04.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1547"
+    description: "PR #1547 on OmniNode-ai/omnibase_core — content-bound probe on the round-#3 remediation
+      commit."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/validator_url_authority.py?ref=75c851266ba2583a3ccc4408f74ff79cb5449dc5 --jq '.content' | base64 -d | grep -c '_is_msk_scannable'
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1547-ci"
+    description: "PR #1547 on OmniNode-ai/omnibase_core — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 1547 --repo OmniNode-ai/omnibase_core --json files"
+  - id: "dod-omnibase_core-pr-1547-baseline-clean"
+    description: >-
+      Confirms the 3 known-live msk-direct-broker-endpoint violations are NOT grandfathered in the committed
+      baseline post-fix (defect 1 of the round-#3 remediation).
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/baselines/url_authority_baseline.json?ref=75c851266ba2583a3ccc4408f74ff79cb5449dc5 --jq '.content' | base64 -d | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for v in d['violations'] if v.get('rule')=='msk-direct-broker-endpoint'))"
+  - id: "dod-occ-evidence-admissibility-validator"
+    description: "Hosted OCC evidence admissibility validator (OMN-15247)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/test_evidence_admissibility.py -q"
+  - id: "occ-self-bind-pr-6083"
+    description: "Binds OMN-15692 to OCC companion PR #6083 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 6083 --repo OmniNode-ai/onex_change_control --json number,state"

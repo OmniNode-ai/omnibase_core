@@ -1,0 +1,32 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-18712
+title: Validate complete contract documents in the contract loader
+summary: Validate complete contract documents in the contract loader
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+contract_completeness: STUB
+evidence_requirements:
+  - kind: tests
+    description: All tests pass
+    command: uv run pytest tests/ -v
+  - kind: ci
+    description: CI passes
+    command: pre-commit run --all-files
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1920"
+    description: >-
+      PR #1920 on OmniNode-ai/omnibase_core, hand-authored companion: the contract loader in src/omnibase_core/utils/util_contract_loader.py
+      passes the complete contract document to ModelContractContent.model_validate. The check counts that
+      call at PR commit ef6b35cf49fd30e930da33cbd31b808b6c970c6e (1); at the parent commit it is absent
+      (0).
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api -H 'Accept: application/vnd.github.raw' "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/utils/util_contract_loader.py?ref=ef6b35cf49fd30e930da33cbd31b808b6c970c6e" | grep -c 'ModelContractContent.model_validate'

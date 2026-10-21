@@ -363,6 +363,15 @@ requirements:
         statement: "AC46: A first declared terminal that cannot be subscribed still fails the run at once,
           and leaves no later terminal subscription bound. -- falsifier: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py
           -q -k test_a_fatal_first_terminal_leaves_no_extra_terminal_bound"
+  - id: req-omn17427-repo-local-migrated-contracts
+    statement: The twenty migrated ticket contracts are readable from the owning repository without a
+      change-control checkout and retain their ticket identities and populated evidence.
+    acceptance:
+      - id: AC47
+        statement: "AC47: All twenty migrated contracts load from contracts/<ticket>.yaml through ModelTicketContract
+          with matching ticket identities and at least their migrated evidence counts, with populated
+          checks and retained disclosed supersessions. -- falsifier: uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
+          -q -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -984,3 +993,17 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC46
+  - id: dod-omn17427-deploy-repo-local-migrated-contracts
+    description: Hosted contract lookup probe reads all twenty migrated contracts from the checked-out
+      owning repository through ModelTicketContract and refuses missing files, mismatched identities,
+      lost evidence items or missing check values, preserving disclosed supersessions. No change-control
+      checkout or remote service is required.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC47
