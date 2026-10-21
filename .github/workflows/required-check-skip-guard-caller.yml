@@ -45,4 +45,4 @@ permissions:
 jobs:
   required-check-skip-guard:
     # pinned to omniclaude dev commit carrying the current reusable guard.
-    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@cc59bc1087f96c268e797995e17bf5d9bdc0c2db
+    uses: OmniNode-ai/omniclaude/.github/workflows/required-check-skip-guard-reusable.yml@beffbe1c3a85d42cefd261a18a2eaa1c27756071

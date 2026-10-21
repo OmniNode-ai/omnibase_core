@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   deploy-gate:
-    uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@cc59bc1087f96c268e797995e17bf5d9bdc0c2db  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
+    uses: OmniNode-ai/omniclaude/.github/workflows/deploy-gate-reusable.yml@beffbe1c3a85d42cefd261a18a2eaa1c27756071  # omniclaude, sha-pinned (OMN-20001); bump = consumer PR
     with:
       # OMN-20074: read the cited ticket's contract from this repository's
       # contracts/OMN-<n>.yaml at the pull request head, not onex_change_control.

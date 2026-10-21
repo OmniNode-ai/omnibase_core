@@ -160,7 +160,7 @@ jobs:
   # reports for a `uses:` job; renaming either half breaks the registration.
   route:
     name: Runner Route (OMN-18031)
-    uses: OmniNode-ai/omnimarket/.github/workflows/route-runner-reusable.yml@01a0d1b3e7d7ba1a09012f9af245ba29afa000b5
+    uses: OmniNode-ai/omnimarket/.github/workflows/route-runner-reusable.yml@cbefee267da431149087f84955f18f9f1175a50c
     with:
       workflow_path: .github/workflows/ci.yml
     secrets:
@@ -192,7 +192,7 @@ jobs:
   # runs the same commit.
   public-repo-hygiene:
     if: github.event_name == 'pull_request' && github.base_ref == 'dev'
-    uses: OmniNode-ai/omniclaude/.github/workflows/public-repo-hygiene-reusable.yml@0c9f9146d8dd0446fc5c10952aa57247b3a880ae
+    uses: OmniNode-ai/omniclaude/.github/workflows/public-repo-hygiene-reusable.yml@beffbe1c3a85d42cefd261a18a2eaa1c27756071
     with:
       mode: report
     secrets: inherit
@@ -249,7 +249,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Judge wheel content parity
-        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@147c9a4a7b816d94088e730fe2a665c0c2a0eaee
+        uses: OmniNode-ai/omnibase_infra/.github/actions/wheel-content-parity@54c57239d6cea8efdba9e076e768d5aa15bfd2ab
         with:
           package: omnibase_core
 
@@ -3541,7 +3541,7 @@ jobs:
   # frozen baseline count down (it may never grow).
   pydantic-extra-forbid-baseline-oneway:
     name: Pydantic extra="forbid" Baseline One-way (OMN-19677)
-    uses: OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@cc59bc1087f96c268e797995e17bf5d9bdc0c2db
+    uses: OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@beffbe1c3a85d42cefd261a18a2eaa1c27756071
     with:
       baseline-path: src/omnibase_core/validators/extra_forbid_baseline.yaml
       parser: yaml-list:violations
@@ -3764,7 +3764,7 @@ jobs:
   # diverge, and advancing the gate is those two lines changed together.
   secrets-baseline-wiring:
     name: secrets-baseline-wiring
-    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@966d61ce9f0c2eb6e18b317c2453bdfbe9eeb7d0
+    uses: OmniNode-ai/omniclaude/.github/workflows/secrets-baseline-wiring-reusable.yml@beffbe1c3a85d42cefd261a18a2eaa1c27756071
 
   # ===========================================================================
   # OMN-20074: verification gates folded in from standalone workflows.
@@ -5103,7 +5103,7 @@ jobs:
         || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
       }}
     steps:
-      - uses: OmniNode-ai/omnibase_core/.github/actions/validate-boundaries@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1 # omnibase_core dev (OMN-20074): #1972, no change-control boundary
+      - uses: OmniNode-ai/omnibase_core/.github/actions/validate-boundaries@dc5d5b53721d309c5a9f7299bbfa49340bc9c2f7 # omnibase_core dev (OMN-20074): #1972, no change-control boundary
         with:
           checks: "boundary-parity"
           warn-only: "false"

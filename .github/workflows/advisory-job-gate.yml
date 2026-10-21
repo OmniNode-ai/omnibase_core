@@ -55,5 +55,5 @@ jobs:
   # reads and checks the advisory-automation declarations in auto-merge.yml
   # and propagate-config.yml; the earlier pin reports those jobs as unenforced.
   advisory-job-gate:
-    uses: OmniNode-ai/omniclaude/.github/workflows/advisory-job-gate-reusable.yml@cc59bc1087f96c268e797995e17bf5d9bdc0c2db
+    uses: OmniNode-ai/omniclaude/.github/workflows/advisory-job-gate-reusable.yml@beffbe1c3a85d42cefd261a18a2eaa1c27756071
     secrets: inherit
