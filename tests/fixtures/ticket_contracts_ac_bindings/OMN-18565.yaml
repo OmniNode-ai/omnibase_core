@@ -1,0 +1,400 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-18565"
+title: "Autobind OCC evidence for OMN-18565"
+summary: "OCC Evidence-Source autobind companion (OMN-13317 F1) for PR #2615."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #2615 product diff scope present"
+    command: "gh pr view ${PR_NUMBER} --repo ${REPO} --json files"
+  - kind: "tests"
+    description: |-
+      Behavior proof for PR #2615 on OmniNode-ai/omnimarket, derived from the PR's own diff: the test target(s) it adds or changes. Bound as dod_evidence item `dod-occ-diff-derived-behavior-proof`, executed at cwd `${OMNI_HOME}/omnimarket`.
+    command: |-
+      uv run pytest tests/test_omn15683_tenant_uuid_migration_real_postgres.py tests/test_omn15905_delegation_projection_writer_seam.py tests/test_omn15909_real_postgres_projection_write_path_gate.py tests/test_omn17228_quality_gate_result_not_null_columns.py -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnimarket-pr-2615"
+    description: "PR #2615 on OmniNode-ai/omnimarket — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/contents/src/omnimarket/nodes/node_delegation_orchestrator/dispatchers/dispatcher_delegation_workflow.py?ref=04b931f27d9e5570e26a09d50c58613c14cf9235 --jq '.content' | base64 -d | grep -c 'def _consumed_envelope_tenant_id'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+      - "AC5"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "ca67299eef44cc51962dab6f1acb8d071c336b2f3246d81409808d5cb5990484"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC2"
+        criterion_hash: "c0e8d24567e23f64f7b4a808148839819cecc924a457e4774166eab0088a80f1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC3"
+        criterion_hash: "f86836f9f7d3420520bcd69c9a0cba8cbee8352812fe396aa6a59a63cba189e1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC4"
+        criterion_hash: "d9b102de8465f219df11a828209d0e7e494adc0ce91885cee374f532b9dd2d67"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC5"
+        criterion_hash: "dbad8c2c2784b87491fbf455d2227deefc8a8c034f7db62d7f8507bd4a3a284d"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2615-ci"
+    description: "PR #2615 on OmniNode-ai/omnimarket — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2615 --repo OmniNode-ai/omnimarket --json files"
+  - id: "dod-occ-diff-derived-behavior-proof"
+    description: "PR #2615 on OmniNode-ai/omnimarket — diff-derived behavior proof (OMN-16434)."
+    source: "generated"
+    checks:
+      - check_type: "test_passes"
+        check_value: |-
+          uv run pytest tests/test_omn15683_tenant_uuid_migration_real_postgres.py tests/test_omn15905_delegation_projection_writer_seam.py tests/test_omn15909_real_postgres_projection_write_path_gate.py tests/test_omn17228_quality_gate_result_not_null_columns.py -q
+        cwd: "${OMNI_HOME}/omnimarket"
+  - id: "occ-self-bind-pr-9970"
+    description: "OCC companion PR #9970 — self-bind for OMN-18565 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 9970 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnibase_infra-pr-3679"
+    description: "PR #3679 on OmniNode-ai/omnibase_infra — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_infra/contents/src/omnibase_infra/runtime/auto_wiring/handler_wiring.py?ref=109fa33771f49f760c479e9017d04058550b197c --jq '.content' | base64 -d | grep -c 'def _extract_projection_envelope_tenant'
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_infra/pulls/3679/files --paginate --jq '.[].filename' | grep -cFx 'docker/migrations/forward/_ledger/application-migrations.tsv'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+      - "AC5"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "ca67299eef44cc51962dab6f1acb8d071c336b2f3246d81409808d5cb5990484"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC2"
+        criterion_hash: "c0e8d24567e23f64f7b4a808148839819cecc924a457e4774166eab0088a80f1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC3"
+        criterion_hash: "f86836f9f7d3420520bcd69c9a0cba8cbee8352812fe396aa6a59a63cba189e1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC4"
+        criterion_hash: "d9b102de8465f219df11a828209d0e7e494adc0ce91885cee374f532b9dd2d67"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC5"
+        criterion_hash: "dbad8c2c2784b87491fbf455d2227deefc8a8c034f7db62d7f8507bd4a3a284d"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+  - id: "dod-deploy-assessment"
+    description: "Deploy-scope DoD so PR #3679 clears the deploy-gate (F-05)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_infra/pulls/3679/files --paginate --jq '.[].filename' | grep -ciE 'nodes/|handlers/|runtime/|services/|docker|monitor_logs|deploy'
+  - id: "dod-occ-diff-derived-behavior-proof-3679"
+    description: "PR #3679 on OmniNode-ai/omnibase_infra — diff-derived behavior proof (OMN-16434)."
+    source: "generated"
+    checks:
+      - check_type: "test_passes"
+        check_value: |-
+          uv run pytest tests/unit/runtime/auto_wiring/test_handler_wiring_db_injection.py tests/unit/scripts/validation/test_application_migration_manifest.py -q
+        cwd: "${OMNI_HOME}/omnibase_infra"
+  - id: "occ-self-bind-pr-9968"
+    description: "Binds OMN-18565 to OCC companion PR #9968 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 9968 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2620"
+    description: "PR #2620 on OmniNode-ai/omnimarket — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/contents/tests/test_omn18565_ordering_independent_verdict_terminal_rls.py?ref=1fca1e3f7ed4f2a0b320e58522ed03382c9e98cd --jq '.content' | base64 -d | grep -c 'class TestTheRefusalSurvivesRedelivery'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+      - "AC5"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "ca67299eef44cc51962dab6f1acb8d071c336b2f3246d81409808d5cb5990484"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC2"
+        criterion_hash: "c0e8d24567e23f64f7b4a808148839819cecc924a457e4774166eab0088a80f1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC3"
+        criterion_hash: "f86836f9f7d3420520bcd69c9a0cba8cbee8352812fe396aa6a59a63cba189e1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC4"
+        criterion_hash: "d9b102de8465f219df11a828209d0e7e494adc0ce91885cee374f532b9dd2d67"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC5"
+        criterion_hash: "dbad8c2c2784b87491fbf455d2227deefc8a8c034f7db62d7f8507bd4a3a284d"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2620-ci"
+    description: "PR #2620 on OmniNode-ai/omnimarket — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2620 --repo OmniNode-ai/omnimarket --json files"
+  - id: "occ-self-bind-pr-9994"
+    description: "OCC companion PR #9994 — self-bind for OMN-18565 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 9994 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnibase_infra-pr-3691"
+    description: "PR #3691 on OmniNode-ai/omnibase_infra — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 3691 --repo OmniNode-ai/omnibase_infra --json number,state"
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnibase_infra/pulls/3691/files --paginate --jq '.[].filename' | grep -cFx 'CHANGELOG.md'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+      - "AC5"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "ca67299eef44cc51962dab6f1acb8d071c336b2f3246d81409808d5cb5990484"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC2"
+        criterion_hash: "c0e8d24567e23f64f7b4a808148839819cecc924a457e4774166eab0088a80f1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC3"
+        criterion_hash: "f86836f9f7d3420520bcd69c9a0cba8cbee8352812fe396aa6a59a63cba189e1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC4"
+        criterion_hash: "d9b102de8465f219df11a828209d0e7e494adc0ce91885cee374f532b9dd2d67"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC5"
+        criterion_hash: "dbad8c2c2784b87491fbf455d2227deefc8a8c034f7db62d7f8507bd4a3a284d"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+  - id: "occ-self-bind-pr-10002"
+    description: "Binds OMN-18565 to OCC companion PR #10002 (self-bind)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 10002 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2622"
+    description: "PR #2622 on OmniNode-ai/omnimarket raises the omnibase-infra floor from >=0.38.29 to
+      >=0.38.30 in both the direct dependency list and the [tool.uv] override-dependencies block, relocks
+      uv.lock onto the published 0.38.30 wheel, and retires the forward declaration omnimarket#2615 left
+      behind: _tenant_id is deleted from PENDING_UPSTREAM_INJECTED_KEYS, whose own comment requires that
+      deletion in the change that bumps the pin. 0.38.30 is the first release carrying omnibase_infra#3679
+      (068c3a0c1), whose kernel projection dispatch injects the producer-recorded envelope tenant. Hand-authored
+      because occ-autobind DECLINED to mint a companion for this PR (skip:NO_RED_DERIVABLE_CHECK) against
+      merge-base derivation."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/pulls/2622/files --paginate --jq '[.[].filename] | sort | join(",")' | grep -cFx 'pyproject.toml,src/omnimarket/projection/handler_shim.py,tests/test_omn16249_projection_injected_key_seam.py,uv.lock'
+      - check_type: "command"
+        check_value: |-
+          gh api 'repos/OmniNode-ai/omnimarket/contents/pyproject.toml?ref=d0627982b2cfacd8041912ae9b28ddb4aa88c5f6' --jq '.content' | base64 -d | grep -c 'omnibase-infra>=0.38.30,<0.39.0'
+      - check_type: "command"
+        check_value: |-
+          gh api 'repos/OmniNode-ai/omnimarket/contents/src/omnimarket/projection/handler_shim.py?ref=d0627982b2cfacd8041912ae9b28ddb4aa88c5f6' --jq '.content' | base64 -d | grep -cx '        INJECTED_TENANT_ID_KEY,'
+  - id: "dod-OmniNode-ai-omnimemory-pr-511"
+    description: "PR #511 on OmniNode-ai/omnimemory — downstream lockfile bump to omnibase-infra 0.38.30."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          diff_text="$(gh pr diff 511 --repo OmniNode-ai/omnimemory)" && grep -q '+version = "0.38.30"' <<< "$diff_text"
+      - check_type: "command"
+        check_value: |-
+          test "$(gh pr view 511 --repo OmniNode-ai/omnimemory --json files --jq '.files | length')" = "1" && gh pr view 511 --repo OmniNode-ai/omnimemory --json files --jq '.files[0].path' | grep -qxF 'uv.lock'
+  - id: "dod-OmniNode-ai-omniclaude-pr-2219"
+    description: "PR #2219 on OmniNode-ai/omniclaude — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omniclaude/contents/uv.lock?ref=873d831a23e302a39c266d591af3cc481e5ccf1e --jq '.content' | base64 -d | grep -cF 'https://files.pythonhosted.org/packages/ad/85/007f49c368e66e8e860da7e2f3304b977c6728344687eefd85ac9ad3cc16/omnibase_infra-0.38.30.tar.gz'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+      - "AC5"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "ca67299eef44cc51962dab6f1acb8d071c336b2f3246d81409808d5cb5990484"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC2"
+        criterion_hash: "c0e8d24567e23f64f7b4a808148839819cecc924a457e4774166eab0088a80f1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC3"
+        criterion_hash: "f86836f9f7d3420520bcd69c9a0cba8cbee8352812fe396aa6a59a63cba189e1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC4"
+        criterion_hash: "d9b102de8465f219df11a828209d0e7e494adc0ce91885cee374f532b9dd2d67"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC5"
+        criterion_hash: "dbad8c2c2784b87491fbf455d2227deefc8a8c034f7db62d7f8507bd4a3a284d"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+  - id: "dod-OmniNode-ai-omniclaude-pr-2219-ci"
+    description: "PR #2219 on OmniNode-ai/omniclaude — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2219 --repo OmniNode-ai/omniclaude --json files"
+  - id: "occ-self-bind-pr-10047"
+    description: "OCC companion PR #10047 — self-bind for OMN-18565 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 10047 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2633"
+    description: "PR #2633 on OmniNode-ai/omnimarket — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/contents/tests/test_omn18159_inprocess_row_republish.py?ref=51c76c3dca3f2eb45e52326f30b13a4218dce63e --jq '.content' | base64 -d | grep -c 'class TestTheAggregateRepublishUsesTheReturnedTenant'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+      - "AC5"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "ca67299eef44cc51962dab6f1acb8d071c336b2f3246d81409808d5cb5990484"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC2"
+        criterion_hash: "c0e8d24567e23f64f7b4a808148839819cecc924a457e4774166eab0088a80f1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC3"
+        criterion_hash: "f86836f9f7d3420520bcd69c9a0cba8cbee8352812fe396aa6a59a63cba189e1"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC4"
+        criterion_hash: "d9b102de8465f219df11a828209d0e7e494adc0ce91885cee374f532b9dd2d67"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+      - label: "AC5"
+        criterion_hash: "dbad8c2c2784b87491fbf455d2227deefc8a8c034f7db62d7f8507bd4a3a284d"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-17T09:15:00Z"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2633-ci"
+    description: "PR #2633 on OmniNode-ai/omnimarket — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2633 --repo OmniNode-ai/omnimarket --json files"
+  - id: "dod-deploy-OmniNode-ai-omnimarket-pr-2633"
+    description: "Deploy-scope proof for PR #2633 on OmniNode-ai/omnimarket: runtime handler contains
+      the tenant normalization required before aggregate re-read filters."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api 'repos/OmniNode-ai/omnimarket/contents/src/omnimarket/nodes/node_projection_delegation/handlers/handler_projection_delegation.py?ref=51c76c3dca3f2eb45e52326f30b13a4218dce63e' --jq '.content' | base64 -d | grep -c 'tenant_id = str(tenant)'
+  - id: "occ-self-bind-pr-10143"
+    description: "OCC companion PR #10143 — self-bind for OMN-18565 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 10143 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-market-2633-ddc12c5f"
+    description: "Current-head behavior proof for PR #2633 on OmniNode-ai/omnimarket after the model authority
+      alignment commit."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/contents/tests/test_omn18159_inprocess_row_republish.py?ref=ddc12c5f015fa331be0698b71068f73905d5f597 --jq '.content' | base64 -d | grep -c 'class TestTheAggregateRepublishUsesTheReturnedTenant'
+  - id: "dod-deploy-market-2633-ddc12c5f"
+    description: "Current-head deploy-scope proof for PR #2633 on OmniNode-ai/omnimarket: runtime handler
+      contains the tenant normalization required before aggregate re-read filters."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api 'repos/OmniNode-ai/omnimarket/contents/src/omnimarket/nodes/node_projection_delegation/handlers/handler_projection_delegation.py?ref=ddc12c5f015fa331be0698b71068f73905d5f597' --jq '.content' | base64 -d | grep -c 'tenant_id = str(tenant)'

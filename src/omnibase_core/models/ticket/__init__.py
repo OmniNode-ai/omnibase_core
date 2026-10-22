@@ -41,6 +41,7 @@ if TYPE_CHECKING:
         Status,
         VerificationKind,
     )
+    from omnibase_core.models.ticket.model_ac_binding import ModelAcBinding
     from omnibase_core.models.ticket.model_acceptance_criterion import (
         ModelAcceptanceCriterion,
     )
@@ -132,6 +133,7 @@ __all__ = [
     "VerificationKind",
     "GateKind",
     # Sub-models (canonical names)
+    "ModelAcBinding",
     "ModelAcceptanceCriterion",
     "ModelClarifyingQuestion",
     "ModelInterfaceConsumed",
@@ -202,6 +204,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "Phase": ("omnibase_core.enums.ticket", "Phase"),
     "Status": ("omnibase_core.enums.ticket", "Status"),
     "VerificationKind": ("omnibase_core.enums.ticket", "VerificationKind"),
+    "ModelAcBinding": (
+        "omnibase_core.models.ticket.model_ac_binding",
+        "ModelAcBinding",
+    ),
     "ModelAcceptanceCriterion": (
         "omnibase_core.models.ticket.model_acceptance_criterion",
         "ModelAcceptanceCriterion",

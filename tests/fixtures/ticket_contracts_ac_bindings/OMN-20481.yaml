@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-20481"
+title: "Autobind OCC evidence for OMN-20481"
+summary: "OCC Evidence-Source autobind companion (OMN-13317 F1) for PR #3354."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: "req-transcribed-acceptance-criteria"
+    statement: |-
+      The acceptance criteria this ticket's author declared, transcribed from the ticket body at autobind time by occ-autobind. The ticket body is the source and this block is the copy; each criterion's id is the label the sibling binds_ac entry claims.
+    acceptance:
+      - id: "AC1"
+        statement: |-
+          AC1: a harness-delegate event with a prompt longer than 4000 characters is emitted with the whole prompt, or with a blob reference plus prompt_chars and prompt_sha256 that resolves to the whole prompt -- falsifier: a red-first pytest in the harness emitter suite that emits a 12000-character prompt and asserts the event reproduces it byte for byte or by sha256
+      - id: "AC2"
+        statement: |-
+          AC2: the omnimarket delegation projection persists the full prompt and response, or the blob reference with length and sha256, into delegation_events without dropping the new keys -- falsifier: a red-first pytest in node_projection_delegation that projects an event with a 12000-character prompt and reads the row back, asserting length and sha256 equal the input
+      - id: "AC3"
+        statement: |-
+          AC3: secret redaction still runs before storage, so a prompt that contains a credential-shaped string is stored with that string redacted -- falsifier: a pytest that projects a prompt with a planted credential and asserts the stored text and blob contain no trace of it
+      - id: "AC4"
+        statement: |-
+          AC4: a prompt longer than 4000 characters round-trips on the dev lane from emit to a delegation_events readback with matching length and sha256 -- falsifier: a dev-lane run id and a read-only SELECT of prompt length and sha256 for that correlation id compared with the sent prompt
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #3354 product diff scope present"
+    command: "gh pr view ${PR_NUMBER} --repo ${REPO} --json files"
+  - kind: "tests"
+    description: |-
+      Behavior proof for PR #3354 on OmniNode-ai/omnimarket, derived from the PR's own diff: the test target(s) it adds or changes. Bound as dod_evidence item `dod-occ-diff-derived-behavior-proof`, executed at cwd `${OMNI_HOME}/omnimarket`.
+    command: "uv run pytest tests/test_delegation_full_prompt_roundtrip.py -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnimarket-pr-3354"
+    description: "PR #3354 on OmniNode-ai/omnimarket — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/contents/tests/test_delegation_full_prompt_roundtrip.py?ref=ba7e32087c50eae5a64e50bbc486e16701852447 --jq '.content' | base64 -d | grep -c 'def _sha'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "1adc73bfdbc763686301649530201cea2ce064001510aa38a743eaef50b13346"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-10-04T00:26:31Z"
+      - label: "AC2"
+        criterion_hash: "a2b2b0b14341de68ab56b8c5f263d6ce370bdba959fa00c86953bcf34b99db40"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-10-04T00:26:31Z"
+      - label: "AC3"
+        criterion_hash: "365fcebb5eda66f6dd42f5246521ce78db4c487355a0f7d49335fc39ea5cc016"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-10-04T00:26:31Z"
+      - label: "AC4"
+        criterion_hash: "68785ad77cafd49b6de64f5dabf5a226f46c7257c8ebe4a43c9503975eb2b776"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-10-04T00:26:31Z"
+  - id: "occ-self-bind-pr-12700"
+    description: "OCC companion PR #12700 — self-bind for OMN-20481 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 12700 --repo OmniNode-ai/onex_change_control --json number,state"
+  - id: "dod-OmniNode-ai-omnimarket-pr-3354-ci"
+    description: "PR #3354 on OmniNode-ai/omnimarket — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 3354 --repo OmniNode-ai/omnimarket --json files"
+  - id: "dod-occ-diff-derived-behavior-proof-pr-3354"
+    description: "PR #3354 on OmniNode-ai/omnimarket — diff-derived behavior proof (OMN-16434)."
+    source: "generated"
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/test_delegation_full_prompt_roundtrip.py -q"
+        cwd: "${OMNI_HOME}/omnimarket"
