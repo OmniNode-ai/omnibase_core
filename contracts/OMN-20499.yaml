@@ -1,0 +1,32 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-20499"
+title: "Sync omnibase_core uv.lock to the pyproject.toml version 0.47.34"
+summary: "Hand-authored evidence companion for omnibase_core#1879, which regenerates uv.lock so the omnibase-core
+  entry records 0.47.34, the version pyproject.toml already carries."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: "req-uvlock-version-sync"
+    statement: "uv.lock records the same omnibase-core version as pyproject.toml."
+    acceptance:
+      - id: "AC1"
+        statement: "uv.lock at the PR head names omnibase-core version 0.47.34."
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #1879 product diff scope present"
+    command: "gh pr view ${PR_NUMBER} --repo ${REPO} --json files"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnibase_core-pr-1879"
+    description: "PR #1879 on OmniNode-ai/omnibase_core, hand-authored companion. The check counts the
+      omnibase-core entries in omnibase_core's uv.lock at the PR head that record version 0.47.34."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api "repos/OmniNode-ai/omnibase_core/contents/uv.lock?ref=4964aed1b466c3855a18f998bfd6b2ced1e67c48" -H 'Accept: application/vnd.github.raw' | grep -A1 '^name = "omnibase-core"$' | grep -c '^version = "0.47.34"$'
