@@ -292,10 +292,21 @@ jobs:
       - name: Fail red on any real leg failure (no silent gates)
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          SETTLE_ATTEMPTS: "6"
+          SETTLE_SLEEP_SECONDS: "10"
         run: |
           set -euo pipefail
-          FAILED=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --paginate \
-            --jq '.jobs[] | select(.name | startswith("Bump: ")) | select(.conclusion != "success" and .conclusion != "skipped") | "\(.name): \(.conclusion)"')
+          # OMN-20074 (run 39816628531): completed legs can briefly have null conclusions.
+          for ((attempt=1; attempt<=SETTLE_ATTEMPTS; attempt++)); do
+            JOBS=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --paginate \
+              --jq '.jobs[]')
+            UNSETTLED=$(printf '%s\n' "$JOBS" | jq -s '[.[] | select(.name | startswith("Bump: ")) | select(.status != "completed" or .conclusion == null)] | length')
+            if [ "$UNSETTLED" -eq 0 ] || [ "$attempt" -eq "$SETTLE_ATTEMPTS" ]; then
+              break
+            fi
+            sleep "$SETTLE_SLEEP_SECONDS"
+          done
+          FAILED=$(printf '%s\n' "$JOBS" | jq -r 'select(.name | startswith("Bump: ")) | select(.conclusion != "success" and .conclusion != "skipped") | "\(.name): \(.conclusion)"')
           if [ -n "$FAILED" ]; then
             {
               echo "## Downstream pin-bump leg failures"
