@@ -43,6 +43,8 @@ pytestmark = pytest.mark.unit
         ("OMN-19041", 1),
         ("OMN-19059", 3),
         ("OMN-20334", 4),
+        ("OMN-20450", 1),
+        ("OMN-20499", 1),
     ],
 )
 def test_migrated_contract_loads_with_evidence(

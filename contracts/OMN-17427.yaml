@@ -372,6 +372,16 @@ requirements:
           with matching ticket identities and at least their migrated evidence counts, with populated
           checks and retained disclosed supersessions. -- falsifier: uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
           -q -o addopts=''"
+  - id: req-omn17427-repo-local-migrated-contracts-cc0130
+    statement: The OMN-20450 and OMN-20499 contracts moved from onex_change_control are readable from
+      the owning repository without a change-control checkout and retain their ticket identities and populated
+      evidence.
+    acceptance:
+      - id: AC49
+        statement: "AC49: contracts/OMN-20450.yaml and contracts/OMN-20499.yaml load through ModelTicketContract
+          with matching ticket identities, at least one evidence item each and populated check values.
+          -- falsifier: uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
+          -q -o addopts='' -k 'OMN-20450 or OMN-20499'"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -467,6 +477,11 @@ evidence_requirements:
     description: "RuntimeLocal joins the declared terminal subscriptions concurrently, and a fatal first
       terminal leaves no later terminal bound."
     command: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py -q
+  - kind: tests
+    description: "The OMN-20450 and OMN-20499 contracts load from the owning repository with their ticket
+      identities and populated evidence."
+    command: "uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py -q -k
+      'OMN-20450 or OMN-20499'"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1007,3 +1022,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC47
+  - id: dod-omn17427-migrated-contracts-cc0130
+    description: Hosted contract lookup probe reads the OMN-20450 and OMN-20499 contracts from the checked-out
+      owning repository through ModelTicketContract and refuses a missing file, a mismatched identity
+      or a missing check value. No change-control checkout or remote service is required.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
+          -q -o addopts='' -k 'OMN-20450 or OMN-20499'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC49
