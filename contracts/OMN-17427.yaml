@@ -399,6 +399,14 @@ requirements:
         statement: "AC50: The receipt-gate dod-verify job's timeout-minutes is 60 and the verify no-op
           job's stays 5. -- falsifier: uv run pytest tests/ci/test_receipt_gate_dod_verify_budget_omn17427.py
           -q -o addopts=''"
+  - id: req-omn17427-hosted-ci-probe-sources
+    statement: Hosted CI inheritance and repository-jobs evidence compares the checked-out implementation
+      with its published revision after the shrink-only baseline update in PR 2071.
+    acceptance:
+      - id: AC51
+        statement: "AC51: Both hosted probes pin the updated CLI and repository-jobs handler to their
+          published implementation revision and keep pipefail, curl failure handling and byte comparisons.
+          -- falsifier: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -507,6 +515,10 @@ evidence_requirements:
     description: "The receipt-gate dod-verify job's budget is 60 minutes and the verify no-op job's stays
       5, giving a large caller contract time to reach a verdict."
     command: uv run pytest tests/ci/test_receipt_gate_dod_verify_budget_omn17427.py -q -o addopts=''
+  - kind: tests
+    description: The carried hosted source probes pin the published CLI and repository-jobs implementation
+      and retain strict byte comparisons.
+    command: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''
 emergency_bypass:
   enabled: false
   justification: ''
@@ -595,9 +607,10 @@ dod_evidence:
       - AC9
   - id: dod-omn-17427-deploy-hosted-ci-inheritance
     description: Hosted deploy probe for the library's CI-inheritance handler and CLI. Read both published
-      source files at the immutable PR implementation commit and compare their bytes with the checked-out
-      product, then exercise rejection of new references and acceptance of existing references. A missing
-      published file, different implementation or incorrect handler behavior fails the probe.
+      source files at their immutable implementation commits (the CLI includes PR 2071) and compare their
+      bytes with the checked-out product, then exercise rejection of new references and acceptance of
+      existing references. A missing published file, different implementation or incorrect handler behavior
+      fails the probe.
     source: manual
     execution_scope: hosted_and_local
     checks:
@@ -667,9 +680,9 @@ dod_evidence:
       - AC12
   - id: dod-omn-17427-deploy-hosted-repository-jobs
     description: Hosted deploy probe for the library's repository-jobs handler. Read the handler and the
-      CLI at the immutable PR implementation commit and compare their bytes with the checked-out product,
-      then exercise rejection of a new inline job and acceptance of existing ones. A missing published
-      file, different implementation or incorrect handler behavior fails the probe.
+      CLI at PR 2071's immutable landed commit and compare their bytes with the checked-out product, then
+      exercise rejection of a new inline job and acceptance of existing ones. A missing published file,
+      different implementation or incorrect handler behavior fails the probe.
     source: manual
     execution_scope: hosted_and_local
     checks:
@@ -1085,3 +1098,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC50
+  - id: dod-omn17427-hosted-ci-probe-sources
+    description: Offline regression for the carried hosted deploy probes. Check all three published-source
+      comparisons against the landed revision; refuse stale pins, missing comparisons or weakened curl/cmp
+      commands. The existing hosted probes still fetch and compare the published files and exercise handler
+      behavior.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC51
