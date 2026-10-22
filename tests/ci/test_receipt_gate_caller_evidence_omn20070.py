@@ -83,7 +83,8 @@ def test_jobs_run_without_conditions_and_preserve_caller_verification() -> None:
         )
         == verify["runs-on"]
     )
-    assert caller["timeout-minutes"] == 40
+    # OMN-17427: a caller contract with hundreds of bound checks needs 60 minutes.
+    assert caller["timeout-minutes"] == 60
     assert caller["env"] == {"ACTIONS_CACHE_URL": "", "ACTIONS_RUNTIME_URL": ""}
     assert caller["permissions"] == {"contents": "read", "pull-requests": "read"}
 
