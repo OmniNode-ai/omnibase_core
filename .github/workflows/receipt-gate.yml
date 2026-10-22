@@ -97,7 +97,12 @@ jobs:
           || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
         ) || 'ubuntu-latest'
       }}
-    timeout-minutes: 40
+    # OMN-17427: 60 minutes. A caller contract that has grown to hundreds of
+    # bound checks (omnimarket contracts/OMN-17427.yaml, 284 checks) ran 28 to 40
+    # minutes here, and seven omnimarket pull requests were cancelled at the
+    # 40-minute limit with no verdict. Callers that poll for this verdict size
+    # their own deadline from this budget plus scheduling time.
+    timeout-minutes: 60
     env:
       ACTIONS_CACHE_URL: ""
       ACTIONS_RUNTIME_URL: ""
