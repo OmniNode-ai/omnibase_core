@@ -9,7 +9,7 @@ sequences in the ONEX 4-Node Architecture.
 
 """
 
-import asyncio
+import inspect
 from collections.abc import Callable
 from datetime import datetime
 from uuid import UUID
@@ -116,7 +116,7 @@ class ModelEffectTransaction:
             reversed(self.rollback_operations)
         ):
             try:
-                if asyncio.iscoroutinefunction(rollback_func):
+                if inspect.iscoroutinefunction(rollback_func):
                     await rollback_func()
                 else:
                     rollback_func()

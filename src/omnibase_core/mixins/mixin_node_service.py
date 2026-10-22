@@ -29,6 +29,7 @@ tool-as-a-service functionality for MCP, GraphQL, and other integrations.
 """
 
 import asyncio
+import inspect
 import signal
 import time
 import types
@@ -643,7 +644,7 @@ class MixinNodeService:
             )
 
         run_method = self.run
-        if asyncio.iscoroutinefunction(run_method):
+        if inspect.iscoroutinefunction(run_method):
             return await run_method(input_state)
         # Run synchronous method in executor to avoid blocking
         return await asyncio.get_running_loop().run_in_executor(

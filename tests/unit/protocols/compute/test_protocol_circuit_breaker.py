@@ -16,6 +16,7 @@ Related:
 """
 
 import asyncio
+import inspect
 from collections.abc import Callable
 from uuid import UUID, uuid4
 
@@ -224,9 +225,9 @@ class TestProtocolAsyncCircuitBreakerDefinition:
         assert isinstance(sync_mock, ProtocolAsyncCircuitBreaker)
 
         # But we can verify the methods aren't actually async
-        assert not asyncio.iscoroutinefunction(sync_mock.record_success)
-        assert not asyncio.iscoroutinefunction(sync_mock.record_failure)
-        assert not asyncio.iscoroutinefunction(sync_mock.reset)
+        assert not inspect.iscoroutinefunction(sync_mock.record_success)
+        assert not inspect.iscoroutinefunction(sync_mock.record_failure)
+        assert not inspect.iscoroutinefunction(sync_mock.reset)
 
 
 @pytest.mark.unit

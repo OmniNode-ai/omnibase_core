@@ -17,8 +17,8 @@ See Also:
     - CANONICAL_EXECUTION_SHAPES.md: Full documentation of allowed/forbidden patterns
 """
 
-import asyncio
 import functools
+import inspect
 from collections.abc import Callable
 from typing import ParamSpec, TypeVar
 
@@ -131,7 +131,7 @@ def enforce_execution_shape(
 
     def decorator(func: Callable[P, T]) -> Callable[P, T]:
         # Check if the function is async
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
