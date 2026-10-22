@@ -67,6 +67,3 @@ dod_evidence:
       - check_type: command
         check_value: uv run check-public-runner-placement --repo omnibase_core
         cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC1
-      - AC2
