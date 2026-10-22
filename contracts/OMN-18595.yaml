@@ -77,14 +77,13 @@ dod_evidence:
     binds_ac: [AC1]
     checks:
       - check_type: test_passes
-        check_value: uv run pytest -o addopts='' tests/ci/test_release_cut_identity_omn18595.py -q -k
-          changelog
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k changelog
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
           uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
           assert "## v0.47.52 (2026-10-22)" in notes; assert "### Included Since v0.47.51" in notes; assert
-          all(f"(#{number})" in notes for number in (2076, 2072, 2071, 2075))'
+          "(#2076)" in notes and "(#2072)" in notes and "(#2071)" in notes and "(#2075)" in notes'
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-ac2-release-0-47-52-identity
     description: Hosted release readback requires the 0.47.52 project and editable lock entry and scans
