@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-19617"
+title: "Autobind OCC evidence for OMN-19617"
+summary: "OCC Evidence-Source autobind companion (OMN-13317 F1) for PR #2911."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: "req-transcribed-acceptance-criteria"
+    statement: |-
+      The acceptance criteria this ticket's author declared, transcribed from the ticket body at autobind time by occ-autobind. The ticket body is the source and this block is the copy; each criterion's id is the label the sibling binds_ac entry claims.
+    acceptance:
+      - id: "AC1"
+        statement: |-
+          AC1: The node's sync operation fetches refs/heads and refs/pull/*/head into a bare mirror under ONEX_STATE_DIR and never writes a ref into a canonical clone -- falsifier: uv run pytest tests over the node against a scratch upstream asserts the canonical clone's for-each-ref output is unchanged after sync
+      - id: "AC2"
+        statement: |-
+          AC2: head-sha, changed-files, diff, conflicts and on-base return the same answers git computes directly over the same refs, and on-base reports true for a PR whose change is already on the base branch -- falsifier: uv run pytest over the node with a scratch upstream holding a clean PR, a conflicting PR and a superseded PR
+      - id: "AC3"
+        statement: |-
+          AC3: A query against a mirror whose watermark is older than its max age refreshes the one PR ref by git fetch first, and falls back to the GitHub API only when that fetch fails, naming the source in its output -- falsifier: uv run pytest over the node with an aged watermark and an unreachable remote asserts source values mirror-refreshed and gh-fallback
+      - id: "AC4"
+        statement: |-
+          AC4: On this Mac and on one lab host, head-sha for five open PRs matches git ls-remote on refs/pull/N/head with no GitHub API call -- falsifier: the five calls run with gh absent from PATH and no token in the environment and still return source mirror, compared against git ls-remote output
+evidence_requirements:
+  - kind: "ci"
+    description: "PR #2911 product diff scope present"
+    command: "gh pr view ${PR_NUMBER} --repo ${REPO} --json files"
+  - kind: "tests"
+    description: |-
+      Behavior proof for PR #2911 on OmniNode-ai/omnimarket, derived from the PR's own diff: the test target(s) it adds or changes. Bound as dod_evidence item `dod-occ-diff-derived-behavior-proof`, executed at cwd `${OMNI_HOME}/omnimarket`.
+    command: |-
+      uv run pytest tests/nodes/node_git_query_mirror_effect/test_git_query_mirror.py tests/test_market_node_runtime_dogfood.py -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-OmniNode-ai-omnimarket-pr-2911"
+    description: "PR #2911 on OmniNode-ai/omnimarket — Evidence-Source autobind."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: |-
+          gh api repos/OmniNode-ai/omnimarket/contents/src/omnimarket/nodes/node_git_query_mirror_effect/__init__.py?ref=a9b210a1ee74dcd7dc985e5c4952ed0eb723d6aa --jq '.content' | base64 -d | grep -c 'class NodeGitQueryMirrorEffect'
+    binds_ac:
+      - "AC1"
+      - "AC2"
+      - "AC3"
+      - "AC4"
+    ac_bindings:
+      - label: "AC1"
+        criterion_hash: "cf85452f49b880e89ba1bfbf3ab2e4af6da143300619494537483a5266ffa909"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-25T15:08:11Z"
+      - label: "AC2"
+        criterion_hash: "80cef48f596102990e8d964a0be228cf1c08ce9b5f4cff57b844ded5fc182092"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-25T15:08:11Z"
+      - label: "AC3"
+        criterion_hash: "6c53c9304c358e8a856dc86bad997cf5cc05442a5560cce81b56e67ef4d23727"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-25T15:08:11Z"
+      - label: "AC4"
+        criterion_hash: "a4914f72e43b6710e7008fb930c0145c9e3820db2b93f2c03097e8ef6961bf8f"
+        proposed_by: "occ-autobind"
+        accepted_by: "7a850ce1-f95e-431f-b4e3-62f7449f04c0"
+        accepted_at: "2026-09-25T15:08:11Z"
+  - id: "dod-OmniNode-ai-omnimarket-pr-2911-ci"
+    description: "PR #2911 on OmniNode-ai/omnimarket — product diff scope check (OMN-14425)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 2911 --repo OmniNode-ai/omnimarket --json files"
+  - id: "dod-occ-diff-derived-behavior-proof-pr-2911"
+    description: "PR #2911 on OmniNode-ai/omnimarket — diff-derived behavior proof (OMN-16434)."
+    source: "generated"
+    checks:
+      - check_type: "test_passes"
+        check_value: |-
+          uv run pytest tests/nodes/node_git_query_mirror_effect/test_git_query_mirror.py tests/test_market_node_runtime_dogfood.py -q
+        cwd: "${OMNI_HOME}/omnimarket"
+  - id: "occ-self-bind-pr-11433"
+    description: "OCC companion PR #11433 — self-bind for OMN-19617 (OMN-14650)."
+    source: "generated"
+    checks:
+      - check_type: "command"
+        check_value: "gh pr view 11433 --repo OmniNode-ai/onex_change_control --json number,state"
