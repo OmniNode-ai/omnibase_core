@@ -113,11 +113,10 @@ requirements:
       allowlist or baseline entry.
     acceptance:
       - id: AC9
-        statement: 'AC9: cr-thread-gate-caller.yml is deleted and no embedded occ-preflight carries the
-          CodeRabbit thread gate; the ci.yml `gate` caller this fold added was later retired with cr-thread-gate.yml
-          by OMN-17427 (#2028), so ci.yml carries no cr-thread-gate caller and the required-checks row
-          for "gate / CodeRabbit Thread Check" is RETIRED. -- falsifier: uv run pytest tests/ci/test_coderabbit_gate_removed_omn17427.py
-          -q -p no:randomly'
+        statement: 'AC9: cr-thread-gate-caller.yml is deleted and ci.yml carries an unconditional, needs-free
+          `gate` caller of cr-thread-gate.yml whose composed context "gate / CodeRabbit Thread Check"
+          is unchanged and whose required-checks row names ci.yml. -- falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py
+          -q -p no:randomly -k cr_thread_gate'
       - id: AC10
         statement: 'AC10: handshake-policy-gate.yml no longer triggers on merge_group and keeps its schedule,
           dispatch and workflow_call triggers with no embedded preflight, and ci.yml carries a handshake-policy-gate
@@ -716,12 +715,12 @@ dod_evidence:
     binds_ac:
       - AC8
   - id: dod-omn-20074-ac9
-    description: The removal tests prove the CodeRabbit thread gate caller is gone from both its own workflow
-      and ci.yml, and its required-checks row is retired.
+    description: The fold tests prove the CodeRabbit thread gate caller moved into ci.yml with its composed
+      context unchanged.
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/ci/test_coderabbit_gate_removed_omn17427.py -q -p no:randomly
+        check_value: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k cr_thread_gate
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC9
