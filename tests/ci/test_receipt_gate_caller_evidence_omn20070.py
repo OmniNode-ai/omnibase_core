@@ -57,6 +57,7 @@ def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
         "verifier-version": "0.4.305",
         "compare-with-occ": "false",
         "shadow": "false",
+        "check-timeout-seconds": "",
     }
     assert set(inputs) == set(expected)
     for name, default in expected.items():
@@ -97,6 +98,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "Check out the pull request head",
         "Set up Python 3.13",
         "Install uv",
+        "Resolve the per-check timeout",
         "Install the pinned verifier",
         "Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)",
         PG_TOOLS_STEP,

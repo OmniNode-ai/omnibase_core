@@ -28,6 +28,10 @@
 #                   (default: "false"). With "true", dod-verify records its
 #                   verdict (the first refused step) as one `Shadow verdict:`
 #                   job-summary line and one notice annotation, then passes.
+#   check-timeout-seconds: how long each dod_verify check may run, a whole
+#                   number of seconds from 1 to 900 (OMN-21166). Empty, the
+#                   default, keeps the verifier's own 30 s. Browser checks
+#                   need more than that.
 #
 # Secrets:
 #   (none — contracts are in the caller's repository)
@@ -57,6 +61,11 @@ on:
         type: string
         required: false
         default: "false"
+      check-timeout-seconds:
+        description: "Seconds each dod_verify check may run, 1 to 900; empty keeps the verifier default of 30 (OMN-21166)."
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -278,6 +287,31 @@ jobs:
         continue-on-error: ${{ inputs.shadow == 'true' }}
         if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         uses: astral-sh/setup-uv@v7
+
+      # OMN-21166: a browser check outlives the verifier's 30 s default, so the
+      # caller may name its own per-check ceiling. GITHUB_ENV carries it to both
+      # verifier steps; a malformed value is refused here, never defaulted.
+      - name: Resolve the per-check timeout
+        id: check_timeout
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        env:
+          CHECK_TIMEOUT_SECONDS: ${{ inputs.check-timeout-seconds }}
+        run: |
+          set -euo pipefail
+          re='^[1-9][0-9]{0,2}$'
+          val="${CHECK_TIMEOUT_SECONDS:-}"
+          if [[ -z "$val" ]]; then
+            echo '::notice::check-timeout-seconds not set; each dod_verify check keeps the verifier default of 30 s'
+            exit 0
+          fi
+          if [[ "$val" =~ $re ]] && (( 10#$val <= 900 )); then
+            echo "DOD_VERIFY_CHECK_TIMEOUT_S=$val" >> "$GITHUB_ENV"
+            echo "::notice::each dod_verify check may run for up to $val s"
+            exit 0
+          fi
+          echo "::error::check-timeout-seconds must be a whole number of seconds from 1 to 900; got '$val'"
+          exit 1
 
       # OMN-20032: refuse a verifier older than the floor before installing it.
       # VERIFIER_FLOOR is the one place the floor lives: 0.4.303 is the first
@@ -960,7 +994,7 @@ jobs:
       - name: Verify the contract at the PR head
         id: head_verify
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -1192,7 +1226,7 @@ jobs:
       - name: Must-fail control at the merge base
         id: base_control
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -1392,7 +1426,7 @@ jobs:
             {
               new_path=verified
               refused_step=none
-              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv verifier writer_pin_only pg_tools pg_env sibling_checkouts head_verify merge_base base_control; do
+              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts head_verify merge_base base_control; do
                 if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
                   new_path=refused
                   refused_step="$step_id"
