@@ -381,6 +381,16 @@ requirements:
           sync and async functions with the error-handling decorators raises no DeprecationWarning under
           an error filter. -- falsifier: uv run pytest tests/unit/decorators/test_no_asyncio_iscoroutinefunction.py
           -q -o addopts=''"
+  - id: req-omn17427-ticket-contract-ac-bindings
+    statement: Product-repository ticket contracts accept typed acceptance-criterion bindings while retaining
+      strict validation and the existing shape of contracts without bindings.
+    acceptance:
+      - id: AC49
+        statement: "AC49: The three OCC sample contracts carrying ac_bindings validate through ModelTicketContract;
+          bindings round-trip as ModelAcBinding with accepted and draft states; malformed bindings and
+          wrong field types are refused; and omitted bindings default to an empty list absent from exclude_defaults
+          output. -- falsifier: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_ac_bindings_omn17427.py
+          -q -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -480,6 +490,11 @@ evidence_requirements:
     description: "No src module calls asyncio.iscoroutinefunction, and the error-handling decorators wrap
       functions without a DeprecationWarning."
     command: uv run pytest tests/unit/decorators/test_no_asyncio_iscoroutinefunction.py -q -o addopts=''
+  - kind: tests
+    description: The ticket-contract model accepts typed ac_bindings and the three OCC sample contracts,
+      refuses malformed bindings, and preserves contracts without bindings.
+    command: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_ac_bindings_omn17427.py
+      -q -o addopts=''
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1033,3 +1048,17 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC48
+  - id: dod-omn17427-deploy-hosted-ac-bindings
+    description: Hosted library deploy probe loads the checked-out ticket-contract model and validates
+      three OCC sample contracts carrying ac_bindings, accepted and draft binding states, malformed-input
+      refusals and omitted-field serialization. The focused tests require no external service and fail
+      against the merge-base product, which has no ModelAcBinding or ac_bindings item field.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_ac_bindings_omn17427.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC49
