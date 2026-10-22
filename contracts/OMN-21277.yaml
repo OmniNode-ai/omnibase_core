@@ -14,6 +14,21 @@ summary: >
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
+requirements:
+  - id: req-omn21277-ci-inheritance-baseline
+    statement: The CI inheritance check reads a typed, shrink-only baseline, and a failing check publishes
+      one validator-triggered event per triggered validator on the event bus.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the CI inheritance check refuses an inline job of a typed repository that its
+          shrink-only baseline does not list, and a re-added entry fails -- falsifier: pytest of test_handler_ci_inheritance_baseline.py"
+      - id: AC2
+        statement: "AC2 (partial, omnibase_core only): an empty baseline refuses a fixture entry, and
+          the committed omnibase_core baseline is typed and lists exactly its inline jobs -- falsifier:
+          pytest of test_handler_ci_inheritance_baseline.py"
+      - id: AC3
+        statement: "AC3: a core validator that fails a PR emits one validator-triggered event per triggered
+          validator on the bus -- falsifier: pytest of test_handler_validator_triggered_emit.py"
 evidence_requirements:
   - kind: "tests"
     description: "Focused CI inheritance and validator-triggered tests pass"
@@ -29,6 +44,7 @@ dod_evidence:
     description: "AC1: the CI inheritance check refuses an inline job of a typed repository that its shrink-only
       baseline does not list, and a re-added entry fails"
     source: "manual"
+    binds_ac: [AC1]
     checks:
       - check_type: "command"
         check_value: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance_baseline.py -q -k
@@ -38,6 +54,7 @@ dod_evidence:
       committed omnibase_core baseline is typed and lists exactly its inline jobs (139 today, not yet
       empty)"
     source: "manual"
+    binds_ac: [AC2]
     checks:
       - check_type: "command"
         check_value: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance_baseline.py -q -k
@@ -46,6 +63,7 @@ dod_evidence:
     description: "AC3: a core validator that fails a PR emits one validator-triggered event per triggered
       validator on the bus (in-memory bus)"
     source: "manual"
+    binds_ac: [AC3]
     checks:
       - check_type: "command"
         check_value: "uv run pytest tests/unit/handlers/test_handler_validator_triggered_emit.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
