@@ -407,6 +407,19 @@ requirements:
         statement: "AC51: Both hosted probes pin the updated CLI and repository-jobs handler to their
           published implementation revision and keep pipefail, curl failure handling and byte comparisons.
           -- falsifier: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''"
+  - id: req-omn17427-dod-verify-scope
+    statement: The receipt gate's dod-verify job verifies only the evidence a pull request adds or changes
+      in its ticket contract, so a pull request citing a contract with many carried criteria does not
+      re-run every carried check at its head and again at its merge base.
+    acceptance:
+      - id: AC52
+        statement: "AC52: The scope step of receipt-gate.yml, run on a real git history whose merge-base
+          contract carries 150 criteria and whose head adds one, hands the verifier one evidence item
+          and one criterion at the head and the same one at the merge base; a new item that also passes
+          at the merge base is still refused; a contract with nothing new is refused before any check
+          runs; a changed criterion brings the items that bind it; supersessions and binding retirements
+          are never split; and a contract that cannot be compared is verified in full. -- falsifier: uv
+          run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -519,6 +532,10 @@ evidence_requirements:
     description: The carried hosted source probes pin the published CLI and repository-jobs implementation
       and retain strict byte comparisons.
     command: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''
+  - kind: tests
+    description: dod-verify scopes each cited contract to the evidence the pull request adds or changes,
+      at the head and in the must-fail control.
+    command: uv run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1111,3 +1128,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC51
+  - id: dod-omn17427-dod-verify-scope
+    description: Hosted workflow probe. The receipt gate's own scope, head, merge-base and control step
+      scripts run against a real git history with a stand-in verifier that records the contract it is
+      handed. With 150 carried criteria and one new one the verifier sees one item at the head and one
+      at the merge base. The same test fails at the merge base, whose workflow has no scope step.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC52

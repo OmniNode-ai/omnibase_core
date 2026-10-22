@@ -103,6 +103,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         PG_TOOLS_STEP,
         PG_ENV_STEP,
         "Provision the contracts' declared sibling checkouts",
+        "Scope each cited contract to what this pull request adds or changes",
         HEAD_STEP,
         "Prepare the merge base with the pull request's test side laid over it",
         BASE_STEP,
