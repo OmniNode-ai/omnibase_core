@@ -1,0 +1,41 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21166
+title: Receipt gate takes a per-check timeout
+summary: A caller may set check-timeout-seconds; empty keeps the verifier's 30 s default; a whole number
+  from 1 to 900 is written to GITHUB_ENV as DOD_VERIFY_CHECK_TIMEOUT_S so the head check and the merge-base
+  control see the same value; anything else is refused before the verifier is installed.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21166-check-timeout
+    statement: The shared receipt gate must let a caller name each dod_verify check's time ceiling, keep
+      the verifier's 30 s default when none is named, and refuse a malformed value before it runs.
+    acceptance:
+      - id: AC43
+        statement: 'AC43: (approved plan amendment, 2026-10-22) omnibase_core''s receipt gate takes a
+          check-timeout-seconds input: empty keeps the verifier''s 30 s per-check default, a whole number
+          from 1 to 900 reaches both the head check and the merge-base control, and any other value is
+          refused before the verifier is installed -- falsifier: uv run pytest tests/ci/test_receipt_gate_check_timeout_omn21166.py
+          -q in omnibase_core fails at the merge base'
+evidence_requirements:
+  - kind: "tests"
+    description: "The receipt-gate workflow tests pass at the head and the new file fails at the merge
+      base"
+    command: "uv run pytest tests/ci/test_receipt_gate_check_timeout_omn21166.py -q -p no:randomly"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21166-ac43-check-timeout
+    description: The workflow tests declare the input, run the resolver step on empty, accepted and refused
+      values, and find the value reaching both verifier steps through GITHUB_ENV.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_check_timeout_omn21166.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC43
