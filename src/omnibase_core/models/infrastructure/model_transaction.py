@@ -4,6 +4,7 @@
 """Transaction model for side effect management with rollback support."""
 
 import asyncio
+import inspect
 from collections.abc import Callable
 from datetime import datetime
 from uuid import UUID
@@ -77,7 +78,7 @@ class ModelTransaction:
         # Execute rollback operations in reverse order
         for rollback_func in reversed(self.rollback_operations):
             try:
-                if asyncio.iscoroutinefunction(rollback_func):
+                if inspect.iscoroutinefunction(rollback_func):
                     await rollback_func()
                 else:
                     rollback_func()

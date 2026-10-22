@@ -148,7 +148,7 @@ class TestHandlerContract:
         handler = SupportAssistantHandler(mock_container)
 
         # Verify handle is a coroutine function
-        assert asyncio.iscoroutinefunction(handler.handle)
+        assert inspect.iscoroutinefunction(handler.handle)
 
     def test_handle_method_signature(self, mock_container: MagicMock) -> None:
         """Handle method has correct signature."""

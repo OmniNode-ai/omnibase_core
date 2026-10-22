@@ -372,6 +372,15 @@ requirements:
           with matching ticket identities and at least their migrated evidence counts, with populated
           checks and retained disclosed supersessions. -- falsifier: uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
           -q -o addopts=''"
+  - id: req-omn17427-no-asyncio-iscoroutinefunction
+    statement: omnibase_core detects coroutine functions with inspect.iscoroutinefunction, never the asyncio
+      form CPython 3.14 deprecates, so the OMN-17870 Werror teardown regression collects on 3.14.
+    acceptance:
+      - id: AC48
+        statement: "AC48: No module under src/omnibase_core calls asyncio.iscoroutinefunction, and wrapping
+          sync and async functions with the error-handling decorators raises no DeprecationWarning under
+          an error filter. -- falsifier: uv run pytest tests/unit/decorators/test_no_asyncio_iscoroutinefunction.py
+          -q -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -467,6 +476,10 @@ evidence_requirements:
     description: "RuntimeLocal joins the declared terminal subscriptions concurrently, and a fatal first
       terminal leaves no later terminal bound."
     command: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py -q
+  - kind: tests
+    description: "No src module calls asyncio.iscoroutinefunction, and the error-handling decorators wrap
+      functions without a DeprecationWarning."
+    command: uv run pytest tests/unit/decorators/test_no_asyncio_iscoroutinefunction.py -q -o addopts=''
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1007,3 +1020,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC47
+  - id: dod-omn17427-no-asyncio-iscoroutinefunction
+    description: Hosted source probe. The checked-out src tree has no asyncio.iscoroutinefunction call
+      and the error-handling decorators wrap sync and async functions under a DeprecationWarning error
+      filter. The same test fails at the merge base, which carries nine such calls.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/decorators/test_no_asyncio_iscoroutinefunction.py -q -o
+          addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC48
