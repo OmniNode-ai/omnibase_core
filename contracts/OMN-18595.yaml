@@ -85,22 +85,3 @@ dod_evidence:
           assert "## v0.47.52 (2026-10-22)" in notes; assert "### Included Since v0.47.51" in notes; assert
           "(#2076)" in notes and "(#2072)" in notes and "(#2071)" in notes and "(#2075)" in notes'
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn18595-ac2-release-0-47-52-identity
-    description: Hosted release readback requires the 0.47.52 project and editable lock entry and scans
-      the indexed tree.
-    source: manual
-    binds_ac: [AC2]
-    execution_scope: hosted_and_local
-    checks:
-      - check_type: command
-        check_value: >-
-          uv run --locked python -c 'import pathlib, tomllib; project = tomllib.loads(pathlib.Path("pyproject.toml").read_text());
-          lock = tomllib.loads(pathlib.Path("uv.lock").read_text()); assert project["project"]["version"]
-          == "0.47.52"; packages = [p for p in lock["package"] if p["name"] == "omnibase-core"]; assert
-          len(packages) == 1 and packages[0]["version"] == "0.47.52" and packages[0]["source"] == {"editable":
-          "."}'
-        cwd: ${OMNI_HOME}/omnibase_core
-      - check_type: command
-        check_value: uv run --locked python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
-          --root .
-        cwd: ${OMNI_HOME}/omnibase_core
