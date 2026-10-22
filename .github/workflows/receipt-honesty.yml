@@ -47,12 +47,7 @@ concurrency:
 jobs:
   receipt-honesty:
     name: receipt-honesty
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:

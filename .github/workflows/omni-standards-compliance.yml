@@ -36,13 +36,7 @@ env:
 jobs:
   onex-compliance:
     name: ONEX Architecture Compliance
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7.0.1
@@ -72,13 +66,7 @@ jobs:
 
   legacy-compatibility-check:
     name: Legacy Compatibility Check
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7.0.1
@@ -105,13 +93,7 @@ jobs:
 
   ecosystem-validation:
     name: Ecosystem Integration Validation
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     if: github.repository_owner == 'OmniNode-ai' || github.repository_owner == 'jonahgabriel'
     steps:
       - name: Checkout code
@@ -139,13 +121,7 @@ jobs:
 
   forbidden-pattern-scan:
     name: Decommissioned Pattern Scanner (OMN-4801)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7.0.1
@@ -159,12 +135,7 @@ jobs:
 
   ci-naming-convention:
     name: CI Naming Convention
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v7.0.1

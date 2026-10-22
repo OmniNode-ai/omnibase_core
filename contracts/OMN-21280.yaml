@@ -1,0 +1,69 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21280
+title: "No public-repository job resolves to the self-hosted fleet: the public runner placement baseline
+  is empty"
+summary: "Mechanism for RULING 2026-10-16T07:07:09Z (CI runners are for private repositories only). The
+  public runner placement check runs with no baseline: every job of a public repository whose runs-on
+  is, or may resolve to, a self-hosted runner fails. The shrink-only baseline file and its model are deleted,
+  a test refuses their return, and omnibase_core's own self-hosted-capable jobs move to ubuntu-latest
+  (a reusable workflow keeps its route only behind a private-caller guard)."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21280-no-baseline
+    statement: The public runner placement check refuses every public-repository job that is or may resolve
+      to a self-hosted runner, with no baseline, and the baseline file does not return.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the public runner placement check refuses every public-repository job that is
+          or may resolve to a self-hosted runner, with no baseline -- falsifier: pytest of handler_public_runner_placement
+          over a fixture public workflow"
+      - id: AC2
+        statement: "AC2: the placement baseline file is deleted and a test refuses its return -- falsifier:
+          pytest asserting the baseline path is absent"
+evidence_requirements:
+  - kind: tests
+    description: "The handler fails every self-hosted job of a fixture public workflow with no baseline,
+      and the baseline file is absent."
+    command: "uv run pytest tests/unit/handlers/test_handler_public_runner_placement.py tests/ci/test_public_runner_placement_no_baseline_omn21280.py
+      -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn-21280-ac1-no-baseline
+    description: "A fixture public workflow's literal, label-list, group, matrix and vars-computed jobs
+      each fail (rule self_hosted_in_public); the input model carries no baseline and refuses one; the
+      CLI refuses the retired --baseline, --base-ref and --baseline-ratchet-base-ref flags."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_public_runner_placement.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-21280-ac2-baseline-absent
+    description: "The placement baseline path is absent, no repository file carries its name, the check's
+      wiring names no baseline, and every omnibase_core workflow job runs on a hosted label."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_public_runner_placement_no_baseline_omn21280.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-21280-deploy-placement-probe
+    description: "Hosted deploy probe: run omnibase_core's own workflows through check-public-runner-placement
+      with no baseline. Any job that can resolve to a self-hosted runner, or a missing console script,
+      exits 1 and fails the probe."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run check-public-runner-placement --repo omnibase_core
+        cwd: ${OMNI_HOME}/omnibase_core

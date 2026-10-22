@@ -136,8 +136,8 @@ jobs:
   # day allows it; and it is deliberately NOT one of the digest-frozen
   # AUDITED_GUARD_JOB_EXECUTION_CONTRACTS jobs, so wiring it does not require
   # re-baselining an audited execution-contract digest in the same change.
-  # EVERY OTHER JOB IN THIS FILE KEEPS ITS OMNI_RUNNER_SELECTOR_V1 EXPRESSION
-  # UNTOUCHED and moves only on separate evidence.
+  # EVERY OTHER JOB IN THIS FILE RUNS ON ubuntu-latest: omnibase_core is public
+  # and CI runners are for private repositories only (OMN-21280).
   #
   # FAIL-CLOSED ON ANY PROBE ERROR. The reusable's decide step carries a floor
   # that emits hosted labels when the decision cannot be computed at all, so a
@@ -320,13 +320,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -384,13 +378,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
@@ -414,13 +402,7 @@ jobs:
   # Rationale: These scripts are CI tooling, not core library code
   mypy-validation-scripts:
     name: Mypy Validation Scripts
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: timeout-minutes raised (was 5-10m depending on job) to a
     # uniform 20m floor. Byte-cited evidence this whole class of standalone
     # guard/validator jobs is starved, not slow: two live runs 9 days apart
@@ -588,13 +570,7 @@ jobs:
   # Complements the Python-based check in mypy-validation-scripts with a simple grep scan
   core-infra-boundary:
     name: Core-Infra Boundary
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -637,13 +613,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -691,24 +661,15 @@ jobs:
 
       # Public-repository runner placement (OMN-19998, RULING 2026-10-16T07:07:09Z:
       # "Ci runners should be for private repos only") — blocking. A public
-      # repository may not ADD a job whose runs-on is, or can resolve to, a
-      # self-hosted label. The jobs it already runs there are the shrink-only
-      # baseline src/omnibase_core/contracts/public_runner_placement_baseline.yaml:
-      # removing one is allowed, adding one is not, and a baselined job that is
-      # new or newly self-hosted against the base still fails. Other
-      # repositories run the same node through .github/workflows/version-drift.yml.
+      # repository has no job whose runs-on is, or can resolve to, a
+      # self-hosted label; there is no baseline to excuse one (OMN-21280).
+      # Other repositories run the same node through
+      # .github/workflows/version-drift.yml.
       - name: Run public-repository runner placement check
         env:
-          RATCHET_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
           VISIBILITY: ${{ github.event.repository.private && 'private' || 'public' }}
         run: |
           args=(--repo omnibase_core --visibility "$VISIBILITY" --report-json public-runner-placement-report.json)
-          if [ -n "$RATCHET_BASE_REF" ]; then
-            git fetch --no-tags --depth=1 origin "$RATCHET_BASE_REF"
-            args+=(--base-ref "$RATCHET_BASE_REF" --baseline-ratchet-base-ref "$RATCHET_BASE_REF")
-          else
-            echo "::notice::no base ref (push event): base comparison and baseline ratchet skipped"
-          fi
           uv run python -m omnibase_core.handlers.handler_public_runner_placement_cli "${args[@]}"
 
       # Version drift at source (OMN-19998) — blocking. A floor raise on a
@@ -870,13 +831,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -932,13 +887,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -991,13 +940,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -1051,13 +994,7 @@ jobs:
   # - Use StrValueHelper for string serialization
   enum-governance:
     name: Enum Governance Check
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -1108,13 +1045,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -1166,13 +1097,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 7
 
     steps:
@@ -1219,13 +1144,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
@@ -1278,13 +1197,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 6
 
     steps:
@@ -1412,12 +1325,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -1453,13 +1361,7 @@ jobs:
   # Conditional: only runs if the `onex compliance` command is available.
   compliance:
     name: Contract Compliance
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -1498,13 +1400,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 7
 
     steps:
@@ -1558,13 +1454,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 7
 
     steps:
@@ -1622,13 +1512,7 @@ jobs:
   # omni-standards-compliance `validate_class_naming.py` invocation.
   naming-conventions:
     name: Naming Conventions
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -1652,13 +1536,7 @@ jobs:
   # validator and feeds quality-gate so it gates the required rollup.
   pydantic-patterns:
     name: Pydantic Patterns
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 5
 
     steps:
@@ -1697,13 +1575,7 @@ jobs:
   # this workflow all scan the full tracked tree.
   aislop-patterns:
     name: AI Slop Patterns
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -1780,13 +1652,7 @@ jobs:
   # avoids the merge_group / no-diff exit-0 hole on the required path.
   doc-content-scan:
     name: Doc-Content Scan
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -1839,13 +1705,7 @@ jobs:
   # merge_group / no-diff exit-0 hole on the required path.
   spdx-headers:
     name: SPDX Headers
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -1895,13 +1755,7 @@ jobs:
   # closed, while the default validator mode remains strict for raw access.
   typed-bootstrap-environment-boundary:
     name: Typed Bootstrap Environment Boundary (OMN-17744)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -1972,13 +1826,7 @@ jobs:
   # measurement.
   precommit-suite:
     name: Pre-commit Suite (OMN-18899)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
@@ -2050,13 +1898,7 @@ jobs:
   # named but cannot be fetched fails the job.
   hardcoded-model-config-ratchet:
     name: Hardcoded Model Config Ratchet (OMN-19252)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
@@ -2129,13 +1971,7 @@ jobs:
   # success/failure, listed in SPEC_REQUIRED_VALIDATOR_JOBS.
   duplicate-registry-ids:
     name: Duplicate Registry Ids
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2181,13 +2017,7 @@ jobs:
   # success/failure, listed in SPEC_REQUIRED_VALIDATOR_JOBS.
   hardcoded-topic-validator:
     name: Hardcoded Topic Validator
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2236,13 +2066,7 @@ jobs:
   # listed in SPEC_REQUIRED_VALIDATOR_JOBS.
   shape-gate-independence:
     name: Shape-Gate Independence (OMN-20298)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
@@ -2285,12 +2109,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   backend-secret-discipline-validator:
     name: Backend Secret Discipline
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2354,13 +2173,7 @@ jobs:
   # (scripts/ci/ci_summary_gate.py) so a red run turns "CI Summary" red.
   runtime-identity-validator:
     name: Runtime Identity Validator
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
@@ -2418,13 +2231,7 @@ jobs:
   # sample on every run and fails unless the ratchet refuses it.
   canonical-file-shape:
     name: Canonical File Shape (OMN-20304)
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
@@ -2538,12 +2345,7 @@ jobs:
   # not this repo.
   banned-compose-vars-validator:
     name: Compose Drift
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2601,12 +2403,7 @@ jobs:
   # required-gating, non-bypassable enforcement.
   bypass-token-blocklist-validator:
     name: Bypass-Token Blocklist
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2653,12 +2450,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   command-category-event-model-validator:
     name: command-category Event Model Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2697,12 +2489,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   dispatched-contract-operation-validator:
     name: dispatched contract handlers[0].operation Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2739,12 +2526,7 @@ jobs:
   # OMN-14430 fast-follow).
   generated-node-model-class-exists-validator:
     name: generated-node model-class-existence Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -2782,12 +2564,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   gitignore-baseline-validator:
     name: Gitignore Baseline Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2826,12 +2603,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   no-direct-kafka-producer-validator:
     name: No Direct Kafka Producer Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -2869,12 +2641,7 @@ jobs:
   # runs unconditionally under the required CI Summary rollup.
   no-except-swallow-validator:
     name: No Except Swallow
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -2910,12 +2677,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   no-hardcoded-ip-validator:
     name: No Hardcoded IP Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -2952,12 +2714,7 @@ jobs:
   # unchanged; the gating enforcement is the validator unit-test suite.
   no-import-none-fallback-validator:
     name: No Import None Fallback
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -2996,12 +2753,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   no-io-outside-effects-validator:
     name: No IO Outside Effects Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -3041,12 +2793,7 @@ jobs:
   # unchanged; the gating enforcement is the validator unit-test suite.
   no-none-guard-publish-validator:
     name: No None Guard Publish
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -3085,12 +2832,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   no-raw-sqlite3-validator:
     name: No Raw Sqlite3 Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -3138,12 +2880,7 @@ jobs:
   # handlers back the check-ci-inheritance pre-commit hook.
   ci-inheritance-check:
     name: CI Inherits From Core (OMN-17427)
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -3224,12 +2961,7 @@ jobs:
   # workflow's duplicate run_id + embedded occ-preflight caller.
   operation-match-validator:
     name: operation_match Operation Field Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -3264,12 +2996,7 @@ jobs:
   # each is checked out under $OMNI_HOME (= github.workspace).
   pin-hygiene-validator:
     name: Pin Hygiene Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
@@ -3329,12 +3056,7 @@ jobs:
   # fast-follow). Needs full history + tags to resolve the latest published tag.
   release-identity-validator:
     name: Release Identity Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -3377,12 +3099,7 @@ jobs:
   # OMN-19037: protect base required contexts against deleted workflows, jobs, and manifest rows.
   required-context-producer-validator:
     name: Required Context Producer Validator
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout code
@@ -3422,12 +3139,7 @@ jobs:
   # STAGED-only semantics); needs full history to diff against the base.
   todo-marker-validator:
     name: TODO Marker Validator  # onex-allow-todo-marker OMN-14877 reason="job display name IS the validator's subject, not agent-left work"
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -3512,13 +3224,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 7
 
     steps:
@@ -3569,13 +3275,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -3631,13 +3331,7 @@ jobs:
     # conclusion here as passing -- mirrors tests-gate's existing
     # per-upstream skip policy for test-parallel/tests-integration (OMN-15315).
     if: always() && needs.zone-filter.outputs.docs_only != 'true'
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-15980: budget raised 5-10m -> 20m (starved on the self-hosted
     # omnibase-ci fleet under push-event load, not slow/broken — full
     # measured rationale on mypy-validation-scripts above).
@@ -3701,12 +3395,7 @@ jobs:
     # satisfy the SAME required context without any branch-protection edit
     # (see .github/required-checks.yaml's "no-unguarded-git-subprocess" row).
     name: no-unguarded-git-subprocess
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
@@ -3819,12 +3508,7 @@ jobs:
   # `propagate` job (release and manual dispatch) is automation and stays there.
   propagate-dry-run:
     name: Propagate Config Dry-run (OMN-20074)
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
@@ -3904,13 +3588,7 @@ jobs:
 
   quality-gate:
     name: Quality Gate
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-13574 (Model B): naming-conventions / pydantic-patterns /
     # aislop-patterns ARE spec-required validators (validator-requirements.yaml)
     # and are needs so a real violation turns the single required CI Summary
@@ -4137,12 +3815,7 @@ jobs:
   zone-filter:
     name: Zone Filter (docs-only check)
     if: always()
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     outputs:
       docs_only: ${{ steps.zone.outputs.docs_only }}
 
@@ -4237,12 +3910,7 @@ jobs:
   detect-changes:
     name: Detect Changes
     needs: [quality-gate, zone-filter]
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     if: always() && needs.quality-gate.result == 'success' && needs.zone-filter.outputs.docs_only != 'true'
     outputs:
       is_full_suite: ${{ steps.detect.outputs.is_full_suite }}
@@ -4384,13 +4052,7 @@ jobs:
   test-parallel:
     name: Tests (Split ${{ matrix.split }}/${{ needs.detect-changes.outputs.split_count }})
     needs: [quality-gate, zone-filter, detect-changes, full-suite-reuse]
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # OMN-16215: draft-state CI admission gate (org-wide fan-out of the
     # onex_change_control#6686 mechanism, OMN-16214/OMN-15731). This is the
     # single most expensive job in ci.yml (up to 40 self-hosted-or-ubuntu-latest
@@ -4586,12 +4248,7 @@ jobs:
   shadow-compare:
     name: Shadow Selection Compare
     needs: [detect-changes, test-parallel, full-suite-reuse]
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # Run whenever the actual test-parallel run was a full suite (the only case
     # with a complete baseline). During rollout ENABLE_SMART_TESTS is off, so this
     # is every non-docs dev PR.
@@ -4700,13 +4357,7 @@ jobs:
   tests-integration:
     name: Integration Tests (Split ${{ matrix.split }}/4)
     needs: [quality-gate, zone-filter, detect-changes, full-suite-reuse]
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     # OMN-16215: draft-state CI admission gate, mirroring test-parallel's gate
     # immediately above (same rationale: the 4-split integration matrix is the
@@ -4793,13 +4444,7 @@ jobs:
   # so this gate works for any matrix size (1, 4, 5, or 40 shards). No hardcoded count needed.
   tests-gate:
     name: Tests Gate
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     # zone-filter is in `needs:` so this gate can re-evaluate the SAME
     # precondition the test jobs are gated on (OMN-15315). It is read for its
     # `docs_only` output only, never for its `.result`. quality-gate is ALSO
@@ -4969,13 +4614,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       # Both matrices legitimately do not run on a docs-only diff or a draft PR,
       # and `Tests Gate` (registered, strict) already owns the verdict on every
@@ -5109,12 +4748,7 @@ jobs:
   # Blocking mode: boundary parity is an architectural CI gate.
   boundary-validation:
     name: Cross-repo boundary validation
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       - uses: OmniNode-ai/omnibase_core/.github/actions/validate-boundaries@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1 # omnibase_core dev (OMN-20074): #1972, no change-control boundary
         with:

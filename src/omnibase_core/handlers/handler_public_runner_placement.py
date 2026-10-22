@@ -1,11 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""HandlerPublicRunnerPlacement -- public repositories add no self-hosted CI job.
+"""HandlerPublicRunnerPlacement -- no public-repository job runs on the fleet.
 
 RULING 2026-10-16T07:07:09Z (OMN-19998): "Ci runners should be for private
-repos only." In a PUBLIC repository this handler refuses a job whose ``runs-on``
-is, or can resolve to, anything but a GitHub-hosted label:
+repos only." In a PUBLIC repository this handler refuses every job whose
+``runs-on`` is, or can resolve to, anything but a GitHub-hosted label:
 
 * a literal label that is not ``ubuntu-*``, ``windows-*`` or ``macos-*``
   (``self-hosted``, ``omnibase-ci``, ``omnibase-deploy``, a ``group:``), and
@@ -13,19 +13,15 @@ is, or can resolve to, anything but a GitHub-hosted label:
   the workflow cannot prove hosted (``vars.``, ``needs.``, ``matrix.``,
   ``inputs.``, ``env.``, ``secrets.``, ``steps.``).
 
-Two rules, both FAIL:
+There is no baseline (OMN-21280): each such job is a FAIL (rule
+``self_hosted_in_public``). One computed shape is proved hosted for a public
+repository: ``github.event.repository.private && (<route>) || <hosted label>``,
+whose parenthesized route only a private repository (or a private caller of a
+reusable workflow) can take. A private repository passes: self-hosted runners
+are where its CI belongs. Jobs that call a reusable workflow with ``uses:``
+carry no ``runs-on`` and are judged where the callee is defined.
 
-* ``not_in_baseline`` -- the job is not in the shrink-only baseline of the
-  repository's jobs that already ran there.
-* ``re_added`` -- the job is in the baseline, but at the change's base it was
-  absent or ran on a hosted label: the change adds it back.
-
-Baselined jobs that are unchanged WARN once per file. A private repository
-passes: self-hosted runners are where its CI belongs. Jobs that call a reusable
-workflow with ``uses:`` carry no ``runs-on`` and are judged where the callee is
-defined.
-
-Pure: no filesystem, no clock, no global state. Ticket: OMN-19998.
+Pure: no filesystem, no clock, no global state. Tickets: OMN-19998, OMN-21280.
 """
 
 from __future__ import annotations
@@ -67,12 +63,16 @@ _RETURNED_LITERAL = re.compile(r"""(?:&&|\|\||\?|:)\s*['"]([^'"]+)['"]""")
 # Each token owns its whitespace; failed arrays must not repartition it while
 # backtracking through repeated empty labels (CodeQL, OMN-19998).
 _JSON_ARRAY_LITERAL = re.compile(r"""\[\s*+(?:"[^"]*+"\s*+,?+\s*+)++\]""")
-_MAX_LISTED: Final[int] = 10
+# `github.event.repository.private && (` opening a private-caller route.
+_PRIVATE_GUARD = re.compile(r"^github\.event\.repository\.private\s*&&\s*\(")
+_HOSTED_FALLBACK = re.compile(
+    r"""^\|\|\s*(?:'([^']+)'|fromJSON\(\s*'(\[[^']*\])'\s*\))$"""
+)
 _REMEDIATION: Final[str] = (
     "Run the job on a GitHub-hosted label (ubuntu-latest), or move it to a bus "
     "node the private lab runs (plan: knowledge_base_internal#1340). CI runners are "
-    "for private repositories only (RULING 2026-10-16T07:07:09Z, OMN-19998). Never "
-    "add the job to the baseline; the baseline only shrinks."
+    "for private repositories only (RULING 2026-10-16T07:07:09Z, OMN-19998); there "
+    "is no baseline to record the job in (OMN-21280)."
 )
 
 
@@ -80,8 +80,56 @@ def _hosted(label: object) -> bool:
     return isinstance(label, str) and bool(_HOSTED_LABEL.match(label.strip()))
 
 
+def _closing_paren(text: str, start: int) -> int | None:
+    """Index of the ``)`` matching the ``(`` at ``start``; quoted text is skipped."""
+    depth = 0
+    quoted = False
+    for index in range(start, len(text)):
+        char = text[index]
+        if char == "'":
+            quoted = not quoted  # `''` inside a string toggles twice: no change
+        elif quoted:
+            continue
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0:
+                return index
+    return None
+
+
+def _private_guarded(expression: str) -> bool:
+    """True for ``${{ github.event.repository.private && (<route>) || <hosted> }}``.
+
+    For a public repository the guard is false, so the expression is the hosted
+    fallback whatever ``<route>`` reads. The route must be one parenthesized
+    group, or an inner ``||`` would bind outside the guard.
+    """
+    body = expression.strip()
+    if not (body.startswith("${{") and body.endswith("}}")):
+        return False
+    body = body[3:-2].strip()
+    guard = _PRIVATE_GUARD.match(body)
+    if guard is None:
+        return False
+    end = _closing_paren(body, guard.end() - 1)
+    if end is None:
+        return False
+    fallback = _HOSTED_FALLBACK.match(body[end + 1 :].strip())
+    if fallback is None:
+        return False
+    label, array = fallback.groups()
+    if label is not None:
+        return _hosted(label)
+    labels = re.findall(r'"([^"]*)"', array)
+    return bool(labels) and all(_hosted(item) for item in labels)
+
+
 def _computed_is_unproven(expression: str) -> bool:
     """True when a ``runs-on`` expression can resolve to a non-hosted label."""
+    if _private_guarded(expression):
+        return False
     if _UNPROVABLE.search(expression) or "self-hosted" in expression.lower():
         return True
     literals = _RETURNED_LITERAL.findall(expression)
@@ -129,7 +177,7 @@ def self_hosted_jobs(source: str, path: str) -> dict[str, str]:
 
 
 class HandlerPublicRunnerPlacement:
-    """Refuse a public repository adding a job that runs on a self-hosted runner."""
+    """Refuse every public-repository job that can run on a self-hosted runner."""
 
     def handle(self, request: ModelPublicRunnerPlacementInput) -> ModelValidationReport:
         """Definition-B canonical entry-point (OMN-14355). Pure, no I/O, no clock."""
@@ -148,93 +196,25 @@ class HandlerPublicRunnerPlacement:
                 VALIDATOR_ID, tuple(errors)
             )
 
-        base: dict[str, dict[str, str]] | None = None
-        unreadable_at_base: set[str] = set()
-        if request.base_files is not None:
-            base = {}
-            for file in request.base_files:
-                try:
-                    base[file.path] = self_hosted_jobs(file.source, file.path)
-                except (yaml.YAMLError, ValueError):
-                    unreadable_at_base.add(file.path)
-
-        findings: list[ModelValidationFinding] = []
-        for path in sorted(head):
-            existing = 0
-            for job, kind in sorted(head[path].items()):
-                location = f"{path}:jobs.{job}"
-                if (path, job) not in request.baseline:
-                    findings.append(
-                        self._finding(
-                            "FAIL",
-                            location,
-                            f"{location}: new {kind} runs-on in public repository "
-                            f"{request.repository} (rule not_in_baseline)",
-                            _REMEDIATION,
-                        )
-                    )
-                elif (
-                    base is not None
-                    and path not in unreadable_at_base
-                    and job not in base.get(path, {})
-                ):
-                    findings.append(
-                        self._finding(
-                            "FAIL",
-                            location,
-                            f"{location}: baselined job '{job}' is new or newly "
-                            f"self-hosted against the base in public repository "
-                            f"{request.repository} (rule re_added)",
-                            _REMEDIATION,
-                        )
-                    )
-                else:
-                    existing += 1
-            if existing:
-                findings.append(
-                    self._finding(
-                        "WARN",
-                        path,
-                        f"{path}: {existing} baselined self-hosted job(s) in public "
-                        f"repository {request.repository}",
-                        None,
-                    )
-                )
-
-        if request.report_stale_baseline:
-            produced = {(p, j) for p, jobs in head.items() for j in jobs}
-            stale: dict[str, list[str]] = {}
-            for path, job in sorted(request.baseline - produced):
-                stale.setdefault(path, []).append(job)
-            for path, jobs in stale.items():
-                listed = ", ".join(jobs[:_MAX_LISTED])
-                more = len(jobs) - _MAX_LISTED
-                findings.append(
-                    self._finding(
-                        "WARN",
-                        path,
-                        f"{path}: {len(jobs)} baselined job(s) no longer run on a "
-                        f"self-hosted runner: {listed}"
-                        + (f" (+{more} more)" if more > 0 else "")
-                        + "; remove them from the baseline",
-                        None,
-                    )
-                )
+        findings = [
+            self._finding(
+                f"{path}:jobs.{job}",
+                f"{path}:jobs.{job}: {kind} runs-on in public repository "
+                f"{request.repository} (rule self_hosted_in_public)",
+            )
+            for path in sorted(head)
+            for job, kind in sorted(head[path].items())
+        ]
         return self._report(tuple(findings))
 
     @staticmethod
-    def _finding(
-        severity: Literal["WARN", "FAIL"],
-        location: str,
-        message: str,
-        remediation: str | None,
-    ) -> ModelValidationFinding:
+    def _finding(location: str, message: str) -> ModelValidationFinding:
         return ModelValidationFinding(
             validator_id=VALIDATOR_ID,
-            severity=severity,
+            severity="FAIL",
             location=location,
             message=message,
-            remediation=remediation,
+            remediation=_REMEDIATION,
         )
 
     @staticmethod

@@ -286,12 +286,7 @@ jobs:
     name: Enable Auto-Merge
     needs: [pre-check]
     if: needs.pre-check.outputs.skip != 'true' && needs.pre-check.outputs.actor == 'jonahgabriel'
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
 

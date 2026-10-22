@@ -50,8 +50,8 @@ def test_runner_placement_module_is_visible_in_the_workflow() -> None:
 @pytest.mark.parametrize(
     ("visibility", "runs_on", "exit_code", "message"),
     [
-        ("public", "ubuntu-latest", 0, "OK: probe adds no self-hosted CI job"),
-        ("public", "[self-hosted, omnibase-ci]", 1, "not_in_baseline"),
+        ("public", "ubuntu-latest", 0, "OK: probe has no self-hosted CI job"),
+        ("public", "[self-hosted, omnibase-ci]", 1, "self_hosted_in_public"),
         ("private", "[self-hosted, omnibase-ci]", 0, "private repository"),
     ],
 )
@@ -66,8 +66,6 @@ def test_workflow_module_enforces_runner_placement(
         "    steps:\n      - run: echo probe\n",
         encoding="utf-8",
     )
-    baseline = tmp_path / "baseline.yaml"
-    baseline.write_text("repos: {}\n", encoding="utf-8")
     # CI scans tracked workflows, so use a real repository for the subprocess.
     for args in (("init", "--quiet"), ("add", ".github/workflows/ci.yml")):
         subprocess.run(
@@ -88,8 +86,6 @@ def test_workflow_module_enforces_runner_placement(
             "probe",
             "--visibility",
             visibility,
-            "--baseline",
-            str(baseline),
         ],
         cwd=ROOT,
         env=scrub_git_location_env(),

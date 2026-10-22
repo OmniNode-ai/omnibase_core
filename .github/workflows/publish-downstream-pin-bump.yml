@@ -46,12 +46,7 @@ concurrency:
 jobs:
   enumerate-repos:
     name: Enumerate downstream repos
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     outputs:
       repos: ${{ steps.emit.outputs.repos }}
       new_sha: ${{ steps.sha.outputs.sha }}
@@ -90,12 +85,7 @@ jobs:
     name: "Bump: ${{ matrix.repo }}"
     needs: enumerate-repos
     if: needs.enumerate-repos.outputs.repos != '[]'
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     continue-on-error: true
     permissions:
       contents: read
@@ -284,12 +274,7 @@ jobs:
     name: Publish summary
     needs: [enumerate-repos, bump]
     if: always()
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     permissions:
       actions: read
     steps:

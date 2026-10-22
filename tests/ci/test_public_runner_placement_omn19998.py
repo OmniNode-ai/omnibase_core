@@ -10,8 +10,8 @@ omnibase_core is public, so:
   private caller, read from ``github.event.repository.private``, so a private
   repository calling it keeps its lab runner and a public one gets a hosted one;
 * the two jobs that read the route job's decision (``lint`` and
-  ``wheel-content-parity``) run on ``ubuntu-latest`` and leave the shrink-only
-  baseline;
+  ``wheel-content-parity``) run on ``ubuntu-latest`` (the baseline they left is
+  gone, OMN-21280);
 * the check-public-runner-placement hook runs as a pre-commit hook and as a
   step of ``lint-imports``, which the required Quality Gate / CI Summary chain
   aggregates.
@@ -31,13 +31,6 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 WORKFLOWS = REPO_ROOT / ".github" / "workflows"
 CI_WORKFLOW = WORKFLOWS / "ci.yml"
 PRECOMMIT = REPO_ROOT / ".pre-commit-config.yaml"
-BASELINE = (
-    REPO_ROOT
-    / "src"
-    / "omnibase_core"
-    / "contracts"
-    / "public_runner_placement_baseline.yaml"
-)
 
 FLEET_FALLBACK = """'["self-hosted","omnibase-ci"]'"""
 PRIVATE_CALLER = "github.event.repository.private &&"
@@ -103,19 +96,12 @@ def test_route_consumers_run_on_a_hosted_runner(job_id: str) -> None:
     assert _load(CI_WORKFLOW)["jobs"][job_id]["runs-on"] == "ubuntu-latest"
 
 
-@pytest.mark.parametrize("job_id", HOSTED_JOBS)
-def test_hosted_jobs_left_the_baseline(job_id: str) -> None:
-    baseline = _load(BASELINE)["repos"]["omnibase_core"]
-    assert job_id not in baseline[".github/workflows/ci.yml"]
-
-
 def test_placement_check_is_a_step_of_a_job_quality_gate_requires() -> None:
     jobs = _load(CI_WORKFLOW)["jobs"]
     steps = jobs["lint-imports"]["steps"]
     runs = "\n".join(str(step.get("run", "")) for step in steps)
     assert HOOK_MODULE in runs
     assert "--repo omnibase_core" in runs
-    assert "--baseline-ratchet-base-ref" in runs
     needs = jobs["quality-gate"]["needs"]
     assert "lint-imports" in needs
 
