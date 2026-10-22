@@ -9,7 +9,7 @@ Part of the effect boundary system for OMN-1147.
 
 Async Support:
     The decorator automatically detects async functions using
-    asyncio.iscoroutinefunction() and creates the appropriate wrapper:
+    inspect.iscoroutinefunction() and creates the appropriate wrapper:
     - Async functions get an async wrapper that properly awaits the original
     - Sync functions get a sync wrapper that calls the original directly
 
@@ -17,7 +17,7 @@ Async Support:
     of decorated functions.
 """
 
-import asyncio
+import inspect
 from collections.abc import Callable
 from functools import wraps
 from typing import ParamSpec, TypeVar
@@ -58,7 +58,7 @@ def effect_boundary(
     via introspection using get_effect_boundary().
 
     This decorator supports both sync and async functions. It automatically
-    detects async functions using asyncio.iscoroutinefunction() and creates
+    detects async functions using inspect.iscoroutinefunction() and creates
     the appropriate wrapper type to preserve async behavior.
 
     Args:
@@ -126,7 +126,7 @@ def effect_boundary(
         )
 
         # Create appropriate wrapper based on function type
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @wraps(func)
             async def async_wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
