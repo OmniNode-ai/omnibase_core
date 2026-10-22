@@ -67,10 +67,7 @@ jobs:
   # edge case at zero cost.
   manual-no-unguarded-git-subprocess:
     name: manual-no-unguarded-git-subprocess
-    runs-on: >-
-      ${{
-        fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:

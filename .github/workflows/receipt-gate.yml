@@ -67,15 +67,18 @@ jobs:
     name: verify
     # OMN-20074: caller evidence is the only mode, so this job reports a
     # success no-op; dod-verify carries the verdict. Same runner routing
-    # expression as dod-verify (OMN-18205): a genuine fork pull request
-    # resolves to OMNI_PUBLIC_PR_RUNS_ON_JSON, everything else to the trusted
-    # fleet.
+    # expression as dod-verify (OMN-18205): for a private caller a genuine
+    # fork pull request resolves to OMNI_PUBLIC_PR_RUNS_ON_JSON, everything
+    # else to the trusted fleet; a public caller always gets ubuntu-latest
+    # (OMN-21280).
     runs-on: >-
       ${{
-        (github.event_name == 'pull_request' &&
-         github.event.pull_request.head.repo.full_name != github.repository)
-        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        github.event.repository.private && (
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.head.repo.full_name != github.repository)
+          && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+          || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        ) || 'ubuntu-latest'
       }}
     timeout-minutes: 5
     steps:
@@ -87,10 +90,12 @@ jobs:
     # Same runner routing expression as verify (OMN-18205).
     runs-on: >-
       ${{
-        (github.event_name == 'pull_request' &&
-         github.event.pull_request.head.repo.full_name != github.repository)
-        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        github.event.repository.private && (
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.head.repo.full_name != github.repository)
+          && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+          || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        ) || 'ubuntu-latest'
       }}
     timeout-minutes: 40
     env:

@@ -17,8 +17,8 @@ name: Handshake Policy Gate
 # omnimarket revision; bump the revision to take a node change.
 #
 # Deliberately NOT triggered on `pull_request`: this job needs
-# the onexbot App signing secrets, and this repo's OMNI_RUNNER_SELECTOR_V1
-# convention (see ci.yml) routes every `pull_request`-triggered job to the
+# the onexbot App signing secrets, and the OMNI_RUNNER_SELECTOR_V1
+# convention routes every `pull_request`-triggered job to the
 # public ubuntu-latest runner regardless of fork status, withholding trusted
 # secrets by design. Adding `pull_request` here would make this job
 # permanently red on every PR (confirmed live on PR #1381 — "ERROR: GitHub
@@ -50,12 +50,14 @@ env:
 jobs:
   policy-gate:
     name: Check handshake compliance across repos
-    # OMNI_RUNNER_SELECTOR_V1 - trusted events default to ubuntu-latest; pull_request defaults to ubuntu-latest
+    # OMNI_RUNNER_SELECTOR_V1 behind the private-caller guard (OMN-21280): a public caller always gets ubuntu-latest
     runs-on: >-
       ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        github.event.repository.private && (
+          github.event_name != 'pull_request'
+          && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+          || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+        ) || 'ubuntu-latest'
       }}
     timeout-minutes: 10
 

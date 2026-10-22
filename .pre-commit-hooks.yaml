@@ -1206,10 +1206,9 @@
   description: >
     CI runners are for private repositories only (RULING 2026-10-16T07:07:09Z). Refuse a job whose runs-on
     is, or can resolve to, anything but a GitHub-hosted label (a literal such as self-hosted or omnibase-ci,
-    or an expression that names one or reads vars, needs, matrix, inputs, env, secrets or steps) unless
-    omnibase_core's shrink-only baseline, shipped in the package, records it for the repository. Pass
-    --repo <name> when the checkout directory is not the repository name; a private repository passes
-    --visibility private. The base comparison and the baseline ratchet run in CI through .github/workflows/version-drift.yml.
+    or an expression that names one or reads vars, needs, matrix, inputs, env, secrets or steps). There
+    is no baseline (OMN-21280): every such job of a public repository fails. Pass --repo <name> when the
+    checkout directory is not the repository name; a private repository passes --visibility private.
   language: python
   entry: python -m omnibase_core.handlers.handler_public_runner_placement_cli
   files: ^\.github/workflows/[^/]+\.ya?ml$
