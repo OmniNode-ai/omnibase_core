@@ -14,7 +14,7 @@ Related:
     - PR #302: Add infrastructure protocols
 """
 
-import asyncio
+import inspect
 from typing import Any
 
 import pytest
@@ -274,7 +274,7 @@ class TestProtocolServiceDiscoveryDefinition:
         assert isinstance(wrong, ProtocolServiceDiscovery)
 
         # But we can verify the method isn't actually async
-        assert not asyncio.iscoroutinefunction(wrong.register_service)
+        assert not inspect.iscoroutinefunction(wrong.register_service)
 
 
 @pytest.mark.unit

@@ -43,6 +43,7 @@ if TYPE_CHECKING:
 
 import asyncio
 import contextlib
+import inspect
 import signal
 import time
 from pathlib import Path
@@ -401,7 +402,7 @@ class MixinNodeExecutor(MixinEventDrivenNode):
             )
 
         run_method = self.run
-        if asyncio.iscoroutinefunction(run_method):
+        if inspect.iscoroutinefunction(run_method):
             return await run_method(input_state)
         return await asyncio.get_running_loop().run_in_executor(
             None, run_method, input_state
