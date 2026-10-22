@@ -1203,7 +1203,11 @@ def check_run_workflow_run_id(raw: dict[str, object]) -> int | None:
 def resolve_check_run_event(
     raw: dict[str, object], events: dict[int, str]
 ) -> str | None:
-    """Unknown provenance is swept, including App rows and missing run ids."""
+    """Unknown provenance is swept, including App rows and missing run ids.
+
+    OMN-20074 (run 39816629238): a run id missing from the index is unread provenance;
+    the sweep holds its non-success verdict provisional until the index settles.
+    """
 
     run_id = check_run_workflow_run_id(raw)
     return None if run_id is None else events.get(run_id)
@@ -1252,6 +1256,8 @@ def evaluate_external_sweep(
     OMN-17427: only success passes. Running rows and due replacements hold
     PENDING, bounded by the poller's deadline. An omitted clock admits no
     exclusions and grants no time-based grace.
+    OMN-20074 (run 39816629238): unread run-index provenance also holds
+    non-success verdicts PENDING, bounded by the same deadline.
     """
 
     accounted = frozenset(expected) | in_run_names | {self_name}
@@ -1265,6 +1271,12 @@ def evaluate_external_sweep(
         and check_run_workflow_run_id(raw) not in own_run_ids
         and resolve_check_run_event(raw, events) not in SWEEP_NON_PR_EVENTS
     ]
+    unread_names = {
+        str(raw.get("name") or "")
+        for raw in rows
+        if (run_id := check_run_workflow_run_id(raw)) is not None
+        and run_id not in events
+    }
     failures: list[str] = []
     running: list[str] = []
     swept: list[str] = []
@@ -1280,7 +1292,8 @@ def evaluate_external_sweep(
         elif state.conclusion in SWEEP_GOOD_CONCLUSIONS:
             continue
         elif (
-            verdict_is_provisional(state, now)
+            name in unread_names
+            or verdict_is_provisional(state, now)
             or _suite_rerun_in_flight(check_runs or [], name, state)
             or _producer_rerun_in_flight(check_runs or [], name, state, workflow_runs)
         ):
