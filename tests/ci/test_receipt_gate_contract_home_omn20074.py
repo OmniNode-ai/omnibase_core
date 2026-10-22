@@ -29,7 +29,11 @@ def _step() -> dict[str, Any]:
 
 
 def _run_head_verify(
-    tmp_path: Path, *, contract_present: bool, verdict: str = '{"status":"verified"}'
+    tmp_path: Path,
+    *,
+    contract_present: bool,
+    verdict: str = '{"status":"verified"}',
+    scoped: bool = True,
 ) -> tuple[subprocess.CompletedProcess[str], Path, Path, Path]:
     workspace = tmp_path / "workspace"
     head = workspace / ".dod-verify" / "head_home" / REPO_SHORT
@@ -40,6 +44,10 @@ def _run_head_verify(
         contract.write_text(f"ticket_id: {TICKET}\n")
     dod_dir = tmp_path / "runner" / "dod"
     dod_dir.mkdir(parents=True)
+    # OMN-17427: the scope step's output is the contract the verifier runs.
+    if scoped:
+        (dod_dir / "scope").mkdir()
+        (dod_dir / "scope" / f"head-{TICKET}.yaml").write_text(f"ticket_id: {TICKET}\n")
     (dod_dir / "tickets.txt").write_text(f"{TICKET}\n")
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -92,11 +100,25 @@ def test_compare_false_missing_contract_refuses_without_probing(tmp_path: Path) 
 def test_present_contract_runs_the_pinned_verifier_without_probing(
     tmp_path: Path,
 ) -> None:
-    result, verifier_log, contract, dod_dir = _run_head_verify(
-        tmp_path, contract_present=True
-    )
+    result, verifier_log, _, dod_dir = _run_head_verify(tmp_path, contract_present=True)
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [f"{TICKET} head: verified"]
+    assert verifier_log.read_text().splitlines() == [
+        f"-m omnimarket.nodes.node_dod_verify --ticket-id {TICKET} "
+        f"--contract-path {dod_dir}/scope/head-{TICKET}.yaml --execution-audience hosted "
+        f"--output-path {dod_dir}/head-{TICKET}.receipt.json"
+    ]
+
+
+def test_without_a_scoped_contract_the_full_contract_runs(tmp_path: Path) -> None:
+    result, verifier_log, contract, dod_dir = _run_head_verify(
+        tmp_path, contract_present=True, scoped=False
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == [
+        f"::notice::{TICKET}: no scoped contract; verifying contracts/{TICKET}.yaml in full",
+        f"{TICKET} head: verified",
+    ]
     assert verifier_log.read_text().splitlines() == [
         f"-m omnimarket.nodes.node_dod_verify --ticket-id {TICKET} "
         f"--contract-path {contract} --execution-audience hosted "
