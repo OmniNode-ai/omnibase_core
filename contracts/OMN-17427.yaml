@@ -608,7 +608,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/4ebe05bc64d25f5e6260d665a981a9a269e750fd/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
           | cmp - src/omnibase_core/handlers/handler_ci_inheritance_cli.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
@@ -675,12 +675,12 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/4ebe05bc64d25f5e6260d665a981a9a269e750fd/src/omnibase_core/handlers/handler_ci_repository_jobs.py
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_repository_jobs.py
           | cmp - src/omnibase_core/handlers/handler_ci_repository_jobs.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/4ebe05bc64d25f5e6260d665a981a9a269e750fd/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
           | cmp - src/omnibase_core/handlers/handler_ci_inheritance_cli.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
