@@ -1,0 +1,54 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21210
+title: Core terminal cause enum gains returned_to_caller
+summary: EnumDelegationTerminalFailureCause gains returned_to_caller, the terminal cause of a run whose
+  every chosen model failed and was handed back to the calling session with zero savings (decision D3).
+  omnimarket's end-of-ladder outcome (OMN-21264) needs the member in a released core.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21210-returned-to-caller
+    statement: The terminal cause vocabulary names a run handed back to its caller, in a released core.
+    acceptance:
+      - id: AC1
+        statement: "AC1: `EnumDelegationTerminalFailureCause` declares `returned_to_caller` and its enum
+          test enumerates it -- falsifier: `uv run pytest tests/unit/enums -q -k terminal_failure_cause`,
+          which fails today because the member does not exist."
+      - id: AC2
+        statement: "AC2: The member is published in a released omnibase_core version, not only on dev,
+          so omnimarket can pin it -- falsifier: `pip index versions omnibase-core` names a version at
+          or above the release carrying the member, and importing the member from that installed version
+          raises today."
+evidence_requirements:
+  - kind: tests
+    description: The returned_to_caller member and its pinned wire value.
+    command: uv run pytest tests/unit/enums -q -k terminal_failure_cause
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21210-ac1
+    description: EnumDelegationTerminalFailureCause declares returned_to_caller, its wire value is pinned
+      in the vocabulary test, and it is distinct from the provider and gate causes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/enums/test_enum_delegation_terminal_failure_cause.py -n
+          0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21210-ac2
+    description: The installed package exports returned_to_caller, so the next release-train cut publishes
+      it. The published version itself is read with pip index versions at close-out, after the release.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run python -c "from omnibase_core.enums.enum_delegation_terminal_failure_cause
+          import EnumDelegationTerminalFailureCause as E; assert E.RETURNED_TO_CALLER.value == 'returned_to_caller'"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
