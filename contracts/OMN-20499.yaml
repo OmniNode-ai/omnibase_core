@@ -26,6 +26,7 @@ dod_evidence:
     description: "PR #1879 on OmniNode-ai/omnibase_core, hand-authored companion. The check counts the
       omnibase-core entries in omnibase_core's uv.lock at the PR head that record version 0.47.34."
     source: "generated"
+    binds_ac: [AC1]
     checks:
       - check_type: "command"
         check_value: |-
