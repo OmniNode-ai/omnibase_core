@@ -14,7 +14,7 @@ Related:
     - PR #302: Add infrastructure protocols
 """
 
-import asyncio
+import inspect
 from typing import Any
 
 import pytest
@@ -202,7 +202,7 @@ class TestProtocolDatabaseConnectionDefinition:
         assert isinstance(wrong, ProtocolDatabaseConnection)
 
         # But we can verify the method isn't actually async
-        assert not asyncio.iscoroutinefunction(wrong.connect)
+        assert not inspect.iscoroutinefunction(wrong.connect)
 
 
 @pytest.mark.unit
