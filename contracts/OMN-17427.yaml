@@ -1028,7 +1028,7 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -o addopts='' -k
-          test_project_version_matches_locked_editable_package
+          'test_project_version_matches_locked_editable_package or test_dev_version_is_ahead_of_the_0_47_51_release'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC48

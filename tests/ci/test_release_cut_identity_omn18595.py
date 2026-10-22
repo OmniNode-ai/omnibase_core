@@ -70,6 +70,13 @@ def test_project_version_matches_locked_editable_package() -> None:
     assert packages[0]["version"] == project["project"]["version"]
 
 
+def test_dev_version_is_ahead_of_the_0_47_51_release() -> None:
+    """After the 0.47.51 cut, dev declares a version that is not yet published."""
+    project = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    version = tuple(int(part) for part in project["project"]["version"].split("."))
+    assert version > (0, 47, 51)
+
+
 def test_release_changelog_retains_version_0_47_50_in_root_readme() -> None:
     """Keep this cut's public notes while rejecting a standalone changelog."""
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
