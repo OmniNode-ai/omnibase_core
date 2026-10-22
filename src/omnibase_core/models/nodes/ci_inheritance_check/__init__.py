@@ -15,6 +15,9 @@ import importlib.util
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_baseline import (
+        ModelCiInheritanceBaseline,
+    )
     from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input import (
         ModelCiInheritanceCheckInput,
     )
@@ -23,12 +26,17 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
+    "ModelCiInheritanceBaseline",
     "ModelCiInheritanceCheckInput",
     "ModelCiOrgReference",
 ]
 
 
 _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelCiInheritanceBaseline": (
+        "omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_baseline",
+        "ModelCiInheritanceBaseline",
+    ),
     "ModelCiInheritanceCheckInput": (
         "omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input",
         "ModelCiInheritanceCheckInput",
