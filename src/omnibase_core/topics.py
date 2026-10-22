@@ -724,6 +724,18 @@ class TopicBase(StrEnum):
     PLATFORM_LOG_ENTRY = "onex.evt.platform.log-entry.v1"  # onex-topic-sot
     """Structured log entry events; schema: StructuredLogEntry (omnibase_core)."""
 
+    # ==========================================================================
+    # Validator triggered (OMN-21277)
+    # RULING 2026-10-14T20:01:09Z: validators emit a bus event when they trigger.
+    # ==========================================================================
+    VALIDATOR_TRIGGERED = "onex.evt.platform.validator-triggered.v1"  # onex-topic-sot
+    """One event per core validator whose report carries a FAIL or ERROR finding.
+
+    Wire model: ModelValidatorTriggeredEvent.
+    Producer: HandlerValidatorTriggeredEmit (omnibase_core).
+    Registered in contracts/topic_registry.yaml (OMN-21277).
+    """
+
 
 def _validate_topic_segment(segment: str, name: str) -> str:
     """Validate a single topic segment (prefix or base segment).

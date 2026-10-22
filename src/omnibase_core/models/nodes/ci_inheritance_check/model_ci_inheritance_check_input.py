@@ -7,6 +7,9 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_baseline import (
+    ModelCiInheritanceBaseline,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
 )
@@ -32,3 +35,24 @@ class ModelCiInheritanceCheckInput(BaseModel):
     )
     base_files: list[ModelSourceFile] = Field(default_factory=list)
     head_files: list[ModelSourceFile] = Field(default_factory=list)
+    baseline: ModelCiInheritanceBaseline | None = Field(
+        default=None,
+        description=(
+            "Head baseline of the checked repository (OMN-21277). When set, an "
+            "inline job passes only when this baseline lists it."
+        ),
+    )
+    base_baseline: ModelCiInheritanceBaseline | None = Field(
+        default=None,
+        description=(
+            "Base baseline; None means the base carries none, so every entry "
+            "must name an inline job of the base workflows."
+        ),
+    )
+    compare_base: bool = Field(
+        default=True,
+        description=(
+            "False when no base was materialized: only the head baseline is "
+            "enforced and the shrink-only comparison is left to CI."
+        ),
+    )

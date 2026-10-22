@@ -3131,7 +3131,9 @@ jobs:
   # (RULING 2026-10-14T19:54:41Z: repositories of the same type run the same
   # CI); only a job of a reusable (on: workflow_call) workflow in omnibase_core,
   # or a job that calls a reusable workflow, is new CI a repository may gain.
-  # Inline jobs the base already carries are counted, never allowed by a list.
+  # OMN-21277: inline jobs pass only when the shrink-only
+  # .onex_ratchets/ci_inheritance_baseline.yaml lists them; an entry the base
+  # baseline did not list (new or re-added) or naming no inline job fails.
   # Unconditional job under the required "CI Summary" rollup; the same pure
   # handlers back the check-ci-inheritance pre-commit hook.
   ci-inheritance-check:
@@ -3165,7 +3167,7 @@ jobs:
 
       - name: Run validator unit tests
         run: |
-          uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py tests/unit/handlers/test_handler_ci_repository_jobs.py -v
+          uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py tests/unit/handlers/test_handler_ci_repository_jobs.py tests/unit/handlers/test_handler_ci_inheritance_baseline.py tests/unit/handlers/test_handler_validator_triggered_emit.py -v
 
       - name: Materialize the base workflows
         id: base
@@ -3175,6 +3177,7 @@ jobs:
           MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
           PUSH_BEFORE: ${{ github.event.before }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          BASELINE: .onex_ratchets/ci_inheritance_baseline.yaml
         run: |
           set -euo pipefail
           case "$EVENT_NAME" in
@@ -3188,22 +3191,32 @@ jobs:
           if [ -z "$base_sha" ] || [ "$base_sha" = "0000000000000000000000000000000000000000" ]; then
             echo "Event '$EVENT_NAME' carries no base commit; comparing the tree with itself (no reference can be new)."
             cp -R .github/workflows "$base_dir/workflows"
+            cp "$BASELINE" "$base_dir/ci_inheritance_baseline.yaml"
           else
             git fetch --no-tags --depth=1 "$REPO_URL" "$base_sha"
             mkdir -p "$base_dir/archive"
             git archive "$base_sha" .github/workflows | tar -x -C "$base_dir/archive"
             mv "$base_dir/archive/.github/workflows" "$base_dir/workflows"
+            # A base with no baseline file leaves none: the check then allows
+            # only entries naming inline jobs the base workflows carry (OMN-21277).
+            if git cat-file -e "$base_sha:$BASELINE" 2>/dev/null; then
+              git show "$base_sha:$BASELINE" > "$base_dir/ci_inheritance_baseline.yaml"
+            fi
             echo "Base for the comparison: $base_sha"
           fi
           echo "dir=$base_dir/workflows" >> "$GITHUB_OUTPUT"
+          echo "baseline=$base_dir/ci_inheritance_baseline.yaml" >> "$GITHUB_OUTPUT"
 
       - name: Refuse new CI references hosted outside omnibase_core (blocking)
         env:
           BASE_DIR: ${{ steps.base.outputs.dir }}
+          BASE_BASELINE: ${{ steps.base.outputs.baseline }}
         run: |
           env -u PYTHONPATH uv run python -m \
             omnibase_core.handlers.handler_ci_inheritance_cli \
-            --base-dir "$BASE_DIR" --head-dir .github/workflows
+            --base-dir "$BASE_DIR" --head-dir .github/workflows \
+            --baseline .onex_ratchets/ci_inheritance_baseline.yaml \
+            --base-baseline "$BASE_BASELINE"
 
   # Migrated from validator-operation-match.yml (OMN-14877,
   # OMN-14430 fast-follow). Unconditional job under the required "CI Summary"

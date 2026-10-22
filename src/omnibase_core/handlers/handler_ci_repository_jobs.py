@@ -10,6 +10,12 @@ New inline jobs are refused unless they live in a reusable workflow in the
 host repository. Existing repository-specific jobs are reported as one WARN
 per file. Jobs calling reusable workflows are judged by HandlerCiInheritance.
 
+With a baseline (OMN-21277) the base no longer excuses a job: a typed
+repository's inline job passes only when its shrink-only baseline lists it.
+An entry the base baseline did not list (new or re-added) fails, an entry
+naming no inline job is stale and fails, and a first baseline may list only
+inline jobs the base workflows already carry.
+
 Architecture: pure COMPUTE handler — deterministic, no I/O, no clock. Workflow
 text arrives as explicit (path, source) pairs; YAML parsing operates only on
 those strings. The CLI owns filesystem reads and output.
@@ -77,6 +83,8 @@ class HandlerCiRepositoryJobs:
 
     def handle(self, request: ModelCiInheritanceCheckInput) -> ModelValidationReport:
         """Definition-B canonical entry-point (OMN-14355). Pure, no I/O, no clock."""
+        if request.baseline is not None:
+            return _report(self._baseline_findings(request))
         host = request.host_repository
         repository = host if request.repository is None else request.repository
         base_jobs: set[tuple[str, str]] = set()
@@ -99,18 +107,7 @@ class HandlerCiRepositoryJobs:
                     file.source, file.path, repository, host
                 )
             except yaml.YAMLError as error:
-                findings.append(
-                    ModelValidationFinding(
-                        validator_id=VALIDATOR_ID,
-                        severity="ERROR",
-                        location=file.path,
-                        message=(
-                            f"{file.path}: workflow is not valid YAML: "
-                            f"{str(error).splitlines()[0]}"
-                        ),
-                        remediation=None,
-                    )
-                )
+                findings.append(_invalid_yaml(file.path, error))
                 continue
 
             existing = 0
@@ -151,12 +148,141 @@ class HandlerCiRepositoryJobs:
                     )
                 )
 
-        embedded = tuple(
-            ModelValidationFindingEmbed(**finding.model_dump(mode="json"))
-            for finding in findings
-        )
-        return ModelValidationReport.from_findings(
-            findings=embedded,
-            request=ModelValidationRequestRef(profile=_PROFILE),
-            validators_run=(VALIDATOR_ID,),
-        )
+        return _report(findings)
+
+    def _baseline_findings(
+        self, request: ModelCiInheritanceCheckInput
+    ) -> list[ModelValidationFinding]:
+        """Judge the head against the shrink-only baseline (OMN-21277)."""
+        baseline = request.baseline
+        if baseline is None:
+            return []
+        host = request.host_repository
+        repository = host if request.repository is None else request.repository
+        if baseline.repository.casefold() != repository.casefold():
+            return [
+                ModelValidationFinding(
+                    validator_id=VALIDATOR_ID,
+                    severity="ERROR",
+                    location="baseline",
+                    message=(
+                        f"baseline names repository {baseline.repository}, "
+                        f"not the checked repository {repository}"
+                    ),
+                    remediation=None,
+                )
+            ]
+        listed = set(baseline.entries)
+        findings: list[ModelValidationFinding] = []
+        head_jobs: set[str] = set()
+        for file in sorted(request.head_files, key=lambda f: f.path):
+            try:
+                locations = repository_specific_jobs(
+                    file.source, file.path, repository, host
+                )
+            except yaml.YAMLError as error:
+                findings.append(_invalid_yaml(file.path, error))
+                continue
+            head_jobs.update(locations)
+            carried = 0
+            for location in locations:
+                if location in listed:
+                    carried += 1
+                    continue
+                job_id = location.removeprefix(f"{file.path}:jobs.")
+                findings.append(
+                    ModelValidationFinding(
+                        validator_id=VALIDATOR_ID,
+                        severity="FAIL",
+                        location=location,
+                        message=(
+                            f"{location}: repository-specific CI job '{job_id}' of "
+                            f"{baseline.repository_type} repository {repository} is "
+                            "not in its CI inheritance baseline"
+                        ),
+                        remediation=(
+                            "Run the job from a reusable workflow (on: workflow_call) "
+                            f"in {request.organization}/{host} called with uses:; the "
+                            "baseline only shrinks (RULINGs 2026-10-14T19:54:41Z and "
+                            "2026-10-14T20:01:09Z, OMN-21277)."
+                        ),
+                    )
+                )
+            if carried:
+                findings.append(
+                    ModelValidationFinding(
+                        validator_id=VALIDATOR_ID,
+                        severity="WARN",
+                        location=file.path,
+                        message=(
+                            f"{file.path}: {carried} baselined repository-specific "
+                            f"job(s) not inherited from {host}"
+                        ),
+                        remediation=None,
+                    )
+                )
+
+        allowed: set[str] | None = None
+        if request.compare_base:
+            if request.base_baseline is not None:
+                allowed = set(request.base_baseline.entries)
+            else:
+                allowed = set()
+                for file in request.base_files:
+                    try:
+                        allowed.update(
+                            repository_specific_jobs(
+                                file.source, file.path, repository, host
+                            )
+                        )
+                    except yaml.YAMLError:
+                        continue
+        for entry in baseline.entries:
+            if entry not in head_jobs:
+                findings.append(
+                    _entry_fail(entry, "names no inline job of the head; delete it")
+                )
+            elif allowed is not None and entry not in allowed:
+                reason = (
+                    "is not in the base baseline; the baseline only shrinks"
+                    if request.base_baseline is not None
+                    else "names no inline job of the base; a first baseline "
+                    "lists only jobs the base already carries"
+                )
+                findings.append(_entry_fail(entry, reason))
+        return findings
+
+
+def _invalid_yaml(path: str, error: yaml.YAMLError) -> ModelValidationFinding:
+    return ModelValidationFinding(
+        validator_id=VALIDATOR_ID,
+        severity="ERROR",
+        location=path,
+        message=f"{path}: workflow is not valid YAML: {str(error).splitlines()[0]}",
+        remediation=None,
+    )
+
+
+def _entry_fail(entry: str, reason: str) -> ModelValidationFinding:
+    return ModelValidationFinding(
+        validator_id=VALIDATOR_ID,
+        severity="FAIL",
+        location=f"baseline:{entry}",
+        message=f"CI inheritance baseline entry {entry} {reason}",
+        remediation=(
+            "Remove the entry; a job leaves the baseline by moving into a reusable "
+            "omnibase_core workflow and never comes back (OMN-21277)."
+        ),
+    )
+
+
+def _report(findings: list[ModelValidationFinding]) -> ModelValidationReport:
+    embedded = tuple(
+        ModelValidationFindingEmbed(**finding.model_dump(mode="json"))
+        for finding in findings
+    )
+    return ModelValidationReport.from_findings(
+        findings=embedded,
+        request=ModelValidationRequestRef(profile=_PROFILE),
+        validators_run=(VALIDATOR_ID,),
+    )
