@@ -70,17 +70,17 @@ jobs:
     name: verify
     # OMN-20074: caller evidence is the only mode, so this job reports a
     # success no-op; dod-verify carries the verdict. Same runner routing
-    # expression as dod-verify (OMN-18205): for a private caller a genuine
-    # fork pull request resolves to OMNI_PUBLIC_PR_RUNS_ON_JSON, everything
-    # else to the trusted fleet; a public caller always gets ubuntu-latest
-    # (OMN-21280).
+    # expression as dod-verify (OMN-18205): a private caller runs every event,
+    # fork pull requests included, on its own OMNI_TRUSTED_CI_RUNS_ON_JSON
+    # with no default, because since 2026-10-19 a private repository may not
+    # run on a hosted label at all and a hosted default behind a variable
+    # counts (the OMN-21216 shape; the private-repo placement gate refuses a
+    # private caller where that variable is unset). A public caller always
+    # gets ubuntu-latest (OMN-21280).
     runs-on: >-
       ${{
         github.event.repository.private && (
-          (github.event_name == 'pull_request' &&
-           github.event.pull_request.head.repo.full_name != github.repository)
-          && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-          || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+          fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON)
         ) || 'ubuntu-latest'
       }}
     timeout-minutes: 5
@@ -94,10 +94,7 @@ jobs:
     runs-on: >-
       ${{
         github.event.repository.private && (
-          (github.event_name == 'pull_request' &&
-           github.event.pull_request.head.repo.full_name != github.repository)
-          && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-          || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+          fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON)
         ) || 'ubuntu-latest'
       }}
     # OMN-17427: 60 minutes. A caller contract that has grown to hundreds of

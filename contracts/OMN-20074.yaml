@@ -423,6 +423,17 @@ requirements:
           a ticket reference under an onex_change_control/ path is flagged and the local-environment rules
           still apply under contracts/ -- falsifier: uv run pytest tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
           -q --no-cov -p no:randomly fails at the merge base'
+  - id: req-omn20074-receipt-gate-private-fork
+    statement: The receipt gate never places a private caller's run on a GitHub-hosted label, fork pull
+      requests included, and a public caller keeps ubuntu-latest (operator rule 2026-10-19, the OMN-21216
+      shape).
+    acceptance:
+      - id: AC56
+        statement: 'AC56: verify and dod-verify carry no OMNI_PUBLIC_PR_RUNS_ON_JSON arm and resolve a
+          private caller to fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON) with no literal default and a
+          public caller to ubuntu-latest -- falsifier: uv run pytest tests/ci/test_receipt_gate_untrusted_test_omn18205.py
+          tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q --no-cov -p no:randomly fails at the
+          merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -600,6 +611,11 @@ evidence_requirements:
     description: The doc-content scan tests find a ticket reference under an onex_change_control/ path
       flagged and the contracts/ exemption kept, with the local-environment rules applied under contracts/.
     command: uv run pytest tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
+      -q --no-cov -p no:randomly
+  - kind: tests
+    description: The receipt gate's runner test proves a private caller has no hosted arm and no hosted
+      default on either job, and a public caller runs on ubuntu-latest.
+    command: uv run pytest tests/ci/test_receipt_gate_untrusted_test_omn18205.py tests/ci/test_receipt_gate_caller_evidence_omn20070.py
       -q --no-cov -p no:randomly
 emergency_bypass:
   enabled: false
@@ -1080,3 +1096,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC54
+  - id: dod-omn-20074-ac56
+    description: The receipt gate's runner test proves neither job routes a private caller's pull request,
+      fork or not, to a hosted label.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_untrusted_test_omn18205.py tests/ci/test_receipt_gate_caller_evidence_omn20070.py
+          -q --no-cov -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC56
