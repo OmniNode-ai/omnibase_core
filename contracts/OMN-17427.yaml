@@ -372,6 +372,14 @@ requirements:
           with matching ticket identities and at least their migrated evidence counts, with populated
           checks and retained disclosed supersessions. -- falsifier: uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
           -q -o addopts=''"
+  - id: req-omn17427-release-identity-reopen-dev
+    statement: After the 0.47.51 release cut, dev declares an unpublished package version so packaged-source
+      pull requests are not refused by the Release Identity Validator for aliasing a published wheel.
+    acceptance:
+      - id: AC48
+        statement: "AC48: pyproject.toml and the editable omnibase-core uv.lock entry both declare 0.47.52,
+          ahead of the published 0.47.51 tag. -- falsifier: uv run pytest tests/ci/test_release_cut_identity_omn18595.py
+          -q -o addopts='' -k test_project_version_matches_locked_editable_package"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -467,6 +475,10 @@ evidence_requirements:
     description: "RuntimeLocal joins the declared terminal subscriptions concurrently, and a fatal first
       terminal leaves no later terminal bound."
     command: uv run pytest tests/unit/runtime/test_runtime_local_failure_terminal.py -q
+  - kind: tests
+    description: "The project version and the editable omnibase-core lock entry agree on the reopened
+      0.47.52 dev version."
+    command: "uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k test_project_version_matches_locked_editable_package"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1007,3 +1019,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC47
+  - id: dod-omn17427-release-identity-reopen-dev
+    description: Hosted package-identity probe. The checked-out project and its editable lock entry declare
+      0.47.52, ahead of the published 0.47.51 tag, so the Release Identity Validator accepts packaged-source
+      changes.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -o addopts='' -k
+          test_project_version_matches_locked_editable_package
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC48
