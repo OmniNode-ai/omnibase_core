@@ -1,9 +1,9 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-18595
-title: Release 0.47.52 respects the repository documentation policy
+title: Release 0.47.53 respects the repository documentation policy
 summary: Retain the release notes in root README.md instead of the release-generated CHANGELOG.md that
-  the README-only documentation policy refuses, and retain the 0.47.52 package identity in pyproject.toml
+  the README-only documentation policy refuses, and retain the 0.47.53 package identity in pyproject.toml
   and uv.lock.
 is_seam_ticket: false
 interface_change: false
@@ -17,7 +17,7 @@ requirements:
         statement: The canonical README-only documentation validator accepts the release tree; restoring
           the generated CHANGELOG.md makes the validator fail.
       - id: AC2
-        statement: The project and editable omnibase-core lock entry both declare version 0.47.52.
+        statement: The project and editable omnibase-core lock entry both declare version 0.47.53.
 evidence_requirements:
   - kind: tests
     description: Release-cut identity tests, then the canonical documentation scan and package-identity
@@ -56,9 +56,9 @@ dod_evidence:
         check_value: >-
           uv run --locked python -c 'import pathlib, tomllib; project = tomllib.loads(pathlib.Path("pyproject.toml").read_text());
           lock = tomllib.loads(pathlib.Path("uv.lock").read_text()); assert project["project"]["version"]
-          == "0.47.52"; assert "## v0.47.52 (2026-10-22)" in pathlib.Path("README.md").read_text(); packages
+          == "0.47.53"; assert "## v0.47.53 (2026-10-22)" in pathlib.Path("README.md").read_text(); packages
           = [p for p in lock["package"] if p["name"] == "omnibase-core"]; assert len(packages) == 1 and
-          packages[0]["version"] == "0.47.52" and packages[0]["source"] == {"editable": "."}'
+          packages[0]["version"] == "0.47.53" and packages[0]["source"] == {"editable": "."}'
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-deploy-hosted-readback
     description: Hosted deployment probe for this release-only change scans the actual indexed tree; restoring
@@ -84,4 +84,19 @@ dod_evidence:
           uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
           assert "## v0.47.52 (2026-10-22)" in notes; assert "### Included Since v0.47.51" in notes; assert
           "(#2076)" in notes and "(#2072)" in notes and "(#2071)" in notes and "(#2075)" in notes'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18595-ac1-release-0-47-53-notes
+    description: The release tree passes the documentation policy and retains this release's notes in
+      root README.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k changelog
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
+          assert "## v0.47.53 (2026-10-22)" in notes; assert "### Included Since v0.47.52" in notes; assert
+          "(#2081)" in notes'
         cwd: ${OMNI_HOME}/omnibase_core
