@@ -16,6 +16,8 @@ Tests cover:
 Target: 90%+ coverage for decorators/decorator_error_handling.py
 """
 
+import inspect
+
 import pytest
 
 from omnibase_core.decorators.decorator_error_handling import (
@@ -602,13 +604,12 @@ class TestAsyncStandardErrorHandling:
     @pytest.mark.asyncio
     async def test_async_wrapper_is_coroutine_function(self):
         """Test that decorated async functions remain coroutine functions."""
-        import asyncio
 
         @standard_error_handling("Async operation")
         async def async_func():
             return "result"
 
-        assert asyncio.iscoroutinefunction(async_func)
+        assert inspect.iscoroutinefunction(async_func)
 
 
 @pytest.mark.unit
@@ -798,14 +799,13 @@ class TestAsyncDecoratorEdgeCases:
     @pytest.mark.asyncio
     async def test_sync_function_remains_sync(self):
         """Test that sync functions decorated remain sync (not async)."""
-        import asyncio
 
         @standard_error_handling("Sync operation")
         def sync_func():
             return "sync result"
 
         # Should NOT be a coroutine function
-        assert not asyncio.iscoroutinefunction(sync_func)
+        assert not inspect.iscoroutinefunction(sync_func)
         result = sync_func()
         assert result == "sync result"
 

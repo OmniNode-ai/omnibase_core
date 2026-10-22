@@ -16,6 +16,7 @@ All decorators follow the ONEX exception handling contract:
 
 import asyncio
 import functools
+import inspect
 from collections.abc import Callable
 from typing import Any, ParamSpec, TypeVar
 
@@ -247,7 +248,7 @@ def standard_error_handling(
     """
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -335,7 +336,7 @@ def validation_error_handling(
     """
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -444,7 +445,7 @@ def io_error_handling(
     """
 
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
-        if asyncio.iscoroutinefunction(func):
+        if inspect.iscoroutinefunction(func):
 
             @functools.wraps(func)
             async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
