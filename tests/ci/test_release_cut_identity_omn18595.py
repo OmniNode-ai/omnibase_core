@@ -104,3 +104,11 @@ def test_release_changelog_retains_version_0_47_52_in_root_readme() -> None:
     assert (
         "- fix: ticket contract dod_evidence items accept ac_bindings (#2076)" in readme
     )
+
+
+def test_release_changelog_retains_version_0_47_53_in_root_readme() -> None:
+    """Keep the 0.47.53 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.53 (2026-10-22)" in readme
+    assert "### Included Since v0.47.52" in readme
+    assert "- feat: the terminal cause enum gains returned_to_caller (#2081)" in readme
