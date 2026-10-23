@@ -85,15 +85,7 @@ jobs:
   compute-matrix:
     name: Compute Downstream Matrix
     # OMNI_RUNNER_SELECTOR_V1 behind the private-caller guard (OMN-21280): a public caller always gets ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event.repository.private && (
-          (github.event_name == 'pull_request' &&
-           github.event.pull_request.head.repo.full_name != github.repository)
-          && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-          || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
-        ) || 'ubuntu-latest'
-      }}
+    runs-on: ${{ github.event.repository.private && ( (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]') || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]')) ) || 'ubuntu-latest' }}
     outputs:
       repos: ${{ steps.matrix.outputs.repos }}
     steps:
@@ -126,15 +118,7 @@ jobs:
     name: Bump ${{ matrix.repo }}
     needs: compute-matrix
     # OMNI_RUNNER_SELECTOR_V1 behind the private-caller guard (OMN-21280): a public caller always gets ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event.repository.private && (
-          (github.event_name == 'pull_request' &&
-           github.event.pull_request.head.repo.full_name != github.repository)
-          && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-          || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
-        ) || 'ubuntu-latest'
-      }}
+    runs-on: ${{ github.event.repository.private && ( (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]') || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]')) ) || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
