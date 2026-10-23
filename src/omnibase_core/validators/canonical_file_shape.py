@@ -14,10 +14,17 @@ This ratchet looks at every tracked file in the repository and refuses:
 
 ``noncanonical-file``
     a code file outside a canonical location that is not in the repo's
-    baseline. Canonical locations: ``src/<pkg>/{nodes,handlers,models,
+    baseline. Python/other canonical locations: ``src/<pkg>/{nodes,handlers,models,
     protocols,contracts,enums}/``, any ``tests/`` or ``test/`` directory,
-    ``conftest.py``, and ``docs/``. A code file is one with a code extension,
-    or an extensionless file that starts with ``#!``.
+    ``conftest.py``, and ``docs/``. TypeScript/React uses its own workspace
+    locations: tests, docs, root config/setup and next-env files, Storybook,
+    and selected ``src/`` entrypoints, app routes, hooks and source directories.
+    JavaScript is admitted only in those test/docs/config/Storybook locations.
+    Shell scripts have no canonical location, including in tests or docs;
+    shell suffixes and extensionless shell shebangs are always noncanonical.
+    Existing baselined shell scripts remain subject to the shrink-only ratchet.
+    A code file is one with a code extension, or an extensionless file that
+    starts with ``#!``.
 ``baseline-stale``
     a baseline entry whose file was removed, moved or made canonical. The
     entry must be deleted in the same change, so the baseline only shrinks.
@@ -183,6 +190,68 @@ CANONICAL_SRC_DIRS: frozenset[str] = frozenset(
     ("nodes", "handlers", "models", "protocols", "contracts", "enums")
 )
 TEST_DIRS: frozenset[str] = frozenset(("tests", "test"))
+# OMN-21332: knowledge_base_internal/
+# beta/plans/2026-10-23-canonical-shape-typescript-react-swift.md, rules T1-T17.
+TYPESCRIPT_EXTENSIONS: frozenset[str] = frozenset(
+    (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
+)
+TYPESCRIPT_SRC_EXTENSIONS: frozenset[str] = frozenset((".ts", ".tsx"))
+TYPESCRIPT_TEST_DIRS: frozenset[str] = TEST_DIRS | frozenset(("__tests__", "e2e"))
+TYPESCRIPT_SRC_DIRS: frozenset[str] = frozenset(
+    (
+        "components",
+        "pages",
+        "models",
+        "api",
+        "generated",
+        "contracts",
+        "handlers",
+        "store",
+        "theme",
+    )
+)
+TYPESCRIPT_ENTRYPOINTS: frozenset[str] = frozenset(
+    (
+        "index",
+        "main",
+        "App",
+        "middleware",
+        "proxy",
+        "instrumentation",
+        "instrumentation-client",
+    )
+)
+TYPESCRIPT_APP_NAMES: frozenset[str] = frozenset(
+    (
+        "page",
+        "layout",
+        "loading",
+        "error",
+        "not-found",
+        "forbidden",
+        "unauthorized",
+        "route",
+        "template",
+        "default",
+        "global-error",
+        "global-not-found",
+        "sitemap",
+        "robots",
+        "manifest",
+        "icon",
+        "apple-icon",
+        "opengraph-image",
+        "twitter-image",
+    )
+)
+TYPESCRIPT_CONFIG_NAME = re.compile(r"^[^/]+\.(config|setup)\.(ts|js|mjs|cjs)$")
+TYPESCRIPT_TEST_NAME = re.compile(r"\.(test|spec)\.(ts|tsx)$")
+TYPESCRIPT_HOOK_NAME = re.compile(r"^(use[A-Z][A-Za-z0-9]*|index)\.(ts|tsx)$")
+SHELL_EXTENSIONS: frozenset[str] = frozenset((".sh", ".bash", ".zsh"))
+SHELL_SHEBANG = re.compile(
+    rb"^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-S[ \t]+)?(?:\S*/)?)?"
+    rb"(?:sh|bash|zsh|dash|ksh)(?:[ \t]|$)"
+)
 # Path parts that mark Claude Code mod work: a plugin tree, the project's own
 # ``.claude`` directory, or a hooks directory anywhere.
 MOD_SURFACE_ROOTS: frozenset[str] = frozenset(("plugins", ".claude"))
@@ -346,7 +415,99 @@ def is_code_file(path: str, head_bytes: bytes | None) -> bool:
     return False
 
 
-def is_canonical_location(path: str) -> bool:
+def is_shell_script(path: str, head_bytes: bytes | None) -> bool:
+    """A shell suffix, or an extensionless file with a shell interpreter shebang."""
+    suffix = _suffix(path)
+    if suffix in SHELL_EXTENSIONS:
+        return True
+    if suffix or not head_bytes:
+        return False
+    first_line = head_bytes.split(b"\n", 1)[0].rstrip(b"\r")
+    return SHELL_SHEBANG.match(first_line) is not None
+
+
+def _is_typescript_src_location(parts: tuple[str, ...]) -> bool:
+    """Check a path relative to a workspace's src directory."""
+    name = parts[-1]
+    if TYPESCRIPT_TEST_NAME.search(name):
+        return True
+    stem = PurePosixPath(name).stem
+    if len(parts) == 1:
+        return stem in TYPESCRIPT_ENTRYPOINTS or name.endswith(".d.ts")
+    if parts[0] == "app":
+        return stem in TYPESCRIPT_APP_NAMES
+    if parts[0] == "hooks":
+        return len(parts) == 2 and TYPESCRIPT_HOOK_NAME.fullmatch(name) is not None
+    return parts[0] in TYPESCRIPT_SRC_DIRS
+
+
+def typescript_workspace_roots(files: Iterable[str]) -> frozenset[str]:
+    """Workspace directories with tracked package.json files at permitted depths."""
+    roots = set[str]()
+    for path in files:
+        parts = PurePosixPath(path).parts
+        if not parts or parts[-1] != "package.json":
+            continue
+        if (
+            (len(parts) == 2 and parts[0] != "src")
+            or (
+                len(parts) == 3
+                and parts[0] == "packages"
+                and not parts[1].startswith("@")
+            )
+            or (
+                len(parts) == 4
+                and parts[0] == "packages"
+                and parts[1].startswith("@")
+                and len(parts[1]) > 1
+            )
+        ):
+            roots.add("/".join(parts[:-1]))
+    return frozenset(roots)
+
+
+def is_typescript_canonical_location(
+    path: str, workspace_roots: frozenset[str] = frozenset()
+) -> bool:
+    """TypeScript/React locations, trying each permitted workspace prefix."""
+    parts = PurePosixPath(path).parts
+    if not parts or _suffix(path) not in TYPESCRIPT_EXTENSIONS:
+        return False
+    if parts[0] == "docs" or any(part in TYPESCRIPT_TEST_DIRS for part in parts[:-1]):
+        return True
+    prefix_lengths = [0]
+    if parts[0] != "src":
+        prefix_lengths.append(1)
+    if len(parts) >= 3 and parts[0] == "packages":
+        prefix_lengths.append(3 if parts[1].startswith("@") else 2)
+    for length in prefix_lengths:
+        if length and "/".join(parts[:length]) not in workspace_roots:
+            continue
+        relative = parts[length:]
+        if len(relative) == 1 and (
+            TYPESCRIPT_CONFIG_NAME.fullmatch(relative[0])
+            or relative[0] == "next-env.d.ts"
+        ):
+            return True
+        if len(relative) == 2 and relative[0] == ".storybook":
+            return True
+        if (
+            len(relative) >= 2
+            and relative[0] == "src"
+            and _suffix(path) in TYPESCRIPT_SRC_EXTENSIONS
+            and _is_typescript_src_location(relative[1:])
+        ):
+            return True
+    return False
+
+
+def is_canonical_location(
+    path: str, workspace_roots: frozenset[str] = frozenset()
+) -> bool:
+    if is_shell_script(path, None):
+        return False
+    if _suffix(path) in TYPESCRIPT_EXTENSIONS:
+        return is_typescript_canonical_location(path, workspace_roots)
     parts = PurePosixPath(path).parts
     if not parts:
         return False
@@ -564,12 +725,42 @@ def _decode(blob: bytes | None) -> str | None:
 
 def noncanonical_code_files(repo: GitRepo, head: str) -> list[str]:
     files = repo.list_files(head)
+    workspace_roots = typescript_workspace_roots(files)
     extensionless = [f for f in files if _suffix(f) == ""]
     first_bytes = repo.read_blobs(head, extensionless)
     return sorted(
         f
         for f in files
-        if is_code_file(f, first_bytes.get(f)) and not is_canonical_location(f)
+        if is_code_file(f, first_bytes.get(f))
+        and (
+            is_shell_script(f, first_bytes.get(f))
+            or not is_canonical_location(f, workspace_roots)
+        )
+    )
+
+
+def _noncanonical_file_reason(path: str, head_bytes: bytes | None) -> str:
+    if is_shell_script(path, head_bytes):
+        return "shell scripts have no canonical location in any repository (OMN-21332)."
+    if _suffix(path) in TYPESCRIPT_EXTENSIONS:
+        return (
+            "new TypeScript/React code file outside a canonical location: "
+            "tests/, test/, __tests__/, e2e/, docs/; workspace root config/setup "
+            "files, next-env.d.ts and direct .storybook/ files (non-root workspaces "
+            "require a tracked package.json); .ts/.tsx under workspace src/: "
+            "test/spec files, root {index,main,App,middleware,proxy,instrumentation,"
+            "instrumentation-client} or *.d.ts, "
+            "app/**/{page,layout,loading,error,not-found,forbidden,unauthorized,route,"
+            "template,default,global-error,global-not-found,sitemap,robots,manifest,"
+            "icon,apple-icon,opengraph-image,twitter-image}, "
+            "hooks/{use[A-Z]*,index}, "
+            "{components,pages,models,api,generated,contracts,handlers,store,theme}/** "
+            "(OMN-21332)."
+        )
+    return (
+        "new code file outside a canonical location "
+        "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
+        "tests/, docs/). Build it as a contract + node + handler."
     )
 
 
@@ -608,17 +799,21 @@ def check(
     }
     renamed_from = set(renames.values())
 
+    extensionless = repo.read_blobs(
+        head,
+        [
+            path
+            for path in noncanonical
+            if not _suffix(path) and path not in baselined and path not in renames
+        ],
+    )
     for path in noncanonical:
         if path not in baselined and path not in renames:
             findings.append(
                 ModelCanonicalFileShapeFinding(
                     path=path,
                     rule="noncanonical-file",
-                    reason=(
-                        "new code file outside a canonical location "
-                        "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
-                        "tests/, docs/). Build it as a contract + node + handler."
-                    ),
+                    reason=_noncanonical_file_reason(path, extensionless.get(path)),
                 )
             )
     for path in sorted(baselined - noncanonical_set - renamed_from):

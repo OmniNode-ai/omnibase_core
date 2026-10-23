@@ -1,0 +1,84 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21332
+title: Canonical shape for TypeScript, React and Swift, enforced by the shrink-only ratchet
+summary: The canonical file shape validator applies the TypeScript and React definition written in knowledge_base_internal
+  beta/plans/2026-10-23-canonical-shape-typescript-react-swift.md (rules T1-T17) and refuses a new shell
+  script in every location (rule S1), existing ones staying in the shrink-only baseline. This pull request
+  carries AC2 and AC4; AC1 is the definition pull request in knowledge_base_internal and AC3 is the rollout
+  pull requests in omnidash, omniweb, omniui and omnipulse.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21332-canonical-shape-ts-shell
+    statement: A TypeScript or React file outside the defined locations, and a new shell script anywhere,
+      is refused by the canonical file shape ratchet.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a merged definition of the canonical shape for TypeScript and React and for Swift,
+          Codex-reviewed, in knowledge_base_internal -- falsifier: the definition PR merged with a Codex
+          review disposition table"
+      - id: AC2
+        statement: "AC2: a planted ts or tsx file outside the defined locations is refused and the same
+          file in a defined location is admitted -- falsifier: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py
+          -k typescript_shape"
+      - id: AC3
+        statement: "AC3: omnidash, omniweb, omniui and omnipulse each run the check on pull requests and
+          the merge queue with a committed shrink-only baseline, and refuse a planted file -- falsifier:
+          the planted-sample output in each rollout PR body"
+      - id: AC4
+        statement: "AC4: a new shell script is refused in every repository, while existing ones are baselined
+          and only shrink -- falsifier: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py
+          -k shell_script_refused"
+evidence_requirements:
+  - kind: tests
+    description: TypeScript and React locations admitted and refused, shell scripts refused everywhere.
+    command: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21332-ac1
+    description: The validator cites the definition's rule ids; the definition itself merges in knowledge_base_internal
+      and is read there at close-out.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -q "canonical-shape-typescript-react-swift" src/omnibase_core/validators/canonical_file_shape.py
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21332-ac2
+    description: A planted ts or tsx file outside the defined locations is refused and the same file in
+      a defined location is admitted.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -n 0 -q
+          -k typescript_shape
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21332-ac3
+    description: The rollout pull requests pin this validator; the installed module exposes the TypeScript
+      location check they run. The planted-sample output is read in each rollout PR body.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run python -c "from omnibase_core.validators.canonical_file_shape import is_typescript_canonical_location
+          as f; assert f('src/components/A.tsx') and not f('src/lib/a.ts')"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21332-ac4
+    description: A new shell script is refused in every location and a baselined one only shrinks.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -n 0 -q
+          -k shell_script_refused
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
