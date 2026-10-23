@@ -46,13 +46,10 @@ This ratchet looks at every tracked file in the repository and refuses:
     a changed code or config file carrying more suppression comments than at
     the base revision.
 ``mod-file-growth``
-    a baselined code file on a mod surface (``plugins/``, ``.claude/`` or a
-    ``hooks/`` directory) with more code lines than at the base revision, a
-    comment or blank line not counting. Operator ruling 2026-10-15T08:14:15Z
-    (OMN-20864): canonical shapes for all mod work. A baselined hook or plugin
-    script is legacy shape that may shrink or stay; new behaviour goes in a
-    contract, a node and its handler, and the legacy file loses the code it
-    replaces.
+    a baselined code file that grew in code lines on any surface, including
+    through a rename. The historical rule id is retained for consumers.
+    Every baselined file may shrink or stay, never grow (OMN-21331).
+    Put new behaviour in a contract + node + handler.
 
 A declared shrink-only gate baseline is not an exception. The
 ``check-direct-model-call`` (OMN-20295), ``check-node-boundary-imports``
@@ -852,15 +849,16 @@ def check(
         findings.extend(
             _diff_findings(path, new_text, old_text, baseline_path, declared)
         )
-        findings.extend(_mod_growth_findings(path, new_text, old_text, baselined))
+        was_baselined = path in baselined or (old or path) in base_entries
+        findings.extend(_file_growth_findings(path, new_text, old_text, was_baselined))
     return findings
 
 
-def _mod_growth_findings(
-    path: str, new_text: str, old_text: str | None, baselined: set[str]
+def _file_growth_findings(
+    path: str, new_text: str, old_text: str | None, baselined: bool
 ) -> list[ModelCanonicalFileShapeFinding]:
-    """A baselined mod-surface code file may shrink or stay, never grow."""
-    if old_text is None or path not in baselined or not is_mod_surface(path):
+    """Every baselined code file may shrink or stay, never grow."""
+    if old_text is None or not baselined or not is_code_file(path, new_text.encode()):
         return []
     new_n, old_n = count_code_lines(new_text), count_code_lines(old_text)
     if new_n <= old_n:
@@ -870,9 +868,8 @@ def _mod_growth_findings(
             path=path,
             rule="mod-file-growth",
             reason=(
-                f"code lines {old_n} -> {new_n}; a baselined mod script only "
+                f"code lines {old_n} -> {new_n}; a baselined code file only "
                 "shrinks. Put the new behaviour in a contract + node + handler "
-                "and call it from the script (ruling 2026-10-15T08:14:15Z)"
             ),
         )
     ]
@@ -954,7 +951,7 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Refuse new code files outside canonical locations, new imperative "
-            "code in skills, growth of a baselined mod script and any new "
+            "code in skills, growth of any baselined code file and any new "
             f"exception entry ({TICKET})."
         )
     )

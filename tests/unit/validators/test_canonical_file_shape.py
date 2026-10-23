@@ -937,11 +937,11 @@ def test_mod_file_growth_in_renamed_file_refused(mod_repo: Path) -> None:
     assert _rules(mod_repo) == ["mod-file-growth"]
 
 
-def test_non_mod_baselined_file_growth_not_in_scope(mod_repo: Path) -> None:
-    """Scope control: the rule judges plugin and hook surfaces only."""
+def test_non_mod_baselined_file_growth_refused(mod_repo: Path) -> None:
+    """The shrink-only rule applies outside plugin and hook surfaces too."""
     _write(mod_repo, "scripts/old_tool.py", "print('old')\nprint('more')\n")
     _stage(mod_repo)
-    assert _rules(mod_repo) == []
+    assert _rules(mod_repo) == ["mod-file-growth"]
 
 
 def test_mod_surface_paths() -> None:

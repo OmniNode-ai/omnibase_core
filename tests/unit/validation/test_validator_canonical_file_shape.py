@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""TypeScript/React and shell shape rules for OMN-21332."""
+"""Canonical shape rules for OMN-21331 and OMN-21332."""
 
 from __future__ import annotations
 
@@ -432,3 +432,67 @@ def test_shell_script_refused_python_unchanged(repo: Path) -> None:
         "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
         "tests/, docs/). Build it as a contract + node + handler."
     )
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "scripts/legacy.py",
+        "tools/legacy.py",
+        ".github/scripts/legacy.py",
+        "src/pkg/runtime/legacy.py",
+        "plugins/p/helper.py",
+        ".claude/helper.py",
+        "hooks/helper.py",
+        "bin/legacy",
+    ],
+)
+def test_baselined_file_growth_any_surface(repo: Path, path: str) -> None:
+    original = "#!/usr/bin/env python3\nA = 1\nB = 2\nC = 3\n"
+    _write(repo, path, original)
+    _write(repo, DEFAULT_BASELINE, render_baseline([path]))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "legacy file")
+    _write(repo, path, original + "D = 4\n")
+    _git(repo, "add", "-A")
+    findings = check(_repo(repo), INDEX, "HEAD")
+    assert [(f.path, f.rule) for f in findings] == [(path, "mod-file-growth")]
+    assert "3 -> 4" in findings[0].reason
+    assert "contract + node + handler" in findings[0].reason
+
+
+@pytest.mark.parametrize("update_baseline", [False, True])
+@pytest.mark.parametrize("destination", ["tools/renamed.py", "plugins/p/renamed.py"])
+def test_baselined_file_growth_any_surface_rename(
+    repo: Path, update_baseline: bool, destination: str
+) -> None:
+    original = "A = 1\nB = 2\nC = 3\nD = 4\nE = 5\n"
+    old = "scripts/legacy.py"
+    _write(repo, old, original)
+    _write(repo, DEFAULT_BASELINE, render_baseline([old]))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "legacy file")
+    (repo / old).unlink()
+    _write(repo, destination, original + "F = 6\n")
+    if update_baseline:
+        _write(repo, DEFAULT_BASELINE, render_baseline([destination]))
+    _git(repo, "add", "-A")
+    findings = check(_repo(repo), INDEX, "HEAD")
+    assert [(f.path, f.rule) for f in findings] == [(destination, "mod-file-growth")]
+
+
+@pytest.mark.parametrize(
+    "replacement",
+    ["A = 1\n", "A = 2\nB = 3\n", "# prose\nA = 1\nB = 2\n\n"],
+)
+def test_baselined_file_growth_any_surface_controls(
+    repo: Path, replacement: str
+) -> None:
+    path = "scripts/legacy.py"
+    _write(repo, path, "A = 1\nB = 2\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline([path]))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "legacy file")
+    _write(repo, path, replacement)
+    _git(repo, "add", "-A")
+    assert check(_repo(repo), INDEX, "HEAD") == []

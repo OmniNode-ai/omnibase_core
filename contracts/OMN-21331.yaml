@@ -1,0 +1,116 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21331
+title: Every baselined code file only shrinks on every surface
+summary: 'This first pull request implements AC1 and wires its regression tests into the existing PR and
+  merge queue job. AC2 through AC4 remain rollout work: separate repository PRs and sanctioned required-context
+  changes after landing checks are green. The historical mod-file-growth identifier remains stable. Renames
+  inherit their source baseline membership even when the baseline retains the old path.'
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21331-canonical-everywhere
+    statement: No non-canonical code file may grow or be introduced in any active code repository.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the canonical file shape validator refuses any baselined code file whose code
+          lines grow, on every surface, not only mod surfaces -- falsifier: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py
+          -k baselined_file_growth_any_surface'
+      - id: AC2
+        statement: 'AC2: every active code repository runs the check on pull requests and the merge queue
+          and a planted new script is refused there -- falsifier: the planted-sample output in each rollout
+          PR body, one per repository'
+      - id: AC3
+        statement: 'AC3: the check is a required context on the landing branch of every active code repository
+          -- falsifier: the landing controller''s required-contexts.json read after the rollout lists
+          the Canonical File Shape context for each repository'
+      - id: AC4
+        statement: 'AC4: each repository''s workflow reads omnibase_core through the dev-merge tag, not
+          a commit sha -- falsifier: git grep for a 40-hex omnibase_core reference in each repository''s
+          canonical file shape workflow returns nothing'
+evidence_requirements:
+  - kind: tests
+    description: 'Before implementation: 8 failed and 7 passed. After implementation: all 15 focused cases
+      passed.'
+    command: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -k baselined_file_growth_any_surface
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21331-ac1
+    description: Growth refused across all surfaces, including rename inheritance; shrink, equal size
+      and comment-only edits pass.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -k baselined_file_growth_any_surface
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21331-ac2
+    description: Pending rollout evidence from the launching controller. ONEX_CANONICAL_ROLLOUT_REPORT
+      must name its JSON report, keyed by all nine repositories, each with pr, head, pull_request, merge_group,
+      planted_output and planted_exit_code. Local only because hosted CI cannot read controller artifacts.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: >-
+          python3 -c "import json,os; from pathlib import Path; d=json.loads(Path(os.environ['ONEX_CANONICAL_ROLLOUT_REPORT']).read_text());
+          assert set(d)==set(['omnibase_infra', 'omnibase_internal', 'omnimemory', 'knowledge_base_internal',
+          'omnibase_spi', 'omnibase_core', 'omniclaude', 'omniintelligence', 'omnimarket']); assert all(v['pr']
+          and v['head'] and v['pull_request'] and v['merge_group'] and v['planted_exit_code']==1 and 'noncanonical-file'
+          in v['planted_output'] for v in d.values())"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21331-ac3
+    description: 'Pending: read the landing controller required-contexts.json after rollout. ONEX_REQUIRED_CONTEXTS_PATH
+      must name that snapshot. This evidence fails until every landing branch requires the context; hosted
+      CI cannot read controller state.'
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: >-
+          python3 -c "import json,os; from pathlib import Path; d=json.loads(Path(os.environ['ONEX_REQUIRED_CONTEXTS_PATH']).read_text());
+          branches={'omnibase_infra': 'dev', 'omnibase_internal': 'main', 'omnimemory': 'dev', 'knowledge_base_internal':
+          'main', 'omnibase_spi': 'dev', 'omnibase_core': 'dev', 'omniclaude': 'dev', 'omniintelligence':
+          'dev', 'omnimarket': 'dev'}; assert all('Canonical File Shape (OMN-20304)' in d[r+':'+b]['contexts']
+          for r,b in branches.items())"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21331-ac4
+    description: Pending rollout report from each repository workflow. The controller records the actual
+      core_ref and the count of full-SHA core references in each canonical job. Hosted CI cannot read
+      sibling rollout PRs.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: >-
+          python3 -c "import json,os; from pathlib import Path; d=json.loads(Path(os.environ['ONEX_CANONICAL_ROLLOUT_REPORT']).read_text());
+          assert set(d)==set(['omnibase_infra', 'omnibase_internal', 'omnimemory', 'knowledge_base_internal',
+          'omnibase_spi', 'omnibase_core', 'omniclaude', 'omniintelligence', 'omnimarket']); assert all(v['core_ref']=='dev-merge'
+          and v['core_sha_references']==0 for v in d.values())"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21331-deploy-hosted-ratchet
+    description: 'Falsifiable hosted deploy probe for the packaged validator: run all-surface growth,
+      rename and accepted edit controls.'
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -k baselined_file_growth_any_surface
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
