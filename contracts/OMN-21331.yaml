@@ -1,0 +1,93 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21331
+title: The canonical file shape check blocks merges in every code repository, and every baselined file
+  only shrinks
+summary: Operator ruling 2026-10-01T12:36:54Z lane=ratchet-ruling, restated 2026-10-23 about 12:15Z, is
+  that no non-canonical shape is acceptable in any repository. The ratchet's growth rule covered baselined
+  files on mod surfaces only (plugins/, .claude/, hooks/), so a baselined file anywhere else could keep
+  growing. The rule is now baselined-file-growth and refuses a baselined code file with more code lines
+  than at the base revision on every surface, including the new path of a renamed baselined file whose
+  baseline entry was left untouched.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21331-baselined-file-growth
+    statement: A baselined code file on any surface may shrink or stay the same size; growth in code lines
+      is refused by the canonical-file-shape ratchet.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the canonical file shape validator refuses any baselined code file whose code
+          lines grow, on every surface, not only mod surfaces -- falsifier: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py
+          -k baselined_file_growth_any_surface"
+      - id: AC2
+        statement: "AC2: every active code repository runs the check on pull requests and the merge queue
+          and a planted new script is refused there -- falsifier: the planted-sample output in each rollout
+          PR body, one per repository"
+      - id: AC3
+        statement: "AC3: the check is a required context on the landing branch of every active code repository
+          -- falsifier: the landing controller's required-contexts.json read after the rollout lists the
+          Canonical File Shape context for each repository"
+      - id: AC4
+        statement: "AC4: each repository's workflow reads omnibase_core through the dev-merge tag, not
+          a commit sha -- falsifier: git grep for a 40-hex omnibase_core reference in each repository's
+          canonical file shape workflow returns nothing"
+evidence_requirements:
+  - kind: tests
+    description: The baselined_file_growth_any_surface tests fail at the merge base, where growth off
+      a mod surface is not judged, and pass at the head.
+    command: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov -n
+      0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21331-ac1-growth-refused-any-surface
+    description: Growth of a baselined code file on any surface, in place or through a rename, is refused,
+      and a shrink, an equal-size edit and comment or blank growth are accepted.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov
+          -n 0 -k baselined_file_growth_any_surface
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21331-ac2-planted-sample-refused
+    description: The canonical-file-shape job's positive-control step plants a new script on every run
+      and fails unless the ratchet refuses it; omnibase_core's job runs on pull_request and merge_group.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -q 'zz_canary_planted' .github/workflows/ci.yml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21331-ac3-required-context
+    description: The Canonical File Shape (OMN-20304) context is required on omnibase_core dev; the other
+      repositories are read from the landing controller's required-contexts.json after the rollout.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -q 'name. Canonical File Shape (OMN-20304)' .github/workflows/ci.yml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn21331-ac4-no-sha-pin
+    description: omnibase_core's own canonical-file-shape job runs the module from its checkout and names
+      no 40-hex omnibase_core reference.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "! grep -E 'omnibase_core@[0-9a-f]{40}' .github/workflows/ci.yml"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn21331-deploy-hosted-ratchet
+    description: Hosted deploy probe for the packaged ratchet module. The baselined-file-growth rule refuses
+      a grown baselined file off a mod surface and the controls pass.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov
+          -n 0 -k baselined_file_growth_any_surface
+        cwd: ${OMNI_HOME}/omnibase_core
