@@ -331,7 +331,7 @@ jobs:
       - name: Install the pinned verifier
         id: verifier
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.check_timeout.outcome != 'failure'
         env:
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
           VERIFIER_FLOOR: "0.4.303"
@@ -373,7 +373,7 @@ jobs:
       - name: Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)
         id: writer_pin_only
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -735,7 +735,7 @@ jobs:
       - name: Provide the PostgreSQL 16 server tools
         id: pg_tools
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         run: |
           set -euo pipefail
           pg16_bin=/usr/lib/postgresql/16/bin
@@ -791,7 +791,7 @@ jobs:
       - name: Export the Postgres service to the bound tests
         id: pg_env
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
         run: |
@@ -851,7 +851,7 @@ jobs:
       - name: Provision the contracts' declared sibling checkouts
         id: sibling_checkouts
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -1305,7 +1305,7 @@ jobs:
       - name: Prepare the merge base with the pull request's test side laid over it
         id: merge_base
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

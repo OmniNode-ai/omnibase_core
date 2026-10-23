@@ -79,9 +79,10 @@ def test_check_timeout_step_position_and_if() -> None:
 
     check_step = steps[idx]
     verifier_step = steps[idx + 1]
-    assert check_step.get("if") == verifier_step.get("if"), (
-        "check_timeout if must match verifier if"
-    )
+    assert (
+        verifier_step.get("if")
+        == check_step.get("if") + " && steps.check_timeout.outcome != 'failure'"
+    ), "verifier if must be check_timeout's if plus the check_timeout guard"
 
 
 def test_check_timeout_step_shadow_continue_on_error() -> None:
@@ -194,4 +195,34 @@ def test_summarise_loop_order() -> None:
     assert install_uv_pos < check_timeout_pos < verifier_pos, (
         f"Summarise loop order must be install_uv < check_timeout < verifier, "
         f"got positions install_uv={install_uv_pos}, check_timeout={check_timeout_pos}, verifier={verifier_pos}"
+    )
+
+
+# OMN-21166 review: a refused timeout in shadow mode (continue-on-error) must not install, provision or check out anything.
+@pytest.mark.parametrize(
+    "step_id",
+    [
+        "verifier",
+        "writer_pin_only",
+        "pg_tools",
+        "pg_env",
+        "sibling_checkouts",
+        "scope",
+        "head_verify",
+        "merge_base",
+        "base_control",
+    ],
+)
+def test_work_step_after_check_timeout_is_guarded(step_id: str) -> None:
+    steps = _workflow()["jobs"]["dod-verify"]["steps"]
+    ids = [s.get("id") for s in steps]
+    assert ids.index(step_id) > ids.index("check_timeout"), (
+        f"step {step_id!r} must come after check_timeout"
+    )
+    step_if = _step_by_id(step_id).get("if", "")
+    assert "steps.tickets.outcome != 'failure'" in step_if, (
+        f"step {step_id!r} must guard on the tickets outcome, got {step_if!r}"
+    )
+    assert "steps.check_timeout.outcome != 'failure'" in step_if, (
+        f"step {step_id!r} must also guard on the check_timeout outcome, got {step_if!r}"
     )

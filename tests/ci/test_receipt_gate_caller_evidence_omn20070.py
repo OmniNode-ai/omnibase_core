@@ -610,7 +610,8 @@ def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
             "steps.bot_exempt.outputs.exempt != 'true' "
             "&& steps.same_repo.outcome != 'failure' "
             "&& steps.tickets.outcome != 'failure' "
-            "&& steps.writer_pin_only.outputs.exempt != 'true'"
+            "&& steps.writer_pin_only.outputs.exempt != 'true' "
+            "&& steps.check_timeout.outcome != 'failure'"
         )
         assert "set -euo pipefail" in _step(name)["run"]
     tools = _step(PG_TOOLS_STEP)["run"]
