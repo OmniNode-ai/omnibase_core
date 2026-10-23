@@ -55,17 +55,17 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn21331-ac2-planted-sample-refused
-    description: The canonical-file-shape job's positive-control step plants a new script on every run
-      and fails unless the ratchet refuses it; omnibase_core's job runs on pull_request and merge_group.
+    description: omnibase_core's canonical-file-shape job, which runs on pull_request and merge_group
+      and plants a new script on every run, also runs the any-surface growth tests.
     source: manual
     checks:
       - check_type: command
-        check_value: grep -q 'zz_canary_planted' .github/workflows/ci.yml
+        check_value: grep -q 'tests/unit/validation/test_validator_canonical_file_shape.py' .github/workflows/ci.yml
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn21331-ac3-required-context
-    description: The Canonical File Shape (OMN-20304) context is required on omnibase_core dev; the other
-      repositories are read from the landing controller's required-contexts.json after the rollout.
+    description: The Canonical File Shape (OMN-20304) job is declared in omnibase_core. AC3 is read from
+      the landing controller's required-contexts.json after the rollout, not from this pull request.
     source: manual
     checks:
       - check_type: command
