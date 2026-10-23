@@ -84,7 +84,8 @@ def test_jobs_run_without_conditions_and_preserve_caller_verification() -> None:
         )
         == verify["runs-on"]
     )
-    assert caller["timeout-minutes"] == 40
+    # OMN-17427: a caller contract with hundreds of bound checks needs 60 minutes.
+    assert caller["timeout-minutes"] == 60
     assert caller["env"] == {"ACTIONS_CACHE_URL": "", "ACTIONS_RUNTIME_URL": ""}
     assert caller["permissions"] == {"contents": "read", "pull-requests": "read"}
 
@@ -104,6 +105,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         PG_TOOLS_STEP,
         PG_ENV_STEP,
         "Provision the contracts' declared sibling checkouts",
+        "Scope each cited contract to what this pull request adds or changes",
         HEAD_STEP,
         "Prepare the merge base with the pull request's test side laid over it",
         BASE_STEP,

@@ -112,11 +112,6 @@ requirements:
       in ci.yml, where the required CI Summary poller fails on them, with no new required context, annotation,
       allowlist or baseline entry.
     acceptance:
-      - id: AC9
-        statement: 'AC9: cr-thread-gate-caller.yml is deleted and ci.yml carries an unconditional, needs-free
-          `gate` caller of cr-thread-gate.yml whose composed context "gate / CodeRabbit Thread Check"
-          is unchanged and whose required-checks row names ci.yml. -- falsifier: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py
-          -q -p no:randomly -k cr_thread_gate'
       - id: AC10
         statement: 'AC10: handshake-policy-gate.yml no longer triggers on merge_group and keeps its schedule,
           dispatch and workflow_call triggers with no embedded preflight, and ci.yml carries a handshake-policy-gate
@@ -423,6 +418,33 @@ requirements:
           a ticket reference under an onex_change_control/ path is flagged and the local-environment rules
           still apply under contracts/ -- falsifier: uv run pytest tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
           -q --no-cov -p no:randomly fails at the merge base'
+  - id: req-omn20074-receipt-gate-private-fork
+    statement: The receipt gate never places a private caller's run on a GitHub-hosted label, fork pull
+      requests included, and a public caller keeps ubuntu-latest (operator rule 2026-10-19, the OMN-21216
+      shape).
+    acceptance:
+      - id: AC56
+        statement: 'AC56: verify and dod-verify carry no OMNI_PUBLIC_PR_RUNS_ON_JSON arm and resolve a
+          private caller to fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON) with no literal default and a
+          public caller to ubuntu-latest -- falsifier: uv run pytest tests/ci/test_receipt_gate_untrusted_test_omn18205.py
+          tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q --no-cov -p no:randomly fails at the
+          merge base'
+  - id: req-omn20074-main-push-summary-reds
+    statement: A release push to main must not turn the landing branch red through CI Summary or Publish
+      summary when every gating job and every downstream bump leg succeeded; an unread run index or a
+      leg conclusion the jobs API has not yet filled holds the verdict pending instead of failing it.
+    acceptance:
+      - id: AC57
+        statement: 'AC57: the CI Summary layer-5 sweep holds a non-success row whose Actions run id is
+          absent from the actions/runs index provisional (PENDING), while an App row or an unparseable
+          URL still fails and a pull_request-event row still fails -- falsifier: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py
+          -q --no-cov -p no:randomly -k "unread or unusable_or_missing_index or unresolved_events" fails
+          at the merge base'
+      - id: AC58
+        statement: 'AC58: Publish summary re-reads the run''s jobs while a Bump leg is not completed or
+          has a null conclusion, bounded by SETTLE_ATTEMPTS, then fails on any leg that did not succeed
+          or skip -- falsifier: uv run pytest tests/unit/scripts/test_publish_downstream_pin_bump_workflow.py
+          -q --no-cov -p no:randomly -k settles_leg_conclusions fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -464,10 +486,6 @@ evidence_requirements:
     description: The exported and local hook declarations run the handler under the same hook id, with
       the exclude unchanged and no onex_change_control hook of that id.
     command: uv run pytest tests/ci/test_precommit_hooks_local_omn20068.py -q -p no:randomly
-  - kind: tests
-    description: The fold tests prove the CodeRabbit thread gate caller moved into ci.yml with its composed
-      context unchanged.
-    command: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k cr_thread_gate
   - kind: tests
     description: The fold tests prove the handshake policy gate runs from ci.yml on merge_group and keeps
       its weekly and manual runs.
@@ -601,6 +619,17 @@ evidence_requirements:
       flagged and the contracts/ exemption kept, with the local-environment rules applied under contracts/.
     command: uv run pytest tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
       -q --no-cov -p no:randomly
+  - kind: tests
+    description: The receipt gate's runner test proves a private caller has no hosted arm and no hosted
+      default on either job, and a public caller runs on ubuntu-latest.
+    command: uv run pytest tests/ci/test_receipt_gate_untrusted_test_omn18205.py tests/ci/test_receipt_gate_caller_evidence_omn20070.py
+      -q --no-cov -p no:randomly
+  - kind: tests
+    description: The gate tests hold an unindexed run id's red verdict pending and still fail App rows,
+      unparseable URLs and pull_request rows; the workflow test runs the Publish summary step against
+      a fake gh whose legs read null before they settle.
+    command: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py tests/unit/scripts/test_publish_downstream_pin_bump_workflow.py
+      -q --no-cov -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -698,16 +727,6 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
-  - id: dod-omn-20074-ac9
-    description: The fold tests prove the CodeRabbit thread gate caller moved into ci.yml with its composed
-      context unchanged.
-    source: manual
-    checks:
-      - check_type: test_passes
-        check_value: uv run pytest tests/ci/test_ci_fold_gates_omn20074.py -q -p no:randomly -k cr_thread_gate
-        cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC9
   - id: dod-omn-20074-ac10
     description: The fold tests prove the handshake policy gate runs from ci.yml on merge_group and keeps
       its weekly and manual runs.
@@ -1080,3 +1099,40 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC54
+  - id: dod-omn-20074-ac56
+    description: The receipt gate's runner test proves neither job routes a private caller's pull request,
+      fork or not, to a hosted label.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_untrusted_test_omn18205.py tests/ci/test_receipt_gate_caller_evidence_omn20070.py
+          -q --no-cov -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC56
+  - id: dod-omn-20074-ac57
+    description: The gate tests hold a red row with an unindexed run id pending, reproduce run 39816629238's
+      three push rows read with an empty index as PENDING, and still fail App, unparseable-URL and pull_request
+      rows.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py -q --no-cov -p no:randomly
+          -k "unread or unusable_or_missing_index or unresolved_events"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC57
+  - id: dod-omn-20074-ac58
+    description: The workflow test runs the shipped Publish summary step against a fake gh and finds legs
+      that read null and then settle pass, legs null past the bound fail, and a failed leg fails.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/test_publish_downstream_pin_bump_workflow.py -q
+          --no-cov -p no:randomly -k settles_leg_conclusions
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC58

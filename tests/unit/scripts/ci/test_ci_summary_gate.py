@@ -1567,7 +1567,10 @@ class TestExternalDefaultDenySweep:
         row["details_url"] = row["details_url"].replace("runs/7/", "runs/8/")
         assert (
             evaluate(
-                jobs, external_check_runs=[*_ALL_EXTERNAL_GREEN, row], now=self.NOW
+                jobs,
+                external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+                workflow_runs=[{"id": 8, "event": "pull_request"}],
+                now=self.NOW,
             )[0]
             == EXIT_FAILURE
         )
@@ -1608,24 +1611,134 @@ class TestExternalDefaultDenySweep:
         )
         assert code == EXIT_FAILURE, report
 
-    @pytest.mark.parametrize("provenance", ["app", "absent", "bad_url", "no_index"])
+    @pytest.mark.parametrize("provenance", ["app", "bad_url"])
     def test_unresolved_events_are_swept(self, provenance: str) -> None:
         row = _check_run("Unregistered Gate", "failure")
         runs = [{"id": 777, "event": "schedule"}]
-        if provenance != "app":
-            row["details_url"] = (
-                "unparseable"
-                if provenance == "bad_url"
-                else "https://github.com/OmniNode-ai/omnibase_core/actions/runs/888/job/9"
-            )
+        if provenance == "bad_url":
+            row["details_url"] = "unparseable"
         code, report = evaluate(
             _all_good(),
             external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
-            workflow_runs=None if provenance == "no_index" else runs,
+            workflow_runs=runs,
             now=self.NOW,
         )
         assert code == EXIT_FAILURE, report
         assert "Unregistered Gate (failure)" in report
+
+    @pytest.mark.parametrize("provenance", ["absent", "no_index"])
+    def test_unread_events_are_swept_provisionally(self, provenance: str) -> None:
+        row = {
+            **_check_run("Unregistered Gate", "failure"),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/888/job/9",
+        }
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+            workflow_runs=None
+            if provenance == "no_index"
+            else [{"id": 777, "event": "schedule"}],
+            now=self.NOW,
+        )
+        assert code == EXIT_PENDING, report
+        assert (
+            "external sweep rows awaiting an automatic replacement "
+            "(PENDING, re-polled): Unregistered Gate" in report
+        )
+        assert "Unregistered Gate (failure)" not in report
+
+    @pytest.mark.parametrize(
+        ("status", "conclusion", "expected"),
+        [
+            ("completed", "success", EXIT_SUCCESS),
+            ("in_progress", None, EXIT_PENDING),
+        ],
+    )
+    def test_unread_provenance_preserves_success_and_running_rows(
+        self, status: str, conclusion: str | None, expected: int
+    ) -> None:
+        row = {
+            **_check_run("Unregistered Gate", conclusion, status=status),
+            "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/888/job/9",
+        }
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+            workflow_runs=[],
+            now=self.NOW,
+        )
+        assert code == expected, report
+        assert "external sweep rows awaiting an automatic replacement" not in report
+        if status != "completed":
+            assert (
+                "external sweep rows still running (PENDING, re-polled): Unregistered Gate"
+                in report
+            )
+
+    def test_any_unread_row_holds_the_collapsed_name_provisionally(self) -> None:
+        rows = [
+            {
+                **_check_run("Shared Gate", "failure", started_at=started_at),
+                "details_url": (
+                    "https://github.com/OmniNode-ai/omnibase_core/actions/runs/"
+                    f"{run_id}/job/9"
+                ),
+            }
+            for run_id, started_at in [(888, _T0), (777, _T0_PLUS_64)]
+        ]
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, *rows],
+            workflow_runs=[{"id": 777, "event": "pull_request"}],
+            now=self.NOW,
+        )
+        assert code == EXIT_PENDING, report
+        assert (
+            "external sweep rows awaiting an automatic replacement "
+            "(PENDING, re-polled): Shared Gate" in report
+        )
+        assert "Shared Gate (failure)" not in report
+
+    @pytest.mark.parametrize(
+        ("event", "expected"),
+        [(None, EXIT_PENDING), ("push", EXIT_SUCCESS), ("pull_request", EXIT_FAILURE)],
+    )
+    def test_push_verdicts_wait_for_unread_run_index(
+        self, event: str | None, expected: int
+    ) -> None:
+        # OMN-20074: run 39816629238 lost these push runs from its final index.
+        rows = [
+            {
+                **_check_run(name, conclusion),
+                "details_url": (
+                    "https://github.com/OmniNode-ai/omnibase_core/actions/runs/"
+                    f"{run_id}/job/9"
+                ),
+            }
+            for name, conclusion, run_id in [
+                ("Publish summary", "failure", 501),
+                ("Report partial release state", "skipped", 502),
+                ("Sync main to release tag (sync-only)", "skipped", 502),
+            ]
+        ]
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, *rows],
+            workflow_runs=[]
+            if event is None
+            else [{"id": run_id, "event": event} for run_id in (501, 502)],
+            now=self.NOW,
+        )
+        assert code == expected, report
+        if event is None:
+            (provisional_line,) = [
+                line
+                for line in report.splitlines()
+                if "external sweep rows awaiting an automatic replacement" in line
+            ]
+            for row in rows:
+                assert row["name"] in provisional_line
+                assert f"{row['name']} ({row['conclusion']})" not in report
 
     def test_event_resolution_reads_urls_and_suite_and_rejects_bad_ids(self) -> None:
         events = gate.check_run_event_index(
@@ -1964,7 +2077,7 @@ class TestSweepIsWiredIntoProductionPoller:
             **_check_run("Unregistered Gate", "failure"),
             "details_url": "https://github.com/OmniNode-ai/omnibase_core/actions/runs/777/job/9",
         }
-        assert self._main(tmp_path, [*_ALL_EXTERNAL_GREEN, row], runs) == EXIT_FAILURE
+        assert self._main(tmp_path, [*_ALL_EXTERNAL_GREEN, row], runs) == EXIT_PENDING
 
     def test_main_passes_its_clock_to_both_exclusions_and_grace(
         self,

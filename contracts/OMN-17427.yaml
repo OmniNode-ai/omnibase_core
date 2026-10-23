@@ -381,6 +381,45 @@ requirements:
           sync and async functions with the error-handling decorators raises no DeprecationWarning under
           an error filter. -- falsifier: uv run pytest tests/unit/decorators/test_no_asyncio_iscoroutinefunction.py
           -q -o addopts=''"
+  - id: req-omn17427-ticket-contract-ac-bindings
+    statement: Product-repository ticket contracts accept typed acceptance-criterion bindings while retaining
+      strict validation and the existing shape of contracts without bindings.
+    acceptance:
+      - id: AC49
+        statement: "AC49: The three OCC sample contracts carrying ac_bindings validate through ModelTicketContract;
+          bindings round-trip as ModelAcBinding with accepted and draft states; malformed bindings and
+          wrong field types are refused; and omitted bindings default to an empty list absent from exclude_defaults
+          output. -- falsifier: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_ac_bindings_omn17427.py
+          -q -o addopts=''"
+  - id: req-omn17427-dod-verify-budget
+    statement: The hosted dod-verify job gives a caller contract with hundreds of bound checks enough
+      time to reach a verdict instead of a timeout cancel.
+    acceptance:
+      - id: AC50
+        statement: "AC50: The receipt-gate dod-verify job's timeout-minutes is 60 and the verify no-op
+          job's stays 5. -- falsifier: uv run pytest tests/ci/test_receipt_gate_dod_verify_budget_omn17427.py
+          -q -o addopts=''"
+  - id: req-omn17427-hosted-ci-probe-sources
+    statement: Hosted CI inheritance and repository-jobs evidence compares the checked-out implementation
+      with its published revision after the shrink-only baseline update in PR 2071.
+    acceptance:
+      - id: AC51
+        statement: "AC51: Both hosted probes pin the updated CLI and repository-jobs handler to their
+          published implementation revision and keep pipefail, curl failure handling and byte comparisons.
+          -- falsifier: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''"
+  - id: req-omn17427-dod-verify-scope
+    statement: The receipt gate's dod-verify job verifies only the evidence a pull request adds or changes
+      in its ticket contract, so a pull request citing a contract with many carried criteria does not
+      re-run every carried check at its head and again at its merge base.
+    acceptance:
+      - id: AC52
+        statement: "AC52: The scope step of receipt-gate.yml, run on a real git history whose merge-base
+          contract carries 150 criteria and whose head adds one, hands the verifier one evidence item
+          and one criterion at the head and the same one at the merge base; a new item that also passes
+          at the merge base is still refused; a contract with nothing new is refused before any check
+          runs; a changed criterion brings the items that bind it; supersessions and binding retirements
+          are never split; and a contract that cannot be compared is verified in full. -- falsifier: uv
+          run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -480,6 +519,23 @@ evidence_requirements:
     description: "No src module calls asyncio.iscoroutinefunction, and the error-handling decorators wrap
       functions without a DeprecationWarning."
     command: uv run pytest tests/unit/decorators/test_no_asyncio_iscoroutinefunction.py -q -o addopts=''
+  - kind: tests
+    description: The ticket-contract model accepts typed ac_bindings and the three OCC sample contracts,
+      refuses malformed bindings, and preserves contracts without bindings.
+    command: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_ac_bindings_omn17427.py
+      -q -o addopts=''
+  - kind: tests
+    description: "The receipt-gate dod-verify job's budget is 60 minutes and the verify no-op job's stays
+      5, giving a large caller contract time to reach a verdict."
+    command: uv run pytest tests/ci/test_receipt_gate_dod_verify_budget_omn17427.py -q -o addopts=''
+  - kind: tests
+    description: The carried hosted source probes pin the published CLI and repository-jobs implementation
+      and retain strict byte comparisons.
+    command: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''
+  - kind: tests
+    description: dod-verify scopes each cited contract to the evidence the pull request adds or changes,
+      at the head and in the must-fail control.
+    command: uv run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''
 emergency_bypass:
   enabled: false
   justification: ''
@@ -568,9 +624,10 @@ dod_evidence:
       - AC9
   - id: dod-omn-17427-deploy-hosted-ci-inheritance
     description: Hosted deploy probe for the library's CI-inheritance handler and CLI. Read both published
-      source files at the immutable PR implementation commit and compare their bytes with the checked-out
-      product, then exercise rejection of new references and acceptance of existing references. A missing
-      published file, different implementation or incorrect handler behavior fails the probe.
+      source files at their immutable implementation commits (the CLI includes PR 2071) and compare their
+      bytes with the checked-out product, then exercise rejection of new references and acceptance of
+      existing references. A missing published file, different implementation or incorrect handler behavior
+      fails the probe.
     source: manual
     execution_scope: hosted_and_local
     checks:
@@ -581,7 +638,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/4ebe05bc64d25f5e6260d665a981a9a269e750fd/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
           | cmp - src/omnibase_core/handlers/handler_ci_inheritance_cli.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
@@ -640,20 +697,20 @@ dod_evidence:
       - AC12
   - id: dod-omn-17427-deploy-hosted-repository-jobs
     description: Hosted deploy probe for the library's repository-jobs handler. Read the handler and the
-      CLI at the immutable PR implementation commit and compare their bytes with the checked-out product,
-      then exercise rejection of a new inline job and acceptance of existing ones. A missing published
-      file, different implementation or incorrect handler behavior fails the probe.
+      CLI at PR 2071's immutable landed commit and compare their bytes with the checked-out product, then
+      exercise rejection of a new inline job and acceptance of existing ones. A missing published file,
+      different implementation or incorrect handler behavior fails the probe.
     source: manual
     execution_scope: hosted_and_local
     checks:
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/4ebe05bc64d25f5e6260d665a981a9a269e750fd/src/omnibase_core/handlers/handler_ci_repository_jobs.py
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_repository_jobs.py
           | cmp - src/omnibase_core/handlers/handler_ci_repository_jobs.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/4ebe05bc64d25f5e6260d665a981a9a269e750fd/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
           | cmp - src/omnibase_core/handlers/handler_ci_inheritance_cli.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
@@ -1033,3 +1090,54 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC48
+  - id: dod-omn17427-deploy-hosted-ac-bindings
+    description: Hosted library deploy probe loads the checked-out ticket-contract model and validates
+      three OCC sample contracts carrying ac_bindings, accepted and draft binding states, malformed-input
+      refusals and omitted-field serialization. The focused tests require no external service and fail
+      against the merge-base product, which has no ModelAcBinding or ac_bindings item field.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_model_contract_dod_item_ac_bindings_omn17427.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC49
+  - id: dod-omn17427-dod-verify-budget
+    description: "Hosted workflow probe: the dod-verify job's budget is 60 minutes and the verify no-op
+      job's is 5. The same test fails at the merge base, where dod-verify's budget is 40."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_dod_verify_budget_omn17427.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC50
+  - id: dod-omn17427-hosted-ci-probe-sources
+    description: Offline regression for the carried hosted deploy probes. Check all three published-source
+      comparisons against the landed revision; refuse stale pins, missing comparisons or weakened curl/cmp
+      commands. The existing hosted probes still fetch and compare the published files and exercise handler
+      behavior.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC51
+  - id: dod-omn17427-dod-verify-scope
+    description: Hosted workflow probe. The receipt gate's own scope, head, merge-base and control step
+      scripts run against a real git history with a stand-in verifier that records the contract it is
+      handed. With 150 carried criteria and one new one the verifier sees one item at the head and one
+      at the merge base. The same test fails at the merge base, whose workflow has no scope step.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC52

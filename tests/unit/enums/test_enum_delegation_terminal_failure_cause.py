@@ -46,6 +46,11 @@ RUNTIME_SHUTDOWN_WIRE_VALUE = "runtime_shutdown"
 # as a literal for the same reason as the values above.
 REFUSED_BEFORE_DISPATCH_WIRE_VALUE = "refused_before_dispatch"
 
+# OMN-21210: the wire value for a run whose every chosen model failed and was
+# handed back to the calling session, spelled as a literal for the same reason
+# as the values above.
+RETURNED_TO_CALLER_WIRE_VALUE = "returned_to_caller"
+
 # Every member and the exact wire string it serialises to. Adding a member here
 # is deliberate: this constant is what makes a silent vocabulary change fail.
 EXPECTED_MEMBERS: dict[EnumDelegationTerminalFailureCause, str] = {
@@ -64,6 +69,7 @@ EXPECTED_WIRE_VALUES: set[str] = {
     *EXPECTED_MEMBERS.values(),
     RUNTIME_SHUTDOWN_WIRE_VALUE,
     REFUSED_BEFORE_DISPATCH_WIRE_VALUE,
+    RETURNED_TO_CALLER_WIRE_VALUE,
 }
 
 
@@ -241,6 +247,29 @@ class TestEnumDelegationTerminalFailureCause:
         assert not refused.value.startswith("provider_")
         assert refused is not EnumDelegationTerminalFailureCause.TIMEOUT
         assert refused is not EnumDelegationTerminalFailureCause.NO_TERMINAL
+
+    def test_a_run_handed_back_to_its_caller_has_a_member(self) -> None:
+        """OMN-21210: an exhausted ladder hands the task back to the session.
+
+        Decision D3 of the delegation requirements specification: when every
+        model the developer chose fails, the run ends ``returned_to_caller``
+        with zero savings and the calling session does the task. Measured on
+        receipt ``3861ec7f`` from an onboarding walk on 2026-10-20: every
+        attempt failed and the run ended ``quality_gate_refused`` with the last
+        provider's error, so the caller was never told the task was theirs.
+        Not a provider cause (no single provider decided it) and not
+        ``QUALITY_GATE_REFUSED`` (the outcome is the hand-back, whatever each
+        attempt's own cause was).
+        """
+        returned = EnumDelegationTerminalFailureCause(RETURNED_TO_CALLER_WIRE_VALUE)
+        provider_causes = {
+            EnumDelegationTerminalFailureCause.PROVIDER_QUOTA_EXHAUSTED,
+            EnumDelegationTerminalFailureCause.AUTH_FAILED,
+            EnumDelegationTerminalFailureCause.PROVIDER_ERROR,
+        }
+        assert returned not in provider_causes
+        assert not returned.value.startswith("provider_")
+        assert returned is not EnumDelegationTerminalFailureCause.QUALITY_GATE_REFUSED
 
     def test_enum_is_a_string_enum(self) -> None:
         """Members must be ``str`` so they serialise without a custom encoder."""

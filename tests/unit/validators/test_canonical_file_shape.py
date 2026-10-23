@@ -1022,3 +1022,24 @@ def test_public_runner_placement_baseline_undeclared_still_refused(repo: Path) -
     _write(repo, PUBLIC_RUNNER_BASELINE, "repos: {}\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
+
+
+CI_INHERITANCE_BASELINE = ".onex_ratchets/ci_inheritance_baseline.yaml"
+
+
+def test_ci_inheritance_gate_declares_its_baseline() -> None:
+    """OMN-21277: the CI inheritance gate is a declared shrink-only gate."""
+    config = (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-ci-inheritance\n"
+        f"        args: [--baseline, {CI_INHERITANCE_BASELINE}]\n"
+    )
+    assert declared_gate_baselines(config) == frozenset({CI_INHERITANCE_BASELINE})
+
+
+def test_ci_inheritance_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, CI_INHERITANCE_BASELINE, "entries: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]

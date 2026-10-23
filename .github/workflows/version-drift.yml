@@ -17,12 +17,10 @@
 #     a job the merge queue runs and pull request CI can skip fails, unless the
 #     caller's own baseline records it; the baseline may only shrink.
 #
-#   Public Runner Placement -- a PUBLIC repository may not ADD a job whose runs-on is, or
+#   Public Runner Placement -- a PUBLIC repository has no job whose runs-on is, or
 #     can resolve to, a self-hosted label (RULING 2026-10-16T07:07:09Z: "Ci runners
-#     should be for private repos only"). The jobs it already runs there are the
-#     shrink-only baseline shipped in omnibase_core
-#     (src/omnibase_core/contracts/public_runner_placement_baseline.yaml), which the
-#     caller reads from the pinned checkout and cannot edit. A private caller passes.
+#     should be for private repos only"). There is no baseline (OMN-21280): every
+#     such job fails. A private caller passes.
 #
 # Usage in a caller repo:
 #
@@ -91,10 +89,12 @@ jobs:
     name: Version Drift
     runs-on: >-
       ${{
-        (github.event_name == 'pull_request' &&
-         github.event.pull_request.head.repo.full_name != github.repository)
-        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        github.event.repository.private && (
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.head.repo.full_name != github.repository)
+          && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+          || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        ) || 'ubuntu-latest'
       }}
     timeout-minutes: 10
     steps:
@@ -174,18 +174,9 @@ jobs:
         env:
           TARGET_REPO: ${{ inputs.repo || github.event.repository.name }}
           VISIBILITY: ${{ github.event.repository.private && 'private' || 'public' }}
-          BASE_REF: >-
-            ${{ inputs['base-ref']
-            || github.event.pull_request.base.sha
-            || github.event.merge_group.base_sha }}
         run: |
           args=(--root "$GITHUB_WORKSPACE/target" --repo "$TARGET_REPO" --visibility "$VISIBILITY"
                 --report-json "$GITHUB_WORKSPACE/public-runner-placement-report.json")
-          if [ -n "$BASE_REF" ]; then
-            args+=(--base-ref "$BASE_REF")
-          else
-            echo "::notice::no base ref (push event): base comparison skipped"
-          fi
           uv run --no-sync check-public-runner-placement "${args[@]}"
 
       - name: Version floor consumers

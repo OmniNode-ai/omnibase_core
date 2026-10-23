@@ -38,11 +38,14 @@ MANIFEST = ROOT / ".github/required-checks.yaml"
 NODE_DEPENDENCY = "pydantic>=2.11"
 CONTEXT = "pr-title / check-title"
 NODE_MODULE = "omnimarket.nodes.node_pr_title_check_compute"
+# OMN-21280: a public caller (omnibase_core) always gets ubuntu-latest.
 RUNNER = """${{
-  (github.event_name == 'pull_request' &&
-   github.event.pull_request.head.repo.full_name != github.repository)
-  && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-  || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+  github.event.repository.private && (
+    (github.event_name == 'pull_request' &&
+     github.event.pull_request.head.repo.full_name != github.repository)
+    && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
+    || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+  ) || 'ubuntu-latest'
 }}"""
 
 # Decision branches from the previously pinned reusable

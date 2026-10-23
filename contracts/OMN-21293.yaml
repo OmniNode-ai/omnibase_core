@@ -1,0 +1,49 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21293
+title: Evidence for the OMN-20450 and OMN-20499 contracts moved into omnibase_core
+summary: The OMN-20450 and OMN-20499 ticket contracts moved from onex_change_control into contracts/ of
+  this repository are readable from the owning repository without a change-control checkout, name their
+  own tickets and load through ModelTicketContract.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21293-moved-contracts-readable
+    statement: The scheduled closer reads contracts/<ticket>.yaml from the owning repository, so each
+      contract moved from onex_change_control must be present there and parse with its own ticket identity.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: contracts/OMN-20450.yaml and contracts/OMN-20499.yaml exist, load with yaml.safe_load
+          as mappings and carry ticket_id equal to their file id. -- falsifier: uv run pytest tests/unit/models/ticket/test_moved_ticket_contracts_omn21293.py
+          -q'
+      - id: AC2
+        statement: 'AC2: contracts/OMN-20450.yaml and contracts/OMN-20499.yaml load through ModelTicketContract
+          with matching ticket identities and populated check values. -- falsifier: uv run pytest tests/unit/models/ticket/test_moved_ticket_contracts_omn21293.py
+          -q -k loads_through'
+evidence_requirements:
+  - kind: tests
+    description: The moved contracts are present, name their tickets and load through ModelTicketContract.
+    command: uv run pytest tests/unit/models/ticket/test_moved_ticket_contracts_omn21293.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21293-ac1-moved-contracts-present
+    description: Each moved contract exists, loads as a YAML mapping and names its own ticket.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_moved_ticket_contracts_omn21293.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21293-ac2-moved-contracts-model
+    description: Each moved contract loads through ModelTicketContract with populated check values.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_moved_ticket_contracts_omn21293.py -q
+          -k loads_through
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]

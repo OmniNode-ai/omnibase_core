@@ -83,6 +83,20 @@ topics:
       - projection
       - health
 
+  - topic: onex.evt.platform.validator-triggered.v1  # onex-topic-sot
+    introduced_in: OMN-21277
+    owner: omnibase_core
+    durability_tier: durable
+    schema_ref: omnibase_core.models.validation.model_validator_triggered_event.ModelValidatorTriggeredEvent
+    description: >
+      One event per core validator whose canonical ValidationReport carries a FAIL or ERROR finding on
+      a change (RULING 2026-10-14T20:01:09Z: validators emit a bus event when they trigger). Keyed by
+      validator_name.
+    tags:
+      - platform
+      - validation
+      - ci
+
   # ---------------------------------------------------------------------------
   # Delegation — terminal events (OMN-15622, plan Task 1.2)
   #

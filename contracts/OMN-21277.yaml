@@ -1,0 +1,80 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-21277"
+title: "Repositories of one type run the same CI from omnibase_core reusable workflows, and the inheritance
+  check baseline empties"
+summary: >
+  Mechanism for RULING 2026-10-14T19:54:41Z and RULING 2026-10-14T20:01:09Z in omnibase_core. The CI inheritance
+  check reads a typed, shrink-only baseline (.onex_ratchets/ci_inheritance_baseline.yaml): an inline job
+  passes only when the baseline lists it, and an entry the base baseline did not list (new or re-added)
+  or naming no inline job fails. A failing check publishes one onex.evt.platform.validator-triggered.v1
+  event per triggered validator through the event bus publish call. AC2 is partial here: omnibase_core's
+  baseline holds 139 entries; emptying it and the baselines of the other registry repositories is later
+  work.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21277-ci-inheritance-baseline
+    statement: The CI inheritance check reads a typed, shrink-only baseline, and a failing check publishes
+      one validator-triggered event per triggered validator on the event bus.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the CI inheritance check refuses an inline job of a typed repository that its
+          shrink-only baseline does not list, and a re-added entry fails -- falsifier: pytest of test_handler_ci_inheritance_baseline.py"
+      - id: AC2
+        statement: "AC2 (partial, omnibase_core only): an empty baseline refuses a fixture entry, and
+          the committed omnibase_core baseline is typed and lists exactly its inline jobs -- falsifier:
+          pytest of test_handler_ci_inheritance_baseline.py"
+      - id: AC3
+        statement: "AC3: a core validator that fails a PR emits one validator-triggered event per triggered
+          validator on the bus -- falsifier: pytest of test_handler_validator_triggered_emit.py"
+evidence_requirements:
+  - kind: "tests"
+    description: "Focused CI inheritance and validator-triggered tests pass"
+    command: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
+      tests/unit/handlers/test_handler_ci_repository_jobs.py tests/unit/handlers/test_handler_ci_inheritance_baseline.py
+      tests/unit/handlers/test_handler_validator_triggered_emit.py -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-ac1-baseline-refuses-unlisted-job"
+    description: "AC1: the CI inheritance check refuses an inline job of a typed repository that its shrink-only
+      baseline does not list, and a re-added entry fails"
+    source: "manual"
+    binds_ac: [AC1]
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance_baseline.py -q -k
+          \"unlisted_inline_job or re_added_entry or stale_entry or first_baseline\""
+  - id: "dod-ac2-new-entry-refused"
+    description: "AC2 (partial, omnibase_core only): an empty baseline refuses a fixture entry, and the
+      committed omnibase_core baseline is typed and lists exactly its inline jobs (139 today, not yet
+      empty)"
+    source: "manual"
+    binds_ac: [AC2]
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance_baseline.py -q -k
+          \"empty_baseline_refuses_a_new_entry or core_baseline_is_typed\""
+  - id: "dod-ac3-validator-triggered-event"
+    description: "AC3: a core validator that fails a PR emits one validator-triggered event per triggered
+      validator on the bus (in-memory bus)"
+    source: "manual"
+    binds_ac: [AC3]
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/handlers/test_handler_validator_triggered_emit.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
+          -q -k \"triggered or emitting\""
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: the change is a CI check, a pre-commit hook and a new event topic
+      constant with its registry row; no Docker image, daemon, broker topic provisioning, runtime process
+      or service deploy is required before merge. The check runs on the hosted runner against this repository's
+      own workflows."
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/handlers/test_handler_ci_inheritance_baseline.py -q -k
+          core_baseline_is_typed"

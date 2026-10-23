@@ -5,8 +5,11 @@
 #
 # Every PR must cite a Linear ticket whose contracts/<OMN-N>.yaml sits in the
 # caller's own repository at the PR head; the pinned verifier
-# (omnimarket node_dod_verify) runs every dod_evidence check at the head and a
-# must-fail control at the merge base. The `dod-verify` job carries the verdict.
+# (omnimarket node_dod_verify) runs the dod_evidence checks the PR adds or
+# changes at the head and a must-fail control of them at the merge base.
+# Evidence carried unchanged from the merge base's contract passed on the
+# receipt of the PR that added it and is not re-run (OMN-17427). The
+# `dod-verify` job carries the verdict.
 #
 # OMN-20074: caller evidence is the only mode. The change-control evidence
 # mode (a checkout of the retired change-control repository at a stamped SHA),
@@ -76,15 +79,18 @@ jobs:
     name: verify
     # OMN-20074: caller evidence is the only mode, so this job reports a
     # success no-op; dod-verify carries the verdict. Same runner routing
-    # expression as dod-verify (OMN-18205): a genuine fork pull request
-    # resolves to OMNI_PUBLIC_PR_RUNS_ON_JSON, everything else to the trusted
-    # fleet.
+    # expression as dod-verify (OMN-18205): a private caller runs every event,
+    # fork pull requests included, on its own OMNI_TRUSTED_CI_RUNS_ON_JSON
+    # with no default, because since 2026-10-19 a private repository may not
+    # run on a hosted label at all and a hosted default behind a variable
+    # counts (the OMN-21216 shape; the private-repo placement gate refuses a
+    # private caller where that variable is unset). A public caller always
+    # gets ubuntu-latest (OMN-21280).
     runs-on: >-
       ${{
-        (github.event_name == 'pull_request' &&
-         github.event.pull_request.head.repo.full_name != github.repository)
-        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        github.event.repository.private && (
+          fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON)
+        ) || 'ubuntu-latest'
       }}
     timeout-minutes: 5
     steps:
@@ -96,12 +102,16 @@ jobs:
     # Same runner routing expression as verify (OMN-18205).
     runs-on: >-
       ${{
-        (github.event_name == 'pull_request' &&
-         github.event.pull_request.head.repo.full_name != github.repository)
-        && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
+        github.event.repository.private && (
+          fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON)
+        ) || 'ubuntu-latest'
       }}
-    timeout-minutes: 40
+    # OMN-17427: 60 minutes. A caller contract that has grown to hundreds of
+    # bound checks (omnimarket contracts/OMN-17427.yaml, 284 checks) ran 28 to 40
+    # minutes here, and seven omnimarket pull requests were cancelled at the
+    # 40-minute limit with no verdict. Callers that poll for this verdict size
+    # their own deadline from this budget plus scheduling time.
+    timeout-minutes: 60
     env:
       ACTIONS_CACHE_URL: ""
       ACTIONS_RUNTIME_URL: ""
@@ -991,6 +1001,259 @@ jobs:
                   print(f"::notice::{sibling}: checkout unavailable ({type(error).__name__}); left absent")
           PY
 
+      # OMN-17427: verify only what this pull request adds or changes. An
+      # evidence item or acceptance criterion carried unchanged from the merge
+      # base's contract was proven by the receipt of the pull request that
+      # added it, so it is neither re-run at the head nor re-controlled at the
+      # merge base. The head runs the items the pull request adds or changes,
+      # the items whose checks name a path the diff touches, and every item
+      # that binds a criterion the pull request adds or changes; the must-fail
+      # control runs the same set without the diff-named items. Any item that
+      # references a scoped item, or that a scoped item references, comes
+      # with it, so a supersession or a binding retirement is never split.
+      # A contract that cannot be compared is verified in full. A cited
+      # contract whose every item and criterion is carried binds no evidence
+      # of its own and is refused here, before any check runs. Without this an
+      # umbrella contract (154 criteria) ran every check twice per pull
+      # request and outlived the job timeout.
+      - name: Scope each cited contract to what this pull request adds or changes
+        id: scope
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        env:
+          REPO_SHORT: ${{ github.event.repository.name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          head_tree="$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT"
+          if ! git -C "$head_tree" cat-file -e "$BASE_SHA^{commit}"; then
+            git -C "$head_tree" fetch --no-tags origin "$BASE_SHA"
+          fi
+          MB="$(git -C "$head_tree" merge-base "$BASE_SHA" "$HEAD_SHA")"
+          scope_dir="$RUNNER_TEMP/dod/scope"
+          rm -rf "$scope_dir"
+          mkdir -p "$scope_dir"
+          git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA" > "$scope_dir/diff-paths"
+          while IFS= read -r ticket; do
+            if [ -f "$head_tree/contracts/$ticket.yaml" ]; then
+              git -C "$head_tree" show "$MB:contracts/$ticket.yaml" > "$scope_dir/merge-base-$ticket.yaml" 2>/dev/null || rm -f "$scope_dir/merge-base-$ticket.yaml"
+            fi
+          done < "$RUNNER_TEMP/dod/tickets.txt"
+          "$DOD_VERIFY_PY" - "$RUNNER_TEMP/dod/tickets.txt" "$head_tree" "$scope_dir" <<'PY'
+          import json
+          import re
+          import shutil
+          import sys
+          from pathlib import Path
+
+          import yaml
+
+          tickets_file, head_tree, scope_dir = (Path(arg) for arg in sys.argv[1:4])
+          diff_paths = [p for p in (scope_dir / "diff-paths").read_text().split("\0") if p]
+
+
+          def canonical(label):
+              return label.strip().upper().replace("-", "").replace("_", "")
+
+
+          def strict_load(text, source):
+              # The verifier's own loader, so a duplicate key the verifier would
+              # refuse is never dropped by a lenient round trip.
+              from omnibase_core.utils.util_safe_yaml_loader import (
+                  load_yaml_mapping_no_duplicates,
+              )
+
+              loaded = load_yaml_mapping_no_duplicates(text, source=source)
+              if not isinstance(loaded, dict):
+                  raise ValueError("contract is not a mapping")
+              return loaded
+
+
+          def items_of(contract):
+              items = contract.get("dod_evidence")
+              if not isinstance(items, list):
+                  raise ValueError("dod_evidence is not a list")
+              return items
+
+
+          def criteria_by_label(contract):
+              found = {}
+              requirements = contract.get("requirements")
+              for requirement in requirements if isinstance(requirements, list) else ():
+                  acceptance = requirement.get("acceptance") if isinstance(requirement, dict) else None
+                  for criterion in acceptance if isinstance(acceptance, list) else ():
+                      if isinstance(criterion, dict) and isinstance(criterion.get("id"), str):
+                          found.setdefault(canonical(criterion["id"]), []).append(criterion)
+              return found
+
+
+          def strings(value):
+              if isinstance(value, str):
+                  yield value
+              elif isinstance(value, dict):
+                  for child in value.values():
+                      yield from strings(child)
+              elif isinstance(value, list):
+                  for child in value:
+                      yield from strings(child)
+
+
+          def binding_labels(item):
+              labels = set()
+              records = item.get("ac_bindings")
+              for record in records if isinstance(records, list) else ():
+                  if isinstance(record, dict) and isinstance(record.get("label"), str):
+                      labels.add(canonical(record["label"]))
+              return labels
+
+
+          def labels_of(item):
+              labels = binding_labels(item)
+              binds = item.get("binds_ac")
+              for label in binds if isinstance(binds, list) else ():
+                  if isinstance(label, str):
+                      labels.add(canonical(label))
+              return labels
+
+
+          def scope(head, base):
+              items = items_of(head)
+              base_items = {
+                  item["id"]: item for item in (items_of(base) if base is not None else [])
+                  if isinstance(item, dict) and isinstance(item.get("id"), str)
+              }
+              ids = [item.get("id") if isinstance(item, dict) else None for item in items]
+              # Carried exactly as the merge-base control has always judged it:
+              # a uniquely named item equal to the merge base's item of that id.
+              changed = {
+                  index for index, item in enumerate(items)
+                  if not (isinstance(ids[index], str) and ids.count(ids[index]) == 1
+                          and item == base_items.get(ids[index]))
+              }
+              named = {
+                  index for index, item in enumerate(items)
+                  if isinstance(item, dict) and any(
+                      path in text for text in strings(item.get("checks")) for path in diff_paths
+                  )
+              }
+              head_criteria = criteria_by_label(head)
+              base_criteria = criteria_by_label(base) if base is not None else {}
+              new_criteria = {
+                  label for label, entries in head_criteria.items()
+                  if entries != base_criteria.get(label)
+              }
+              # An item references another when any string in it names that item's id.
+              references = {index: set() for index in range(len(items))}
+              by_id = {}
+              for index, item_id in enumerate(ids):
+                  if isinstance(item_id, str):
+                      by_id.setdefault(item_id, set()).add(index)
+              for index, item in enumerate(items):
+                  if not isinstance(item, dict):
+                      continue
+                  for key, value in item.items():
+                      if key == "id":
+                          continue
+                      for text in strings(value):
+                          for token in re.split(r"[\s,:;]+", text):
+                              references[index] |= by_id.get(token, set()) - {index}
+
+              def close(seed):
+                  chosen = set(seed)
+                  while True:
+                      grown = set(chosen)
+                      grown |= {
+                          index for index, item in enumerate(items)
+                          if isinstance(item, dict) and labels_of(item) & new_criteria
+                      }
+                      for index in chosen:
+                          grown |= references[index]
+                      grown |= {index for index in references if references[index] & chosen}
+                      # A binding record is accepted or re-accepted by another
+                      # item's record on the same label, so those travel together.
+                      accepted = set().union(*(
+                          binding_labels(items[index]) for index in chosen if isinstance(items[index], dict)
+                      ))
+                      grown |= {
+                          index for index, item in enumerate(items)
+                          if isinstance(item, dict) and binding_labels(item) & accepted
+                      }
+                      if grown == chosen:
+                          return chosen
+                      chosen = grown
+
+              return items, close(changed | named), close(changed), new_criteria
+
+
+          def scoped_contract(head, items, chosen, criteria):
+              contract = dict(head)
+              contract["dod_evidence"] = [item for index, item in enumerate(items) if index in chosen]
+              if isinstance(head.get("requirements"), list):
+                  requirements = []
+                  for requirement in head["requirements"]:
+                      if not isinstance(requirement, dict) or not isinstance(requirement.get("acceptance"), list):
+                          continue
+                      kept = [
+                          criterion for criterion in requirement["acceptance"]
+                          if isinstance(criterion, dict) and isinstance(criterion.get("id"), str)
+                          and canonical(criterion["id"]) in criteria
+                      ]
+                      if kept:
+                          requirements.append({**requirement, "acceptance": kept})
+                  contract["requirements"] = requirements
+              return yaml.safe_dump(contract, sort_keys=False, allow_unicode=True, width=1000000)
+
+
+          failed = False
+          for ticket in tickets_file.read_text().split():
+              contract_path = head_tree / "contracts" / f"{ticket}.yaml"
+              if not contract_path.is_file():
+                  # The head verification step names a missing contract.
+                  continue
+              head_out = scope_dir / f"head-{ticket}.yaml"
+              base_out = scope_dir / f"base-{ticket}.yaml"
+              base_path = scope_dir / f"merge-base-{ticket}.yaml"
+              try:
+                  head = strict_load(contract_path.read_text(), str(contract_path))
+                  try:
+                      base = strict_load(base_path.read_text(), str(base_path)) if base_path.is_file() else None
+                  except Exception:
+                      base = None
+                  items, head_scope, base_scope, criteria = scope(head, base)
+              except Exception as error:
+                  # Anything that cannot be compared is verified in full.
+                  shutil.copyfile(contract_path, head_out)
+                  shutil.copyfile(contract_path, base_out)
+                  print(f"{ticket}: contract not scoped ({type(error).__name__}); verifying it in full")
+                  continue
+              all_criteria = criteria_by_label(head)
+              summary = {
+                  "items": len(items),
+                  "criteria": len(all_criteria),
+                  "new_criteria": sorted(criteria),
+                  "head": [items[index].get("id") if isinstance(items[index], dict) else None for index in sorted(head_scope)],
+                  "base": [items[index].get("id") if isinstance(items[index], dict) else None for index in sorted(base_scope)],
+              }
+              (scope_dir / f"summary-{ticket}.json").write_text(json.dumps(summary) + "\n")
+              if not base_scope:
+                  print(
+                      f"::error::{ticket}: every evidence item and acceptance criterion in contracts/{ticket}.yaml "
+                      "is carried unchanged from the merge base's contract; this pull request binds no evidence of its own"
+                  )
+                  failed = True
+                  continue
+              head_out.write_text(scoped_contract(head, items, head_scope, criteria))
+              base_out.write_text(scoped_contract(head, items, base_scope, criteria))
+              carried = len(items) - len(head_scope)
+              print(
+                  f"{ticket}: the head verifies {len(head_scope)} of {len(items)} evidence items and "
+                  f"{len(criteria)} of {len(all_criteria)} criteria; the merge-base control runs {len(base_scope)}; "
+                  f"{carried} carried unchanged pass by their earlier receipt"
+              )
+          sys.exit(1 if failed else 0)
+          PY
+
       - name: Verify the contract at the PR head
         id: head_verify
         continue-on-error: ${{ inputs.shadow == 'true' }}
@@ -1013,10 +1276,17 @@ jobs:
               echo "::notice::Include contracts/$ticket.yaml at this PR head; a later companion merge cannot supply evidence for this head."
               exit 1
             fi
+            # OMN-17427: the contract scoped to what this pull request adds or changes.
+            # Without one (the scope step refused, in shadow mode) the full contract runs.
+            scoped="$RUNNER_TEMP/dod/scope/head-$ticket.yaml"
+            if [ ! -f "$scoped" ]; then
+              echo "::notice::$ticket: no scoped contract; verifying contracts/$ticket.yaml in full"
+              scoped="$contract"
+            fi
             result="$RUNNER_TEMP/dod/head-$ticket.json"
             rc=0
             "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
-              --ticket-id "$ticket" --contract-path "$contract" --execution-audience hosted \
+              --ticket-id "$ticket" --contract-path "$scoped" --execution-audience hosted \
               --output-path "$RUNNER_TEMP/dod/head-$ticket.receipt.json" > "$result" || rc=$?
             # --output-path adds this non-JSON line after the pretty JSON document.
             sed -i '/^Receipt written to: /d' "$result"
@@ -1314,8 +1584,15 @@ jobs:
               failed=1
               continue
             fi
+            # OMN-17427: only the items this pull request adds or changes, and the
+            # items binding a criterion it adds or changes, run at the merge base.
+            scoped="$RUNNER_TEMP/dod/scope/base-$ticket.yaml"
+            if [ ! -f "$scoped" ]; then
+              echo "::notice::$ticket: no scoped contract; controlling contracts/$ticket.yaml in full"
+              scoped="$base_tree/contracts/$ticket.yaml"
+            fi
             "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
-              --ticket-id "$ticket" --contract-path "$base_tree/contracts/$ticket.yaml" --execution-audience hosted \
+              --ticket-id "$ticket" --contract-path "$scoped" --execution-audience hosted \
               --output-path "$RUNNER_TEMP/dod/base-$ticket.receipt.json" > "$result" || true
             sed -i '/^Receipt written to: /d' "$result"
             if ! jq -s -e 'length == 1 and (.[0] | type == "object" and (.checks | type == "array"))' "$result" > /dev/null 2>&1; then
@@ -1417,6 +1694,8 @@ jobs:
               while IFS= read -r ticket; do
                 verdict="$(jq -r '"status=\(.status), acceptance_basis=\(.acceptance_basis)"' "$RUNNER_TEMP/dod/head-$ticket.json" 2>/dev/null || printf '%s' 'unavailable')"
                 control="$(cat "$RUNNER_TEMP/dod/base-$ticket.control.txt" 2>/dev/null || printf '%s' 'not run')"
+                scope="$(jq -r '"head ran \(.head | length) of \(.items) evidence items, base control ran \(.base | length), new or changed criteria [\(.new_criteria | join(", "))]"' "$RUNNER_TEMP/dod/scope/summary-$ticket.json" 2>/dev/null || printf '%s' 'unscoped')"
+                printf '%s scope (OMN-17427): %s\n\n' "$ticket" "$scope"
                 where="$(cat "$RUNNER_TEMP/dod/control-label-$ticket.txt" 2>/dev/null || printf '%s' 'unavailable')"
                 printf '%s: head %s; base control %s at %s\n\n' "$ticket" "$verdict" "$control" "$where"
               done < "$RUNNER_TEMP/dod/tickets.txt"
@@ -1426,7 +1705,7 @@ jobs:
             {
               new_path=verified
               refused_step=none
-              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts head_verify merge_base base_control; do
+              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts scope head_verify merge_base base_control; do
                 if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
                   new_path=refused
                   refused_step="$step_id"

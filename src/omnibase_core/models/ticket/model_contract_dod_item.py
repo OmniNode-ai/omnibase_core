@@ -41,6 +41,7 @@ from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
 from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
     SOLE_FILE_EXISTS_ERROR_TOKEN,
 )
+from omnibase_core.models.ticket.model_ac_binding import ModelAcBinding
 from omnibase_core.models.ticket.model_contract_ac_binding_retirement import (
     ModelContractAcBindingRetirement,
 )
@@ -117,6 +118,18 @@ class ModelContractDodItem(BaseModel):
             "Acceptance-criterion labels (`AC1`, `DoD2`) from the ticket body "
             "that this evidence item claims to prove. Empty means it claims "
             "none, which is a coverage gap rather than a pass."
+        ),
+    )
+    # OMN-17427: the pinned, possibly-accepted record behind each `binds_ac`
+    # label. The DoD verifier reads it; without the field here, a product-repo
+    # contract carrying it was refused as an extra input.
+    ac_bindings: list[ModelAcBinding] = Field(
+        default_factory=list,
+        max_length=_MAX_LIST_ITEMS,
+        description=(
+            "Acceptance-criterion bindings, each pinned to the criterion's "
+            "hash and, once accepted, to who accepted it and when. An entry "
+            "with no acceptance is a draft, not evidence."
         ),
     )
     # OMN-21220: the append-only way to withdraw a binding a merged item makes,

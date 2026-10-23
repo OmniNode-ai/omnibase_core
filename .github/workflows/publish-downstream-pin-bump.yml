@@ -46,12 +46,7 @@ concurrency:
 jobs:
   enumerate-repos:
     name: Enumerate downstream repos
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     outputs:
       repos: ${{ steps.emit.outputs.repos }}
       new_sha: ${{ steps.sha.outputs.sha }}
@@ -90,12 +85,7 @@ jobs:
     name: "Bump: ${{ matrix.repo }}"
     needs: enumerate-repos
     if: needs.enumerate-repos.outputs.repos != '[]'
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     continue-on-error: true
     permissions:
       contents: read
@@ -284,12 +274,7 @@ jobs:
     name: Publish summary
     needs: [enumerate-repos, bump]
     if: always()
-    runs-on: >-
-      ${{
-        github.event_name != 'pull_request'
-        && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || '["ubuntu-latest"]')
-        || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-      }}
+    runs-on: ubuntu-latest
     permissions:
       actions: read
     steps:
@@ -307,10 +292,21 @@ jobs:
       - name: Fail red on any real leg failure (no silent gates)
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          SETTLE_ATTEMPTS: "6"
+          SETTLE_SLEEP_SECONDS: "10"
         run: |
           set -euo pipefail
-          FAILED=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --paginate \
-            --jq '.jobs[] | select(.name | startswith("Bump: ")) | select(.conclusion != "success" and .conclusion != "skipped") | "\(.name): \(.conclusion)"')
+          # OMN-20074 (run 39816628531): completed legs can briefly have null conclusions.
+          for ((attempt=1; attempt<=SETTLE_ATTEMPTS; attempt++)); do
+            JOBS=$(gh api "repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/jobs" --paginate \
+              --jq '.jobs[]')
+            UNSETTLED=$(printf '%s\n' "$JOBS" | jq -s '[.[] | select(.name | startswith("Bump: ")) | select(.status != "completed" or .conclusion == null)] | length')
+            if [ "$UNSETTLED" -eq 0 ] || [ "$attempt" -eq "$SETTLE_ATTEMPTS" ]; then
+              break
+            fi
+            sleep "$SETTLE_SLEEP_SECONDS"
+          done
+          FAILED=$(printf '%s\n' "$JOBS" | jq -r 'select(.name | startswith("Bump: ")) | select(.conclusion != "success" and .conclusion != "skipped") | "\(.name): \(.conclusion)"')
           if [ -n "$FAILED" ]; then
             {
               echo "## Downstream pin-bump leg failures"

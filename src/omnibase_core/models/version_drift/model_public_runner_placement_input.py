@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Input to the public-repository runner placement check (OMN-19998)."""
+"""Input to the public-repository runner placement check (OMN-19998, OMN-21280)."""
 
 from __future__ import annotations
 
@@ -15,18 +15,16 @@ __all__ = ["ModelPublicRunnerPlacementInput"]
 
 
 class ModelPublicRunnerPlacementInput(BaseModel):
-    """A repository's workflow files, optionally its base, and its baselined jobs.
+    """A repository's workflow files and whether the repository is public.
+
+    There is no baseline (OMN-21280): every self-hosted job of a public
+    repository fails, and ``extra="forbid"`` refuses one passed in.
 
     Attributes:
-        repository: The repository name the baseline is keyed on.
+        repository: The repository name the findings name.
         public: False means a private repository, where self-hosted runners are
             the rule and the check passes.
-        files: Repository-relative (path, source) pairs of the head workflows.
-        base_files: The same pairs at the change's base, or None when no base is
-            known (a push, a staged-files run); the re-added-job rule is then off.
-        baseline: ``(path, job)`` pairs of this repository the baseline records.
-        report_stale_baseline: When True (a full-tree scan), a baseline entry no
-            workflow produces any more is reported as WARN.
+        files: Repository-relative (path, source) pairs of the workflows.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -34,6 +32,3 @@ class ModelPublicRunnerPlacementInput(BaseModel):
     repository: str = Field(min_length=1)
     public: bool = True
     files: tuple[ModelSourceFile, ...] = Field(default=())
-    base_files: tuple[ModelSourceFile, ...] | None = None
-    baseline: frozenset[tuple[str, str]] = Field(default=frozenset())
-    report_stale_baseline: bool = False

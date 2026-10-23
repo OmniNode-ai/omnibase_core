@@ -1836,15 +1836,15 @@ repos:
         stages: [pre-commit]
 
       # Public-repository runner placement (OMN-19998, RULING 2026-10-16T07:07:09Z:
-      # "Ci runners should be for private repos only"). Refuses a workflow job
-      # whose runs-on is, or can resolve to, a self-hosted label unless the
-      # shrink-only baseline records it. Mirror the CI step in the lint-imports
-      # job and .github/workflows/version-drift.yml.
+      # "Ci runners should be for private repos only"). Refuses every workflow
+      # job whose runs-on is, or can resolve to, a self-hosted label; there is no
+      # baseline (OMN-21280). Mirror the CI step in the lint-imports job and
+      # .github/workflows/version-drift.yml.
       - id: check-public-runner-placement
         name: Public repositories add no self-hosted CI job (OMN-19998)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_public_runner_placement_cli
         language: system
-        args: [--repo, omnibase_core, --baseline, src/omnibase_core/contracts/public_runner_placement_baseline.yaml]
+        args: [--repo, omnibase_core]
         files: ^\.github/workflows/[^/]+\.ya?ml$
         pass_filenames: true
         require_serial: true
@@ -1905,12 +1905,17 @@ repos:
       # (RULING 2026-10-14T19:54:41Z: the same CI for repositories of a type).
       - id: check-ci-inheritance
         name: CI Inherits From Core (OMN-17427)
+        # OMN-21277: the shrink-only .onex_ratchets/ci_inheritance_baseline.yaml
+        # lists the inline jobs that still pass; HEAD's copy is the base baseline.
         entry: >-
           bash -c 'set -euo pipefail; base=$(mktemp -d); trap "rm -rf \"$base\"" EXIT; git archive HEAD
-          .github/workflows | tar -x -C "$base"; env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_ci_inheritance_cli
-          --base-dir "$base/.github/workflows" --head-dir .github/workflows'
+          .github/workflows | tar -x -C "$base"; if git cat-file -e HEAD:.onex_ratchets/ci_inheritance_baseline.yaml
+          2>/dev/null; then git show HEAD:.onex_ratchets/ci_inheritance_baseline.yaml > "$base/ci_inheritance_baseline.yaml";
+          fi; env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_ci_inheritance_cli --base-dir
+          "$base/.github/workflows" --head-dir .github/workflows --baseline .onex_ratchets/ci_inheritance_baseline.yaml
+          --base-baseline "$base/ci_inheritance_baseline.yaml"'
         language: system
-        files: ^\.github/workflows/.*\.ya?ml$
+        files: ^(\.github/workflows/.*\.ya?ml|\.onex_ratchets/ci_inheritance_baseline\.yaml)$
         pass_filenames: false
         require_serial: true
         stages: [pre-commit]

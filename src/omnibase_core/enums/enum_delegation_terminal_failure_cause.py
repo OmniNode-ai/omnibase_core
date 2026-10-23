@@ -120,5 +120,19 @@ class EnumDelegationTerminalFailureCause(str, Enum):
     names that the request never ran.
     """
 
+    RETURNED_TO_CALLER = "returned_to_caller"
+    """Every model the developer chose failed, and the task went back to them.
+
+    Decision D3 of the delegation requirements specification (OMN-21210): an
+    exhausted ladder ends here with zero savings, and the calling session does
+    the task itself. Measured on receipt ``3861ec7f`` from an onboarding walk
+    on 2026-10-20: every attempt failed and the run ended
+    ``quality_gate_refused`` carrying the last provider's error, so the caller
+    read a gate verdict instead of being told the task was theirs. Each
+    attempt's own cause stays on its attempt record; this member names the
+    outcome of the run. Distinct from every provider member and from
+    ``QUALITY_GATE_REFUSED``, because no single rung decided it.
+    """
+
 
 __all__: list[str] = ["EnumDelegationTerminalFailureCause"]
