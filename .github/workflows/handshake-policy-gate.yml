@@ -51,14 +51,7 @@ jobs:
   policy-gate:
     name: Check handshake compliance across repos
     # OMNI_RUNNER_SELECTOR_V1 behind the private-caller guard (OMN-21280): a public caller always gets ubuntu-latest
-    runs-on: >-
-      ${{
-        github.event.repository.private && (
-          github.event_name != 'pull_request'
-          && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]'))
-          || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]')
-        ) || 'ubuntu-latest'
-      }}
+    runs-on: ${{ github.event.repository.private && ( github.event_name != 'pull_request' && fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]')) || fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]') ) || 'ubuntu-latest' }}
     timeout-minutes: 10
 
     steps:

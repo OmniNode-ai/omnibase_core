@@ -86,12 +86,7 @@ jobs:
     # counts (the OMN-21216 shape; the private-repo placement gate refuses a
     # private caller where that variable is unset). A public caller always
     # gets ubuntu-latest (OMN-21280).
-    runs-on: >-
-      ${{
-        github.event.repository.private && (
-          fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON)
-        ) || 'ubuntu-latest'
-      }}
+    runs-on: ${{ github.event.repository.private && ( fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON) ) || 'ubuntu-latest' }}
     timeout-minutes: 5
     steps:
       - name: Caller evidence runs in dod-verify
@@ -100,12 +95,7 @@ jobs:
   dod-verify:
     name: dod-verify
     # Same runner routing expression as verify (OMN-18205).
-    runs-on: >-
-      ${{
-        github.event.repository.private && (
-          fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON)
-        ) || 'ubuntu-latest'
-      }}
+    runs-on: ${{ github.event.repository.private && ( fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON) ) || 'ubuntu-latest' }}
     # OMN-17427: 60 minutes. A caller contract that has grown to hundreds of
     # bound checks (omnimarket contracts/OMN-17427.yaml, 284 checks) ran 28 to 40
     # minutes here, and seven omnimarket pull requests were cancelled at the
