@@ -33,7 +33,13 @@ REMOVED_PATHS = (
     "scripts/ci/check_occ_companion_merged.py",
 )
 
-CALLER_INPUTS = {"evidence-source", "verifier-version", "compare-with-occ", "shadow"}
+CALLER_INPUTS = {
+    "evidence-source",
+    "verifier-version",
+    "compare-with-occ",
+    "shadow",
+    "check-timeout-seconds",
+}
 
 CLI_MODULES = (
     "src/omnibase_core/validation/validator_receipt_reprobe.py",
