@@ -244,7 +244,11 @@ def test_writer_pin_only_step_is_gated_and_gates_every_evidence_step() -> None:
     index = ids.index("writer_pin_only")
     assert ids[index - 1 : index + 2] == ["verifier", "writer_pin_only", "pg_tools"]
     step = _step("writer_pin_only")
-    assert step["if"] == GUARD + " && steps.bot_exempt.outputs.writer_app == 'true'"
+    assert step["if"] == (
+        GUARD
+        + " && steps.bot_exempt.outputs.writer_app == 'true'"
+        + " && steps.check_timeout.outcome != 'failure'"
+    )
     assert step["continue-on-error"] == "${{ inputs.shadow == 'true' }}"
     assert step["env"] == {
         "REPO_SHORT": "${{ github.event.repository.name }}",

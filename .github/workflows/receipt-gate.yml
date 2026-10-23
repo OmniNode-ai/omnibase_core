@@ -31,6 +31,10 @@
 #                   (default: "false"). With "true", dod-verify records its
 #                   verdict (the first refused step) as one `Shadow verdict:`
 #                   job-summary line and one notice annotation, then passes.
+#   check-timeout-seconds: how long each dod_verify check may run, a whole
+#                   number of seconds from 1 to 900 (OMN-21166). Empty, the
+#                   default, keeps the verifier's own 30 s. Browser checks
+#                   need more than that.
 #
 # Secrets:
 #   (none — contracts are in the caller's repository)
@@ -60,6 +64,11 @@ on:
         type: string
         required: false
         default: "false"
+      check-timeout-seconds:
+        description: "Seconds each dod_verify check may run, 1 to 900; empty keeps the verifier default of 30 (OMN-21166)."
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -289,6 +298,31 @@ jobs:
         if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
         uses: astral-sh/setup-uv@v7
 
+      # OMN-21166: a browser check outlives the verifier's 30 s default, so the
+      # caller may name its own per-check ceiling. GITHUB_ENV carries it to both
+      # verifier steps; a malformed value is refused here, never defaulted.
+      - name: Resolve the per-check timeout
+        id: check_timeout
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        env:
+          CHECK_TIMEOUT_SECONDS: ${{ inputs.check-timeout-seconds }}
+        run: |
+          set -euo pipefail
+          re='^[1-9][0-9]{0,2}$'
+          val="${CHECK_TIMEOUT_SECONDS:-}"
+          if [[ -z "$val" ]]; then
+            echo '::notice::check-timeout-seconds not set; each dod_verify check keeps the verifier default of 30 s'
+            exit 0
+          fi
+          if [[ "$val" =~ $re ]] && (( 10#$val <= 900 )); then
+            echo "DOD_VERIFY_CHECK_TIMEOUT_S=$val" >> "$GITHUB_ENV"
+            echo "::notice::each dod_verify check may run for up to $val s"
+            exit 0
+          fi
+          echo "::error::check-timeout-seconds must be a whole number of seconds from 1 to 900; got '$val'"
+          exit 1
+
       # OMN-20032: refuse a verifier older than the floor before installing it.
       # VERIFIER_FLOOR is the one place the floor lives: 0.4.303 is the first
       # omnimarket release carrying omnimarket#3511, which makes node_dod_verify
@@ -297,7 +331,7 @@ jobs:
       - name: Install the pinned verifier
         id: verifier
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.check_timeout.outcome != 'failure'
         env:
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
           VERIFIER_FLOOR: "0.4.303"
@@ -339,7 +373,7 @@ jobs:
       - name: Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)
         id: writer_pin_only
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -701,7 +735,7 @@ jobs:
       - name: Provide the PostgreSQL 16 server tools
         id: pg_tools
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         run: |
           set -euo pipefail
           pg16_bin=/usr/lib/postgresql/16/bin
@@ -757,7 +791,7 @@ jobs:
       - name: Export the Postgres service to the bound tests
         id: pg_env
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
         run: |
@@ -817,7 +851,7 @@ jobs:
       - name: Provision the contracts' declared sibling checkouts
         id: sibling_checkouts
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -985,7 +1019,7 @@ jobs:
       - name: Scope each cited contract to what this pull request adds or changes
         id: scope
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -1223,7 +1257,7 @@ jobs:
       - name: Verify the contract at the PR head
         id: head_verify
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -1271,7 +1305,7 @@ jobs:
       - name: Prepare the merge base with the pull request's test side laid over it
         id: merge_base
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -1462,7 +1496,7 @@ jobs:
       - name: Must-fail control at the merge base
         id: base_control
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -1671,7 +1705,7 @@ jobs:
             {
               new_path=verified
               refused_step=none
-              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv verifier writer_pin_only pg_tools pg_env sibling_checkouts scope head_verify merge_base base_control; do
+              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts scope head_verify merge_base base_control; do
                 if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
                   new_path=refused
                   refused_step="$step_id"
