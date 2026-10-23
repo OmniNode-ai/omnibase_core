@@ -445,6 +445,16 @@ requirements:
           has a null conclusion, bounded by SETTLE_ATTEMPTS, then fails on any leg that did not succeed
           or skip -- falsifier: uv run pytest tests/unit/scripts/test_publish_downstream_pin_bump_workflow.py
           -q --no-cov -p no:randomly -k settles_leg_conclusions fails at the merge base'
+  - id: req-omn20074-runs-on-one-line
+    statement: Every runs-on under .github/workflows and .github/actions is written on one line, so the
+      omninode_infra private-repo-runner-placement gate pinned at 9d4b381d can parse receipt-gate.yml,
+      with every runs-on value unchanged.
+    acceptance:
+      - id: AC59
+        statement: 'AC59: the workflow and action scan rejects folded or missing inline runs-on values,
+          finds at least two one-line private/public receipt-gate runner expressions, and detects a folded
+          negative control -- falsifier: uv run pytest tests/ci/test_workflow_runs_on_single_line_omn20074.py
+          -q --no-cov -p no:randomly fails at the merge base'
 evidence_requirements:
   - kind: tests
     description: The workflow test asserts that verify has no job-level condition and that enforcing caller
@@ -630,6 +640,10 @@ evidence_requirements:
       a fake gh whose legs read null before they settle.
     command: uv run pytest tests/unit/scripts/ci/test_ci_summary_gate.py tests/unit/scripts/test_publish_downstream_pin_bump_workflow.py
       -q --no-cov -p no:randomly
+  - kind: tests
+    description: Scan every workflow and action YAML file for runs-on values on following lines, with
+      positive controls on the receipt-gate runner expressions and a folded negative control.
+    command: uv run pytest tests/ci/test_workflow_runs_on_single_line_omn20074.py -q --no-cov -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1136,3 +1150,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC58
+  - id: dod-omn-20074-ac59
+    description: The workflow and action scan finds every runs-on on one line, finds positive controls
+      on the private/public receipt-gate runner expressions, and rejects a folded negative control.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_workflow_runs_on_single_line_omn20074.py -q --no-cov
+          -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC59
