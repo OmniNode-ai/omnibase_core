@@ -45,14 +45,12 @@ This ratchet looks at every tracked file in the repository and refuses:
 ``suppression-growth``
     a changed code or config file carrying more suppression comments than at
     the base revision.
-``mod-file-growth``
-    a baselined code file on a mod surface (``plugins/``, ``.claude/`` or a
-    ``hooks/`` directory) with more code lines than at the base revision, a
-    comment or blank line not counting. Operator ruling 2026-10-15T08:14:15Z
-    (OMN-20864): canonical shapes for all mod work. A baselined hook or plugin
-    script is legacy shape that may shrink or stay; new behaviour goes in a
-    contract, a node and its handler, and the legacy file loses the code it
-    replaces.
+``baselined-file-growth``
+    a baselined code file on any surface with more code lines than at base;
+    comments and blank lines do not count. OMN-21331: operator ruling
+    2026-10-01T12:36:54Z, restated 2026-10-23, and OMN-20864's ruling
+    2026-10-15T08:14:15Z: a baselined file only shrinks or stays; new behaviour
+    goes in a contract, a node and its handler.
 
 A declared shrink-only gate baseline is not an exception. The
 ``check-direct-model-call`` (OMN-20295), ``check-node-boundary-imports``
@@ -252,11 +250,6 @@ SHELL_SHEBANG = re.compile(
     rb"^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-S[ \t]+)?(?:\S*/)?)?"
     rb"(?:sh|bash|zsh|dash|ksh)(?:[ \t]|$)"
 )
-# Path parts that mark Claude Code mod work: a plugin tree, the project's own
-# ``.claude`` directory, or a hooks directory anywhere.
-MOD_SURFACE_ROOTS: frozenset[str] = frozenset(("plugins", ".claude"))
-MOD_SURFACE_DIRS: frozenset[str] = frozenset(("hooks",))
-
 # The omniclaude thin-shim gate's patterns (OMN-12237), verbatim in meaning.
 SKILL_IMPERATIVE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^[^`]*\bAgent\("),
@@ -516,16 +509,6 @@ def is_canonical_location(
     if any(part in TEST_DIRS for part in parts[:-1]):
         return True
     return len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
-
-
-def is_mod_surface(path: str) -> bool:
-    """A path under a plugin tree, ``.claude/`` or any ``hooks/`` directory."""
-    parts = PurePosixPath(path).parts
-    if not parts:
-        return False
-    return parts[0] in MOD_SURFACE_ROOTS or any(
-        part in MOD_SURFACE_DIRS for part in parts[:-1]
-    )
 
 
 def _entry_module(entry: object) -> str | None:
@@ -852,15 +835,19 @@ def check(
         findings.extend(
             _diff_findings(path, new_text, old_text, baseline_path, declared)
         )
-        findings.extend(_mod_growth_findings(path, new_text, old_text, baselined))
+        findings.extend(
+            _baselined_growth_findings(
+                path, new_text, old_text, baselined | set(renames)
+            )
+        )
     return findings
 
 
-def _mod_growth_findings(
+def _baselined_growth_findings(
     path: str, new_text: str, old_text: str | None, baselined: set[str]
 ) -> list[ModelCanonicalFileShapeFinding]:
-    """A baselined mod-surface code file may shrink or stay, never grow."""
-    if old_text is None or path not in baselined or not is_mod_surface(path):
+    """A baselined code file may shrink or stay, never grow."""
+    if old_text is None or path not in baselined:
         return []
     new_n, old_n = count_code_lines(new_text), count_code_lines(old_text)
     if new_n <= old_n:
@@ -868,11 +855,11 @@ def _mod_growth_findings(
     return [
         ModelCanonicalFileShapeFinding(
             path=path,
-            rule="mod-file-growth",
+            rule="baselined-file-growth",
             reason=(
-                f"code lines {old_n} -> {new_n}; a baselined mod script only "
-                "shrinks. Put the new behaviour in a contract + node + handler "
-                "and call it from the script (ruling 2026-10-15T08:14:15Z)"
+                f"code lines {old_n} -> {new_n}; a baselined file only shrinks. "
+                "Put the new behaviour in a contract + node + handler "
+                "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z)"
             ),
         )
     ]
@@ -954,7 +941,7 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Refuse new code files outside canonical locations, new imperative "
-            "code in skills, growth of a baselined mod script and any new "
+            "code in skills, growth of a baselined file and any new "
             f"exception entry ({TICKET})."
         )
     )

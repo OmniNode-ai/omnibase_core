@@ -24,6 +24,8 @@ from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_locat
 pytestmark = pytest.mark.unit
 
 IDENTITY = ("-c", "user.name=t", "-c", "user.email=t@example.com")
+OLD_TOOL = "scripts/old_tool.py"
+BASE_TEXT = "#!/usr/bin/env python3\na=1\nb=2\nc=3\n"
 
 
 def _git(repo: Path, *args: str) -> None:
@@ -432,3 +434,89 @@ def test_shell_script_refused_python_unchanged(repo: Path) -> None:
         "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
         "tests/, docs/). Build it as a contract + node + handler."
     )
+
+
+def _commit_baselined_file(repo: Path, path: str = OLD_TOOL) -> None:
+    _write(repo, path, BASE_TEXT)
+    _write(repo, DEFAULT_BASELINE, render_baseline([path]))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "base")
+
+
+def _rules(repo: Path) -> list[str]:
+    git = GitRepo(root=repo, env=scrub_git_location_env())
+    return sorted(f.rule for f in check(git, INDEX, "HEAD"))
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        OLD_TOOL,
+        "src/pkg/runtime/a.py",
+        "bin/tool",
+        "tool.sh",
+        ".github/scripts/a.py",
+        "plugins/p/hooks/lib/h.py",
+    ],
+)
+def test_baselined_file_growth_any_surface_refused(repo: Path, path: str) -> None:
+    _commit_baselined_file(repo, path)
+    _write(repo, path, BASE_TEXT + "d=4\n")
+    _git(repo, "add", "-A")
+
+    assert _rules(repo) == ["baselined-file-growth"]
+    finding = check(GitRepo(root=repo, env=scrub_git_location_env()), INDEX, "HEAD")[0]
+    assert finding.path == path
+    assert finding.reason == (
+        "code lines 3 -> 4; a baselined file only shrinks. "
+        "Put the new behaviour in a contract + node + handler "
+        "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z)"
+    )
+
+
+@pytest.mark.parametrize("baseline_form", ["untouched", "swap"])
+def test_baselined_file_growth_any_surface_rename_refused(
+    repo: Path, baseline_form: str
+) -> None:
+    _commit_baselined_file(repo)
+    new_path = "scripts/renamed_tool.py"
+    _git(repo, "mv", OLD_TOOL, new_path)
+    _write(repo, new_path, BASE_TEXT + "d=4\n")
+    if baseline_form == "swap":
+        _write(repo, DEFAULT_BASELINE, render_baseline([new_path]))
+    _git(repo, "add", "-A")
+
+    assert _rules(repo) == ["baselined-file-growth"]
+    finding = check(GitRepo(root=repo, env=scrub_git_location_env()), INDEX, "HEAD")[0]
+    assert finding.path == new_path
+    assert "3 -> 4" in finding.reason
+
+
+@pytest.mark.parametrize(
+    "head_text",
+    [
+        pytest.param("a=1\n", id="shrink"),
+        pytest.param(BASE_TEXT.replace("b=2", "b=20"), id="equal-size-edit"),
+        pytest.param(
+            BASE_TEXT + "\n# more prose\n// more prose\n", id="comments-blanks"
+        ),
+    ],
+)
+def test_baselined_file_growth_any_surface_controls_accepted(
+    repo: Path, head_text: str
+) -> None:
+    _commit_baselined_file(repo)
+    _write(repo, OLD_TOOL, head_text)
+    _git(repo, "add", "-A")
+    assert _rules(repo) == []
+
+
+def test_baselined_file_growth_any_surface_unbaselined_canonical_growth_accepted(
+    repo: Path,
+) -> None:
+    canonical_path = "src/pkg/nodes/node_x/handler.py"
+    _write(repo, canonical_path, BASE_TEXT)
+    _commit_baselined_file(repo)
+    _write(repo, canonical_path, BASE_TEXT + "d=4\n")
+    _git(repo, "add", "-A")
+    assert _rules(repo) == []

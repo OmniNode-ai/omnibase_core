@@ -2256,7 +2256,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run ratchet unit tests
-        run: uv run pytest tests/unit/validators/test_canonical_file_shape.py -v
+        run: uv run pytest tests/unit/validators/test_canonical_file_shape.py tests/unit/validation/test_validator_canonical_file_shape.py -v
 
       - name: Run node-home ratchet unit tests
         run: uv run pytest tests/unit/nodes/node_node_home_check_compute -v

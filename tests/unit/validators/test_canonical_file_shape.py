@@ -868,7 +868,7 @@ def test_read_blobs_fails_loud_when_cat_file_hangs(
         GitRepo(root=repo, env=env).read_blobs(INDEX, ["docs/any.md"])
 
 
-# --- mod-file-growth (OMN-20864; operator ruling 2026-10-15T08:14:15Z) ---------
+# --- baselined-file-growth (OMN-21331; every surface) -----------------------
 
 LEGACY_HOOK = "plugins/p/hooks/lib/legacy_hook.py"
 LEGACY_HOOK_TEXT = "# legacy hook\nA = 1\nB = 2\n\nC = 3\n"
@@ -892,7 +892,7 @@ def test_mod_file_growth_refused(mod_repo: Path) -> None:
     """Negative control: new logic in a baselined hook script is refused."""
     _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "D = 4\n")
     _stage(mod_repo)
-    assert _rules(mod_repo) == ["mod-file-growth"]
+    assert _rules(mod_repo) == ["baselined-file-growth"]
 
 
 def test_mod_file_growth_names_the_node_route(mod_repo: Path) -> None:
@@ -934,24 +934,7 @@ def test_mod_file_growth_in_renamed_file_refused(mod_repo: Path) -> None:
         render_baseline(["scripts/old_tool.py", new_path]),
     )
     _stage(mod_repo)
-    assert _rules(mod_repo) == ["mod-file-growth"]
-
-
-def test_non_mod_baselined_file_growth_not_in_scope(mod_repo: Path) -> None:
-    """Scope control: the rule judges plugin and hook surfaces only."""
-    _write(mod_repo, "scripts/old_tool.py", "print('old')\nprint('more')\n")
-    _stage(mod_repo)
-    assert _rules(mod_repo) == []
-
-
-def test_mod_surface_paths() -> None:
-    surface = canonical_file_shape.is_mod_surface
-    assert surface("plugins/onex/hooks/lib/a.py")
-    assert surface("plugins/onex/skills/s/run.py")
-    assert surface(".claude/hooks/a.sh")
-    assert surface("hooks/a.sh")
-    assert not surface("scripts/a.py")
-    assert not surface("src/pkg/runtime/a.py")
+    assert _rules(mod_repo) == ["baselined-file-growth"]
 
 
 DEPENDENCY_DIRECTION_BASELINE = ".onex_ratchets/dependency_direction_baseline.yaml"
