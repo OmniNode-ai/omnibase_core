@@ -64,21 +64,25 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn21331-ac3-required-context
-    description: The Canonical File Shape (OMN-20304) job is declared in omnibase_core. AC3 is read from
-      the landing controller's required-contexts.json after the rollout, not from this pull request.
+    description: omnibase_core's Canonical File Shape (OMN-20304) job, the context AC3 makes required,
+      runs the any-surface growth tests. The other repositories are read from the landing controller's
+      required-contexts.json after the rollout, not from this pull request.
     source: manual
     checks:
       - check_type: command
-        check_value: grep -q 'name. Canonical File Shape (OMN-20304)' .github/workflows/ci.yml
+        check_value: grep -q 'name. Canonical File Shape (OMN-20304)' .github/workflows/ci.yml && grep
+          -q 'run. uv run pytest tests/unit/validators/test_canonical_file_shape.py tests/unit/validation/test_validator_canonical_file_shape.py'
+          .github/workflows/ci.yml
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
   - id: dod-omn21331-ac4-no-sha-pin
-    description: omnibase_core's own canonical-file-shape job runs the module from its checkout and names
-      no 40-hex omnibase_core reference.
+    description: omnibase_core's own canonical-file-shape job names no 40-hex omnibase_core reference
+      and runs, from its checkout, the module that carries the baselined-file-growth rule.
     source: manual
     checks:
       - check_type: command
-        check_value: "! grep -E 'omnibase_core@[0-9a-f]{40}' .github/workflows/ci.yml"
+        check_value: "! grep -E 'omnibase_core@[0-9a-f]{40}' .github/workflows/ci.yml && grep -q 'rule=.baselined-file-growth.'
+          src/omnibase_core/validators/canonical_file_shape.py"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC4]
   - id: dod-omn21331-deploy-hosted-ratchet
