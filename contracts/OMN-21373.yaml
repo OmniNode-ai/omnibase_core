@@ -107,7 +107,8 @@ dod_evidence:
       - AC5
   - id: dod-omn21373-sa-ac7
     description: The corpus test over the measured skill trees, given as a JSON list of skill roots and
-      their expected outcome in ONEX_AGENT_SKILL_CORPUS; it skips when the variable is unset.
+      their expected outcome in .onex_state/agent_skill_corpus.json; when that manifest is absent it runs
+      over the committed fixture tree instead of skipping.
     source: manual
     checks:
       - check_type: test_passes

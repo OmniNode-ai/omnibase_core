@@ -1,7 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Optional externally supplied Agent Skills corpus agreement (OMN-21373)."""
+"""Agent Skills corpus agreement (OMN-21373).
+
+The measured skill trees are not committed. When the repository-local
+.onex_state/agent_skill_corpus.json manifest names them, the test reads them;
+otherwise it runs over the committed fixture tree, whose canonical and Claude
+Code fixtures must parse and whose onex migration fixtures (today's file
+shape) must be read tolerantly and refused by the strict parser.
+"""
 
 import json
 from pathlib import Path
@@ -16,6 +23,17 @@ from omnibase_core.handlers.handler_agent_skill_codec import (
     parse_skill_md,
     read_skill_md,
 )
+from tests.fixtures.agent_skill_tree import agent_skill_fixture_root
+
+
+def _fixture_corpus() -> list[dict[str, str]]:
+    root = agent_skill_fixture_root()
+    return [
+        {"root": str(root / "canonical" / "agent_skills"), "expected": "pass"},
+        {"root": str(root / "canonical" / "claude_code"), "expected": "pass"},
+        {"root": str(root / "claude_code"), "expected": "pass"},
+        {"root": str(root / "migration"), "expected": "fail"},
+    ]
 
 
 @pytest.mark.unit
@@ -23,9 +41,9 @@ def test_external_corpus() -> None:
     manifest = (
         Path(__file__).resolve().parents[4] / ".onex_state/agent_skill_corpus.json"
     )
-    if not manifest.exists():
-        pytest.skip("repository-local .onex_state/agent_skill_corpus.json is absent")
-    entries = json.loads(manifest.read_text())
+    entries = (
+        json.loads(manifest.read_text()) if manifest.exists() else _fixture_corpus()
+    )
     disagreements = []
     checked = 0
     for entry in entries:
