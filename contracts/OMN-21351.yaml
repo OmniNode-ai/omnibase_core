@@ -1,0 +1,38 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21351
+title: Third-party dependency bumps ride the release train; no repository opens its own Dependabot version-update
+  pull requests
+summary: omnibase_core drops its Dependabot version-update schedules by deleting .github/dependabot.yml,
+  which declared nothing else. The registry-wide ratchet and the release-train refresh are in omnibase_infra.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-no-dependabot-version-updates
+    statement: omnibase_core declares no Dependabot version-update schedule.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: no registry repository''s .github/dependabot.yml declares a version-update schedule
+          (security alerts stay on) -- falsifier for this repository: test ! -e .github/dependabot.yml,
+          the file having declared only version-update schedules; the registry ratchet is uv run pytest
+          tests/ci -k no_dependabot_version_updates in omnibase_infra'
+evidence_requirements:
+  - kind: command
+    description: .github/dependabot.yml is absent from the repository.
+    command: test ! -e .github/dependabot.yml
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-no-dependabot-version-updates-ac1
+    description: .github/dependabot.yml, which declared only version-update schedules, is absent from
+      the repository.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: test ! -e .github/dependabot.yml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
