@@ -2,110 +2,32 @@
 # SPDX-License-Identifier: MIT
 """Canonical-file-shape ratchet (OMN-20304).
 
-Operator ruling 2026-10-01 (ledger RULING lane=ratchet-ruling, OMN-20297): no
-new scripts, no new plugins, no new exceptions, in any repository. Every
-capability is a contract, a node and its handlers
-(``docs/architecture/ONEX_CANONICAL_ARCHITECTURE.md`` in omni_home). The gates
-before this one only matched words inside ``src/``, so a new file under
-``scripts/``, ``plugins/``, ``tools/``, ``bin/`` or a skill directory was never
-looked at.
+Operator ruling 2026-10-01 (OMN-20297): no new scripts, plugins or exceptions in
+any repository; every capability is a contract, a node and its handlers.
 
-This ratchet looks at every tracked file in the repository and refuses:
+Refused rules: noncanonical-file (a code file outside a canonical location
+and not in the baseline), baseline-stale (an entry whose file was removed,
+moved or made canonical), baseline-growth, skill-imperative (more
+imperative-pattern lines in a SKILL.md), new-exception-file,
+exception-entry-growth, suppression-growth and baselined-file-growth
+(a baselined code file with more code lines than at base; OMN-21331).
 
-``noncanonical-file``
-    a code file outside a canonical location that is not in the repo's
-    baseline. Python/other canonical locations: ``src/<pkg>/{nodes,handlers,models,
-    protocols,contracts,enums}/``, any ``tests/`` or ``test/`` directory,
-    ``conftest.py``, and ``docs/``. TypeScript/React uses its own workspace
-    locations: tests, docs, root config/setup and next-env files, Storybook,
-    and selected ``src/`` entrypoints, app routes, hooks and source directories.
-    JavaScript is admitted only in those test/docs/config/Storybook locations.
-    Shell scripts have no canonical location, including in tests or docs;
-    shell suffixes and extensionless shell shebangs are always noncanonical.
-    Existing baselined shell scripts remain subject to the shrink-only ratchet.
-    A code file is one with a code extension, or an extensionless file that
-    starts with ``#!``.
-``baseline-stale``
-    a baseline entry whose file was removed, moved or made canonical. The
-    entry must be deleted in the same change, so the baseline only shrinks.
-    The old path of a detected rename (below) is not stale.
-``baseline-growth``
-    a baseline entry that the base revision's baseline did not have, except
-    the new path of a detected rename (below).
-``skill-imperative``
-    a ``SKILL.md`` with more imperative-pattern lines than at the base
-    revision. The patterns are the omniclaude thin-shim gate's
-    (``.pre-commit-hooks/reject-imperative-skill-patterns.sh``, OMN-12237);
-    its ``imperative-ok`` escape is not honoured here.
-``new-exception-file``
-    a new allowlist, baseline, waiver, exemption or suppression file.
-``exception-entry-growth``
-    an existing allowlist, baseline, waiver, exemption or suppression file
-    with more entries than at the base revision.
-``suppression-growth``
-    a changed code or config file carrying more suppression comments than at
-    the base revision.
-``baselined-file-growth``
-    a baselined code file on any surface with more code lines than at base;
-    comments and blank lines do not count. OMN-21331: operator ruling
-    2026-10-01T12:36:54Z, restated 2026-10-23, and OMN-20864's ruling
-    2026-10-15T08:14:15Z: a baselined file only shrinks or stays; new behaviour
-    goes in a contract, a node and its handler.
+Python canonical locations: src/<pkg>/{nodes,handlers,models,protocols,
+contracts,enums}/, tests/, test/, conftest.py and docs/.
+TypeScript/React and shell location rules live in
+handlers.handler_canonical_location_rules (OMN-21332).
 
-A declared shrink-only gate baseline is not an exception. The
-``check-direct-model-call`` (OMN-20295), ``check-node-boundary-imports``
-(OMN-17427), ``check-hardcoded-model-config-compute`` (OMN-21147),
-``check-dependency-direction`` (OMN-19998) and ``check-ci-inheritance``
-(OMN-21277) hooks
-declare paths via ``--baseline`` in the repository's own
-``.pre-commit-config.yaml``. Only hooks taken from omnibase_core count; local
-hooks do not, except in the repository that provides the hook: there a local
-hook of a gate id counts when the head ``.pre-commit-hooks.yaml`` exports that
-id and the local ``entry`` runs the same module. The node-boundary hook without
-``--baseline`` declares ``.onex_ratchets/node_boundary_import_baseline.yaml``;
-the model-config hook with no ``args`` declares its manifest default
-``config/hardcoded_model_config_baseline.yaml``. The configuration is read from
-the head revision, and each gate enforces that its list only shrinks.
-A workflow job in a ``.github/workflows/*.yml`` or ``*.yaml`` file whose
-``uses:`` is omnibase_core's own imperative contract guard reusable
-(``OmniNode-ai/omnibase_core/.github/workflows/imperative-contract-guard.yml@<ref>``,
-OMN-20918) declares its ``with.allowlist-path`` the same way (OMN-20946); that
-reusable enforces the allowlist shrink-only. A local workflow or another
-repository's reusable declares nothing, and an unparseable workflow file
-declares nothing. A baseline-named file nothing declares is still refused.
-The node-home gate (OMN-20702) has a fixed baseline path,
-admitted in every repository without a declaration; that gate enforces its own
-shrink-only list of node directories.
+Declared shrink-only gate baselines (--baseline of the gate hooks, the
+imperative contract guard reusable's allowlist-path, the fixed node-home
+baseline) are not exceptions; each gate enforces its own list only shrinks. A
+git rename inherits the old path's baseline entry, by swap or untouched; copies
+never do. No allowlist, suppression comment or option widens the canonical
+locations; the only state is .onex_ratchets/canonical_file_shape_baseline.txt.
 
-Renames. A baselined file may be renamed (``git diff -M`` from base to head,
-default similarity, so a rename plus an edit counts). The renamed path inherits
-its old path's entry from the BASE baseline. Two forms are accepted:
+Revisions: by default the head is the index and the base is HEAD;
+--base/--head name revisions. Without a base only the first three rules
+run. Usage::
 
-* swap (preferred): the same change removes the old entry and adds the new
-  path, so the baseline count does not grow and the baseline stays true;
-* untouched: the change leaves the baseline alone. The old entry reads as
-  satisfied by the rename and the new path is covered. The old entry is then
-  stale in the next change, which must delete it, so the swap is the cleaner
-  form.
-
-Nothing is inherited when no rename is detected (a delete plus an add), when
-the old path was not in the base baseline, when the new path is not itself a
-non-canonical code file, or when the swap keeps the old entry and adds the new
-one (growth). Another new script in the same change is still refused. Only
-renames count, never copies.
-
-There is no allowlist, no suppression comment and no option that widens the
-canonical locations. The only state is the shrink-only baseline file, default
-``.onex_ratchets/canonical_file_shape_baseline.txt``.
-
-Revisions. By default the head is the index and the base is ``HEAD``, which
-is what a pre-commit hook sees. CI soft-resets to the merge base, so the index
-holds the change and the same hook checks it; ``--base``/``--head`` name the
-revisions directly. Without a base revision only the first three rules run.
-
-Usage::
-
-    python -m omnibase_core.validators.canonical_file_shape
     python -m omnibase_core.validators.canonical_file_shape --base origin/dev --head HEAD
     python -m omnibase_core.validators.canonical_file_shape --write-baseline
     python -m omnibase_core.validators.canonical_file_shape --prune-baseline
@@ -124,6 +46,13 @@ from pathlib import Path, PurePosixPath
 
 import yaml
 
+from omnibase_core.handlers.handler_canonical_location_rules import (
+    TYPESCRIPT_EXTENSIONS,
+    is_shell_script,
+    is_typescript_canonical_location,
+    typescript_noncanonical_file_reason,
+    typescript_workspace_roots,
+)
 from omnibase_core.models.validation.model_canonical_file_shape_finding import (
     ModelCanonicalFileShapeFinding,
 )
@@ -188,68 +117,6 @@ CANONICAL_SRC_DIRS: frozenset[str] = frozenset(
     ("nodes", "handlers", "models", "protocols", "contracts", "enums")
 )
 TEST_DIRS: frozenset[str] = frozenset(("tests", "test"))
-# OMN-21332: knowledge_base_internal/
-# beta/plans/2026-10-23-canonical-shape-typescript-react-swift.md, rules T1-T17.
-TYPESCRIPT_EXTENSIONS: frozenset[str] = frozenset(
-    (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs")
-)
-TYPESCRIPT_SRC_EXTENSIONS: frozenset[str] = frozenset((".ts", ".tsx"))
-TYPESCRIPT_TEST_DIRS: frozenset[str] = TEST_DIRS | frozenset(("__tests__", "e2e"))
-TYPESCRIPT_SRC_DIRS: frozenset[str] = frozenset(
-    (
-        "components",
-        "pages",
-        "models",
-        "api",
-        "generated",
-        "contracts",
-        "handlers",
-        "store",
-        "theme",
-    )
-)
-TYPESCRIPT_ENTRYPOINTS: frozenset[str] = frozenset(
-    (
-        "index",
-        "main",
-        "App",
-        "middleware",
-        "proxy",
-        "instrumentation",
-        "instrumentation-client",
-    )
-)
-TYPESCRIPT_APP_NAMES: frozenset[str] = frozenset(
-    (
-        "page",
-        "layout",
-        "loading",
-        "error",
-        "not-found",
-        "forbidden",
-        "unauthorized",
-        "route",
-        "template",
-        "default",
-        "global-error",
-        "global-not-found",
-        "sitemap",
-        "robots",
-        "manifest",
-        "icon",
-        "apple-icon",
-        "opengraph-image",
-        "twitter-image",
-    )
-)
-TYPESCRIPT_CONFIG_NAME = re.compile(r"^[^/]+\.(config|setup)\.(ts|js|mjs|cjs)$")
-TYPESCRIPT_TEST_NAME = re.compile(r"\.(test|spec)\.(ts|tsx)$")
-TYPESCRIPT_HOOK_NAME = re.compile(r"^(use[A-Z][A-Za-z0-9]*|index)\.(ts|tsx)$")
-SHELL_EXTENSIONS: frozenset[str] = frozenset((".sh", ".bash", ".zsh"))
-SHELL_SHEBANG = re.compile(
-    rb"^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-S[ \t]+)?(?:\S*/)?)?"
-    rb"(?:sh|bash|zsh|dash|ksh)(?:[ \t]|$)"
-)
 # The omniclaude thin-shim gate's patterns (OMN-12237), verbatim in meaning.
 SKILL_IMPERATIVE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^[^`]*\bAgent\("),
@@ -405,92 +272,6 @@ def is_code_file(path: str, head_bytes: bytes | None) -> bool:
         return True
     if suffix == "" and head_bytes is not None:
         return head_bytes.startswith(b"#!")
-    return False
-
-
-def is_shell_script(path: str, head_bytes: bytes | None) -> bool:
-    """A shell suffix, or an extensionless file with a shell interpreter shebang."""
-    suffix = _suffix(path)
-    if suffix in SHELL_EXTENSIONS:
-        return True
-    if suffix or not head_bytes:
-        return False
-    first_line = head_bytes.split(b"\n", 1)[0].rstrip(b"\r")
-    return SHELL_SHEBANG.match(first_line) is not None
-
-
-def _is_typescript_src_location(parts: tuple[str, ...]) -> bool:
-    """Check a path relative to a workspace's src directory."""
-    name = parts[-1]
-    if TYPESCRIPT_TEST_NAME.search(name):
-        return True
-    stem = PurePosixPath(name).stem
-    if len(parts) == 1:
-        return stem in TYPESCRIPT_ENTRYPOINTS or name.endswith(".d.ts")
-    if parts[0] == "app":
-        return stem in TYPESCRIPT_APP_NAMES
-    if parts[0] == "hooks":
-        return len(parts) == 2 and TYPESCRIPT_HOOK_NAME.fullmatch(name) is not None
-    return parts[0] in TYPESCRIPT_SRC_DIRS
-
-
-def typescript_workspace_roots(files: Iterable[str]) -> frozenset[str]:
-    """Workspace directories with tracked package.json files at permitted depths."""
-    roots = set[str]()
-    for path in files:
-        parts = PurePosixPath(path).parts
-        if not parts or parts[-1] != "package.json":
-            continue
-        if (
-            (len(parts) == 2 and parts[0] != "src")
-            or (
-                len(parts) == 3
-                and parts[0] == "packages"
-                and not parts[1].startswith("@")
-            )
-            or (
-                len(parts) == 4
-                and parts[0] == "packages"
-                and parts[1].startswith("@")
-                and len(parts[1]) > 1
-            )
-        ):
-            roots.add("/".join(parts[:-1]))
-    return frozenset(roots)
-
-
-def is_typescript_canonical_location(
-    path: str, workspace_roots: frozenset[str] = frozenset()
-) -> bool:
-    """TypeScript/React locations, trying each permitted workspace prefix."""
-    parts = PurePosixPath(path).parts
-    if not parts or _suffix(path) not in TYPESCRIPT_EXTENSIONS:
-        return False
-    if parts[0] == "docs" or any(part in TYPESCRIPT_TEST_DIRS for part in parts[:-1]):
-        return True
-    prefix_lengths = [0]
-    if parts[0] != "src":
-        prefix_lengths.append(1)
-    if len(parts) >= 3 and parts[0] == "packages":
-        prefix_lengths.append(3 if parts[1].startswith("@") else 2)
-    for length in prefix_lengths:
-        if length and "/".join(parts[:length]) not in workspace_roots:
-            continue
-        relative = parts[length:]
-        if len(relative) == 1 and (
-            TYPESCRIPT_CONFIG_NAME.fullmatch(relative[0])
-            or relative[0] == "next-env.d.ts"
-        ):
-            return True
-        if len(relative) == 2 and relative[0] == ".storybook":
-            return True
-        if (
-            len(relative) >= 2
-            and relative[0] == "src"
-            and _suffix(path) in TYPESCRIPT_SRC_EXTENSIONS
-            and _is_typescript_src_location(relative[1:])
-        ):
-            return True
     return False
 
 
@@ -726,20 +507,7 @@ def _noncanonical_file_reason(path: str, head_bytes: bytes | None) -> str:
     if is_shell_script(path, head_bytes):
         return "shell scripts have no canonical location in any repository (OMN-21332)."
     if _suffix(path) in TYPESCRIPT_EXTENSIONS:
-        return (
-            "new TypeScript/React code file outside a canonical location: "
-            "tests/, test/, __tests__/, e2e/, docs/; workspace root config/setup "
-            "files, next-env.d.ts and direct .storybook/ files (non-root workspaces "
-            "require a tracked package.json); .ts/.tsx under workspace src/: "
-            "test/spec files, root {index,main,App,middleware,proxy,instrumentation,"
-            "instrumentation-client} or *.d.ts, "
-            "app/**/{page,layout,loading,error,not-found,forbidden,unauthorized,route,"
-            "template,default,global-error,global-not-found,sitemap,robots,manifest,"
-            "icon,apple-icon,opengraph-image,twitter-image}, "
-            "hooks/{use[A-Z]*,index}, "
-            "{components,pages,models,api,generated,contracts,handlers,store,theme}/** "
-            "(OMN-21332)."
-        )
+        return typescript_noncanonical_file_reason()
     return (
         "new code file outside a canonical location "
         "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
