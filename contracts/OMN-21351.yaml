@@ -14,25 +14,25 @@ requirements:
     acceptance:
       - id: AC1
         statement: 'AC1: no registry repository''s .github/dependabot.yml declares a version-update schedule
-          (security alerts stay on) -- falsifier for this repository: test ! -e .github/dependabot.yml,
-          the file having declared only version-update schedules; the registry ratchet is uv run pytest
-          tests/ci -k no_dependabot_version_updates in omnibase_infra'
+          (security alerts stay on) -- falsifier for this repository: uv run pytest tests/ci/test_no_dependabot_version_updates_omn21351.py
+          -q; the deleted file declared only version-update schedules'
 evidence_requirements:
-  - kind: command
-    description: .github/dependabot.yml is absent from the repository.
-    command: test ! -e .github/dependabot.yml
+  - kind: tests
+    description: Neither supported Dependabot configuration path declares version-update entries.
+    command: uv run pytest tests/ci/test_no_dependabot_version_updates_omn21351.py -q
 emergency_bypass:
   enabled: false
   justification: ''
   follow_up_ticket_id: ''
 dod_evidence:
   - id: dod-no-dependabot-version-updates-ac1
-    description: .github/dependabot.yml, which declared only version-update schedules, is absent from
-      the repository.
+    description: Hosted configuration probe rejects version-update entries under either supported Dependabot
+      configuration filename; repository security-alert settings are not modified.
     source: manual
+    execution_scope: hosted_and_local
     checks:
-      - check_type: command
-        check_value: test ! -e .github/dependabot.yml
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_no_dependabot_version_updates_omn21351.py -q
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
