@@ -17,7 +17,16 @@ requirements:
         statement: The canonical README-only documentation validator accepts the release tree; restoring
           the generated CHANGELOG.md makes the validator fail.
       - id: AC2
-        statement: The project and editable omnibase-core lock entry both declare version 0.47.55.
+        statement: The project and editable omnibase-core lock entry declare one version, bumped past
+          the released 0.47.55 whose notes root README retains.
+  - id: req-omn18595-main-range-file-shape
+    statement: The canonical-file-shape ratchet passes over the whole range a main fast-forward pushes,
+      so a release cut leaves CI Summary green on the main push run.
+    acceptance:
+      - id: AC3
+        statement: "AC3: the baselined validator file holds no more code lines than it did at the previous
+          main head (731), with the TypeScript and shell location rules in a handler -- falsifier: the
+          ratchet run with --base 9d65b648bff53b14d7c8a5fb2eef24896dba39bc refuses with baselined-file-growth"
 evidence_requirements:
   - kind: tests
     description: Release-cut identity tests, then the canonical documentation scan and package-identity
@@ -55,10 +64,11 @@ dod_evidence:
       - check_type: command
         check_value: >-
           uv run --locked python -c 'import pathlib, tomllib; project = tomllib.loads(pathlib.Path("pyproject.toml").read_text());
-          lock = tomllib.loads(pathlib.Path("uv.lock").read_text()); assert project["project"]["version"]
-          == "0.47.55"; assert "## v0.47.55 (2026-10-24)" in pathlib.Path("README.md").read_text(); packages
+          lock = tomllib.loads(pathlib.Path("uv.lock").read_text()); assert tuple(map(int, project["project"]["version"].split(".")))
+          > (0, 47, 55); assert "## v0.47.55 (2026-10-24)" in pathlib.Path("README.md").read_text(); packages
           = [p for p in lock["package"] if p["name"] == "omnibase-core"]; assert len(packages) == 1 and
-          packages[0]["version"] == "0.47.55" and packages[0]["source"] == {"editable": "."}'
+          packages[0]["version"] == project["project"]["version"] and packages[0]["source"] == {"editable":
+          "."}'
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-deploy-hosted-readback
     description: Hosted deployment probe for this release-only change scans the actual indexed tree; restoring
@@ -114,4 +124,53 @@ dod_evidence:
           uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
           assert "## v0.47.55 (2026-10-24)" in notes; assert "### Included Since v0.47.54" in notes; assert
           "(#2087)" in notes and "(#2088)" in notes'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18595-ac3-main-range-file-shape
+    description: The ratchet accepts the range from the previous main head to this head, and the moved
+      location rules keep their behaviour.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+      # Keep the full validator suite, including both eight-second mutation controls,
+      # in separate commands so each fits the verifier's per-command budget.
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+          -k 'not stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+          -k stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validators.canonical_file_shape --base 9d65b648bff53b14d7c8a5fb2eef24896dba39bc
+          --head HEAD
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18595-deploy-location-rules-handler
+    description: Hosted content probe at the commit that moved the location rules; the handler module
+      defines is_typescript_canonical_location and the validator imports it from that handler, without
+      any lab services.
+    source: manual
+    binds_ac: [AC3]
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_canonical_location_rules.py?ref=8116cd606883a869780fc20a7d033216f75c4e41'
+          --jq .content | base64 -d | grep -c 'def is_typescript_canonical_location' | grep -qx '[1-9][0-9]*'
+      - check_type: command
+        check_value: >-
+          gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validators/canonical_file_shape.py?ref=8116cd606883a869780fc20a7d033216f75c4e41'
+          --jq .content | base64 -d | grep -c 'from omnibase_core.handlers.handler_canonical_location_rules
+          import' | grep -qx '[1-9][0-9]*'
+      # The same two properties read from the checked-out tree, so the item fails
+      # wherever the location rules have not moved into the handler.
+      - check_type: command
+        check_value: grep -q 'def is_typescript_canonical_location' src/omnibase_core/handlers/handler_canonical_location_rules.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: grep -q 'from omnibase_core.handlers.handler_canonical_location_rules import' src/omnibase_core/validators/canonical_file_shape.py
         cwd: ${OMNI_HOME}/omnibase_core

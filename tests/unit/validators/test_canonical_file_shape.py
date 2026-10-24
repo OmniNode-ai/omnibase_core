@@ -1026,3 +1026,11 @@ def test_ci_inheritance_baseline_undeclared_still_refused(repo: Path) -> None:
     _write(repo, CI_INHERITANCE_BASELINE, "entries: []\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
+
+
+def test_validator_stays_within_its_code_lines_at_the_previous_main_head() -> None:
+    # OMN-18595: the main push run diffs from the previous main head, where this
+    # baselined file held 731 code lines; the TypeScript and shell location rules
+    # live in the handler so the whole range passes baselined-file-growth.
+    source = Path(canonical_file_shape.__file__).read_text(encoding="utf-8")
+    assert canonical_file_shape.count_code_lines(source) <= 731
