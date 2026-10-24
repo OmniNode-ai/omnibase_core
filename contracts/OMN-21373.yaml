@@ -90,9 +90,15 @@ dod_evidence:
     binds_ac:
       - AC4
   - id: dod-omn21373-sa-ac5
-    description: The canonical file shape check over the PR's files against dev.
+    description: The Agent Skills modules load from canonical source locations and declare at most one
+      class per file with the appropriate Model or Enum prefix. The repository shape check also runs over
+      the PR's files against dev. The module checks fail when the implementation is absent at the merge
+      base, instead of treating an empty diff as evidence for this change.
     source: manual
     checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/skill/test_agent_skill_file_shape.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run python -m omnibase_core.validators.canonical_file_shape --base origin/dev
           --head HEAD
