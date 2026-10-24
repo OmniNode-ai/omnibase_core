@@ -131,8 +131,18 @@ dod_evidence:
     binds_ac: [AC3]
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py tests/unit/validation/test_validator_canonical_file_shape.py
-          -q --no-cov -n 0
+        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+      # Keep the full validator suite, including both eight-second mutation controls,
+      # in separate commands so each fits the verifier's per-command budget.
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+          -k 'not stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+          -k stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run python -m omnibase_core.validators.canonical_file_shape --base 9d65b648bff53b14d7c8a5fb2eef24896dba39bc
