@@ -138,3 +138,20 @@ dod_evidence:
         check_value: uv run python -m omnibase_core.validators.canonical_file_shape --base 9d65b648bff53b14d7c8a5fb2eef24896dba39bc
           --head HEAD
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18595-deploy-location-rules-handler
+    description: Hosted content probe at the commit that moved the location rules; the handler module
+      defines is_typescript_canonical_location and the validator imports it from that handler, without
+      any lab services.
+    source: manual
+    binds_ac: [AC3]
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_canonical_location_rules.py?ref=8116cd606883a869780fc20a7d033216f75c4e41'
+          --jq .content | base64 -d | grep -q 'def is_typescript_canonical_location'
+      - check_type: command
+        check_value: >-
+          gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validators/canonical_file_shape.py?ref=8116cd606883a869780fc20a7d033216f75c4e41'
+          --jq .content | base64 -d | grep -q 'from omnibase_core.handlers.handler_canonical_location_rules
+          import'
