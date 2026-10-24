@@ -159,9 +159,9 @@ dod_evidence:
       - check_type: command
         check_value: >-
           gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_canonical_location_rules.py?ref=8116cd606883a869780fc20a7d033216f75c4e41'
-          --jq .content | base64 -d | grep -q 'def is_typescript_canonical_location'
+          --jq .content | base64 -d | grep -c 'def is_typescript_canonical_location' | grep -qx '[1-9][0-9]*'
       - check_type: command
         check_value: >-
           gh api 'repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validators/canonical_file_shape.py?ref=8116cd606883a869780fc20a7d033216f75c4e41'
-          --jq .content | base64 -d | grep -q 'from omnibase_core.handlers.handler_canonical_location_rules
-          import'
+          --jq .content | base64 -d | grep -c 'from omnibase_core.handlers.handler_canonical_location_rules
+          import' | grep -qx '[1-9][0-9]*'
