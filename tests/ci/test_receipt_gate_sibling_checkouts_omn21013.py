@@ -323,10 +323,11 @@ def test_unresolvable_sibling_is_absent_for_verifier_refusal(tmp_path, bad_metad
     assert (dod / "siblings.tsv").read_text() == ""
 
 
-# OMN-21166: a checkout ref written as a step output (``${{ ... }}``) is not a
-# revision. omnidash pins omnibase_core once, as a literal in
-# check-handshake.yml, and two other workflows check out the same commit through
-# ``${{ steps.core-pin.outputs.ref }}``, a step that reads that literal. The
+# OMN-21166: a checkout ref written as a step output (``${{ ... }}``) resolves
+# to the literal pin it reads, or stays unresolved. omnidash pins omnibase_core
+# once, as a literal in check-handshake.yml, and two other workflows check out the
+# same commit through ``${{ steps.core-pin.outputs.ref }}``, a step that reads
+# .github/workflows/check-handshake.yml. The
 # fixtures are those three files as they are on omnidash dev 3713a036, with
 # their commit ids replaced by low-entropy placeholders of the same length,
 # because the secret scanner reads a real commit id as a hex secret.
@@ -400,6 +401,59 @@ def test_uv_pin_still_wins_over_literal_and_step_output_checkout_refs(tmp_path):
                 _checkout("OmniNode-ai/sibling", OTHER_SHA),
                 _checkout("OmniNode-ai/sibling", STEP_OUTPUT_REF),
             )
+        },
+    )
+    assert (dod / "siblings.tsv").read_text() == f"sibling\t{SHA}\n"
+    assert not any("ls-remote" in argv for argv, _ in calls)
+
+
+def _reading_step(step_id, *files):
+    names = " ".join(f"Path('.github/workflows/{name}')" for name in files)
+    return {"id": step_id, "run": f"python - <<'PY'\nread({names})\nPY\n"}
+
+
+def test_step_output_reading_a_different_pin_still_conflicts(tmp_path):
+    # Codex's case on the first fix: a step output that reads a file pinning a
+    # different commit must not be dropped in favour of the other literal.
+    _, dod, calls = _run(
+        tmp_path,
+        workflows={
+            "a.yml": _workflow(_checkout("OmniNode-ai/sibling", SHA)),
+            "pins.yml": _workflow(_checkout("OmniNode-ai/sibling", OTHER_SHA)),
+            "b.yml": _workflow(
+                _reading_step("resolve", "pins.yml"),
+                _checkout("OmniNode-ai/sibling", "${{ steps.resolve.outputs.ref }}"),
+            ),
+        },
+    )
+    assert not calls
+    assert (dod / "siblings.tsv").read_text() == ""
+
+
+def test_step_output_from_a_step_naming_no_workflow_file_still_conflicts(tmp_path):
+    _, dod, calls = _run(
+        tmp_path,
+        workflows={
+            "a.yml": _workflow(_checkout("OmniNode-ai/sibling", SHA)),
+            "b.yml": _workflow(
+                {"id": "resolve", "run": "echo ref=$(cat pin.txt) >> $GITHUB_OUTPUT"},
+                _checkout("OmniNode-ai/sibling", "${{ steps.resolve.outputs.ref }}"),
+            ),
+        },
+    )
+    assert not calls
+    assert (dod / "siblings.tsv").read_text() == ""
+
+
+def test_step_output_reading_the_same_pin_resolves(tmp_path):
+    _, dod, calls = _run(
+        tmp_path,
+        workflows={
+            "a.yml": _workflow(_checkout("OmniNode-ai/sibling", SHA)),
+            "b.yml": _workflow(
+                _reading_step("resolve", "a.yml"),
+                _checkout("OmniNode-ai/sibling", "${{ steps.resolve.outputs.ref }}"),
+            ),
         },
     )
     assert (dod / "siblings.tsv").read_text() == f"sibling\t{SHA}\n"

@@ -39,3 +39,12 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC43
+  - id: dod-omn21166-sibling-step-output-ref
+    description: The sibling resolver sets a step-output checkout ref aside when a literal ref exists,
+      so omnidash's three workflows resolve omnibase_core to the handshake literal; an expression-only
+      ref stays unresolved, two literals still conflict, and a uv pin still wins.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core

@@ -905,11 +905,13 @@ jobs:
               sources = tomllib.loads(project.read_text()).get("tool", {}).get("uv", {}).get("sources", {}) if project.is_file() else {}
               if not isinstance(sources, dict):
                   raise ValueError("uv sources must be a table")
-              documents = []
+              documents, workflow_files = [], {}
               for folder in (caller / ".github/workflows", caller / ".github/actions"):
                   for path in sorted(folder.rglob("*")):
                       if path.suffix in (".yml", ".yaml") and path.is_file():
                           documents.append(yaml.safe_load(path.read_text()))
+                          if folder.name == "workflows":
+                              workflow_files[path.name] = documents[-1]
           except (OSError, ValueError, yaml.YAMLError):
               print("::notice::sibling pin metadata unreadable; checkouts left absent")
               sys.exit(0)
@@ -922,6 +924,44 @@ jobs:
               elif isinstance(value, list):
                   for child in value:
                       yield from mappings(child)
+
+          def checkouts(document, repository):
+              for entry in mappings(document):
+                  uses = entry.get("uses", "")
+                  options = entry.get("with", {})
+                  if isinstance(uses, str) and uses.startswith("actions/checkout@") and isinstance(options, dict):
+                      if options.get("repository") == repository and options.get("ref"):
+                          yield entry, str(options["ref"])
+
+          # OMN-21166: a checkout ref written as ${{ steps.<id>.outputs.<name> }}
+          # resolves to the literal pin it reads: the step with that id in the same
+          # job (or composite action) names workflow files in its run script, and
+          # their literal checkout refs of the same repository must agree on one
+          # revision. Anything else stays the unresolved expression, so beside a
+          # literal it still conflicts and alone it is still an unresolved revision.
+          step_ids = {}
+          for document in documents:
+              for entry in mappings(document):
+                  steps = entry.get("steps")
+                  if isinstance(steps, list):
+                      named = {s["id"]: s for s in steps if isinstance(s, dict) and isinstance(s.get("id"), str)}
+                      for step in steps:
+                          if isinstance(step, dict):
+                              step_ids[id(step)] = named
+
+          def resolve_step_output(entry, ref, repository):
+              match = re.fullmatch(r"\$\{\{\s*steps\.([A-Za-z0-9_-]+)\.outputs\.[A-Za-z0-9_-]+\s*\}\}", ref.strip())
+              producer = step_ids.get(id(entry), {}).get(match[1]) if match else None
+              names = set(re.findall(r"\.github/workflows/([A-Za-z0-9_.-]+\.ya?ml)", str((producer or {}).get("run", ""))))
+              if not names or not names <= workflow_files.keys():
+                  return ref
+              literals = {
+                  value
+                  for name in names
+                  for _, value in checkouts(workflow_files[name], repository)
+                  if "${{" not in value
+              }
+              return literals.pop() if len(literals) == 1 else ref
 
           git_env = {key: value for key, value in os.environ.items() if key not in (
               "GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_COMMON_DIR",
@@ -941,7 +981,7 @@ jobs:
               target = home / sibling
               repository = f"OmniNode-ai/{sibling}"
               url = f"https://github.com/{repository}.git"
-              uv_pins, action_pins, checkout_refs, step_output_refs = set(), set(), set(), set()
+              uv_pins, action_pins, checkout_refs = set(), set(), set()
               for source in sources.values():
                   for entry in (source if isinstance(source, list) else [source]):
                       if isinstance(entry, dict) and str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
@@ -953,15 +993,8 @@ jobs:
                       uses = entry.get("uses", "")
                       if isinstance(uses, str) and uses.startswith(repository + "/.github/actions/") and "@" in uses:
                           action_pins.add(uses.rsplit("@", 1)[1])
-                      if isinstance(uses, str) and uses.startswith("actions/checkout@"):
-                          options = entry.get("with", {})
-                          if options.get("repository") == repository and options.get("ref"):
-                              ref = str(options["ref"])
-                              # OMN-21166: a ${{ }} ref is not a revision; it is set aside
-                              # when a literal ref exists (a step that reads that literal),
-                              # and alone it stays unresolved rather than falling to HEAD.
-                              (step_output_refs if "${{" in ref else checkout_refs).add(ref)
-              checkout_refs = checkout_refs or step_output_refs
+                  for entry, ref in checkouts(document, repository):
+                      checkout_refs.add(resolve_step_output(entry, ref, repository) if "${{" in ref else ref)
               pins = next((pins for pins in (uv_pins, action_pins, checkout_refs) if pins), set())
               if len(pins) > 1:
                   print(f"::notice::{sibling}: conflicting revision pins; checkout left absent")
