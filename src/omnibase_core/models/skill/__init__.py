@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Skill execution result models.
+"""Agent Skills definitions and skill execution results (OMN-21373).
 
 Provides ``ModelSkillResultFile``, the base contract for skill result files
 written to ``~/.claude/skill-results/``.
@@ -13,12 +13,30 @@ import importlib.util
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from omnibase_core.models.skill.model_agent_skill import ModelAgentSkill
+    from omnibase_core.models.skill.model_agent_skill_frontmatter import (
+        ModelAgentSkillFrontmatter,
+    )
+    from omnibase_core.models.skill.model_agent_skill_source import (
+        ModelAgentSkillSource,
+    )
+    from omnibase_core.models.skill.model_agent_skill_verdict import (
+        ModelAgentSkillVerdict,
+    )
+    from omnibase_core.models.skill.model_claude_code_skill_extensions import (
+        ModelClaudeCodeSkillExtensions,
+    )
     from omnibase_core.models.skill.model_skill_result_file import (
         ModelSkillResultFile,
         SkillResultFile,
     )
 
 __all__ = [
+    "ModelAgentSkill",
+    "ModelAgentSkillFrontmatter",
+    "ModelAgentSkillSource",
+    "ModelAgentSkillVerdict",
+    "ModelClaudeCodeSkillExtensions",
     "ModelSkillResultFile",
     "SkillResultFile",
 ]
@@ -30,6 +48,26 @@ __all__ = [
 # Names now load on first access; ``from <package> import Name`` and
 # ``<package>.Name`` behave as before.
 _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
+    "ModelAgentSkill": (
+        "omnibase_core.models.skill.model_agent_skill",
+        "ModelAgentSkill",
+    ),
+    "ModelAgentSkillFrontmatter": (
+        "omnibase_core.models.skill.model_agent_skill_frontmatter",
+        "ModelAgentSkillFrontmatter",
+    ),
+    "ModelAgentSkillSource": (
+        "omnibase_core.models.skill.model_agent_skill_source",
+        "ModelAgentSkillSource",
+    ),
+    "ModelAgentSkillVerdict": (
+        "omnibase_core.models.skill.model_agent_skill_verdict",
+        "ModelAgentSkillVerdict",
+    ),
+    "ModelClaudeCodeSkillExtensions": (
+        "omnibase_core.models.skill.model_claude_code_skill_extensions",
+        "ModelClaudeCodeSkillExtensions",
+    ),
     "ModelSkillResultFile": (
         "omnibase_core.models.skill.model_skill_result_file",
         "ModelSkillResultFile",
