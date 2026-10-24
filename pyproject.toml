@@ -64,6 +64,7 @@ dependencies = [
     "tree-sitter>=0.25.2,<0.27",
     "tree-sitter-python>=0.25.0,<0.26",
     "pathspec>=0.12.1",
+    "strictyaml==1.7.3",
 ]
 
 [project.urls]
@@ -246,6 +247,7 @@ dev = [
     "prometheus-client>=0.21.0,<1.0.0",
     "types-psutil>=7.2.1.20260116",
     "sqlglot>=26.0.0,<31.0.0",
+    "skills-ref==0.1.1",
 ]
 
 [tool.hatch.build.targets.wheel]

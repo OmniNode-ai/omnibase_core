@@ -1,10 +1,9 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Shared enums for ONEX ecosystem.
+"""Shared enums for ONEX ecosystem (OMN-21373).
 
-Domain-grouped enums used across multiple ONEX packages (omnibase_core, omnibase_spi, etc.)
-organized by functional domains for better maintainability.
+Domain-grouped enums for omnibase_core, organized by functional domain.
 """
 
 # Action status enum (OMN-1309)
@@ -19,6 +18,7 @@ from .enum_action_status import EnumActionStatus
 
 # Agent protocol enum (OMN-9622 — A2A wire protocol classification)
 from .enum_agent_protocol import EnumAgentProtocol
+from .enum_agent_skill_render_profile import EnumAgentSkillRenderProfile
 
 # Architecture and system enums
 from .enum_architecture import EnumArchitecture
@@ -964,6 +964,7 @@ __all__ = [
     "EnumProofType",
     # Agent protocol domain (A2A wire protocol classification - OMN-9622)
     "EnumAgentProtocol",
+    "EnumAgentSkillRenderProfile",
     # NOTE: Removed from __all__ due to missing module files or circular imports:
     # - "EnumRegistryType" (module doesn't exist)
     # - "ModelServiceModeEnum" (replaced with correct "EnumServiceMode")
