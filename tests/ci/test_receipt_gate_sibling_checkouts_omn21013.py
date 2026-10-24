@@ -321,3 +321,86 @@ def test_unresolvable_sibling_is_absent_for_verifier_refusal(tmp_path, bad_metad
     )
     assert not (home / "sibling").exists()
     assert (dod / "siblings.tsv").read_text() == ""
+
+
+# OMN-21166: a checkout ref written as a step output (``${{ ... }}``) is not a
+# revision. omnidash pins omnibase_core once, as a literal in
+# check-handshake.yml, and two other workflows check out the same commit through
+# ``${{ steps.core-pin.outputs.ref }}``, a step that reads that literal. The
+# fixtures are those three files as they are on omnidash dev 3713a036, with
+# their commit ids replaced by low-entropy placeholders of the same length,
+# because the secret scanner reads a real commit id as a hex secret.
+OMNIDASH_WORKFLOWS = Path(__file__).parent / "fixtures/omn21166_omnidash_workflows"
+OMNIDASH_CORE_PIN = "c" * 40
+STEP_OUTPUT_REF = "${{ steps.core-pin.outputs.ref }}"
+
+
+def _checkout(repository, ref):
+    return {
+        "uses": "actions/checkout@v7",
+        "with": {"repository": repository, "ref": ref},
+    }
+
+
+def _workflow(*steps):
+    return {"jobs": {"test": {"steps": list(steps)}}}
+
+
+def test_omnidash_step_output_core_pin_resolves_to_the_handshake_literal(tmp_path):
+    workflows = {
+        path.name: yaml.safe_load(path.read_text())
+        for path in sorted(OMNIDASH_WORKFLOWS.glob("*.yml"))
+    }
+    assert sorted(workflows) == [
+        "check-handshake.yml",
+        "onex-schema-compat.yml",
+        "type-sync-check.yml",
+    ]
+    _, dod, calls = _run(
+        tmp_path, cwds=["${OMNI_HOME}/omnibase_core"], workflows=workflows
+    )
+    assert (dod / "siblings.tsv").read_text() == f"omnibase_core\t{OMNIDASH_CORE_PIN}\n"
+    assert any("fetch" in argv and OMNIDASH_CORE_PIN in argv for argv, _ in calls)
+    assert not any("ls-remote" in argv for argv, _ in calls)
+
+
+def test_two_literal_checkout_refs_still_conflict(tmp_path):
+    _, dod, calls = _run(
+        tmp_path,
+        workflows={
+            "a.yml": _workflow(_checkout("OmniNode-ai/sibling", SHA)),
+            "b.yml": _workflow(
+                _checkout("OmniNode-ai/sibling", OTHER_SHA),
+                _checkout("OmniNode-ai/sibling", STEP_OUTPUT_REF),
+            ),
+        },
+    )
+    assert not calls
+    assert (dod / "siblings.tsv").read_text() == ""
+
+
+def test_step_output_ref_alone_is_unresolved_never_head(tmp_path):
+    home, dod, calls = _run(
+        tmp_path,
+        workflows={
+            "a.yml": _workflow(_checkout("OmniNode-ai/sibling", STEP_OUTPUT_REF))
+        },
+    )
+    assert not calls, "an unreadable ref must not fall back to the sibling's HEAD"
+    assert not (home / "sibling").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+
+
+def test_uv_pin_still_wins_over_literal_and_step_output_checkout_refs(tmp_path):
+    _, dod, calls = _run(
+        tmp_path,
+        uv_pin=f'[tool.uv.sources]\nsibling = {{git = "https://github.com/OmniNode-ai/sibling.git", rev = "{SHA}"}}\n',
+        workflows={
+            "a.yml": _workflow(
+                _checkout("OmniNode-ai/sibling", OTHER_SHA),
+                _checkout("OmniNode-ai/sibling", STEP_OUTPUT_REF),
+            )
+        },
+    )
+    assert (dod / "siblings.tsv").read_text() == f"sibling\t{SHA}\n"
+    assert not any("ls-remote" in argv for argv, _ in calls)

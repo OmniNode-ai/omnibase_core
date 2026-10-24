@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+#
+# Design note: omnidash is not an ONEX node, so this is a reinterpretation of the
+# check-handshake concept rather than a verbatim port.
+#
+# Two-part check:
+#   1. Standard architecture handshake: verifies .claude/architecture-handshake.md is
+#      current against omnibase_core. Uses the "omnidash" handshake (same React/TS/Express
+#      stack as v1). This is the RRH-compatible part.
+#   2. Contract surface guard: verifies shared/types/topics.ts exists — v2's canonical
+#      topic registry. This is the v2-specific addition: cross-repo contract surface
+#      compatibility (topic registry), not RRH node lifecycle validation.
+name: Check Architecture Handshake
+
+on:
+  push:
+    branches: [main, "hotfix/**"]
+  pull_request:
+    branches: [main, dev, "hotfix/**"]
+  merge_group:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check-handshake:
+    name: Check architecture handshake
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Checkout omnibase_core
+        uses: actions/checkout@v4
+        with:
+          repository: OmniNode-ai/omnibase_core
+          # Auto-bumped by omnibase_core publish-downstream-pin-bump.yml to 35664cc30ca4.
+          ref: cccccccccccccccccccccccccccccccccccccccc
+          path: omnibase_core
+
+      - name: Verify omnibase_core checkout
+        run: |
+          if [ ! -f omnibase_core/architecture-handshakes/check-handshake.sh ]; then
+            echo "::error::Failed to checkout omnibase_core or check-handshake.sh not found."
+            exit 1
+          fi
+
+      - name: Verify v2 contract surface exists
+        run: |
+          if [ ! -f shared/types/topics.ts ]; then
+            echo "::error::shared/types/topics.ts not found — v2 contract surface missing."
+            exit 1
+          fi
+
+      - name: Check architecture handshake
+        run: bash omnibase_core/architecture-handshakes/check-handshake.sh omnibase_core

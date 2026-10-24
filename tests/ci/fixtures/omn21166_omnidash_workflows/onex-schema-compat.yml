@@ -1,0 +1,208 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: ONEX Schema Compatibility
+
+# Validates omnidash's ONEX contract files against the schema owner.
+#
+# OMN-20885: the ticket-contract model is omnibase_core's ModelTicketContract and
+# the day-close model is omnibase_core's ModelDayClose; the change-control
+# repository re-exports them and is no longer checked out or installed.
+#
+# This gate:
+#   1. Checks out omnibase_core at the commit check-handshake.yml pins; the
+#      resolver step reads it, so a pin bump needs no edit here (OMN-9050)
+#   2. Validates every YAML file under contracts/ (the root contract.yaml is an ONEX
+#      Service Contract, a different schema, and is excluded) against ModelTicketContract,
+#      or ModelDayClose for a path containing day_close, as the old validator step did
+#   3. Fails a ticket contract whose schema_version major differs from
+#      ModelTicketContract's, through omnibase_spi is_compatible
+#   4. Runs tests/ci/test_schema_compat_core_owner_omn20885.py, which drives step 2 and 3
+#      against planted contracts; it needs omnibase_core, so it runs here and not in
+#      the bare-environment workflow-script-refs job
+#
+# A contracts/ directory with no YAML file to validate fails. A repository with no
+# contracts/ directory reads no contract, so there is nothing to check.
+
+on:
+  push:
+    branches: [main, develop, "hotfix/**"]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/onex-schema-compat.yml'
+      - '.github/workflows/check-handshake.yml'
+      - 'tests/ci/test_schema_compat_core_owner_omn20885.py'
+  pull_request:
+    branches: [main, develop, dev, "hotfix/**"]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/onex-schema-compat.yml'
+      - '.github/workflows/check-handshake.yml'
+      - 'tests/ci/test_schema_compat_core_owner_omn20885.py'
+  merge_group:
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  schema-compat:
+    name: ONEX Schema Compatibility Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7
+
+      - name: Resolve the handshake's omnibase_core pin
+        id: core-pin
+        run: |
+          uv run --no-project --python 3.12 --with pyyaml python - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          import yaml
+
+          handshake = yaml.safe_load(Path('.github/workflows/check-handshake.yml').read_text())
+          refs = [
+              (step.get('with') or {}).get('ref')
+              for job in handshake['jobs'].values()
+              for step in job['steps']
+              if (step.get('with') or {}).get('repository') == 'OmniNode-ai/omnibase_core'
+          ]
+          if len(refs) != 1 or not isinstance(refs[0], str) or not re.fullmatch(r'[0-9a-f]{40}', refs[0]):
+              raise SystemExit('The handshake must pin exactly one omnibase_core checkout to a full commit SHA')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'ref={refs[0]}\n')
+          PY
+
+      - name: Checkout omnibase_core
+        # No token needed -- OmniNode-ai/omnibase_core is read the same way by
+        # check-handshake.yml.
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v4
+        with:
+          persist-credentials: false
+          repository: OmniNode-ai/omnibase_core
+          # The commit check-handshake.yml pins, the one declared omnibase_core
+          # pin of this repository. This workflow carries no ref of its own.
+          ref: ${{ steps.core-pin.outputs.ref }}
+          path: omnibase_core
+
+      - name: Assert the core checkout is the handshake pin
+        env:
+          HANDSHAKE_CORE_REF: ${{ steps.core-pin.outputs.ref }}
+        run: |
+          set -eo pipefail
+          actual="$(git -C omnibase_core rev-parse HEAD)"
+          if [ "${actual}" != "${HANDSHAKE_CORE_REF}" ]; then
+            echo "::error::omnibase_core checkout ${actual} differs from the check-handshake.yml pin ${HANDSHAKE_CORE_REF}; move both pins together."
+            exit 1
+          fi
+
+      - name: Verify omnibase_core checkout
+        run: |
+          set -eo pipefail
+          for model in models/ticket/model_ticket_contract.py models/governance/model_day_close.py; do
+            if [ ! -f "omnibase_core/src/omnibase_core/${model}" ]; then
+              echo "::error::Failed to checkout omnibase_core or ${model} not found."
+              exit 1
+            fi
+          done
+
+      - name: Validate ONEX contract files against omnibase_core
+        run: |
+          uv run --no-project --python 3.12 \
+            --with ./omnibase_core --with omnibase-spi==0.23.5 --with pyyaml \
+            python - <<'PY'
+          import sys
+          from pathlib import Path
+
+          import yaml
+          from omnibase_core.models.governance.model_day_close import ModelDayClose
+          from omnibase_core.models.ticket.model_ticket_contract import ModelTicketContract
+          from omnibase_spi.contracts.pipeline.contract_schema_compat import is_compatible
+          from pydantic import ValidationError
+
+          reader_version = str(ModelTicketContract.model_fields["schema_version"].default)
+          contracts_dir = Path("contracts")
+          if not contracts_dir.is_dir():
+              print("No contracts/ directory: this repository reads no ONEX contract.")
+              sys.exit(0)
+          # contracts/contract.yaml is an ONEX Service Contract (a different schema).
+          # Only that exact root-level file is excluded; contracts/<dir>/contract.yaml
+          # is still validated.
+          service_contract = contracts_dir / "contract.yaml"
+          paths = sorted(
+              path
+              for path in contracts_dir.rglob("*")
+              if path.is_file() and path.suffix in {".yaml", ".yml"} and path != service_contract
+          )
+          if not paths:
+              print("::error::contracts/ holds no YAML file to validate")
+              sys.exit(1)
+
+          print(f"omnibase_core ModelTicketContract schema_version (reader): {reader_version}")
+          broken = []
+          for path in paths:
+              try:
+                  data = yaml.safe_load(path.read_text(encoding="utf-8"))
+              except yaml.YAMLError as exc:
+                  broken.append((path, f"YAML parse error: {exc}"))
+                  continue
+              if not isinstance(data, dict):
+                  broken.append((path, "not a mapping"))
+                  continue
+              day_close = "day_close" in path.as_posix().lower()
+              if not day_close:
+                  wire_version = str(data.get("schema_version", reader_version))
+                  try:
+                      compatible = is_compatible(wire_version=wire_version, reader_version=reader_version)
+                  except ValueError as exc:
+                      broken.append((path, str(exc)))
+                      continue
+                  if not compatible:
+                      broken.append((path, f"schema_version {wire_version} vs reader {reader_version}"))
+                      continue
+              model = ModelDayClose if day_close else ModelTicketContract
+              try:
+                  model.model_validate(data)
+              except ValidationError as exc:
+                  detail = "; ".join(
+                      f"{'.'.join(str(part) for part in err['loc']) or '(root)'}: {err['msg']}"
+                      for err in exc.errors()
+                  )
+                  broken.append((path, f"{model.__name__}: {detail}"))
+
+          for path, reason in broken:
+              print(f"::error file={path.as_posix()}::{path.as_posix()}: {reason}")
+          if broken:
+              print(f"ERROR: {len(broken)} of {len(paths)} ONEX contract file(s) are invalid or incompatible with omnibase_core.")
+              print("  A major mismatch means omnibase_core released a breaking ticket-contract")
+              print("  schema change, or a contract declares a major this core cannot read.")
+              sys.exit(1)
+          print(f"OK: {len(paths)} ONEX contract file(s) valid and compatible with omnibase_core schema_version {reader_version}")
+          PY
+
+      - name: Run the compatibility-step tests against planted contracts
+        run: |
+          uv run --no-project --python 3.12 \
+            --with ./omnibase_core --with omnibase-spi==0.23.5 --with pyyaml --with pytest \
+            python -m pytest tests/ci/test_schema_compat_core_owner_omn20885.py \
+            -q --noconftest -p no:cacheprovider -c /dev/null

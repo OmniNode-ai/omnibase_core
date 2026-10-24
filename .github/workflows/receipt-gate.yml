@@ -941,7 +941,7 @@ jobs:
               target = home / sibling
               repository = f"OmniNode-ai/{sibling}"
               url = f"https://github.com/{repository}.git"
-              uv_pins, action_pins, checkout_refs = set(), set(), set()
+              uv_pins, action_pins, checkout_refs, step_output_refs = set(), set(), set(), set()
               for source in sources.values():
                   for entry in (source if isinstance(source, list) else [source]):
                       if isinstance(entry, dict) and str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
@@ -956,7 +956,12 @@ jobs:
                       if isinstance(uses, str) and uses.startswith("actions/checkout@"):
                           options = entry.get("with", {})
                           if options.get("repository") == repository and options.get("ref"):
-                              checkout_refs.add(str(options["ref"]))
+                              ref = str(options["ref"])
+                              # OMN-21166: a ${{ }} ref is not a revision; it is set aside
+                              # when a literal ref exists (a step that reads that literal),
+                              # and alone it stays unresolved rather than falling to HEAD.
+                              (step_output_refs if "${{" in ref else checkout_refs).add(ref)
+              checkout_refs = checkout_refs or step_output_refs
               pins = next((pins for pins in (uv_pins, action_pins, checkout_refs) if pins), set())
               if len(pins) > 1:
                   print(f"::notice::{sibling}: conflicting revision pins; checkout left absent")
