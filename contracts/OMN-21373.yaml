@@ -40,6 +40,16 @@ requirements:
         statement: "AC7: read_skill_md reads every SKILL.md of the measured skill trees without error,
           and parse_skill_md refuses exactly the files counted as failing -- falsifier: the corpus test
           disagrees with either."
+  - id: req-omn21373-sd1-skill-readers
+    statement: The core skill readers read skill_kind and backing_node through read_skill_md, from top-level
+      frontmatter or from metadata.
+    acceptance:
+      - id: AC10
+        statement: "S-d1 AC1: each reads `skill_kind` and `backing_node` through `read_skill_md` from
+          top level or from `metadata`, with tests for both placements and for a today's-format file with
+          no `name` -- falsifier: a test with the key only under `metadata` fails, or the module still
+          holds its own frontmatter regex (`git grep -n '_FRONTMATTER_RE' -- src/omnibase_core/validators/skill_dispatch_receipt_mode.py`
+          prints a line)."
 evidence_requirements:
   - kind: tests
     description: The agreement suite, the round-trip property test, the codec tests and the corpus test.
@@ -134,4 +144,28 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: uv run pytest tests/unit/handlers/test_handler_agent_skill_codec.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21373-sd1-ac10
+    description: The two skill readers use the tolerant reader for top-level and metadata values, and
+      the dispatch receipt-mode validator no longer holds its own frontmatter regex.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_skill_dispatch_receipt_mode.py tests/unit/validation/test_validator_skill_backing_node.py
+          -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -z "$(git grep -n '_FRONTMATTER_RE' -- src/omnibase_core/validators/skill_dispatch_receipt_mode.py)"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC10
+  - id: dod-omn21373-sd1-deploy-hosted-readback
+    description: "Hosted deploy probe for the two skill readers: their tests read skill_kind and backing_node
+      from top level and from metadata through read_skill_md."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validators/test_skill_dispatch_receipt_mode.py tests/unit/validation/test_validator_skill_backing_node.py
+          -n 0 -q
         cwd: ${OMNI_HOME}/omnibase_core

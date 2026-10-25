@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.enums.enum_skill_receipt_rule import EnumSkillReceiptRule
+from omnibase_core.validators import skill_dispatch_receipt_mode
 from omnibase_core.validators.skill_dispatch_receipt_mode import (
     Allowlist,
     main,
@@ -123,6 +124,80 @@ class TestSkillKindClassification:
             tmp_path, allowlist=Allowlist(skills=frozenset())
         )
         assert findings == []
+
+
+@pytest.mark.unit
+class TestSkillKindPlacement:
+    @pytest.mark.parametrize(
+        "frontmatter",
+        [
+            "description: x\nmetadata:\n  onex.skill_kind: '\"methodology\"'\n",
+            "description: x\nmetadata:\n  skill_kind: methodology\n",
+            "description: x\nskill_kind: methodology\n",
+        ],
+        ids=["encoded-metadata", "plain-metadata", "top-level-without-name"],
+    )
+    def test_methodology_placements_pass(
+        self, tmp_path: Path, frontmatter: str
+    ) -> None:
+        _skill(tmp_path, "think", skill_md=f"---\n{frontmatter}---\n\nbody\n")
+        findings = validate_skills_root(
+            tmp_path, allowlist=Allowlist(skills=frozenset())
+        )
+        assert findings == []
+
+    def test_invalid_metadata_skill_kind_fails(self, tmp_path: Path) -> None:
+        _skill(
+            tmp_path,
+            "thing",
+            skill_md=(
+                "---\ndescription: x\nmetadata:\n  onex.skill_kind: '\"bogus\"'\n---\n"
+            ),
+        )
+        findings = validate_skills_root(
+            tmp_path, allowlist=Allowlist(skills=frozenset())
+        )
+        assert any(f.rule is EnumSkillReceiptRule.INVALID_SKILL_KIND for f in findings)
+
+    def test_metadata_dispatch_runs_dispatch_checks(self, tmp_path: Path) -> None:
+        _skill(
+            tmp_path,
+            "thing",
+            skill_md=(
+                "---\ndescription: x\nmetadata:\n"
+                "  onex.skill_kind: '\"dispatch\"'\n---\n\n"
+                "```bash\nuv run onex node node_thing\n```\n"
+            ),
+        )
+        findings = validate_skills_root(
+            tmp_path, allowlist=Allowlist(skills=frozenset())
+        )
+        assert any(
+            f.rule is EnumSkillReceiptRule.BARE_DISPATCH_INVOCATION for f in findings
+        )
+
+    @pytest.mark.parametrize(
+        "frontmatter",
+        [
+            "description: [unclosed\n",
+            "metadata:\n  onex.skill_kind: 'not-json'\n",
+            "metadata:\n  onex.skill_kind: '42'\n",
+            "skill_kind: methodology\nskill_kind: dispatch\n",
+        ],
+        ids=["malformed-yaml", "invalid-json", "invalid-onex-type", "duplicate-key"],
+    )
+    def test_unreadable_skill_kind_is_missing(
+        self, tmp_path: Path, frontmatter: str
+    ) -> None:
+        _skill(tmp_path, "thing", skill_md=f"---\n{frontmatter}---\n")
+        findings = validate_skills_root(
+            tmp_path, allowlist=Allowlist(skills=frozenset())
+        )
+        assert [f.rule for f in findings] == [EnumSkillReceiptRule.MISSING_SKILL_KIND]
+
+    def test_no_local_frontmatter_parser(self) -> None:
+        assert not hasattr(skill_dispatch_receipt_mode, "_FRONTMATTER_RE")
+        assert not hasattr(skill_dispatch_receipt_mode, "_parse_frontmatter")
 
 
 # ---------------------------------------------------------------------------

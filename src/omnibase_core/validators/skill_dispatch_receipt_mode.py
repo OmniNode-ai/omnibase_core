@@ -11,8 +11,9 @@ the single receipt-mode command + result presentation; all glue lives in the
 Four checks, applied to every skill under ``plugins/onex/skills/``:
 
 (a) **skill_kind** — every skill declares ``skill_kind: dispatch | methodology``
-    in its frontmatter. Classification is explicit, never heuristic. A missing
-    or invalid value FAILS.
+    in top-level frontmatter or ``metadata`` (``onex.skill_kind`` or
+    ``skill_kind``), read through ``read_skill_md`` (OMN-21373). Classification
+    is explicit, never heuristic. A missing or invalid value FAILS.
 (b) **bare dispatch invocation** — a ``dispatch`` skill's markdown may not
     contain a bare ``onex (run|node|run-node)`` invocation; the only accepted
     dispatch form is the single ``onex skill`` / ``onex delegate`` receipt-mode
@@ -63,11 +64,12 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads the ratchet allowlist + skill frontmatter
+import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads only the ratchet allowlist
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_skill_receipt_rule import EnumSkillReceiptRule
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.handlers.handler_agent_skill_codec import read_skill_md
 from omnibase_core.models.validation.model_skill_dispatch_receipt_finding import (
     ModelSkillDispatchReceiptFinding,
 )
@@ -114,8 +116,6 @@ _VALID_SKILL_KINDS = frozenset({"dispatch", "methodology"})
 _EXECUTABLE_SUFFIXES = frozenset({".py", ".sh", ".bash", ".zsh"})
 _EXECUTABLE_DIR_NAMES = frozenset({"_lib"})
 
-_FRONTMATTER_RE = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
-
 
 @dataclass(frozen=True, slots=True)
 class Allowlist:
@@ -143,20 +143,6 @@ def load_allowlist(path: Path) -> Allowlist | None:
     return Allowlist(skills=frozenset(str(s).strip() for s in skills if str(s).strip()))
 
 
-def _parse_frontmatter(text: str) -> dict[str, object] | None:
-    match = _FRONTMATTER_RE.match(text)
-    if match is None:
-        return None
-    try:
-        # ONEX_EXCLUDE: manual_yaml - validator reads free-form skill frontmatter
-        parsed = yaml.safe_load(match.group(1))
-    except yaml.YAMLError:
-        # Malformed frontmatter cannot declare a valid skill_kind; treat it as
-        # absent so check (a) fails rather than the validator crashing.
-        return None
-    return parsed if isinstance(parsed, dict) else None
-
-
 def _markdown_files(skill_dir: Path) -> list[Path]:
     return sorted(p for p in skill_dir.rglob("*.md") if p.is_file())
 
@@ -182,10 +168,18 @@ def _skill_kind(skill_dir: Path) -> tuple[str | None, bool]:
         if not mds:
             return None, False
         skill_md = mds[0]
-    fm = _parse_frontmatter(skill_md.read_text(encoding="utf-8"))
-    if fm is None:
+    try:
+        source = read_skill_md(skill_md.read_text(encoding="utf-8"))
+    except ModelOnexError:
+        # Malformed frontmatter cannot declare a valid skill_kind; treat it as
+        # absent so check (a) fails rather than the validator crashing.
         return None, False
-    value = fm.get("skill_kind")
+    if not source.has_frontmatter:
+        return None, False
+    try:
+        value = source.get("skill_kind")
+    except ModelOnexError:
+        return None, True
     return (str(value) if value is not None else None), True
 
 
