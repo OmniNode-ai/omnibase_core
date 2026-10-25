@@ -59,6 +59,9 @@ from omnibase_core.models.contracts.model_contract_intent_consumption import (
 from omnibase_core.models.contracts.model_contract_mcp_config import (
     ModelContractMcpConfig,
 )
+from omnibase_core.models.contracts.model_contract_skill_surface import (
+    ModelContractSkillSurface,
+)
 from omnibase_core.models.contracts.model_dod_evidence import ModelDodEvidence
 from omnibase_core.models.contracts.model_lifecycle_config import ModelLifecycleConfig
 from omnibase_core.models.contracts.model_performance_requirements import (
@@ -342,6 +345,12 @@ class ModelContractBase(BaseModel, ABC):
         default=None,
         description="MCP tool exposure. Read by the MCP adapter when scanning "
         "contracts for AI-invocable tools.",
+    )
+
+    skill_surface: ModelContractSkillSurface | None = Field(
+        default=None,
+        description="Agent Skills surface of a node from which a shim skill is rendered. "
+        "Read by the shim skill render node (OMN-21373).",
     )
 
     intent_consumption: ModelContractIntentConsumption | None = Field(
