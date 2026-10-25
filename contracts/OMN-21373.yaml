@@ -1,12 +1,13 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-21373
-title: "S-a: Agent Skills model, parser and renderer in omnibase_core"
+title: "S-a and S-c0: Agent Skills model, codec and skill_surface contract section in omnibase_core"
 summary: Slice S-a of the Agent Skills amendment. A typed model of the Agent Skills SKILL.md format (the
   six spec fields, the declared Claude Code extension keys, the body), a strict parser that loads frontmatter
   with strictyaml the way the reference validator does, a tolerant reader for today's files, and a deterministic
   renderer with two profiles (AGENT_SKILLS and CLAUDE_CODE). The release of the model (the slice's AC6)
-  is cut separately through the release train.
+  is cut separately through the release train. S-c0 adds an optional typed skill_surface contract section;
+  its release criterion (S-c0 AC3) is cut separately through the release train.
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
@@ -40,6 +41,16 @@ requirements:
         statement: "AC7: read_skill_md reads every SKILL.md of the measured skill trees without error,
           and parse_skill_md refuses exactly the files counted as failing -- falsifier: the corpus test
           disagrees with either."
+  - id: req-omn21373-sc0-skill-surface
+    statement: A node contract may carry an optional typed skill_surface section (id, cli_id, description)
+      that core validates, so a shim skill can be rendered from it.
+    acceptance:
+      - id: AC8
+        statement: "S-c0 AC1: a contract with `skill_surface: {id, cli_id, description}` validates, and
+          one with an unknown key inside it is refused -- falsifier: either fixture gives the other result."
+      - id: AC9
+        statement: "S-c0 AC2: `id` follows the reference name rule, and `description` the 1024 limit --
+          falsifier: a contract with `id: bad_name` or a 1025-character description validates."
 evidence_requirements:
   - kind: tests
     description: The agreement suite, the round-trip property test, the codec tests and the corpus test.
@@ -116,6 +127,26 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC7
+  - id: dod-omn21373-sc0-ac8
+    description: Contracts accept the typed skill_surface section and refuse unknown keys inside it.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/contracts/test_model_contract_skill_surface.py -n
+          0 -q -k "validates or unknown_key"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC8
+  - id: dod-omn21373-sc0-ac9
+    description: Skill surface ids follow the reference name rule and descriptions respect the 1024 limit.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/contracts/test_model_contract_skill_surface.py -n
+          0 -q -k "id_ or description"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC9
   - id: dod-omn21373-sa-deploy-readback-on-dev
     description: Deploy probe. omnibase_core is a library, so the live surface for this change is its
       dev branch. The probe reads the merged codec handler from dev and fails until parse_skill_md and
