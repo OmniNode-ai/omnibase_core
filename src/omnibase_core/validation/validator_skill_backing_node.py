@@ -23,9 +23,9 @@ CI (omnimarket):
 
        - **Backing node**: `node_<name>`
 
-   The extractor accepts all three field-value separators seen in the corpus:
-   ``**Backing node**:``, ``Backing node:``, and ``backing_node:`` (YAML
-   frontmatter). The first match per file wins.
+   The extractor accepts the body forms ``**Backing node**:`` and
+   ``Backing node:`` (first match wins), else the ``backing_node`` key from
+   frontmatter top level or ``metadata`` via ``read_skill_md`` (OMN-21373).
 
 3. For each declared backing node, resolve the path relative to the omnimarket
    repo root and assert:
@@ -73,6 +73,8 @@ from pathlib import Path
 
 import yaml
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.handlers.handler_agent_skill_codec import read_skill_md
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
@@ -99,24 +101,13 @@ _BACKING_NODE_PATTERNS: list[re.Pattern[str]] = [
         r"\*\*Backing node\*\*\s*:\s*`(?:[^`]*/)?(?P<name>node_[a-z_0-9]+)/?`",
         re.IGNORECASE,
     ),
-    # Short body form: - **Backing node**: `node_foo`
-    re.compile(
-        r"\*\*Backing node\*\*\s*:\s*`(?P<name>node_[a-z_0-9]+)`",
-        re.IGNORECASE,
-    ),
     # Inline heading form (compliance_sweep):
     # **Skill ID**: ... · **Backing node**: `omnimarket/...node_foo/` · ...
     re.compile(
         r"Backing\s+node\*\*\s*:\s*`(?:[^`]*/)?(?P<name>node_[a-z_0-9]+)/?`",
         re.IGNORECASE,
     ),
-    # YAML frontmatter form: backing_node: "node_foo"
-    re.compile(
-        r"^backing_node\s*:\s*[\"']?(?P<name>node_[a-z_0-9]+)[\"']?",
-        re.MULTILINE,
-    ),
 ]
-
 
 # ---------------------------------------------------------------------------
 # Allowlist loader
@@ -180,6 +171,12 @@ def extract_backing_node(skill_md_path: Path) -> str | None:
         m = pattern.search(text)
         if m:
             return m.group("name")
+    try:
+        value = read_skill_md(text).get("backing_node")
+    except ModelOnexError:
+        return None
+    if isinstance(value, str) and re.fullmatch(r"node_[a-z_0-9]+", value.strip()):
+        return value.strip()
     return None
 
 

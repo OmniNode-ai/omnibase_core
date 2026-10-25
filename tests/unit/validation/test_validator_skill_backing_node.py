@@ -76,6 +76,55 @@ class TestExtractBackingNode:
         _write(p, "---\nbacking_node: node_baz\n---\n")
         assert extract_backing_node(p) == "node_baz"
 
+    def test_frontmatter_without_name(self, tmp_path: Path) -> None:
+        p = tmp_path / "SKILL.md"
+        _write(p, "---\ndescription: x\nbacking_node: node_baz\n---\n")
+        assert extract_backing_node(p) == "node_baz"
+
+    def test_metadata_backing_node(self, tmp_path: Path) -> None:
+        p = tmp_path / "SKILL.md"
+        _write(
+            p,
+            "---\ndescription: x\nmetadata:\n  backing_node: node_meta\n---\n# body\n",
+        )
+        assert extract_backing_node(p) == "node_meta"
+
+    def test_yaml_body_example_is_not_frontmatter(self, tmp_path: Path) -> None:
+        p = tmp_path / "SKILL.md"
+        _write(
+            p,
+            "---\ndescription: x\n---\n\n```yaml\nbacking_node: node_example\n```\n",
+        )
+        assert extract_backing_node(p) is None
+
+    def test_body_pattern_wins_over_frontmatter(self, tmp_path: Path) -> None:
+        p = tmp_path / "SKILL.md"
+        _write(
+            p,
+            "---\nbacking_node: node_front\n---\n\n**Backing node**: `node_body`\n",
+        )
+        assert extract_backing_node(p) == "node_body"
+
+    @pytest.mark.parametrize(
+        "value", ["other_thing", "node_partial/path", "node_upperCase", "42"]
+    )
+    def test_invalid_frontmatter_value_returns_none(
+        self, tmp_path: Path, value: str
+    ) -> None:
+        p = tmp_path / "SKILL.md"
+        _write(p, f"---\nbacking_node: {value}\n---\n")
+        assert extract_backing_node(p) is None
+
+    def test_frontmatter_value_is_stripped(self, tmp_path: Path) -> None:
+        p = tmp_path / "SKILL.md"
+        _write(p, '---\nbacking_node: "  node_baz  "\n---\n')
+        assert extract_backing_node(p) == "node_baz"
+
+    def test_malformed_frontmatter_returns_none(self, tmp_path: Path) -> None:
+        p = tmp_path / "SKILL.md"
+        _write(p, "---\ndescription: [unclosed\n---\n")
+        assert extract_backing_node(p) is None
+
     def test_inline_heading_form(self, tmp_path: Path) -> None:
         p = tmp_path / "SKILL.md"
         _write(
@@ -233,6 +282,17 @@ class TestScan:
     def test_violation_reported(self, tmp_path: Path) -> None:
         omniclaude_root, _ = self._setup(tmp_path)
         _make_skill(omniclaude_root, "skill_bad", "**Backing node**: `node_phantom`\n")
+        errors = scan(omniclaude_root)
+        assert len(errors) == 1
+        assert "node_phantom" in errors[0]
+
+    def test_metadata_backing_node_violation_reported(self, tmp_path: Path) -> None:
+        omniclaude_root, _ = self._setup(tmp_path)
+        _make_skill(
+            omniclaude_root,
+            "skill_bad",
+            "---\ndescription: x\nmetadata:\n  backing_node: node_phantom\n---\n",
+        )
         errors = scan(omniclaude_root)
         assert len(errors) == 1
         assert "node_phantom" in errors[0]
