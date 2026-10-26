@@ -24,6 +24,8 @@ from omnibase_core.constants.constants_field_limits import MAX_LABELS_COUNT
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_dependency_type import EnumDependencyType
+from omnibase_core.enums.enum_placement_mode import EnumPlacementMode
+from omnibase_core.enums.enum_placement_state_store import EnumPlacementStateStore
 from omnibase_core.models.contracts.model_dependency import ModelDependency
 
 # Import ModelExecutionProfile for execution profile field
@@ -56,8 +58,12 @@ from omnibase_core.models.contracts.model_contract_feature_flag import (
 from omnibase_core.models.contracts.model_contract_intent_consumption import (
     ModelContractIntentConsumption,
 )
+from omnibase_core.models.contracts.model_contract_lease import ModelContractLease
 from omnibase_core.models.contracts.model_contract_mcp_config import (
     ModelContractMcpConfig,
+)
+from omnibase_core.models.contracts.model_contract_placement import (
+    ModelContractPlacement,
 )
 from omnibase_core.models.contracts.model_contract_skill_surface import (
     ModelContractSkillSurface,
@@ -185,6 +191,20 @@ class ModelContractBase(BaseModel, ABC):
     node_type: EnumNodeType = Field(
         default=...,
         description="Node type classification for 4-node architecture",
+    )
+
+    placement: ModelContractPlacement = Field(
+        # Pydantic supplies already validated preceding fields to this factory.
+        default_factory=lambda validated_fields: ModelContractPlacement.for_node_type(
+            validated_fields["node_type"]
+        ),
+        description="Runtime placement. Defaults to primary for ORCHESTRATOR and REDUCER "
+        "and any for EFFECT and COMPUTE. Consumer groups are derived by the runtime.",
+    )
+
+    leases: list[ModelContractLease] = Field(
+        default_factory=list,
+        description="Lease kinds registered by this node; each requires kind and max_ttl_s.",
     )
 
     # Model specifications with strong typing
@@ -386,6 +406,23 @@ class ModelContractBase(BaseModel, ABC):
         "(3) ModelPublishedEventEntry instances - passed through directly. "
         "Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
     )
+
+    @model_validator(mode="after")
+    def validate_placement_state(self) -> Self:
+        """Refuse concurrent stateful folding unless statelessness is explicit."""
+        if (
+            ModelContractPlacement.requires_primary(self.node_type)
+            and self.placement.mode == EnumPlacementMode.ANY
+            and (
+                self.placement.state is None
+                or self.placement.state.store != EnumPlacementStateStore.NONE
+            )
+        ):
+            raise ValueError(
+                "ORCHESTRATOR or REDUCER with placement.mode any requires "
+                "placement.state.store: none"
+            )
+        return self
 
     @model_validator(mode="after")
     def validate_no_duplicate_protocol_bindings(self) -> Self:
@@ -1032,6 +1069,44 @@ class ModelContractBase(BaseModel, ABC):
         str_strip_whitespace=True,
         validate_default=True,  # Enable model validation caching for performance
         from_attributes=True,
+        json_schema_extra={
+            "allOf": [
+                {
+                    "if": {
+                        "required": ["node_type", "placement"],
+                        "properties": {
+                            "node_type": {
+                                "enum": [
+                                    node_type.value
+                                    for node_type in EnumNodeType
+                                    if ModelContractPlacement.requires_primary(
+                                        node_type
+                                    )
+                                ]
+                            },
+                            "placement": {
+                                "required": ["mode"],
+                                "properties": {"mode": {"const": "any"}},
+                            },
+                        },
+                    },
+                    "then": {
+                        "properties": {
+                            "placement": {
+                                "required": ["state"],
+                                "properties": {
+                                    "state": {
+                                        "type": "object",
+                                        "required": ["store"],
+                                        "properties": {"store": {"const": "none"}},
+                                    }
+                                },
+                            }
+                        }
+                    },
+                }
+            ]
+        },
     )
 
 

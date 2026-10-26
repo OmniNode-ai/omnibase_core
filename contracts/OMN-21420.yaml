@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21420
+title: Placement and leases fields in the ONEX contract model
+summary: Optional contract placement resolves by node type, forbids consumer groups, requires explicit
+  statelessness for concurrent stateful node kinds, and declares bounded lease kinds.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched: []
+requirements:
+  - id: req-omn21420-contract-placement-leases
+    statement: Node contracts declare runtime placement and lease requirements without changing existing
+      fixtures.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a contract with no `placement` block validates with `mode: any` for EFFECT and
+          COMPUTE and `mode: primary` for ORCHESTRATOR and REDUCER -- falsifier: a pytest over one fixture
+          contract per node type reads a different effective mode'
+      - id: AC2
+        statement: 'AC2: an ORCHESTRATOR or REDUCER contract with `mode: any` and without `state.store:
+          none` fails validation -- falsifier: the fixture validates'
+      - id: AC3
+        statement: 'AC3: a `placement` block naming a consumer group fails validation -- falsifier: a
+          fixture with `placement.consumer_group` validates'
+      - id: AC4
+        statement: 'AC4: a `leases` entry requires `kind` and `max_ttl_s` -- falsifier: a fixture with
+          a `leases` entry lacking either validates'
+evidence_requirements:
+  - kind: tests
+    description: Fixture contracts exercise all four acceptance criteria and the generated schema.
+    command: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py -q --no-cov
+  - kind: ci
+    description: Hosted-runner deploy check validates the installed contract model against fixtures and
+      its committed JSON schema; fails on schema drift or incorrect effective placement. No live service
+      is required.
+    command: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21420-ac1-default-placement
+    description: One omitted-placement fixture per node type resolves its required effective mode.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py
+          -q --no-cov -k ac1
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21420-ac2-stateless-guard
+    description: Both stateful node kinds reject any placement without explicit state.store none and accept
+      it with none.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py
+          -q --no-cov -k ac2
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21420-ac3-consumer-group
+    description: A consumer group in placement fails at the nested consumer_group field.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py
+          -q --no-cov -k ac3
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21420-ac4-required-lease-fields
+    description: Missing kind and missing max_ttl_s each fail at the lease entry field; a complete entry
+      validates.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py
+          -q --no-cov -k ac4
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21420-deploy-schema
+    description: Hosted-runner contract load and JSON Schema checks prove the shipped model accepts valid
+      fixtures, rejects invalid fixtures, and agrees with its generated export.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
