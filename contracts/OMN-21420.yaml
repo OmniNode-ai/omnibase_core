@@ -89,3 +89,19 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/models/contracts/test_contract_placement_leases.py
           -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21420-deploy-contract-surface
+    description: Read the published model source at the checkout commit through the GitHub contents API.
+      Fail when the placement declaration, bounded lease declaration, or explicit statelessness guard
+      is absent. Runs on hosted runners without a container daemon or access to a private runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_base.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -Fq 'placement: ModelContractPlacement = Field(' &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_base.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -Fq 'self.placement.state.store != EnumPlacementStateStore.NONE' &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_lease.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -Fq 'max_ttl_s: int = Field(gt=0'
+        cwd: ${OMNI_HOME}/omnibase_core
