@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: placement_compute
+contract_version: {major: 1, minor: 0, patch: 0}
+description: OMN-21420 compute placement fixture
+node_type: COMPUTE_GENERIC
+input_model: omnibase_core.models.ModelInput
+output_model: omnibase_core.models.ModelOutput
+leases:
+  - kind: worker_slot
+    max_ttl_s: 30

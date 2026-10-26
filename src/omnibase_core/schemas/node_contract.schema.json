@@ -1,0 +1,2539 @@
+{
+  "$defs": {
+    "EnumDependencyType": {
+      "description": "Dependency type classification for ONEX contract validation.",
+      "enum": [
+        "protocol",
+        "service",
+        "module",
+        "external",
+        "environment"
+      ],
+      "title": "EnumDependencyType",
+      "type": "string"
+    },
+    "EnumFeatureFlagCategory": {
+      "description": "Category for contract-declared feature flags.\n\nCategories are constrained to a controlled set to ensure consistent\ngrouping in the registry API and omnidash dashboard.",
+      "enum": [
+        "runtime",
+        "intelligence",
+        "observability",
+        "infrastructure",
+        "dashboard",
+        "general"
+      ],
+      "title": "EnumFeatureFlagCategory",
+      "type": "string"
+    },
+    "EnumHandlerRoutingStrategy": {
+      "description": "Handler routing strategy for contract-driven message routing.",
+      "enum": [
+        "payload_type_match",
+        "operation_match",
+        "topic_pattern"
+      ],
+      "title": "EnumHandlerRoutingStrategy",
+      "type": "string"
+    },
+    "EnumNodeArchetype": {
+      "description": "Design-time architectural role for handler contracts.\n\nValues: COMPUTE (transform), EFFECT (I/O), REDUCER (state), ORCHESTRATOR (workflow).\nUsed in handler contracts to specify the node's architectural role.\n\nUnlike EnumNodeKind, this enum does NOT include RUNTIME_HOST since\ncontracts cannot declare themselves as runtime infrastructure.\n\nExample:\n    >>> archetype = EnumNodeArchetype.COMPUTE\n    >>> str(archetype)\n    'compute'\n    >>> archetype == \"compute\"\n    True",
+      "enum": [
+        "compute",
+        "effect",
+        "reducer",
+        "orchestrator"
+      ],
+      "title": "EnumNodeArchetype",
+      "type": "string"
+    },
+    "EnumNodeType": {
+      "description": "Specific node implementation types for ONEX architecture.\n\nEnumNodeType represents the specific KIND OF IMPLEMENTATION a node uses,\ndefining its concrete behavior, capabilities, and implementation pattern.\n\nInherits from str for JSON serialization compatibility while providing\ntype safety and IDE support for node classification operations.\n\nRelationship to EnumNodeKind\n-----------------------------\n- **EnumNodeType** (this enum): Specific node implementation type\n  - Answers: \"What specific kind of node implementation is this?\"\n  - Example: TRANSFORMER, AGGREGATOR, VALIDATOR (specific implementations)\n  - Use when: Node discovery, capability matching, specific behavior selection\n\n- **EnumNodeKind**: High-level architectural classification\n  - Answers: \"What role does this node play in the ONEX workflow?\"\n  - Example: COMPUTE (data processing role)\n  - Use when: Routing data through the ONEX pipeline, enforcing architectural patterns\n\nMultiple EnumNodeType values can map to a single EnumNodeKind. For example:\n- TRANSFORMER, AGGREGATOR, COMPUTE_GENERIC -> All are COMPUTE kind\n- GATEWAY, VALIDATOR -> Both are control flow nodes (ORCHESTRATOR kind)\n\nFor high-level architectural classification, see EnumNodeKind.",
+      "enum": [
+        "COMPUTE_GENERIC",
+        "EFFECT_GENERIC",
+        "REDUCER_GENERIC",
+        "ORCHESTRATOR_GENERIC",
+        "RUNTIME_HOST_GENERIC",
+        "GATEWAY",
+        "VALIDATOR",
+        "TRANSFORMER",
+        "AGGREGATOR",
+        "FUNCTION",
+        "TOOL",
+        "AGENT",
+        "MODEL",
+        "PLUGIN",
+        "SCHEMA",
+        "NODE",
+        "WORKFLOW",
+        "SERVICE",
+        "UNKNOWN"
+      ],
+      "title": "EnumNodeType",
+      "type": "string"
+    },
+    "EnumPlacementMode": {
+      "description": "Whether every runtime or only the elected primary handles a node.",
+      "enum": [
+        "any",
+        "primary"
+      ],
+      "title": "EnumPlacementMode",
+      "type": "string"
+    },
+    "EnumPlacementStateStore": {
+      "description": "Where a node's state can be recovered after primary failover.",
+      "enum": [
+        "projection",
+        "none",
+        "lease_store"
+      ],
+      "title": "EnumPlacementStateStore",
+      "type": "string"
+    },
+    "ModelConcurrencyContractSpec": {
+      "description": "Contract-level concurrency requirements for a node.\n\nDeclared under the ``concurrency:`` block of a node's ``contract.yaml``.\nThe runtime and the model router read these fields when scheduling work\nso that nodes do not exceed their own parallelism cap and, optionally,\nrespect the concurrency limits published by the model registry.\n\nExample:\n    >>> spec = ModelConcurrencyContractSpec(\n    ...     max_parallel=5,\n    ...     model_concurrency_aware=True,\n    ... )\n    >>> spec.max_parallel\n    5\n    >>> spec.model_concurrency_aware\n    True\n\nYAML form::\n\n    concurrency:\n      max_parallel: 5\n      model_concurrency_aware: true",
+      "properties": {
+        "max_parallel": {
+          "default": 1,
+          "description": "Maximum number of concurrent invocations of this node that the runtime may dispatch at any given time. Must be >= 1.",
+          "minimum": 1,
+          "title": "Max Parallel",
+          "type": "integer"
+        },
+        "model_concurrency_aware": {
+          "default": false,
+          "description": "When true, the router will gate dispatched work by the target model's ``concurrency_limit`` as published in the model registry. When false, only ``max_parallel`` is enforced.",
+          "title": "Model Concurrency Aware",
+          "type": "boolean"
+        }
+      },
+      "title": "ModelConcurrencyContractSpec",
+      "type": "object"
+    },
+    "ModelConsumedEventEntry": {
+      "additionalProperties": false,
+      "description": "Simple consumed event entry for YAML contracts.\n\nONEX infra extension - used for contract-level event subscription declarations.\nNormalized from simple strings or full subscription objects.\n\nExample YAML (string form - normalized to this model):\n    consumed_events:\n      - \"jobs.events.created.v1\"\n      - \"jobs.events.completed.v1\"\n\nExample YAML (object form):\n    consumed_events:\n      - event_type: \"jobs.events.created.v1\"\n        handler_function: \"handle_job_created\"\n      - event_type: \"jobs.events.completed.v1\"\n        handler_function: \"handle_job_completed\"",
+      "properties": {
+        "event_type": {
+          "description": "Event type name or pattern",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "handler_function": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Handler function for this event (optional for simple declarations)",
+          "title": "Handler Function"
+        }
+      },
+      "required": [
+        "event_type"
+      ],
+      "title": "ModelConsumedEventEntry",
+      "type": "object"
+    },
+    "ModelContractBehaviorSpec": {
+      "additionalProperties": false,
+      "description": "Behavioral execution profile extracted from ModelContractBase (first slice).",
+      "properties": {
+        "execution_timeout_ms": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Handler execution timeout in milliseconds. None means no timeout.",
+          "title": "Execution Timeout Ms"
+        },
+        "idempotent": {
+          "default": false,
+          "description": "Whether handler invocations are safe to retry with the same input.",
+          "title": "Idempotent",
+          "type": "boolean"
+        },
+        "max_concurrency": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum concurrent handler invocations. None means runtime default.",
+          "title": "Max Concurrency"
+        },
+        "retry_attempts": {
+          "default": 0,
+          "description": "Number of retry attempts on transient failure.",
+          "minimum": 0,
+          "title": "Retry Attempts",
+          "type": "integer"
+        }
+      },
+      "title": "ModelContractBehaviorSpec",
+      "type": "object"
+    },
+    "ModelContractConfig": {
+      "additionalProperties": true,
+      "description": "Strongly typed contract config block.\n\nComposes LLM endpoint, storage, and operational sub-models as optional\nnested structures. extra=\"allow\" lets node-specific fields not covered by\nthe base schema pass through at the top level \u2014 node-specific typed config\nmodels are a follow-up.\n\nAll fields default to empty sub-models so contracts without a config section\nstill load cleanly.",
+      "properties": {
+        "llm": {
+          "$ref": "#/$defs/ModelLlmEndpointConfig",
+          "description": "LLM endpoint configuration"
+        },
+        "operational": {
+          "$ref": "#/$defs/ModelOperationalConfig",
+          "description": "Operational configuration"
+        },
+        "storage": {
+          "$ref": "#/$defs/ModelStorageConfig",
+          "description": "Storage connection configuration"
+        }
+      },
+      "title": "ModelContractConfig",
+      "type": "object"
+    },
+    "ModelContractFeatureFlag": {
+      "additionalProperties": false,
+      "description": "A single feature flag declared in a contract YAML.\n\nFrozen and strict (extra=\"forbid\") to enforce contract-time correctness.\nRuntime resolution and env overrides happen in the infra layer, not here.",
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/EnumFeatureFlagCategory",
+          "default": "general",
+          "description": "Functional domain grouping for dashboard display."
+        },
+        "default_value": {
+          "default": false,
+          "description": "Contract author's intended default. Overridden by env/Infisical at runtime.",
+          "title": "Default Value",
+          "type": "boolean"
+        },
+        "description": {
+          "default": "",
+          "description": "Human-readable description of what the flag controls.",
+          "title": "Description",
+          "type": "string"
+        },
+        "env_var": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Z][A-Z0-9_]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Uppercase env var name for runtime resolution. Maps contract flag to environment variable during env-based override.",
+          "title": "Env Var"
+        },
+        "name": {
+          "description": "Snake-case flag identifier. Must be globally unique across contracts.",
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "owner": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Free-text owner identifier (team or service name). Migration-grade metadata \u2014 normalization deferred to Phase B.",
+          "title": "Owner"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ModelContractFeatureFlag",
+      "type": "object"
+    },
+    "ModelContractIntentConsumption": {
+      "additionalProperties": false,
+      "description": "Intent-to-effect routing declared in a contract YAML ``intent_consumption:`` block.",
+      "properties": {
+        "intent_routing_table": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Map of intent_type (e.g. 'postgres.upsert_registration') to the effect node name that executes it.",
+          "minProperties": 1,
+          "title": "Intent Routing Table",
+          "type": "object"
+        }
+      },
+      "required": [
+        "intent_routing_table"
+      ],
+      "title": "ModelContractIntentConsumption",
+      "type": "object"
+    },
+    "ModelContractLease": {
+      "additionalProperties": false,
+      "description": "Required lease identity and TTL bound, with optional capacity and renewal policy.",
+      "properties": {
+        "capacity": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Capacity"
+        },
+        "kind": {
+          "description": "Lease kind registered at contract load.",
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "max_ttl_s": {
+          "description": "Maximum grant TTL in seconds.",
+          "exclusiveMinimum": 0,
+          "title": "Max Ttl S",
+          "type": "integer"
+        },
+        "renewable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Renewable"
+        }
+      },
+      "required": [
+        "kind",
+        "max_ttl_s"
+      ],
+      "title": "ModelContractLease",
+      "type": "object"
+    },
+    "ModelContractMcpConfig": {
+      "additionalProperties": false,
+      "description": "MCP tool exposure declared in a contract YAML ``mcp:`` block.\n\nEvery field is required: a contract that opts into MCP exposure must\nsay what the tool is called, what it does, and how long it may run.",
+      "properties": {
+        "description": {
+          "description": "Tool description presented to the MCP client.",
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "expose": {
+          "description": "Whether the MCP adapter exposes this node as a tool.",
+          "title": "Expose",
+          "type": "boolean"
+        },
+        "timeout_seconds": {
+          "description": "Maximum wall-clock seconds a single tool invocation may take.",
+          "exclusiveMinimum": 0,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        },
+        "tool_name": {
+          "description": "Snake-case MCP tool identifier presented to callers.",
+          "minLength": 1,
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Tool Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "expose",
+        "tool_name",
+        "description",
+        "timeout_seconds"
+      ],
+      "title": "ModelContractMcpConfig",
+      "type": "object"
+    },
+    "ModelContractPlacement": {
+      "additionalProperties": false,
+      "description": "Placement policy and optional primary failover recovery configuration.",
+      "properties": {
+        "failover_target_s": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Failover Target S"
+        },
+        "mode": {
+          "$ref": "#/$defs/EnumPlacementMode",
+          "description": "Run on any runtime or the elected primary."
+        },
+        "state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelContractPlacementState"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "title": "ModelContractPlacement",
+      "type": "object"
+    },
+    "ModelContractPlacementState": {
+      "additionalProperties": false,
+      "description": "Durable state location and replay sources for a placed node.",
+      "properties": {
+        "replay_topics": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Replay Topics",
+          "type": "array"
+        },
+        "store": {
+          "$ref": "#/$defs/EnumPlacementStateStore",
+          "default": "projection",
+          "description": "State store; explicitly use none to declare a stateless node."
+        },
+        "table": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Table"
+        }
+      },
+      "title": "ModelContractPlacementState",
+      "type": "object"
+    },
+    "ModelContractSkillSurface": {
+      "additionalProperties": false,
+      "description": "Agent Skills surface declared in a contract YAML ``skill_surface:`` block.\n\n``id`` is the Agent Skills skill name, and the ``cli_id`` key (attribute\n``cli_command``) is the command name passed to ``uv run onex skill <cli_id>``,\nkept as today's id. ``description`` supplies the skill\ndescription when present; otherwise the renderer uses the contract description.",
+      "properties": {
+        "cli_id": {
+          "description": "Command name passed to uv run onex skill <cli_id>; read from the cli_id key.",
+          "minLength": 1,
+          "title": "Cli Id",
+          "type": "string"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Skill description; falls back to the contract description when absent.",
+          "title": "Description"
+        },
+        "id": {
+          "description": "Agent Skills skill name rendered in SKILL.md frontmatter.",
+          "title": "Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "cli_id"
+      ],
+      "title": "ModelContractSkillSurface",
+      "type": "object"
+    },
+    "ModelCorrelationConfig": {
+      "description": "Configuration for correlation ID extraction in request-response patterns.\n\nSpecifies where to find the correlation ID in messages, enabling the event bus\nto track request-response pairs across asynchronous message exchanges.",
+      "properties": {
+        "field": {
+          "default": "correlation_id",
+          "description": "Field name containing the correlation ID",
+          "title": "Field",
+          "type": "string"
+        },
+        "location": {
+          "default": "body",
+          "description": "Where the correlation ID is found in the message",
+          "enum": [
+            "body",
+            "headers"
+          ],
+          "title": "Location",
+          "type": "string"
+        }
+      },
+      "title": "ModelCorrelationConfig",
+      "type": "object"
+    },
+    "ModelDependency": {
+      "description": "ONEX dependency specification with strong typing enforcement.\n\nProvides structured dependency model for contract dependencies.\nSTRONG TYPES ONLY: Only accepts properly typed ModelDependency instances.\nNo string or dict[str, Any]fallbacks - use structured initialization only.\n\nStrict typing is enforced - no Any types allowed in implementation.",
+      "properties": {
+        "dependency_type": {
+          "$ref": "#/$defs/EnumDependencyType",
+          "default": "protocol",
+          "description": "Dependency type classification"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable dependency description",
+          "title": "Description"
+        },
+        "env_var": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Environment variable name supplying this dependency (e.g., 'LINEAR_API_KEY'); set on ENVIRONMENT dependencies",
+          "title": "Env Var"
+        },
+        "module": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Module path (e.g., 'omnibase.protocol.protocol_event_bus')",
+          "title": "Module"
+        },
+        "name": {
+          "description": "Dependency name (e.g., 'ProtocolEventBus')",
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "description": "Whether dependency is required for operation",
+          "title": "Required",
+          "type": "boolean"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelSemVer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Version constraint as ModelSemVer object"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "ModelDependency",
+      "type": "object"
+    },
+    "ModelDescriptorCircuitBreaker": {
+      "additionalProperties": false,
+      "description": "Simplified circuit breaker configuration for handler descriptors.\n\nThis is a lightweight configuration model for embedding in handler\ndescriptors. For full-featured circuit breakers with state management,\nsee ModelCircuitBreaker in omnibase_core.models.configuration.\n\nCircuit breakers prevent cascading failures by temporarily blocking\nrequests to failing services. When failures exceed the threshold, the\ncircuit \"opens\" and rejects requests immediately.\n\nAttributes:\n    enabled: Whether circuit breaker protection is active.\n    failure_threshold: Number of failures before opening the circuit.\n    success_threshold: Successes in half-open state to close the circuit.\n    timeout_ms: Duration the circuit stays open before testing recovery.\n    half_open_requests: Max concurrent requests allowed in half-open state.\n\nExample:\n    >>> circuit_breaker = ModelDescriptorCircuitBreaker(\n    ...     enabled=True,\n    ...     failure_threshold=5,\n    ...     success_threshold=2,\n    ...     timeout_ms=60000,\n    ... )",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "description": "Whether circuit breaker protection is active",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "failure_threshold": {
+          "default": 5,
+          "description": "Number of failures before opening the circuit",
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Failure Threshold",
+          "type": "integer"
+        },
+        "half_open_requests": {
+          "default": 3,
+          "description": "Max concurrent requests allowed in half-open state",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Half Open Requests",
+          "type": "integer"
+        },
+        "success_threshold": {
+          "default": 2,
+          "description": "Successes in half-open state required to close the circuit",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Success Threshold",
+          "type": "integer"
+        },
+        "timeout_ms": {
+          "default": 60000,
+          "description": "Duration in ms the circuit stays open before testing recovery",
+          "maximum": 600000,
+          "minimum": 1000,
+          "title": "Timeout Ms",
+          "type": "integer"
+        }
+      },
+      "title": "ModelDescriptorCircuitBreaker",
+      "type": "object"
+    },
+    "ModelDescriptorRetryPolicy": {
+      "additionalProperties": false,
+      "description": "Simplified retry policy configuration for handler descriptors.\n\nThis is a lightweight configuration model for embedding in handler\ndescriptors. For full-featured retry policies with execution tracking,\nsee ModelRetryPolicy in omnibase_core.models.infrastructure.\n\nAttributes:\n    enabled: Whether retry is enabled for this handler.\n    max_retries: Maximum number of retry attempts (0-10).\n    backoff_strategy: Strategy for calculating delay between retries.\n    base_delay_ms: Initial delay between retries in milliseconds.\n    max_delay_ms: Maximum delay cap for backoff strategies.\n    jitter_factor: Randomization factor as fraction of delay (0.0-0.5).\n\nExample:\n    >>> policy = ModelDescriptorRetryPolicy(\n    ...     enabled=True,\n    ...     max_retries=3,\n    ...     backoff_strategy=\"exponential\",\n    ...     base_delay_ms=1000,\n    ... )",
+      "properties": {
+        "backoff_strategy": {
+          "default": "exponential",
+          "description": "Strategy for calculating delay between retries",
+          "enum": [
+            "fixed",
+            "exponential",
+            "linear"
+          ],
+          "title": "Backoff Strategy",
+          "type": "string"
+        },
+        "base_delay_ms": {
+          "default": 1000,
+          "description": "Initial delay between retries in milliseconds",
+          "maximum": 60000,
+          "minimum": 100,
+          "title": "Base Delay Ms",
+          "type": "integer"
+        },
+        "enabled": {
+          "default": true,
+          "description": "Whether retry is enabled for this handler",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "jitter_factor": {
+          "default": 0.1,
+          "description": "Randomization factor as fraction of delay",
+          "maximum": 0.5,
+          "minimum": 0.0,
+          "title": "Jitter Factor",
+          "type": "number"
+        },
+        "max_delay_ms": {
+          "default": 30000,
+          "description": "Maximum delay cap for backoff strategies in milliseconds",
+          "maximum": 300000,
+          "minimum": 100,
+          "title": "Max Delay Ms",
+          "type": "integer"
+        },
+        "max_retries": {
+          "default": 3,
+          "description": "Maximum number of retry attempts",
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Max Retries",
+          "type": "integer"
+        }
+      },
+      "title": "ModelDescriptorRetryPolicy",
+      "type": "object"
+    },
+    "ModelDodEvidence": {
+      "additionalProperties": false,
+      "description": "Structured evidence item for Definition of Done verification.\n\nEach evidence item declares what type of verification is required\nand how to perform or locate the verification.\n\nAttributes:\n    type: Evidence category (e.g., \"rendered_output\", \"integration_test\",\n        \"golden_chain\", \"api_response\", \"screenshot\").\n    description: Human-readable description of what this evidence proves.\n    check: Optional command, URL, or test path that validates this evidence.",
+      "properties": {
+        "check": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Command, URL, or test path that validates this evidence",
+          "title": "Check"
+        },
+        "description": {
+          "description": "Human-readable description of what this evidence proves",
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "type": {
+          "description": "Evidence category (e.g., 'rendered_output', 'integration_test', 'golden_chain')",
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "description"
+      ],
+      "title": "ModelDodEvidence",
+      "type": "object"
+    },
+    "ModelEventBusSubcontract": {
+      "additionalProperties": false,
+      "description": "Event Bus subcontract model for event communication functionality.\n\nComprehensive event bus subcontract providing event emission, routing,\nqueue management, and monitoring capabilities. Designed for composition\ninto node contracts requiring event-driven communication.\n\nStrict typing is enforced: No Any types allowed in implementation.",
+      "properties": {
+        "batch_size": {
+          "default": 100,
+          "description": "Number of events to process in a batch",
+          "maximum": 1000,
+          "minimum": 1,
+          "title": "Batch Size",
+          "type": "integer"
+        },
+        "batch_timeout_ms": {
+          "default": 5000,
+          "description": "Maximum time to wait for batch completion",
+          "maximum": 60000,
+          "minimum": 100,
+          "title": "Batch Timeout Ms",
+          "type": "integer"
+        },
+        "cache_max_size": {
+          "default": 100,
+          "description": "Maximum number of events to cache",
+          "maximum": 1000,
+          "minimum": 10,
+          "title": "Cache Max Size",
+          "type": "integer"
+        },
+        "correlation_id_propagation": {
+          "default": true,
+          "description": "Propagate correlation IDs to downstream events",
+          "title": "Correlation Id Propagation",
+          "type": "boolean"
+        },
+        "correlation_tracking": {
+          "default": true,
+          "description": "Enable correlation ID tracking across events",
+          "title": "Correlation Tracking",
+          "type": "boolean"
+        },
+        "default_event_patterns": {
+          "description": "Default event patterns if no other patterns can be determined",
+          "items": {
+            "type": "string"
+          },
+          "title": "Default Event Patterns",
+          "type": "array"
+        },
+        "detailed_metrics": {
+          "default": false,
+          "description": "Enable detailed event bus metrics",
+          "title": "Detailed Metrics",
+          "type": "boolean"
+        },
+        "dlq_topics": {
+          "description": "Dead-letter topic suffixes for inbound messages that cannot be routed to any handler. Read by the auto-wiring layer.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Dlq Topics",
+          "type": "array"
+        },
+        "enable_event_caching": {
+          "default": true,
+          "description": "Enable caching for frequently created events",
+          "title": "Enable Event Caching",
+          "type": "boolean"
+        },
+        "enable_event_logging": {
+          "default": true,
+          "description": "Enable structured logging for all events",
+          "title": "Enable Event Logging",
+          "type": "boolean"
+        },
+        "enable_event_retry": {
+          "default": true,
+          "description": "Enable retry logic for failed event publishing",
+          "title": "Enable Event Retry",
+          "type": "boolean"
+        },
+        "enable_event_validation": {
+          "default": true,
+          "description": "Validate events before publishing",
+          "title": "Enable Event Validation",
+          "type": "boolean"
+        },
+        "enable_introspection_events": {
+          "default": true,
+          "description": "Emit introspection events for service discovery",
+          "title": "Enable Introspection Events",
+          "type": "boolean"
+        },
+        "enable_lifecycle_events": {
+          "default": true,
+          "description": "Emit NODE_START, NODE_SUCCESS, NODE_FAILURE events",
+          "title": "Enable Lifecycle Events",
+          "type": "boolean"
+        },
+        "event_bus_type": {
+          "default": "hybrid",
+          "description": "Event bus type: memory, hybrid, or distributed",
+          "title": "Event Bus Type",
+          "type": "string"
+        },
+        "fail_fast_on_validation_errors": {
+          "default": true,
+          "description": "Fail immediately on event validation errors",
+          "title": "Fail Fast On Validation Errors",
+          "type": "boolean"
+        },
+        "fallback_to_node_name_patterns": {
+          "default": true,
+          "description": "Fall back to node name-based patterns if no contract patterns",
+          "title": "Fallback To Node Name Patterns",
+          "type": "boolean"
+        },
+        "log_event_payloads": {
+          "default": false,
+          "description": "Include event payloads in logs (may contain sensitive data)",
+          "title": "Log Event Payloads",
+          "type": "boolean"
+        },
+        "max_queue_size": {
+          "default": 10000,
+          "description": "Maximum number of events in queue",
+          "maximum": 100000,
+          "minimum": 100,
+          "title": "Max Queue Size",
+          "type": "integer"
+        },
+        "max_retry_attempts": {
+          "default": 3,
+          "description": "Maximum number of retry attempts",
+          "maximum": 10,
+          "minimum": 1,
+          "title": "Max Retry Attempts",
+          "type": "integer"
+        },
+        "metrics_enabled": {
+          "default": true,
+          "description": "Enable event bus metrics collection",
+          "title": "Metrics Enabled",
+          "type": "boolean"
+        },
+        "performance_monitoring": {
+          "default": true,
+          "description": "Enable event bus performance monitoring",
+          "title": "Performance Monitoring",
+          "type": "boolean"
+        },
+        "plugin_managed": {
+          "default": false,
+          "description": "Whether a domain plugin owns this contract's event-bus subscriptions. Generic auto-wiring must skip subscriber creation when enabled.",
+          "title": "Plugin Managed",
+          "type": "boolean"
+        },
+        "publish_topic_metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/ModelTopicMeta"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional metadata per publish topic suffix (keyed by suffix string)",
+          "title": "Publish Topic Metadata"
+        },
+        "publish_topics": {
+          "description": "Topic suffixes this node publishes to. Format: onex.{kind}.{producer}.{event-name}.v{n}",
+          "items": {
+            "type": "string"
+          },
+          "title": "Publish Topics",
+          "type": "array"
+        },
+        "queue_overflow_strategy": {
+          "default": "block",
+          "description": "Strategy when queue is full: block, drop_oldest, drop_newest",
+          "title": "Queue Overflow Strategy",
+          "type": "string"
+        },
+        "request_response": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelRequestResponseConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Request-response pattern configuration for RPC-style Kafka communication"
+        },
+        "retry_delay_ms": {
+          "default": 1000,
+          "description": "Delay between retry attempts in milliseconds",
+          "maximum": 30000,
+          "minimum": 100,
+          "title": "Retry Delay Ms",
+          "type": "integer"
+        },
+        "signed_ingress_topics": {
+          "description": "Subscribed topics that require a verified signed gateway envelope before dispatch.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Signed Ingress Topics",
+          "type": "array"
+        },
+        "subscribe_topic_metadata": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "$ref": "#/$defs/ModelTopicMeta"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional metadata per subscribe topic suffix (keyed by suffix string)",
+          "title": "Subscribe Topic Metadata"
+        },
+        "subscribe_topics": {
+          "description": "Topic suffixes this node subscribes to. Format: onex.{kind}.{producer}.{event-name}.v{n}",
+          "items": {
+            "type": "string"
+          },
+          "title": "Subscribe Topics",
+          "type": "array"
+        },
+        "use_contract_event_patterns": {
+          "default": true,
+          "description": "Extract event patterns from contract YAML first",
+          "title": "Use Contract Event Patterns",
+          "type": "boolean"
+        },
+        "version": {
+          "$ref": "#/$defs/ModelSemVer",
+          "description": "Model version (MUST be provided in YAML contract)"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "ModelEventBusSubcontract",
+      "type": "object"
+    },
+    "ModelExecutionOrderingPolicy": {
+      "additionalProperties": false,
+      "description": "Defines how handlers are ordered within execution phases.\n\nUsed by contract profiles to specify ordering behavior for handler execution.\nThe ordering policy determines how handlers are sorted within each phase.\n\nAttributes:\n    strategy: The ordering strategy to use (currently only topological_sort)\n    tie_breakers: List of tie-breaking criteria when ordering is ambiguous\n    deterministic_seed: Whether to use a fixed seed for deterministic ordering",
+      "properties": {
+        "deterministic_seed": {
+          "default": true,
+          "description": "Use fixed seed for deterministic ordering across runs",
+          "title": "Deterministic Seed",
+          "type": "boolean"
+        },
+        "strategy": {
+          "const": "topological_sort",
+          "default": "topological_sort",
+          "description": "Strategy for ordering handlers within phases",
+          "title": "Strategy",
+          "type": "string"
+        },
+        "strict_mode": {
+          "default": false,
+          "description": "When True, missing dependency references (handler:X, capability:Y, tag:Z) are treated as errors instead of warnings, making the execution plan invalid",
+          "title": "Strict Mode",
+          "type": "boolean"
+        },
+        "tie_breakers": {
+          "default": [
+            "priority",
+            "alphabetical"
+          ],
+          "description": "Tie-breaking criteria when ordering is ambiguous",
+          "items": {
+            "enum": [
+              "priority",
+              "alphabetical"
+            ],
+            "type": "string"
+          },
+          "title": "Tie Breakers",
+          "type": "array"
+        }
+      },
+      "title": "ModelExecutionOrderingPolicy",
+      "type": "object"
+    },
+    "ModelExecutionProfile": {
+      "additionalProperties": false,
+      "description": "Execution configuration embedded in contract profiles.\n\nDefines the execution phases and ordering policy for handler execution.\nEach profile type (orchestrator_safe, orchestrator_parallel, etc.) includes\nan execution field with this configuration.\n\nThis model is fully immutable:\n- Uses frozen=True to prevent attribute reassignment\n- Uses tuples instead of lists to prevent content mutation\n- Caches computed properties for performance\n\nAttributes:\n    phases: Tuple of execution phases in order. Each phase represents a\n        distinct stage in the handler execution lifecycle (e.g., preflight,\n        before, execute, after, emit, finalize).\n    ordering_policy: Policy for ordering handlers within phases. Controls\n        how handlers are sorted and executed within each phase.\n    nondeterministic_allowed_phases: Tuple of phase names where nondeterministic\n        effects (e.g., random values, current time) are permitted. Must be a\n        subset of the phases field.\n\nProperties:\n    phase_order: Cached immutable mapping (MappingProxyType) of phase names\n        to their position indices for efficient phase ordering lookups.\n\nExample:\n    >>> profile = ModelExecutionProfile(\n    ...     phases=(\"init\", \"execute\", \"cleanup\"),\n    ...     nondeterministic_allowed_phases=(\"execute\",),\n    ... )\n    >>> profile.phase_order\n    mappingproxy({'init': 0, 'execute': 1, 'cleanup': 2})\n    >>> \"execute\" in profile.nondeterministic_allowed_phases\n    True\n\nSee Also:\n    - OMN-1227: ProtocolConstraintValidator for SPI\n    - OMN-1292: Core Models for ProtocolConstraintValidator\n\n.. versionchanged:: 0.6.0\n    Added nondeterministic_allowed_phases and phase_order property (OMN-1292)\n\n.. versionchanged:: 0.6.1\n    Converted list fields to tuples for true immutability.\n    Added cached phase_order property for performance.\n    Enhanced validation for nondeterministic_allowed_phases (OMN-1292)",
+      "properties": {
+        "nondeterministic_allowed_phases": {
+          "default": [],
+          "description": "Phases where nondeterministic effects are permitted (immutable tuple)",
+          "items": {
+            "type": "string"
+          },
+          "title": "Nondeterministic Allowed Phases",
+          "type": "array"
+        },
+        "ordering_policy": {
+          "$ref": "#/$defs/ModelExecutionOrderingPolicy",
+          "description": "Policy for ordering handlers within phases"
+        },
+        "phases": {
+          "default": [
+            "preflight",
+            "before",
+            "execute",
+            "after",
+            "emit",
+            "finalize"
+          ],
+          "description": "Execution phases in order (immutable tuple)",
+          "items": {
+            "type": "string"
+          },
+          "title": "Phases",
+          "type": "array"
+        }
+      },
+      "title": "ModelExecutionProfile",
+      "type": "object"
+    },
+    "ModelHandlerBehavior": {
+      "additionalProperties": false,
+      "description": "Handler behavior configuration embedded in contracts.\n\nDefines runtime behavior characteristics for handlers including purity,\nidempotency, concurrency, isolation, and observability. This model is\npart of the three-layer architecture:\n\n1. **Profile** (ModelExecutionProfile): Resource allocation and execution\n   environment settings (CPU, memory, timeout defaults).\n2. **Behavior** (this model): Handler behavior configuration embedded\n   in contracts defining how the handler operates.\n3. **Contract** (ModelContractBase): Full declarative node specification\n   including I/O schemas, dependencies, and metadata.\n\nNode Archetype Semantics:\n    - **compute**: Pure data transformation, no side effects, cacheable\n    - **effect**: External I/O operations, side-effecting, requires isolation\n    - **reducer**: State aggregation, FSM-driven, intent-based transitions\n    - **orchestrator**: Workflow coordination, emits events/intents only\n\nPurity and Idempotency:\n    - **pure**: Function has no side effects, same input = same output\n    - **side_effecting**: Function may modify external state\n    - **idempotent**: Multiple identical calls produce same result\n\nConcurrency Policies:\n    - **parallel_ok**: Handler can run concurrently with itself\n    - **serialized**: Handler executes one at a time (default)\n    - **singleflight**: Deduplicate concurrent calls with same input\n\nIsolation Policies:\n    - **none**: No isolation, runs in same process (default)\n    - **process**: Runs in separate process\n    - **container**: Runs in isolated container\n    - **vm**: Runs in isolated virtual machine\n\nObservability Levels:\n    - **minimal**: Basic metrics only (latency, success/failure)\n    - **standard**: Metrics plus structured logging (default)\n    - **verbose**: Full tracing, detailed logs, performance profiling\n\nAttributes:\n    node_archetype: Architectural role of the handler (compute/effect/etc).\n    purity: Whether handler is pure or side-effecting.\n    idempotent: Whether handler is idempotent (safe to retry).\n    timeout_ms: Handler timeout in milliseconds (None = use profile default).\n    retry_policy: Retry configuration for transient failures.\n    circuit_breaker: Circuit breaker configuration for fault tolerance.\n    concurrency_policy: How concurrent handler invocations are managed.\n    isolation_policy: Process/container isolation level for handler.\n    observability_level: Telemetry verbosity for the handler.\n    capability_inputs: Required input capabilities (e.g., [\"http\", \"json\"]).\n    capability_outputs: Provided output capabilities (e.g., [\"event\", \"log\"]).\n\nExample:\n    >>> behavior = ModelHandlerBehavior(\n    ...     node_archetype=\"compute\",\n    ...     purity=\"pure\",\n    ...     idempotent=True,\n    ...     timeout_ms=5000,\n    ...     concurrency_policy=\"parallel_ok\",\n    ...     observability_level=\"standard\",\n    ... )\n\n    >>> # Effect handler with retry and circuit breaker\n    >>> effect_behavior = ModelHandlerBehavior(\n    ...     node_archetype=\"effect\",\n    ...     purity=\"side_effecting\",\n    ...     idempotent=True,  # Required for retry\n    ...     timeout_ms=30000,\n    ...     retry_policy=ModelDescriptorRetryPolicy(\n    ...         enabled=True,\n    ...         max_retries=3,\n    ...     ),\n    ...     circuit_breaker=ModelDescriptorCircuitBreaker(\n    ...         enabled=True,\n    ...         failure_threshold=5,\n    ...     ),\n    ... )\n\nSee Also:\n    - EnumNodeArchetype: Enum defining node archetype values\n    - ModelExecutionProfile: Profile layer for resource allocation\n    - ModelContractBase: Contract layer for full node specification",
+      "properties": {
+        "capability_inputs": {
+          "description": "Required input capabilities (e.g., ['http', 'json'])",
+          "items": {
+            "type": "string"
+          },
+          "title": "Capability Inputs",
+          "type": "array"
+        },
+        "capability_outputs": {
+          "description": "Provided output capabilities (e.g., ['event', 'log'])",
+          "items": {
+            "type": "string"
+          },
+          "title": "Capability Outputs",
+          "type": "array"
+        },
+        "circuit_breaker": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelDescriptorCircuitBreaker"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Circuit breaker configuration for fault tolerance"
+        },
+        "concurrency_policy": {
+          "default": "serialized",
+          "description": "How concurrent handler invocations are managed",
+          "enum": [
+            "parallel_ok",
+            "serialized",
+            "singleflight"
+          ],
+          "title": "Concurrency Policy",
+          "type": "string"
+        },
+        "idempotent": {
+          "default": false,
+          "description": "Whether handler is idempotent (safe to retry with same input)",
+          "title": "Idempotent",
+          "type": "boolean"
+        },
+        "isolation_policy": {
+          "default": "none",
+          "description": "Process/container isolation level for handler execution",
+          "enum": [
+            "none",
+            "process",
+            "container",
+            "vm"
+          ],
+          "title": "Isolation Policy",
+          "type": "string"
+        },
+        "node_archetype": {
+          "$ref": "#/$defs/EnumNodeArchetype",
+          "description": "Architectural role of the handler in the ONEX workflow"
+        },
+        "observability_level": {
+          "default": "standard",
+          "description": "Telemetry and logging verbosity for the handler",
+          "enum": [
+            "minimal",
+            "standard",
+            "verbose"
+          ],
+          "title": "Observability Level",
+          "type": "string"
+        },
+        "purity": {
+          "default": "side_effecting",
+          "description": "Whether handler is pure (no side effects) or side-effecting",
+          "enum": [
+            "pure",
+            "side_effecting"
+          ],
+          "title": "Purity",
+          "type": "string"
+        },
+        "retry_policy": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelDescriptorRetryPolicy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Retry configuration for handling transient failures"
+        },
+        "timeout_ms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Handler timeout in milliseconds (None = use profile default)",
+          "title": "Timeout Ms"
+        }
+      },
+      "required": [
+        "node_archetype"
+      ],
+      "title": "ModelHandlerBehavior",
+      "type": "object"
+    },
+    "ModelHandlerRef": {
+      "additionalProperties": false,
+      "description": "Reference to a handler class in a contract's handler_routing section.",
+      "properties": {
+        "module": {
+          "description": "Fully qualified module path",
+          "title": "Module",
+          "type": "string"
+        },
+        "name": {
+          "description": "Handler class name",
+          "title": "Name",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "module"
+      ],
+      "title": "ModelHandlerRef",
+      "type": "object"
+    },
+    "ModelHandlerRoutingEntry": {
+      "description": "Single handler routing entry in the canonical live routing shape (OMN-12547).",
+      "properties": {
+        "event_model": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelHandlerRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Event model reference (payload_type_match strategy)"
+        },
+        "event_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional contract-declared event_type alias (e.g. 'omnimarket.pr-lifecycle-orchestrator-start'). When present, the dispatcher is indexed under this wire-level string in addition to event_model.name, so publishers that set ModelEventEnvelope.event_type to the dot-path string resolve to the handler without needing the Python class name on the wire (OMN-9215). Also used as the pattern key for topic_pattern routing strategy.",
+          "title": "Event Type"
+        },
+        "handler": {
+          "$ref": "#/$defs/ModelHandlerRef",
+          "description": "Handler class reference"
+        },
+        "message_category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional per-handler message category override from contract YAML (EVENT, COMMAND, or INTENT). Required for mixed-topic contracts so command handlers do not inherit the category of the contract's first subscribed topic.",
+          "title": "Message Category"
+        },
+        "operation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Operation name (operation_match strategy)",
+          "title": "Operation"
+        },
+        "topic": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional per-entry subscribe topic that owns this route (OMN-14771). When present, RuntimeDispatch route resolution (routing_map_builder._resolve_owning_entry) uses this to map a single entry to its owning topic instead of failing closed on topic-agnostic multiplexed orchestrator entries. Additive and backward-compatible: existing entries omit it and default to None, leaving the legacy payload_type_match path (which resolves the topic from the contract's subscribe_topics list) unaffected.",
+          "title": "Topic"
+        }
+      },
+      "required": [
+        "handler"
+      ],
+      "title": "ModelHandlerRoutingEntry",
+      "type": "object"
+    },
+    "ModelHandlerRoutingSubcontract": {
+      "description": "Handler routing configuration subcontract.\n\nDefines contract-driven routing configuration for nodes that need to\ndispatch messages to specific handlers. This subcontract enables\nMixinHandlerRouting to make routing decisions based on YAML contract\nconfiguration rather than hardcoded logic.\n\nRouting Strategies:\n- payload_type_match: Route based on event payload model class name.\n  Used by ORCHESTRATOR nodes to dispatch events to appropriate handlers.\n- operation_match: Route based on operation field in the message.\n  Used by EFFECT nodes to dispatch to appropriate I/O handlers.\n- topic_pattern: Route based on glob pattern matching against topic.\n  Uses first-match-wins semantics: patterns (event_type field) are\n  evaluated in list order.\n\nExample YAML configuration:\n    handler_routing:\n      version:\n        major: 1\n        minor: 0\n        patch: 0\n      routing_strategy: payload_type_match\n      handlers:\n        - handler:\n            name: HandlerUserCreated\n            module: myapp.handlers.handler_user_created\n          event_model:\n            name: ModelUserCreatedEvent\n            module: myapp.models\n      default_handler: null\n\nStrict typing is enforced: No Any types allowed in implementation.",
+      "properties": {
+        "default_handler": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Default handler registry key to use when no routing entries match. If None, unmatched messages may raise an error or be ignored depending on node implementation",
+          "title": "Default Handler"
+        },
+        "handlers": {
+          "description": "List of handler routing entries defining routing rules. Entries are evaluated in list order.",
+          "items": {
+            "$ref": "#/$defs/ModelHandlerRoutingEntry"
+          },
+          "title": "Handlers",
+          "type": "array"
+        },
+        "routing_strategy": {
+          "$ref": "#/$defs/EnumHandlerRoutingStrategy",
+          "default": "payload_type_match",
+          "description": "Strategy for routing events to handlers"
+        },
+        "version": {
+          "$ref": "#/$defs/ModelSemVer",
+          "description": "Model version (MUST be provided in YAML contract)"
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "title": "ModelHandlerRoutingSubcontract",
+      "type": "object"
+    },
+    "ModelLifecycleConfig": {
+      "description": "EnumLifecycle management configuration for node initialization and cleanup.\n\nDefines initialization, error handling, state management and cleanup\npolicies for contract-driven lifecycle management.",
+      "properties": {
+        "cleanup_timeout_s": {
+          "default": 30,
+          "description": "Maximum time for node cleanup in seconds",
+          "minimum": 1,
+          "title": "Cleanup Timeout S",
+          "type": "integer"
+        },
+        "error_recovery_enabled": {
+          "default": true,
+          "description": "Enable automatic error recovery mechanisms",
+          "title": "Error Recovery Enabled",
+          "type": "boolean"
+        },
+        "health_check_interval_s": {
+          "default": 60,
+          "description": "Health check interval in seconds",
+          "minimum": 1,
+          "title": "Health Check Interval S",
+          "type": "integer"
+        },
+        "initialization_timeout_s": {
+          "default": 30,
+          "description": "Maximum time for node initialization in seconds",
+          "minimum": 1,
+          "title": "Initialization Timeout S",
+          "type": "integer"
+        },
+        "state_persistence_enabled": {
+          "default": false,
+          "description": "Enable state persistence across restarts",
+          "title": "State Persistence Enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "ModelLifecycleConfig",
+      "type": "object"
+    },
+    "ModelLlmEndpointConfig": {
+      "additionalProperties": false,
+      "description": "LLM endpoint URLs and model names declared in contract config.",
+      "properties": {
+        "coder_fast_model_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fast coder model name",
+          "title": "Coder Fast Model Name"
+        },
+        "coder_fast_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fast coder LLM endpoint URL",
+          "title": "Coder Fast Url"
+        },
+        "coder_model_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Primary coder model name",
+          "title": "Coder Model Name"
+        },
+        "coder_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Primary coder LLM endpoint URL",
+          "title": "Coder Url"
+        },
+        "deepseek_r1_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "DeepSeek R1 endpoint URL",
+          "title": "Deepseek R1 Url"
+        },
+        "gemini_api_key": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Gemini API key",
+          "title": "Gemini Api Key"
+        },
+        "glm_api_key": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "GLM API key",
+          "title": "Glm Api Key"
+        },
+        "glm_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "GLM endpoint URL",
+          "title": "Glm Url"
+        },
+        "openai_api_key": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "OpenAI API key",
+          "title": "Openai Api Key"
+        }
+      },
+      "title": "ModelLlmEndpointConfig",
+      "type": "object"
+    },
+    "ModelOperationalConfig": {
+      "additionalProperties": false,
+      "description": "Operational configuration: credentials and integration keys.",
+      "properties": {
+        "github_token": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "GitHub personal access token",
+          "title": "Github Token"
+        },
+        "linear_api_key": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linear API key",
+          "title": "Linear Api Key"
+        },
+        "linear_team_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linear team ID (string slug, e.g. 'OmniNode')",
+          "title": "Linear Team Id"
+        },
+        "slack_webhook_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Slack incoming webhook URL",
+          "title": "Slack Webhook Url"
+        }
+      },
+      "title": "ModelOperationalConfig",
+      "type": "object"
+    },
+    "ModelPerformanceRequirements": {
+      "description": "Performance SLA specifications for contract-driven behavior.\n\nDefines measurable performance targets and resource constraints\nfor runtime validation and optimization, including explicit timeout\nconfiguration fields that enable contract-driven timeout behavior\nacross the ONEX ecosystem.\n\nTimeout fields (OMN-1548):\n    database_query_timeout_ms: Timeout for individual database queries. Must be\n        <= single_operation_max_ms when both are set.\n    external_service_timeout_ms: Timeout for external service calls (APIs, etc.).\n    projection_reader_timeout_ms: Timeout for projection reader operations.\n    circuit_breaker_recovery_timeout_s: Circuit breaker recovery timeout in seconds.\n\nConstraint tension \u2014 single_operation_max_ms vs database_query_timeout_ms:\n    single_operation_max_ms has a minimum of 1ms (ge=1), while\n    database_query_timeout_ms has a minimum of 100ms (ge=100). When\n    single_operation_max_ms is set to any value in [1, 99], it becomes\n    impossible to also set database_query_timeout_ms because the smallest\n    valid value for that field (100ms) already exceeds the SLA. Any attempt\n    to assign database_query_timeout_ms in that state will raise a\n    ValidationError from the cross-field validator. This is intentional: a\n    sub-100ms single-operation SLA implies database queries are not expected\n    to be performed within the same operation boundary.",
+      "properties": {
+        "batch_operation_max_s": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum execution time for batch operations in seconds",
+          "title": "Batch Operation Max S"
+        },
+        "circuit_breaker_recovery_timeout_s": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Circuit breaker recovery timeout in seconds",
+          "title": "Circuit Breaker Recovery Timeout S"
+        },
+        "cpu_limit_percent": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum CPU usage percentage",
+          "title": "Cpu Limit Percent"
+        },
+        "database_query_timeout_ms": {
+          "anyOf": [
+            {
+              "minimum": 100,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Timeout for individual database queries in milliseconds",
+          "title": "Database Query Timeout Ms"
+        },
+        "external_service_timeout_ms": {
+          "anyOf": [
+            {
+              "minimum": 100,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Timeout for external service calls (APIs, etc.) in milliseconds",
+          "title": "External Service Timeout Ms"
+        },
+        "memory_limit_mb": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum memory usage in megabytes",
+          "title": "Memory Limit Mb"
+        },
+        "projection_reader_timeout_ms": {
+          "anyOf": [
+            {
+              "minimum": 100,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Timeout for projection reader operations in milliseconds",
+          "title": "Projection Reader Timeout Ms"
+        },
+        "single_operation_max_ms": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum execution time for single operation in milliseconds",
+          "title": "Single Operation Max Ms"
+        },
+        "throughput_min_ops_per_second": {
+          "anyOf": [
+            {
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Minimum throughput in operations per second",
+          "title": "Throughput Min Ops Per Second"
+        }
+      },
+      "title": "ModelPerformanceRequirements",
+      "type": "object"
+    },
+    "ModelProtocolDependency": {
+      "additionalProperties": false,
+      "description": "Protocol dependency declaration for contract-driven dependency injection.\n\nDeclares a protocol that a node requires from the DI container. At node\ninitialization, the framework resolves each declared protocol and binds\nit to the node's protocol namespace.\n\nImmutability:\n    This model uses frozen=True, making instances immutable after creation.\n    This enables safe sharing across threads without synchronization.\n\nExamples:\n    >>> dep = ModelProtocolDependency(\n    ...     name=\"ProtocolEventBus\",\n    ...     protocol=\"omnibase_core.protocols.protocol_event_bus:ProtocolEventBus\",\n    ... )\n    >>> dep.get_bind_name()\n    'event_bus'\n\n    >>> dep = ModelProtocolDependency(\n    ...     name=\"ProtocolLogger\",\n    ...     protocol=\"omnibase_core.protocols.protocol_logger:ProtocolLogger\",\n    ...     bind_as=\"log\",\n    ... )\n    >>> dep.get_bind_name()\n    'log'\n\nYAML Example:\n    .. code-block:: yaml\n\n        protocol_dependencies:\n          - name: ProtocolEventBus\n            protocol: omnibase_core.protocols.protocol_event_bus:ProtocolEventBus\n            required: true\n          - name: ProtocolLogger\n            protocol: omnibase_core.protocols.protocol_logger:ProtocolLogger\n            bind_as: log\n            required: false",
+      "properties": {
+        "bind_as": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bind As"
+        },
+        "lazy_import": {
+          "default": false,
+          "title": "Lazy Import",
+          "type": "boolean"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "protocol": {
+          "title": "Protocol",
+          "type": "string"
+        },
+        "required": {
+          "default": true,
+          "title": "Required",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "protocol"
+      ],
+      "title": "ModelProtocolDependency",
+      "type": "object"
+    },
+    "ModelPublishedEventEntry": {
+      "additionalProperties": false,
+      "description": "Simple published event entry for YAML contracts.\n\nONEX infra extension - used for contract-level event publishing declarations.\nDefines events that a node may publish during execution.\n\nExample YAML:\n    published_events:\n      - topic: \"jobs.events.created.v1\"\n        event_type: \"ModelEventJobCreated\"\n      - topic: \"jobs.events.completed.v1\"\n        event_type: \"ModelEventJobCompleted\"",
+      "properties": {
+        "event_type": {
+          "description": "Event type name",
+          "title": "Event Type",
+          "type": "string"
+        },
+        "topic": {
+          "description": "Topic pattern for event publishing",
+          "title": "Topic",
+          "type": "string"
+        }
+      },
+      "required": [
+        "topic",
+        "event_type"
+      ],
+      "title": "ModelPublishedEventEntry",
+      "type": "object"
+    },
+    "ModelReplyTopics": {
+      "additionalProperties": false,
+      "description": "Reply topic configuration for request-response patterns.\n\nDefines the topic suffixes used for publishing responses back to\nrequestors. Both completed and failed topic suffixes are required\nand must comply with ONEX topic naming conventions.\n\nStrict typing is enforced: No Any types allowed in implementation.",
+      "properties": {
+        "completed": {
+          "description": "Topic suffix for successful responses (ONEX naming convention required)",
+          "title": "Completed",
+          "type": "string"
+        },
+        "failed": {
+          "description": "Topic suffix for failure responses (ONEX naming convention required)",
+          "title": "Failed",
+          "type": "string"
+        }
+      },
+      "required": [
+        "completed",
+        "failed"
+      ],
+      "title": "ModelReplyTopics",
+      "type": "object"
+    },
+    "ModelRequestResponseConfig": {
+      "description": "Top-level configuration for request-response patterns.\n\nWraps a list of ModelRequestResponseInstance definitions that each specify\na complete request-response pattern configuration including request topic,\nreply topics, timeout settings, and other pattern-specific options.\n\nThe instances list must contain at least one instance - empty configurations\nare rejected to prevent silent no-op behavior.\n\nStrict typing is enforced: No Any types allowed in implementation.",
+      "properties": {
+        "instances": {
+          "description": "List of request-response pattern definitions (must not be empty)",
+          "items": {
+            "$ref": "#/$defs/ModelRequestResponseInstance"
+          },
+          "title": "Instances",
+          "type": "array"
+        }
+      },
+      "required": [
+        "instances"
+      ],
+      "title": "ModelRequestResponseConfig",
+      "type": "object"
+    },
+    "ModelRequestResponseInstance": {
+      "additionalProperties": false,
+      "description": "Configuration for a single request-response pattern instance.\n\nDefines the complete configuration for Kafka RPC-style request-response\ncommunication, including request/reply topics, correlation tracking,\ntimeout behavior, and consumer group strategies.\n\nStrict typing is enforced: No Any types allowed in implementation.",
+      "properties": {
+        "auto_offset_reset": {
+          "default": "earliest",
+          "description": "Kafka consumer offset reset policy when no committed offset exists",
+          "enum": [
+            "earliest",
+            "latest"
+          ],
+          "title": "Auto Offset Reset",
+          "type": "string"
+        },
+        "consumer_group_mode": {
+          "default": "per_instance",
+          "description": "Consumer group strategy: per_instance creates unique groups, shared uses common group",
+          "enum": [
+            "per_instance",
+            "shared"
+          ],
+          "title": "Consumer Group Mode",
+          "type": "string"
+        },
+        "correlation": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelCorrelationConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Correlation ID configuration. If None, uses body.correlation_id"
+        },
+        "name": {
+          "description": "Instance identifier for this request-response pattern",
+          "title": "Name",
+          "type": "string"
+        },
+        "reply_topics": {
+          "$ref": "#/$defs/ModelReplyTopics",
+          "description": "Topic suffixes for completed and failed responses"
+        },
+        "request_topic": {
+          "description": "Topic suffix for request messages (ONEX naming convention required)",
+          "title": "Request Topic",
+          "type": "string"
+        },
+        "timeout_seconds": {
+          "default": 30,
+          "description": "Response timeout in seconds",
+          "minimum": 1,
+          "title": "Timeout Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "request_topic",
+        "reply_topics"
+      ],
+      "title": "ModelRequestResponseInstance",
+      "type": "object"
+    },
+    "ModelSemVer": {
+      "description": "Semantic version model following SemVer 2.0.0 specification.\n\nFull SemVer format: MAJOR.MINOR.PATCH[-prerelease][+build]\n\nPreferred usage (structured format):\n    >>> version = ModelSemVer(major=0, minor=4, patch=0)\n    >>> assert str(version) == \"0.4.0\"\n    >>> assert version.major == 0 and version.minor == 4\n\nWith prerelease and build metadata:\n    >>> version = ModelSemVer(major=1, minor=0, patch=0, prerelease=(\"alpha\", 1))\n    >>> assert str(version) == \"1.0.0-alpha.1\"\n    >>> assert version.is_prerelease() is True\n\nFor parsing external input, use the parse() class method:\n    >>> version = ModelSemVer.parse(\"1.0.0-alpha.1+build.123\")\n    >>> assert version.prerelease == (\"alpha\", 1)\n    >>> assert version.build == (\"build\", \"123\")\n\nPrecedence rules (per SemVer spec):\n    - prerelease < no prerelease (1.0.0-alpha < 1.0.0)\n    - Numeric identifiers < alphanumeric (1.0.0-1 < 1.0.0-alpha)\n    - Build metadata is IGNORED for precedence\n\nNote:\n    String version literals like \"1.0.0\" are deprecated.\n    Always use structured format: ModelSemVer(major=X, minor=Y, patch=Z)\n\n    This model is frozen (immutable) and hashable, suitable for use as dict\n    keys or in sets. Hash is based on major, minor, patch, and prerelease;\n    build metadata is excluded (see __hash__ docstring for details).",
+      "properties": {
+        "build": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Build metadata identifiers (ignored for precedence)",
+          "title": "Build"
+        },
+        "major": {
+          "description": "Major version number",
+          "minimum": 0,
+          "title": "Major",
+          "type": "integer"
+        },
+        "minor": {
+          "description": "Minor version number",
+          "minimum": 0,
+          "title": "Minor",
+          "type": "integer"
+        },
+        "patch": {
+          "description": "Patch version number",
+          "minimum": 0,
+          "title": "Patch",
+          "type": "integer"
+        },
+        "prerelease": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Prerelease identifiers (dot-separated in string form)",
+          "title": "Prerelease"
+        }
+      },
+      "required": [
+        "major",
+        "minor",
+        "patch"
+      ],
+      "title": "ModelSemVer",
+      "type": "object"
+    },
+    "ModelStorageConfig": {
+      "additionalProperties": false,
+      "description": "Storage connection parameters declared in contract config.",
+      "properties": {
+        "kafka_bootstrap_servers": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Kafka bootstrap servers",
+          "title": "Kafka Bootstrap Servers"
+        },
+        "postgres_database": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "PostgreSQL database name",
+          "title": "Postgres Database"
+        },
+        "postgres_host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "PostgreSQL host",
+          "title": "Postgres Host"
+        },
+        "postgres_password": {
+          "anyOf": [
+            {
+              "format": "password",
+              "type": "string",
+              "writeOnly": true
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "PostgreSQL password",
+          "title": "Postgres Password"
+        },
+        "postgres_port": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "PostgreSQL port",
+          "title": "Postgres Port"
+        },
+        "postgres_user": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "PostgreSQL user",
+          "title": "Postgres User"
+        },
+        "redpanda_admin_host": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Redpanda admin host",
+          "title": "Redpanda Admin Host"
+        },
+        "redpanda_admin_port": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Redpanda admin port",
+          "title": "Redpanda Admin Port"
+        }
+      },
+      "title": "ModelStorageConfig",
+      "type": "object"
+    },
+    "ModelTopicMeta": {
+      "additionalProperties": false,
+      "description": "Metadata for a topic subscription/publication.\n\nProvides optional metadata for topics declared in publish_topics\nand subscribe_topics fields, keyed by the topic suffix string.\nThis is an extension point for future schema validation and\ndocumentation generation.",
+      "properties": {
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Human-readable description of this topic's purpose",
+          "title": "Description"
+        },
+        "schema_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference to the Pydantic model for this topic's payload",
+          "title": "Schema Ref"
+        },
+        "topic_config": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ModelTopicProvisioningConfig"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional per-topic provisioning config (partitions, replication_factor, kafka_config). None defers to the platform ModelTopicSpec defaults."
+        }
+      },
+      "title": "ModelTopicMeta",
+      "type": "object"
+    },
+    "ModelTopicProvisioningConfig": {
+      "additionalProperties": false,
+      "description": "Optional per-topic provisioning config carried on a topic declaration.\n\nDeclared per topic suffix via :class:`ModelTopicMeta.topic_config`. Every\nfield is optional; an absent field (``None``) defers to the platform\n``ModelTopicSpec`` defaults at provisioning time.",
+      "properties": {
+        "kafka_config": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Optional Kafka topic config overrides (e.g. {\"cleanup.policy\": \"compact\", \"retention.ms\": \"604800000\"}). None defers to the platform ModelTopicSpec default (no overrides).",
+          "title": "Kafka Config"
+        },
+        "partitions": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Partition count for this topic. None defers to the platform ModelTopicSpec default.",
+          "title": "Partitions"
+        },
+        "replication_factor": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Replication factor for this topic. None defers to the platform ModelTopicSpec default.",
+          "title": "Replication Factor"
+        }
+      },
+      "title": "ModelTopicProvisioningConfig",
+      "type": "object"
+    },
+    "ModelValidationRules": {
+      "description": "Contract validation rules and constraint definitions.\n\nDefines runtime validation rules for input/output models,\nconfiguration constraints, and compliance checking.",
+      "properties": {
+        "constraint_definitions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Custom constraint definitions for validation",
+          "title": "Constraint Definitions",
+          "type": "object"
+        },
+        "input_validation_enabled": {
+          "default": true,
+          "description": "Enable input model validation",
+          "title": "Input Validation Enabled",
+          "type": "boolean"
+        },
+        "output_validation_enabled": {
+          "default": true,
+          "description": "Enable output model validation",
+          "title": "Output Validation Enabled",
+          "type": "boolean"
+        },
+        "performance_validation_enabled": {
+          "default": true,
+          "description": "Enable performance requirement validation",
+          "title": "Performance Validation Enabled",
+          "type": "boolean"
+        },
+        "strict_typing_enabled": {
+          "default": true,
+          "description": "Enforce strict type checking for all operations",
+          "title": "Strict Typing Enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "ModelValidationRules",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "node_type": {
+            "enum": [
+              "REDUCER_GENERIC",
+              "ORCHESTRATOR_GENERIC",
+              "GATEWAY",
+              "VALIDATOR",
+              "WORKFLOW"
+            ]
+          },
+          "placement": {
+            "properties": {
+              "mode": {
+                "const": "any"
+              }
+            },
+            "required": [
+              "mode"
+            ]
+          }
+        },
+        "required": [
+          "node_type",
+          "placement"
+        ]
+      },
+      "then": {
+        "properties": {
+          "placement": {
+            "properties": {
+              "state": {
+                "properties": {
+                  "store": {
+                    "const": "none"
+                  }
+                },
+                "required": [
+                  "store"
+                ],
+                "type": "object"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "description": "Abstract base for 4-node architecture contract models.\n\nProvides common contract fields, node type classification,\nand foundational configuration for all specialized contract models.\n\nStrict typing is enforced: No Any types allowed in implementation.\n\nONEX Infrastructure Extensions\n------------------------------\nThis class includes extension fields for contract-level event routing and\nhandler configuration (added in OMN-1588). These fields enable downstream\ninfrastructure to read event subscriptions and publishing declarations\ndirectly from YAML contracts without requiring field stripping.\n\n**When to use each field:**\n\n- ``handler_routing``: Use when a node needs to dispatch messages to\n  different handlers based on payload type, operation, or topic pattern.\n  Common for ORCHESTRATOR nodes that route events to specific handlers.\n\n- ``yaml_consumed_events``: Use to declare which event types a node subscribes to.\n  Enables infrastructure to auto-configure event subscriptions from contracts.\n  Note: Named with ``yaml_`` prefix to avoid collision with\n  ``ModelContractOrchestrator.consumed_events`` which uses a different type.\n\n- ``yaml_published_events``: Use to declare which events a node may publish.\n  Enables infrastructure to validate event schemas and configure topics.\n  Note: Named with ``yaml_`` prefix to avoid collision with\n  ``ModelContractOrchestrator.published_events`` which uses a different type.\n\n**Example YAML contract with all extension fields:**\n\n.. code-block:: yaml\n\n    name: node_job_orchestrator\n    contract_version: {major: 1, minor: 0, patch: 0}\n    description: Job orchestration node\n    node_type: orchestrator\n\n    # Handler routing configuration\n    handler_routing:\n      version: {major: 1, minor: 0, patch: 0}\n      routing_strategy: payload_type_match\n      handlers:\n        - routing_key: ModelEventJobCreated\n          handler_key: handle_job_created\n          priority: 0\n      default_handler: handle_unknown\n\n    # Events this node consumes (string shorthand)\n    yaml_consumed_events:\n      - \"jobs.events.created.v1\"\n      - \"jobs.events.completed.v1\"\n\n    # Events this node publishes\n    yaml_published_events:\n      - topic: \"jobs.events.started.v1\"\n        event_type: ModelEventJobStarted",
+  "properties": {
+    "annotations": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Non-load-bearing operational annotations preserved from legacy contract corpus.",
+      "title": "Annotations"
+    },
+    "author": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Contract author information",
+      "title": "Author"
+    },
+    "behavior": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelHandlerBehavior"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Handler behavior configuration defining purity, idempotency, concurrency, isolation, and observability. Set when created via profile factory, None for manually created contracts."
+    },
+    "behavior_spec": {
+      "$ref": "#/$defs/ModelContractBehaviorSpec",
+      "description": "Behavioral execution profile: concurrency cap, execution timeout, retry policy, and idempotency flag."
+    },
+    "concurrency": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelConcurrencyContractSpec"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Contract-level concurrency cap and optional coupling to model-registry concurrency limits. None means the runtime uses its default (serialized dispatch) for this node."
+    },
+    "config": {
+      "$ref": "#/$defs/ModelContractConfig",
+      "description": "Strongly typed static node configuration declared in the contract. Read by nodes via self.contract.config; never falls back to env vars."
+    },
+    "contract_version": {
+      "$ref": "#/$defs/ModelSemVer",
+      "description": "Contract schema version following SemVer specification (ONEX spec: contract_version)"
+    },
+    "dependencies": {
+      "description": "Required protocol dependencies with structured specification",
+      "items": {
+        "$ref": "#/$defs/ModelDependency"
+      },
+      "maxItems": 100,
+      "title": "Dependencies",
+      "type": "array"
+    },
+    "description": {
+      "description": "Human-readable contract description",
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "documentation_url": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "URL to detailed contract documentation",
+      "title": "Documentation Url"
+    },
+    "dod_evidence": {
+      "description": "Structured Definition of Done evidence items. Each entry declares an evidence type and a check that must pass before a ticket touching this contract can be marked Done.",
+      "items": {
+        "$ref": "#/$defs/ModelDodEvidence"
+      },
+      "title": "Dod Evidence",
+      "type": "array"
+    },
+    "event_bus": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelEventBusSubcontract"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Event-bus subscriptions, publications, and dead-letter topics. Read by the runtime host to wire Kafka consumers and by auto-wiring for DLQ routing."
+    },
+    "execution": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelExecutionProfile"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Execution profile defining phases and ordering policy. Set when created via profile factory, None for manually created contracts."
+    },
+    "feature_flags": {
+      "description": "Feature flags declared by this contract. Extracted during introspection and surfaced in the registry API.",
+      "items": {
+        "$ref": "#/$defs/ModelContractFeatureFlag"
+      },
+      "title": "Feature Flags",
+      "type": "array"
+    },
+    "golden_path": {
+      "description": "Ordered list of verification steps that prove this contract's pipeline works end-to-end. Each entry is a human-readable step (e.g., 'emit event to onex.evt.foo.v1', 'verify row in llm_cost_aggregates'). Used by golden chain sweeps and platform readiness checks.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Golden Path",
+      "type": "array"
+    },
+    "handler_routing": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelHandlerRoutingSubcontract"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Handler routing configuration defining how messages are routed to handlers based on payload type, operation, or topic pattern. ONEX infra extension for contract-driven handler dispatch. Accepts ModelHandlerRoutingSubcontract instance or equivalent dict from YAML."
+    },
+    "input_model": {
+      "description": "Fully qualified input model class name",
+      "minLength": 1,
+      "title": "Input Model",
+      "type": "string"
+    },
+    "intent_consumption": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelContractIntentConsumption"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Intent-type to effect-node routing. Read by the intent routing loader when wiring intent executors."
+    },
+    "leases": {
+      "description": "Lease kinds registered by this node; each requires kind and max_ttl_s.",
+      "items": {
+        "$ref": "#/$defs/ModelContractLease"
+      },
+      "title": "Leases",
+      "type": "array"
+    },
+    "lifecycle": {
+      "$ref": "#/$defs/ModelLifecycleConfig",
+      "description": "EnumLifecycle management configuration"
+    },
+    "mcp": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelContractMcpConfig"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "MCP tool exposure. Read by the MCP adapter when scanning contracts for AI-invocable tools."
+    },
+    "name": {
+      "description": "Unique contract name for identification",
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "node_type": {
+      "$ref": "#/$defs/EnumNodeType",
+      "description": "Node type classification for 4-node architecture"
+    },
+    "node_version": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelSemVer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Node implementation version. Tracks the version of the node that implements this contract, separate from the contract schema version."
+    },
+    "output_model": {
+      "description": "Fully qualified output model class name",
+      "minLength": 1,
+      "title": "Output Model",
+      "type": "string"
+    },
+    "performance": {
+      "$ref": "#/$defs/ModelPerformanceRequirements",
+      "description": "Performance SLA specifications"
+    },
+    "placement": {
+      "$ref": "#/$defs/ModelContractPlacement",
+      "description": "Runtime placement. Defaults to primary for ORCHESTRATOR and REDUCER and any for EFFECT and COMPUTE. Consumer groups are derived by the runtime."
+    },
+    "protocol_dependencies": {
+      "description": "Protocol dependencies to be injected via contract-driven DI. Each dependency specifies a protocol to resolve from the container and bind to self.protocols namespace.",
+      "items": {
+        "$ref": "#/$defs/ModelProtocolDependency"
+      },
+      "title": "Protocol Dependencies",
+      "type": "array"
+    },
+    "protocol_interfaces": {
+      "description": "Protocol interfaces implemented by this contract",
+      "items": {
+        "type": "string"
+      },
+      "title": "Protocol Interfaces",
+      "type": "array"
+    },
+    "skill_surface": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelContractSkillSurface"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Agent Skills surface of a node from which a shim skill is rendered. Read by the shim skill render node (OMN-21373)."
+    },
+    "tags": {
+      "description": "Contract classification tags",
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "validation_rules": {
+      "$ref": "#/$defs/ModelValidationRules",
+      "description": "Contract validation rules and constraints"
+    },
+    "yaml_consumed_events": {
+      "description": "Events consumed by this node. ONEX infra extension for event subscriptions. Supports multiple input formats: (1) String list: ['event.type.v1'] - auto-converted to entries with event_type; (2) Dict list: [{event_type: '...', handler_function: '...'}] - full specification; (3) ModelConsumedEventEntry instances - passed through directly. Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
+      "items": {
+        "$ref": "#/$defs/ModelConsumedEventEntry"
+      },
+      "title": "Yaml Consumed Events",
+      "type": "array"
+    },
+    "yaml_published_events": {
+      "description": "Events published by this node. ONEX infra extension for event publishing declarations. Supports multiple input formats: (1) String list: ['topic.v1'] - auto-converted using string as both topic and event_type; (2) Dict list: [{topic: '...', event_type: '...'}] - full specification; (3) ModelPublishedEventEntry instances - passed through directly. Named with yaml_ prefix to avoid collision with ModelContractOrchestrator fields.",
+      "items": {
+        "$ref": "#/$defs/ModelPublishedEventEntry"
+      },
+      "title": "Yaml Published Events",
+      "type": "array"
+    }
+  },
+  "required": [
+    "name",
+    "contract_version",
+    "description",
+    "node_type",
+    "input_model",
+    "output_model"
+  ],
+  "title": "ModelContractBase",
+  "type": "object"
+}

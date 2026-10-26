@@ -12,7 +12,7 @@ import socket
 import sys
 from collections.abc import Iterable
 from pathlib import Path
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING
 
 import click
 
@@ -919,9 +919,7 @@ def register_lazy_cli_extensions(
     return attached
 
 
-register_lazy_cli_extensions(
-    cast(_LazyCoreCommandGroup, cli), _entry_points(group=_CLI_EXTENSION_GROUP)
-)
+register_lazy_cli_extensions(cli, _entry_points(group=_CLI_EXTENSION_GROUP))
 
 if __name__ == "__main__":
     cli()
