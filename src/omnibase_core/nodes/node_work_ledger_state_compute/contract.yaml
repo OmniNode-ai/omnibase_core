@@ -13,7 +13,7 @@
 name: node_work_ledger_state_compute
 node_id: node_work_ledger_state_compute
 node_type: compute
-node_version: {major: 1, minor: 1, patch: 0}
+node_version: {major: 1, minor: 2, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 
 description: >

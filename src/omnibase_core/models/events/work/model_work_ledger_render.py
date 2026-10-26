@@ -463,6 +463,8 @@ def _correction_cells(event: ModelWorkCorrectionRecorded) -> list[str]:
     if event.corrects_legacy_ts is not None:
         key = "corrects-legacy" if event.corrects is not None else "corrects"
         cells.append(f"{key}={_text(event.corrects_legacy_ts)}")
+    if event.operator_span is not None:
+        cells.append(f"operator_span={_text(event.operator_span)}")
     return cells
 
 
@@ -474,6 +476,8 @@ def _ruling_cells(
         cells.append(f"amends={event.amends}")
     if event.supersedes is not None:
         cells.append(f"supersedes={event.supersedes}")
+    if event.extends is not None:
+        cells.append(f"extends={event.extends}")
     if event.goal_revision_resolution is not None:
         resolution = event.goal_revision_resolution
         competing = ",".join(
@@ -517,6 +521,12 @@ def _consent_cells(
     event: ModelWorkOperatorConsentRecorded, index: Mapping[uuid.UUID, ModelWorkEvent]
 ) -> list[str]:
     cells = _ticket(event.ticket_id)
+    if event.amends is not None:
+        cells.append(f"amends={event.amends}")
+    if event.supersedes is not None:
+        cells.append(f"supersedes={event.supersedes}")
+    if event.extends is not None:
+        cells.append(f"extends={event.extends}")
     if event.approved_by is not None:
         cells.append(f"approved_by={event.approved_by}")
     cells.extend(_answers_cells(event.answers, index))

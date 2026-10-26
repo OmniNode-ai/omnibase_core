@@ -11,7 +11,10 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from omnibase_core.enums.enum_work_event_kind import EnumWorkEventKind
-from omnibase_core.models.events.work.model_work_event_base import ModelWorkEventBase
+from omnibase_core.models.events.work.model_work_event_base import (
+    SUMMARY_MAX_LENGTH,
+    ModelWorkEventBase,
+)
 
 __all__ = ["ModelWorkCorrectionRecorded"]
 
@@ -31,6 +34,16 @@ class ModelWorkCorrectionRecorded(ModelWorkEventBase):
         min_length=1,
         max_length=64,
         description="Timestamp of the legacy markdown row this corrects. Display only.",
+    )
+    operator_span: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=SUMMARY_MAX_LENGTH,
+        exclude_if=lambda value: value is None,
+        description=(
+            "The exact span of the operator's words the correction concerns, "
+            "when it concerns one. Never read by a checker."
+        ),
     )
 
     @model_validator(mode="after")
