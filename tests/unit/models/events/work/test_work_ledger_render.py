@@ -779,6 +779,26 @@ def test_correction_naming_nothing_is_refused() -> None:
         render_ledger_row(correction, {})
 
 
+def test_relationship_cells_render_on_ruling_consent_and_correction() -> None:
+    """OMN-21107 (TA.5): the relationship fields the fold reads reach the md row."""
+    index = index_events(_all_events())
+    ruling = _ruling().model_copy(update={"extends": _id(98)})
+    assert " | extends=00000000-0000-4000-8000-000000000098 | " in render_ledger_row(
+        ruling, index
+    )
+    consent = _consent().model_copy(
+        update={"amends": _id(97), "supersedes": RULING_ID, "extends": _id(96)}
+    )
+    consent_row = render_ledger_row(consent, index)
+    assert f" | amends={_id(97)} | supersedes={RULING_ID} | extends={_id(96)} | " in (
+        consent_row
+    )
+    correction = _correction().model_copy(update={"operator_span": "the wrong | head"})
+    assert " | operator_span=the wrong \N{BROKEN BAR} head" in render_ledger_row(
+        correction, index
+    )
+
+
 def test_claim_without_a_worktree_renders_worktree_none() -> None:
     event = _claim().model_copy(update={"worktree": None})
     row = render_ledger_row(event, index_events(_all_events()))

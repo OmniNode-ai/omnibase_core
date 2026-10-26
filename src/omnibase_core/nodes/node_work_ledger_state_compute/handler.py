@@ -27,6 +27,15 @@ Fold semantics, all set-based so the result does not depend on line order:
   names it, else OPEN. ANSWERED outranks WITHDRAWN. An answer or withdrawal
   naming an unknown event_id or a non-question answers or withdraws nothing and
   is listed.
+- A ruling or consent with ``supersedes`` closes its target: the target, which
+  must itself be a ruling or a consent, is no longer open and lists its
+  superseder. ``amends`` and ``extends`` link to a ruling-or-consent target
+  without closing it. A correction (``work.correction.recorded``) with
+  ``corrects`` links to a target of ANY kind, carries its ``operator_span`` on
+  the link, and never closes anything; a correction naming only
+  ``corrects_legacy_ts`` creates nothing. A reference naming an unknown
+  event_id, or a non-ruling where a ruling is required, creates no link,
+  closes nothing and is listed.
 - Identical duplicate event_ids count once. A duplicate event_id with
   different content makes the ledger UNDECIDED.
 - An unparseable line (including an unknown schema or kind) or a ledger with no
@@ -46,14 +55,21 @@ from datetime import datetime
 from omnibase_core.enums.enum_invalid_question_ref_reason import (
     EnumInvalidQuestionRefReason,
 )
+from omnibase_core.enums.enum_invalid_relationship_reason import (
+    EnumInvalidRelationshipReason,
+)
 from omnibase_core.enums.enum_invalid_release_reason import EnumInvalidReleaseReason
 from omnibase_core.enums.enum_question_status import EnumQuestionStatus
+from omnibase_core.enums.enum_work_ledger_relation import EnumWorkLedgerRelation
 from omnibase_core.errors.error_work_ledger_parse import WorkLedgerParseError
 from omnibase_core.models.events.work.model_work_claim_released import (
     ModelWorkClaimReleased,
 )
 from omnibase_core.models.events.work.model_work_claim_requested import (
     ModelWorkClaimRequested,
+)
+from omnibase_core.models.events.work.model_work_correction_recorded import (
+    ModelWorkCorrectionRecorded,
 )
 from omnibase_core.models.events.work.model_work_event_union import ModelWorkEvent
 from omnibase_core.models.events.work.model_work_goal_revised import (
@@ -95,11 +111,17 @@ from omnibase_core.models.events.work.model_work_result_recorded import (
 from omnibase_core.models.events.work.model_work_ruling_recorded import (
     ModelWorkRulingRecorded,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_corrected_event import (
+    ModelCorrectedEvent,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_invalid_question_ref import (
     ModelInvalidQuestionRef,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_invalid_relationship_ref import (
+    ModelInvalidRelationshipRef,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_invalid_release import (
     ModelInvalidRelease,
@@ -107,8 +129,14 @@ from omnibase_core.models.nodes.work_ledger_state.model_invalid_release import (
 from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
     ModelQuestionState,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_ruling_state import (
+    ModelRulingState,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input import (
     ModelWorkLedgerFoldInput,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_link import (
+    ModelWorkLedgerLink,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_state import (
     ModelWorkLedgerState,
@@ -221,6 +249,126 @@ def _fold_questions(
             )
         )
     return tuple(states), tuple(invalid)
+
+
+_RulingLike = ModelWorkRulingRecorded | ModelWorkOperatorConsentRecorded
+
+
+def _fold_relationships(
+    distinct: Sequence[ModelWorkEvent], by_id: dict[uuid.UUID, ModelWorkEvent]
+) -> tuple[
+    tuple[ModelRulingState, ...],
+    tuple[ModelWorkLedgerLink, ...],
+    tuple[ModelCorrectedEvent, ...],
+    tuple[ModelInvalidRelationshipRef, ...],
+]:
+    """Each ruling's state, the valid links, the corrected events and the refusals.
+
+    ``distinct`` is sorted by event_id; every result is sorted as the state
+    model documents, so the fold stays a function of the event set.
+    """
+    links: list[ModelWorkLedgerLink] = []
+    invalid: list[ModelInvalidRelationshipRef] = []
+    corrections: dict[uuid.UUID, list[ModelWorkCorrectionRecorded]] = {}
+
+    def _refer(
+        source: uuid.UUID,
+        target_id: uuid.UUID,
+        relation: EnumWorkLedgerRelation,
+        operator_span: str | None = None,
+    ) -> bool:
+        target = by_id.get(target_id)
+        reason: EnumInvalidRelationshipReason | None = None
+        if target is None:
+            reason = EnumInvalidRelationshipReason.UNKNOWN_TARGET
+        elif relation is not EnumWorkLedgerRelation.CORRECTS and not isinstance(
+            target, _RulingLike
+        ):
+            reason = EnumInvalidRelationshipReason.NOT_A_RULING
+        if reason is not None:
+            invalid.append(
+                ModelInvalidRelationshipRef(
+                    referrer=source, target=target_id, relation=relation, reason=reason
+                )
+            )
+            return False
+        links.append(
+            ModelWorkLedgerLink(
+                source=source,
+                target=target_id,
+                relation=relation,
+                operator_span=operator_span,
+            )
+        )
+        return True
+
+    for event in distinct:
+        if isinstance(event, _RulingLike):
+            for relation, target_id in (
+                (EnumWorkLedgerRelation.SUPERSEDES, event.supersedes),
+                (EnumWorkLedgerRelation.AMENDS, event.amends),
+                (EnumWorkLedgerRelation.EXTENDS, event.extends),
+            ):
+                if target_id is not None:
+                    _refer(event.event_id, target_id, relation)
+        elif isinstance(event, ModelWorkCorrectionRecorded) and event.corrects:
+            if _refer(
+                event.event_id,
+                event.corrects,
+                EnumWorkLedgerRelation.CORRECTS,
+                event.operator_span,
+            ):
+                corrections.setdefault(event.corrects, []).append(event)
+
+    sources: dict[tuple[uuid.UUID, EnumWorkLedgerRelation], list[uuid.UUID]] = {}
+    for link in links:
+        sources.setdefault((link.target, link.relation), []).append(link.source)
+
+    def _named_by(
+        target: uuid.UUID, relation: EnumWorkLedgerRelation
+    ) -> tuple[uuid.UUID, ...]:
+        return tuple(sorted(sources.get((target, relation), ()), key=str))
+
+    rulings = tuple(
+        ModelRulingState(
+            ruling=event,
+            is_open=not _named_by(event.event_id, EnumWorkLedgerRelation.SUPERSEDES),
+            superseded_by=_named_by(event.event_id, EnumWorkLedgerRelation.SUPERSEDES),
+            amended_by=_named_by(event.event_id, EnumWorkLedgerRelation.AMENDS),
+            extended_by=_named_by(event.event_id, EnumWorkLedgerRelation.EXTENDS),
+            corrected_by=_named_by(event.event_id, EnumWorkLedgerRelation.CORRECTS),
+        )
+        for event in distinct
+        if isinstance(event, _RulingLike)
+    )
+    corrected = tuple(
+        ModelCorrectedEvent(
+            target=target_id,
+            target_kind=by_id[target_id].kind,
+            corrected_by=tuple(sorted(found, key=_by_id)),
+        )
+        for target_id, found in sorted(corrections.items(), key=lambda kv: str(kv[0]))
+    )
+    return (
+        rulings,
+        tuple(
+            sorted(
+                links,
+                key=lambda lk: (str(lk.source), lk.relation.value, str(lk.target)),
+            )
+        ),
+        corrected,
+        tuple(
+            sorted(
+                invalid,
+                key=lambda ref: (
+                    str(ref.referrer),
+                    ref.relation.value,
+                    str(ref.target),
+                ),
+            )
+        ),
+    )
 
 
 def fold_work_events(
@@ -496,6 +644,9 @@ def fold_work_events(
             closed_claims.add(claim_id)
 
     questions, invalid_question_refs = _fold_questions(distinct, by_id)
+    rulings, links, corrected_events, invalid_relationship_refs = _fold_relationships(
+        distinct, by_id
+    )
 
     if not epochs:
         reasons.add(NO_EPOCH_REASON)
@@ -524,6 +675,10 @@ def fold_work_events(
         acks=tuple(e for e in distinct if isinstance(e, ModelWorkMessageAcked)),
         questions=questions,
         invalid_question_refs=invalid_question_refs,
+        rulings=rulings,
+        links=links,
+        corrected_events=corrected_events,
+        invalid_relationship_refs=invalid_relationship_refs,
     )
 
 

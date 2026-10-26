@@ -31,17 +31,29 @@ from omnibase_core.models.events.work.model_work_message_sent import (
 from omnibase_core.models.events.work.model_work_ruling_recorded import (
     ModelWorkRulingRecorded,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_corrected_event import (
+    ModelCorrectedEvent,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
     ModelHoldInForce,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_invalid_question_ref import (
     ModelInvalidQuestionRef,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_invalid_relationship_ref import (
+    ModelInvalidRelationshipRef,
+)
 from omnibase_core.models.nodes.work_ledger_state.model_invalid_release import (
     ModelInvalidRelease,
 )
 from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
     ModelQuestionState,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_ruling_state import (
+    ModelRulingState,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_link import (
+    ModelWorkLedgerLink,
 )
 
 __all__ = ["ModelWorkLedgerState"]
@@ -112,6 +124,33 @@ class ModelWorkLedgerState(BaseModel):
         description=(
             "Answer and withdrawal references that name no question, sorted by the "
             "referring event_id and then the target."
+        ),
+    )
+    rulings: tuple[ModelRulingState, ...] = Field(
+        default=(),
+        description=(
+            "Every ruling and consent with whether it is open and what supersedes, "
+            "amends, extends or corrects it, sorted by the event's event_id."
+        ),
+    )
+    links: tuple[ModelWorkLedgerLink, ...] = Field(
+        default=(),
+        description=(
+            "Every valid relationship link, sorted by source, relation and target."
+        ),
+    )
+    corrected_events: tuple[ModelCorrectedEvent, ...] = Field(
+        default=(),
+        description=(
+            "Every corrected event with the corrections naming it, of any kind, "
+            "sorted by the target event_id."
+        ),
+    )
+    invalid_relationship_refs: tuple[ModelInvalidRelationshipRef, ...] = Field(
+        default=(),
+        description=(
+            "Relationship references naming an unknown event, or a non-ruling where "
+            "a ruling is required, sorted by referrer, relation and target."
         ),
     )
 

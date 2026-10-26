@@ -29,6 +29,7 @@ from omnibase_core.models.events.work import (
     ModelSessionActor,
     ModelWorkClaimReleased,
     ModelWorkClaimRequested,
+    ModelWorkCorrectionRecorded,
     ModelWorkEvent,
     ModelWorkHoldPlaced,
     ModelWorkHoldReleased,
@@ -236,12 +237,20 @@ def withdrawal(
     )
 
 
+def _refs(**values: object) -> dict[str, object]:
+    """Only the relationship kwargs that are set, so None stays out of the payload."""
+    return {name: value for name, value in values.items() if value is not None}
+
+
 def ruling(
     event_id: uuid.UUID,
     *,
     answers: frozenset[uuid.UUID] = frozenset(),
     words: str = "re-scope it",
     summary: str = "ruling",
+    supersedes: uuid.UUID | None = None,
+    amends: uuid.UUID | None = None,
+    extends: uuid.UUID | None = None,
 ) -> ModelWorkRulingRecorded:
     return ModelWorkRulingRecorded(
         event_id=event_id,
@@ -250,6 +259,7 @@ def ruling(
         summary=summary,
         operator_words=words,
         answers=answers,
+        **_refs(supersedes=supersedes, amends=amends, extends=extends),
     )
 
 
@@ -259,6 +269,9 @@ def consent(
     answers: frozenset[uuid.UUID] = frozenset(),
     words: str = "yes",
     summary: str = "consent",
+    supersedes: uuid.UUID | None = None,
+    amends: uuid.UUID | None = None,
+    extends: uuid.UUID | None = None,
 ) -> ModelWorkOperatorConsentRecorded:
     return ModelWorkOperatorConsentRecorded(
         event_id=event_id,
@@ -269,6 +282,25 @@ def consent(
         approved_scope=("the named action",),
         out_of_scope=("prod",),
         answers=answers,
+        **_refs(supersedes=supersedes, amends=amends, extends=extends),
+    )
+
+
+def correction(
+    event_id: uuid.UUID,
+    *,
+    corrects: uuid.UUID | None = None,
+    corrects_legacy_ts: str | None = None,
+    operator_span: str | None = None,
+) -> ModelWorkCorrectionRecorded:
+    return ModelWorkCorrectionRecorded(
+        event_id=event_id,
+        emitted_at=T0,
+        actor=actor("orchestrator"),
+        summary="correction",
+        corrects=corrects,
+        corrects_legacy_ts=corrects_legacy_ts,
+        **_refs(operator_span=operator_span),
     )
 
 

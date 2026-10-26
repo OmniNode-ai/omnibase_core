@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21107
+title: Ruling relationships and correction closure in the canonical work-ledger reducer
+summary: The omnibase_core half of TA.5. node_work_ledger_state_compute folds supersedes, amends and extends
+  on rulings and consents, and corrects on corrections, into ruling states, links, corrected events and
+  refused references; the omnimarket projection fold carries the same rules (omnimarket#4096).
+is_seam_ticket: false
+interface_change: true
+interfaces_touched: []
+requirements:
+  - id: req-omn21107-core-reducer-relationships
+    statement: The canonical reducer folds every TA.5 relationship fixture to its expected open or closed
+      state and links, identically under every arrival order.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: fixtures for a superseded ruling, an amended ruling, a consent continued by `extends=`,
+          a corrected ruling, a released hold, a hold past its `until` at a given `as_of`, a claim closed
+          by TERMINAL and by RELEASE, and an ACKed MSG each fold to the expected open or closed state,
+          with the expected links, in both implementations -- falsifier: a fixture whose state or links
+          differ from the expectation or between the two.'
+      - id: AC5
+        statement: 'AC5: every fixture''s state is identical under every arrival permutation -- falsifier:
+          two permutations with different states.'
+evidence_requirements:
+  - kind: tests
+    description: Relationship fixtures and the permutation property over the canonical reducer.
+    command: uv run --frozen pytest tests/unit/nodes/node_work_ledger_state_compute/test_fold_relationships.py
+      -q --no-cov
+  - kind: ci
+    description: Hosted-runner deploy check reads the reducer source at the checkout commit and fails
+      when the relationship fold is absent. No live service is required.
+    command: uv run --frozen pytest tests/unit/nodes/node_work_ledger_state_compute/test_fold_relationships.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21107-core-ac1-fixtures
+    description: Superseded, amended, extended and corrected rulings and consents, a corrected hold and
+      every refused reference fold to the expected state and links in the canonical reducer.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_work_ledger_state_compute/test_fold_relationships.py
+          -q --no-cov -k 'not permutation'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21107-core-ac5-permutations
+    description: Every permutation of a ledger mixing supersede, amend, extend and correct folds to one
+      state.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_work_ledger_state_compute/test_fold_relationships.py
+          -q --no-cov -k permutation
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21107-core-deploy-probe
+    description: Read the published reducer source at the checkout commit through the GitHub contents
+      API. Fail when the relationship fold or its state fields are absent. Runs on hosted runners without
+      a container daemon or access to a private runtime.
+    source: manual
+    binds_ac: [AC1, AC5]
+    checks:
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_work_ledger_state_compute/handler.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'def _fold_relationships(' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/nodes/work_ledger_state/model_work_ledger_state.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'invalid_relationship_refs: tuple[ModelInvalidRelationshipRef, ...]' > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core

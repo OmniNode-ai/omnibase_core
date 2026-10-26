@@ -79,6 +79,28 @@ class ModelWorkOperatorConsentRecorded(ModelWorkEventBase):
         min_length=1,
         description="What the consent does not approve. At least one entry; no placeholder.",
     )
+    supersedes: uuid.UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "event_id of the ruling or consent this one supersedes, when it "
+            "supersedes one."
+        ),
+    )
+    amends: uuid.UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "event_id of the ruling or consent this one amends, when it amends one."
+        ),
+    )
+    extends: uuid.UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "event_id of the ruling or consent this one extends, when it extends one."
+        ),
+    )
 
     answers: frozenset[uuid.UUID] = Field(
         default_factory=frozenset,
@@ -112,7 +134,9 @@ class ModelWorkOperatorConsentRecorded(ModelWorkEventBase):
         return raw
 
     @model_validator(mode="after")
-    def _does_not_answer_itself(self) -> ModelWorkOperatorConsentRecorded:
+    def _does_not_name_itself(self) -> ModelWorkOperatorConsentRecorded:
+        if self.event_id in (self.supersedes, self.amends, self.extends):
+            raise ValueError("a consent cannot supersede, amend or extend itself")
         if self.event_id in self.answers:
             raise ValueError("a consent cannot answer itself")
         return self

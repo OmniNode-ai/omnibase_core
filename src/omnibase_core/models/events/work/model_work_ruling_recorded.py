@@ -52,6 +52,11 @@ class ModelWorkRulingRecorded(ModelWorkEventBase):
         default=None,
         description="event_id of the ruling this one supersedes, when it supersedes one.",
     )
+    extends: uuid.UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description="event_id of the ruling this one extends, when it extends one.",
+    )
 
     answers: frozenset[uuid.UUID] = Field(
         default_factory=frozenset,
@@ -86,8 +91,8 @@ class ModelWorkRulingRecorded(ModelWorkEventBase):
 
     @model_validator(mode="after")
     def _does_not_name_itself(self) -> ModelWorkRulingRecorded:
-        if self.event_id in (self.amends, self.supersedes):
-            raise ValueError("a ruling cannot amend or supersede itself")
+        if self.event_id in (self.amends, self.supersedes, self.extends):
+            raise ValueError("a ruling cannot amend, supersede or extend itself")
         if self.event_id in self.answers:
             raise ValueError("a ruling cannot answer itself")
         return self
