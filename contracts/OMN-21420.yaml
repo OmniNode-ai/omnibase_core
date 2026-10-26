@@ -99,9 +99,9 @@ dod_evidence:
       - check_type: command
         check_value: |
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_base.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -Fq 'placement: ModelContractPlacement = Field(' &&
+            base64 -d | grep -F 'placement: ModelContractPlacement = Field(' > /dev/null &&
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_base.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -Fq 'self.placement.state.store != EnumPlacementStateStore.NONE' &&
+            base64 -d | grep -F 'self.placement.state.store != EnumPlacementStateStore.NONE' > /dev/null &&
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/models/contracts/model_contract_lease.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -Fq 'max_ttl_s: int = Field(gt=0'
+            base64 -d | grep -F 'max_ttl_s: int = Field(gt=0' > /dev/null
         cwd: ${OMNI_HOME}/omnibase_core
