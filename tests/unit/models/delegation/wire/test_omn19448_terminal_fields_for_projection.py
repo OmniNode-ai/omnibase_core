@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
 """OMN-19448: the terminal carries, unchanged, what delegation_events copies.
@@ -43,7 +43,7 @@ def _failed_terminal(**overrides: object) -> ModelDelegationResult:
         "fallback_to_claude": False,
     }
     fields.update(overrides)
-    return ModelDelegationResult(**fields)  # type: ignore[arg-type]
+    return ModelDelegationResult.model_validate(fields)
 
 
 def _round_trip(terminal: ModelDelegationResult) -> dict[str, object]:
