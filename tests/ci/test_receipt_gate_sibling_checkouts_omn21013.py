@@ -513,6 +513,8 @@ def test_declared_pin_also_binds_uv_pins(tmp_path):
         "pins:\n  sibling: dev\n",
         f"pins:\n  sibling: {SHA[:12]}\n",
         f"sibling: {SHA}\n",
+        f"pins:\n  sibling: {OTHER_SHA}\n  sibling: {SHA}\n",  # duplicate key: PyYAML keeps the last
+        f"pins:\n  sibling: {OTHER_SHA}\npins:\n  sibling: {SHA}\n",  # duplicate pins mapping
     ],
 )
 def test_malformed_declared_pin_withholds_an_otherwise_resolved_sibling(tmp_path, pins):
@@ -600,6 +602,61 @@ def test_declared_pin_also_binds_uv_pins_in_every_url_form(tmp_path, source, res
     home, dod, _ = _run(
         tmp_path,
         uv_pin=f"[tool.uv.sources]\nsibling = {source}\n",
+        sibling_pins=f"pins:\n  sibling: {SHA}\n",
+    )
+    assert (home / "sibling").is_dir() is resolves
+    assert (dod / "siblings.tsv").read_text() == (
+        f"sibling\t{SHA}\n" if resolves else ""
+    )
+
+
+@pytest.mark.parametrize(
+    ("step", "resolves"),
+    [
+        (
+            {
+                "uses": "actions/checkout@v4",
+                "with": {"repository": "omninode-ai/SIBLING", "ref": OTHER_SHA},
+            },
+            False,
+        ),
+        (
+            {
+                "uses": "Actions/Checkout@v4",
+                "with": {"repository": "OmniNode-ai/sibling", "ref": OTHER_SHA},
+            },
+            False,
+        ),
+        (
+            {
+                "uses": "actions/checkout@v4",
+                "with": {"repository": "OmniNode-ai/sibling"},
+            },
+            False,
+        ),
+        ({"uses": f"omninode-ai/Sibling/.github/actions/setup@{OTHER_SHA}"}, False),
+        (
+            {
+                "uses": "actions/checkout@v4",
+                "with": {"repository": "omninode-ai/SIBLING", "ref": SHA},
+            },
+            True,
+        ),
+    ],
+    ids=[
+        "repo-case-other",
+        "checkout-case-other",
+        "no-ref",
+        "action-case-other",
+        "repo-case-same",
+    ],
+)
+def test_declared_pin_binds_every_checkout_and_action_form(tmp_path, step, resolves):
+    """AC209: GitHub owner and repository names are case-insensitive, and a sibling checkout with
+    no ref fetches the default branch, so beside a declared pin each is a literal it must equal."""
+    home, dod, _ = _run(
+        tmp_path,
+        workflows={"ci.yml": {"jobs": {"build": {"steps": [step]}}}},
         sibling_pins=f"pins:\n  sibling: {SHA}\n",
     )
     assert (home / "sibling").is_dir() is resolves

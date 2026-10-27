@@ -69,7 +69,7 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: 'uv run pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q -p no:randomly
-          -k "declared_pin_resolves_omnidash_workflows or declared_pin_also_binds_uv_pins"'
+          -k "declared_pin_resolves_omnidash_workflows or declared_pin_also_binds_uv_pins or declared_pin_binds_every_checkout_and_action_form"'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC209

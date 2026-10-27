@@ -918,7 +918,19 @@ jobs:
                   # A dangling link or a directory here is an unreadable pin file, not a missing one.
                   if pins_file.is_symlink() or not pins_file.is_file():
                       raise ValueError("sibling-pins.yaml is not a regular file")
-                  loaded = yaml.safe_load(pins_file.read_text())
+                  # YAML forbids duplicate keys but safe_load keeps the last one; a pin file that
+                  # names a sibling twice is malformed, so it is refused like any other.
+                  class UniqueKeyLoader(yaml.SafeLoader):
+                      pass
+
+                  def unique_mapping(loader, node, deep=False):
+                      keys = [repr(loader.construct_object(key, deep=deep)) for key, _ in node.value]
+                      if len(keys) != len(set(keys)):
+                          raise ValueError("sibling-pins.yaml repeats a key")
+                      return loader.construct_mapping(node, deep=deep)
+
+                  UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping)
+                  loaded = yaml.load(pins_file.read_text(), Loader=UniqueKeyLoader)
                   declared_pins = loaded.get("pins") if isinstance(loaded, dict) else None
                   if not isinstance(declared_pins, dict):
                       raise ValueError("sibling-pins.yaml must hold a pins mapping")
@@ -988,17 +1000,28 @@ jobs:
               for document in documents:
                   for entry in mappings(document):
                       uses = entry.get("uses", "")
+                      if declared is not None and isinstance(uses, str):
+                          # GitHub owner and repository names are case-insensitive, and a sibling
+                          # checkout with no ref fetches the default branch: each is a literal the
+                          # declared pin must equal.
+                          if uses.lower().startswith(repository.lower() + "/.github/actions/") and "@" in uses:
+                              action_pins.add(uses.rsplit("@", 1)[1])
+                          if uses.lower().startswith("actions/checkout@"):
+                              options = entry.get("with") or {}
+                              if str(options.get("repository", "")).lower() == repository.lower():
+                                  ref_text = str(options.get("ref") or "")
+                                  # An expression ref is set aside only here, beside a declared pin; without
+                                  # one it still counts, so an unprovable step output keeps the checkout
+                                  # absent. The marker is built from two parts: Actions would evaluate it whole.
+                                  if ("$" + "{{") not in ref_text:
+                                      checkout_refs.add(ref_text)
+                          continue
                       if isinstance(uses, str) and uses.startswith(repository + "/.github/actions/") and "@" in uses:
                           action_pins.add(uses.rsplit("@", 1)[1])
                       if isinstance(uses, str) and uses.startswith("actions/checkout@"):
                           options = entry.get("with", {})
                           if options.get("repository") == repository and options.get("ref"):
-                              ref_text = str(options["ref"])
-                              # An expression ref is set aside only beside a declared pin; without one it
-                              # still counts, so an unprovable step output keeps the checkout absent.
-                              # The marker is built from two parts: Actions would evaluate it written whole.
-                              if declared is None or ("$" + "{{") not in ref_text:
-                                  checkout_refs.add(ref_text)
+                              checkout_refs.add(str(options["ref"]))
               if declared is not None:
                   pins = {declared} if all(pin.lower() == declared for pin in uv_pins | action_pins | checkout_refs) else {declared, ""}
               else:
