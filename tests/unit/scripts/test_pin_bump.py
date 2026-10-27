@@ -494,3 +494,28 @@ def test_bump_two_line_banner_indent_follows_first_line(tmp_repo: Path) -> None:
     bump_file(tmp_repo, _PIN_SITE, INDENT_NEW_SHA)
     (line,) = _banner_lines(f.read_text())
     assert line.startswith(" " * 14 + "# Auto-bumped")
+
+
+def test_shipped_manifest_bumps_only_the_active_handshake_and_declared_pin_key(
+    tmp_repo: Path,
+) -> None:
+    """AC211: the declared-pin site rewrites the uncommented omnibase_core key only; a commented
+    copy or a key that merely ends in omnibase_core is left alone."""
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    entry = next(r for r in load_manifest(manifest_path).repos if r.name == "omnidash")
+    site = next(s for s in entry.pin_sites if s.path == ".github/sibling-pins.yaml")
+    other = "c" * 40
+    pins = tmp_repo / ".github" / "sibling-pins.yaml"
+    pins.parent.mkdir(parents=True, exist_ok=True)
+    pins.write_text(
+        f"# omnibase_core: {OLD_SHA}\n"
+        f"pins:\n  other_omnibase_core: {other}\n  omnibase_core: {OLD_SHA}\n"
+    )
+    result = bump_file(tmp_repo, site, NEW_SHA)
+    assert result.changed is True
+    assert pins.read_text() == (
+        f"# omnibase_core: {OLD_SHA}\n"
+        f"pins:\n  other_omnibase_core: {other}\n  omnibase_core: {NEW_SHA}\n"
+    )

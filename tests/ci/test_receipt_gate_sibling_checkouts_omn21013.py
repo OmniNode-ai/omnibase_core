@@ -66,7 +66,10 @@ def _run(
         (caller / "pyproject.toml").write_text(uv_pin)
     if sibling_pins is not None:
         (caller / ".github").mkdir(parents=True, exist_ok=True)
-        (caller / ".github/sibling-pins.yaml").write_text(sibling_pins)
+        if callable(sibling_pins):
+            sibling_pins(caller / ".github/sibling-pins.yaml")
+        else:
+            (caller / ".github/sibling-pins.yaml").write_text(sibling_pins)
     for folder, documents in (("actions", actions), ("workflows", workflows)):
         for name, doc in (documents or {}).items():
             path = caller / ".github" / folder / name
@@ -522,3 +525,84 @@ def test_malformed_declared_pin_withholds_an_otherwise_resolved_sibling(tmp_path
     assert not (home / "sibling").exists()
     assert (dod / "siblings.tsv").read_text() == ""
     assert not any("fetch" in argv for argv, _ in calls)
+
+
+def _dangling_symlink(path):
+    path.symlink_to(path.parent / "missing-pins.yaml")
+
+
+def _directory(path):
+    path.mkdir()
+    (path / "pins.yaml").write_text(f"pins:\n  sibling: {SHA}\n")
+
+
+@pytest.mark.parametrize(
+    "make_path", [_dangling_symlink, _directory], ids=["dangling-symlink", "directory"]
+)
+def test_malformed_declared_pin_withholds_an_otherwise_resolved_sibling_path(
+    tmp_path, make_path
+):
+    """AC210: a pin path that exists but is not a readable regular file is unreadable, not absent;
+    the uv pin that alone would resolve (the control below) must not be fetched."""
+    uv_pin = f'[tool.uv.sources]\nsibling = {{git = "https://github.com/OmniNode-ai/sibling.git", rev = "{SHA}"}}\n'
+    _, control_dod, _ = _run(tmp_path / "control", uv_pin=uv_pin)
+    assert (control_dod / "siblings.tsv").read_text() == f"sibling\t{SHA}\n"
+    home, dod, calls = _run(tmp_path / "case", uv_pin=uv_pin, sibling_pins=make_path)
+    assert not (home / "sibling").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+    assert not any("fetch" in argv for argv, _ in calls)
+
+
+@pytest.mark.parametrize(
+    ("source", "resolves"),
+    [
+        (
+            f'{{git = "ssh://git@github.com/OmniNode-ai/sibling", rev = "{OTHER_SHA}"}}',
+            False,
+        ),
+        (
+            f'{{git = "git@github.com:OmniNode-ai/sibling.git", rev = "{OTHER_SHA}"}}',
+            False,
+        ),
+        (
+            f'{{git = "https://github.com/omninode-ai/Sibling.git", rev = "{OTHER_SHA}"}}',
+            False,
+        ),
+        (
+            '{git = "https://github.com/OmniNode-ai/sibling.git", branch = "main"}',
+            False,
+        ),
+        ('{git = "https://github.com/OmniNode-ai/sibling.git"}', False),
+        (
+            f'{{git = "https://mirror.example/OmniNode-ai/sibling.git", rev = "{OTHER_SHA}"}}',
+            False,
+        ),
+        (
+            f'{{git = "https://github.com/someone/sibling.git", rev = "{OTHER_SHA}"}}',
+            False,
+        ),
+        (f'{{git = "ssh://git@github.com/OmniNode-ai/sibling", rev = "{SHA}"}}', True),
+    ],
+    ids=[
+        "ssh-other",
+        "scp-other",
+        "case-other",
+        "branch-only",
+        "unpinned",
+        "lookalike-host",
+        "fork-other",
+        "ssh-same",
+    ],
+)
+def test_declared_pin_also_binds_uv_pins_in_every_url_form(tmp_path, source, resolves):
+    """AC209: every uv source uv itself would fetch for the sibling is a literal the declared pin
+    must equal; a form the resolver cannot read leaves the checkout absent."""
+    home, dod, _ = _run(
+        tmp_path,
+        uv_pin=f"[tool.uv.sources]\nsibling = {source}\n",
+        sibling_pins=f"pins:\n  sibling: {SHA}\n",
+    )
+    assert (home / "sibling").is_dir() is resolves
+    assert (dod / "siblings.tsv").read_text() == (
+        f"sibling\t{SHA}\n" if resolves else ""
+    )

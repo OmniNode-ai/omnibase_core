@@ -914,7 +914,10 @@ jobs:
               # output cannot be proven statically; a declared pin can, and every literal must match it.
               declared_pins = {}
               pins_file = caller / ".github/sibling-pins.yaml"
-              if pins_file.is_file():
+              if pins_file.is_symlink() or pins_file.exists():
+                  # A dangling link or a directory here is an unreadable pin file, not a missing one.
+                  if pins_file.is_symlink() or not pins_file.is_file():
+                      raise ValueError("sibling-pins.yaml is not a regular file")
                   loaded = yaml.safe_load(pins_file.read_text())
                   declared_pins = loaded.get("pins") if isinstance(loaded, dict) else None
                   if not isinstance(declared_pins, dict):
@@ -946,6 +949,15 @@ jobs:
               return subprocess.run(["git", *args], env=git_env, check=True,
                                     capture_output=True, text=True, timeout=45).stdout.strip()
 
+          def github_repository(git_url):
+              """owner/name for the GitHub URL forms uv accepts (https, ssh, scp), else None."""
+              found = re.fullmatch(
+                  r"(?:git\+)?(?:https://(?:[^@/]+@)?github\.com/|ssh://git@github\.com/|git@github\.com:)"
+                  r"([^/]+/[^/]+?)(?:\.git)?/?",
+                  git_url,
+              )
+              return found.group(1).lower() if found else None
+
           for sibling in sorted(siblings):
               target = home / sibling
               repository = f"OmniNode-ai/{sibling}"
@@ -957,10 +969,22 @@ jobs:
                   continue
               for source in sources.values():
                   for entry in (source if isinstance(source, list) else [source]):
-                      if isinstance(entry, dict) and str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
-                          pin = entry.get("rev") or entry.get("tag")
-                          if pin:
-                              uv_pins.add(pin)
+                      if not isinstance(entry, dict):
+                          continue
+                      if declared is None:
+                          if str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
+                              pin = entry.get("rev") or entry.get("tag")
+                              if pin:
+                                  uv_pins.add(pin)
+                          continue
+                      # Beside a declared pin, any source uv would fetch for this sibling must name the
+                      # declared commit: a branch, no pin, or a URL that only looks like the sibling's
+                      # cannot be proven equal, so it counts as a disagreeing literal.
+                      git_url = str(entry.get("git", ""))
+                      named = github_repository(git_url)
+                      lookalike = re.search(rf"[/:]{re.escape(sibling)}(?:\.git)?/?$", git_url, re.IGNORECASE)
+                      if named == repository.lower() or lookalike:
+                          uv_pins.add(str(entry.get("rev") or entry.get("tag") or entry.get("branch") or ""))
               for document in documents:
                   for entry in mappings(document):
                       uses = entry.get("uses", "")
