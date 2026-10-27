@@ -910,6 +910,15 @@ jobs:
                   for path in sorted(folder.rglob("*")):
                       if path.suffix in (".yml", ".yaml") and path.is_file():
                           documents.append(yaml.safe_load(path.read_text()))
+              # OMN-21166 part 31 (option B): a sibling revision the caller declares as data. A step
+              # output cannot be proven statically; a declared pin can, and every literal must match it.
+              declared_pins = {}
+              pins_file = caller / ".github/sibling-pins.yaml"
+              if pins_file.is_file():
+                  loaded = yaml.safe_load(pins_file.read_text())
+                  declared_pins = loaded.get("pins") if isinstance(loaded, dict) else None
+                  if not isinstance(declared_pins, dict):
+                      raise ValueError("sibling-pins.yaml must hold a pins mapping")
           except (OSError, ValueError, yaml.YAMLError):
               print("::notice::sibling pin metadata unreadable; checkouts left absent")
               sys.exit(0)
@@ -942,6 +951,10 @@ jobs:
               repository = f"OmniNode-ai/{sibling}"
               url = f"https://github.com/{repository}.git"
               uv_pins, action_pins, checkout_refs = set(), set(), set()
+              declared = declared_pins.get(sibling)
+              if sibling in declared_pins and not (isinstance(declared, str) and re.fullmatch(r"[0-9a-f]{40}", declared)):
+                  print(f"::notice::{sibling}: declared pin is not a 40-hex commit; checkout left absent")
+                  continue
               for source in sources.values():
                   for entry in (source if isinstance(source, list) else [source]):
                       if isinstance(entry, dict) and str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
@@ -956,8 +969,16 @@ jobs:
                       if isinstance(uses, str) and uses.startswith("actions/checkout@"):
                           options = entry.get("with", {})
                           if options.get("repository") == repository and options.get("ref"):
-                              checkout_refs.add(str(options["ref"]))
-              pins = next((pins for pins in (uv_pins, action_pins, checkout_refs) if pins), set())
+                              ref_text = str(options["ref"])
+                              # An expression ref is set aside only beside a declared pin; without one it
+                              # still counts, so an unprovable step output keeps the checkout absent.
+                              # The marker is built from two parts: Actions would evaluate it written whole.
+                              if declared is None or ("$" + "{{") not in ref_text:
+                                  checkout_refs.add(ref_text)
+              if declared is not None:
+                  pins = {declared} if all(pin.lower() == declared for pin in uv_pins | action_pins | checkout_refs) else {declared, ""}
+              else:
+                  pins = next((pins for pins in (uv_pins, action_pins, checkout_refs) if pins), set())
               if len(pins) > 1:
                   print(f"::notice::{sibling}: conflicting revision pins; checkout left absent")
                   continue

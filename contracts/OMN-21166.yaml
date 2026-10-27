@@ -19,6 +19,29 @@ requirements:
           from 1 to 900 reaches both the head check and the merge-base control, and any other value is
           refused before the verifier is installed -- falsifier: uv run pytest tests/ci/test_receipt_gate_check_timeout_omn21166.py
           -q in omnibase_core fails at the merge base'
+  - id: req-omn21166-declared-sibling-pin
+    statement: The shared receipt gate must take a caller's declared sibling pin as data, hold every literal
+      pin to it, fail closed on a bad pin, and the pin-bump bot must keep omnidash's declared pin with
+      its handshake.
+    acceptance:
+      - id: AC209
+        statement: 'AC209: (approved plan amendment part 31, 2026-10-27, Lakshman; Jonah chose option
+          B on 2026-10-25) the receipt gate''s sibling resolver uses a caller''s declared pin in .github/sibling-pins.yaml
+          as the sibling''s revision: every literal pin for that sibling must equal it or the checkout
+          stays absent, expression refs are set aside only when a pin is declared, and a caller with no
+          pin file is unchanged -- falsifier: the bound check dod-omn21166-ac209-declared-sibling-pin
+          fails at the merge base'
+      - id: AC210
+        statement: 'AC210: (approved plan amendment part 31, 2026-10-27, Lakshman; Jonah chose option
+          B on 2026-10-25) an unreadable or malformed .github/sibling-pins.yaml, or a declared pin that
+          is not a 40-hex commit, leaves the sibling''s checkout absent and never falls back to another
+          revision -- falsifier: the bound check dod-omn21166-ac210-bad-declared-pin fails at the merge
+          base'
+      - id: AC211
+        statement: 'AC211: (approved plan amendment part 31, 2026-10-27, Lakshman; Jonah chose option
+          B on 2026-10-25) the core pin-bump bot''s manifest lists omnidash''s .github/sibling-pins.yaml
+          as a second pin site, so one bump moves it and check-handshake.yml to the same commit -- falsifier:
+          the bound check dod-omn21166-ac211-bot-bumps-declared-pin fails at the merge base'
 evidence_requirements:
   - kind: "tests"
     description: "The receipt-gate workflow tests pass at the head and the new file fails at the merge
@@ -39,3 +62,35 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC43
+  - id: dod-omn21166-ac209-declared-sibling-pin
+    description: 'Runs the gate''s real resolver over omnidash''s three workflows with a declared pin
+      (resolves to it) and a disagreeing uv pin (absent); both fail at the merge base.'
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: 'uv run pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q -p no:randomly
+          -k "declared_pin_resolves_omnidash_workflows or declared_pin_also_binds_uv_pins"'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC209
+  - id: dod-omn21166-ac210-bad-declared-pin
+    description: 'A malformed, branch-name, short or unmapped pin file withholds a sibling that its uv
+      pin alone would resolve; every case fails at the merge base.'
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: 'uv run pytest tests/ci/test_receipt_gate_sibling_checkouts_omn21013.py -q -p no:randomly
+          -k "malformed_declared_pin_withholds_an_otherwise_resolved_sibling"'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC210
+  - id: dod-omn21166-ac211-bot-bumps-declared-pin
+    description: 'The shipped manifest lists omnidash''s handshake and declared pin, and one bump moves
+      both to one commit; both fail at the merge base.'
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: 'uv run pytest tests/unit/scripts/test_pin_bump.py -q -p no:randomly -k "handshake_and_declared_pin"'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC211

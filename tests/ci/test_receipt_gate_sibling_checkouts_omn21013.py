@@ -32,7 +32,14 @@ def _step():
 
 
 def _run(
-    tmp_path, *, cwds=None, uv_pin=None, actions=None, workflows=None, unavailable=False
+    tmp_path,
+    *,
+    cwds=None,
+    uv_pin=None,
+    actions=None,
+    workflows=None,
+    unavailable=False,
+    sibling_pins=None,
 ):
     home = tmp_path / "ws/.dod-verify/head_home"
     caller = home / "caller"
@@ -57,6 +64,9 @@ def _run(
     )
     if uv_pin:
         (caller / "pyproject.toml").write_text(uv_pin)
+    if sibling_pins is not None:
+        (caller / ".github").mkdir(parents=True, exist_ok=True)
+        (caller / ".github/sibling-pins.yaml").write_text(sibling_pins)
     for folder, documents in (("actions", actions), ("workflows", workflows)):
         for name, doc in (documents or {}).items():
             path = caller / ".github" / folder / name
@@ -321,3 +331,194 @@ def test_unresolvable_sibling_is_absent_for_verifier_refusal(tmp_path, bad_metad
     )
     assert not (home / "sibling").exists()
     assert (dod / "siblings.tsv").read_text() == ""
+
+
+# OMN-21166 part 31 (option B, Jonah 2026-10-25): a caller may declare a sibling's revision in
+# .github/sibling-pins.yaml. A declared pin is the revision; every literal pin must agree with it;
+# expression refs (a step output the resolver cannot read) are set aside only when a pin is declared.
+OMNIDASH_CORE = "c" * 40
+_CHECKOUT = "actions/checkout@" + "d" * 40
+_STEP_OUTPUT_REF = "$" + "{{ steps.core-pin.outputs.ref }}"
+
+
+def _omnidash_workflows():
+    """Every checkout and core-pin step of omnidash's three omnibase_core workflows at omnidash
+    dev 03a5f605, copied field for field; the resolver reads nothing else from them. The commit
+    shas are stand-ins: the resolver compares pins, it does not read what they name."""
+    core_by_step_output = {
+        "persist-credentials": False,
+        "repository": "OmniNode-ai/omnibase_core",
+        "ref": _STEP_OUTPUT_REF,
+        "path": "omnibase_core",
+    }
+    return {
+        "check-handshake.yml": {
+            "jobs": {
+                "check-handshake": {
+                    "steps": [
+                        {"name": "Checkout repo", "uses": "actions/checkout@v4"},
+                        {
+                            "name": "Checkout omnibase_core",
+                            "uses": "actions/checkout@v4",
+                            "with": {
+                                "repository": "OmniNode-ai/omnibase_core",
+                                "ref": OMNIDASH_CORE,
+                                "path": "omnibase_core",
+                            },
+                        },
+                    ]
+                }
+            }
+        },
+        "type-sync-check.yml": {
+            "jobs": {
+                "type-sync-check": {
+                    "steps": [
+                        {
+                            "name": "Checkout omnidash (shallow, for path detection)",
+                            "uses": _CHECKOUT,
+                            "with": {"persist-credentials": False, "fetch-depth": 0},
+                        },
+                        {
+                            "name": "Resolve the handshake's omnibase_core pin",
+                            "id": "core-pin",
+                            "run": "true",
+                        },
+                        {
+                            "name": "Checkout omnibase_core",
+                            "if": "steps.changes.outputs.run_check == 'true'",
+                            "uses": _CHECKOUT,
+                            "with": core_by_step_output,
+                        },
+                        {
+                            "name": "Checkout omniintelligence",
+                            "if": "steps.changes.outputs.run_check == 'true'",
+                            "uses": _CHECKOUT,
+                            "with": {
+                                "persist-credentials": False,
+                                "repository": "OmniNode-ai/omniintelligence",
+                                "ref": "e" * 40,
+                                "path": "omniintelligence",
+                            },
+                        },
+                    ]
+                }
+            }
+        },
+        "onex-schema-compat.yml": {
+            "jobs": {
+                "schema-compat": {
+                    "steps": [
+                        {
+                            "name": "Checkout repo",
+                            "uses": _CHECKOUT,
+                            "with": {"persist-credentials": False},
+                        },
+                        {
+                            "name": "Resolve the handshake's omnibase_core pin",
+                            "id": "core-pin",
+                            "run": "true",
+                        },
+                        {
+                            "name": "Checkout omnibase_core",
+                            "uses": _CHECKOUT,
+                            "with": core_by_step_output,
+                        },
+                    ]
+                }
+            }
+        },
+    }
+
+
+def _core(tmp_path, **kwargs):
+    return _run(
+        tmp_path,
+        cwds=["${OMNI_HOME}/omnibase_core/tests"],
+        workflows=_omnidash_workflows(),
+        **kwargs,
+    )
+
+
+def test_omnidash_workflows_without_a_declared_pin_still_conflict(tmp_path):
+    """Control: today's behaviour for omnidash's three workflows (a literal and two step outputs)."""
+    home, dod, calls = _core(tmp_path)
+    assert not (home / "omnibase_core").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+    assert not calls
+
+
+def test_declared_pin_resolves_omnidash_workflows(tmp_path):
+    home, dod, calls = _core(
+        tmp_path, sibling_pins=f"pins:\n  omnibase_core: {OMNIDASH_CORE}\n"
+    )
+    assert (home / "omnibase_core").is_dir()
+    assert (dod / "siblings.tsv").read_text() == f"omnibase_core\t{OMNIDASH_CORE}\n"
+    assert any("fetch" in argv and OMNIDASH_CORE in argv for argv, _ in calls)
+    assert not any("ls-remote" in argv for argv, _ in calls)
+
+
+def test_declared_pin_that_disagrees_with_a_literal_is_a_conflict(tmp_path):
+    home, dod, calls = _core(
+        tmp_path, sibling_pins=f"pins:\n  omnibase_core: {OTHER_SHA}\n"
+    )
+    assert not (home / "omnibase_core").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+    assert not calls
+
+
+@pytest.mark.parametrize(
+    "pins",
+    [
+        "pins: [",  # not YAML
+        "pins:\n  omnibase_core: dev\n",  # a branch name, not a commit
+        f"pins:\n  omnibase_core: {OMNIDASH_CORE[:12]}\n",  # short sha
+        f"omnibase_core: {OMNIDASH_CORE}\n",  # no pins mapping
+        "pins:\n  omnibase_core:\n",  # empty value
+    ],
+)
+def test_malformed_declared_pin_leaves_sibling_absent(tmp_path, pins):
+    home, dod, calls = _core(tmp_path, sibling_pins=pins)
+    assert not (home / "omnibase_core").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+    assert not any("ls-remote" in argv or "fetch" in argv for argv, _ in calls)
+
+
+def test_pin_declared_for_another_sibling_changes_nothing(tmp_path):
+    home, dod, calls = _core(
+        tmp_path, sibling_pins=f"pins:\n  omniintelligence: {OTHER_SHA}\n"
+    )
+    assert not (home / "omnibase_core").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+    assert not calls
+
+
+def test_declared_pin_also_binds_uv_pins(tmp_path):
+    home, dod, _ = _run(
+        tmp_path,
+        uv_pin=f'[tool.uv.sources]\nsibling = {{git = "https://github.com/OmniNode-ai/sibling.git", rev = "{OTHER_SHA}"}}\n',
+        sibling_pins=f"pins:\n  sibling: {SHA}\n",
+    )
+    assert not (home / "sibling").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+
+
+@pytest.mark.parametrize(
+    "pins",
+    [
+        "pins: [",
+        "pins:\n  sibling: dev\n",
+        f"pins:\n  sibling: {SHA[:12]}\n",
+        f"sibling: {SHA}\n",
+    ],
+)
+def test_malformed_declared_pin_withholds_an_otherwise_resolved_sibling(tmp_path, pins):
+    """AC210: a bad pin file never falls back, even where the uv pin alone would resolve."""
+    home, dod, calls = _run(
+        tmp_path,
+        uv_pin=f'[tool.uv.sources]\nsibling = {{git = "https://github.com/OmniNode-ai/sibling.git", rev = "{SHA}"}}\n',
+        sibling_pins=pins,
+    )
+    assert not (home / "sibling").exists()
+    assert (dod / "siblings.tsv").read_text() == ""
+    assert not any("fetch" in argv for argv, _ in calls)
