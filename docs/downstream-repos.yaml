@@ -49,8 +49,12 @@ repos:
     pin_sites:
       - path: .github/workflows/check-handshake.yml
         pattern: "ref:\\s*([0-9a-f]{40})"
-    notes: "OMN-9050: check-handshake.yml is omnidash's one omnibase_core pin; its type-sync and schema-compat
-      workflows read it through a resolver step, so they are not pin sites."
+      - path: .github/sibling-pins.yaml
+        pattern: "(?m)^[ \\t]*omnibase_core:[ \\t]*([0-9a-f]{40})\\b"
+    notes: "OMN-9050: check-handshake.yml is omnidash's one omnibase_core checkout pin; its type-sync
+      and schema-compat workflows read it through a resolver step, so they are not pin sites. OMN-21166
+      part 31: the receipt gate reads omnidash's declared pin in .github/sibling-pins.yaml, so each bump
+      rewrites it with the handshake."
 
   - name: omniintelligence
     owner: OmniNode-ai

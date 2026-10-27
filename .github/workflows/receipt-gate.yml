@@ -910,6 +910,30 @@ jobs:
                   for path in sorted(folder.rglob("*")):
                       if path.suffix in (".yml", ".yaml") and path.is_file():
                           documents.append(yaml.safe_load(path.read_text()))
+              # OMN-21166 part 31 (option B): a sibling revision the caller declares as data. A step
+              # output cannot be proven statically; a declared pin can, and every literal must match it.
+              declared_pins = {}
+              pins_file = caller / ".github/sibling-pins.yaml"
+              if pins_file.is_symlink() or pins_file.exists():
+                  # A dangling link or a directory here is an unreadable pin file, not a missing one.
+                  if pins_file.is_symlink() or not pins_file.is_file():
+                      raise ValueError("sibling-pins.yaml is not a regular file")
+                  # YAML forbids duplicate keys but safe_load keeps the last one; a pin file that
+                  # names a sibling twice is malformed, so it is refused like any other.
+                  class UniqueKeyLoader(yaml.SafeLoader):
+                      pass
+
+                  def unique_mapping(loader, node, deep=False):
+                      keys = [repr(loader.construct_object(key, deep=deep)) for key, _ in node.value]
+                      if len(keys) != len(set(keys)):
+                          raise ValueError("sibling-pins.yaml repeats a key")
+                      return loader.construct_mapping(node, deep=deep)
+
+                  UniqueKeyLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, unique_mapping)
+                  loaded = yaml.load(pins_file.read_text(), Loader=UniqueKeyLoader)
+                  declared_pins = loaded.get("pins") if isinstance(loaded, dict) else None
+                  if not isinstance(declared_pins, dict):
+                      raise ValueError("sibling-pins.yaml must hold a pins mapping")
           except (OSError, ValueError, yaml.YAMLError):
               print("::notice::sibling pin metadata unreadable; checkouts left absent")
               sys.exit(0)
@@ -937,27 +961,71 @@ jobs:
               return subprocess.run(["git", *args], env=git_env, check=True,
                                     capture_output=True, text=True, timeout=45).stdout.strip()
 
+          def github_repository(git_url):
+              """owner/name for the GitHub URL forms uv accepts (https, ssh, scp), else None."""
+              found = re.fullmatch(
+                  r"(?:git\+)?(?:https://(?:[^@/]+@)?github\.com/|ssh://git@github\.com/|git@github\.com:)"
+                  r"([^/]+/[^/]+?)(?:\.git)?/?",
+                  git_url,
+              )
+              return found.group(1).lower() if found else None
+
           for sibling in sorted(siblings):
               target = home / sibling
               repository = f"OmniNode-ai/{sibling}"
               url = f"https://github.com/{repository}.git"
               uv_pins, action_pins, checkout_refs = set(), set(), set()
+              declared = declared_pins.get(sibling)
+              if sibling in declared_pins and not (isinstance(declared, str) and re.fullmatch(r"[0-9a-f]{40}", declared)):
+                  print(f"::notice::{sibling}: declared pin is not a 40-hex commit; checkout left absent")
+                  continue
               for source in sources.values():
                   for entry in (source if isinstance(source, list) else [source]):
-                      if isinstance(entry, dict) and str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
-                          pin = entry.get("rev") or entry.get("tag")
-                          if pin:
-                              uv_pins.add(pin)
+                      if not isinstance(entry, dict):
+                          continue
+                      if declared is None:
+                          if str(entry.get("git", "")).removesuffix(".git").rstrip("/") == url.removesuffix(".git"):
+                              pin = entry.get("rev") or entry.get("tag")
+                              if pin:
+                                  uv_pins.add(pin)
+                          continue
+                      # Beside a declared pin, any source uv would fetch for this sibling must name the
+                      # declared commit: a branch, no pin, or a URL that only looks like the sibling's
+                      # cannot be proven equal, so it counts as a disagreeing literal.
+                      git_url = str(entry.get("git", ""))
+                      named = github_repository(git_url)
+                      lookalike = re.search(rf"[/:]{re.escape(sibling)}(?:\.git)?/?$", git_url, re.IGNORECASE)
+                      if named == repository.lower() or lookalike:
+                          uv_pins.add(str(entry.get("rev") or entry.get("tag") or entry.get("branch") or ""))
               for document in documents:
                   for entry in mappings(document):
                       uses = entry.get("uses", "")
+                      if declared is not None and isinstance(uses, str):
+                          # GitHub owner and repository names are case-insensitive, and a sibling
+                          # checkout with no ref fetches the default branch: each is a literal the
+                          # declared pin must equal.
+                          if uses.lower().startswith(repository.lower() + "/.github/actions/") and "@" in uses:
+                              action_pins.add(uses.rsplit("@", 1)[1])
+                          if uses.lower().startswith("actions/checkout@"):
+                              options = entry.get("with") or {}
+                              if str(options.get("repository", "")).lower() == repository.lower():
+                                  ref_text = str(options.get("ref") or "")
+                                  # An expression ref is set aside only here, beside a declared pin; without
+                                  # one it still counts, so an unprovable step output keeps the checkout
+                                  # absent. The marker is built from two parts: Actions would evaluate it whole.
+                                  if ("$" + "{{") not in ref_text:
+                                      checkout_refs.add(ref_text)
+                          continue
                       if isinstance(uses, str) and uses.startswith(repository + "/.github/actions/") and "@" in uses:
                           action_pins.add(uses.rsplit("@", 1)[1])
                       if isinstance(uses, str) and uses.startswith("actions/checkout@"):
                           options = entry.get("with", {})
                           if options.get("repository") == repository and options.get("ref"):
                               checkout_refs.add(str(options["ref"]))
-              pins = next((pins for pins in (uv_pins, action_pins, checkout_refs) if pins), set())
+              if declared is not None:
+                  pins = {declared} if all(pin.lower() == declared for pin in uv_pins | action_pins | checkout_refs) else {declared, ""}
+              else:
+                  pins = next((pins for pins in (uv_pins, action_pins, checkout_refs) if pins), set())
               if len(pins) > 1:
                   print(f"::notice::{sibling}: conflicting revision pins; checkout left absent")
                   continue

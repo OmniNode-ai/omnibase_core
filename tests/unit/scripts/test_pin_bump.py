@@ -362,17 +362,49 @@ def test_shipped_manifest_omnidash_onex_schema_compat_is_not_a_pin_site() -> Non
     ]
 
 
-def test_shipped_manifest_omnidash_has_one_pin_site_the_handshake() -> None:
+def test_shipped_manifest_omnidash_pin_sites_are_the_handshake_and_declared_pin() -> (
+    None
+):
     """omnidash's type-sync and schema-compat workflows read the handshake's pin
-    (OMN-9050); declaring them again made the bot leave a second literal behind."""
+    (OMN-9050); declaring them again made the bot leave a second literal behind.
+    OMN-21166 part 31 (AC211): the receipt gate reads omnidash's declared pin in
+    .github/sibling-pins.yaml, so the bot bumps that file with the handshake."""
     manifest_path = (
         Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
     )
     manifest = load_manifest(manifest_path)
     entry = next(r for r in manifest.repos if r.name == "omnidash")
     assert [s.path for s in entry.pin_sites] == [
-        ".github/workflows/check-handshake.yml"
+        ".github/workflows/check-handshake.yml",
+        ".github/sibling-pins.yaml",
     ]
+
+
+def test_shipped_manifest_bumps_omnidash_handshake_and_declared_pin_together(
+    tmp_repo: Path,
+) -> None:
+    """AC211: one bump leaves omnidash's handshake checkout and its declared pin on the
+    same commit, so the receipt gate's declared pin never drifts from the literal."""
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    entry = next(r for r in load_manifest(manifest_path).repos if r.name == "omnidash")
+    workflows = tmp_repo / ".github" / "workflows"
+    workflows.mkdir(parents=True, exist_ok=True)
+    (workflows / "check-handshake.yml").write_text(
+        "jobs:\n  handshake:\n    steps:\n      - uses: actions/checkout@v4\n"
+        "        with:\n          repository: OmniNode-ai/omnibase_core\n"
+        f"          ref: {OLD_SHA}\n"
+    )
+    (tmp_repo / ".github" / "sibling-pins.yaml").write_text(
+        f"pins:\n  omnibase_core: {OLD_SHA}\n  omniintelligence: {'c' * 40}\n"
+    )
+    results = bump_repo(tmp_repo, entry, NEW_SHA)
+    assert [r.changed for r in results] == [True, True]
+    assert f"ref: {NEW_SHA}" in (workflows / "check-handshake.yml").read_text()
+    pins = (tmp_repo / ".github" / "sibling-pins.yaml").read_text()
+    assert f"omnibase_core: {NEW_SHA}" in pins
+    assert f"omniintelligence: {'c' * 40}" in pins
 
 
 # --- banner indent (OMN-20525) -------------------------------------------------
@@ -462,3 +494,28 @@ def test_bump_two_line_banner_indent_follows_first_line(tmp_repo: Path) -> None:
     bump_file(tmp_repo, _PIN_SITE, INDENT_NEW_SHA)
     (line,) = _banner_lines(f.read_text())
     assert line.startswith(" " * 14 + "# Auto-bumped")
+
+
+def test_shipped_manifest_bumps_only_the_active_handshake_and_declared_pin_key(
+    tmp_repo: Path,
+) -> None:
+    """AC211: the declared-pin site rewrites the uncommented omnibase_core key only; a commented
+    copy or a key that merely ends in omnibase_core is left alone."""
+    manifest_path = (
+        Path(__file__).parent.parent.parent.parent / "docs" / "downstream-repos.yaml"
+    )
+    entry = next(r for r in load_manifest(manifest_path).repos if r.name == "omnidash")
+    site = next(s for s in entry.pin_sites if s.path == ".github/sibling-pins.yaml")
+    other = "c" * 40
+    pins = tmp_repo / ".github" / "sibling-pins.yaml"
+    pins.parent.mkdir(parents=True, exist_ok=True)
+    pins.write_text(
+        f"# omnibase_core: {OLD_SHA}\n"
+        f"pins:\n  other_omnibase_core: {other}\n  omnibase_core: {OLD_SHA}\n"
+    )
+    result = bump_file(tmp_repo, site, NEW_SHA)
+    assert result.changed is True
+    assert pins.read_text() == (
+        f"# omnibase_core: {OLD_SHA}\n"
+        f"pins:\n  other_omnibase_core: {other}\n  omnibase_core: {NEW_SHA}\n"
+    )
