@@ -1300,3 +1300,16 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-precommit-pin-parity
+  name: Pre-commit pin parity for the shared core hook repo (OMN-21433)
+  description: >
+    Refuse a shared core hook repo entry whose rev has an older commit time than the newest pin of the
+    same repo in .pre-commit-config.yaml. Resolve revisions from a history checkout or the pre-commit
+    cache; unresolved revisions fail closed when multiple distinct pins need comparison.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_precommit_pin_parity_cli
+  files: ^\.pre-commit-config\.yaml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

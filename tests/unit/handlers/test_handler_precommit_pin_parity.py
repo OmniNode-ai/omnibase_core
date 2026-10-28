@@ -13,6 +13,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.handlers.handler_precommit_pin_parity import (
     HandlerPrecommitPinParity,
 )
@@ -21,7 +23,6 @@ from omnibase_core.models.precommit_pins import (
     ModelPrecommitPinRules,
     ModelPrecommitRevTime,
 )
-
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
 )
@@ -129,7 +130,7 @@ def test_local_and_meta_repos_are_ignored() -> None:
 
 @pytest.mark.parametrize("source", ["", "- a\n- b\n", "repos: 3\n", "repos: [\n"])
 def test_a_config_that_is_not_a_repos_mapping_is_refused(source: str) -> None:
-    with pytest.raises(ValueError):
+    with pytest.raises(ModelOnexError):
         _run(source)
 
 

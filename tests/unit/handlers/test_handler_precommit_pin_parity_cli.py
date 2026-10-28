@@ -18,13 +18,13 @@ from pathlib import Path
 
 import pytest
 import yaml
+
 from omnibase_core.handlers.handler_precommit_pin_parity_cli import (
     DEFAULT_CONFIG,
     DEFAULT_RULES,
     main,
 )
 from omnibase_core.models.precommit_pins import ModelPrecommitPinRules
-
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
 )
@@ -158,8 +158,8 @@ def test_without_a_history_repo_the_pre_commit_cache_supplies_the_times(
 ) -> None:
     history, old, new = _history(tmp_path / "hist")
     cache = tmp_path / "cache"
-    (cache / "db").mkdir(parents=True)
-    db = sqlite3.connect(cache / "db" / "db.db")
+    cache.mkdir()
+    db = sqlite3.connect(cache / "db.db")
     db.execute("CREATE TABLE repos (repo TEXT, ref TEXT, path TEXT)")
     for rev in (old, new):
         clone = cache / f"repo-{rev[:8]}"
