@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21478
+title: FSM executor evaluates every operator the condition model accepts
+summary: The FSM executor evaluates greater_than, less_than, greater_than_or_equal, less_than_or_equal,
+  min_length, max_length, exists and not_exists, so a guard written with one of them holds when its condition
+  is true.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21478-fsm-operators
+    statement: Every operator in ModelFSMTransitionCondition.VALID_OPERATORS has an evaluator in the FSM
+      executor.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: Each of the eight operators evaluates true and false on a pair of contexts, or
+          is refused when the contract is loaded -- falsifier: one pytest case per operator, parametrized
+          from `VALID_OPERATORS` so a new operator without an evaluator fails'
+      - id: AC2
+        statement: 'AC2: The contracts that use these operators today still evaluate as their authors
+          intended -- falsifier: the existing runtime contract tests pass, and a new case drives `node_graph_reducer`''s
+          `registry_loaded` guard with a non-empty registry'
+      - id: AC3
+        statement: 'AC3: Configuration: a core library carries no deployment value; the operator set and
+          the expression grammar are the model''s own constants -- falsifier: the one test per operator
+          reads the operator list from `ModelFSMTransitionCondition.VALID_OPERATORS`, so adding an operator
+          without an evaluator fails'
+      - id: AC4
+        statement: 'AC4: Bindings: a core library has no binding; the executor evaluates a context --
+          falsifier: the same context gives the same transition in a direct call and through a reducer
+          run by the local in-process entry of the parity harness (T-B2)'
+evidence_requirements:
+  - kind: tests
+    description: One parametrized case per operator, the node_graph_reducer registry_loaded guard, and
+      direct-call versus reducer parity.
+    command: uv run --frozen pytest tests/unit/utils/test_fsm_executor_condition_operators.py -q --no-cov
+  - kind: ci
+    description: Hosted-runner check that runs the same test file against the checkout; no live service
+      is required.
+    command: uv run --frozen pytest tests/unit/utils/test_fsm_executor_condition_operators.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21478-ac1-operators
+    description: Each operator of VALID_OPERATORS holds on one context and fails on another.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/utils/test_fsm_executor_condition_operators.py
+          -q --no-cov -k "operator"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21478-ac2-runtime-contract
+    description: The node_graph_reducer registry_loaded guard holds for a non-empty registry and fails
+      for an empty one; the runtime contract tests pass.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/utils/test_fsm_executor_condition_operators.py
+          tests/unit/contracts/test_runtime_contracts.py -q --no-cov -k "registry_loaded or node_graph"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21478-ac3-operator-set
+    description: The case table must equal ModelFSMTransitionCondition.VALID_OPERATORS, and the parser's
+      set must equal it.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/utils/test_fsm_executor_condition_operators.py
+          -q --no-cov -k "cover_exactly or same_operators"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21478-ac4-reducer-parity
+    description: A reducer run in process through the FSM mixin gives the direct call's transition for
+      every operator.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/utils/test_fsm_executor_condition_operators.py
+          -q --no-cov -k "reducer_run"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21478-deploy-checkout-test
+    description: Hosted-runner run of the test file at the checkout; needs no container daemon or private
+      runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/utils/test_fsm_executor_condition_operators.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

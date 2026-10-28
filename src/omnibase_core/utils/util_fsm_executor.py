@@ -15,10 +15,12 @@ while maintaining type clarity for FSM-specific usage.
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING, Literal, NamedTuple, cast
+from operator import ge, gt, le, lt
+from typing import TYPE_CHECKING, Final, Literal, NamedTuple, cast
 from uuid import UUID
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sized
     from typing import SupportsFloat
 
     from omnibase_core.models.fsm.model_fsm_transition_result import (
@@ -54,6 +56,24 @@ from omnibase_core.models.reducer.payloads import (
 from omnibase_core.types.type_fsm_context import FSMContextType
 from omnibase_core.utils.util_fsm_expression_parser import parse_expression
 from omnibase_core.utils.util_fsm_operators import evaluate_equals, evaluate_not_equals
+
+# Numeric comparison operators; the textual names are aliases of the symbolic ones.
+_NUMERIC_COMPARISONS: Final[dict[str, Callable[[float, float], bool]]] = {
+    ">": gt,
+    "greater_than": gt,
+    "<": lt,
+    "less_than": lt,
+    ">=": ge,
+    "greater_than_or_equal": ge,
+    "<=": le,
+    "less_than_or_equal": le,
+}
+
+# Length operators: the observed length is compared with an integer bound.
+_LENGTH_BOUNDS: Final[dict[str, Callable[[int, int], bool]]] = {
+    "min_length": ge,
+    "max_length": le,
+}
 
 
 async def execute_transition(
@@ -678,57 +698,37 @@ async def _evaluate_single_condition(
         # Both values are cast to str before comparison (INTENTIONAL)
         # See fsm_operators.evaluate_not_equals docstring for type coercion behavior
         return evaluate_not_equals(field_value, expected_value)
-    elif operator == ">":
+    elif operator in _NUMERIC_COMPARISONS:
         try:
             # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast("SupportsFloat", field_value) or 0) > float(
-                expected_value or "0"
+            return _NUMERIC_COMPARISONS[operator](
+                float(cast("SupportsFloat", field_value) or 0),
+                float(expected_value or "0"),
             )
         except VALIDATION_ERRORS:
             # fallback-ok: non-numeric values return False for numeric comparison
             return False
-    elif operator == "<":
+    elif operator in _LENGTH_BOUNDS:
+        # Length of a string, sequence or mapping against an integer bound.
+        # Values without a length (None, numbers) and non-integer bounds never hold.
         try:
-            # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast("SupportsFloat", field_value) or 0) < float(
-                expected_value or "0"
-            )
+            length = len(cast("Sized", field_value))
+            return _LENGTH_BOUNDS[operator](length, int(expected_value))
         except VALIDATION_ERRORS:
-            # fallback-ok: non-numeric values return False for numeric comparison
+            # fallback-ok: a value without a length cannot satisfy a length guard
             return False
-    elif operator == ">=":
-        try:
-            # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast("SupportsFloat", field_value) or 0) >= float(
-                expected_value or "0"
-            )
-        except VALIDATION_ERRORS:
-            # fallback-ok: non-numeric values return False for numeric comparison
-            return False
-    elif operator == "<=":
-        try:
-            # Cast to SupportsFloat - TypeError caught if not actually numeric
-            return float(cast("SupportsFloat", field_value) or 0) <= float(
-                expected_value or "0"
-            )
-        except VALIDATION_ERRORS:
-            # fallback-ok: non-numeric values return False for numeric comparison
-            return False
-    elif operator == "in":
-        # Check if field_value is in expected_value (comma-separated list or iterable)
+    elif operator == "exists" or operator == "not_exists":
+        # Presence check: the value token is a placeholder and is ignored.
+        # A missing key and an explicit None are both absent.
+        return (field_value is not None) == (operator == "exists")
+    elif operator == "in" or operator == "not_in":
+        # Membership of field_value in a comma-separated expected_value list
         # Note: expected_value is always a string from parse_expression
         expected_list = [v.strip() for v in expected_value.split(",")]
-        return str(field_value) in expected_list
-    elif operator == "not_in":
-        # Check if field_value is NOT in expected_value (comma-separated list)
-        # Note: expected_value is always a string from parse_expression
-        expected_list = [v.strip() for v in expected_value.split(",")]
-        return str(field_value) not in expected_list
+        return (str(field_value) in expected_list) == (operator == "in")
     elif operator == "contains":
         # Check if field_value contains expected_value as substring
-        if field_value is None:
-            return False
-        return str(expected_value) in str(field_value)
+        return field_value is not None and str(expected_value) in str(field_value)
     elif operator == "matches":
         # Regex match (basic pattern matching)
         import re

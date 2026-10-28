@@ -13,12 +13,13 @@ Specification Reference: docs/architecture/CONTRACT_DRIVEN_NODEREDUCER_V1_0.md
 
 from __future__ import annotations
 
-from typing import Self
+from typing import ClassVar, Self
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 
 class ModelFSMTransitionCondition(BaseModel):
@@ -37,7 +38,9 @@ class ModelFSMTransitionCondition(BaseModel):
         condition_name: Unique identifier for the condition.
         condition_type: Type of condition (e.g., "expression", "custom").
         expression: 3-token expression in format "field operator value".
-            Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches.
+            Valid operators are the members of ``VALID_OPERATORS``.
+        description: Optional human-readable explanation of the condition.
+        version: Optional version of the condition declaration.
         required: If False, evaluation errors are treated as False result.
         error_message: Custom error message for validation failures.
         retry_count: Reserved for v1.1+ (parsed but not executed).
@@ -66,8 +69,18 @@ class ModelFSMTransitionCondition(BaseModel):
         default=...,
         description=(
             "3-token expression in format 'field operator value'. "
-            "Valid operators: ==, !=, <, >, <=, >=, in, not_in, contains, matches"
+            "Valid operators: see ModelFSMTransitionCondition.VALID_OPERATORS"
         ),
+    )
+
+    description: str | None = Field(
+        default=None,
+        description="Human-readable explanation of the condition",
+    )
+
+    version: ModelSemVer | None = Field(
+        default=None,
+        description="Version of the condition declaration",
     )
 
     required: bool = Field(
@@ -93,7 +106,7 @@ class ModelFSMTransitionCondition(BaseModel):
     )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         frozen=True,
         from_attributes=True,
@@ -102,7 +115,7 @@ class ModelFSMTransitionCondition(BaseModel):
     # Valid operators for expression evaluation
     # Must be kept in sync with fsm_expression_parser.SUPPORTED_OPERATORS
     # and fsm_executor._evaluate_single_condition()
-    VALID_OPERATORS: frozenset[str] = frozenset(
+    VALID_OPERATORS: ClassVar[frozenset[str]] = frozenset(
         {
             # Equality operators (symbolic and textual)
             "==",

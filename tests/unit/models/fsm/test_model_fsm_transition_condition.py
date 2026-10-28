@@ -1073,20 +1073,20 @@ class TestModelFSMTransitionConditionEdgeCases:
             condition.error_message = "Updated error"
         assert "frozen" in str(exc_info.value).lower()
 
-    def test_extra_fields_ignored(self):
-        """Test that extra fields are ignored per config."""
+    def test_extra_fields_forbidden(self):
+        """Test that undeclared fields are refused rather than silently dropped."""
         data = {
             "condition_name": "check",
             "condition_type": "expression",
             "expression": "value > 0",
-            "extra_field": "should_be_ignored",
+            "extra_field": "refused",
             "another_extra": 123,
         }
 
-        condition = ModelFSMTransitionCondition.model_validate(data)
-        assert condition.condition_name == "check"
-        assert not hasattr(condition, "extra_field")
-        assert not hasattr(condition, "another_extra")
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFSMTransitionCondition.model_validate(data)
+        assert "extra_field" in str(exc_info.value)
+        assert "another_extra" in str(exc_info.value)
 
     def test_negative_retry_count(self):
         """Test that negative retry_count raises ValidationError.
