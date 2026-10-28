@@ -93,7 +93,13 @@ class HandlerActionPin:
                             _THIRD_PARTY_REMEDIATION,
                         )
                     continue
-                if ref is not None and overlay.matches_tag(ref):
+                is_sha = ref is not None and FULL_SHA.fullmatch(ref) is not None
+                if (
+                    ref is not None
+                    and not is_sha
+                    and ref != "main"
+                    and overlay.matches_tag(ref)
+                ):
                     continue
                 if ref == "main" and overlay.first_party_main == "warn":
                     add(
@@ -103,11 +109,7 @@ class HandlerActionPin:
                         "with a dev-merge tag and remove this allowance",
                         _FIRST_PARTY_REMEDIATION,
                     )
-                elif (
-                    ref is not None
-                    and FULL_SHA.fullmatch(ref) is not None
-                    and value in exceptions
-                ):
+                elif is_sha and value in exceptions:
                     used.add(value)
                     add(
                         "WARN",

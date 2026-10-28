@@ -178,6 +178,23 @@ class TestRatchet:
         (root / "moved.yaml").rename(root / DEFAULT_OVERLAY)
         assert main(["--root", str(root), "--ratchet-base-ref", "HEAD"]) == 0
 
+    def test_unreadable_base_overlay_is_error_not_introduction(
+        self, tmp_path: Path
+    ) -> None:
+        root = self._committed(tmp_path, _overlay_doc())
+        blob = subprocess.run(
+            ["git", "-C", str(root), "rev-parse", f"HEAD:{DEFAULT_OVERLAY}"],
+            check=True,
+            capture_output=True,
+            text=True,
+            env=scrub_git_location_env(),
+        ).stdout.strip()
+        (root / ".git" / "objects" / blob[:2] / blob[2:]).unlink()
+        (root / DEFAULT_OVERLAY).write_text(
+            yaml.safe_dump(_overlay_doc(_EXC_USES)), encoding="utf-8"
+        )
+        assert main(["--root", str(root), "--ratchet-base-ref", "HEAD"]) == 1
+
     def test_growth_names_the_added_entry(self) -> None:
         base = ModelActionPinOverlay.model_validate(_overlay_doc())
         current = ModelActionPinOverlay.model_validate(_overlay_doc(_EXC_USES))

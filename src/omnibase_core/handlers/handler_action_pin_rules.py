@@ -27,9 +27,15 @@ VALIDATOR_ID: Final[str] = "action-pins"
 
 # A third-party pin is exactly 40 hex characters.
 FULL_SHA: Final[re.Pattern[str]] = re.compile(r"[0-9a-fA-F]{40}")
-# ``uses: <action>@<ref>``: tolerate a list dash, quotes and a trailing comment.
-_USES: Final[re.Pattern[str]] = re.compile(
-    r"""^\s*(?:-\s*)?uses:\s*["']?([^"'#\s]+)["']?"""
+# ``uses: <action>@<ref>`` as a block key (optionally a list item and a quoted key). An
+# unquoted value runs to the first whitespace, so ``#`` inside a ref belongs to the ref
+# and only whitespace followed by ``#`` starts a comment.
+_BLOCK_USES: Final[re.Pattern[str]] = re.compile(
+    r"""^\s*(?:-\s*)?["']?uses["']?\s*:\s*(?:"([^"]*)"|'([^']*)'|(\S+))"""
+)
+# ``{uses: <action>@<ref>}`` inside a flow mapping.
+_FLOW_USES: Final[re.Pattern[str]] = re.compile(
+    r"""[{,]\s*["']?uses["']?\s*:\s*(?:"([^"]*)"|'([^']*)'|([^\s,}]+))"""
 )
 
 
@@ -43,12 +49,23 @@ def is_candidate(path: str) -> bool:
 
 
 def extract_uses(source: str) -> tuple[tuple[int, str], ...]:
-    """``(line number, uses value)`` for every ``uses:`` line, 1-based."""
+    """``(line number, uses value)`` for every ``uses`` key, 1-based.
+
+    Reads block keys (plain or quoted, with or without a list dash) and keys
+    inside flow mappings; a whole-line comment is skipped.
+    """
     found: list[tuple[int, str]] = []
     for number, line in enumerate(source.splitlines(), start=1):
-        match = _USES.match(line)
-        if match:
-            found.append((number, match.group(1)))
+        if line.lstrip().startswith("#"):
+            continue
+        matches: list[re.Match[str]] = []
+        block = _BLOCK_USES.match(line)
+        if block is not None:
+            matches.append(block)
+        matches.extend(_FLOW_USES.finditer(line))
+        for match in matches:
+            value = next(group for group in match.groups() if group is not None)
+            found.append((number, value))
     return tuple(found)
 
 

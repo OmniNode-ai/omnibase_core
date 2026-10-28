@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 from typing import Final
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.handlers.handler_action_pin import HandlerActionPin
 from omnibase_core.handlers.handler_action_pin_rules import (
@@ -127,6 +128,21 @@ def _ref_exists(root: Path, ref: str) -> bool:
 
 
 def _base_overlay(root: Path, ref: str, overlay: str) -> ModelActionPinOverlay | None:
+    """The overlay at ``ref``; None only when ``ref`` genuinely has no such file."""
+    listed = subprocess.run(
+        ["git", "-C", str(root), "ls-tree", ref, "--", overlay],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=scrub_git_location_env(),
+    )
+    if listed.returncode != 0:
+        raise ModelOnexError(
+            message=f"cannot list {overlay} at {ref}: {listed.stderr.strip()}",
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+        )
+    if not listed.stdout.strip():
+        return None
     shown = subprocess.run(
         ["git", "-C", str(root), "show", f"{ref}:{overlay}"],
         capture_output=True,
@@ -135,7 +151,10 @@ def _base_overlay(root: Path, ref: str, overlay: str) -> ModelActionPinOverlay |
         env=scrub_git_location_env(),
     )
     if shown.returncode != 0:
-        return None
+        raise ModelOnexError(
+            message=f"cannot read {overlay} at {ref}: {shown.stderr.strip()}",
+            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
+        )
     return load_yaml_content_as_model(shown.stdout, ModelActionPinOverlay)
 
 

@@ -205,6 +205,38 @@ class TestOverlay:
             )
 
 
+class TestReviewFindings:
+    """Bypasses a hostile review found; each input must be a finding."""
+
+    def test_hash_inside_a_ref_is_part_of_the_ref(self) -> None:
+        third = _check(f"actions/checkout@{_SHA}#branch")
+        assert third.overall_status == "FAIL"
+        assert _check(f"{_FIRST}@{_TAG}#branch").overall_status == "FAIL"
+
+    def test_hash_after_whitespace_is_a_comment(self) -> None:
+        assert _check(f"actions/checkout@{_SHA} # v4").overall_status == "PASS"
+
+    def test_quoted_key_is_read(self) -> None:
+        assert extract_uses('      - "uses": actions/checkout@v4\n') == (
+            (1, "actions/checkout@v4"),
+        )
+
+    def test_flow_mapping_is_read(self) -> None:
+        assert extract_uses("      - {uses: x/y@main, with: {a: b}}\n") == (
+            (1, "x/y@main"),
+        )
+        assert extract_uses("      - { 'uses': 'x/y@v1' }\n") == ((1, "x/y@v1"),)
+
+    def test_greedy_tag_pattern_never_admits_a_sha_or_main(self) -> None:
+        greedy = ModelActionPinOverlay(first_party_orgs=(_ORG,), tag_pattern=".*")
+        assert _check(f"{_FIRST}@{_SHA}", overlay=greedy).overall_status == "FAIL"
+        assert _check(f"{_FIRST}@main", overlay=greedy).overall_status == "FAIL"
+
+    def test_whitespace_reason_is_refused(self) -> None:
+        with pytest.raises(ValidationError):
+            ModelActionPinKnownException(uses=f"{_FIRST}@{_SHA}", reason=" " * 12)
+
+
 class TestScanning:
     def test_location_names_file_and_line(self) -> None:
         report = _check("actions/checkout@v4")
