@@ -40,8 +40,9 @@ from typing import Final
 import yaml
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.bootstrap.model_environment_bootstrap import (
-    ModelEnvironmentBootstrap,
+from omnibase_core.handlers.handler_private_vocabulary import (
+    HandlerPrivateVocabulary,
+    request_from_process,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 from omnibase_core.validation.hardcoded_model_config.handler import (
@@ -68,7 +69,6 @@ __all__ = [
 ]
 
 _POLICY_RESOURCE: Final[str] = "policy.yaml"
-_LAB_DENYLIST_REL: Final[str] = "vocabularies/hardcoded_model_config_lab_denylist.yaml"
 _SCANNED_SUFFIXES: Final[frozenset[str]] = frozenset(
     {
         ".py",
@@ -119,24 +119,6 @@ class _InputError(Exception):
     """An input the gate cannot read. The gate fails closed on it."""
 
 
-def _workspace_config_root() -> Path | None:
-    """The operator's private config root, or None when none is supplied.
-
-    ``ONEX_WORKSPACE_CONFIG_ROOT`` wins; otherwise the ``omnibase_internal``
-    sibling of ``OMNI_HOME``. A consumer with neither runs the shape rules alone.
-    """
-    captured = ModelEnvironmentBootstrap.capture_process_environment(
-        declared_keys=("ONEX_WORKSPACE_CONFIG_ROOT", "OMNI_HOME")
-    ).environment
-    configured = (captured.optional("ONEX_WORKSPACE_CONFIG_ROOT") or "").strip()
-    if configured:
-        return Path(configured)
-    omni_home = (captured.optional("OMNI_HOME") or "").strip()
-    if omni_home:
-        return Path(omni_home) / ".." / "omnibase_internal"
-    return None
-
-
 def _lab_denylist() -> ModelHardcodedModelConfigLabDenylist | None:
     """Dead lab endpoints and lab deployment facts from the private vocabulary,
     when it is present.
@@ -145,18 +127,20 @@ def _lab_denylist() -> ModelHardcodedModelConfigLabDenylist | None:
     present and unreadable or malformed stops the gate: a denylist that
     silently fails to load would pass the values it exists to refuse.
     """
-    root = _workspace_config_root()
-    if root is None:
-        return None
-    path = root / _LAB_DENYLIST_REL
-    if not path.is_file():
+    try:
+        resolution = HandlerPrivateVocabulary().handle(
+            request_from_process("hardcoded_model_config_lab_denylist")
+        )
+    except ModelOnexError as exc:
+        raise _InputError(exc.message) from exc
+    if resolution.text is None:
         return None
     try:
         return load_yaml_content_as_model(
-            path.read_text(encoding="utf-8"), ModelHardcodedModelConfigLabDenylist
+            resolution.text, ModelHardcodedModelConfigLabDenylist
         )
-    except (OSError, ModelOnexError) as exc:
-        raise _InputError(f"{path}: lab denylist is invalid: {exc}") from exc
+    except ModelOnexError as exc:
+        raise _InputError(f"{resolution.path}: lab denylist is invalid: {exc}") from exc
 
 
 def _union[T](first: tuple[T, ...], second: tuple[T, ...]) -> tuple[T, ...]:

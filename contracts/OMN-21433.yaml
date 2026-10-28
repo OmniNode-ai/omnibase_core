@@ -1,0 +1,82 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21433
+title: The software factory has a formal design and failure process, with every station proven against
+  canonical shapes at its seams
+summary: Plan task T0.1 (private vocabulary resolution for every core validator) of the validators-to-core
+  and hardcoded-rules plan. One core handler resolves a private vocabulary by name from an explicit path,
+  then the environment, then the workspace config root, and refuses with the setting's name when a required
+  vocabulary is absent. The model-config gate reads through it. The omniclaude hygiene gate reads through
+  it after a dev-merge tag of omnibase_core carries the handler.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21433-t0-1-private-vocabulary-handler
+    statement: T0.1 - Every core validator reads a private vocabulary by name through one handler that
+      resolves an explicit path, then the environment variable, then the workspace config root, refuses
+      with the setting's name when a required vocabulary is absent, and carries no age limit in code.
+    acceptance:
+      - id: AC101
+        statement: "AC101: T0.1 - The model-config gate reads its lab denylist through the handler by
+          name and keeps no loader of its own; the hygiene gate reads through the same handler once a
+          dev-merge tag of omnibase_core carries it (follow-up in omniclaude). -- falsifier: uv run pytest
+          tests/unit/validation/hardcoded_model_config -q -o addopts=''"
+      - id: AC102
+        statement: "AC102: T0.1 - An unset vocabulary on a contributor host gives one refusal line naming
+          the setting, and the cache age bound is a value of the vocabulary contract. -- falsifier: uv
+          run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts='' -k \"one_line
+          or one_refusal_line or age_bound\""
+      - id: AC103
+        statement: "AC103: T0.1 - With OMNI_HYGIENE_VOCAB_PATH unset and the vocabulary at the config
+          root, the handler resolves it where the hygiene gate refuses today. -- falsifier: uv run pytest
+          tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts='' -k \"config_root or
+          variable_unset\""
+evidence_requirements:
+  - kind: tests
+    description: The model-config gate asks the handler for its denylist by name and keeps no loader of
+      its own.
+    command: uv run pytest tests/unit/validation/hardcoded_model_config -q -o addopts=''
+  - kind: tests
+    description: The handler resolves in the order explicit path, environment, config root, refuses a
+      required vocabulary with one line naming the setting, and takes its age bound from the contract.
+    command: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21433-t01-model-config-read
+    description: The model-config gate asks the private-vocabulary handler for its lab denylist by name
+      and keeps no loader of its own.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC101
+  - id: dod-omn21433-t01-refusal-and-age
+    description: An unset required vocabulary is one refusal line naming the setting, and the age bound
+      comes from the vocabulary contract.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC102
+  - id: dod-omn21433-t01-root-resolves
+    description: With the hygiene variable unset and the vocabulary at the config root, the handler's
+      CLI prints the resolved path.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts=''
+          -k "cli_prints_the_resolved_path or unset_variable_resolves"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC103
