@@ -420,6 +420,18 @@ requirements:
           runs; a changed criterion brings the items that bind it; supersessions and binding retirements
           are never split; and a contract that cannot be compared is verified in full. -- falsifier: uv
           run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''"
+  - id: req-omn17427-action-pin-rule
+    statement: A workflow uses ref is judged by the overlay's rule values. A third-party ref must be a
+      full 40-hex sha, a first-party ref must be a dev-merge tag matching the overlay's tag pattern, and
+      a first-party sha passes only as a known exception the overlay lists with a reason.
+    acceptance:
+      - id: AC53
+        statement: "AC53: The action-pin handler fails a third-party ref that is not a full sha and a
+          first-party sha, branch or non-matching tag, passes a first-party dev-merge tag and a third-party
+          sha, warns on a listed exception and on a first-party main the overlay keeps, and the CLI refuses
+          a missing overlay, a scan of zero uses and a known exception the base ref's overlay lacks. --
+          falsifier: uv run pytest tests/unit/handlers/test_handler_action_pin.py tests/unit/handlers/test_handler_action_pin_cli.py
+          -q -o addopts=''"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -536,6 +548,11 @@ evidence_requirements:
     description: dod-verify scopes each cited contract to the evidence the pull request adds or changes,
       at the head and in the must-fail control.
     command: uv run pytest tests/ci/test_receipt_gate_scope_omn17427.py -q -o addopts=''
+  - kind: tests
+    description: The action-pin rule fails and passes each ref class from the overlay's values, and the
+      CLI refuses a missing overlay, a zero-use scan and overlay exception growth.
+    command: uv run pytest tests/unit/handlers/test_handler_action_pin.py tests/unit/handlers/test_handler_action_pin_cli.py
+      -q -o addopts=''
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1141,3 +1158,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC52
+  - id: dod-omn17427-action-pin-rule
+    description: The action-pin handler and CLI judge each ref class from the overlay's rule values and
+      refuse a missing overlay, a zero-use scan and overlay exception growth.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_action_pin.py tests/unit/handlers/test_handler_action_pin_cli.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC53

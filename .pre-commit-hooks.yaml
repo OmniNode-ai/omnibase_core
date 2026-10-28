@@ -1285,3 +1285,18 @@
   always_run: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-action-pins
+  name: Workflow action pins (OMN-17427)
+  description: >
+    Third-party `uses:` refs in .github/workflows must be a full 40-hex commit sha. First-party refs (the
+    organisations the repository's .action-pin-overlay.yaml names) must be a dev-merge tag matching the
+    overlay's tag pattern; a first-party sha is refused unless the overlay lists that exact value as a
+    known exception with a reason, and a first-party @main is a finding when the overlay keeps it. The
+    overlay is the only source of the organisation, the tag pattern and the exceptions.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_action_pin_cli
+  files: ^\.github/workflows/[^/]+\.ya?ml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
