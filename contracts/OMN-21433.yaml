@@ -1,0 +1,172 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21433
+title: "T-V1 (core half only: checker_delivery_reference): delivery check, core checker"
+summary: The delivery-reference checker classifies how a consumer reads a delivered artifact and refuses
+  every reference except the kind its path role permits, in the generic validator format with all rules
+  in the delivery_paths overlay. Placeholder contract the orchestrator renames to the task ticket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21433-delivery-reference-checker
+    statement: A pure checker classifies each delivery reference and refuses all but the permitted kind
+      for the path role, with every rule held in overlay data.
+    acceptance:
+      - id: AC1
+        statement: "AC1: A reference is classified as exactly one of dev_merge_tag, candidate_tag, gate_bootstrap_pin,
+          declared_dependency_pin, branch, sha, hand_kept_version, bump_pr or unknown; continuous delivery
+          permits dev_merge_tag, a declared pre-PR path permits a candidate_tag bound to its PR head,
+          test-merge target and artifact digest, a required gate permits its declared bootstrap pin, and
+          the checker reports reference_allowed from the path role and the kind -- falsifier: nine pytest
+          cases built from the real forms (a branch-following marketplace entry, a cache key from a version
+          string, a sha, a workflow uses line at a branch, a bump branch, a matching tag, a candidate
+          tag on a declared pre-PR path, the same candidate tag on a continuous path, and a declared bootstrap
+          pin)"
+      - id: AC2
+        statement: "AC2: unknown is refused and never passed, so a form nobody listed cannot slip through
+          -- falsifier: a facts file with a reference form that matches none of the listed kinds is refused
+          through the validator"
+      - id: AC3
+        statement: "AC3: A reference named like a tag that the change source resolved to a branch is branch
+          -- falsifier: the fixture with a branch named like the tag pattern"
+      - id: AC4
+        statement: "AC4: A repository that carries version-bump automation for a delivered artifact is
+          refused as bump_pr even when its consumers read tags; the three declared dependency mechanisms
+          are declared_dependency_pin only while the overlay declares them, and an undeclared one is bump_pr
+          -- falsifier: a fixture bump workflow is refused, and the three declared mechanisms pass only
+          while declared"
+      - id: AC5
+        statement: "AC5: For the reusable-workflow kind a literal tag in a uses line is hand_kept_version,
+          a full-SHA pin is sha unless the overlay declares it the gate's gate_bootstrap_pin, and the
+          declared bootstrap pin passes only with run-time resolution of the payload -- falsifier: three
+          pytest cases (a uses line at a literal tag, an undeclared sha pin, and a declared bootstrap
+          pin with a run-time resolution step)"
+      - id: AC6
+        statement: "AC6: Operation reconcile_consumers refuses a consumer found but not declared as undeclared
+          and reports a declaration whose file cannot be read as blocked -- falsifier: a fixture that
+          adds a branch-based consumer absent from the overlay is refused, and an unreadable declaration
+          is blocked"
+      - id: AC7
+        statement: "AC7: A tag whose target commit differs from the target recorded when it was first
+          resolved is tag_moved and refused -- falsifier: the pytest case with a same-name retarget"
+      - id: AC8
+        statement: "AC8: Configuration: the tag pattern, the bump-automation patterns, the discovery patterns
+          and the consumer kinds are the delivery_paths overlay; neither the checker nor its models hold
+          a tag shape, repository or organization name -- falsifier: the same fixture is refused under
+          one overlay pattern and passes under another"
+      - id: AC9
+        statement: "AC9: Bindings: the checker depends on no protocol (it takes facts) -- falsifier: the
+          same facts give byte-identical results across a JSON round trip, and no protocol_dependencies
+          entry or protocol import appears in the checker"
+evidence_requirements:
+  - kind: tests
+    description: The delivery-reference checker and validator tests.
+    command: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py tests/unit/handlers/test_handler_delivery_reference_cli.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21433-ac1
+    description: "AC1: nine pytest cases built from the real forms (a branch-following marketplace entry,
+      a cache key from a version string, a sha, a workflow uses line at a branch, a bump branch, a matching
+      tag, a candidate tag on a declared pre-PR path, the same candidate tag on a continuous path, and
+      a declared bootstrap pin)."
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
+          --no-cov -k ac1
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac2
+    description: "AC2: a facts file with a reference form that matches none of the listed kinds is refused
+      through the validator."
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py tests/unit/handlers/test_handler_delivery_reference_cli.py
+          -q --no-cov -k ac2
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac3
+    description: "AC3: the fixture with a branch named like the tag pattern."
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
+          --no-cov -k ac3
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac4
+    description: "AC4: a fixture bump workflow is refused, and the three declared mechanisms pass only
+      while declared."
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
+          --no-cov -k ac4
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac5
+    description: "AC5: three pytest cases (a uses line at a literal tag, an undeclared sha pin, and a
+      declared bootstrap pin with a run-time resolution step)."
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
+          --no-cov -k ac5
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac6
+    description: "AC6: a fixture that adds a branch-based consumer absent from the overlay is refused,
+      and an unreadable declaration is blocked."
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py tests/unit/handlers/test_handler_delivery_reference_cli.py
+          -q --no-cov -k ac6
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac7
+    description: "AC7: the pytest case with a same-name retarget."
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
+          --no-cov -k ac7
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac8
+    description: "AC8: the same fixture is refused under one overlay pattern and passes under another."
+    source: manual
+    binds_ac: [AC8]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
+          --no-cov -k ac8
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac9
+    description: "AC9: the same facts give byte-identical results across a JSON round trip, and no protocol_dependencies
+      entry or protocol import appears in the checker."
+    source: manual
+    binds_ac: [AC9]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
+          --no-cov -k ac9
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-checkout-test
+    description: Hosted-runner run of both test files at the checkout; needs no container daemon or private
+      runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8, AC9]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py tests/unit/handlers/test_handler_delivery_reference_cli.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

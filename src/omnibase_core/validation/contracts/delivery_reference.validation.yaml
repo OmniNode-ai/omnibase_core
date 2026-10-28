@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: delivery_reference
+  validator_name: Delivery Reference Validator
+  validator_description: |
+    The consuming repository collects facts into a *.delivery-facts.yaml file.
+    This validator enforces the verdict using the delivery_paths overlay data
+    inside the facts: tag pattern, permitted kinds per role, bump patterns,
+    dependency mechanisms and discovery patterns.
+  target_patterns:
+    - "**/*.delivery-facts.yaml"
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+  rules:
+    - rule_id: delivery_reference_refused
+      description: Reject references outside the declared delivery policy.
+      severity: error
+      enabled: true
+    - rule_id: delivery_reference_tag_moved
+      description: Reject same-name tags whose resolved target changed.
+      severity: error
+      enabled: true
+    - rule_id: delivery_reference_undeclared
+      description: Reject consumer reads absent from the declared paths.
+      severity: error
+      enabled: true
+    - rule_id: delivery_reference_blocked
+      description: Block declarations whose reference cannot be read.
+      severity: error
+      enabled: true
+    - rule_id: delivery_reference_facts_unreadable
+      description: Fail closed when facts cannot be read or validated.
+      severity: error
+      enabled: true
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
