@@ -1,0 +1,102 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21433
+title: "T-C2: contract loader strict on duplicate keys, measured first"
+summary: The contract.yaml files of omnibase_core, omnibase_spi, omnibase_infra and omnimarket were loaded
+  through the strict loader first and none repeats a key, so IncludeLoader now refuses a repeated mapping
+  key at the top level, in a nested mapping and through an include, naming the key and line. Placeholder
+  contract for the factory plan parent OMN-21433; the orchestrator renames it to the task ticket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21433-loader-measured-then-strict
+    statement: The general contract loader must be measured against the contracts of the four repositories
+      first, and refuse a repeated mapping key at load once that count reads zero.
+    acceptance:
+      - id: AC1
+        statement: "AC1: The measured count of contracts with a duplicate key, and their paths, are in
+          the PR body -- falsifier: the PR body's command and output, re-run at review"
+      - id: AC2
+        statement: "AC2: With a zero count, a contract with a repeated key refuses at load naming the
+          key and line, and every existing contract still loads -- falsifier: a pytest case plus the existing
+          contract-loading tests"
+      - id: AC3
+        statement: "AC3: With a nonzero count, the activation waits for the listed fixes and lands when
+          the re-run reads zero -- falsifier: the re-run's command and output in the activation PR"
+      - id: AC4
+        statement: "AC4: The activated general loader refuses a repeated key at the top level, in a nested
+          mapping and through an include -- falsifier: three pytest cases through IncludeLoader itself,
+          not the strict helper"
+      - id: AC5
+        statement: "AC5: Configuration: a core library carries no deployment value -- falsifier: the test
+          reads no overlay and no environment variable"
+      - id: AC6
+        statement: "AC6: Bindings: a core library has no binding; the loader reads a file or a string
+          -- falsifier: the same text loads to the same mapping from a file and from a string"
+evidence_requirements:
+  - kind: "tests"
+    description: "The new duplicate-key tests pass at the head and fail at the merge base"
+    command: "uv run pytest tests/unit/contracts/test_contract_loader_duplicate_keys.py -q -p no:randomly"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21433-ac1-measured-count
+    description: The shipped omnibase_core contract.yaml files load through the strict loader with zero
+      duplicate keys (the cross-repository count of the four repositories, with its command and output,
+      is in the PR body).
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/contracts/test_contract_loader_duplicate_keys.py -q -p no:randomly
+          -k "contract_discovery_is_nonempty or real_contract_loads"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+      - AC3
+  - id: dod-omn21433-ac2-refuses-and-existing-load
+    description: A contract file with a repeated key is refused naming the key and line, and the existing
+      contract-loading tests and every shipped contract still load.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/contracts/test_contract_loader_duplicate_keys.py tests/unit/contracts/test_contract_loader.py
+          tests/unit/contracts/test_contract_loader_cache.py -q -p no:randomly -k "file_duplicate or real_contract_loads
+          or TestContractLoader or TestIncludeLoaderClass"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21433-ac4-three-cases-through-include-loader
+    description: IncludeLoader itself refuses a repeated key at the top level, in a nested mapping and
+      through an include.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/contracts/test_contract_loader_duplicate_keys.py -q -p no:randomly
+          -k "test_top_level_duplicate or test_nested_duplicate or test_include_duplicate"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21433-ac5-no-environment-read
+    description: The loader module source reads no environment variable and no overlay.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/contracts/test_contract_loader_duplicate_keys.py -q -p no:randomly
+          -k "test_loader_has_no_environment_reads"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21433-ac6-file-and-string-parity
+    description: The same text loads to the same mapping from a file and from a string, and a repeated
+      key is refused with the same key and line both ways.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/contracts/test_contract_loader_duplicate_keys.py -q -p no:randomly
+          -k "string_and_file_parity"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
