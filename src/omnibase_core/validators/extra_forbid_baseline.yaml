@@ -8,7 +8,7 @@
 # an entry here becomes compliant, forcing the count down. Do not hand-add.
 #
 # scan roots: src/omnibase_core
-# count: 984
+# count: 983
 #
 # Regenerate: python -m omnibase_core.validators.pydantic_extra_forbid \
 #     --write-baseline src/omnibase_core
@@ -620,7 +620,6 @@ violations:
   - "omnibase_core.models.fsm.model_fsm_state:ModelFsmState"
   - "omnibase_core.models.fsm.model_fsm_transition:ModelFsmTransition"
   - "omnibase_core.models.fsm.model_fsm_transition_action:ModelFSMTransitionAction"
-  - "omnibase_core.models.fsm.model_fsm_transition_condition:ModelFSMTransitionCondition"
   - "omnibase_core.models.fsm.model_fsm_transition_result:ModelFSMTransitionResult"
   - "omnibase_core.models.governance.model_canary_tier:ModelCanaryTier"
   - "omnibase_core.models.governance.model_canary_tier_assignments:ModelCanaryTierAssignments"
