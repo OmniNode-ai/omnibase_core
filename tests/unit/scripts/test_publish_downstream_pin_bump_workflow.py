@@ -66,12 +66,12 @@ def test_workflow_triggers_and_matrix_object_shape() -> None:
     assert workflow[True]["push"]["branches"] == ["main", "dev"]
     assert "override_tag" in workflow[True]["workflow_dispatch"]["inputs"]
     bump = workflow["jobs"]["bump"]
-    assert bump["name"] == "Bump: ${{ matrix.target.repo }}"
+    assert bump["name"] == "Bump: ${{ matrix.repo }}"
     assert bump["strategy"]["matrix"] == {
-        "target": "${{ fromJson(needs.enumerate-repos.outputs.repos) }}"
+        "include": "${{ fromJson(needs.enumerate-repos.outputs.repos) }}"
     }
-    assert bump["env"]["REPO"] == "${{ matrix.target.repo }}"
-    assert bump["env"]["MODE"] == "${{ matrix.target.mode }}"
+    assert bump["env"]["REPO"] == "${{ matrix.repo }}"
+    assert bump["env"]["MODE"] == "${{ matrix.mode }}"
     steps = {s.get("name"): s for s in bump["steps"]}
     assert steps["Install uv"]["uses"] == "astral-sh/setup-uv@v10.3.0"
     for name in (
@@ -79,7 +79,7 @@ def test_workflow_triggers_and_matrix_object_shape() -> None:
         "Install omnibase_core handler",
         "Update dependency lock",
     ):
-        assert steps[name]["if"] == "matrix.target.mode == 'dependency'"
+        assert steps[name]["if"] == "matrix.mode == 'dependency'"
     step_names = [step.get("name") for step in bump["steps"]]
     assert (
         step_names.index("Install uv")

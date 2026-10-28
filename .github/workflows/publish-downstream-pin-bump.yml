@@ -132,7 +132,7 @@ jobs:
           exit 1
 
   bump:
-    name: "Bump: ${{ matrix.target.repo }}"
+    name: "Bump: ${{ matrix.repo }}"
     needs: enumerate-repos
     if: needs.enumerate-repos.outputs.repos != '[]'
     runs-on: ubuntu-latest
@@ -142,11 +142,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJson(needs.enumerate-repos.outputs.repos) }}
+        include: ${{ fromJson(needs.enumerate-repos.outputs.repos) }}
     env:
       NEW_SHA: ${{ needs.enumerate-repos.outputs.new_sha }}
-      REPO: ${{ matrix.target.repo }}
-      MODE: ${{ matrix.target.mode }}
+      REPO: ${{ matrix.repo }}
+      MODE: ${{ matrix.mode }}
       DEPENDENCY_TAG: ${{ needs.enumerate-repos.outputs.dependency_tag }}
     steps:
       - name: Checkout omnibase_core (manifest + script)
@@ -164,7 +164,7 @@ jobs:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
           owner: OmniNode-ai
-          repositories: ${{ matrix.target.repo }}
+          repositories: ${{ matrix.repo }}
           permission-contents: write
           permission-pull-requests: write
           # OMN-19848: every declared pin_site lives under .github/workflows/.
@@ -175,10 +175,10 @@ jobs:
           # permission", before any PR was ever opened.
           permission-workflows: write
 
-      - name: Checkout downstream (${{ matrix.target.repo }})
+      - name: Checkout downstream (${{ matrix.repo }})
         uses: actions/checkout@v7.0.1
         with:
-          repository: OmniNode-ai/${{ matrix.target.repo }}
+          repository: OmniNode-ai/${{ matrix.repo }}
           token: ${{ steps.app-token.outputs.token }}
           path: downstream
           fetch-depth: 0
@@ -192,11 +192,11 @@ jobs:
         run: pip install pyyaml pydantic
 
       - name: Install uv
-        if: matrix.target.mode == 'dependency'
+        if: matrix.mode == 'dependency'
         uses: astral-sh/setup-uv@v10.3.0
 
       - name: Install omnibase_core handler
-        if: matrix.target.mode == 'dependency'
+        if: matrix.mode == 'dependency'
         working-directory: omnibase_core
         env:
           UV_HTTP_TIMEOUT: "600"
@@ -230,7 +230,7 @@ jobs:
           fi
 
       - name: Update dependency lock
-        if: matrix.target.mode == 'dependency'
+        if: matrix.mode == 'dependency'
         working-directory: downstream
         run: uv lock --upgrade-package omnibase-core
 
