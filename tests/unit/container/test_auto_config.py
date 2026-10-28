@@ -14,8 +14,12 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.container.container_auto_config import auto_configure_registry
+from omnibase_core.container.container_service_registry import ServiceRegistry
 from omnibase_core.enums.enum_probe_state import EnumProbeState
 from omnibase_core.models.container.model_probe_result import ModelProbeResult
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 # ---------------------------------------------------------------------------
@@ -23,16 +27,11 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 # ---------------------------------------------------------------------------
 
 
-async def _noop_register(*args: object, **kwargs: object) -> None:
-    """Async no-op stand-in for register_instance."""
-
-
 def _make_container_stub() -> SimpleNamespace:
-    """Create a minimal container stub with a mock service_registry."""
-    registry = MagicMock()
-    # register_instance is async
-    registry.register_instance = MagicMock(side_effect=_noop_register)
-    return SimpleNamespace(service_registry=registry)
+    """Create a minimal container stub with a real service registry."""
+    return SimpleNamespace(
+        service_registry=ServiceRegistry(create_default_registry_config())
+    )
 
 
 # ---------------------------------------------------------------------------

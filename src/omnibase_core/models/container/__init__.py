@@ -10,6 +10,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from omnibase_core.models.container.model_auto_config_result import (
+    ModelAutoConfigResult,
+)
+from omnibase_core.models.container.model_backend_finding import ModelBackendFinding
 from omnibase_core.models.container.model_injection_context import ModelInjectionContext
 from omnibase_core.models.container.model_protocols_namespace import (
     ModelProtocolsNamespace,
@@ -70,6 +74,8 @@ def __getattr__(name: str) -> Any:
 
 __all__ = [
     "_BaseModelONEXContainer",
+    "ModelAutoConfigResult",
+    "ModelBackendFinding",
     "ModelInjectionContext",
     "ModelONEXContainer",
     "ModelProtocolsNamespace",

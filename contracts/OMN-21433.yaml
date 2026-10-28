@@ -1,0 +1,121 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21433
+title: The container honours a pinned binding and registers the override
+summary: auto_configure_registry registers the authoritative backend's instance in place of the local
+  default, returns every skipped entry point as a named finding, and takes an optional pin per protocol
+  supplied by the caller. Placeholder contract under the plan parent; the orchestrator renames it to the
+  task ticket once that ticket exists.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21433-t-c3-pinned-binding
+    statement: The container registry serves the authoritative backend, or the backend a caller pins,
+      and reports what it skipped.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: With an authoritative fake backend and no pin, `get_service` returns the backend''s
+          instance -- falsifier: the pytest case, which fails on today''s code'
+      - id: AC2
+        statement: 'AC2: With a pin to the local default and an authoritative lab backend reachable, `get_service`
+          returns the local default -- falsifier: the pytest case'
+      - id: AC3
+        statement: 'AC3: A pin naming an absent or non-authoritative backend refuses naming the protocol
+          and the backend -- falsifier: two pytest cases'
+      - id: AC4
+        statement: 'AC4: A skipped entry point is returned in a findings list with its reason -- falsifier:
+          the pytest case with a backend lacking `probe()`'
+      - id: AC5
+        statement: 'AC5: Configuration: a core library carries no deployment value; the pin is an argument
+          the caller reads from its overlay -- falsifier: the tests pass the pin as data and the module
+          reads no environment variable'
+      - id: AC6
+        statement: 'AC6: Bindings: the registry is the binding mechanism; its own tests use the in-memory
+          defaults and fake backends -- falsifier: the same registrations in two orders give the same
+          resolution'
+evidence_requirements:
+  - kind: tests
+    description: The T-C3 test module and the existing auto-configuration module.
+    command: uv run --frozen pytest tests/unit/container/test_auto_config_override.py tests/unit/container/test_auto_config.py
+      -q --no-cov -n 0
+  - kind: ci
+    description: Hosted-runner run of the same files at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/container/test_auto_config_override.py tests/unit/container/test_auto_config.py
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21433-ac1-override-registered
+    description: An authoritative fake backend is served after the call, and the local default is served
+      on the same code path when no backend is discovered.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "replaces_local_default or no_entry_points or other_protocols"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac2-pin-local-default
+    description: A pin to the local default keeps it while an authoritative backend is reachable, and
+      a pin selects one of two authoritative backends.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "pin_to_local_default or pin_selects"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac3-pin-refusals
+    description: A pin naming an absent backend, a non-authoritative backend, or an unknown protocol refuses
+      naming the protocol and the backend.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "pin_naming or pin_for_unknown or pinned_uninstantiable or unless_pinned"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac4-findings
+    description: Entry points that failed to load, have no probe() or whose probe raised come back as
+      findings with a reason.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "findings or uninstantiable"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac5-no-environment
+    description: The module source names no environment accessor and the tests pass the pin as data.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "no_environment_variable"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-ac6-order-independent
+    description: Every permutation of the same entry points resolves to the same instances, unpinned and
+      pinned.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "independent_of_entry_point_order"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-deploy-checkout-test
+    description: Hosted-runner run of both auto-configuration test files at the checkout; needs no container
+      daemon or private runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py tests/unit/container/test_auto_config.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
