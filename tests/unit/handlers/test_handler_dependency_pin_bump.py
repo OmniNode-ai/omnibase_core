@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.handlers.handler_dependency_pin_bump import (
     HandlerDependencyPinBump,
     main,
@@ -31,8 +32,8 @@ GIT_URL = "https://github.com/OmniNode-ai/omnibase_core"
 def manifest(tmp_path: Path) -> Path:
     path = tmp_path / "manifest.yaml"
     path.write_text(
-        "version: 1\nrepos:\n  - name: consumer\n    dependency_pin: {}\n"
-        "    pin_sites: []\n  - name: handshake\n    pin_sites: []\n",
+        "version: 1\nrepos:\n  - name: consumer\n    owner: OmniNode-ai\n    dependency_pin: {}\n"
+        "    pin_sites: []\n  - name: handshake\n    owner: OmniNode-ai\n    pin_sites: []\n",
         encoding="utf-8",
     )
     return path
@@ -134,7 +135,7 @@ def test_refuses_missing_or_invalid_git_source(
     content = f"[tool.uv.sources]\n{source}\n"
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(content, encoding="utf-8")
-    with pytest.raises(ValueError, match=r"omnibase-core.*git source"):
+    with pytest.raises(ModelOnexError, match=r"omnibase-core.*git source"):
         HandlerDependencyPinBump().handle(manifest, "consumer", tmp_path, NEW_TAG)
     assert pyproject.read_text("utf-8") == content
 
@@ -143,7 +144,7 @@ def test_uses_configured_pyproject_and_case_insensitive_git_url(
     tmp_path: Path, manifest: Path
 ) -> None:
     manifest.write_text(
-        "repos:\n  - name: consumer\n    dependency_pin:\n      pyproject: custom.toml\n",
+        "version: 1\nrepos:\n  - name: consumer\n    owner: OmniNode-ai\n    dependency_pin:\n      pyproject: custom.toml\n",
         encoding="utf-8",
     )
     pyproject = tmp_path / "custom.toml"
