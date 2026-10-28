@@ -1,0 +1,178 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""Dependency pin rewrite and manifest opt-in regression tests (OMN-21478)."""
+
+from __future__ import annotations
+
+import tomllib
+from pathlib import Path
+
+import pytest
+
+from omnibase_core.handlers.handler_dependency_pin_bump import (
+    HandlerDependencyPinBump,
+    main,
+)
+from omnibase_core.models.version_drift import (
+    ModelDependencyPin,
+    ModelDependencyPinManifest,
+)
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+
+pytestmark = pytest.mark.unit
+
+OLD_TAG = "dev-20261027010203-aaaaaaaaaaaa"
+NEW_TAG = "dev-20261028010203-bbbbbbbbbbbb"
+GIT_URL = "https://github.com/OmniNode-ai/omnibase_core"
+
+
+@pytest.fixture
+def manifest(tmp_path: Path) -> Path:
+    path = tmp_path / "manifest.yaml"
+    path.write_text(
+        "version: 1\nrepos:\n  - name: consumer\n    dependency_pin: {}\n"
+        "    pin_sites: []\n  - name: handshake\n    pin_sites: []\n",
+        encoding="utf-8",
+    )
+    return path
+
+
+def _arguments(
+    manifest: Path, repo_root: Path, tag: str = NEW_TAG, repo: str = "consumer"
+) -> list[str]:
+    return [
+        "--manifest",
+        str(manifest),
+        "--repo",
+        repo,
+        "--repo-root",
+        str(repo_root),
+        "--dependency-tag",
+        tag,
+    ]
+
+
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
+@pytest.mark.parametrize("inline", [True, False])
+def test_rewrite_changes_only_source_tag_and_preserves_comments(
+    tmp_path: Path,
+    manifest: Path,
+    capsys: pytest.CaptureFixture[str],
+    newline: str,
+    inline: bool,
+) -> None:
+    source = (
+        f"[tool.uv.sources]\nomnibase-core = {{ git = '{GIT_URL}.git/', "
+        f"tag = '{OLD_TAG}' }} # keep source comment\n"
+        if inline
+        else f'[tool.uv.sources.omnibase-core]\ngit = "{GIT_URL}"\n'
+        f'tag  =  "{OLD_TAG}" # keep source comment\n'
+    )
+    content = (
+        f'# keep quoted "{OLD_TAG}" in this comment\n'
+        f'[project]\nname = "consumer"\ndescription = "{OLD_TAG}"\n'
+        f"{source}\n[tool.uv.sources.other]\ntag = '{OLD_TAG}'\n"
+    ).replace("\n", newline)
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_bytes(content.encode("utf-8"))
+
+    assert main(_arguments(manifest, tmp_path)) == 0
+
+    expected = content.replace(f"tag = '{OLD_TAG}' }}", f"tag = '{NEW_TAG}' }}")
+    if not inline:
+        expected = content.replace(f'tag  =  "{OLD_TAG}"', f'tag  =  "{NEW_TAG}"')
+    assert pyproject.read_bytes() == expected.encode("utf-8")
+    assert capsys.readouterr().out == f"CHANGED: {pyproject} (tag -> {NEW_TAG})\n"
+    assert main(_arguments(manifest, tmp_path)) == 0
+    assert capsys.readouterr().out == ""
+    assert pyproject.read_bytes() == expected.encode("utf-8")
+
+
+@pytest.mark.parametrize("tag", ["v0.47.0", "dev-main", NEW_TAG + "\n"])
+def test_rejects_non_dev_tag(
+    tmp_path: Path, manifest: Path, capsys: pytest.CaptureFixture[str], tag: str
+) -> None:
+    assert main(_arguments(manifest, tmp_path, tag=tag)) == 1
+    captured = capsys.readouterr()
+    assert "not a dev merge tag" in captured.err
+    assert captured.out == ""
+
+
+@pytest.mark.parametrize(
+    ("repo", "message"),
+    [("absent", "is absent from"), ("handshake", "no declared dependency_pin")],
+)
+def test_requires_manifest_entry_with_dependency_opt_in(
+    tmp_path: Path,
+    manifest: Path,
+    capsys: pytest.CaptureFixture[str],
+    repo: str,
+    message: str,
+) -> None:
+    assert main(_arguments(manifest, tmp_path, repo=repo)) == 1
+    assert message in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        "",
+        'omnibase-core = { path = "../omnibase_core" }',
+        f'omnibase-core = {{ git = "{GIT_URL}_other", tag = "{OLD_TAG}" }}',
+        f'omnibase-core = {{ git = "{GIT_URL}" }}',
+        f'omnibase-core = {{ git = "{GIT_URL}", tag = 123 }}',
+        f'omnibase-core = {{ git = "{GIT_URL}", tag = "{OLD_TAG}", rev = "abc" }}',
+        f'omnibase-core = {{ git = "{GIT_URL}", tag = "{OLD_TAG}", branch = "dev" }}',
+        'omnibase-core = "registry"',
+        f'omnibase-core = [{{ git = "{GIT_URL}", tag = "{OLD_TAG}" }}]',
+    ],
+)
+def test_refuses_missing_or_invalid_git_source(
+    tmp_path: Path, manifest: Path, source: str
+) -> None:
+    content = f"[tool.uv.sources]\n{source}\n"
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(content, encoding="utf-8")
+    with pytest.raises(ValueError, match=r"omnibase-core.*git source"):
+        HandlerDependencyPinBump().handle(manifest, "consumer", tmp_path, NEW_TAG)
+    assert pyproject.read_text("utf-8") == content
+
+
+def test_uses_configured_pyproject_and_case_insensitive_git_url(
+    tmp_path: Path, manifest: Path
+) -> None:
+    manifest.write_text(
+        "repos:\n  - name: consumer\n    dependency_pin:\n      pyproject: custom.toml\n",
+        encoding="utf-8",
+    )
+    pyproject = tmp_path / "custom.toml"
+    pyproject.write_text(
+        f'[tool.uv.sources.omnibase-core]\ngit = "{GIT_URL.upper()}"\n'
+        f'tag = "{OLD_TAG}"\n',
+        encoding="utf-8",
+    )
+    assert (
+        HandlerDependencyPinBump().handle(manifest, "consumer", tmp_path, NEW_TAG)
+        == pyproject
+    )
+    assert (
+        tomllib.loads(pyproject.read_text())["tool"]["uv"]["sources"]["omnibase-core"][
+            "tag"
+        ]
+        == NEW_TAG
+    )
+
+
+def test_real_manifest_dependency_opt_ins() -> None:
+    manifest = Path(__file__).resolve().parents[3] / "docs" / "downstream-repos.yaml"
+    settings = load_yaml_content_as_model(
+        manifest.read_text("utf-8"), ModelDependencyPinManifest
+    )
+    repos = {entry.name: entry.dependency_pin for entry in settings.repos}
+    assert repos["omnimarket"] == ModelDependencyPin()
+    assert ModelDependencyPin().pyproject == "pyproject.toml"
+    assert ModelDependencyPin().lock == "uv.lock"
+    assert {name for name, pin in repos.items() if pin is not None} == {"omnimarket"}
+    for repo in ("omnidash", "omniweb", "omninode_infra"):
+        assert repos[repo] is None

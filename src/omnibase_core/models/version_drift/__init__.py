@@ -9,6 +9,18 @@ from omnibase_core.models.version_drift.model_consumer_pyproject import (
 from omnibase_core.models.version_drift.model_declared_floor import (
     ModelDeclaredFloor,
 )
+from omnibase_core.models.version_drift.model_dependency_pin import (
+    ModelDependencyPin,
+)
+from omnibase_core.models.version_drift.model_dependency_pin_manifest import (
+    ModelDependencyPinManifest,
+)
+from omnibase_core.models.version_drift.model_dependency_pin_repo import (
+    ModelDependencyPinRepo,
+)
+from omnibase_core.models.version_drift.model_dependency_pin_site import (
+    ModelDependencyPinSite,
+)
 from omnibase_core.models.version_drift.model_internal_sibling import (
     ModelInternalSibling,
 )
@@ -30,6 +42,9 @@ from omnibase_core.models.version_drift.model_merge_queue_parity_input import (
 from omnibase_core.models.version_drift.model_public_runner_placement_input import (
     ModelPublicRunnerPlacementInput,
 )
+from omnibase_core.models.version_drift.model_sibling_dev_tags import (
+    ModelSiblingDevTags,
+)
 from omnibase_core.models.version_drift.model_version_floor_check_input import (
     ModelVersionFloorCheckInput,
 )
@@ -37,6 +52,10 @@ from omnibase_core.models.version_drift.model_version_floor_check_input import (
 __all__ = [
     "ModelConsumerPyproject",
     "ModelDeclaredFloor",
+    "ModelDependencyPin",
+    "ModelDependencyPinManifest",
+    "ModelDependencyPinRepo",
+    "ModelDependencyPinSite",
     "ModelInternalSibling",
     "ModelInternalSiblingPinsContract",
     "ModelInternalSiblingPinsInput",
@@ -44,5 +63,6 @@ __all__ = [
     "ModelMergeQueueParityBaselineEntry",
     "ModelMergeQueueParityInput",
     "ModelPublicRunnerPlacementInput",
+    "ModelSiblingDevTags",
     "ModelVersionFloorCheckInput",
 ]

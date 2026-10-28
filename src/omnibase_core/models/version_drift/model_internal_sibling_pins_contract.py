@@ -20,6 +20,8 @@ class ModelInternalSiblingPinsContract(BaseModel):
     Attributes:
         github_org: The organisation every sibling repository lives in.
         dev_tag_pattern: Regular expression a dev merge tag name matches.
+        max_trailing_merges: Maximum dev merges a pin may trail the newest tag.
+        max_trailing_hours: Maximum timestamp gap from the newest dev tag.
         siblings: The repositories that tag every dev merge.
     """
 
@@ -27,4 +29,6 @@ class ModelInternalSiblingPinsContract(BaseModel):
 
     github_org: str = Field(min_length=1)
     dev_tag_pattern: str = Field(min_length=1)
+    max_trailing_merges: int = Field(gt=0, strict=True)
+    max_trailing_hours: int = Field(gt=0, strict=True)
     siblings: tuple[ModelInternalSibling, ...] = Field(min_length=1)
