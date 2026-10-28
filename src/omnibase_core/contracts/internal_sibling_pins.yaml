@@ -16,6 +16,10 @@
 
 github_org: OmniNode-ai
 dev_tag_pattern: '^dev-[0-9]{14}-[0-9a-f]{12}$'
+# A dev merge tag is one dev merge. A pin trailing the newest dev tag by more
+# than either bound is stale; these policy bounds live only in this contract.
+max_trailing_merges: 50
+max_trailing_hours: 72
 
 siblings:
   - repo: omnibase_core

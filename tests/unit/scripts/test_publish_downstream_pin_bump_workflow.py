@@ -51,10 +51,216 @@ def test_existing_pr_is_retargeted_to_the_resolved_base(open_pr_script: str) -> 
 
 @pytest.mark.unit
 def test_title_carries_the_ticket_token(open_pr_script: str) -> None:
-    (title_line,) = [
-        ln for ln in open_pr_script.splitlines() if ln.strip().startswith("TITLE=")
-    ]
-    assert "[OMN-9050]" in title_line
+    # Both modes share this PR step; metadata is prepared once in GITHUB_ENV.
+    assert '--title "$TITLE"' in open_pr_script
+    steps = yaml.safe_load(WORKFLOW.read_text())["jobs"]["bump"]["steps"]
+    metadata = next(s["run"] for s in steps if s.get("name") == "Prepare PR metadata")
+    assert "[OMN-9050]" in metadata
+    assert "[OMN-21478]" in metadata
+
+
+@pytest.mark.unit
+def test_workflow_triggers_and_matrix_object_shape() -> None:
+    workflow = yaml.safe_load(WORKFLOW.read_text())
+    # PyYAML's YAML 1.1 resolver reads the Actions `on` key as True.
+    assert workflow[True]["push"]["branches"] == ["main", "dev"]
+    assert "override_tag" in workflow[True]["workflow_dispatch"]["inputs"]
+    bump = workflow["jobs"]["bump"]
+    assert bump["name"] == "Bump: ${{ matrix.repo }}"
+    assert bump["strategy"]["matrix"] == {
+        "include": "${{ fromJson(needs.enumerate-repos.outputs.repos) }}"
+    }
+    assert bump["env"]["REPO"] == "${{ matrix.repo }}"
+    assert bump["env"]["MODE"] == "${{ matrix.mode }}"
+    steps = {s.get("name"): s for s in bump["steps"]}
+    assert steps["Install uv"]["uses"] == "astral-sh/setup-uv@v10.3.0"
+    for name in (
+        "Install uv",
+        "Install omnibase_core handler",
+        "Update dependency lock",
+    ):
+        assert steps[name]["if"] == "matrix.mode == 'dependency'"
+    step_names = [step.get("name") for step in bump["steps"]]
+    assert (
+        step_names.index("Install uv")
+        < step_names.index("Install omnibase_core handler")
+        < step_names.index("Rewrite pins")
+        < step_names.index("Update dependency lock")
+    )
+    install = steps["Install omnibase_core handler"]
+    assert install["working-directory"] == "omnibase_core"
+    validator = yaml.safe_load(
+        WORKFLOW.with_name("internal-sibling-pins.yml").read_text()
+    )
+    validator_install = next(
+        s
+        for s in validator["jobs"]["internal-sibling-pins"]["steps"]
+        if s.get("name") == "Install the validator"
+    )
+    assert install["run"] == validator_install["run"]
+    assert install["env"] == validator_install["env"]
+    assert steps["Update dependency lock"]["working-directory"] == "downstream"
+    assert (
+        steps["Update dependency lock"]["run"]
+        == "uv lock --upgrade-package omnibase-core"
+    )
+    rewrite = steps["Rewrite pins"]
+    assert rewrite["working-directory"] == "omnibase_core"
+    dependency, handshake = rewrite["run"].split("\nelse\n")
+    assert (
+        "uv run --no-sync python -m omnibase_core.handlers.handler_dependency_pin_bump"
+        in dependency
+    )
+    assert '--dependency-tag "$DEPENDENCY_TAG"' in dependency
+    assert "scripts/pin_bump.py" not in dependency
+    assert "python scripts/pin_bump.py" in handshake
+    assert '--new-sha "$NEW_SHA"' in handshake
+    assert "--dependency-tag" not in handshake
+    assert "PIN_ARGS" not in rewrite["run"]
+    assert 'git commit -m "$TITLE"' in steps["Commit + push branch"]["run"]
+    assert (
+        steps["Mint onexbot-occ-writer app token"]["with"]["permission-workflows"]
+        == "write"
+    )
+    assert (
+        sum(s.get("name") == "Open PR + enable auto-merge" for s in bump["steps"]) == 1
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("mode", ["handshake", "dependency"])
+def test_pr_metadata_is_parameterized_by_mode(tmp_path: Path, mode: str) -> None:
+    workflow = yaml.safe_load(WORKFLOW.read_text())
+    script = next(
+        s["run"]
+        for s in workflow["jobs"]["bump"]["steps"]
+        if s.get("name") == "Prepare PR metadata"
+    )
+    output = tmp_path / "env"
+    sha = "a" * 40
+    short = "b" * 12
+    tag = f"dev-20261028010203-{short}"
+    result = subprocess.run(
+        ["bash", "-e", "-c", script],
+        env={
+            "PATH": os.defpath,
+            "GITHUB_ENV": str(output),
+            "MODE": mode,
+            "NEW_SHA": sha,
+            "DEPENDENCY_TAG": tag,
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    metadata = output.read_text()
+    if mode == "dependency":
+        assert f"BRANCH=bot/bump-omnibase-core-dev-pin-{short}\n" in metadata
+        assert (
+            f"TITLE=chore(ci): bump omnibase_core dev tag pin to {short} [bot] [OMN-21478]\n"
+            in metadata
+        )
+        assert f"New dev tag: `{tag}`" in metadata
+    else:
+        assert f"BRANCH=bot/bump-omnibase-core-pin-{sha[:12]}\n" in metadata
+        assert (
+            f"TITLE=chore(ci): bump omnibase_core pin to {sha[:12]} [bot] [OMN-9050]\n"
+            in metadata
+        )
+        assert f"New SHA: `{sha}`" in metadata
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("appears_on", [1, 3, 12, None])
+def test_dev_tag_resolution_waits_for_parallel_tag_workflow(
+    tmp_path: Path, appears_on: int | None
+) -> None:
+    workflow = yaml.safe_load(WORKFLOW.read_text())
+    step = next(
+        s
+        for s in workflow["jobs"]["enumerate-repos"]["steps"]
+        if s.get("name") == "Resolve dev tag"
+    )
+    assert step["id"] == "tag"
+    assert "github.ref == 'refs/heads/dev'" in step["if"]
+    assert "inputs.override_tag != ''" in step["if"]
+    sha = "a" * 40
+    tag = f"dev-20261028010203-{sha[:12]}"
+    (tmp_path / "reads").write_text("0\n")
+    git = tmp_path / "git"
+    git.write_text("""#!/bin/bash
+set -euo pipefail
+[[ "$*" == "ls-remote --tags https://github.com/OmniNode-ai/omnibase_core.git refs/tags/dev-*-${SHA:0:12}" ]]
+reads=$(cat "$TEST_ROOT/reads")
+reads=$((reads + 1))
+echo "$reads" > "$TEST_ROOT/reads"
+if [ "$reads" -ge "$APPEARS_ON" ]; then
+  printf '%s\trefs/tags/%s\n' "$SHA" "$TEST_TAG"
+fi
+""")
+    git.chmod(0o755)
+    sleep = tmp_path / "sleep"
+    sleep.write_text("""#!/bin/bash
+[[ "$1" == "20" ]] || exit 1
+echo sleep >> "$TEST_ROOT/sleeps"
+""")
+    sleep.chmod(0o755)
+    output = tmp_path / "output"
+    result = subprocess.run(
+        ["bash", "-eo", "pipefail", "-c", step["run"]],
+        env={
+            "PATH": str(tmp_path) + os.pathsep + os.defpath,
+            "GITHUB_OUTPUT": str(output),
+            "SHA": sha,
+            "OVERRIDE_TAG": "",
+            "TEST_ROOT": str(tmp_path),
+            "APPEARS_ON": str(appears_on or 99),
+            "TEST_TAG": tag,
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=10,
+    )
+    attempts = appears_on or 12
+    assert int((tmp_path / "reads").read_text()) == attempts
+    sleeps = (
+        (tmp_path / "sleeps").read_text().splitlines()
+        if (tmp_path / "sleeps").exists()
+        else []
+    )
+    assert len(sleeps) == (attempts - 1)
+    if appears_on is None:
+        assert result.returncode == 1
+        assert (
+            f"::error::No dev merge tag found for {sha} after 12 attempts"
+            in result.stdout
+        )
+    else:
+        assert result.returncode == 0, result.stderr
+        assert output.read_text() == f"tag={tag}\n"
+
+
+@pytest.mark.unit
+def test_dev_tag_override_skips_remote_resolution(tmp_path: Path) -> None:
+    workflow = yaml.safe_load(WORKFLOW.read_text())
+    step = next(
+        s
+        for s in workflow["jobs"]["enumerate-repos"]["steps"]
+        if s.get("name") == "Resolve dev tag"
+    )
+    output = tmp_path / "output"
+    tag = "dev-20261028010203-aaaaaaaaaaaa"
+    result = subprocess.run(
+        ["bash", "-e", "-c", step["run"]],
+        env={"GITHUB_OUTPUT": str(output), "OVERRIDE_TAG": tag},
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert output.read_text() == f"tag={tag}\n"
 
 
 @pytest.mark.unit

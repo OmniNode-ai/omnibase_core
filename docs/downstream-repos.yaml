@@ -2,7 +2,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# Single source of truth for downstream repos that pin omnibase_core SHAs.
+# Single source of truth for downstream omnibase_core handshake and dependency pins.
 # Consumed by .github/workflows/publish-downstream-pin-bump.yml via scripts/pin_bump.py.
 #
 # Schema:
@@ -14,7 +14,13 @@
 #         - path: repo-relative file path that contains a pinned SHA
 #           pattern: regex that MUST match the current pinned SHA; bump rewrites the match
 #                    to the new SHA. Must have exactly one capture group over the SHA itself.
+#       dependency_pin: optional; opt in to dev merge tag dependency bumps
+#         pyproject: repo-relative pyproject path (default: pyproject.toml)
+#         lock: repo-relative lockfile path (default: uv.lock)
 #       notes: optional human context
+#
+# omnidash, omniweb and omninode_infra are deliberately excluded from dependency_pin
+# bumps; their handshake pin_sites (if any) remain independent.
 #
 # When a new repo/file starts pinning omnibase_core, ADD it here — the bot relies on this
 # manifest, not discovery. Ticket: OMN-9050.
@@ -65,7 +71,9 @@ repos:
   - name: omnimarket
     owner: OmniNode-ai
     pin_sites: []
-    notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared."
+    dependency_pin: {}
+    notes: "OMN-21478: consumes omnibase-core via a dev tag in pyproject.toml and uv.lock; no handshake
+      pin_sites are declared."
 
   - name: omnimemory
     owner: OmniNode-ai

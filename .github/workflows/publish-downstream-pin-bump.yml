@@ -1,17 +1,17 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# OMN-9050: automate omnibase_core SHA pin bumps across all downstream repos.
+# OMN-9050 / OMN-21478: manifest-driven handshake SHA and dev dependency pin bumps.
 #
-# Trigger: push to main OR manual workflow_dispatch (for the 2026-04-17 bootstrap
-# sweep and any future on-demand replays).
+# Trigger: main pushes bump pin_sites; dev pushes bump dependency_pin consumers.
+# Manual replays use handshake mode unless override_tag selects dependency mode.
 #
-# For each repo declared in docs/downstream-repos.yaml with pin_sites:
+# For each eligible repo declared in docs/downstream-repos.yaml:
 #   1. Checkout the downstream repo with a minted onexbot-occ-writer App
 #      token (OMN-16373; CROSS_REPO_PAT retired).
-#   2. Run scripts/pin_bump.py to rewrite every pin_site to the new SHA.
-#   3. Commit + push a bot/bump-omnibase-core-pin-<shortsha> branch.
-#   4. Open a PR titled "chore(ci): bump omnibase_core pin to <shortsha> [bot]".
+#   2. Rewrite handshake pin_sites to the new SHA, or the dependency tag + uv.lock.
+#   3. Commit + push a mode-specific bot branch.
+#   4. Open a PR naming the pin and its tracking ticket.
 #   5. Enable auto-merge SQUASH via GraphQL so the PR merges on green CI.
 #      Arming is skipped where the repo disallows auto-merge (OMN-20361); the
 #      PR URL and a hand-landing line go to the step summary and the leg stays
@@ -29,11 +29,14 @@ name: Publish downstream pin bumps
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
   workflow_dispatch:
     inputs:
       override_sha:
         description: "Override SHA (defaults to github.sha). Must be 40-char hex."
+        required: false
+      override_tag:
+        description: "Dev tag override; selects dependency mode on manual dispatch."
         required: false
 
 permissions:
@@ -50,17 +53,25 @@ jobs:
     outputs:
       repos: ${{ steps.emit.outputs.repos }}
       new_sha: ${{ steps.sha.outputs.sha }}
+      dependency_tag: ${{ steps.tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v7.0.1
 
       - name: Resolve new SHA
         id: sha
+        env:
+          OVERRIDE_SHA: ${{ inputs.override_sha }}
         run: |
-          if [ -n "${{ inputs.override_sha }}" ]; then
-            echo "sha=${{ inputs.override_sha }}" >> "$GITHUB_OUTPUT"
+          if [ -n "$OVERRIDE_SHA" ]; then
+            SHA="$OVERRIDE_SHA"
           else
-            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+            SHA="$GITHUB_SHA"
           fi
+          if [[ ! "$SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::SHA must be 40-char lowercase hex"
+            exit 1
+          fi
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v7
@@ -72,14 +83,53 @@ jobs:
 
       - name: Emit matrix from manifest
         id: emit
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          OVERRIDE_TAG: ${{ inputs.override_tag }}
         shell: python
         run: |
           import json, os, yaml
           with open("docs/downstream-repos.yaml") as f:
               mf = yaml.safe_load(f)
-          repos = [r["name"] for r in mf["repos"] if r.get("pin_sites")]
+          dependency = (
+              os.environ["EVENT_NAME"] == "push" and os.environ["GITHUB_REF"] == "refs/heads/dev"
+          ) or (
+              os.environ["EVENT_NAME"] == "workflow_dispatch" and bool(os.environ["OVERRIDE_TAG"])
+          )
+          mode = "dependency" if dependency else "handshake"
+          repos = [
+              {"repo": r["name"], "mode": mode}
+              for r in mf["repos"]
+              if (r.get("dependency_pin") is not None if dependency else bool(r.get("pin_sites")))
+          ]
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write("repos=" + json.dumps(repos) + "\n")
+
+      - name: Resolve dev tag
+        id: tag
+        if: github.event_name == 'push' && github.ref == 'refs/heads/dev' || github.event_name == 'workflow_dispatch' && inputs.override_tag != ''
+        env:
+          SHA: ${{ steps.sha.outputs.sha }}
+          OVERRIDE_TAG: ${{ inputs.override_tag }}
+        run: |
+          if [ -n "$OVERRIDE_TAG" ]; then
+            echo "tag=$OVERRIDE_TAG" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # dev-merge-tag.yml runs in parallel; wait for its lightweight tag.
+          for ((attempt=1; attempt<=12; attempt++)); do
+            TAG=$(git ls-remote --tags https://github.com/OmniNode-ai/omnibase_core.git "refs/tags/dev-*-${SHA:0:12}" \
+              | awk '{sub("refs/tags/", "", $2); print $2}' | sort | tail -n 1)
+            if [ -n "$TAG" ]; then
+              echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            if [ "$attempt" -lt 12 ]; then
+              sleep 20
+            fi
+          done
+          echo "::error::No dev merge tag found for ${SHA} after 12 attempts (20s apart)"
+          exit 1
 
   bump:
     name: "Bump: ${{ matrix.repo }}"
@@ -92,10 +142,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        repo: ${{ fromJson(needs.enumerate-repos.outputs.repos) }}
+        include: ${{ fromJson(needs.enumerate-repos.outputs.repos) }}
     env:
       NEW_SHA: ${{ needs.enumerate-repos.outputs.new_sha }}
       REPO: ${{ matrix.repo }}
+      MODE: ${{ matrix.mode }}
+      DEPENDENCY_TAG: ${{ needs.enumerate-repos.outputs.dependency_tag }}
     steps:
       - name: Checkout omnibase_core (manifest + script)
         uses: actions/checkout@v7.0.1
@@ -139,15 +191,89 @@ jobs:
       - name: Install script deps
         run: pip install pyyaml pydantic
 
+      - name: Install uv
+        if: matrix.mode == 'dependency'
+        uses: astral-sh/setup-uv@v10.3.0
+
+      - name: Install omnibase_core handler
+        if: matrix.mode == 'dependency'
+        working-directory: omnibase_core
+        env:
+          UV_HTTP_TIMEOUT: "600"
+        run: |
+          git config --global http.version HTTP/1.1
+          for attempt in 1 2 3; do
+            uv sync --locked --no-dev && break
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::uv sync failed after ${attempt} attempts"
+              exit 1
+            fi
+            sleep $((10 * attempt))
+          done
+
       - name: Rewrite pins
         id: rewrite
-        working-directory: downstream
+        working-directory: omnibase_core
         run: |
-          python ../omnibase_core/scripts/pin_bump.py \
-            --manifest ../omnibase_core/docs/downstream-repos.yaml \
-            --repo "$REPO" \
-            --repo-root . \
-            --new-sha "$NEW_SHA"
+          if [ "$MODE" == "dependency" ]; then
+            uv run --no-sync python -m omnibase_core.handlers.handler_dependency_pin_bump \
+              --manifest docs/downstream-repos.yaml \
+              --repo "$REPO" \
+              --repo-root "$GITHUB_WORKSPACE/downstream" \
+              --dependency-tag "$DEPENDENCY_TAG"
+          else
+            python scripts/pin_bump.py \
+              --manifest docs/downstream-repos.yaml \
+              --repo "$REPO" \
+              --repo-root "$GITHUB_WORKSPACE/downstream" \
+              --new-sha "$NEW_SHA"
+          fi
+
+      - name: Update dependency lock
+        if: matrix.mode == 'dependency'
+        working-directory: downstream
+        run: uv lock --upgrade-package omnibase-core
+
+      - name: Prepare PR metadata
+        run: |
+          SHORT="${NEW_SHA:0:12}"
+          if [ "$MODE" == "dependency" ]; then
+            SHORT="${DEPENDENCY_TAG##*-}"
+            BRANCH="bot/bump-omnibase-core-dev-pin-${SHORT}"
+            TITLE="chore(ci): bump omnibase_core dev tag pin to ${SHORT} [bot] [OMN-21478]"
+            BODY=$(cat <<EOF
+          Automated dependency pin bump emitted by \`omnibase_core/publish-downstream-pin-bump.yml\`.
+
+          - New dev tag: \`${DEPENDENCY_TAG}\`
+          - Source: https://github.com/OmniNode-ai/omnibase_core/tree/${DEPENDENCY_TAG}
+          - Lock: refreshed with \`uv lock --upgrade-package omnibase-core\`
+          - Tracking: OMN-21478
+
+          Will auto-merge on green CI.
+          EOF
+            )
+          else
+            BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
+            TITLE="chore(ci): bump omnibase_core pin to ${SHORT} [bot] [OMN-9050]"
+            BODY=$(cat <<EOF
+          Automated pin bump emitted by \`omnibase_core/publish-downstream-pin-bump.yml\`.
+
+          - New SHA: \`${NEW_SHA}\`
+          - Source: https://github.com/OmniNode-ai/omnibase_core/commit/${NEW_SHA}
+          - Tracking: OMN-9050
+
+          Will auto-merge on green CI. If CI regresses, DO NOT manually bump the pin to
+          paper over the failure — diagnose the handshake break instead.
+          EOF
+            )
+          fi
+          {
+            echo "BRANCH=$BRANCH"
+            echo "TITLE=$TITLE"
+            echo "BODY<<PIN_BUMP_BODY"
+            echo "$BODY"
+            echo "PIN_BUMP_BODY"
+          } >> "$GITHUB_ENV"
 
       - name: Detect changes
         id: diff
@@ -165,8 +291,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          SHORT="${NEW_SHA:0:12}"
-          BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
           # OMN-18273: commit as the App this job already mints a token for. The
           # previous identity resolved to no GitHub account, so the commit rendered
           # unlinked and named neither a bot nor a run. The numeric prefix on the
@@ -175,7 +299,7 @@ jobs:
           git config user.email "307849072+onexbot-occ-writer[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
           git add -A
-          git commit -m "chore(ci): bump omnibase_core pin to ${SHORT} [bot] [OMN-9050]" \
+          git commit -m "$TITLE" \
             --trailer "Onex-Workflow: ${GITHUB_WORKFLOW}" \
             --trailer "Onex-Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           git push -u origin "$BRANCH" --force-with-lease
@@ -186,12 +310,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          SHORT="${NEW_SHA:0:12}"
-          BRANCH="bot/bump-omnibase-core-pin-${SHORT}"
           # OMN-19848: the ticket token belongs in the TITLE, not only the commit
           # message. The downstream OCC autobind and Receipt Gate read the PR
           # title, and a title without it left every bot PR with no companion.
-          TITLE="chore(ci): bump omnibase_core pin to ${SHORT} [bot] [OMN-9050]"
           # OMN-19848: open against the downstream repo's own default branch. A
           # hardcoded main opened every dev-default repo's PR against the
           # release-synced branch (OMN-16289), where main-target-guard rejects it
@@ -201,17 +322,6 @@ jobs:
             echo "::error::could not resolve the default branch of OmniNode-ai/${REPO}"
             exit 1
           fi
-          BODY=$(cat <<EOF
-          Automated pin bump emitted by \`omnibase_core/publish-downstream-pin-bump.yml\`.
-
-          - New SHA: \`${NEW_SHA}\`
-          - Source: https://github.com/OmniNode-ai/omnibase_core/commit/${NEW_SHA}
-          - Tracking: OMN-9050
-
-          Will auto-merge on green CI. If CI regresses, DO NOT manually bump the pin to
-          paper over the failure — diagnose the handshake break instead.
-          EOF
-          )
           # Check for existing open PR from this branch first — gh pr create
           # errors if one exists (no --upsert flag). When rerun from push, the
           # existing PR already has our commits; just update the PR body and
@@ -268,7 +378,7 @@ jobs:
 
       - name: Report no-op
         if: steps.diff.outputs.changed == 'false'
-        run: echo "No changes for ${REPO} — pins already at ${NEW_SHA}."
+        run: echo "No changes for ${REPO} — pins already at ${DEPENDENCY_TAG:-$NEW_SHA}."
 
   summary:
     name: Publish summary

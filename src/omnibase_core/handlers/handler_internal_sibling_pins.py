@@ -22,6 +22,10 @@ other than the consumer itself:
 * ``wrong_repo`` -- a git source that is not the sibling's own repository.
 * ``release_pin`` -- an exact ``==`` version of a sibling, which pins a release
   and refuses the dev tag's version; keep a range for external installs.
+* ``stale_pin`` -- a dev tag trails the newest dev tag by more than the
+  contract's merge or timestamp bound; repin to the newest dev tag.
+* ``unverifiable_pin`` -- the sibling's tag inventory or pinned tag is absent
+  when staleness is evaluated, or a tag timestamp cannot be read.
 
 The PyPI range stays in ``[project]`` dependencies for external installs; the
 source is what CI and the lab resolve. Every finding is FAIL. There is no
@@ -36,6 +40,7 @@ from __future__ import annotations
 import re
 import tomllib
 from collections.abc import Iterator, Mapping
+from datetime import UTC, datetime, timedelta
 from typing import Final, Literal
 
 from omnibase_core.models.validation.model_validation_finding import (
@@ -57,6 +62,7 @@ __all__ = [
     "VALIDATOR_ID",
     "HandlerInternalSiblingPins",
     "classify_ref",
+    "declared_sibling_repos",
     "normalize_name",
 ]
 
@@ -75,7 +81,8 @@ _REMEDIATION: Final[str] = (
     "Pin the sibling in [tool.uv.sources] to its newest green dev merge tag: "
     '<dist> = { git = "https://github.com/OmniNode-ai/<repo>.git", tag = '
     '"dev-<YYYYMMDDHHMMSS>-<sha12>" }, and keep a version range (never ==) in '
-    "[project] dependencies for external installs. RULINGs 2026-10-16T07:34:18Z "
+    "[project] dependencies for external installs. Repin stale pins to the newest "
+    "dev tag. RULINGs 2026-10-16T07:34:18Z "
     "and 2026-10-16T09:35:49Z (OMN-19998)."
 )
 
@@ -139,13 +146,40 @@ def _uv(document: Mapping[str, object]) -> Mapping[str, object]:
     return {}
 
 
+def declared_sibling_repos(
+    document: Mapping[str, object], contract: ModelInternalSiblingPinsContract
+) -> tuple[str, ...]:
+    """Sibling repositories judged in this document, excluding the consumer."""
+    names = set()
+    for _, requirement in _requirement_strings(document):
+        match = _NAME.match(requirement)
+        if match:
+            names.add(normalize_name(match.group(1)))
+    sources = _uv(document).get("sources")
+    if isinstance(sources, Mapping):
+        names.update(normalize_name(str(name)) for name in sources)
+    project = document.get("project")
+    if isinstance(project, Mapping):
+        names.discard(normalize_name(str(project.get("name", ""))))
+    return tuple(
+        sorted(
+            s.repo for s in contract.siblings if normalize_name(s.distribution) in names
+        )
+    )
+
+
 class HandlerInternalSiblingPins:
-    """Refuse a release, bare-sha or branch pin of an internal sibling."""
+    """Require internal sibling dev merge tags within the contract's bounds."""
 
     def handle(self, request: ModelInternalSiblingPinsInput) -> ModelValidationReport:
         """Definition-B canonical entry-point (OMN-14355). Pure, no I/O, no clock."""
         contract = request.contract
         dev_tag = re.compile(contract.dev_tag_pattern)
+        dev_tags = (
+            {sibling.repo: sibling.tags for sibling in request.dev_tags}
+            if request.dev_tags is not None
+            else None
+        )
         errors: list[str] = []
         findings: list[ModelValidationFinding] = []
         for file in request.files:
@@ -154,7 +188,9 @@ class HandlerInternalSiblingPins:
             except tomllib.TOMLDecodeError as exc:
                 errors.append(f"{file.path}: pyproject does not parse: {exc}")
                 continue
-            findings.extend(self._judge(file.path, document, contract, dev_tag))
+            findings.extend(
+                self._judge(file.path, document, contract, dev_tag, dev_tags)
+            )
         if errors:
             return ModelValidationReport.from_runtime_errors(
                 VALIDATOR_ID, tuple(errors)
@@ -167,6 +203,7 @@ class HandlerInternalSiblingPins:
         document: Mapping[str, object],
         contract: ModelInternalSiblingPinsContract,
         dev_tag: re.Pattern[str],
+        dev_tags: Mapping[str, tuple[str, ...]] | None,
     ) -> Iterator[ModelValidationFinding]:
         siblings = {normalize_name(s.distribution): s for s in contract.siblings}
         project = document.get("project")
@@ -224,7 +261,7 @@ class HandlerInternalSiblingPins:
             items = entries if isinstance(entries, list) else [entries]
             for item in items:
                 yield from self._judge_source(
-                    location, name, item, sibling.repo, contract, dev_tag
+                    location, name, item, sibling.repo, contract, dev_tag, dev_tags
                 )
 
     def _judge_source(
@@ -235,6 +272,7 @@ class HandlerInternalSiblingPins:
         repo: str,
         contract: ModelInternalSiblingPinsContract,
         dev_tag: re.Pattern[str],
+        dev_tags: Mapping[str, tuple[str, ...]] | None,
     ) -> Iterator[ModelValidationFinding]:
         if not isinstance(source, Mapping) or "git" not in source:
             kind = (
@@ -279,6 +317,54 @@ class HandlerInternalSiblingPins:
                 location,
                 f"{location}: {name} git source has {shown}, not a dev merge tag "
                 f"(rule {rule})",
+            )
+        elif dev_tags is not None:
+            yield from self._judge_staleness(
+                location, name, str(tag).strip(), repo, contract, dev_tag, dev_tags
+            )
+
+    def _judge_staleness(
+        self,
+        location: str,
+        name: str,
+        pinned: str,
+        repo: str,
+        contract: ModelInternalSiblingPinsContract,
+        dev_tag: re.Pattern[str],
+        dev_tags: Mapping[str, tuple[str, ...]],
+    ) -> Iterator[ModelValidationFinding]:
+        tags = {tag for tag in dev_tags.get(repo, ()) if dev_tag.match(tag)}
+        if pinned not in tags:
+            yield self._finding(
+                location,
+                f"{location}: {name} pinned tag {pinned!r} is absent from the "
+                f"supplied dev tags for {repo} (rule unverifiable_pin)",
+            )
+            return
+        newest = max(tags)
+        merges = sum(tag > pinned for tag in tags)
+        try:
+            pinned_time = datetime.strptime(
+                pinned.split("-")[1], "%Y%m%d%H%M%S"
+            ).replace(tzinfo=UTC)
+            newest_time = datetime.strptime(
+                newest.split("-")[1], "%Y%m%d%H%M%S"
+            ).replace(tzinfo=UTC)
+        except ValueError:
+            yield self._finding(
+                location,
+                f"{location}: {name} cannot read UTC timestamps for pinned tag "
+                f"{pinned!r} and newest tag {newest!r} (rule unverifiable_pin)",
+            )
+            return
+        hours = (newest_time - pinned_time) / timedelta(hours=1)
+        if merges > contract.max_trailing_merges or hours > contract.max_trailing_hours:
+            yield self._finding(
+                location,
+                f"{location}: {name} pinned tag {pinned!r} trails newest tag "
+                f"{newest!r} by {merges} merges and {hours:g} hours; bounds are "
+                f"{contract.max_trailing_merges} merges and "
+                f"{contract.max_trailing_hours} hours (rule stale_pin)",
             )
 
     def _judge_url(

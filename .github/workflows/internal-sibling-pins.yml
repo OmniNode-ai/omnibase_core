@@ -19,6 +19,12 @@
 #   not_dev_tag     any other ref or a non-git source
 #   wrong_repo      a git source that is not the sibling's own repository
 #   release_pin     an exact == version (keep a range for external installs)
+#   stale_pin       a tag trails newest by more than either contract bound
+#   unverifiable_pin a sibling tag inventory or pinned tag cannot be verified
+#
+# Staleness is evaluated by default against live sibling tags. Each dev merge
+# tag represents one merge; merge-count and UTC timestamp-gap bounds come only
+# from the packaged contract. A stale pin must move to the newest dev tag.
 #
 # The contract is read from the pinned checkout, so a caller cannot widen it.
 # A caller adopts the check in the same pull request that converts its pins,
