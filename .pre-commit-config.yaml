@@ -9,7 +9,7 @@
 # Two-stage validation strategy for optimal developer experience:
 #
 # PRE-COMMIT (target: <15 seconds):
-#   - Formatting (ruff format/fix, yamlfmt)
+#   - Formatting checks (ruff format --check, ruff check, yamlfmt -lint): check-only, no hook rewrites a file (OMN-21433)
 #   - Basic file checks (whitespace, large files, merge conflicts)
 #   - Quick structural validations (empty dirs, duplicates)
 #   - Security checks (secrets, env vars)
@@ -48,6 +48,9 @@ repos:
     rev: v0.21.0
     hooks:
       - id: yamlfmt
+        # OMN-21433 (T2.6): check-only. -lint refuses an unformatted file and leaves the
+        # tree byte-identical; the fix is `yamlfmt <file>`, run by the author.
+        args: [-lint]
         # The public hygiene config uses a restricted bootstrap YAML parser
         # that does not accept the document-start marker added by yamlfmt.
         exclude: ^(work_tickets/|tests/fixtures/validation/invalid/|\.github/workflows/|archived/|\.public-repo-hygiene\.yaml$)
@@ -56,8 +59,6 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: end-of-file-fixer
-        exclude: ^(\.github/workflows/|\.mcp\.json$)
       - id: check-merge-conflict
       - id: check-added-large-files
         args: [--maxkb=1000]
@@ -91,8 +92,10 @@ repos:
         stages: [pre-commit]
 
       - id: ruff-format
-        name: ruff format (staged Python files)
-        entry: uv run ruff format --force-exclude
+        name: ruff format --check (staged Python files)
+        # OMN-21433 (T2.6): check-only. A file ruff would reformat is refused and left
+        # as written; the fix is `uv run ruff format <file>`, run by the author.
+        entry: uv run ruff format --force-exclude --check
         language: system
         pass_filenames: true
         require_serial: true
@@ -100,15 +103,28 @@ repos:
         stages: [pre-commit]
 
       - id: ruff-fix
-        name: ruff check (auto-fix staged Python files)
-        entry: uv run ruff check --force-exclude --fix --exit-non-zero-on-fix
+        name: ruff check (staged Python files, check-only)
+        # OMN-21433 (T2.6): check-only, no --fix. The hook id stays because the validator
+        # requirements name it; the fix is `uv run ruff check --fix <file>`, run by the author.
+        entry: uv run ruff check --force-exclude
         language: system
         pass_filenames: true
         require_serial: true
         files: ^(src|tests)/.*\.py$
         stages: [pre-commit]
-        # Note: --exit-non-zero-on-fix ensures pre-commit fails if files were modified,
-        # forcing you to re-stage the changes. This keeps pre-commit and CI in sync.
+
+      # OMN-21433 (T2.6): replaces pre-commit-hooks' end-of-file-fixer, which rewrote the
+      # final newline. The pattern matches a text file whose last byte is not a newline or
+      # that ends in more than one; the hook refuses it and leaves it as written.
+      - id: check-end-of-file
+        name: Files end in exactly one newline (check-only)
+        entry: '[^\n]\Z|\n\n\Z'
+        language: pygrep
+        args: [--multiline]
+        types: [text]
+        exclude: ^(\.github/workflows/|\.mcp\.json$)
+        require_serial: true
+        stages: [pre-commit]
 
       - id: mypy-type-check
         name: mypy (type checking - strict)
@@ -353,14 +369,14 @@ repos:
         files: ^(src/omnibase_core/(.*/)?nodes/.*/contract\.yaml|src/omnibase_core/(.*/)?nodes/.*\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/verify_flip_bundle\.py|scripts/ci/equivalence_producer\.py|scripts/ci/parity_replay\.py|scripts/ci/parity_red_on_base_baseline\.py|scripts/ci/adequacy_receipts/.*)$
         stages: [pre-push]
 
-      # Cleanup: Clear tmp/ directory before commits
-      # Prevents accumulation of temporary files from custom commands
-      - id: clean-tmp-directory
-        name: Clean tmp directory
-        entry: bash -c "rm -rf tmp/* 2>/dev/null || true"
-        language: system
-        always_run: true
-        pass_filenames: false
+      # OMN-21433 (T2.6): replaces clean-tmp-directory, which deleted tmp/* before every
+      # commit. tmp/ is scratch space; a staged file under it is refused, nothing is deleted.
+      - id: reject-staged-tmp-files
+        name: Reject staged tmp/ files
+        entry: tmp/ is scratch space and is never committed; unstage every file under tmp/ and keep it
+          ignored
+        language: fail
+        files: ^tmp/
         stages: [pre-commit]
 
       # Security: Prevent .env file commits
@@ -457,10 +473,13 @@ repos:
         pass_filenames: true
         require_serial: true
         stages: [commit-msg]
-      - id: strip-ai-coauthor-trailer
-        name: Strip AI-generated Co-Authored-By trailers from commit messages
-        entry: perl -i -ne 'print unless /^co-authored-by:.*claude.*noreply\@anthropic\.com/i'
-        language: system
+      # OMN-21433 (T2.6): replaces strip-ai-coauthor-trailer, which rewrote the commit
+      # message file. The trailer is refused and the message is left as written.
+      - id: reject-ai-coauthor-trailer
+        name: Reject AI-generated Co-Authored-By trailers in commit messages
+        entry: '^co-authored-by:.*claude.*noreply@anthropic\.com'
+        language: pygrep
+        args: [--ignore-case]
         pass_filenames: true
         require_serial: true
         stages: [commit-msg]
@@ -1916,6 +1935,20 @@ repos:
           --base-baseline "$base/ci_inheritance_baseline.yaml"'
         language: system
         files: ^(\.github/workflows/.*\.ya?ml|\.onex_ratchets/ci_inheritance_baseline\.yaml)$
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
+      # A hook checks and refuses; it never rewrites (OMN-21433, plan task T2.6). Refuses a
+      # hook in this file or in .pre-commit-hooks.yaml whose entry or args write, judged by the
+      # signals and known rewriting hook ids of .hook-writes-overlay.yaml. The scan covers the
+      # whole of both files, so it needs no base ref; it runs in CI through the
+      # precommit-suite job.
+      - id: check-hook-writes
+        name: Pre-commit hooks check, never rewrite (OMN-21433)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_hook_writes_cli
+        language: system
+        files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml|\.hook-writes-overlay\.yaml)$
         pass_filenames: false
         require_serial: true
         stages: [pre-commit]
