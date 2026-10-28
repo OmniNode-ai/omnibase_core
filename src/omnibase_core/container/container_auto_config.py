@@ -41,10 +41,10 @@ async def auto_configure_registry(
     handler = HandlerBackendOverride()
     instances, stage_findings = handler.handle(selected, selected_pins, _LOCAL_BACKENDS)
     findings.extend(stage_findings)
-    registry = container.service_registry
-    defaults = await _register_local_defaults(registry, state_root=Path(state_root))
+    reg = container.service_registry
+    defaults = await _register_local_defaults(reg, state_root=Path(state_root))
     overrides, registration_findings = await handler.register(
-        registry, defaults, selected, instances
+        (reg.unregister_service, reg.register_instance), defaults, selected, instances
     )
     findings.extend(registration_findings)
     return ModelAutoConfigResult(findings=tuple(findings), overrides=overrides)

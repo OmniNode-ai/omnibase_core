@@ -6,8 +6,7 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Mapping
-from typing import Any
+from collections.abc import Awaitable, Callable, Mapping
 from uuid import UUID
 
 from omnibase_core.enums.enum_backend_finding_reason import EnumBackendFindingReason
@@ -84,12 +83,19 @@ class HandlerBackendOverride:
 
     async def register(
         self,
-        registry: Any,
+        registry_calls: tuple[
+            Callable[[UUID], Awaitable[bool]],
+            Callable[[type[object], object], Awaitable[object]],
+        ],
         defaults: Mapping[str, LocalRegistration],
         selected: Mapping[str, ProbedBackend],
         instances: BackendInstances,
     ) -> tuple[dict[str, str], list[ModelBackendFinding]]:
-        """Replace registered defaults and report unavailable local interfaces."""
+        """Replace registered defaults and report unavailable local interfaces.
+
+        ``registry_calls`` is the registry's (unregister, register_instance) pair.
+        """
+        unregister, register_instance = registry_calls
         findings: list[ModelBackendFinding] = []
         overrides: dict[str, str] = {}
         for proto_name, (instance, result) in instances.items():
@@ -107,8 +113,8 @@ class HandlerBackendOverride:
                 )
                 continue
             registration_id, interface = local
-            await registry.unregister_service(registration_id)
-            await registry.register_instance(interface, instance)
+            await unregister(registration_id)
+            await register_instance(interface, instance)
             overrides[proto_name] = result.backend_name
             logger.info(
                 "Override registered: %s → %s (package: %s)",
