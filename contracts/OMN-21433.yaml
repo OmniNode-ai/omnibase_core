@@ -1,0 +1,62 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21433
+title: Validators-to-core plan, task T0.2 -- pin parity for the shared core hook repo
+summary: One core check refuses a hook of the shared core hook repo whose pinned rev is older than the
+  newest rev that hook repo is pinned at anywhere in the same .pre-commit-config.yaml.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21433-t02-precommit-pin-parity
+    statement: T0.2 -- a hook of the shared core hook repo never pins a rev older than the newest rev
+      that hook repo is pinned at in the same repository's .pre-commit-config.yaml.
+    acceptance:
+      - id: AC1
+        statement: 'T0.2 AC1: a config whose first hook pins the shared core hook repo at an older rev
+          than its second hook fails, naming the older rev, the newest rev and the line of the older pin
+          -- falsifier: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity.py -q -o addopts=''''
+          -k "older or order or fixture"'
+      - id: AC2
+        statement: 'T0.2 AC2: a config whose hooks of the shared core hook repo all pin the newest rev
+          passes, and a rev whose commit time cannot be resolved fails closed -- falsifier: uv run pytest
+          tests/unit/handlers/test_handler_precommit_pin_parity.py tests/unit/handlers/test_handler_precommit_pin_parity_cli.py
+          -q -o addopts='''' -k "newest or converged or fails_closed or does_not_hold"'
+      - id: AC3
+        statement: 'T0.2 AC3: the canary commit that lowers one pin is refused by the CLI, which orders
+          revs by git commit time from a history repository or the pre-commit cache -- falsifier: uv run
+          pytest tests/unit/handlers/test_handler_precommit_pin_parity_cli.py -q -o addopts='''''
+evidence_requirements:
+  - kind: tests
+    description: The pin-parity handler and CLI pass and fail each pin shape, including the canary fixture
+      that lowers one pin.
+    command: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity.py tests/unit/handlers/test_handler_precommit_pin_parity_cli.py
+      -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21433-t02-handler
+    description: The handler fails a hook pinned older than the newest pin of the same hook repo and passes
+      converged pins.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21433-t02-cli-canary
+    description: The CLI refuses the canary that lowers one pin, resolves commit times from git, and refuses
+      a missing or unparsable config.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity_cli.py -q -o
+          addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

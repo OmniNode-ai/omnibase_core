@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Both hooks pin the newest rev of the shared core hook repo (OMN-21433, T0.2).
+---
+repos:
+  - repo: https://github.com/OmniNode-ai/omnibase_core
+    rev: 2222222222222222222222222222222222222222
+    hooks:
+      - id: canonical-file-shape
+  - repo: https://github.com/OmniNode-ai/omnibase_core
+    rev: 2222222222222222222222222222222222222222
+    hooks:
+      - id: check-direct-model-call
