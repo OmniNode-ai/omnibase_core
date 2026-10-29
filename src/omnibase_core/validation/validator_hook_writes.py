@@ -12,12 +12,11 @@ hands them with the contract's rule rows to the pure
 
 Usage (pre-commit hook)::
 
-    python -m omnibase_core.validation.validator_hook_writes <hook files...>
+    python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_hook_writes:ValidatorHookWrites <hook files...>
 """
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import ClassVar
 
@@ -56,12 +55,3 @@ class ValidatorHookWrites(ValidatorBase):
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             ) from exc
         return check_hook_writes(path, hooks, contract.rules)
-
-
-if __name__ == "__main__":
-    from omnibase_core.handlers.handler_validator_run import (
-        build_validator_container,
-        main,
-    )
-
-    sys.exit(main(ValidatorHookWrites, container_factory=build_validator_container))

@@ -25,7 +25,7 @@ Families (the policy decides which apply to a path):
 * ``L``: a ``.example.`` file handed to a loader (``open``, ``read_text``,
   ``safe_load``, ``json.load``) in Python source.
 * ``T`` and ``N``: a model tier alias and an engine name of the engine ladder
-  (OMN-21463); judged by ``handlers.handler_hardcoded_model_tier_engine``.
+  (OMN-21463); judged by ``validation.checker_hardcoded_model_tier``.
 
 No inline suppression marker is honoured; the policy file is the whole
 allowlist. Several matches of one family on one line are one finding, because
@@ -43,7 +43,7 @@ from collections.abc import Iterable, Sequence
 from functools import lru_cache
 from typing import Final, get_args
 
-from omnibase_core.handlers.handler_hardcoded_model_tier_engine import scan_tier_engine
+from omnibase_core.validation.checker_hardcoded_model_tier import scan_tier_engine
 from omnibase_core.validation.hardcoded_model_config.models import (
     LiteralFamily,
     ModelHardcodedModelConfigBaselineEntry,

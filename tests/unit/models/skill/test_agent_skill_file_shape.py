@@ -24,7 +24,7 @@ from tests.unit.nodes.node_canonical_file_shape_check_compute.support import RUL
     "module_name",
     [
         "enums.enum_agent_skill_render_profile",
-        "handlers.handler_agent_skill_codec",
+        "validation.checker_agent_skill_codec",
         "models.skill.model_agent_skill",
         "models.skill.model_agent_skill_frontmatter",
         "models.skill.model_agent_skill_onex_keys",
@@ -46,7 +46,7 @@ def test_agent_skill_modules_have_canonical_file_shape(module_name: str) -> None
         contract_texts=(
             ModelCanonicalFileShapeText(
                 path="src/omnibase_core/nodes/node_skill/contract.yaml",
-                text="handler:\n  module: omnibase_core.handlers.handler_agent_skill_codec\n",
+                text="handler:\n  module: omnibase_core.validation.checker_agent_skill_codec\n",
             ),
         ),
     )

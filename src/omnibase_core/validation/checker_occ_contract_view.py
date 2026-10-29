@@ -40,7 +40,6 @@ of any existing entry, in either layout.
 from __future__ import annotations
 
 import hashlib
-import re
 from pathlib import Path
 
 import yaml
@@ -55,7 +54,7 @@ from omnibase_core.models.validation.model_occ_contract_view import (
 )
 
 __all__ = [
-    "PER_PR_CONTRACT_FILENAME_PATTERN",
+    "is_per_pr_contract_filename",
     "legacy_contract_path",
     "load_occ_contract_view",
     "occ_contract_present",
@@ -63,12 +62,29 @@ __all__ = [
     "per_pr_contract_path",
 ]
 
+
 # ``<repo>-<pr>.yaml``: the repo is the short repository name (as in
 # ``omnibase_core``), the PR its number. The repo may itself contain hyphens; the
 # last ``-<digits>`` is the PR number.
-PER_PR_CONTRACT_FILENAME_PATTERN = re.compile(
-    r"^(?P<repo>[A-Za-z0-9_.][A-Za-z0-9_.-]*)-(?P<pr>[1-9][0-9]*)\.yaml$"
-)
+def _is_repo_char(char: str) -> bool:
+    return char.isascii() and (char.isalnum() or char in "_.")
+
+
+def is_per_pr_contract_filename(name: str) -> bool:
+    """Whether ``name`` is ``<repo>-<pr>.yaml``: a repository name, ``-``, a PR number from 1."""
+    stem, dot, suffix = name.rpartition(".")
+    if not dot or suffix != "yaml":
+        return False
+    repo, hyphen, pr = stem.rpartition("-")
+    return (
+        bool(hyphen)
+        and pr.isascii()
+        and pr.isdigit()
+        and not pr.startswith("0")
+        and bool(repo)
+        and _is_repo_char(repo[0])
+        and all(_is_repo_char(c) or c == "-" for c in repo)
+    )
 
 
 def _view_error(message: str) -> ModelOnexError:
@@ -96,7 +112,7 @@ def per_pr_contract_path(
     """
     short_repo = repo.rsplit("/", 1)[-1]
     name = f"{short_repo}-{pr_number}.yaml"
-    if PER_PR_CONTRACT_FILENAME_PATTERN.fullmatch(name) is None:
+    if not is_per_pr_contract_filename(name):
         raise _view_error(
             f"cannot build a per-PR contract name from repo={repo!r} pr={pr_number!r}"
         )
@@ -134,7 +150,7 @@ def _evidence_ids(data: object) -> list[str]:
 
 
 def _load_per_pr_source(path: Path, ticket_id: str) -> ModelOccContractSource:
-    if PER_PR_CONTRACT_FILENAME_PATTERN.fullmatch(path.name) is None:
+    if not is_per_pr_contract_filename(path.name):
         raise _view_error(f"per-PR contract {path} is not named <repo>-<pr>.yaml")
     if not path.is_file():
         raise _view_error(f"per-PR contract {path} is not a file")

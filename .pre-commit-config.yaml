@@ -119,7 +119,8 @@ repos:
       # refuses and writes nothing. The id is the one .pre-commit-hooks.yaml publishes.
       - id: commit-hygiene
         name: Commit hygiene (final newline, staged tmp/ files; check-only)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_commit_hygiene
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
         language: system
         types: [file]
         exclude: ^(\.github/workflows/|\.mcp\.json$)
@@ -468,7 +469,8 @@ repos:
       # refuses the trailer and leaves the message as written.
       - id: commit-hygiene-message
         name: Reject AI-generated Co-Authored-By trailers in commit messages
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_commit_hygiene
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
         language: system
         pass_filenames: true
         require_serial: true
@@ -1792,7 +1794,7 @@ repos:
 
       - id: check-backend-secret-discipline
         name: Backend Secret-Ref Discipline Gate (OMN-13305)
-        entry: uv run python -m omnibase_core.validation.validator_backend_secret_discipline
+        entry: uv run python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline
         language: system
         types_or: [yaml]
         pass_filenames: true
@@ -1977,7 +1979,8 @@ repos:
       # the precommit-suite job.
       - id: check-hook-writes
         name: Pre-commit hooks check, never rewrite (OMN-21498)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_hook_writes
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_hook_writes:ValidatorHookWrites
         language: system
         files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml)$
         pass_filenames: true

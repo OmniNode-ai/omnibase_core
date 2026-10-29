@@ -69,10 +69,10 @@ import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads only the ratchet allo
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_skill_receipt_rule import EnumSkillReceiptRule
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_agent_skill_codec import read_skill_md
 from omnibase_core.models.validation.model_skill_dispatch_receipt_finding import (
     ModelSkillDispatchReceiptFinding,
 )
+from omnibase_core.validation.checker_agent_skill_codec import read_skill_md
 
 __all__ = [
     "Allowlist",

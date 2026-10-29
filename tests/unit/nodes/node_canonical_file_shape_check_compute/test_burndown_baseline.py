@@ -88,7 +88,7 @@ def test_first_install_lists_only_paths_the_head_tree_is_refused_for(
     assert _locations(repo) == [("baseline-stale", BURNDOWN)]
 
 
-def test_first_install_without_a_ticket_on_the_first_comment_line_is_refused(
+def test_planted_entry_without_a_ticket_at_install_is_burndown_ticket_missing(
     repo: Path,
 ) -> None:
     write(repo, BURNDOWN, _burndown("scripts/b.py", header="# burn-down baseline\n"))
@@ -128,6 +128,121 @@ def test_first_install_does_not_open_the_old_baseline_for_growth(repo: Path) -> 
     write(repo, BURNDOWN, _burndown("scripts/b.py"))
     stage(repo)
     assert _locations(repo) == [("baseline-growth", BASELINE)]
+
+
+# --- first install admits only base findings, under its own ticket ---------------
+
+
+def test_planted_extra_line_at_install_as_an_added_file_is_burndown_extra_entry(
+    repo: Path,
+) -> None:
+    """A brand-new violating file listed in the install is not a finding at base."""
+    write(repo, "scripts/c.py", CODE)
+    write(repo, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py"))
+    stage(repo)
+    assert _locations(repo) == [("burndown-extra-entry", BURNDOWN)]
+    [issue] = issues(repo)
+    assert issue.message == RULES.parameters.burndown_extra_added_text.format(
+        path="scripts/c.py", status="A"
+    )
+
+
+def test_planted_extra_line_at_install_as_a_renamed_in_file_is_burndown_extra_entry(
+    repo: Path,
+) -> None:
+    git(repo, "mv", "scripts/b.py", "scripts/b2.py")
+    write(repo, BURNDOWN, _burndown("scripts/b2.py"))
+    stage(repo)
+    assert _locations(repo) == [("burndown-extra-entry", BURNDOWN)]
+    [issue] = issues(repo)
+    assert issue.message == RULES.parameters.burndown_extra_added_text.format(
+        path="scripts/b2.py", status="R"
+    )
+
+
+def test_planted_extra_line_at_install_duplicating_baseline_path_is_burndown_extra_entry(
+    repo: Path,
+) -> None:
+    """scripts/a.py is already an admitted entry of ``baseline_path``."""
+    write(repo, BURNDOWN, _burndown("scripts/a.py", "scripts/b.py"))
+    stage(repo)
+    assert _locations(repo) == [("burndown-extra-entry", BURNDOWN)]
+    [issue] = issues(repo)
+    assert issue.message == RULES.parameters.burndown_extra_duplicate_text.format(
+        path="scripts/a.py", baseline=BASELINE
+    )
+
+
+def test_each_extra_entry_at_install_gets_its_own_issue(repo: Path) -> None:
+    write(repo, "scripts/c.py", CODE)
+    write(repo, BURNDOWN, _burndown("scripts/a.py", "scripts/b.py", "scripts/c.py"))
+    stage(repo)
+    assert rules_hit(repo) == ["burndown-extra-entry"] * 2
+
+
+def test_a_modified_base_finding_is_not_an_extra_entry(repo: Path) -> None:
+    """A file that existed at base and changed is still a base finding."""
+    write(repo, "scripts/b.py", CODE + "# b\n# touched\n")
+    write(repo, BURNDOWN, _burndown("scripts/b.py"))
+    stage(repo)
+    assert rules_hit(repo) == []
+
+
+def test_planted_ticket_uncited_at_install_is_refused(repo: Path) -> None:
+    write(repo, BURNDOWN, _burndown("scripts/b.py"))
+    stage(repo)
+    found = issues(repo, commit_message="chore: refresh the file-shape baselines\n")
+    assert [(i.code, str(i.file_path)) for i in found] == [
+        ("burndown-ticket-uncited", BURNDOWN)
+    ]
+    assert found[0].message == RULES.parameters.burndown_ticket_uncited_text.format(
+        ticket=TICKET
+    )
+
+
+def test_a_ticket_cited_in_the_commit_message_admits_the_install(repo: Path) -> None:
+    write(repo, BURNDOWN, _burndown("scripts/b.py"))
+    stage(repo)
+    assert (
+        rules_hit(repo, commit_message=f"fix({TICKET}): install the burn-down\n") == []
+    )
+
+
+@pytest.mark.parametrize("cited", ["OMN-215230", "XOMN-21523", "OMN-2152"])
+def test_a_ticket_that_only_shares_a_prefix_with_the_header_is_not_cited(
+    repo: Path, cited: str
+) -> None:
+    write(repo, BURNDOWN, _burndown("scripts/b.py"))
+    stage(repo)
+    assert rules_hit(repo, commit_message=f"fix({cited}): install\n") == [
+        "burndown-ticket-uncited"
+    ]
+
+
+def test_the_ticket_uncited_rule_is_deferred_while_the_message_is_unknown(
+    repo: Path,
+) -> None:
+    """A pre-commit run on the index knows no message; the commit-msg stage and the revision run do."""
+    write(repo, BURNDOWN, _burndown("scripts/b.py"))
+    stage(repo)
+    assert rules_hit(repo, commit_message=None) == []
+
+
+def test_the_revision_run_reads_the_messages_of_the_commit_range(repo: Path) -> None:
+    write(repo, BURNDOWN, _burndown("scripts/b.py"))
+    stage(repo)
+    git(repo, "commit", "-q", "-m", "chore: refresh the baselines")
+    assert rules_hit(repo, base="HEAD~1", head="HEAD") == ["burndown-ticket-uncited"]
+    write(repo, "docs/note.md", "note\n")
+    stage(repo)
+    git(repo, "commit", "-q", "-m", f"fix({TICKET}): the ticket's own change")
+    assert rules_hit(repo, base="HEAD~2", head="HEAD") == []
+
+
+def test_the_uncited_rule_does_not_apply_after_install(installed: Path) -> None:
+    write(installed, "docs/note.md", "note\n")
+    stage(installed)
+    assert rules_hit(installed, commit_message="chore: unrelated\n") == []
 
 
 # --- after install: shrink-only -------------------------------------------------
@@ -184,7 +299,7 @@ def test_a_listed_file_that_grows_is_baselined_file_growth(installed: Path) -> N
     assert rules_hit(installed) == ["baselined-file-growth"]
 
 
-def test_deleting_the_file_while_it_holds_an_entry_is_refused(
+def test_planted_deletion_with_entries_is_burndown_baseline_removed(
     installed: Path,
 ) -> None:
     git(installed, "rm", "-q", BURNDOWN)
@@ -192,7 +307,9 @@ def test_deleting_the_file_while_it_holds_an_entry_is_refused(
     assert "burndown-baseline-removed" in rules_hit(installed)
 
 
-def test_deleting_the_file_when_it_is_empty_is_refused(installed: Path) -> None:
+def test_planted_deletion_when_empty_is_burndown_baseline_removed(
+    installed: Path,
+) -> None:
     git(installed, "rm", "-q", "scripts/b.py")
     write(installed, BURNDOWN, _burndown())
     stage(installed)
@@ -207,6 +324,61 @@ def test_an_empty_file_that_stays_is_clean(installed: Path) -> None:
     write(installed, BURNDOWN, _burndown())
     stage(installed)
     assert rules_hit(installed) == []
+
+
+def test_planted_second_install_with_other_entries_is_baseline_growth(
+    installed: Path,
+) -> None:
+    """The base already has the file; the head rewrites it under another ticket with other entries."""
+    write(installed, "scripts/c.py", CODE)
+    write(
+        installed,
+        BURNDOWN,
+        _burndown(
+            "scripts/b.py",
+            "scripts/c.py",
+            header=RULES.parameters.burndown_baseline_header.format(ticket="OMN-21524"),
+        ),
+    )
+    stage(installed)
+    assert _locations(installed) == [("baseline-growth", BURNDOWN)]
+
+
+def test_planted_second_install_replacing_the_entries_is_baseline_growth(
+    installed: Path,
+) -> None:
+    """Content unlike the deleted file, so git reads an add and a delete, not a rename."""
+    write(installed, "scripts/c.py", "".join(f"other_{n} = 'x{n}'\n" for n in range(9)))
+    git(installed, "rm", "-q", "scripts/b.py")
+    write(installed, BURNDOWN, _burndown("scripts/c.py"))
+    stage(installed)
+    assert _locations(installed) == [("baseline-growth", BURNDOWN)]
+
+
+def test_planted_second_install_at_another_path_is_a_new_exception_file(
+    installed: Path,
+) -> None:
+    """A second burn-down-style file does not escape the exception-file rule."""
+    write(installed, "scripts/c.py", CODE)
+    write(
+        installed,
+        ".onex_ratchets/second_burndown_baseline.txt",
+        _burndown("scripts/c.py"),
+    )
+    stage(installed)
+    assert ("new-exception-file", ".onex_ratchets/second_burndown_baseline.txt") in (
+        _locations(installed)
+    )
+
+
+def test_planted_entry_without_a_ticket_after_install_is_refused(
+    installed: Path,
+) -> None:
+    write(
+        installed, BURNDOWN, _burndown("scripts/b.py", header="# burn-down baseline\n")
+    )
+    stage(installed)
+    assert _locations(installed) == [("burndown-ticket-missing", BURNDOWN)]
 
 
 # --- new-exception-file still refuses every other new baseline file -------------

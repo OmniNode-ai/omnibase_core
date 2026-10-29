@@ -7,15 +7,15 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_agent_skill_codec import (
-    parse_skill_md,
-    read_skill_md,
-)
 from omnibase_core.models.skill.model_agent_skill import ModelAgentSkill
 from omnibase_core.models.skill.model_agent_skill_onex_keys import (
     DECLARED_ONEX_KEY_TYPES,
     decode_onex_value,
     encode_onex_value,
+)
+from omnibase_core.validation.checker_agent_skill_codec import (
+    parse_skill_md,
+    read_skill_md,
 )
 from tests.fixtures.agent_skill_tree import agent_skill_fixture_root
 

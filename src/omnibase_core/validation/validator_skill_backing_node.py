@@ -74,10 +74,10 @@ from pathlib import Path
 import yaml
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_agent_skill_codec import read_skill_md
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
+from omnibase_core.validation.checker_agent_skill_codec import read_skill_md
 
 _OMNIMARKET_ROOT_KEY = "OMNIMARKET_ROOT"
 _OMNI_HOME_KEY = "OMNI_HOME"

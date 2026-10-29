@@ -11,9 +11,11 @@ writer is never built here; ``run_validator`` resolves it from the container wit
 container was composed with. ``main`` is the composition root: it composes the
 default container, injecting the writer, and runs the validator.
 
-Usage (as a validator's ``__main__``)::
+Usage (a validator is named by ``module:Class``; the validators live in
+``validation/``, which never imports a node, so the node runtime imports them)::
 
-    sys.exit(main(ValidatorHookWrites))
+    python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run \\
+        omnibase_core.validation.validator_hook_writes:ValidatorHookWrites <targets...>
 
 Publishing the run events to the bus waits on the report-writer publish task (the
 writer only derives them to ``<report>.events.jsonl`` today), so no bus is
@@ -24,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -46,7 +49,14 @@ from omnibase_core.nodes.node_validation_report_write_effect.handler import (
 )
 from omnibase_core.validation.validator_base import EXIT_ERRORS, ValidatorBase
 
-__all__ = ["build_report", "build_validator_container", "main", "run_validator"]
+__all__ = [
+    "build_report",
+    "build_validator_container",
+    "main",
+    "main_for_reference",
+    "run_validator",
+    "validator_class",
+]
 
 
 def _location(path: Path | None, line: int | None, root: Path) -> str | None:
@@ -168,3 +178,38 @@ def main(
                 f"{issue.rule_name}: {issue.message}\n"
             )
     return validator.get_exit_code(result)
+
+
+def validator_class(reference: str) -> type[ValidatorBase]:
+    """The ``ValidatorBase`` subclass that ``module:Class`` names."""
+    module_name, separator, class_name = reference.partition(":")
+    if not separator or not module_name or not class_name:
+        raise ModelOnexError(
+            message=f"validator reference {reference!r} is not 'module:Class'",
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+        )
+    candidate: object = getattr(importlib.import_module(module_name), class_name, None)
+    if not (isinstance(candidate, type) and issubclass(candidate, ValidatorBase)):
+        raise ModelOnexError(
+            message=f"validator reference {reference!r} is not a ValidatorBase subclass",
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+        )
+    return candidate
+
+
+def main_for_reference(argv: Sequence[str] | None = None) -> int:
+    """CLI runtime for a pre-commit hook: ``module:Class`` first, then ``main``'s arguments."""
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    if not arguments:
+        sys.stderr.write("Validation error: a 'module:Class' validator is required\n")
+        return EXIT_ERRORS
+    try:
+        cls = validator_class(arguments[0])
+    except ModelOnexError as exc:
+        sys.stderr.write(f"Validation error: {exc.message}\n")
+        return EXIT_ERRORS
+    return main(cls, arguments[1:], container_factory=build_validator_container)
+
+
+if __name__ == "__main__":
+    sys.exit(main_for_reference())

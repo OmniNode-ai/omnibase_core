@@ -498,7 +498,7 @@
     is NOT a logical reference (OMN-17931): only-api_key_env fails; api_key_env beside a real reference
     is migration debt. ADC and API-key auth are mutually exclusive per backend.
   language: python
-  entry: python -m omnibase_core.validation.validator_backend_secret_discipline
+  entry: python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline
   files: \.(ya?ml|json)$
   pass_filenames: true
   require_serial: true
@@ -923,9 +923,15 @@
     file is not edited, and a path either file lists is admitted. The base revision having no burn-down
     file is what admits the install; after that an added line is refused as baseline-growth (a one-for-one
     rename is admitted), --prune-baseline shrinks it, and it stays even when empty (burndown-baseline-removed).
-    There is no allowlist and no suppression comment. Checks the whole index against HEAD. CI runs the
-    same hook after `git reset --soft <merge-base>`, so the index holds the pull request's change. Includes
-    the node-home rule group (also available alone as check-node-home).
+    The install is bound to what existed at base and to its ticket: an entry for a file the change adds,
+    copies or renames in, or one the baseline file already lists, is refused (burndown-extra-entry), and
+    the ticket on the header's first comment line must appear in a commit message of the change (burndown-ticket-uncited).
+    A pre-commit run on the index knows no message and defers that check to the canonical-file-shape-release-trailer
+    commit-msg hook and to a revision run (--base and --head), so install the commit-msg hook type and
+    name the burn-down ticket id in the commit message of the switch change. There is no allowlist and
+    no suppression comment. Checks the whole index against HEAD. CI runs the same hook after `git reset
+    --soft <merge-base>`, so the index holds the pull request's change. Includes the node-home rule group
+    (also available alone as check-node-home).
   language: python
   entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
   pass_filenames: false
@@ -1374,7 +1380,7 @@
     known ids and the scan set are the rule rows of hook_writes.validation.yaml; a hook file that yields
     no hooks is an issue, never a pass.
   language: python
-  entry: python -m omnibase_core.validation.validator_hook_writes
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_hook_writes:ValidatorHookWrites
   files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml)$
   pass_filenames: true
   require_serial: true
@@ -1404,7 +1410,7 @@
     and a staged tmp/ file (staged_tmp_file). Each rule is a refusal; nothing is written or deleted. The
     patterns are the rule rows of commit_hygiene.validation.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
   types: [file]
   pass_filenames: true
   require_serial: true
@@ -1416,7 +1422,7 @@
     Refuse a commit message carrying an AI co-author trailer (ai_coauthor_trailer) and leave the message
     as written. The trailer pattern is a rule row of commit_hygiene.validation.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
   pass_filenames: true
   require_serial: true
   stages: [commit-msg]

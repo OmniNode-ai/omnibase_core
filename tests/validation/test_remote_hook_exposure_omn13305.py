@@ -36,7 +36,7 @@ def test_backend_secret_discipline_compute_hook_exported(
     assert hook["language"] == "python"
     assert (
         hook["entry"]
-        == "python -m omnibase_core.validation.validator_backend_secret_discipline"
+        == "python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline"
     )
     assert hook["files"] == r"\.(ya?ml|json)$"
     assert hook["pass_filenames"] is True

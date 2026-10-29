@@ -19,10 +19,6 @@ import pytest
 import yaml
 
 from omnibase_core.enums.enum_ci_repository_type import EnumCiRepositoryType
-from omnibase_core.handlers.handler_ci_repository_jobs import (
-    HandlerCiRepositoryJobs,
-    repository_specific_jobs,
-)
 from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_baseline import (
     ModelCiInheritanceBaseline,
 )
@@ -31,6 +27,10 @@ from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
+)
+from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
+    HandlerCiRepositoryJobs,
+    repository_specific_jobs,
 )
 
 pytestmark = pytest.mark.unit

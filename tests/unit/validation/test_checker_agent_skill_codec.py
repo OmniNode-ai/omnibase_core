@@ -14,8 +14,8 @@ from omnibase_core.enums.enum_agent_skill_render_profile import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers import handler_agent_skill_codec
-from omnibase_core.handlers.handler_agent_skill_codec import (
+from omnibase_core.validation import checker_agent_skill_codec
+from omnibase_core.validation.checker_agent_skill_codec import (
     check_skill_md,
     parse_skill_md,
     read_skill_md,
@@ -124,7 +124,7 @@ def test_import_boundary() -> None:
         "strictyaml",
         "omnibase_core",
     }
-    for node in ast.walk(ast.parse(inspect.getsource(handler_agent_skill_codec))):
+    for node in ast.walk(ast.parse(inspect.getsource(checker_agent_skill_codec))):
         if isinstance(node, ast.Import):
             assert all(alias.name.split(".")[0] in allowed for alias in node.names), (
                 ast.dump(node)
