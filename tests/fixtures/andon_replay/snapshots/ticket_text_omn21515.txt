@@ -1,0 +1,28 @@
+## Ticket OMN-21515, read from Linear at 2026-10-29T04:29:09Z
+
+The ticket's own title, state, description and acceptance criteria, read once with the launching host's key so a lane with no Linear tool reads them here. Quoted as they stand; never edit a criterion's own line on the ticket.
+
+ticket-criteria: OMN-21515
+> - [ ] AC1: The old hook id canonical-file-shape runs the new node with no id change downstream, the report has one finding per refused path with its rule id, and the baseline file stays the only state -- falsifier: pytest cases over the node's report for a multi-path fixture and a check that the hook id in .pre-commit-hooks.yaml is unchanged
+> - [ ] AC2: A new scripts/x.py in omnimarket is refused -- falsifier: the canary commit that adds scripts/x.py run through pre-commit run --files, plus a pytest case over the rule
+> - [ ] AC3: In a repository whose lifecycle file says no-code, a new src/.../x.py is refused and a ledger-row Markdown append is admitted -- falsifier: two pytest cases over a no-code fixture repository
+> - [ ] AC4: In fix-only, a new file is refused, and a two-line fix to an existing file without the trailer is refused, with the trailer admitted -- falsifier: three pytest cases over a fix-only fixture repository
+
+ticket-text: OMN-21515 read=2026-10-29T04:29:09Z
+> Title: T1.1: canonical file shape on the core pattern, with a repository-lifecycle rule
+> State: Backlog
+>
+> created-by-lane: ticket-mint-0001
+>
+> Gate: OmniNode-ai/knowledge-base-internal plan-index-registry.yml
+>
+> Task T1.1 of the plan beta/plans/2026-10-28-validators-to-core-and-hardcoded-rules.md in the knowledge-base-internal repository (parent [OMN-21433](https://linear.app/omninode/issue/OMN-21433); section C of the plan). Target repository: omnibase_core. Paths: src/omnibase_core/validators/canonical_file_shape.py, handlers/handler_canonical_location_rules.py, nodes/node_node_home_check_compute/; new runtime under nodes/node_canonical_file_shape_check_compute/ (the existing node-home node is the template). What moves: the canonical-location, baseline, suppression-growth and baselined-file-growth rules move into a \*\_check_compute node that returns ModelValidationReport through node_validation_report_write_effect; node-home becomes one rule of it. The lifecycle rule is added: the repository declares its own state in .onex/repo_lifecycle.yaml (active, fix-only, no-code, retired), so no public file names a private repository. no-code refuses any code file added or grown; fix-only refuses a new code file and admits growth of an existing one only with a release= RELEASE-row stamp in the commit trailer; retired refuses everything except deletions. The full task text is task T1.1 in section C of the plan; the criteria below are copied from it.
+>
+> Order: Phase 1, first. Its plan dependency is T0.1 ([OMN-21494](https://linear.app/omninode/issue/OMN-21494), draft pull request omnibase_core#2110): none of the lifecycle data needs it, but the hygiene gate must accept the lifecycle file. No pull request is open yet.
+>
+> ## Acceptance criteria
+>
+> - [ ] AC1: The old hook id canonical-file-shape runs the new node with no id change downstream, the report has one finding per refused path with its rule id, and the baseline file stays the only state -- falsifier: pytest cases over the node's report for a multi-path fixture and a check that the hook id in .pre-commit-hooks.yaml is unchanged
+> - [ ] AC2: A new scripts/x.py in omnimarket is refused -- falsifier: the canary commit that adds scripts/x.py run through pre-commit run --files, plus a pytest case over the rule
+> - [ ] AC3: In a repository whose lifecycle file says no-code, a new src/.../x.py is refused and a ledger-row Markdown append is admitted -- falsifier: two pytest cases over a no-code fixture repository
+> - [ ] AC4: In fix-only, a new file is refused, and a two-line fix to an existing file without the trailer is refused, with the trailer admitted -- falsifier: three pytest cases over a fix-only fixture repository

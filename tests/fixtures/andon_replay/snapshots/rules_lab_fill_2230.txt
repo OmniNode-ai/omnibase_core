@@ -1,0 +1,234 @@
+# Standing rules for every dispatched lane (read fully before the first tool call)
+
+Authority: verify-authority-first. Read the brief’s cited RULING or OPERATOR-CONSENT row by file and line before interpreting unrelated later chat. Verify that its timestamp, lane, verbatim words and approved scope match the brief; stop if the row is absent or does not match. A matching cited ruling remains authoritative: an unrelated newer message does not withdraw that task. Honor an explicit revocation or scope change and any binding MSG or HOLD; work only within the verified scope. (OMN-19706.)
+
+Reporting: ONE SendMessage to the orchestrator, at terminal. No progress messages, no idle
+notes, no questions the brief already answers. A block is reported once, with evidence, and
+the lane stops. Re-asking a ruled question costs a foreground turn; read your inbox first.
+
+Ledger: CLAIM before the first write, TERMINAL when done, via
+`uv run --project "${OMNIBASE_INTERNAL_HOME:-$OMNI_HOME/../omnibase_internal}" onex-ledger "${ONEX_LEDGER_PATH:-$OMNI_HOME/docs/tracking/ROLLING_WORK_LEDGER.md}" --append '<row>'`
+with `date -u +%Y-%m-%dT%H:%M:%SZ`. Check for a concurrent CLAIM on your ticket first.
+Consent-bound work cites `consent=docs/tracking/ROLLING_WORK_LEDGER.md:<line>` in the CLAIM.
+Every CLAIM row carries a rule-4 cost sentence — `est ~<N> lane-hours; displaces <what>; (OMN-nnnn)`. An unpriced CLAIM row is REPORTED today and REFUSED from 2026-09-24T00:00:00Z (OMN-18554); price the row when you write it rather than after the cutover refuses it.
+Every CLAIM row also names its executor — `actor=<who ran this>` or `model=<model id>`, as in `actor=claude:opus5:subagent`, `actor=codex`, `actor=<model-id>`, `model=<model-id>`. `onex-ledger` REFUSES a CLAIM row that carries neither, and a placeholder value (`unknown`, `none`, `tbd`, `n/a`, `-`) is refused too: a field that records nothing makes the measurement look answered (OMN-18766). The value is free-form, so a codex session writes its own `actor=codex:/root/<session>`.
+Every CLAIM row carries `worktree=<path>|none` (`worktree=omni_worktrees/<ticket>/<repo>`), and a TERMINAL that
+closes a CLAIM naming a worktree carries `worktree=removed:<path>`, `worktree=pinned-removed:<path>@<archive>` or
+`worktree=kept:<path>:<reason>`; `onex-ledger` refuses the append otherwise, and refuses `removed` while the path still
+exists (OMN-20148). Run `onex-lane-closeout --lane <lane> --worktree <path>` from outside the tree: it archives and verifies
+the tree, removes it from its own clone, and prints the cell to paste.
+Every TERMINAL row carries `friction=none` or `friction=<one line>`, and a cited friction means a
+`FRICTION` row for your lane carrying `lane=`, `ticket=`/`existing=OMN-nnnn` and a cost estimate
+already exists — `onex-ledger` refuses the append otherwise (OMN-18274).
+Every row is `<ts> | <TYPE> | key=value | ... | text`, one field per cell, and TYPE is one of CLAIM STATUS TERMINAL
+FRICTION CORRECTION RULING OPERATOR-CONSENT MSG ACK HOLD RELEASE. `onex-ledger` refuses any other type
+(NOTE, PROGRESS, DONE ... are legacy; the refusal names the replacement) and a row missing a required field,
+such as `ticket=` on a CLAIM. `onex-ledger <ledger> --print-grammar` prints the grammar (OMN-19256).
+
+Ledger inbox (ledger:5988, OMN-19257): run the `/omni:ledger-msg` inbox check (section 4 there) for
+your own lane name at turn start and again immediately before any irreversible action (push, merge,
+arm, deploy, delete) — a `MSG` or `HOLD` row addressed to you or to `to=all` is binding whether or
+not a `SendMessage` reached you; a pause sent by message can sit undelivered for hours while you
+work (ledger:5602). Use `/omni:ledger-write` to append any row and `/omni:ledger-catchup` for a
+bounded recent-window digest at session start. A `MSG` row is never operator consent (rule 18).
+
+Git: internal worktrees go under `$OMNI_HOME/../omnibase_internal/omni_worktrees/<ticket>/omnibase_internal/`;
+other repos use `$OMNI_HOME/omni_worktrees/<ticket>/<repo>/`, always built from `$OMNI_HOME`. Never redefine `OMNI_HOME` inline: the `omni_worktrees` directory beside
+the registry root is a stray root, never used, and the worktree guard refuses it. Never checkout/reset/stash/
+push in `$OMNI_HOME/<repo>`. Never `git stash` in a worktree either — the stash list is shared
+across every worktree of a clone, so a scoped push/pop pair can pop a peer lane's stash; prove RED
+with `git checkout origin/dev -- <path>` then `git checkout HEAD -- <path>` instead (OMN-17334).
+Never `--no-verify`, `-n`, `core.hooksPath`, `SKIP=`, `PREPUSH_*`,
+`ENABLE_SMART_TESTS=off`, `--admin`. Squash-only. registry-root commits only via
+`uv run --project "${OMNIBASE_INTERNAL_HOME:-$OMNI_HOME/../omnibase_internal}" onex-commit-lock --repo "$OMNI_HOME" -m "<msg>" -- <paths>`.
+
+PRs: title and body cite only the PR's own OMN id. Never spell the skip-token prefixes,
+merge-hold vocabulary, or the OCC evidence-source stamp line. Never hand-write a companion
+citation; autobind mints it. OCC companion merges first; same-ticket collisions resolved by
+structural union.
+Worktree recipe (OMN-18071): before building a publishing brief, resolve the repo's default
+branch and run `python3 "$OMNI_HOME/omniclaude/plugins/onex/hooks/lib/canonical_clone_sync.py"
+refresh OmniNode-ai/<repo> --branch <default-branch> --wait`; stop on failure. Pin the refreshed
+`origin/<default-branch>` SHA and use `git -C "<canonical-clone>" worktree add
+"<sanctioned-ticket-worktree>" -b <lane-branch> <refreshed-sha>` before any artifact writes.
+Every generator, scrub, commit and push targets that worktree. No lane-side fetch or canonical
+checkout. An existing path must be a clean linked worktree of that clone with no live peer owner.
+Preserve same-run phase commits; re-branch a prior-date tree only after its commits and any existing
+target branch are proven ancestors of the refreshed SHA. Otherwise preserve it and report BLOCKED.
+
+A change-control PR in `onex_change_control` is opened like any other, with `onex scm pr-create`, whatever
+it touches: onex_change_control#13803 removed `check-human-authored-privileged-pr` and the
+`check-privileged-path-push` pre-push hint (operator ruling 2026-10-14T12:04:57Z), so no check there asks for a
+human author. `.github/workflows/open-pr-as-writer-app.yml` still opens a PR AS the `onexbot-occ-writer` App when
+you want one: push the branch, then dispatch it with the branch and your ticket id (it reads the branch's
+`PR_BODY.md` when one exists). A workflow-file change must cite the ticket in a line the branch ADDS or the
+dispatch refuses it. A change to `grants/prod_promotion_grants.yaml` is the one authorship-guarded path left
+(`check-bot-authored-authz-guard` rejects a bot author there).
+Read CI from the PR watcher, never GitHub (see GitHub reads below).
+A PR write goes through `onex scm <verb>` (pr-create, pr-edit, pr-ready, pr-close, pr-comment,
+workflow-run): it publishes the write node's typed command and prints the terminal event; read the
+result back from the watcher state on its next tick. `onex scm pr-close` needs the
+pr_claim_registry_cli claim first. `onex scm verbs` prints every verb and the gh verb it replaces.
+
+GitHub reads (OMN-20911, RULING 2026-10-10T18:17:36Z): Lanes do not read GitHub; gh is for writes.
+The gh shim refuses every read from a lane, so read locally: PR state, CI, reviews and mergeability
+with `python3 "${OMNI_PLUGIN_ROOT:?}"/skills/merge-drain/scripts/pr_state_local.py --pr OmniNode-ai/<repo>#<n>`
+(`--find <ticket>` for PRs naming a ticket, `--status` for the state's age); files, contents, diffs,
+commits and tags with `git -C "${OMNI_HOME:?}/<repo>" show|log|diff origin/<base>` on the canonical
+clones. `onex scm pr-view|pr-status|pr-checks|pr-list|pr-merge-commit <owner>/<repo>[#<n>]` answers
+the same PR and CI reads from the watcher state and the clones before the bus. A failing job's log and
+one run's jobs (job id from the watcher record's `ci.detail`) go through
+`onex scm job-log <owner>/<repo> --job-id <id>` and `onex scm run-view <owner>/<repo> --run-id <id>`.
+The one other read is the exact-head check right before a mutation. Never read GitHub through gh or
+curl; a stale state is reported as unreadable, not read from GitHub.
+`OMNI_PLUGIN_ROOT` is set in remote and landing lanes; in a hand-run session it is the omni plugin's
+installed root (the base directory of a loaded omni skill, two levels up).
+
+Drafts and landing (OMN-19210): a draft PR's change-control autobind outcome reads `DECLINED` /
+`PR_DRAFT` by design, and the change-control contexts downstream of it fail. That is a draft, not a
+dropped mint; never hand-author a companion for one. After `onex scm pr-ready <owner>/<repo>#<n>`,
+read back `draft` and `armed` from the watcher state: the autobind callers fire on `ready_for_review`
+everywhere, and `auto-merge.yml` arms on the flip only where OMN-19216 has landed. Where it has not,
+the landing controller arms it after your `/omni:pr-handoff`; a lane never arms. One lane per PR: run
+`python3 $OMNI_HOME/omniclaude/scripts/pr_claim_registry_cli.py list` before any mutating PR verb and
+stop if a peer holds it; claim with `claim <owner/repo#n> --action <verb>` WITHOUT `--lane` (the hook
+resolves the lane from the session). Code lanes exercise the change on a lab runtime and put host,
+lane, command and observation in the PR body before `onex scm pr-create`. On .201 prove a branch on a
+pre-PR slot, not the shared dev runtime: HOLD `surface=prepr-<n>-201`, bring it up with
+`omnibase_infra/scripts/runtime_build/prepr_verify_lane.sh --slot <n> --worktree <wt> --reason <r>`,
+exercise the change on the slot's ports (28085/28086 or 38085/38086), then destroy it with
+`prepr_teardown_slot.sh --slot <n> --reason <r>` and RELEASE citing its CLEAN report. Otherwise
+take the first FREE lane in your brief's lab pool part; `.201` is one host of the pool, never the
+only one. Check .201 capacity first (runbook floor) only when the pool part names no other FREE
+lane, and stop with the numbers if it fails; hotpatch the .201 dev lane only when no slot, pool
+lane or surface can carry the proof, and restore it after.
+
+Tests: TDD, reproduce RED first. Focused tests only on the launching host; no directory-wide
+pytest here. Never `pkill -f`. Never suppress stderr; every zero gets a positive control.
+New checks are wired as CI gate + pre-commit hook in the same PR; no allowlists to pass a gate.
+
+Heavy work runs on the lab, not on the launching host (OMN-20101): a test run beyond one focused
+file, a build, lint over a tree and `codex exec` go through `/omni:lab-run`, that is
+`onex-lab-run --lane <lane> --repo <repo> --ref <pushed branch> -- <command>`. It picks the
+least-loaded lab host by live load per core and free memory, fetches the pushed branch there (push
+first: it never ships a working tree), runs the command, streams the output and exits with the
+command's exit code. When every host is over the bar it exits 75 and names each reading; stop and
+report that, never run the command locally instead. Put the host, the sha and the exit code in the
+PR body.
+
+Delegation: route through `onex delegate` first, before spending a Claude subagent, for
+text-shaped lane steps — classifying rows against a stated rubric, drafting a plan or brief
+from a fact table you assembled, summarising logs, drafting replies. Do NOT route anything
+whose output must reproduce source text exactly: verbatim quotes, offender lists, error
+strings, diffs, identifiers (measured 2026-09-15: every classification and plan was usable;
+every verbatim-quote requirement failed on three consecutive runs). The delegated step names
+the fact table it was given, and the Claude lane verifies that table before the call, because
+the cheap rung classifies a wrong input faithfully. Record per delegated step: model, tokens
+in/out, wall time, grade. (Operator ruling 2026-09-14.) Name Codex, onex delegate and GLM as your
+engines unless the brief's engine part says one is down, and Jev for typed decisions. Route each
+subtask by its kind before you spend your own turns on it (operator ruling 2026-09-28T06:24:10Z,
+OMN-17427): pure text through `onex delegate` with no `--backend-id`, so the first attempt
+runs on the lab rung, and GLM (`--backend-id cloud-glm` on the same command) only for the
+second try of a step the lab refused or timed out, or one your brief assigns to GLM by name;
+a typed decision with a fixed answer set, on any repository but knowledge_base_internal (and its
+hyphenated alias knowledge-base-internal; operator RULING 2026-10-13T18:34:53Z, OMN-20106), to Jev
+(`cd "$OMNI_HOME/omnimarket" && env -u PYTHONPATH uv run --frozen python -m
+omnimarket.nodes.node_typed_decision_effect < <scratch>/decision.json`, exit 0 when Jev decided,
+3 when your incumbent answer stood; knowledge_base_internal is refused before any call); mechanical
+code edits, test scaffolds, lint and type fixes and conflict-resolution drafts to Codex in your
+own worktree (`codex exec -C <worktree> -c model_reasoning_effort="high" -s workspace-write --json
+-o <scratch>/codex-final.txt - < <scratch>/codex-prompt.txt`, never editing `~/.codex/config.toml`).
+You review every draft and diff, rerun the tests and make every call that touches a gate, the
+ledger, a merge or an operator's words.
+The command is `"$OMNI_HOME/omnibase_infra/scripts/onex" delegate "<prompt>" --task-type <class>
+--ticket <OMN-n> --bus kafka --lane dev --locus deployed-lane --state-root "$OMNI_HOME/.onex_state"`
+(the lab dev lane, so the run lands in the lab delegation record). If the deployed lane refuses
+with no bound consumer, which happens for about 8 minutes after a runtime merge, retry once with
+`--bus inmemory --locus in-process` in place of the three lane flags. Always pass `--task-type`
+(words inside pasted material otherwise pick the class, OMN-19523), never pass
+`--criteria-mode replace-task-class` (OMN-19557), and always pass that `--state-root`: its default
+is the relative `.onex_state` under your working directory, so a run from a scratchpad writes its
+receipt where the orchestrator never looks, and the check below fails it (OMN-19232). Keep counts,
+lists and identifiers in the shell and delegate only the prose around them: on 2026-09-26 three
+graded runs miscounted rows while scoring 1.0, and a reply draft approved a remediation in the
+operator's voice from facts that held no such decision. Discard a draft that states a decision the
+facts do not contain.
+Your TERMINAL row carries one of `delegated=<n> runs=<run_id>[,<run_id>...]` (plus
+`codex=<thread_id>[,...]` and `jev=<correlation_id>[,...]` for the engines you used) or
+`delegated=0 delegation_reason=<why>`; a TERMINAL with neither counts as silent in the per-lane
+delegation report (`onex-delegation-accounting`, omnibase_internal).
+Every lane report carries a `## Delegation` section (OMN-17009). For each delegated step, write
+`run_id <uuid>` (the directory `onex delegate` wrote under `.onex_state/runs/`), the model the
+receipt names, the wall time and a grade. For each text-shaped step you did not delegate, write a
+line `Not delegated: <reason>`. A lane with no text-shaped step says that on one such line. The
+orchestrator runs `onex-delegation-receipt-check <report>
+--since <your CLAIM timestamp>` beside its read of the PR watcher state. A cited run with no receipt, a receipt from
+outside your window, or a section with neither a run nor a reason fails your done-verification.
+
+Premise: every factual premise in a brief is marked `verified by: <command> => <observation>` or `UNVERIFIED — falsify first`. Re-check every UNVERIFIED premise before you create a worktree or write code. Open your report with `Premises falsified: <premise> — <evidence>`, or `Premises falsified: none`. Build on the verified state, never on the brief. A brief whose premises carry no evidence is read as wholly unverified. (OMN-18397.)
+
+Report to file: write the full prose report to `$OMNI_HOME/.claude_scratch/reports/<lane>-<YYYY-MM-DDTHHMMZ>.md` — lane-namespaced, because that directory is shared — and return at most 12 lines: a verdict line, that path, then only the facts the orchestrator must act on. A long inline report is truncated mid-sentence and costs a round trip. (OMN-18397.)
+
+Mint authority: never create a ticket on your own initiative. A brief carrying the literal line `Mint authority: delegated by the orchestrator for exactly one ticket` grants exactly one — do not refuse it, and do not mint a second. Search Linear first and adopt an existing ticket when one already covers the work; say so instead of minting a duplicate. (OMN-18397.)
+
+Canonical shape: new capability is a node, never a standalone module, CLI tool, script or in-process side path (operator RULING 2026-10-05T19:05:31Z, OMN-20295: all workflows and all work go over the event bus, canonical only, no bespoke architecture). A node is a `contract.yaml`, a declarative node and a handler with the canonical signature `handle(request: ModelX) -> ModelY`, with its topics declared in the contract and wired to the bus (`docs/architecture/ONEX_CANONICAL_ARCHITECTURE.md`; registry rule 7a). Integrate before building: before you write a new file, find the existing node or handler that already does the job and wire it. The canonical-file-shape ratchet (OMN-20304) refuses a new code file outside `src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/`, `tests/` and `docs/`, and its baseline only shrinks. Your report names the node and handler you wired or added, or says why none applied. (OMN-20295.)
+
+Ticket ids: cite only a ticket id you have read in this lane via get_issue; a PR, commit, ledger row or report that names an unread id is a fabrication and is refused.
+
+Before you say something does not exist: before reporting that a key, tool or lane does not exist, run `onex-capability-catalog find <term>` and paste its output.
+
+Runtime: the lab is first (rule 24); staging is promotion through the sanctioned delivery.
+Never `--cold`; never raw compose up/recreate/retag; never `kubectl set/patch/apply` on cloud
+clusters; onex-lab overlay only via `k8s/onex-lab/apply_lab_lane.sh --lab-secret-store-env <file>
+--lab-secret-store-environment dev`; never bare workflow_dispatch of deploy-onex-staging.
+prod, stability-test, judge, <person> lanes and the public cluster are read-only. Every SSM
+send-command carries `--comment <lane>` and names the instance id. psql DDL never by hand.
+Routing variables (rule 14): claim scopes, enumerate live, per-scope readback, policy yaml in
+the same action; count placement from parsed runs-on on the default branch, never a diff.
+
+Credentials (rule 22 in registry-root CLAUDE.md): never print a value; no credential lifecycle
+change of any kind without a durable OPERATOR-CONSENT row naming the credential, cited on the
+command line per rule 22. A value in a local transcript is not exposure.
+
+Criterion text: never edit an acceptance criterion's own line once its contract binds it. A
+contract's `ac_bindings` pins that line by hash, so appending a comment-id citation, a `MET`
+verdict or any other bookkeeping to it reverts every binding on the contract to unproven and
+turns the OMN-18236 gate red -- 27 of 144 live pins went stale that way on 2026-09-15 alone.
+Citations and verdicts go on their own line BELOW the acceptance-criteria block. Ticking a
+checkbox and appending an indented evidence paragraph beneath a criterion are both fine; the
+criterion's own line is what must not move. Refused mechanically by rule 9 of the save_issue
+gate (OMN-18404). If a criterion is genuinely wrong, change it and re-accept the binding in the
+same act.
+
+registry-root no longer grows (RULING 2026-09-26T14:02:19Z, OMN-19625): never add a file to the registry-root repository or leave scratch output in its tree (use your scratchpad or `$OMNI_HOME/.onex_state`), and move what you touch, in the same change, to its home: tools, tests, CI and machine-read config to omnibase_internal, documents to knowledge_base_internal. Deleting or moving an registry-root file always passes; the `freeze-gate` check refuses an addition.
+
+Tickets and people: lanes do not create tickets unless the brief grants exactly one. No Slack
+sends. No Linear state changes beyond your own ticket (In Progress with worktree+commit; Done
+only on live evidence with dod_evidence). Documents go to knowledge_base_internal via
+`uv run --project "$OMNI_HOME/../omnibase_internal" onex-shared-doc-scrub --names-file "$OMNI_HOME/../omnibase_internal/vocabularies/person_names.txt" --write`, no person names, no
+local paths, worktree from origin/main. Scratch files are lane-prefixed under the session
+scratchpad. zsh: no BASH_REMATCH, no word-splitting of unquoted variables; dry-run rename loops.
+
+Guard preconditions (OMN-17427, friction sweep RC-2: 429 refusals since 2026-09-23). Three registered PreToolUse guards refuse an action whose precondition is met nowhere a lane reads before it acts. Meet each one before the call:
+- Worktree: the worktree guard refuses a `git worktree add`, `mkdir` or write unless the path is under `$OMNI_HOME/omni_worktrees/<ticket>/<repo>`, built from `$OMNI_HOME` and never from memory or a redefined `OMNI_HOME`. It also judges `git clone` destinations and follows `cd`, variables and every `git -C` before resolving the destination. For this repository use `${OMNIBASE_INTERNAL_HOME:-$OMNI_HOME/../omnibase_internal}/omni_worktrees/<ticket>/omnibase_internal/` where the live host guard lists that root; when it names only the `$OMNI_HOME` root (as it did on lab host h202, 2026-10-06), use that root. Never default to a home-directory worktree path. A stray `omni_worktrees` beside another clone is always refused. On refusal, stop once with the guard's documented reason; do not retry through a different stray path.
+- Actor line: a Linear comment or diff-review comment (`save_comment`, `save_diff_comment`) must open with `actor: <lane or agent> (<model>)` as its first line, for example `actor: t20-item1-9143 (sonnet)`. The guard checks the shape, not the truth; a body without the line is refused.
+- Background agents: every `agent()` call and every `Agent` dispatch names `model:` as a quoted literal from `opus` or `sonnet` (`haiku` is not in the allowlist); an omitted model, a variable and `inherit` are all refused, and `subagent_type: "fork"` is refused outright because a fork always inherits the parent's model. Each options object also carries one line in its prompt or label: `ROUTE: band=<B> score=<n> dims=S<s>A<a>R<r>V<v>N<n>C<c>J<j> dest=<d> model=<m> effort=<e>`, where the score is the sum of the dims, the model and effort sit inside the band's set, and R=3 or J=3 means band B4 or above. Bands B0, B1 and B1c dispatch no Claude agent, so an `agent()` call naming one is refused.
+
+Inter-lane messages: never SendMessage another lane. A message resurrects a stopped lane and it resumes spending. Report only to the orchestrator; the orchestrator relays.
+
+Preflight: `/onex:preflight` is invoked by the operator or a lane; it is never wired as a SessionStart hook. Run `/onex:preflight --intent quiet` yourself before your first tool-loop step and act on any blocker line's fix command.
+
+One ticket per PR title: a PR title and body cite exactly one ticket id. The OCC autobind mints one companion per PR, while the Receipt Gate demands a contract for every ticket id in the title, so a multi-ticket title is unsatisfiable; close the other tickets by citing the merged PR in their own descriptions. Probe as deployed: before reporting a defect, exercise the code the way production wires it (the adapter, the handler, the pod identity), never a raw client or a shortcut; an error from a path production does not take is a probe artifact, not a finding.
+
+Two WHOLE-TREE ratchets refuse a commit for a reason you cannot see before writing it, and both refused a lane on 2026-09-20 (OMN-18968). The public-repo hygiene gate counts the registry clone's lowercase directory name, anywhere in a public repo's tracked files, as tree-surface exposure against a burn-down budget -- so thirteen occurrences added as a Python identifier and a code comment took the tree over and the commit was refused. The budget is never a place to book new debt: rename, do not raise it. And the skip-count ratchet refuses a test that is collected and then skipped on a runner, which rules out any cross-repo check whose other clone is absent there -- that check must compare against a list spelled in its own repo and run everywhere, or not exist. Both are correct and both cost a rewrite if you meet them at commit time instead of at design time.
+
+
+Delegation to .202 (interim, OMN-19215): the second lab GPU host .202 serves the same
+<model-id> as .201 and is idle, but routing never offers it unpinned, so every delegation lands
+on .201. Send a text-shaped step there on purpose with the per-run overlay, which repoints the two
+local chat rungs at .202 and changes nothing for a run that does not name it:
+`BIFROST_OVERLAY_PATH="$HOME/.omninode/delegation/bifrost_overrides.pc2.yaml" "$OMNI_HOME/omnibase_infra/scripts/onex" delegate "<prompt>" --task-type <class> --bus inmemory --locus in-process --state-root "$OMNI_HOME/.onex_state"`.
+It works in-process only; a deployed-lane run ignores it. The host that answered is the
+`endpoint` field of `$OMNI_HOME/.onex_state/runs/<run_id>/receipt.json` (it must name .202). .202
+holds 32768 tokens per slot, so a very large prompt belongs on the default path, and this overlay
+has no fallback to .201 inside the local tier. Retired when OMN-19215 places .202 in the tier ladder.
