@@ -76,11 +76,16 @@ def _canary_config(tmp_path: Path) -> Path:
     return path
 
 
+# The git directory and ``.onex_state/`` (disposable and gitignored, OMN-15989) are not the
+# tree under review: every generic-format hook run leaves its report there (OMN-21529).
+_NOT_THE_TREE = (".git", ".onex_state")
+
+
 def _tree_digest(root: Path) -> dict[str, str]:
     return {
         p.relative_to(root).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(root.rglob("*"))
-        if p.is_file() and ".git" not in p.relative_to(root).parts
+        if p.is_file() and not set(_NOT_THE_TREE) & set(p.relative_to(root).parts)
     }
 
 

@@ -19,3 +19,4 @@ class ModelValidationReportWriteOutput(BaseModel):
     bytes_written: int
     events_path: str
     events_written: int
+    events_published: int = 0
