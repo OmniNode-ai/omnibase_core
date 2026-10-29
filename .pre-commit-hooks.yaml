@@ -1415,6 +1415,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-event-registry-drift
+  name: Event-registry drift (OMN-21416)
+  description: >
+    A producer's contract-declared event registrations (wire contracts with an event_registration block,
+    or an exported event_registrations document) must match the consumer's emit registry (topics.yaml):
+    the same event types, fan-out topics, partition key and required fields, minus the declared baseline.
+    A missing, unreadable or malformed source, or a source that declares nothing, is ERROR, never PASS.
+    The caller passes its sources as hook args.
+  language: python
+  entry: python -m omnibase_core.validation.validator_event_registry_drift
+  pass_filenames: false
+  always_run: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-binding-conformance
   name: Binding conformance, handler literals (OMN-21514)
   description: >

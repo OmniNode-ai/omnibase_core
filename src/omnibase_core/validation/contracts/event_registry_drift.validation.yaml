@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: event_registry_drift
+  validator_name: Event Registry Drift
+  validator_description: |
+    A producer's contract-declared event registrations (wire contracts with an
+    event_registration block, or an exported event_registrations document) must match
+    the consumer's emit registry (topics.yaml): the same event types, fan-out topics,
+    partition key and required fields, minus the declared baseline (OMN-21416).
+    A missing, unreadable or malformed source, or a side that declares nothing, is
+    an error, never a pass.
+
+    The sources are arguments of the validator entry (--source-contracts,
+    --source-document, --registry-topics-yaml, --baseline).
+
+  target_patterns:
+    - "**/topics.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: event_source_only
+      description: An event type the source declares that the emit registry lacks.
+      severity: error
+      enabled: true
+    - rule_id: event_registry_only
+      description: An event type the emit registry holds that no source declares.
+      severity: error
+      enabled: true
+    - rule_id: topic_source_only
+      description: A topic the source names that no registry event names.
+      severity: error
+      enabled: true
+    - rule_id: topic_registry_only
+      description: A topic the emit registry names that no source event names.
+      severity: error
+      enabled: true
+    - rule_id: topics_mismatch
+      description: An event on both sides whose fan-out topics differ.
+      severity: error
+      enabled: true
+    - rule_id: partition_key_mismatch
+      description: An event on both sides whose partition key field differs.
+      severity: error
+      enabled: true
+    - rule_id: required_fields_mismatch
+      description: An event on both sides whose required fields differ as a set.
+      severity: error
+      enabled: true
+    - rule_id: empty_source
+      description: A side with no registrations cannot be compared.
+      severity: error
+      enabled: true
+    - rule_id: duplicate_registration
+      description: An event type declared twice on one side is ambiguous.
+      severity: error
+      enabled: true
+    - rule_id: source_unreadable
+      description: A source that is missing, unreadable or malformed cannot be judged.
+      severity: error
+      enabled: true
+      parameters:
+        max_file_bytes: 5242880
+        contract_globs:
+          - "*.yaml"
+          - "*.yml"
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
