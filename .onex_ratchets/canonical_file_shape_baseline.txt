@@ -379,6 +379,8 @@ src/omnibase_core/handlers/handler_action_pin_cli.py
 src/omnibase_core/handlers/handler_action_pin_rules.py
 src/omnibase_core/handlers/handler_agent_skill_codec.py
 src/omnibase_core/handlers/handler_arch_handler_contract_compliance.py
+src/omnibase_core/handlers/handler_backward_compat.py
+src/omnibase_core/handlers/handler_backward_compat_cli.py
 src/omnibase_core/handlers/handler_boundary_parity.py
 src/omnibase_core/handlers/handler_canonical_location_rules.py
 src/omnibase_core/handlers/handler_ci_inheritance.py
@@ -393,8 +395,12 @@ src/omnibase_core/handlers/handler_dependency_direction.py
 src/omnibase_core/handlers/handler_dependency_direction_cli.py
 src/omnibase_core/handlers/handler_dependency_direction_rules.py
 src/omnibase_core/handlers/handler_dependency_pin_bump.py
+src/omnibase_core/handlers/handler_dict_any.py
+src/omnibase_core/handlers/handler_dict_any_cli.py
 src/omnibase_core/handlers/handler_done_write_receipt_gate.py
 src/omnibase_core/handlers/handler_evidence_admissibility.py
+src/omnibase_core/handlers/handler_finding_baseline.py
+src/omnibase_core/handlers/handler_finding_baseline_cli.py
 src/omnibase_core/handlers/handler_freestanding_imperative_io.py
 src/omnibase_core/handlers/handler_imperative_allowlist_ratchet.py
 src/omnibase_core/handlers/handler_imperative_contract_guard.py
