@@ -142,13 +142,13 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "d92635c4b916ca7b2af96cc0d84363047f841bacf3f0edef3bd8910ba113d9f4"  # pragma: allowlist secret
     ),
     "duplicate-registry-ids": (
-        "e756296b606f516b1b776b1e1046e070ad13f6f4f1b2351a78761500a12dd828"  # pragma: allowlist secret
+        "fc1fe6cea70c9fa210e47c5a548ce48ef11cb239258618b694dc6b646cf93be0"  # pragma: allowlist secret
     ),
     "no-noncanonical-lifecycle-classes": (
         "bbd7ba51c778860cb05269ea6db57c93033dcf880b6c6e62c384ec3856420014"  # pragma: allowlist secret
     ),
     "pull-request-workflow-ratchet": (
-        "bf8f2b3662122751ca4a086c0dcc8812eff6d7700c3e816c1151c77ee87f456c"  # pragma: allowlist secret
+        "4d611eada35d5980b09f5e5f36653f9dba75fc13f555fa6e5b6ed71300844bb9"  # pragma: allowlist secret
     ),
 }
 
