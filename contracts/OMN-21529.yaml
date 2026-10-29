@@ -1,0 +1,108 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21529
+title: "The validator report writer publishes run and triggered events through a container-resolved bus,
+  with an in-memory and a Redpanda overlay pair"
+summary: The validation report writer resolves its event bus from the container and publishes one ModelValidatorRunEvent
+  per run and one onex.evt.platform.validator-triggered.v1 event per failing validator, keeping events.jsonl
+  as the offline copy. The generic validator runtime defaults --report-json, binds its bus from a named
+  validator-runtime overlay, and ships an in-memory overlay and a Redpanda overlay that differ only in
+  the bus binding.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21529-writer-publishes
+    statement: The report writer publishes through a bus resolved from the container, and the overlay
+      pair selects the bus with no code change.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the writer resolves the bus from the container and publishes exactly one run
+          event and one `onex.evt.platform.validator-triggered.v1` event per failing validator, with `events.jsonl`
+          kept as the offline copy -- falsifier: `uv run pytest tests/unit/nodes/node_validation_report_write_effect
+          -q` with a container spy recording the bus resolution and an in-memory listener counting events
+          for a run with 3 failing validators and a run with none (3 triggered plus 1 run event, then
+          1 run event)"
+      - id: AC2
+        statement: "AC2: `--report-json` is the default path so a hook always produces a report -- falsifier:
+          a hook-run test that omits the flag and finds the report file"
+      - id: AC3
+        statement: "AC3: one named overlay pair exists in core (an in-memory overlay and a Redpanda overlay
+          that differ only in the bus binding) and the same fixture run on both overlays on one commit
+          yields reports equal to the committed golden report after normalising run id and timestamps
+          -- falsifier: the two-overlay test, the second run on a lab host through `/omni:lab-run`, run-event
+          consumer filtered by run id"
+      - id: AC4
+        statement: "AC4: Configuration: the topic names, the profile selection and the overlay paths come
+          from a contract or overlay -- falsifier: hardcoded_topic, url_authority and contract_config_compliance
+          report zero on the changed source"
+      - id: AC5
+        statement: "AC5: Bindings: the Redpanda case runs with a launch environment that differs from
+          the in-memory case by the overlay file only, not by code -- falsifier: the lab run's receipt
+          (exit code and log path) quoted in the PR body, and `git diff` between the two case configurations
+          shows only the overlay file"
+evidence_requirements:
+  - kind: tests
+    description: Writer publish test, overlay pair test and the hook-run default report path.
+    command: uv run pytest tests/unit/nodes/node_validation_report_write_effect tests/unit/validation/test_handler_validator_run.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21529-ac1-writer-publishes
+    description: A run with 3 failing validators puts 3 triggered events and 1 run event on the container's
+      bus, a run with none puts the run event alone, and a container spy records the bus resolution.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_validation_report_write_effect/test_report_write_publish.py
+          -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21529-ac2-default-report
+    description: A hook run that omits --report-json finds the report at the contract's default path.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_validation_report_write_effect/test_validator_runtime_overlays.py
+          -n 0 -q -k omits_report_json
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21529-ac3-overlay-pair
+    description: The overlay pair differs only in the bus binding and both runs equal the golden report
+      after normalising run id and timestamps; the live-broker run is the lab receipt in the PR body.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_validation_report_write_effect/test_validator_runtime_overlays.py
+          -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21529-ac4-configuration
+    description: The topic names are in the node contract and the topic registry, the profile and the
+      bus binding are in the overlays, and the default overlay path is in the node contract.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_validation_report_write_effect/test_validator_runtime_overlays.py
+          -n 0 -q -k "settings or invalid or every_overlay_key"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21529-ac5-overlay-only
+    description: The two overlay files differ in the bus key alone, so the launch differs by the overlay
+      file.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_validation_report_write_effect/test_validator_runtime_overlays.py
+          -n 0 -q -k differs_only
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5

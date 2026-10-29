@@ -30,6 +30,9 @@ from omnibase_core.models.nodes.validation_report_write.model_validation_report_
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
+    HandlerValidatorRuntimeOverlay,
+)
 from omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run import (
     build_validator_container,
     main,
@@ -44,6 +47,9 @@ _FIXTURES = _ROOT / "tests/fixtures/validation/hook_writes"
 _PLANTED = _FIXTURES / "violation_hook_writes_fix_flag.yaml"
 _GOLDEN = _FIXTURES / "golden_hook_writes_fix_flag.json"
 _NORMALISED = "<normalised>"
+_OVERLAYS = HandlerValidatorRuntimeOverlay()
+_REPOSITORY = "example-repository"
+_PROFILE = _OVERLAYS.load(_OVERLAYS.default_overlay_path()).profile
 
 
 class _SpyContainer:
@@ -64,6 +70,7 @@ class _RecordingWriter(NodeValidationReportWriteEffect):
     """A different injected writer: the composition changes, the runtime does not."""
 
     def __init__(self) -> None:
+        super().__init__()
         self.requests: list[ModelValidationReportWriteInput] = []
 
     def handle(
@@ -95,6 +102,8 @@ def test_runtime_resolves_the_report_writer_from_the_container(
         ValidatorHookWrites(),
         [_PLANTED],
         str(report_path),
+        _PROFILE,
+        _REPOSITORY,
     )
     assert not result.is_valid
     assert spy.resolved == [NodeValidationReportWriteEffect]
@@ -113,7 +122,14 @@ def test_a_different_injected_writer_gives_the_same_report_with_no_code_change(
         )
     )
     report_path = tmp_path / "report.json"
-    run_validator(container, ValidatorHookWrites(), [_PLANTED], str(report_path))
+    run_validator(
+        container,
+        ValidatorHookWrites(),
+        [_PLANTED],
+        str(report_path),
+        _PROFILE,
+        _REPOSITORY,
+    )
     assert len(writer.requests) == 1
     assert _written(report_path) == json.loads(_GOLDEN.read_text(encoding="utf-8"))
 
@@ -122,7 +138,12 @@ def test_no_report_path_resolves_no_writer(monkeypatch: pytest.MonkeyPatch) -> N
     monkeypatch.chdir(_ROOT)
     spy = _SpyContainer(build_validator_container())
     run_validator(
-        cast(ModelONEXContainer, spy), ValidatorHookWrites(), [_PLANTED], None
+        cast(ModelONEXContainer, spy),
+        ValidatorHookWrites(),
+        [_PLANTED],
+        None,
+        _PROFILE,
+        _REPOSITORY,
     )
     assert spy.resolved == []
 
@@ -133,7 +154,12 @@ def test_a_report_path_without_a_container_is_an_error(
     monkeypatch.chdir(_ROOT)
     with pytest.raises(ModelOnexError, match="needs a container"):
         run_validator(
-            None, ValidatorHookWrites(), [_PLANTED], str(tmp_path / "report.json")
+            None,
+            ValidatorHookWrites(),
+            [_PLANTED],
+            str(tmp_path / "report.json"),
+            _PROFILE,
+            _REPOSITORY,
         )
 
 
