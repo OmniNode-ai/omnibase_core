@@ -59,6 +59,17 @@ emergency_bypass:
   justification: ''
   follow_up_ticket_id: ''
 dod_evidence:
+  - id: dod-omn21515-drift-source-placement-and-parameters
+    description: The drift validator's pure parser occupies a canonical path without a handler binding.
+      Its topic prefix and accepted baseline kinds come from the validator contract; changing either parameter
+      changes admission for the corresponding source.
+    source: manual
+    binds_ac: [AC5, AC6]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
+          tests/unit/validation/test_validator_event_registry_drift.py -q --no-cov -o addopts='' -k drift_source
+        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21515-ac1-report-per-refused-path
     description: The node's report has one finding per refused path with its rule id, and the hook id
       canonical-file-shape and its entry in .pre-commit-hooks.yaml run the node runtime.

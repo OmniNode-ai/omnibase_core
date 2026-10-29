@@ -20,6 +20,7 @@ from typing import Any
 
 import pytest
 
+import omnibase_core.validation.validator_event_registry_drift as drift_validator
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
@@ -147,6 +148,19 @@ def test_new_scripts_file_in_any_repository_is_refused() -> None:
     )
     assert _codes(facts) == ["noncanonical-file"]
     assert [str(i.file_path) for i in check(facts, RULES)] == ["scripts/x.py"]
+
+
+def test_drift_source_parser_has_canonical_unbound_location() -> None:
+    """The drift validator's pure parser must not occupy an unbound handler path."""
+    parser_path = (
+        "src/"
+        + drift_validator.parse_registration_contract.__module__.replace(".", "/")
+        + ".py"
+    )
+    facts = ModelCanonicalFileShapeFacts.model_validate(
+        {"head_tree": {"files": [parser_path]}}
+    )
+    assert _codes(facts) == []
 
 
 def test_report_has_one_finding_per_refused_path_with_its_rule_id() -> None:
