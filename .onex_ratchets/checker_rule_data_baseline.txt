@@ -4,7 +4,6 @@
 # and the entry is lowered (deleted at zero) in the same change. A file may not hold more than
 # its entry, an entry must equal what the file holds, and an entry the base branch lacks fails.
 # Do not add a line; do not raise a count.
-src/omnibase_core/handlers/handler_dependency_direction.py 1
 src/omnibase_core/handlers/handler_internal_sibling_pins.py 6
 src/omnibase_core/handlers/handler_merge_queue_parity.py 6
 src/omnibase_core/handlers/handler_no_bare_feature_flags.py 7

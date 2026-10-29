@@ -90,7 +90,7 @@ check-imperative-contracts = "omnibase_core.nodes.node_imperative_contract_guard
 # OMN-19998: refuse a dependency on a repository at the same or a higher layer of
 # the declared order, through any channel; every repository runs it via
 # .github/workflows/dependency-direction.yml and the pre-commit hook.
-check-dependency-direction = "omnibase_core.handlers.handler_dependency_direction_cli:main"
+check-dependency-direction = "omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check:main"
 # OMN-17427: how a workflow `uses:` ref must be pinned. Third-party actions take a full
 # 40-hex sha; first-party refs take the dev-merge tag the repository's overlay names.
 check-action-pins = "omnibase_core.nodes.node_action_pin_check_effect.runtime_action_pin_check:main"

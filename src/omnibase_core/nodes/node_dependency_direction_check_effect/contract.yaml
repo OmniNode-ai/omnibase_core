@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_dependency_direction_check_effect
+node_id: node_dependency_direction_check_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Judges a repository's files against the declared layer order (contracts/repo_layers.yaml): a dependency
+  on a repository at the same or a higher layer is a FAIL unless the baseline records it (OMN-19998, OMN-21518).
+  Patterns, file classes and message templates are rows of dependency_direction.validation.yaml.
+input_model: omnibase_core.models.dependency_direction.model_dependency_direction_check_input.ModelDependencyDirectionCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_dependency_direction:HandlerDependencyDirection
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 60000

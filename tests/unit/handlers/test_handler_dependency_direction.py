@@ -13,12 +13,6 @@ from __future__ import annotations
 import pytest
 
 from omnibase_core.enums.enum_dependency_channel import EnumDependencyChannel
-from omnibase_core.handlers.handler_dependency_direction import (
-    HandlerDependencyDirection,
-)
-from omnibase_core.handlers.handler_dependency_direction_cli import (
-    load_layer_map,
-)
 from omnibase_core.models.dependency_direction import (
     ModelDependencyDirectionBaselineEntry,
     ModelDependencyDirectionCheckInput,
@@ -30,6 +24,13 @@ from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
 )
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
+)
+from omnibase_core.nodes.node_dependency_direction_check_effect.handler_dependency_direction import (
+    HandlerDependencyDirection,
+)
+from omnibase_core.validation.checker_dependency_direction import (
+    load_dependency_direction_rules,
+    load_layer_map,
 )
 
 pytestmark = pytest.mark.unit
@@ -85,6 +86,7 @@ def _check(
     return HandlerDependencyDirection().handle(
         ModelDependencyDirectionCheckInput(
             repo=repo,
+            rules=load_dependency_direction_rules(),
             layer_map=LAYERS,
             files=tuple(ModelSourceFile(path=p, source=s) for p, s in files.items()),
             baseline=baseline,

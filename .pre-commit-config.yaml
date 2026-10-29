@@ -1815,7 +1815,7 @@ repos:
       # shrink-only baseline ratchet.
       - id: check-dependency-direction
         name: Cross-repository dependency direction (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_dependency_direction_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check
         language: system
         args: [--baseline, .onex_ratchets/dependency_direction_baseline.yaml]
         files: (\.py|(^|/)pyproject\.toml|(^|/)(requirements|constraints)[^/]*\.(txt|in)|(^|/)(Dockerfile|Containerfile)[^/]*|\.dockerfile|\.(sh|bash|zsh|mk)|(^|/)(GNU)?Makefile|^\.github/.*\.ya?ml)$

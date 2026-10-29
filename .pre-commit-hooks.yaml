@@ -1215,7 +1215,7 @@
     pre-existing violations recorded there warn, new ones fail. The full tree and the shrink-only baseline
     ratchet run in CI through .github/workflows/dependency-direction.yml.
   language: python
-  entry: python -m omnibase_core.handlers.handler_dependency_direction_cli
+  entry: python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check
   files: (\.py|(^|/)pyproject\.toml|(^|/)(requirements|constraints)[^/]*\.(txt|in)|(^|/)(Dockerfile|Containerfile)[^/]*|\.dockerfile|\.(sh|bash|zsh|mk)|(^|/)(GNU)?Makefile|^\.github/.*\.ya?ml)$
   pass_filenames: true
   require_serial: true

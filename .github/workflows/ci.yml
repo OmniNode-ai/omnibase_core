@@ -657,7 +657,7 @@ jobs:
           else
             echo "::notice::no ratchet base ref (push event): baseline ratchet skipped"
           fi
-          uv run python -m omnibase_core.handlers.handler_dependency_direction_cli --repo omnibase_core "${args[@]}"
+          uv run python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check --repo omnibase_core "${args[@]}"
 
       # K10 checker_rule_data (OMN-21503) — blocking. No rule table in a checker and no
       # validator outside the generic format; the tables that sat in checkers before K10
