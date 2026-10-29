@@ -196,3 +196,12 @@ def test_real_manifest_dependency_opt_ins() -> None:
     assert {name for name, pin in repos.items() if pin is not None} == {"omnimarket"}
     for repo in ("omnidash", "omniweb", "omninode_infra"):
         assert repos[repo] is None
+
+
+def test_source_url_comes_from_repository_layer_map() -> None:
+    """Pin the layer-map-derived source URL and fail where the helper is absent."""
+    from omnibase_core.nodes.node_dependency_pin_bump_effect.handler_dependency_pin_bump import (
+        _source_url,
+    )
+
+    assert _source_url() == GIT_URL
