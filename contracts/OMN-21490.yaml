@@ -172,12 +172,12 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21490-delegation-join
     description: "Delegation join: the delegation runs whose output is in the head (Codex thread 01a1849d-9978-7f22-8e74-01fd02c18091,
-      GLM text runs d983504e-c975-46e4-8463-ec8fa026b69c and 54c27ddb-d57f-42cc-86e5-f3b21d38b08e) are
-      named in the commit history of the head, so each receipt id joins to the head it produced; the delegation_events
-      side of the join is read from the lab projection by the lane."
+      GLM text runs d983504e-c975-46e4-8463-ec8fa026b69c, 54c27ddb-d57f-42cc-86e5-f3b21d38b08e and f190b802-1914-4787-9b6c-e86e29594d67)
+      are named in the commit history of the head, so each receipt id joins to the head it produced; the
+      delegation_events side of the join is read from the lab projection by the lane."
     source: manual
     checks:
       - check_type: command
-        check_value: "for id in 01a1849d-9978-7f22-8e74-01fd02c18091 d983504e-c975-46e4-8463-ec8fa026b69c
-          54c27ddb-d57f-42cc-86e5-f3b21d38b08e; do git log --format=%B | grep -F -q \"Delegation-Id: $id\"
-          || { echo \"missing $id\"; exit 1; }; done"
+        check_value: "msgs=$(git log --format=%B); for id in 01a1849d-9978-7f22-8e74-01fd02c18091 d983504e-c975-46e4-8463-ec8fa026b69c
+          54c27ddb-d57f-42cc-86e5-f3b21d38b08e f190b802-1914-4787-9b6c-e86e29594d67; do grep -F -q \"Delegation-Id:
+          $id\" <<< \"$msgs\" || { echo \"missing $id\"; exit 1; }; done"
