@@ -150,3 +150,13 @@ dod_evidence:
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
           -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-checkout-passes-ratchet
+    description: The checkout passes the canonical-file-shape ratchet; a handler module that no node
+      contract binds, such as the event-registry drift parsers once placed under handlers/, is refused.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_checkout_has_no_handler_outside_node.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
