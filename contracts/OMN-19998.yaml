@@ -74,9 +74,9 @@ requirements:
     acceptance:
       - id: AC9
         statement: "AC9: The lint-imports job step and the check-dependency-direction hook both run the
-          handler module omnibase_core.handlers.handler_dependency_direction_cli, and a step that runs
-          only the console script alias fails the check. -- falsifier: uv run pytest tests/ci/test_dependency_direction_wiring_omn19998.py
-          -q"
+          handler module omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check,
+          and a step that runs only the console script alias fails the check. -- falsifier: uv run pytest
+          tests/ci/test_dependency_direction_wiring_omn19998.py -q"
   - id: req-omn19998-core-hosted-fallbacks
     statement: omnibase_core is public, so no workflow falls back to the self-hosted omnibase-ci fleet
       for a public caller, and the jobs that read the route decision run on a GitHub-hosted runner.

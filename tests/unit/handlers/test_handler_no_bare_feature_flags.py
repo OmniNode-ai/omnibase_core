@@ -17,16 +17,33 @@ import pytest
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.handlers.handler_no_bare_feature_flags import (
-    APPROVED_BASENAMES,
-    APPROVED_PATH_SEGMENTS,
-    HandlerNoBareFeatureFlags,
-    main,
+from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
+    ModelValidatorSubcontract,
 )
 from omnibase_core.models.nodes.bare_feature_flag_check.model_bare_feature_flag_check_input import (
     ModelBareFeatureFlagCheckInput,
 )
+from omnibase_core.models.nodes.bare_feature_flag_check.model_bare_feature_flag_rules import (
+    ModelBareFeatureFlagRules,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
+from omnibase_core.nodes.node_no_bare_feature_flags_check_compute.handler_no_bare_feature_flags import (
+    HandlerNoBareFeatureFlags,
+)
+from omnibase_core.nodes.node_no_bare_feature_flags_check_compute.runtime_no_bare_feature_flags_check import (
+    main,
+    summary,
+)
+from omnibase_core.validation.checker_no_bare_feature_flags import (
+    RULE_BARE_EXEMPTION,
+    RULE_EXEMPTION,
+    RULE_READ,
+    RULE_SUMMARY,
+    load_rules,
+)
+from omnibase_core.validation.validator_no_bare_feature_flags import (
+    ValidatorNoBareFeatureFlags,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -91,10 +108,17 @@ def _materialise(root: Path, case: _Case) -> None:
         target.write_text(_text(spec), encoding="utf-8")
 
 
-def _scan(path: str, source: str) -> list[str]:
+def _contract() -> ModelValidatorSubcontract:
+    return ValidatorNoBareFeatureFlags().contract
+
+
+def _scan(
+    path: str, source: str, rules: ModelBareFeatureFlagRules | None = None
+) -> list[str]:
     report = HandlerNoBareFeatureFlags().handle(
         ModelBareFeatureFlagCheckInput(
-            files=[ModelSourceFile(path=path, source=source)]
+            rules=rules or load_rules(_contract()),
+            files=[ModelSourceFile(path=path, source=source)],
         )
     )
     return [f.message for f in report.findings if f.severity == "FAIL"]
@@ -208,21 +232,18 @@ def test_a_comment_line_and_a_reasoned_exemption_are_line_skips() -> None:
 
 
 def test_the_approved_basenames_are_the_four_of_the_occ_hook() -> None:
-    assert (
-        frozenset(
-            {
-                "feature_flag_resolver.py",
-                "contract.yaml",
-                "check_bare_feature_flags.py",
-                "model_contract_feature_flag.py",
-            }
-        )
-        == APPROVED_BASENAMES
-    )
+    assert frozenset(
+        {
+            "feature_flag_resolver.py",
+            "contract.yaml",
+            "check_bare_feature_flags.py",
+            "model_contract_feature_flag.py",
+        }
+    ) == frozenset(load_rules(_contract()).approved_basenames)
 
 
 def test_the_approved_path_segments_are_the_four_of_the_occ_hook() -> None:
-    assert APPROVED_PATH_SEGMENTS == (
+    assert load_rules(_contract()).approved_path_segments == (
         "/tests/",
         "/capabilities/",
         "/config_discovery/",
@@ -296,3 +317,173 @@ def test_an_unreadable_path_is_skipped_silently_as_the_occ_hook_does(
 ) -> None:
     assert main([str(tmp_path / "missing.py"), str(tmp_path)]) == 0
     assert capsys.readouterr().out == ""
+
+
+NODE_DIR = (
+    Path(__file__).resolve().parents[3]
+    / "src"
+    / "omnibase_core"
+    / "nodes"
+    / "node_no_bare_feature_flags_check_compute"
+)
+
+
+def test_the_node_contract_binds_the_handler() -> None:
+    contract = yaml.safe_load((NODE_DIR / "contract.yaml").read_text(encoding="utf-8"))
+    assert contract["handler_routing"]["default_handler"] == (
+        "handler_no_bare_feature_flags:HandlerNoBareFeatureFlags"
+    )
+    assert (NODE_DIR / "handler_no_bare_feature_flags.py").is_file()
+    assert (NODE_DIR / "runtime_no_bare_feature_flags_check.py").is_file()
+
+
+def _with_parameter(rule_id: str, key: str, value: object) -> ModelValidatorSubcontract:
+    contract = _contract()
+    rules = []
+    for rule in contract.rules:
+        if rule.rule_id == rule_id:
+            rule = rule.model_copy(
+                update={"parameters": {**(rule.parameters or {}), key: value}}
+            )
+        rules.append(rule)
+    return contract.model_copy(update={"rules": rules})
+
+
+TS_MESSAGE = (
+    'src/a.ts:1: bare feature flag env var "ENABLE_FOO"'
+    " -- declare in contract.yaml feature_flags: block and resolve via flag system"
+)
+FLAGGED_LINE = 'x = os.getenv("ENABLE_FOO")\n'
+TS_LINE = "const x = process.env.ENABLE_FOO;\n"
+EXEMPT_LINE = 'x = os.getenv("ENABLE_FOO")  # ONEX_FLAG_EXEMPT: legacy\n'
+BARE_EXEMPT_LINE = 'x = os.getenv("ENABLE_FOO")  # ONEX_FLAG_EXEMPT:\n'
+
+
+@pytest.mark.parametrize(
+    ("rule_id", "key", "value", "path", "source", "expected"),
+    [
+        (
+            RULE_READ,
+            "python_pattern",
+            r"NEVER_MATCHES_(\w+)",
+            "src/a.py",
+            FLAGGED_LINE,
+            [],
+        ),
+        (RULE_READ, "ts_pattern", r"NEVER_MATCHES_(\w+)", "src/a.ts", TS_LINE, []),
+        (
+            RULE_READ,
+            "comment_prefixes",
+            ["#"],
+            "src/a.ts",
+            "// " + TS_LINE,
+            [TS_MESSAGE],
+        ),
+        (
+            RULE_READ,
+            "approved_basenames",
+            ["service.py"],
+            "src/service.py",
+            FLAGGED_LINE,
+            [],
+        ),
+        (
+            RULE_READ,
+            "approved_path_segments",
+            ["/src/"],
+            "x/src/service.py",
+            FLAGGED_LINE,
+            [],
+        ),
+        (
+            RULE_READ,
+            "message_template",
+            "{location} {flag_name}",
+            "src/a.py",
+            FLAGGED_LINE,
+            ["src/a.py:1 ENABLE_FOO"],
+        ),
+        (
+            RULE_BARE_EXEMPTION,
+            "exempt_with_reason_pattern",
+            r"NEVER_MATCHES:\s*(\S.*)",
+            "src/a.py",
+            EXEMPT_LINE,
+            [
+                "src/a.py:1: ONEX_FLAG_EXEMPT without reason token -- add a reason after the colon"
+            ],
+        ),
+        (
+            RULE_BARE_EXEMPTION,
+            "exempt_bare_pattern",
+            r"NEVER_MATCHES:",
+            "src/a.py",
+            BARE_EXEMPT_LINE,
+            [
+                'src/a.py:1: bare feature flag env var "ENABLE_FOO" -- declare in contract.yaml feature_flags: block and resolve via flag system'
+            ],
+        ),
+        (
+            RULE_BARE_EXEMPTION,
+            "message_template",
+            "{location} no reason",
+            "src/a.py",
+            BARE_EXEMPT_LINE,
+            ["src/a.py:1 no reason"],
+        ),
+    ],
+)
+def test_each_moved_rule_parameter_changes_the_verdict(
+    rule_id: str,
+    key: str,
+    value: object,
+    path: str,
+    source: str,
+    expected: list[str],
+) -> None:
+    baseline = _scan(path, source)
+    mutated = _scan(path, source, load_rules(_with_parameter(rule_id, key, value)))
+    assert mutated != baseline
+    assert mutated == expected
+
+
+def test_the_exemption_listing_template_changes_the_skip_message() -> None:
+    contract = _with_parameter(
+        RULE_EXEMPTION, "message_template", "{location}<{reason}>"
+    )
+    report = HandlerNoBareFeatureFlags().handle(
+        ModelBareFeatureFlagCheckInput(
+            rules=load_rules(contract),
+            files=[ModelSourceFile(path="src/a.py", source=EXEMPT_LINE)],
+        )
+    )
+    assert [f.message for f in report.findings if f.severity == "SKIP"] == [
+        "src/a.py:1<legacy>"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("key", "value", "expected_tail"),
+    [
+        (
+            "summary_template",
+            "{count} bad{exemptions}!\n",
+            "1 bad, 1 exemption(s) (a)!\n",
+        ),
+        (
+            "exemptions_template",
+            "; {count} skipped [{listing}]",
+            "\n1 violation(s); 1 skipped [a]. Declare flags in contract.yaml feature_flags: block and resolve via the flag system.\n",
+        ),
+    ],
+)
+def test_the_summary_parameters_shape_the_closing_lines(
+    key: str, value: str, expected_tail: str
+) -> None:
+    contract = _with_parameter(RULE_SUMMARY, key, value)
+    assert summary(contract, 1, ["a"]) == expected_tail
+
+
+def test_the_summary_listing_separator_joins_the_exemptions() -> None:
+    contract = _with_parameter(RULE_SUMMARY, "listing_separator", " | ")
+    assert "(a | b)" in summary(contract, 1, ["a", "b"])

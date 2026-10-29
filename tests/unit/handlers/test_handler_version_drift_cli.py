@@ -10,8 +10,12 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers import (
-    handler_merge_queue_parity_cli,
+from omnibase_core.nodes.node_merge_queue_parity_check_effect import (
+    runtime_merge_queue_parity_check,
+)
+from omnibase_core.validation.checker_workflow_selection import (
+    is_workflow,
+    load_workflow_rule,
 )
 
 pytestmark = pytest.mark.unit
@@ -59,9 +63,9 @@ def test_parity_cli_fails_then_warns_once_baselined(tmp_path: Path) -> None:
     repo.mkdir()
     _git(repo, "init", "-q", "-b", "dev")
     _commit(repo, {".github/workflows/ci.yml": _QUEUE_ONLY}, "wf")
-    assert handler_merge_queue_parity_cli.main(["--root", str(repo)]) == 1
+    assert runtime_merge_queue_parity_check.main(["--root", str(repo)]) == 1
     _commit(repo, {".onex_ratchets/merge_queue_parity_baseline.yaml": _BASELINE}, "bl")
-    assert handler_merge_queue_parity_cli.main(["--root", str(repo)]) == 0
+    assert runtime_merge_queue_parity_check.main(["--root", str(repo)]) == 0
 
 
 def test_parity_cli_refuses_baseline_growth_against_the_base(tmp_path: Path) -> None:
@@ -85,7 +89,7 @@ def test_parity_cli_refuses_baseline_growth_against_the_base(tmp_path: Path) -> 
         "grow",
     )
     assert (
-        handler_merge_queue_parity_cli.main(
+        runtime_merge_queue_parity_check.main(
             ["--root", str(repo), "--ratchet-base-ref", base]
         )
         == 1
@@ -113,26 +117,22 @@ def test_parity_cli_refuses_baseline_growth_against_the_base(tmp_path: Path) -> 
 def test_parity_workflow_selection_preserves_path_boundaries(
     path: str, expected: bool
 ) -> None:
-    assert handler_merge_queue_parity_cli.is_workflow(path) is expected
+    assert is_workflow(path) is expected
 
 
 def test_parity_workflow_selection_uses_rule_parameter() -> None:
-    row = handler_merge_queue_parity_cli.load_workflow_rule()
+    row = load_workflow_rule()
     changed = row.model_copy(
         update={"parameters": {"path_pattern": r"^custom/[^/]+\.yml$"}}
     )
-    assert not handler_merge_queue_parity_cli.is_workflow(
-        ".github/workflows/ci.yml", rule=changed
-    )
-    assert handler_merge_queue_parity_cli.is_workflow("custom/ci.yml", rule=changed)
+    assert not is_workflow(".github/workflows/ci.yml", rule=changed)
+    assert is_workflow("custom/ci.yml", rule=changed)
 
 
 def test_parity_workflow_selection_refuses_missing_parameter() -> None:
     from omnibase_core.errors.model_onex_error import ModelOnexError
 
-    row = handler_merge_queue_parity_cli.load_workflow_rule()
+    row = load_workflow_rule()
     broken = row.model_copy(update={"parameters": {}})
     with pytest.raises(ModelOnexError):
-        handler_merge_queue_parity_cli.is_workflow(
-            ".github/workflows/ci.yml", rule=broken
-        )
+        is_workflow(".github/workflows/ci.yml", rule=broken)

@@ -45,6 +45,9 @@ from collections.abc import Iterable, Iterator
 from typing import Final
 
 from omnibase_core.enums.enum_dependency_channel import EnumDependencyChannel
+from omnibase_core.models.dependency_direction.model_dependency_direction_rules import (
+    ModelDependencyDirectionRules,
+)
 from omnibase_core.models.dependency_direction.model_repo_layer_map import (
     ModelRepoLayerMap,
 )
@@ -62,26 +65,14 @@ VALIDATOR_ID: Final[str] = "dependency_direction"
 # (channel, target repo, 1-based line, evidence text)
 Reference = tuple[EnumDependencyChannel, str, int, str]
 
-_INSTALL_OR_FETCH: Final[re.Pattern[str]] = re.compile(
-    r"\b(?:pip3?\s+install|uv\s+pip\s+install|uv\s+add|uv\s+tool\s+install|uvx"
-    r"|git\s+clone|gh\s+repo\s+clone|curl|wget)\b|git\+https?://",
-    re.IGNORECASE,
-)
-_REPOSITORY: Final[re.Pattern[str]] = re.compile(
-    r"^\s*-?\s*repository:\s*['\"]?([^\s'\"#]+)"
-)
-_REQUIREMENT_NAME: Final[re.Pattern[str]] = re.compile(
-    r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)"
-)
 
-_SCRIPT_SUFFIXES: Final[tuple[str, ...]] = (".sh", ".bash", ".zsh", ".mk")
+def _norm(name: str, rules: ModelDependencyDirectionRules) -> str:
+    return re.sub(rules.name_separator_pattern, "-", name).lower()
 
 
-def _norm(name: str) -> str:
-    return re.sub(r"[-_.]+", "-", name).lower()
-
-
-def classify_path(path: str) -> EnumDependencyChannel | None:
+def classify_path(
+    path: str, rules: ModelDependencyDirectionRules
+) -> EnumDependencyChannel | None:
     """The line-scanning channel a file belongs to, or None when it has none.
 
     ``.py`` files are scanned for imports and, when classified ``script`` here,
@@ -89,38 +80,48 @@ def classify_path(path: str) -> EnumDependencyChannel | None:
     """
     name = path.rsplit("/", 1)[-1]
     lowered = name.lower()
-    if path.startswith(".github/") and lowered.endswith((".yml", ".yaml")):
+    if path.startswith(rules.workflow_dir_prefix) and lowered.endswith(
+        rules.workflow_suffixes
+    ):
         return EnumDependencyChannel.WORKFLOW
-    if lowered.startswith(("dockerfile", "containerfile")) or lowered.endswith(
-        ".dockerfile"
+    if lowered.startswith(rules.dockerfile_prefixes) or lowered.endswith(
+        rules.dockerfile_suffixes
     ):
         return EnumDependencyChannel.DOCKERFILE
-    if lowered.startswith(("requirements", "constraints")) and lowered.endswith(
-        (".txt", ".in")
+    if lowered.startswith(rules.requirements_prefixes) and lowered.endswith(
+        rules.requirements_suffixes
     ):
         return EnumDependencyChannel.REQUIREMENTS
-    if lowered.endswith(_SCRIPT_SUFFIXES) or name in ("Makefile", "GNUmakefile"):
+    if lowered.endswith(rules.script_suffixes) or name in rules.makefile_names:
         return EnumDependencyChannel.SCRIPT
-    if lowered.endswith(".py"):
+    if lowered.endswith(rules.python_suffix):
         parts = path.split("/")[:-1]
-        if "scripts" in parts and "tests" not in parts and "fixtures" not in parts:
+        if any(d in parts for d in rules.script_dirs) and not any(
+            d in parts for d in rules.script_excluded_dirs
+        ):
             return EnumDependencyChannel.SCRIPT
     return None
 
 
-def is_candidate(path: str) -> bool:
+def is_candidate(path: str, rules: ModelDependencyDirectionRules) -> bool:
     """Whether ``path`` can carry a cross-repository reference this check reads."""
     return (
-        path.endswith(".py")
-        or path.rsplit("/", 1)[-1] == "pyproject.toml"
-        or classify_path(path) is not None
+        path.endswith(rules.python_suffix)
+        or path.rsplit("/", 1)[-1] == rules.pyproject_name
+        or classify_path(path, rules) is not None
     )
 
 
 class _Names:
     """Lookup tables from a name to the repository that owns it."""
 
-    def __init__(self, layer_map: ModelRepoLayerMap, own_repo: str) -> None:
+    def __init__(
+        self,
+        layer_map: ModelRepoLayerMap,
+        own_repo: str,
+        rules: ModelDependencyDirectionRules,
+    ) -> None:
+        self.rules = rules
         self.org = layer_map.github_org.lower()
         self.modules: dict[str, str] = {}
         self.dists: dict[str, str] = {}
@@ -131,7 +132,7 @@ class _Names:
             for module in entry.python_modules:
                 self.modules[module] = entry.repo
             for dist in entry.distributions:
-                self.dists[_norm(dist)] = entry.repo
+                self.dists[_norm(dist, rules)] = entry.repo
             self.slugs[entry.repo.lower()] = entry.repo
         tokens = sorted(
             {*self.modules, *(d for d in self.dists), *self.slugs},
@@ -140,16 +141,17 @@ class _Names:
         )
         self.token_re = (
             re.compile(
-                r"(?<![A-Za-z0-9_.-])("
+                rules.token_before_pattern
+                + "("
                 + "|".join(re.escape(t).replace(r"\-", "[-_]") for t in tokens)
-                + r")(?![A-Za-z0-9_-])"
+                + ")"
+                + rules.token_after_pattern
             )
             if tokens
             else None
         )
         self.slug_re = re.compile(
-            re.escape(layer_map.github_org)
-            + r"/([A-Za-z0-9_.-]+?)(?:\.git)?(?=[/@\s'\"#]|$)",
+            re.escape(layer_map.github_org) + rules.slug_repo_pattern,
             re.IGNORECASE,
         )
 
@@ -157,8 +159,8 @@ class _Names:
         lowered = token.lower()
         if lowered in self.modules:
             return self.modules[lowered]
-        if _norm(lowered) in self.dists:
-            return self.dists[_norm(lowered)]
+        if _norm(lowered, self.rules) in self.dists:
+            return self.dists[_norm(lowered, self.rules)]
         return self.slugs.get(lowered.replace("-", "_"), self.slugs.get(lowered))
 
     def repo_for_slug(self, slug_repo: str) -> str | None:
@@ -196,46 +198,62 @@ def _logical_lines(source: str) -> Iterator[tuple[int, str]]:
         yield start, " ".join(buffer)
 
 
-def _is_comment(line: str) -> bool:
-    return line.lstrip().startswith("#")
+def _is_comment(line: str, rules: ModelDependencyDirectionRules) -> bool:
+    return line.lstrip().startswith(rules.comment_prefix)
 
 
 def _install_fetch_refs(
     source: str, channel: EnumDependencyChannel, names: _Names
 ) -> Iterator[Reference]:
+    rules = names.rules
+    install_or_fetch = re.compile(rules.install_or_fetch_pattern)
     for line_no, line in _logical_lines(source):
-        if _is_comment(line) or not _INSTALL_OR_FETCH.search(line):
+        if _is_comment(line, rules) or not install_or_fetch.search(line):
             continue
         for repo in sorted(names.repos_in(line)):
-            yield channel, repo, line_no, line.strip()[:200]
+            yield channel, repo, line_no, line.strip()[: rules.evidence_limit]
 
 
 def _workflow_refs(source: str, names: _Names) -> Iterator[Reference]:
+    rules = names.rules
+    repository = re.compile(rules.repository_pattern)
     for line_no, line in enumerate(source.splitlines(), start=1):
-        if _is_comment(line):
+        if _is_comment(line, rules):
             continue
-        match = _REPOSITORY.match(line)
+        match = repository.match(line)
         if match is None:
             continue
         slug = names.slug_re.match(match.group(1))
         repo = names.repo_for_slug(slug.group(1)) if slug else None
         if repo:
-            yield EnumDependencyChannel.WORKFLOW, repo, line_no, line.strip()[:200]
+            yield (
+                EnumDependencyChannel.WORKFLOW,
+                repo,
+                line_no,
+                line.strip()[: rules.evidence_limit],
+            )
     yield from _install_fetch_refs(source, EnumDependencyChannel.WORKFLOW, names)
 
 
 def _requirements_refs(source: str, names: _Names) -> Iterator[Reference]:
+    rules = names.rules
+    requirement_name = re.compile(rules.requirement_name_pattern)
     for line_no, line in enumerate(source.splitlines(), start=1):
-        if _is_comment(line) or not line.strip():
+        if _is_comment(line, rules) or not line.strip():
             continue
         repos = names.repos_in(line) if "/" in line else set()
-        match = _REQUIREMENT_NAME.match(line)
+        match = requirement_name.match(line)
         if match:
-            repo = names.dists.get(_norm(match.group(1)))
+            repo = names.dists.get(_norm(match.group(1), rules))
             if repo:
                 repos.add(repo)
         for repo in sorted(repos):
-            yield EnumDependencyChannel.REQUIREMENTS, repo, line_no, line.strip()[:200]
+            yield (
+                EnumDependencyChannel.REQUIREMENTS,
+                repo,
+                line_no,
+                line.strip()[: rules.evidence_limit],
+            )
 
 
 def _requirement_strings(document: dict[str, object]) -> Iterator[tuple[str, str]]:
@@ -276,14 +294,16 @@ def _requirement_strings(document: dict[str, object]) -> Iterator[tuple[str, str
 
 
 def _pyproject_refs(source: str, names: _Names) -> Iterator[Reference]:
+    rules = names.rules
+    requirement_name = re.compile(rules.requirement_name_pattern)
     try:
         document = tomllib.loads(source)
     except tomllib.TOMLDecodeError:
         return
     lines = source.splitlines()
     for table, requirement in _requirement_strings(document):
-        match = _REQUIREMENT_NAME.match(requirement)
-        repo = names.dists.get(_norm(match.group(1))) if match else None
+        match = requirement_name.match(requirement)
+        repo = names.dists.get(_norm(match.group(1), rules)) if match else None
         if repo is None:
             continue
         line_no = next(
@@ -318,17 +338,23 @@ def _import_refs(source: str, path: str, names: _Names) -> Iterator[Reference]:
 
 
 def extract_references(
-    path: str, source: str, layer_map: ModelRepoLayerMap, own_repo: str
+    path: str,
+    source: str,
+    layer_map: ModelRepoLayerMap,
+    own_repo: str,
+    rules: ModelDependencyDirectionRules,
 ) -> list[Reference]:
     """Every reference from ``path`` to a repository other than ``own_repo``."""
-    names = _Names(layer_map, own_repo)
+    names = _Names(layer_map, own_repo, rules)
     name = path.rsplit("/", 1)[-1]
     refs: list[Reference] = []
-    if name == "pyproject.toml":
+    if name == rules.pyproject_name:
         refs.extend(_pyproject_refs(source, names))
         return refs
-    channel = classify_path(path)
-    if path.endswith(".py") and "fixtures" not in path.split("/")[:-1]:
+    channel = classify_path(path, rules)
+    if path.endswith(rules.python_suffix) and not any(
+        d in path.split("/")[:-1] for d in rules.fixture_dirs
+    ):
         refs.extend(_import_refs(source, path, names))
     if channel is EnumDependencyChannel.WORKFLOW:
         refs.extend(_workflow_refs(source, names))

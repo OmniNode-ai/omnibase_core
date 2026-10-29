@@ -12,6 +12,9 @@ from omnibase_core.models.dependency_direction.model_dependency_direction_baseli
 from omnibase_core.models.dependency_direction.model_dependency_direction_check_input import (
     ModelDependencyDirectionCheckInput,
 )
+from omnibase_core.models.dependency_direction.model_dependency_direction_rules import (
+    ModelDependencyDirectionRules,
+)
 from omnibase_core.models.dependency_direction.model_repo_layer import (
     ModelRepoLayer,
 )
@@ -23,6 +26,7 @@ __all__ = [
     "ModelDependencyDirectionBaseline",
     "ModelDependencyDirectionBaselineEntry",
     "ModelDependencyDirectionCheckInput",
+    "ModelDependencyDirectionRules",
     "ModelRepoLayer",
     "ModelRepoLayerMap",
 ]

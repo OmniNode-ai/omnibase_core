@@ -1825,7 +1825,7 @@ repos:
       # shrink-only baseline ratchet.
       - id: check-dependency-direction
         name: Cross-repository dependency direction (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_dependency_direction_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check
         language: system
         args: [--baseline, .onex_ratchets/dependency_direction_baseline.yaml]
         files: (\.py|(^|/)pyproject\.toml|(^|/)(requirements|constraints)[^/]*\.(txt|in)|(^|/)(Dockerfile|Containerfile)[^/]*|\.dockerfile|\.(sh|bash|zsh|mk)|(^|/)(GNU)?Makefile|^\.github/.*\.ya?ml)$
@@ -1864,7 +1864,7 @@ repos:
 
       - id: check-merge-queue-parity
         name: Pull request CI runs every merge-queue job (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_merge_queue_parity_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check
         language: system
         args: [--baseline, .onex_ratchets/merge_queue_parity_baseline.yaml]
         files: ^\.github/workflows/[^/]+\.ya?ml$
@@ -1964,8 +1964,8 @@ repos:
           bash -c 'set -euo pipefail; base=$(mktemp -d); trap "rm -rf \"$base\"" EXIT; git archive HEAD
           .github/workflows | tar -x -C "$base"; if git cat-file -e HEAD:.onex_ratchets/ci_inheritance_baseline.yaml
           2>/dev/null; then git show HEAD:.onex_ratchets/ci_inheritance_baseline.yaml > "$base/ci_inheritance_baseline.yaml";
-          fi; env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_ci_inheritance_cli --base-dir
-          "$base/.github/workflows" --head-dir .github/workflows --baseline .onex_ratchets/ci_inheritance_baseline.yaml
+          fi; env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check
+          --base-dir "$base/.github/workflows" --head-dir .github/workflows --baseline .onex_ratchets/ci_inheritance_baseline.yaml
           --base-baseline "$base/ci_inheritance_baseline.yaml"'
         language: system
         files: ^(\.github/workflows/.*\.ya?ml|\.onex_ratchets/ci_inheritance_baseline\.yaml)$
@@ -2409,7 +2409,7 @@ repos:
       - id: no-hardcoded-topics
         name: No hardcoded ONEX topic strings
         language: system
-        entry: uv run python -m omnibase_core.handlers.handler_no_hardcoded_topics
+        entry: uv run python -m omnibase_core.nodes.node_no_hardcoded_topics_check_compute.runtime_no_hardcoded_topics_check
         require_serial: true
         types_or: [python, yaml, ts, javascript]
         exclude: ^(src/omnibase_core/constants/constants_event_types\.py|src/omnibase_core/models/events/contract_registration/model_contract_deregistered_event\.py|src/omnibase_core/models/events/contract_registration/model_contract_registered_event\.py|src/omnibase_core/models/events/contract_registration/model_node_heartbeat_event\.py|src/omnibase_core/models/events/model_episode_event\.py|src/omnibase_core/models/events/model_git_hook_event\.py|src/omnibase_core/models/events/model_github_pr_status_event\.py|src/omnibase_core/models/events/model_linear_snapshot_event\.py|src/omnibase_core/models/events/validation/model_validation_run_completed_event\.py|src/omnibase_core/models/events/validation/model_validation_run_started_event\.py|src/omnibase_core/models/events/validation/model_validation_violations_batch_event\.py|src/omnibase_core/schemas/cli_contribution\.v1\.example\.yaml|src/omnibase_core/validation/validator_topic_suffix\.py)$

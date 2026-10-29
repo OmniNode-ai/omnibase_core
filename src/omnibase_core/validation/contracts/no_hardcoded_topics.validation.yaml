@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: no_hardcoded_topics
+  validator_name: No Hardcoded Topics
+  validator_description: |
+    Reject quoted ONEX topic literals outside approved constant files (OMN-20074, OMN-21518).
+    Ported from the onex_change_control check-hardcoded-topics hook under the same hook id. A
+    literal is flagged on a line that is not a comment, a docstring line or a block-comment line,
+    in a file that is neither a test file, an authoritative wire schema nor an approved basename.
+    Source texts are arguments; every pattern, name list, threshold and message is a rule parameter.
+
+  target_patterns:
+    - "**/*.py"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.ts"
+    - "**/*.js"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: topic_literal
+      description: A quoted topic literal on a code line outside an approved constant file.
+      severity: error
+      enabled: true
+      parameters:
+        validator_name: no-hardcoded-topics
+        topic_literal_pattern: '["'']onex\.(evt|cmd)\.'
+        message: hardcoded topic string -- use a constant from the canonical topic registry
+        remediation: Move topic strings to an approved constant file.
+    - rule_id: exempt_path
+      description: Files in which no line is ever flagged.
+      severity: error
+      enabled: true
+      parameters:
+        approved_basenames:
+          - platform_topic_suffixes.py
+          - topics.py
+          - topics.ts
+          - contract.yaml
+          - handler_contract.yaml
+          - topics.yaml
+          - contract_topic_extractor.py
+          - check_topic_drift.py
+          - topic_constants.py
+          - constants_topic_taxonomy.py
+          - topic_naming_baseline.txt
+          - governance_emitter.py
+        test_dir_marker: /tests/
+        test_name_prefix: test_
+        test_name_suffixes: ["_test.py", ".test.ts", ".test.js"]
+        wire_schema_dir: wire_schemas
+        wire_schema_name_pattern: '.+_v\d+\.ya?ml'
+        wire_schema_min_parts: 4
+    - rule_id: skip_line
+      description: Lines that are comments, docstrings or block comments are never flagged.
+      severity: error
+      enabled: true
+      parameters:
+        comment_prefixes: ["#", "//", "*", "/*"]
+        block_comment_open: /*
+        block_comment_close: "*/"
+        docstring_delimiters: ['"""', "'''"]
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

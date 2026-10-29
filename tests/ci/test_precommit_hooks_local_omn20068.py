@@ -82,7 +82,10 @@ def test_no_hardcoded_topics_runs_the_in_repo_handler_with_the_unchanged_exclude
     assert repo == "local"
     entry = hook["entry"]
     assert isinstance(entry, str)
-    assert "omnibase_core.handlers.handler_no_hardcoded_topics" in entry
+    assert (
+        "omnibase_core.nodes.node_no_hardcoded_topics_check_compute.runtime_no_hardcoded_topics_check"
+        in entry
+    )
     assert hook["types_or"] == ["python", "yaml", "ts", "javascript"]
     exclude = hook["exclude"]
     assert isinstance(exclude, str)
@@ -151,7 +154,7 @@ def test_the_in_repo_topic_hook_is_exported_under_the_same_id() -> None:
     hook = exported[0]
     assert (
         hook.get("entry")
-        == "python -m omnibase_core.handlers.handler_no_hardcoded_topics"
+        == "python -m omnibase_core.nodes.node_no_hardcoded_topics_check_compute.runtime_no_hardcoded_topics_check"
     )
     assert hook.get("language") == "python"
     assert hook.get("types_or") == ["python", "yaml", "ts", "javascript"]
@@ -178,7 +181,8 @@ def test_the_in_repo_cosmetic_hook_is_exported_under_the_same_id_and_keys() -> N
     }
     assert hook["name"] == "Cosmetic lint (OmniNode standards)"
     assert (
-        hook["entry"] == "python -m omnibase_core.handlers.handler_cosmetic_lint check"
+        hook["entry"]
+        == "python -m omnibase_core.nodes.node_cosmetic_lint_check_compute.runtime_cosmetic_lint_check check"
     )
     assert hook["language"] == "python"
     assert hook["types"] == ["file"]
@@ -206,7 +210,7 @@ def test_the_in_repo_bare_feature_flag_hook_is_exported_under_the_same_id() -> N
     hook = exported[0]
     assert (
         hook.get("entry")
-        == "python -m omnibase_core.handlers.handler_no_bare_feature_flags"
+        == "python -m omnibase_core.nodes.node_no_bare_feature_flags_check_compute.runtime_no_bare_feature_flags_check"
     )
     assert hook.get("language") == "python"
     assert hook.get("types_or") == ["python", "ts", "javascript"]

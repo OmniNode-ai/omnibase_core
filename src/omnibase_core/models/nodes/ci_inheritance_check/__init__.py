@@ -21,6 +21,12 @@ if TYPE_CHECKING:
     from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input import (
         ModelCiInheritanceCheckInput,
     )
+    from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_reference_input import (
+        ModelCiInheritanceReferenceInput,
+    )
+    from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_rules import (
+        ModelCiInheritanceRules,
+    )
     from omnibase_core.models.nodes.ci_inheritance_check.model_ci_org_reference import (
         ModelCiOrgReference,
     )
@@ -28,6 +34,8 @@ if TYPE_CHECKING:
 __all__ = [
     "ModelCiInheritanceBaseline",
     "ModelCiInheritanceCheckInput",
+    "ModelCiInheritanceReferenceInput",
+    "ModelCiInheritanceRules",
     "ModelCiOrgReference",
 ]
 
@@ -40,6 +48,14 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelCiInheritanceCheckInput": (
         "omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input",
         "ModelCiInheritanceCheckInput",
+    ),
+    "ModelCiInheritanceReferenceInput": (
+        "omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_reference_input",
+        "ModelCiInheritanceReferenceInput",
+    ),
+    "ModelCiInheritanceRules": (
+        "omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_rules",
+        "ModelCiInheritanceRules",
     ),
     "ModelCiOrgReference": (
         "omnibase_core.models.nodes.ci_inheritance_check.model_ci_org_reference",

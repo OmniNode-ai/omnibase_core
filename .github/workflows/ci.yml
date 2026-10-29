@@ -657,7 +657,7 @@ jobs:
           else
             echo "::notice::no ratchet base ref (push event): baseline ratchet skipped"
           fi
-          uv run python -m omnibase_core.handlers.handler_dependency_direction_cli --repo omnibase_core "${args[@]}"
+          uv run python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check --repo omnibase_core "${args[@]}"
 
       # K10 checker_rule_data (OMN-21503) — blocking. No rule table in a checker and no
       # validator outside the generic format; the tables that sat in checkers before K10
@@ -2965,7 +2965,7 @@ jobs:
           BASE_BASELINE: ${{ steps.base.outputs.baseline }}
         run: |
           env -u PYTHONPATH uv run python -m \
-            omnibase_core.handlers.handler_ci_inheritance_cli \
+            omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check \
             --base-dir "$BASE_DIR" --head-dir .github/workflows \
             --baseline .onex_ratchets/ci_inheritance_baseline.yaml \
             --base-baseline "$BASE_BASELINE"

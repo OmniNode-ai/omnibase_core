@@ -90,7 +90,7 @@ check-imperative-contracts = "omnibase_core.nodes.node_imperative_contract_guard
 # OMN-19998: refuse a dependency on a repository at the same or a higher layer of
 # the declared order, through any channel; every repository runs it via
 # .github/workflows/dependency-direction.yml and the pre-commit hook.
-check-dependency-direction = "omnibase_core.handlers.handler_dependency_direction_cli:main"
+check-dependency-direction = "omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check:main"
 # OMN-21494: resolve operator-private vocabularies through the shared core node.
 resolve-private-vocabulary = "omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary:main"
 # OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator
@@ -101,7 +101,7 @@ check-no-backward-compat = "omnibase_core.nodes.node_backward_compat_check_compu
 # package ahead of the registry consumers that install it, and a job the merge
 # queue runs that pull request CI skips; every repository runs both via
 # .github/workflows/version-drift.yml and the pre-commit hooks.
-check-merge-queue-parity = "omnibase_core.handlers.handler_merge_queue_parity_cli:main"
+check-merge-queue-parity = "omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check:main"
 # OMN-19998: CI runners are for private repositories only (RULING 2026-10-16T07:07:09Z).
 # Refuse a public repository adding a job whose runs-on is, or can resolve to, a
 # self-hosted label, against the shrink-only baseline shipped in the package; every

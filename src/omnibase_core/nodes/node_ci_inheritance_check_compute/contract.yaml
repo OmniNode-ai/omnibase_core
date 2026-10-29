@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_ci_inheritance_check_compute
+node_id: node_ci_inheritance_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Refuses a change that adds a reusable workflow or action reference to an organization repository other
+  than the CI host, from supplied base and head workflow sources and the ci_inheritance rule data, and
+  returns a ModelValidationReport (OMN-17427, OMN-21518).
+input_model: omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_reference_input.ModelCiInheritanceReferenceInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_ci_inheritance:HandlerCiInheritance
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

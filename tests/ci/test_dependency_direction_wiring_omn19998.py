@@ -22,7 +22,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 CI_WORKFLOW = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 PRECOMMIT_CONFIG = REPO_ROOT / ".pre-commit-config.yaml"
 
-HANDLER_MODULE = "omnibase_core.handlers.handler_dependency_direction_cli"
+HANDLER_MODULE = (
+    "omnibase_core.nodes.node_dependency_direction_check_effect"
+    ".runtime_dependency_direction_check"
+)
 STEP_NAME = "Run cross-repository dependency-direction check"
 JOB_ID = "lint-imports"
 HOOK_ID = "check-dependency-direction"

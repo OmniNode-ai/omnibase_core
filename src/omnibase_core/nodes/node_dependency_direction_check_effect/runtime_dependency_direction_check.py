@@ -26,23 +26,14 @@ Exit codes: 0 -- PASS or WARN only; 1 -- FAIL/ERROR, or the baseline grew.
 from __future__ import annotations
 
 import argparse
-import re
 import subprocess
 import sys
-import tomllib
 from pathlib import Path
 from typing import Final
 
 import yaml
 
-from omnibase_core.handlers.handler_dependency_direction import (
-    HandlerDependencyDirection,
-)
-from omnibase_core.handlers.handler_dependency_direction_rules import (
-    VALIDATOR_ID,
-    extract_references,
-    is_candidate,
-)
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.dependency_direction.model_dependency_direction_baseline import (
     ModelDependencyDirectionBaseline,
 )
@@ -51,6 +42,9 @@ from omnibase_core.models.dependency_direction.model_dependency_direction_baseli
 )
 from omnibase_core.models.dependency_direction.model_dependency_direction_check_input import (
     ModelDependencyDirectionCheckInput,
+)
+from omnibase_core.models.dependency_direction.model_dependency_direction_rules import (
+    ModelDependencyDirectionRules,
 )
 from omnibase_core.models.dependency_direction.model_repo_layer_map import (
     ModelRepoLayerMap,
@@ -70,6 +64,14 @@ from omnibase_core.models.nodes.validation_report_write.model_validation_report_
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
 )
+from omnibase_core.nodes.node_dependency_direction_check_effect.handler_dependency_direction import (
+    HandlerDependencyDirection,
+)
+from omnibase_core.nodes.node_dependency_direction_check_effect.matcher_dependency_direction import (
+    VALIDATOR_ID,
+    extract_references,
+    is_candidate,
+)
 from omnibase_core.nodes.node_git_file_listing_effect.handler import (
     NodeGitFileListingEffect,
 )
@@ -79,22 +81,19 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.utils.util_safe_yaml_loader import (
-    load_and_validate_yaml_model,
     load_yaml_content_as_model,
+)
+from omnibase_core.validation.checker_dependency_direction import (
+    infer_repo,
+    load_dependency_direction_rules,
+    load_layer_map,
 )
 
 __all__ = ["main"]
 
 DEFAULT_BASELINE: Final[str] = ".onex_ratchets/dependency_direction_baseline.yaml"
-LAYER_MAP_PATH: Final[Path] = (
-    Path(__file__).parent.parent / "contracts" / "repo_layers.yaml"
-)
-
-
-def load_layer_map(path: Path = LAYER_MAP_PATH) -> ModelRepoLayerMap:
-    """Read the declared layer order."""
-    return load_and_validate_yaml_model(path, ModelRepoLayerMap)
 
 
 def parse_baseline(
@@ -106,39 +105,17 @@ def parse_baseline(
     return load_yaml_content_as_model(text, ModelDependencyDirectionBaseline).violations
 
 
-def infer_repo(root: Path, layer_map: ModelRepoLayerMap) -> str:
-    """The repository at ``root``: pyproject distribution, then origin URL, then dirname."""
-    pyproject = root / "pyproject.toml"
-    if pyproject.is_file():
-        name = (
-            tomllib.loads(pyproject.read_text("utf-8")).get("project", {}).get("name")
-        )
-        if isinstance(name, str):
-            norm = re.sub(r"[-_.]+", "-", name).lower()
-            for entry in layer_map.repos:
-                dists = {re.sub(r"[-_.]+", "-", d).lower() for d in entry.distributions}
-                if norm in dists:
-                    return entry.repo
-    origin = subprocess.run(
-        ["git", "-C", str(root), "config", "--get", "remote.origin.url"],
-        capture_output=True,
-        text=True,
-        check=False,
-    ).stdout.strip()
-    if origin:
-        return re.sub(r"\.git$", "", origin.rstrip("/").rsplit("/", 1)[-1])
-    return root.resolve().name
-
-
-def gather(root: Path, filenames: list[str]) -> tuple[list[ModelSourceFile], list[str]]:
+def gather(
+    root: Path, filenames: list[str], rules: ModelDependencyDirectionRules
+) -> tuple[list[ModelSourceFile], list[str]]:
     """Repository-relative (path, source) pairs of the candidate files."""
     if filenames:
-        relative = [f for f in filenames if is_candidate(f)]
+        relative = [f for f in filenames if is_candidate(f, rules)]
     else:
         listing = NodeGitFileListingEffect().handle(
             ModelGitFileListingInput(root=root, scope="tracked")
         )
-        relative = [p for p in listing.paths if is_candidate(p)]
+        relative = [p for p in listing.paths if is_candidate(p, rules)]
     output = NodeSourceFileGatherEffect().handle(
         ModelSourceFileGatherInput(
             root=str(root),
@@ -193,6 +170,7 @@ def _base_baseline(root: Path, ref: str, baseline: str) -> str | None:
 def baseline_growth(
     current: tuple[ModelDependencyDirectionBaselineEntry, ...],
     base: tuple[ModelDependencyDirectionBaselineEntry, ...] | None,
+    rules: ModelDependencyDirectionRules,
 ) -> list[str]:
     """Entries the current baseline adds over the base (shrink-only ratchet).
 
@@ -202,7 +180,9 @@ def baseline_growth(
         return []
     base_keys = {entry.key() for entry in base}
     return [
-        f"baseline grew: {e.path} {e.channel.value} {e.target} is not in the base baseline"
+        rules.baseline_grew_message.format(
+            path=e.path, channel=e.channel.value, target=e.target
+        )
         for e in current
         if e.key() not in base_keys
     ]
@@ -213,6 +193,7 @@ def render_baseline(
     files: list[ModelSourceFile],
     layer_map: ModelRepoLayerMap,
     ticket: str,
+    rules: ModelDependencyDirectionRules,
 ) -> str:
     """A baseline YAML recording every current violation of ``repo``."""
     own = layer_map.get(repo)
@@ -220,7 +201,7 @@ def render_baseline(
     keys: set[tuple[str, str, str]] = set()
     for file in files:
         for channel, target, _line, _evidence in extract_references(
-            file.path, file.source, layer_map, repo
+            file.path, file.source, layer_map, repo, rules
         ):
             if own is not None and layers[target] >= own.layer:
                 keys.add((file.path, channel.value, target))
@@ -228,14 +209,7 @@ def render_baseline(
         {"path": p, "channel": c, "target": t, "ticket": ticket}
         for p, c, t in sorted(keys)
     ]
-    header = (
-        "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.\n"
-        "# SPDX-License-Identifier: MIT\n"
-        "# Cross-repository dependency-direction baseline (OMN-19998).\n"
-        "# Shrink-only: CI refuses an entry the base branch does not have.\n"
-        "# Each entry is a pre-existing violation and the ticket that removes it.\n"
-    )
-    return header + yaml.safe_dump(
+    return rules.baseline_header + yaml.safe_dump(
         {"repo": repo, "violations": violations}, sort_keys=False
     )
 
@@ -244,14 +218,30 @@ def _out(line: str) -> None:
     sys.stdout.write(line + "\n")
 
 
-def _write_report(path: str | None, report: ModelValidationReport) -> None:
+def build_container() -> ModelONEXContainer:
+    """The composition root: a container with the report writer registered."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry()
+    run_coro_sync(
+        registry.register_instance(
+            NodeValidationReportWriteEffect, NodeValidationReportWriteEffect()
+        )
+    )
+    return container
+
+
+def _write_report(
+    container: ModelONEXContainer, path: str | None, report: ModelValidationReport
+) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        container.get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None, container: ModelONEXContainer | None = None
+) -> int:
     """CLI entry. Returns 0 on PASS/WARN, 1 on FAIL/ERROR or baseline growth."""
     parser = argparse.ArgumentParser(
         prog="check-dependency-direction",
@@ -288,13 +278,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     parsed = parser.parse_args(argv)
 
+    rules = load_dependency_direction_rules()
+    container = container or build_container()
     root = Path(parsed.root).resolve()
     layer_map = load_layer_map()
-    repo = parsed.repo or infer_repo(root, layer_map)
-    files, read_errors = gather(root, parsed.filenames)
+    repo = parsed.repo or infer_repo(root, layer_map, rules)
+    files, read_errors = gather(root, parsed.filenames, rules)
 
     if parsed.write_baseline:
-        sys.stdout.write(render_baseline(repo, files, layer_map, parsed.ticket))
+        sys.stdout.write(render_baseline(repo, files, layer_map, parsed.ticket, rules))
         return 0
 
     baseline_file = root / parsed.baseline
@@ -306,23 +298,19 @@ def main(argv: list[str] | None = None) -> int:
     runtime_errors = list(read_errors)
     if parsed.ratchet_base_ref and not _ref_exists(root, parsed.ratchet_base_ref):
         runtime_errors.append(
-            f"ratchet base ref {parsed.ratchet_base_ref!r} is not in the clone; fetch "
-            "it, since a ratchet with no base is never a pass"
+            rules.ratchet_ref_missing_message.format(ref=parsed.ratchet_base_ref)
         )
     elif parsed.ratchet_base_ref:
         base_text = _base_baseline(root, parsed.ratchet_base_ref, parsed.baseline)
         base = parse_baseline(base_text) if base_text is not None else None
-        runtime_errors.extend(baseline_growth(baseline, base))
+        runtime_errors.extend(baseline_growth(baseline, base, rules))
     if not parsed.filenames and not files:
-        runtime_errors.append(
-            f"zero candidate files under {root}: a full-tree run that scans "
-            "nothing is ERROR, never PASS"
-        )
+        runtime_errors.append(rules.zero_files_message.format(root=root))
     if runtime_errors:
         report = ModelValidationReport.from_runtime_errors(
             VALIDATOR_ID, tuple(runtime_errors)
         )
-        _write_report(parsed.report_json, report)
+        _write_report(container, parsed.report_json, report)
         for message in runtime_errors:
             _out(f"ERROR: {message}")
         return 1
@@ -333,23 +321,18 @@ def main(argv: list[str] | None = None) -> int:
             layer_map=layer_map,
             files=tuple(files),
             baseline=baseline,
+            rules=rules,
             report_stale_baseline=not parsed.filenames,
         )
     )
-    _write_report(parsed.report_json, report)
+    _write_report(container, parsed.report_json, report)
 
     for finding in report.findings:
         _out(f"{finding.severity}: {finding.message}")
     if report.overall_status in ("PASS", "WARN"):
-        _out(
-            f"OK: {repo} depends on no repository at its own or a higher layer "
-            f"outside its baseline ({len(files)} files scanned)"
-        )
+        _out(rules.ok_message.format(repo=repo, count=len(files)))
         return 0
-    _out(
-        f"{report.overall_status}: {repo} depends on a repository at its own or a "
-        "higher layer; see omnibase_core contracts/repo_layers.yaml"
-    )
+    _out(rules.fail_message.format(status=report.overall_status, repo=repo))
     return 1
 
 

@@ -11,6 +11,7 @@ that change only ``repo:`` and ``rev:`` see no difference in what is flagged.
 
 from __future__ import annotations
 
+import importlib
 import re
 from pathlib import Path
 
@@ -18,15 +19,24 @@ import pytest
 import yaml
 from pydantic import BaseModel, ConfigDict
 
-from omnibase_core.handlers.handler_no_hardcoded_topics import (
-    APPROVED_BASENAMES,
-    HandlerNoHardcodedTopics,
-    main,
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.nodes.no_hardcoded_topics_check.model_no_hardcoded_topics_check_input import (
+    ModelNoHardcodedTopicsCheckInput,
 )
-from omnibase_core.models.nodes.hardcoded_topic_check.model_hardcoded_topic_check_input import (
-    ModelHardcodedTopicCheckInput,
+from omnibase_core.models.nodes.no_hardcoded_topics_check.model_no_hardcoded_topics_rules import (
+    ModelNoHardcodedTopicsRules,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
+from omnibase_core.nodes.node_no_hardcoded_topics_check_compute.handler_no_hardcoded_topics import (
+    HandlerNoHardcodedTopics,
+)
+from omnibase_core.nodes.node_no_hardcoded_topics_check_compute.runtime_no_hardcoded_topics_check import (
+    main,
+)
+from omnibase_core.validation.validator_no_hardcoded_topics import (
+    ValidatorNoHardcodedTopics,
+    load_rules,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -50,9 +60,21 @@ def _cases() -> list[_Case]:
     return [_Case(**item) for item in raw]
 
 
-def _scan(path: str, source: str) -> list[str]:
+def _rules() -> ModelNoHardcodedTopicsRules:
+    return load_rules(ValidatorNoHardcodedTopics().contract)
+
+
+APPROVED_BASENAMES = _rules().approved_basenames
+
+
+def _scan(
+    path: str, source: str, rules: ModelNoHardcodedTopicsRules | None = None
+) -> list[str]:
     report = HandlerNoHardcodedTopics().handle(
-        ModelHardcodedTopicCheckInput(files=[ModelSourceFile(path=path, source=source)])
+        ModelNoHardcodedTopicsCheckInput(
+            files=[ModelSourceFile(path=path, source=source)],
+            rules=rules or _rules(),
+        )
     )
     return [finding.message for finding in report.findings]
 
@@ -217,3 +239,222 @@ def test_main_with_no_files_is_zero() -> None:
 
 def test_an_unreadable_named_file_is_an_error_not_a_pass(tmp_path: Path) -> None:
     assert main([str(tmp_path / "missing.py")]) == 1
+
+
+# --- rule data: every parameter of every rule row is read, and a change flips a verdict ---
+
+ROOT = Path(__file__).resolve().parents[3]
+NODE_DIR = (
+    ROOT / "src" / "omnibase_core" / "nodes" / "node_no_hardcoded_topics_check_compute"
+)
+LITERAL_SOURCE = 'T = "onex.evt.a.b.v1"\n'
+
+
+def _contract_rows() -> dict[str, dict[str, object]]:
+    return {
+        rule.rule_id: dict(rule.parameters or {})
+        for rule in ValidatorNoHardcodedTopics().contract.rules
+    }
+
+
+def _mutated(rule_id: str, key: str, value: object) -> ModelNoHardcodedTopicsRules:
+    contract = ValidatorNoHardcodedTopics().contract
+    rows = [
+        r.model_copy(update={"parameters": {**(r.parameters or {}), key: value}})
+        if r.rule_id == rule_id
+        else r
+        for r in contract.rules
+    ]
+    return load_rules(contract.model_copy(update={"rules": rows}))
+
+
+# (rule_id, key): (new value, path, source, flagged before, flagged after)
+CONTROLS: dict[tuple[str, str], tuple[object, str, str, bool, bool]] = {
+    ("topic_literal", "validator_name"): (
+        "other-id",
+        "src/a.py",
+        LITERAL_SOURCE,
+        True,
+        True,
+    ),
+    ("topic_literal", "topic_literal_pattern"): (
+        "(?!)",
+        "src/a.py",
+        LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("topic_literal", "message"): ("changed", "src/a.py", LITERAL_SOURCE, True, True),
+    ("topic_literal", "remediation"): (
+        "changed",
+        "src/a.py",
+        LITERAL_SOURCE,
+        True,
+        True,
+    ),
+    ("exempt_path", "approved_basenames"): (
+        ["service.py"],
+        "src/service.py",
+        LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("exempt_path", "test_dir_marker"): (
+        "/src/",
+        "/repo/src/a.py",
+        LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("exempt_path", "test_name_prefix"): (
+        "svc_",
+        "src/svc_a.py",
+        LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("exempt_path", "test_name_suffixes"): (
+        ["_svc.py"],
+        "src/a_svc.py",
+        LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("exempt_path", "wire_schema_dir"): (
+        "schemas",
+        "src/pkg/schemas/event_v1.yaml",
+        LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("exempt_path", "wire_schema_name_pattern"): (
+        r"event\.yaml",
+        "src/pkg/wire_schemas/event.yaml",
+        LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("exempt_path", "wire_schema_min_parts"): (
+        9,
+        "src/pkg/wire_schemas/event_v1.yaml",
+        LITERAL_SOURCE,
+        False,
+        True,
+    ),
+    ("skip_line", "comment_prefixes"): (
+        ["%"],
+        "src/a.py",
+        "% " + LITERAL_SOURCE,
+        True,
+        False,
+    ),
+    ("skip_line", "block_comment_open"): (
+        "<!--",
+        "src/a.py",
+        "<!--\n" + LITERAL_SOURCE + "*/\n",
+        True,
+        False,
+    ),
+    ("skip_line", "block_comment_close"): (
+        "-->",
+        "src/a.py",
+        "/*\n-->\n" + LITERAL_SOURCE,
+        False,
+        True,
+    ),
+    ("skip_line", "docstring_delimiters"): (
+        ["'''"],
+        "src/a.py",
+        '"""\n' + LITERAL_SOURCE + '"""\n',
+        False,
+        True,
+    ),
+}
+
+
+def test_every_parameter_of_every_rule_row_has_a_control() -> None:
+    assert {
+        (rule_id, key) for rule_id, row in _contract_rows().items() for key in row
+    } == set(CONTROLS)
+
+
+@pytest.mark.parametrize(("rule_id", "key"), sorted(CONTROLS))
+def test_mutating_a_parameter_changes_the_verdict(rule_id: str, key: str) -> None:
+    value, path, source, before, after = CONTROLS[(rule_id, key)]
+    assert bool(_scan(path, source)) is before
+    mutated = _mutated(rule_id, key, value)
+    assert bool(_scan(path, source, mutated)) is after
+    if key == "validator_name":
+        report = HandlerNoHardcodedTopics().handle(
+            ModelNoHardcodedTopicsCheckInput(
+                files=[ModelSourceFile(path=path, source=source)], rules=mutated
+            )
+        )
+        assert report.findings[0].rule_id == "other-id"
+    if key == "message":
+        assert _scan(path, source, mutated) == [f"{path}:1: changed"]
+
+
+def test_remediation_parameter_is_the_summary_text(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert _rules().remediation == "Move topic strings to an approved constant file."
+    target = tmp_path / "service.py"
+    target.write_text(LITERAL_SOURCE, encoding="utf-8")
+    assert main([str(target)]) == 1
+    assert capsys.readouterr().out.endswith(f"1 violation(s). {_rules().remediation}\n")
+
+
+@pytest.mark.parametrize(
+    ("rule_id", "key"),
+    sorted((rule_id, key) for rule_id, row in _contract_rows().items() for key in row),
+)
+def test_a_missing_parameter_fails_the_load_instead_of_passing(
+    rule_id: str, key: str
+) -> None:
+    contract = ValidatorNoHardcodedTopics().contract
+    rows = [
+        r.model_copy(
+            update={
+                "parameters": {
+                    k: v for k, v in (r.parameters or {}).items() if k != key
+                }
+            }
+        )
+        if r.rule_id == rule_id
+        else r
+        for r in contract.rules
+    ]
+    with pytest.raises(ModelOnexError, match="parameters"):
+        load_rules(contract.model_copy(update={"rules": rows}))
+
+
+@pytest.mark.parametrize("rule_id", ["topic_literal", "exempt_path", "skip_line"])
+def test_a_disabled_or_missing_rule_row_fails_the_load(rule_id: str) -> None:
+    contract = ValidatorNoHardcodedTopics().contract
+    disabled = [
+        r.model_copy(update={"enabled": False}) if r.rule_id == rule_id else r
+        for r in contract.rules
+    ]
+    with pytest.raises(ModelOnexError, match="rule row"):
+        load_rules(contract.model_copy(update={"rules": disabled}))
+    absent = [r for r in contract.rules if r.rule_id != rule_id]
+    with pytest.raises(ModelOnexError, match="rule row"):
+        load_rules(contract.model_copy(update={"rules": absent}))
+
+
+def test_node_contract_binds_the_handler() -> None:
+    contract = yaml.safe_load((NODE_DIR / "contract.yaml").read_text(encoding="utf-8"))
+    assert contract["name"] == "node_no_hardcoded_topics_check_compute"
+    assert contract["node_type"] == "compute"
+    module_name, _, class_name = contract["handler_routing"][
+        "default_handler"
+    ].partition(":")
+    assert (NODE_DIR / f"{module_name}.py").is_file()
+    module = importlib.import_module(
+        f"omnibase_core.nodes.node_no_hardcoded_topics_check_compute.{module_name}"
+    )
+    assert getattr(module, class_name) is HandlerNoHardcodedTopics
+    for field in ("input_model", "output_model"):
+        path, _, name = contract[field].rpartition(".")
+        assert hasattr(importlib.import_module(path), name)

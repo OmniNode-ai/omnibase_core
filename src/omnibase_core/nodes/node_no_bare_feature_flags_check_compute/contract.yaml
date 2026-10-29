@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_no_bare_feature_flags_check_compute
+node_id: node_no_bare_feature_flags_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Rejects bare feature-flag environment reads (os.getenv, os.environ.get, os.environ[] and process.env
+  of an ENABLE_* or *_ENABLED name) in supplied sources and returns the findings; patterns, approved basenames
+  and path segments and message templates are the rule rows of no_bare_feature_flags.validation.yaml (OMN-20074,
+  OMN-21518).
+input_model: omnibase_core.models.nodes.bare_feature_flag_check.model_bare_feature_flag_check_input.ModelBareFeatureFlagCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_no_bare_feature_flags:HandlerNoBareFeatureFlags
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

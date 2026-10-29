@@ -1,0 +1,108 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Cross-repository dependency-direction rules: every pattern, name list, file-classification
+# list and message template the check reads (OMN-19998, OMN-21518).
+version:
+  major: 1
+  minor: 0
+  patch: 0
+validator_id: dependency_direction
+validator_name: Dependency Direction
+validator_description: >-
+  A repository may depend only on repositories at a strictly lower layer of the declared order (contracts/repo_layers.yaml).
+  The repository, the layer map, the files and the baseline are arguments; patterns, file classes and
+  message templates are rule parameters.
+target_patterns:
+  - "**/*"
+rules:
+  - rule_id: reference_channels
+    description: Which files carry a cross-repository reference, and how a reference is recognised in
+      them.
+    severity: error
+    enabled: true
+    parameters:
+      install_or_fetch_pattern: '(?i)\b(?:pip3?\s+install|uv\s+pip\s+install|uv\s+add|uv\s+tool\s+install|uvx|git\s+clone|gh\s+repo\s+clone|curl|wget)\b|git\+https?://'
+      repository_pattern: '^\s*-?\s*repository:\s*[''"]?([^\s''"#]+)'
+      requirement_name_pattern: '^\s*([A-Za-z0-9][A-Za-z0-9._-]*)'
+      name_separator_pattern: '[-_.]+'
+      token_before_pattern: '(?<![A-Za-z0-9_.-])'
+      token_after_pattern: '(?![A-Za-z0-9_-])'
+      slug_repo_pattern: '/([A-Za-z0-9_.-]+?)(?:\.git)?(?=[/@\s''"#]|$)'
+      script_suffixes: [".sh", ".bash", ".zsh", ".mk"]
+      makefile_names: ["Makefile", "GNUmakefile"]
+      workflow_dir_prefix: ".github/"
+      workflow_suffixes: [".yml", ".yaml"]
+      dockerfile_prefixes: ["dockerfile", "containerfile"]
+      dockerfile_suffixes: [".dockerfile"]
+      requirements_prefixes: ["requirements", "constraints"]
+      requirements_suffixes: [".txt", ".in"]
+      python_suffix: ".py"
+      pyproject_name: "pyproject.toml"
+      script_dirs: ["scripts"]
+      script_excluded_dirs: ["tests", "fixtures"]
+      fixture_dirs: ["fixtures"]
+      comment_prefix: "#"
+      evidence_limit: 200
+  - rule_id: upward_dependency
+    description: A reference to a repository at the same or a higher layer than the scanned repository.
+    severity: error
+    enabled: true
+    parameters:
+      remediation: >-
+        A repository may depend only on repositories at a strictly lower layer (omnibase_core contracts/repo_layers.yaml).
+        Remove the dependency or move the code to the lower repository; never add it to the baseline.
+      violation_message: >-
+        {path}:{line}: {repo} (layer {own_layer}) depends on {target} (layer {target_layer}, {direction}
+        it) via {channel}: {evidence}
+      direction_same: "same layer as"
+      direction_above: "above"
+      baselined_message: "baselined ({ticket}): {message}"
+  - rule_id: repo_not_in_layer_map
+    description: The scanned repository must be declared in the layer map.
+    severity: error
+    enabled: true
+    parameters:
+      undeclared_repo_message: >-
+        repository {repo!r} is not declared in the layer map; declare its layer in contracts/repo_layers.yaml
+  - rule_id: stale_baseline_entry
+    description: A baseline entry no file produces any more must be removed.
+    severity: warning
+    enabled: true
+    parameters:
+      stale_message: >-
+        stale baseline entry ({ticket}): {path} no longer depends on {target} via {channel}; remove it
+        from the baseline
+  - rule_id: baseline_ratchet
+    description: The baseline only shrinks, and a scan that reads nothing is never a pass.
+    severity: error
+    enabled: true
+    parameters:
+      ratchet_ref_missing_message: >-
+        ratchet base ref {ref!r} is not in the clone; fetch it, since a ratchet with no base is never
+        a pass
+      baseline_grew_message: "baseline grew: {path} {channel} {target} is not in the base baseline"
+      zero_files_message: >-
+        zero candidate files under {root}: a full-tree run that scans nothing is ERROR, never PASS
+      baseline_spdx_copyright: 2025 OmniNode.ai Inc.
+      baseline_spdx_license: MIT
+      baseline_header: |
+        # Cross-repository dependency-direction baseline (OMN-19998).
+        # Shrink-only: CI refuses an entry the base branch does not have.
+        # Each entry is a pre-existing violation and the ticket that removes it.
+  - rule_id: run_summary
+    description: The closing line of a run.
+    severity: error
+    enabled: true
+    parameters:
+      ok_message: >-
+        OK: {repo} depends on no repository at its own or a higher layer outside its baseline ({count}
+        files scanned)
+      fail_message: >-
+        {status}: {repo} depends on a repository at its own or a higher layer; see omnibase_core contracts/repo_layers.yaml
+suppression_comments: []
+fail_on_error: true
+fail_on_warning: false
+max_violations: 0
+severity_default: error
+parallel_execution: true

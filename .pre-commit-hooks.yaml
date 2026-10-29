@@ -27,7 +27,7 @@
     basenames. Ported from onex_change_control (OMN-20074, S8) under the same hook id, so a consumer changes
     only repo: and rev:.
   language: python
-  entry: python -m omnibase_core.handlers.handler_no_hardcoded_topics
+  entry: python -m omnibase_core.nodes.node_no_hardcoded_topics_check_compute.runtime_no_hardcoded_topics_check
   types_or: [python, yaml, ts, javascript]
   pass_filenames: true
   require_serial: true
@@ -42,7 +42,7 @@
     Ported from onex_change_control (OMN-20074, S8) under the same hook id, so a consumer changes only
     repo: and rev:.
   language: python
-  entry: python -m omnibase_core.handlers.handler_no_bare_feature_flags
+  entry: python -m omnibase_core.nodes.node_no_bare_feature_flags_check_compute.runtime_no_bare_feature_flags_check
   types_or: [python, ts, javascript]
   pass_filenames: true
   require_serial: true
@@ -66,7 +66,7 @@
     Cross-repo cosmetic linter enforcing OmniNode platform standards. Ported from onex_change_control
     (OMN-20074, S8) under the same hook id, so a consumer changes only repo: and rev:.
   language: python
-  entry: python -m omnibase_core.handlers.handler_cosmetic_lint check
+  entry: python -m omnibase_core.nodes.node_cosmetic_lint_check_compute.runtime_cosmetic_lint_check check
   types: [file]
   pass_filenames: false
   always_run: true
@@ -1217,7 +1217,7 @@
     pre-existing violations recorded there warn, new ones fail. The full tree and the shrink-only baseline
     ratchet run in CI through .github/workflows/dependency-direction.yml.
   language: python
-  entry: python -m omnibase_core.handlers.handler_dependency_direction_cli
+  entry: python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check
   files: (\.py|(^|/)pyproject\.toml|(^|/)(requirements|constraints)[^/]*\.(txt|in)|(^|/)(Dockerfile|Containerfile)[^/]*|\.dockerfile|\.(sh|bash|zsh|mk)|(^|/)(GNU)?Makefile|^\.github/.*\.ya?ml)$
   pass_filenames: true
   require_serial: true
@@ -1248,7 +1248,7 @@
     Pre-existing violations recorded in the repository's .onex_ratchets/merge_queue_parity_baseline.yaml
     warn; the baseline only shrinks against the base in CI through .github/workflows/version-drift.yml.
   language: python
-  entry: python -m omnibase_core.handlers.handler_merge_queue_parity_cli
+  entry: python -m omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1279,7 +1279,7 @@
     <path>; --base-dir and --base-baseline add the base comparison that refuses a new or re-added baseline
     entry.
   language: python
-  entry: python -m omnibase_core.handlers.handler_ci_inheritance_cli
+  entry: python -m omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: false
   require_serial: true

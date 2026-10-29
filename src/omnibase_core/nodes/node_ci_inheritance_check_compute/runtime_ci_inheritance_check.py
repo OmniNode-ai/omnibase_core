@@ -1,12 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI for CI reference inheritance and repository-specific jobs (OMN-17427).
+"""CLI runtime for CI reference inheritance and repository-specific jobs (OMN-17427, OMN-21518).
 
 The pre-commit hook and the ci.yml job both run the same pure handlers
 (:class:`HandlerCiInheritance` and :class:`HandlerCiRepositoryJobs`); this
 module owns the filesystem read through the ``node_source_file_gather_effect``
-EFFECT node, report merging, and output for both rules.
+EFFECT node, the rule data read from ``contracts/ci_inheritance.validation.yaml``,
+the report writer resolved from the container, report merging, and output for
+both rules.
 
 The caller materializes the base workflows in a directory (CI: ``git archive``
 of the pull request's base; pre-commit: of ``HEAD``) and passes it with
@@ -24,7 +26,7 @@ in-process in-memory bus (OMN-21277, RULING 2026-10-14T20:01:09Z).
 
 Usage::
 
-    python -m omnibase_core.handlers.handler_ci_inheritance_cli \\
+    python -m omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check \\
         --base-dir /tmp/base/.github/workflows --head-dir .github/workflows \\
         --baseline .onex_ratchets/ci_inheritance_baseline.yaml \\
         --base-baseline /tmp/base/.onex_ratchets/ci_inheritance_baseline.yaml
@@ -39,23 +41,33 @@ from __future__ import annotations
 import argparse
 import asyncio
 import sys
+from functools import cache
+from importlib import resources
 from pathlib import Path
-from typing import Final
 from uuid import uuid4
 
 import yaml
 from pydantic import ValidationError
 
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-from omnibase_core.handlers.handler_ci_inheritance import (
-    VALIDATOR_ID,
-    HandlerCiInheritance,
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
+    ModelValidatorRule,
+)
+from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
+    ModelValidatorSubcontract,
 )
 from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_baseline import (
     ModelCiInheritanceBaseline,
 )
 from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input import (
     ModelCiInheritanceCheckInput,
+)
+from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_reference_input import (
+    ModelCiInheritanceReferenceInput,
+)
+from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_rules import (
+    ModelCiInheritanceRules,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
@@ -72,6 +84,10 @@ from omnibase_core.models.nodes.validator_triggered_emit.model_validator_trigger
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
     ModelValidationRequestRef,
+)
+from omnibase_core.nodes.node_ci_inheritance_check_compute.handler_ci_inheritance import (
+    VALIDATOR_ID,
+    HandlerCiInheritance,
 )
 from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
     VALIDATOR_ID as JOBS_VALIDATOR_ID,
@@ -90,19 +106,84 @@ from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_t
     HandlerValidatorTriggeredEmit,
     PublishFn,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.validation.checker_rule_parameters import rule_string, rule_strings
 
-__all__ = ["main", "main_emitting"]
+__all__ = [
+    "build_container",
+    "load_cli_defaults",
+    "load_contract",
+    "main",
+    "main_emitting",
+    "rules_from_contract",
+]
 
-_DEFAULT_HEAD_DIR: Final[str] = ".github/workflows"
-_DEFAULT_ORGANIZATION: Final[str] = "OmniNode-ai"
-_DEFAULT_HOST: Final[str] = "omnibase_core"
-_WORKFLOW_PATTERNS: Final[list[str]] = ["*.yml", "*.yaml"]
+
+@cache
+def load_contract() -> ModelValidatorSubcontract:
+    """The ci_inheritance validation contract shipped inside the package."""
+    raw = resources.files("omnibase_core.validation").joinpath(
+        "contracts/ci_inheritance.validation.yaml"
+    )
+    return load_yaml_content_as_model(raw.read_text("utf-8"), ModelValidatorSubcontract)
+
+
+def _row(contract: ModelValidatorSubcontract, rule_id: str) -> ModelValidatorRule:
+    return {row.rule_id: row for row in contract.rules}[rule_id]
+
+
+def rules_from_contract(
+    contract: ModelValidatorSubcontract,
+) -> ModelCiInheritanceRules:
+    """The handler's rule data, read from the rule rows of ``contract``."""
+    return ModelCiInheritanceRules(
+        uses_pattern=rule_string(
+            _row(contract, "org_reference_pattern"), "uses_pattern"
+        ),
+        new_reference_message=rule_string(
+            _row(contract, "new_org_reference"), "message_template"
+        ),
+        new_reference_remediation=rule_string(
+            _row(contract, "new_org_reference"), "remediation_template"
+        ),
+        existing_reference_message=rule_string(
+            _row(contract, "existing_org_reference"), "message_template"
+        ),
+    )
+
+
+def load_cli_defaults(
+    contract: ModelValidatorSubcontract | None = None,
+) -> tuple[str, str, str, tuple[str, ...]]:
+    """Head directory, organization, host repository and workflow patterns defaults."""
+    row = _row(contract or load_contract(), "command_line_defaults")
+    return (
+        rule_string(row, "head_dir"),
+        rule_string(row, "organization"),
+        rule_string(row, "host_repository"),
+        rule_strings(row, "workflow_patterns"),
+    )
+
+
+def build_container() -> ModelONEXContainer:
+    """The composition root: a container with the report writer registered."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry()
+    run_coro_sync(
+        registry.register_instance(
+            NodeValidationReportWriteEffect, NodeValidationReportWriteEffect()
+        )
+    )
+    return container
 
 
 def _gather(directory: str) -> tuple[list[ModelSourceFile], list[str]]:
     """Read the workflow files directly under ``directory`` (EFFECT boundary)."""
     output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(root=directory, include_patterns=_WORKFLOW_PATTERNS)
+        ModelSourceFileGatherInput(
+            root=directory, include_patterns=list(load_cli_defaults()[3])
+        )
     )
     errors = [
         f"{skipped.path}: {skipped.reason}"
@@ -139,11 +220,14 @@ def _read_baseline(
         return None, [f"baseline {path}: {str(error).splitlines()[0]}"]
 
 
-def _write_report(path: str | None, report: ModelValidationReport) -> None:
+def _write_report(
+    path: str | None,
+    report: ModelValidationReport,
+    container: ModelONEXContainer,
+) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
-            ModelValidationReportWriteInput(report_path=path, report=report)
-        )
+        writer = container.get_service(NodeValidationReportWriteEffect)
+        writer.handle(ModelValidationReportWriteInput(report_path=path, report=report))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -171,9 +255,10 @@ async def main_emitting(
     *,
     pull_request: int | None = None,
     head_sha: str | None = None,
+    container: ModelONEXContainer | None = None,
 ) -> int:
     """Run :func:`main` and publish one validator-triggered event per failing validator."""
-    exit_code, report, repository = _run(argv)
+    exit_code, report, repository = _run(argv, container or build_container())
     await HandlerValidatorTriggeredEmit(publish).handle(
         ModelValidatorTriggeredEmitInput(
             report=report,
@@ -186,7 +271,10 @@ async def main_emitting(
     return exit_code
 
 
-def _run(argv: list[str] | None) -> tuple[int, ModelValidationReport, str]:
+def _run(
+    argv: list[str] | None, container: ModelONEXContainer
+) -> tuple[int, ModelValidationReport, str]:
+    default_head_dir, default_organization, default_host, _ = load_cli_defaults()
     parser = argparse.ArgumentParser(
         prog="check-ci-inheritance",
         description=(
@@ -201,10 +289,10 @@ def _run(argv: list[str] | None) -> tuple[int, ModelValidationReport, str]:
         help="Base workflow directory; may be omitted only with --baseline.",
     )
     parser.add_argument(
-        "--head-dir", default=_DEFAULT_HEAD_DIR, help="Head workflow directory."
+        "--head-dir", default=default_head_dir, help="Head workflow directory."
     )
-    parser.add_argument("--organization", default=_DEFAULT_ORGANIZATION)
-    parser.add_argument("--host-repository", default=_DEFAULT_HOST)
+    parser.add_argument("--organization", default=default_organization)
+    parser.add_argument("--host-repository", default=default_host)
     parser.add_argument(
         "--repository",
         default=None,
@@ -262,7 +350,7 @@ def _run(argv: list[str] | None) -> tuple[int, ModelValidationReport, str]:
         error_report = ModelValidationReport.from_runtime_errors(
             VALIDATOR_ID, tuple(runtime_errors)
         )
-        _write_report(parsed.report_json, error_report)
+        _write_report(parsed.report_json, error_report, container)
         for error in runtime_errors:
             sys.stdout.write(f"ERROR: {error}\n")
         return 1, error_report, repository
@@ -277,14 +365,18 @@ def _run(argv: list[str] | None) -> tuple[int, ModelValidationReport, str]:
         base_baseline=base_baseline,
         compare_base=parsed.base_dir is not None,
     )
-    inheritance_report = HandlerCiInheritance().handle(request)
+    inheritance_report = HandlerCiInheritance().handle(
+        ModelCiInheritanceReferenceInput(
+            check=request, rules=rules_from_contract(load_contract())
+        )
+    )
     jobs_report = HandlerCiRepositoryJobs().handle(request)
     report = ModelValidationReport.from_findings(
         findings=inheritance_report.findings + jobs_report.findings,
         request=ModelValidationRequestRef(profile="default"),
         validators_run=(VALIDATOR_ID, JOBS_VALIDATOR_ID),
     )
-    _write_report(parsed.report_json, report)
+    _write_report(parsed.report_json, report, container)
 
     references = [f for f in report.findings if f.validator_id == VALIDATOR_ID]
     jobs = [f for f in report.findings if f.validator_id == JOBS_VALIDATOR_ID]
@@ -304,7 +396,7 @@ def _run(argv: list[str] | None) -> tuple[int, ModelValidationReport, str]:
             sys.stdout.write(f"  {finding.message}\n")
         sys.stdout.write(
             f"\nShared CI lives in {parsed.organization}/{parsed.host_repository} and every "
-            "repository inherits it from there (RULING 2026-10-14T20:01:09Z, OMN-17427).\n"
+            "repository inherits it from there (OMN-17427).\n"
         )
 
     job_fails = [f for f in jobs if f.severity in ("FAIL", "ERROR")]

@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_no_hardcoded_topics_check_compute
+node_id: node_no_hardcoded_topics_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Rejects quoted ONEX topic literals outside approved constant files from supplied source texts and the
+  no_hardcoded_topics rule data, reproducing the decisions of the onex_change_control check-hardcoded-topics
+  hook (OMN-20074, OMN-21518).
+input_model: omnibase_core.models.nodes.no_hardcoded_topics_check.model_no_hardcoded_topics_check_input.ModelNoHardcodedTopicsCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_no_hardcoded_topics:HandlerNoHardcodedTopics
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

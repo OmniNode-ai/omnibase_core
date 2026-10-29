@@ -18,10 +18,6 @@ from pathlib import Path
 from typing import ClassVar
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_dependency_direction_cli import (
-    infer_repo,
-    load_layer_map,
-)
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -31,6 +27,10 @@ from omnibase_core.models.version_drift.model_consumer_pyproject import (
 )
 from omnibase_core.models.version_drift.model_version_floor_check_input import (
     ModelVersionFloorCheckInput,
+)
+from omnibase_core.validation.checker_dependency_direction import (
+    infer_repo,
+    load_layer_map,
 )
 from omnibase_core.validation.checker_version_floor_consumers import (
     RULE_FLOOR,

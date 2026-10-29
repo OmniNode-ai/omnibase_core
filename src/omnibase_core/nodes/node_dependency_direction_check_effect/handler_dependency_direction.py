@@ -22,10 +22,6 @@ from __future__ import annotations
 
 from typing import Final, Literal
 
-from omnibase_core.handlers.handler_dependency_direction_rules import (
-    VALIDATOR_ID,
-    extract_references,
-)
 from omnibase_core.models.dependency_direction.model_dependency_direction_check_input import (
     ModelDependencyDirectionCheckInput,
 )
@@ -34,15 +30,14 @@ from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
     ModelValidationRequestRef,
 )
+from omnibase_core.nodes.node_dependency_direction_check_effect.matcher_dependency_direction import (
+    VALIDATOR_ID,
+    extract_references,
+)
 
 __all__ = ["HandlerDependencyDirection"]
 
 _PROFILE: Final[Literal["strict", "default", "advisory"]] = "default"
-_REMEDIATION: Final[str] = (
-    "A repository may depend only on repositories at a strictly lower layer "
-    "(omnibase_core contracts/repo_layers.yaml). Remove the dependency or move the code "
-    "to the lower repository; never add it to the baseline."
-)
 
 
 class HandlerDependencyDirection:
@@ -52,14 +47,12 @@ class HandlerDependencyDirection:
         self, request: ModelDependencyDirectionCheckInput
     ) -> ModelValidationReport:
         """Definition-B canonical entry-point: typed request in, typed report out."""
+        rules = request.rules
         own = request.layer_map.get(request.repo)
         if own is None:
             return ModelValidationReport.from_runtime_errors(
                 VALIDATOR_ID,
-                (
-                    f"repository {request.repo!r} is not declared in the layer map; "
-                    "declare its layer in contracts/repo_layers.yaml",
-                ),
+                (rules.undeclared_repo_message.format(repo=request.repo),),
             )
 
         layers = {entry.repo: entry.layer for entry in request.layer_map.repos}
@@ -69,17 +62,27 @@ class HandlerDependencyDirection:
 
         for file in sorted(request.files, key=lambda f: f.path):
             for channel, target, line, evidence in extract_references(
-                file.path, file.source, request.layer_map, request.repo
+                file.path, file.source, request.layer_map, request.repo, rules
             ):
                 target_layer = layers[target]
                 if target_layer < own.layer:
                     continue
                 key = (file.path, channel.value, target)
-                direction = "same layer as" if target_layer == own.layer else "above"
-                message = (
-                    f"{file.path}:{line}: {request.repo} (layer {own.layer}) depends on "
-                    f"{target} (layer {target_layer}, {direction} it) via {channel.value}: "
-                    f"{evidence}"
+                direction = (
+                    rules.direction_same
+                    if target_layer == own.layer
+                    else rules.direction_above
+                )
+                message = rules.violation_message.format(
+                    path=file.path,
+                    line=line,
+                    repo=request.repo,
+                    own_layer=own.layer,
+                    target=target,
+                    target_layer=target_layer,
+                    direction=direction,
+                    channel=channel.value,
+                    evidence=evidence,
                 )
                 recorded = baseline.get(key)
                 if recorded is not None:
@@ -90,8 +93,10 @@ class HandlerDependencyDirection:
                             validator_id=VALIDATOR_ID,
                             severity="WARN",
                             location=f"{file.path}:{line}",
-                            message=f"baselined ({recorded.ticket}): {message}",
-                            remediation=_REMEDIATION,
+                            message=rules.baselined_message.format(
+                                ticket=recorded.ticket, message=message
+                            ),
+                            remediation=rules.remediation,
                         )
                     )
                 else:
@@ -101,7 +106,7 @@ class HandlerDependencyDirection:
                             severity="FAIL",
                             location=f"{file.path}:{line}",
                             message=message,
-                            remediation=_REMEDIATION,
+                            remediation=rules.remediation,
                         )
                     )
                 seen_keys.add(key)
@@ -115,10 +120,11 @@ class HandlerDependencyDirection:
                         validator_id=VALIDATOR_ID,
                         severity="WARN",
                         location=entry.path,
-                        message=(
-                            f"stale baseline entry ({entry.ticket}): {entry.path} no longer "
-                            f"depends on {entry.target} via {entry.channel.value}; "
-                            "remove it from the baseline"
+                        message=rules.stale_message.format(
+                            ticket=entry.ticket,
+                            path=entry.path,
+                            target=entry.target,
+                            channel=entry.channel.value,
                         ),
                         remediation=None,
                     )
