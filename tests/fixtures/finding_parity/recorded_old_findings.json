@@ -1,0 +1,340 @@
+{
+ "recorded_from": "git history of omnibase_core, the two repository scripts at commit a2dbf96e53bd76eae82fb2756afaaad288542338 (the parent of 127641e87, the OMN-21501 squash that removed them)",
+ "script_blobs": {
+  "scripts/validation/validate-dict-any-usage.py": "38c8f337a18b27d0ff6118c0035b7b97ce565d30",
+  "scripts/validation/validate-no-backward-compatibility.py": "47dcc722c70fe20eb8fbe44c53b4d8373fb87b51"
+ },
+ "how": "git show a2dbf96e5:<script path> > old.py; materialise tests/fixtures/finding_parity/src with the .fx suffix stripped; from its parent directory run python3 old.py src (dict-any) or python3 old.py --dir src (backward-compat), or pass the sorted file list; findings are (path, line, message) from the script output",
+ "cases": [
+  {
+   "tool": "dict_any",
+   "mode": "dir",
+   "exit_code": 1,
+   "findings": [
+    [
+     "src/pkg/dict_any_cases.py",
+     4,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/dict_any_cases.py",
+     4,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/dict_any_cases.py",
+     47,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/dict_any_cases.py",
+     52,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/syntax_error.py",
+     1,
+     "Syntax error: invalid syntax"
+    ]
+   ]
+  },
+  {
+   "tool": "dict_any",
+   "mode": "files",
+   "exit_code": 1,
+   "findings": [
+    [
+     "src/pkg/dict_any_cases.py",
+     4,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/dict_any_cases.py",
+     4,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/dict_any_cases.py",
+     47,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/dict_any_cases.py",
+     52,
+     "dict[str, Any] anti-pattern detected"
+    ],
+    [
+     "src/pkg/syntax_error.py",
+     1,
+     "Syntax error: invalid syntax"
+    ]
+   ]
+  },
+  {
+   "tool": "backward_compat",
+   "mode": "dir",
+   "exit_code": 1,
+   "findings": [
+    [
+     "src/pkg/compat_cases.py",
+     4,
+     "Backward compatibility comment detected - '# Kept for backward compatibility with old callers'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     14,
+     "Backward compatibility comment detected - '# legacy support for the previous release'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     15,
+     "Backward compatibility comment detected - '# maintain compatibility with v1'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     16,
+     "Backward compatibility comment detected - '# a compatibility layer'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     17,
+     "Backward compatibility comment detected - '# a migration path'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     20,
+     "Backward compatibility function 'load_legacy' - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     20,
+     "Backward compatibility method detected - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     24,
+     "Backward compatibility function 'load_compat' - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     24,
+     "Backward compatibility method detected - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     28,
+     "Backward compatibility function 'helper_deprecated' - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     28,
+     "Backward compatibility method detected - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     40,
+     "Function 'doc_cases' has backward compatibility docstring - remove legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     41,
+     "Backward compatibility comment detected - '\"\"\"Provided for backward compatibility.\"\"\"'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     46,
+     "Configuration allowing extra fields for compatibility - remove permissive configuration"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     48,
+     "Configuration allowing extra fields for compatibility - remove permissive configuration"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     53,
+     "Configuration allowing extra fields for compatibility - remove permissive configuration"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     57,
+     "Backward compatibility comment detected - '# Accept simple Protocol names for backward compatibility'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     57,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     57,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     58,
+     "Protocol backward compatibility condition - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     58,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     60,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     70,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/syntax_error.py",
+     1,
+     "Python syntax error at line 1, column 12: invalid syntax"
+    ]
+   ]
+  },
+  {
+   "tool": "backward_compat",
+   "mode": "files",
+   "exit_code": 1,
+   "findings": [
+    [
+     "src/pkg/compat_cases.py",
+     4,
+     "Backward compatibility comment detected - '# Kept for backward compatibility with old callers'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     14,
+     "Backward compatibility comment detected - '# legacy support for the previous release'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     15,
+     "Backward compatibility comment detected - '# maintain compatibility with v1'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     16,
+     "Backward compatibility comment detected - '# a compatibility layer'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     17,
+     "Backward compatibility comment detected - '# a migration path'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     20,
+     "Backward compatibility function 'load_legacy' - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     20,
+     "Backward compatibility method detected - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     24,
+     "Backward compatibility function 'load_compat' - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     24,
+     "Backward compatibility method detected - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     28,
+     "Backward compatibility function 'helper_deprecated' - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     28,
+     "Backward compatibility method detected - remove legacy support methods"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     40,
+     "Function 'doc_cases' has backward compatibility docstring - remove legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     41,
+     "Backward compatibility comment detected - '\"\"\"Provided for backward compatibility.\"\"\"'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     46,
+     "Configuration allowing extra fields for compatibility - remove permissive configuration"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     48,
+     "Configuration allowing extra fields for compatibility - remove permissive configuration"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     53,
+     "Configuration allowing extra fields for compatibility - remove permissive configuration"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     57,
+     "Backward compatibility comment detected - '# Accept simple Protocol names for backward compatibility'. No consumers exist, remove legacy support."
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     57,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     57,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     58,
+     "Protocol backward compatibility condition - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     58,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     60,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/compat_cases.py",
+     70,
+     "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+    ],
+    [
+     "src/pkg/syntax_error.py",
+     1,
+     "Python syntax error at line 1, column 12: invalid syntax"
+    ]
+   ]
+  },
+  {
+   "tool": "dict_any",
+   "mode": "clean",
+   "exit_code": 0,
+   "findings": []
+  },
+  {
+   "tool": "backward_compat",
+   "mode": "clean",
+   "exit_code": 0,
+   "findings": []
+  }
+ ]
+}
