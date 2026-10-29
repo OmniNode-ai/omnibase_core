@@ -923,9 +923,15 @@
     file is not edited, and a path either file lists is admitted. The base revision having no burn-down
     file is what admits the install; after that an added line is refused as baseline-growth (a one-for-one
     rename is admitted), --prune-baseline shrinks it, and it stays even when empty (burndown-baseline-removed).
-    There is no allowlist and no suppression comment. Checks the whole index against HEAD. CI runs the
-    same hook after `git reset --soft <merge-base>`, so the index holds the pull request's change. Includes
-    the node-home rule group (also available alone as check-node-home).
+    The install is bound to what existed at base and to its ticket: an entry for a file the change adds,
+    copies or renames in, or one the baseline file already lists, is refused (burndown-extra-entry), and
+    the ticket on the header's first comment line must appear in a commit message of the change (burndown-ticket-uncited).
+    A pre-commit run on the index knows no message and defers that check to the canonical-file-shape-release-trailer
+    commit-msg hook and to a revision run (--base and --head), so install the commit-msg hook type and
+    name the burn-down ticket id in the commit message of the switch change. There is no allowlist and
+    no suppression comment. Checks the whole index against HEAD. CI runs the same hook after `git reset
+    --soft <merge-base>`, so the index holds the pull request's change. Includes the node-home rule group
+    (also available alone as check-node-home).
   language: python
   entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
   pass_filenames: false
