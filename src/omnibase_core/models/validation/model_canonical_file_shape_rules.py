@@ -40,6 +40,14 @@ class ModelCanonicalFileShapeRules(BaseModel):
     baseline_growth_text: str
     comment_prefixes: tuple[str, ...]
     baselined_growth_text: str
+    # burn-down baseline: burndown-baseline, burndown-ticket-missing, burndown-baseline-removed
+    burndown_baseline_path: str
+    burndown_baseline_header: str
+    burndown_ticket_pattern: str
+    burndown_ticket_missing_text: str
+    burndown_stale_text: str
+    burndown_growth_text: str
+    burndown_removed_text: str
     # skill-imperative
     skill_file_name: str
     imperative_patterns: tuple[str, ...]

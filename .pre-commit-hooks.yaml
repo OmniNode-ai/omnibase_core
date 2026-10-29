@@ -916,9 +916,16 @@
     OMN-12237 thin-shim patterns), any new baseline, allowlist, waiver, exemption or suppression entry,
     and any change the repository's own .onex/repo_lifecycle.yaml (active, fix-only, no-code, retired)
     does not admit. Existing files live in the shrink-only baseline .onex_ratchets/canonical_file_shape_baseline.txt
-    (create it once with --write-baseline). There is no allowlist and no suppression comment. Checks the
-    whole index against HEAD. CI runs the same hook after `git reset --soft <merge-base>`, so the index
-    holds the pull request's change. Includes the node-home rule group (also available alone as check-node-home).
+    (create it once with --write-baseline). A repository that already has that file installs the findings
+    a new rule adds once, in a second shrink-only file, .onex_ratchets/canonical_file_shape_burndown_baseline.txt:
+    run --write-burndown-baseline OMN-<n> (the burn-down ticket; its header's first comment line reads
+    '# Burn-down ticket: OMN-<n> ...'); it lists the refused paths the baseline does not, the baseline
+    file is not edited, and a path either file lists is admitted. The base revision having no burn-down
+    file is what admits the install; after that an added line is refused as baseline-growth (a one-for-one
+    rename is admitted), --prune-baseline shrinks it, and it stays even when empty (burndown-baseline-removed).
+    There is no allowlist and no suppression comment. Checks the whole index against HEAD. CI runs the
+    same hook after `git reset --soft <merge-base>`, so the index holds the pull request's change. Includes
+    the node-home rule group (also available alone as check-node-home).
   language: python
   entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
   pass_filenames: false

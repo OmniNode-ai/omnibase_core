@@ -11,6 +11,7 @@ per finding. Usage::
     python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --base origin/dev --head HEAD
     python -m ...runtime_canonical_file_shape_check --write-baseline
     python -m ...runtime_canonical_file_shape_check --prune-baseline
+    python -m ...runtime_canonical_file_shape_check --write-burndown-baseline OMN-<n>
 """
 
 from __future__ import annotations
@@ -170,6 +171,7 @@ def gather_facts(
         head,
         [
             p.baseline_path,
+            p.burndown_baseline_path,
             p.lifecycle_path,
             p.pre_commit_config_path,
             p.hooks_manifest_path,
@@ -182,15 +184,19 @@ def gather_facts(
         if (text := _decode(head_blobs.get(path))) is not None
     )
     head_baseline = _decode(head_blobs.get(p.baseline_path))
+    head_burndown = _decode(head_blobs.get(p.burndown_baseline_path))
     if base is None:
         return ModelCanonicalFileShapeFacts(
             head_tree=head_tree,
             head_baseline_text=head_baseline,
+            head_burndown_text=head_burndown,
             declared_texts=declared,
             head_lifecycle_text=_decode(head_blobs.get(p.lifecycle_path)),
             commit_messages=None if commit_message is None else (commit_message,),
         )
-    base_blobs = repo.read_blobs(base, [p.baseline_path, p.lifecycle_path])
+    base_blobs = repo.read_blobs(
+        base, [p.baseline_path, p.burndown_baseline_path, p.lifecycle_path]
+    )
     base_baseline = _decode(base_blobs.get(p.baseline_path))
     raw_changes = [c for c in repo.changed_paths(base, head) if c[0] != "D"]
     head_text = repo.read_blobs(head, [path for _, path, _ in raw_changes])
@@ -216,6 +222,8 @@ def gather_facts(
         has_base=True,
         head_baseline_text=head_baseline,
         base_baseline_text=base_baseline,
+        head_burndown_text=head_burndown,
+        base_burndown_text=_decode(base_blobs.get(p.burndown_baseline_path)),
         declared_texts=declared,
         changes=changes,
         head_lifecycle_text=_decode(head_blobs.get(p.lifecycle_path)),
@@ -428,9 +436,61 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
         help="delete baseline entries that no file rule refuses any more",
     )
     parser.add_argument(
+        "--write-burndown-baseline",
+        metavar="TICKET",
+        default=None,
+        help=(
+            "create the ticketed burn-down baseline from the head, listing the refused "
+            "paths the baseline does not; refused when one exists"
+        ),
+    )
+    parser.add_argument(
         "filenames", nargs="*", help="ignored; the whole tree is checked"
     )
     return parser.parse_args(argv)
+
+
+def _header_of(file: Path) -> str:
+    """The leading comment lines of a baseline file, kept when it is pruned."""
+    lines = file.read_text(encoding="utf-8").splitlines(keepends=True)
+    header: list[str] = []
+    for line in lines:
+        if line.strip() and not line.strip().startswith("#"):
+            break
+        header.append(line)
+    return "".join(header)
+
+
+def _write_burndown(
+    p: ModelCanonicalFileShapeRules,
+    burndown_file: Path,
+    baseline_file: Path,
+    ticket: str,
+    refused: Sequence[str],
+) -> int:
+    """Write the burn-down baseline for ``refused`` minus the baseline's entries."""
+    if burndown_file.exists():
+        sys.stderr.write(
+            f"{p.burndown_baseline_path} exists; it is written once, then only shrinks\n"
+        )
+        return 1
+    header = p.burndown_baseline_header.format(ticket=ticket)
+    if re.search(p.burndown_ticket_pattern, header.splitlines()[0]) is None:
+        sys.stderr.write(f"{ticket!r} does not read as a burn-down ticket id\n")
+        return 1
+    listed = set(
+        parse_baseline(
+            baseline_file.read_text(encoding="utf-8")
+            if baseline_file.exists()
+            else None
+        )
+    )
+    entries = [path for path in refused if path not in listed]
+    write_text_file(burndown_file, header + "".join(f"{path}\n" for path in entries))
+    sys.stdout.write(
+        f"wrote {len(entries)} entries to {p.burndown_baseline_path} for {ticket}\n"
+    )
+    return 0
 
 
 def main(
@@ -447,7 +507,7 @@ def main(
     )
     baseline_file = args.repo_root / p.baseline_path
 
-    if args.write_baseline or args.prune_baseline:
+    if args.write_baseline or args.prune_baseline or args.write_burndown_baseline:
         refused = sorted(
             file_rule_refusals(
                 gather_tree(repo, args.head or INDEX, p),
@@ -466,19 +526,32 @@ def main(
             )
             sys.stdout.write(f"wrote {len(refused)} entries to {p.baseline_path}\n")
             return 0
-        current = parse_baseline(
-            baseline_file.read_text(encoding="utf-8")
-            if baseline_file.exists()
-            else None
-        )
-        kept = [path for path in current if path in set(refused)]
-        write_text_file(
-            baseline_file,
-            p.baseline_header + "".join(f"{path}\n" for path in sorted(set(kept))),
-        )
-        sys.stdout.write(
-            f"pruned {len(current) - len(kept)} entries from {p.baseline_path}\n"
-        )
+        burndown_file = args.repo_root / p.burndown_baseline_path
+        if args.write_burndown_baseline:
+            return _write_burndown(
+                p, burndown_file, baseline_file, args.write_burndown_baseline, refused
+            )
+        for file, location in (
+            (baseline_file, p.baseline_path),
+            (burndown_file, p.burndown_baseline_path),
+        ):
+            if location == p.burndown_baseline_path and not file.exists():
+                continue
+            current = parse_baseline(
+                file.read_text(encoding="utf-8") if file.exists() else None
+            )
+            kept = [path for path in current if path in set(refused)]
+            header = (
+                _header_of(file)
+                if location == p.burndown_baseline_path
+                else p.baseline_header
+            )
+            write_text_file(
+                file, header + "".join(f"{path}\n" for path in sorted(set(kept)))
+            )
+            sys.stdout.write(
+                f"pruned {len(current) - len(kept)} entries from {location}\n"
+            )
         return 0
 
     message = (

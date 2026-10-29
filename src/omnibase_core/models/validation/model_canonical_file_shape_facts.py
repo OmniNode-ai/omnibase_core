@@ -24,6 +24,9 @@ class ModelCanonicalFileShapeFacts(BaseModel):
     ``commit_messages`` is None when no message is known (a pre-commit run on the
     index); the release-trailer rule is then deferred to the commit-msg stage and
     to the revision run, which both know the message.
+
+    ``head_burndown_text`` and ``base_burndown_text`` carry the ticketed burn-down
+    baseline (OMN-21515); None means the revision has no such file.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -32,6 +35,8 @@ class ModelCanonicalFileShapeFacts(BaseModel):
     has_base: bool = False
     head_baseline_text: str | None = None
     base_baseline_text: str | None = None
+    head_burndown_text: str | None = None
+    base_burndown_text: str | None = None
     declared_texts: tuple[ModelCanonicalFileShapeText, ...] = Field(
         default_factory=tuple
     )
