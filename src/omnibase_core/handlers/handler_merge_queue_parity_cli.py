@@ -24,7 +24,6 @@ Exit codes: 0 -- PASS or WARN only; 1 -- FAIL/ERROR, or the baseline grew.
 from __future__ import annotations
 
 import argparse
-import re
 import subprocess
 import sys
 from pathlib import Path
@@ -72,12 +71,17 @@ from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 __all__ = ["is_workflow", "main", "parse_baseline"]
 
 DEFAULT_BASELINE: Final[str] = ".onex_ratchets/merge_queue_parity_baseline.yaml"
-_WORKFLOW = re.compile(r"^\.github/workflows/[^/]+\.ya?ml$")
 
 
 def is_workflow(path: str) -> bool:
     """True for a top-level file of ``.github/workflows``."""
-    return bool(_WORKFLOW.match(path))
+    head, _, name = path.removeprefix(".github/workflows/").partition("/")
+    return (
+        path.startswith(".github/workflows/")
+        and not name
+        and head.endswith((".yml", ".yaml"))
+        and head not in (".yml", ".yaml")
+    )
 
 
 def parse_baseline(text: str | None) -> tuple[ModelMergeQueueParityBaselineEntry, ...]:
