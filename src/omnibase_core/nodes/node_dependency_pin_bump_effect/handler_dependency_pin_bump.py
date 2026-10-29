@@ -3,36 +3,41 @@
 
 """Bump an opted-in consumer's omnibase-core dev tag (OMN-21478).
 
-Run with ``python -m omnibase_core.handlers.handler_dependency_pin_bump``.
+Run with ``python -m omnibase_core.nodes.node_dependency_pin_bump_effect.runtime_dependency_pin_bump``.
 The workflow refreshes the consumer's lockfile after this handler succeeds.
 """
 
 from __future__ import annotations
 
-import argparse
 import re
-import sys
 import tomllib
-from pathlib import Path
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.handlers.handler_internal_sibling_pins_cli import load_contract
+from omnibase_core.models.version_drift.model_dependency_pin_bump_request import (
+    ModelDependencyPinBumpRequest,
+)
+from omnibase_core.models.version_drift.model_dependency_pin_bump_result import (
+    ModelDependencyPinBumpResult,
+)
 from omnibase_core.models.version_drift.model_dependency_pin_manifest import (
     ModelDependencyPinManifest,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
-__all__ = ["HandlerDependencyPinBump", "main"]
+__all__ = ["HandlerDependencyPinBump"]
 
 
 class HandlerDependencyPinBump:
     """Rewrite only the declared git source tag, preserving the consumer's text."""
 
     def handle(
-        self, manifest: Path, repo: str, repo_root: Path, dependency_tag: str
-    ) -> Path | None:
+        self, request: ModelDependencyPinBumpRequest
+    ) -> ModelDependencyPinBumpResult:
         """Return the changed pyproject path, or None for an unchanged pin."""
+        manifest, repo = request.manifest, request.repo
+        repo_root, dependency_tag = request.repo_root, request.dependency_tag
         settings = load_yaml_content_as_model(
             manifest.read_text("utf-8"), ModelDependencyPinManifest
         )
@@ -81,7 +86,7 @@ class HandlerDependencyPinBump:
             )
         old_tag = source["tag"]
         if old_tag == dependency_tag:
-            return None
+            return ModelDependencyPinBumpResult()
         source["tag"] = dependency_tag
         for match in re.finditer(r"([\"'])(" + re.escape(old_tag) + r")\1", content):
             updated = (
@@ -93,32 +98,8 @@ class HandlerDependencyPinBump:
                 continue
             if matches_document:
                 path.write_bytes(updated.encode("utf-8"))
-                return path
+                return ModelDependencyPinBumpResult(changed_path=path)
         raise ModelOnexError(
             message=(f"{path}: cannot rewrite omnibase-core tag preserving TOML"),
             error_code=EnumCoreErrorCode.INVALID_INPUT,
         )
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entry: zero for a changed pin or no-op, nonzero for invalid input."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--manifest", type=Path, required=True)
-    parser.add_argument("--repo", required=True)
-    parser.add_argument("--repo-root", type=Path, required=True)
-    parser.add_argument("--dependency-tag", required=True)
-    args = parser.parse_args(argv)
-    try:
-        changed = HandlerDependencyPinBump().handle(
-            args.manifest, args.repo, args.repo_root, args.dependency_tag
-        )
-    except (OSError, ModelOnexError) as exc:
-        sys.stderr.write(f"ERROR: {exc}\n")
-        return 1
-    if changed is not None:
-        sys.stdout.write(f"CHANGED: {changed} (tag -> {args.dependency_tag})\n")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

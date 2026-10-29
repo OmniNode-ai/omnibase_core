@@ -24,7 +24,7 @@ A write is refused when BOTH hold:
 
 There is no bypass flag and no allowlist. ``onex-work-ledger render --repair`` calls
 :func:`check_file` before it takes the md lock or writes a byte; the refusal is
-:class:`LedgerTestWriteRefusedError` and the command exit is :data:`EXIT_TEST_WRITE_REFUSED`.
+:class:`ModelLedgerTestWriteRefusedError` and the command exit is :data:`EXIT_TEST_WRITE_REFUSED`.
 """
 
 from __future__ import annotations
@@ -36,16 +36,28 @@ from pathlib import Path
 from typing import Final
 from urllib.parse import urlsplit
 
+from omnibase_core.enums.enum_ledger_write_target import EnumLedgerWriteTarget
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
+from omnibase_core.models.ledger_write_guard.model_ledger_test_write_refused import (
+    GUARD_NAME,
+    ModelLedgerTestWriteRefusedError,
+)
+from omnibase_core.models.ledger_write_guard.model_ledger_write_guard_decision import (
+    ModelLedgerWriteGuardDecision,
+)
+from omnibase_core.models.ledger_write_guard.model_ledger_write_guard_request import (
+    ModelLedgerWriteGuardRequest,
+)
 
 __all__ = [
+    "HandlerLedgerWriteGuard",
     "CANONICAL_TOPIC",
     "EXIT_TEST_WRITE_REFUSED",
     "GUARD_NAME",
     "TEST_CONTEXT_ENV",
-    "LedgerTestWriteRefusedError",
+    "ModelLedgerTestWriteRefusedError",
     "check_dsn",
     "check_file",
     "check_topic",
@@ -55,7 +67,6 @@ __all__ = [
     "topic_is_canonical",
 ]
 
-GUARD_NAME: Final = "ledger-test-write-guard"
 TEST_CONTEXT_ENV: Final = "ONEX_TEST_CONTEXT"
 EXIT_TEST_WRITE_REFUSED: Final = 79
 CANONICAL_TOPIC: Final = re.compile(
@@ -65,21 +76,6 @@ _LOOPBACK_HOSTS: Final = frozenset({"", "localhost", "127.0.0.1", "::1"})
 _RUNNER_MODULES: Final = ("pytest",)
 _PYTEST_ENV: Final = "PYTEST_CURRENT_TEST"
 _OMNI_HOME_ENV: Final = "OMNI_HOME"
-
-
-class LedgerTestWriteRefusedError(Exception):
-    """A test process tried to write a canonical ledger target. The message names the guard."""
-
-    def __init__(self, signal: str, target_kind: str, target: str) -> None:
-        self.signal = signal
-        self.target_kind = target_kind
-        self.target = target
-        super().__init__(
-            f"{GUARD_NAME} REFUSED -- a test process ({signal}) tried to write the canonical "
-            f"{target_kind} {target}. Nothing was written. A test writes a tmp_path ledger, a "
-            "non-canonical topic or a loopback DSN "
-            "(omnibase_core.handlers.handler_ledger_write_guard, OMN-19513)."
-        )
 
 
 def _env(name: str) -> str:
@@ -136,7 +132,7 @@ def dsn_is_canonical(dsn: str) -> bool:
 def _refuse_if_test(target_kind: str, target: str) -> None:
     signal = runner_signal()
     if signal is not None:
-        raise LedgerTestWriteRefusedError(signal, target_kind, target)
+        raise ModelLedgerTestWriteRefusedError(signal, target_kind, target)
 
 
 def check_file(path: Path) -> None:
@@ -157,3 +153,19 @@ def check_dsn(dsn: str) -> None:
         _refuse_if_test(
             "projection DSN", urlsplit(dsn).hostname or "<non-loopback host>"
         )
+
+
+class HandlerLedgerWriteGuard:
+    """The ledger test-write guard as a node handler."""
+
+    def handle(
+        self, request: ModelLedgerWriteGuardRequest
+    ) -> ModelLedgerWriteGuardDecision:
+        """Refuse the write when a test runner is present and the target is canonical."""
+        canonical = {
+            EnumLedgerWriteTarget.FILE: lambda target: file_is_canonical(Path(target)),
+            EnumLedgerWriteTarget.TOPIC: topic_is_canonical,
+            EnumLedgerWriteTarget.DSN: dsn_is_canonical,
+        }[request.target_kind](request.target)
+        signal = runner_signal() if canonical else None
+        return ModelLedgerWriteGuardDecision(refused=signal is not None, signal=signal)

@@ -287,6 +287,52 @@ dod_evidence:
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
           -q --no-cov -n 0 -o addopts='' -k "burndown or every_parameter_key or every_contract_rule"
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-group-d-handler-bindings
+    description: The group d handlers expose typed handle request entries after moving into their node
+      contracts. The published hook runtimes import those node handlers, and the checkout has no unbound
+      handler. These checks exercise the group d migration independently of inherited checker evidence.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/handlers/test_handle_request_shape_omn21515.py
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_checkout_has_no_handler_outside_node.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          uv run python - <<'PY'
+          from importlib import import_module
+          from pathlib import Path
+          import yaml
+          root = Path('src/omnibase_core/nodes')
+          for node, runtime in (
+              ('node_cross_repo_boundary_check_effect', 'runtime_boundary_parity'),
+              ('node_cross_repo_boundary_check_effect', 'runtime_migration_conflicts'),
+              ('node_dependency_pin_bump_effect', 'runtime_dependency_pin_bump'),
+              ('node_todo_format_check_effect', 'runtime_todo_format'),
+              ('node_shape_gate_independence_check_effect', 'runtime_shape_gate_independence'),
+              ('node_contract_evidence_check_effect', 'runtime_contract_check_values_lint'),
+              ('node_contract_evidence_check_effect', 'runtime_contract_substance_floor'),
+          ):
+              contract = yaml.safe_load((root / node / 'contract.yaml').read_text())
+              handler_module, handler_class = contract['handler_routing']['default_handler'].split(':')
+              handler = getattr(import_module(f'omnibase_core.nodes.{node}.{handler_module}'), handler_class)
+              assert callable(handler.handle), node
+              module = import_module(f'omnibase_core.nodes.{node}.{runtime}')
+              assert callable(module.main), (node, runtime)
+          PY
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-ledger-node-default-handler
+    description: The published ledger guard default resolves inside its node and classifies canonical
+      and scratch targets through the shared CLI guard. Its node passes all eight compliance checks.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/test_node_ledger_write_guard_effect.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21515-burndown-extra-entry
     description: A first install that lists an added, renamed-in or baseline-duplicated path is refused
       as burndown-extra-entry, one issue per extra entry, and a modified base finding is admitted.

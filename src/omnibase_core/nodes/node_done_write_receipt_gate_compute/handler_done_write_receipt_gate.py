@@ -45,6 +45,9 @@ from omnibase_core.models.ticket.model_ac_binding_row import ModelAcBindingRow
 from omnibase_core.models.ticket.model_done_write_decision import (
     ModelDoneWriteDecision,
 )
+from omnibase_core.models.ticket.model_done_write_receipt_request import (
+    ModelDoneWriteReceiptRequest,
+)
 
 #: dod_verify's own terminal status for "every verdict-bearing check passed".
 DOD_VERIFY_STATUS_VERIFIED = "verified"
@@ -1213,7 +1216,20 @@ def evaluate_done_write_receipt(
     return ModelDoneWriteDecision(allowed=True, rows=rows)
 
 
+class HandlerDoneWriteReceiptGate:
+    """The Done-write receipt gate as a node handler."""
+
+    def handle(self, request: ModelDoneWriteReceiptRequest) -> ModelDoneWriteDecision:
+        """Decide whether the Done write in ``request`` may proceed."""
+        return evaluate_done_write_receipt(
+            ticket_id=request.ticket_id,
+            description=request.description,
+            verdict=request.verdict,
+        )
+
+
 __all__ = [
+    "HandlerDoneWriteReceiptGate",
     "dod_verify_non_probative_key",
     "DOD_VERIFY_STATUS_VERIFIED",
     "ac_binding_gap",

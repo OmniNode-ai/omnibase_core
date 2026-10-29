@@ -33,11 +33,11 @@ _INPUT_DEFAULTS = {
     "repos": "omniclaude,omnidash,omniintelligence,omnibase_infra,omnibase_core,omnimemory,omnimarket",
 }
 _PARITY_CALL = (
-    "python -m omnibase_core.handlers.handler_boundary_parity"
+    "python -m omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_boundary_parity"
     " --repos-root /tmp/omni_repos;"
 )
 _MIGRATION_CALL = (
-    "python -m omnibase_core.handlers.handler_migration_conflicts"
+    "python -m omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_migration_conflicts"
     " --repos-root /tmp/omni_repos --check-columns --warn-only;"
 )
 
@@ -107,11 +107,11 @@ def test_every_action_is_pinned_by_full_sha() -> None:
         assert _FULL_SHA_USES.match(ref), ref
 
 
-def test_handler_modules_expose_main() -> None:
-    from omnibase_core.handlers import (
-        handler_boundary_parity,
-        handler_migration_conflicts,
+def test_runtime_modules_expose_main() -> None:
+    from omnibase_core.nodes.node_cross_repo_boundary_check_effect import (
+        runtime_boundary_parity,
+        runtime_migration_conflicts,
     )
 
-    assert callable(handler_boundary_parity.main)
-    assert callable(handler_migration_conflicts.main)
+    assert callable(runtime_boundary_parity.main)
+    assert callable(runtime_migration_conflicts.main)

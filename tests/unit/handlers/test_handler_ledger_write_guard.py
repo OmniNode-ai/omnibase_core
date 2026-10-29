@@ -145,9 +145,9 @@ def test_the_test_fails_with_the_refusal_switched_off(
 
 def test_a_real_topic_and_a_real_dsn_are_refused_under_a_test_runner() -> None:
     topic = "onex.evt.omnimarket.work-ledger-row-appended.v1"
-    with pytest.raises(guard.LedgerTestWriteRefusedError, match=guard.GUARD_NAME):
+    with pytest.raises(guard.ModelLedgerTestWriteRefusedError, match=guard.GUARD_NAME):
         guard.check_topic(topic)
-    with pytest.raises(guard.LedgerTestWriteRefusedError, match=guard.GUARD_NAME):
+    with pytest.raises(guard.ModelLedgerTestWriteRefusedError, match=guard.GUARD_NAME):
         guard.check_dsn("postgresql://u@db.internal.example:5432/ledger")
     guard.check_topic("onex.evt.test.scratch.v1")
     guard.check_dsn("postgresql://u@localhost:5432/scratch")

@@ -10,8 +10,8 @@
 # caller changes only the `uses:` line and keeps its job and context names.
 #
 # The checks run omnibase_core's handlers from this action's own checkout:
-#   omnibase_core.handlers.handler_boundary_parity
-#   omnibase_core.handlers.handler_migration_conflicts
+#   omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_boundary_parity
+#   omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_migration_conflicts
 # against the boundary manifest and migration inventory packaged beside them in
 # src/omnibase_core/contracts/boundaries/. No validator source is checked out.
 #
@@ -149,7 +149,7 @@ runs:
         uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python - <<'PY' >> "$GITHUB_OUTPUT"
         import os
 
-        from omnibase_core.handlers.handler_boundary_parity import (
+        from omnibase_core.nodes.node_cross_repo_boundary_check_effect.handler_boundary_parity import (
             load_boundary_manifest,
             load_manifest_yaml,
         )
@@ -256,7 +256,7 @@ runs:
           case "$check" in
             boundary-parity)
               echo "::group::Running boundary-parity check"
-              if uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python -m omnibase_core.handlers.handler_boundary_parity --repos-root /tmp/omni_repos; then
+              if uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python -m omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_boundary_parity --repos-root /tmp/omni_repos; then
                 echo "::endgroup::"
                 echo "boundary-parity: PASSED"
               else
@@ -271,7 +271,7 @@ runs:
                 continue
               fi
               echo "::group::Running migration-conflicts check"
-              if uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python -m omnibase_core.handlers.handler_migration_conflicts --repos-root /tmp/omni_repos --check-columns --warn-only; then
+              if uv run --project "${CORE_ROOT}" --frozen --no-dev --no-sync python -m omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_migration_conflicts --repos-root /tmp/omni_repos --check-columns --warn-only; then
                 echo "::endgroup::"
                 echo "migration-conflicts: PASSED"
               else

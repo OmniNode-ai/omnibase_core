@@ -138,6 +138,6 @@ dod_evidence:
         check_value: |
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_internal_sibling_pins.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'if merges > contract.max_trailing_merges or hours > contract.max_trailing_hours:' > /dev/null &&
-          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_dependency_pin_bump.py?ref=$(git rev-parse HEAD)" --jq .content |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'source["tag"] = dependency_tag' > /dev/null
         cwd: ${OMNI_HOME}/omnibase_core

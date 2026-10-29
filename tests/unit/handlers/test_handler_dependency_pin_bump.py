@@ -11,13 +11,16 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_dependency_pin_bump import (
-    HandlerDependencyPinBump,
-    main,
-)
 from omnibase_core.models.version_drift import (
     ModelDependencyPin,
+    ModelDependencyPinBumpRequest,
     ModelDependencyPinManifest,
+)
+from omnibase_core.nodes.node_dependency_pin_bump_effect.handler_dependency_pin_bump import (
+    HandlerDependencyPinBump,
+)
+from omnibase_core.nodes.node_dependency_pin_bump_effect.runtime_dependency_pin_bump import (
+    main,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
@@ -136,7 +139,14 @@ def test_refuses_missing_or_invalid_git_source(
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text(content, encoding="utf-8")
     with pytest.raises(ModelOnexError, match=r"omnibase-core.*git source"):
-        HandlerDependencyPinBump().handle(manifest, "consumer", tmp_path, NEW_TAG)
+        HandlerDependencyPinBump().handle(
+            ModelDependencyPinBumpRequest(
+                manifest=manifest,
+                repo="consumer",
+                repo_root=tmp_path,
+                dependency_tag=NEW_TAG,
+            )
+        )
     assert pyproject.read_text("utf-8") == content
 
 
@@ -154,7 +164,16 @@ def test_uses_configured_pyproject_and_case_insensitive_git_url(
         encoding="utf-8",
     )
     assert (
-        HandlerDependencyPinBump().handle(manifest, "consumer", tmp_path, NEW_TAG)
+        HandlerDependencyPinBump()
+        .handle(
+            ModelDependencyPinBumpRequest(
+                manifest=manifest,
+                repo="consumer",
+                repo_root=tmp_path,
+                dependency_tag=NEW_TAG,
+            )
+        )
+        .changed_path
         == pyproject
     )
     assert (

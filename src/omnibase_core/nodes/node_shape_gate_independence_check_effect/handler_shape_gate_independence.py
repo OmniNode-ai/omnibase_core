@@ -24,16 +24,14 @@ The guard has no baseline, no allowlist and no suppression comment.
 
 Usage::
 
-    python -m omnibase_core.handlers.handler_shape_gate_independence [workflow.yml ...]
+    python -m omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence [workflow.yml ...]
 
 With no paths, every file under ``.github/workflows`` is scanned.
 """
 
 from __future__ import annotations
 
-import argparse
 import re
-import sys
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 
@@ -41,6 +39,12 @@ import yaml
 
 from omnibase_core.models.validation.model_shape_gate_independence_finding import (
     ModelShapeGateIndependenceFinding,
+)
+from omnibase_core.models.validation.model_shape_gate_independence_report import (
+    ModelShapeGateIndependenceReport,
+)
+from omnibase_core.models.validation.model_shape_gate_independence_request import (
+    ModelShapeGateIndependenceRequest,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_duplicates
 
@@ -196,17 +200,13 @@ def _iter_workflow_files(paths: Sequence[Path]) -> list[Path]:
     return files
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Refuse shape-gate detector jobs that depend on the OCC preflight."
-    )
-    parser.add_argument("paths", nargs="*", type=Path)
-    args = parser.parse_args(argv)
-    findings = validate_paths(args.paths)
-    for finding in findings:
-        sys.stderr.write(f"{finding.format()}\n")
-    return 1 if findings else 0
+class HandlerShapeGateIndependence:
+    """Refuse shape-gate detector jobs that depend on the OCC preflight."""
 
-
-if __name__ == "__main__":
-    sys.exit(main())
+    def handle(
+        self, request: ModelShapeGateIndependenceRequest
+    ) -> ModelShapeGateIndependenceReport:
+        """Return the findings over the requested workflow files and directories."""
+        return ModelShapeGateIndependenceReport(
+            findings=tuple(validate_paths(request.paths))
+        )

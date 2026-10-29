@@ -25,15 +25,15 @@ from typing import Any
 import pytest
 import yaml
 
-from omnibase_core.handlers.handler_contract_compliance_check import (
-    is_inert_check as _is_inert_check,
-)
 from omnibase_core.handlers.handler_evidence_admissibility import (
     EXECUTED_HERMETIC_COMMANDS,
     LIVE_PROBE_COMMANDS,
     EnumAdmissibilityRule,
     admissible_evidence_guidance,
     classify_evidence,
+)
+from omnibase_core.nodes.node_contract_evidence_check_effect.handler_contract_compliance_check import (
+    is_inert_check as _is_inert_check,
 )
 
 _CASES_PATH = (

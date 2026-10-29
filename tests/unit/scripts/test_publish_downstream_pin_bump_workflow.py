@@ -108,7 +108,7 @@ def test_workflow_triggers_and_matrix_object_shape() -> None:
     assert rewrite["working-directory"] == "omnibase_core"
     dependency, handshake = rewrite["run"].split("\nelse\n")
     assert (
-        "uv run --no-sync python -m omnibase_core.handlers.handler_dependency_pin_bump"
+        "uv run --no-sync python -m omnibase_core.nodes.node_dependency_pin_bump_effect.runtime_dependency_pin_bump"
         in dependency
     )
     assert '--dependency-tag "$DEPENDENCY_TAG"' in dependency

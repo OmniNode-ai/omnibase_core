@@ -23,7 +23,12 @@ import pytest
 import yaml
 
 # ---------------------------------------------------------------------------
-from omnibase_core.handlers import handler_contract_check_values_lint as linter
+from omnibase_core.nodes.node_contract_evidence_check_effect import (
+    handler_contract_check_values_lint as linter,
+)
+from omnibase_core.nodes.node_contract_evidence_check_effect import (
+    runtime_contract_check_values_lint as runtime,
+)
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -387,7 +392,7 @@ def test_main_returns_1_for_bad_contract(tmp_path: Path) -> None:
     """main() should return 1 when a bad contract is passed."""
     bad = '[ -z "$result" ] || [ "$result" = "SUCCESS" ]'
     path = write_contract(tmp_path, bad)
-    rc = linter.main(["lint_contract_check_values.py", str(path)])
+    rc = runtime.main(["lint_contract_check_values.py", str(path)])
     assert rc == 1
 
 
@@ -396,14 +401,14 @@ def test_main_returns_0_for_clean_contract(tmp_path: Path) -> None:
     """main() should return 0 when no bad patterns are present."""
     good = '[ "$result" = "SUCCESS" ]'
     path = write_contract(tmp_path, good)
-    rc = linter.main(["lint_contract_check_values.py", str(path)])
+    rc = runtime.main(["lint_contract_check_values.py", str(path)])
     assert rc == 0
 
 
 @pytest.mark.unit
 def test_main_returns_2_with_no_args() -> None:
     """main() with no file arguments should return 2 (usage error)."""
-    rc = linter.main(["lint_contract_check_values.py"])
+    rc = runtime.main(["lint_contract_check_values.py"])
     assert rc == 2
 
 
@@ -426,7 +431,7 @@ def test_main_reports_all_files(tmp_path: Path) -> None:
             yaml.dump(data, default_flow_style=False, allow_unicode=True),
             encoding="utf-8",
         )
-    rc = linter.main(["lint_contract_check_values.py", str(p1), str(p2)])
+    rc = runtime.main(["lint_contract_check_values.py", str(p1), str(p2)])
     assert rc == 1
 
 
@@ -1161,7 +1166,7 @@ def test_rule_e_is_warning_tier_and_does_not_change_exit_code(tmp_path: Path) ->
     assert not linter.lint_contract(path), (
         "Rule E leaked into the hard-finding path -- it must be warning tier"
     )
-    assert linter.main(["lint_contract_check_values.py", str(path)]) == 0
+    assert runtime.main(["lint_contract_check_values.py", str(path)]) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -1226,7 +1231,7 @@ def test_rule_f_green_after_on_anchored_receipt_shape(tmp_path: Path) -> None:
 def test_rule_f_run_conclusion_changes_exit_code(tmp_path: Path) -> None:
     """Rule F is HARD tier -- it must move the linter's exit code."""
     path = write_contract(tmp_path, _OMN_15484_CHECK_2)
-    assert linter.main(["lint", str(path)]) == 1
+    assert runtime.main(["lint", str(path)]) == 1
 
 
 @pytest.mark.unit
