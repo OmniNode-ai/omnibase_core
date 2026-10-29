@@ -39,6 +39,7 @@ CALLER_INPUTS = {
     "compare-with-occ",
     "shadow",
     "check-timeout-seconds",
+    "dod-verify-overlay",
 }
 
 CLI_MODULES = (

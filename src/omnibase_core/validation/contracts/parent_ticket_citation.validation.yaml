@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: parent_ticket_citation
+  validator_name: Parent Ticket Citation Validator
+  validator_description: |
+    OMN-21504 / T-Q1: reject parent-only pull request citations and receipt-gate
+    exemptions citing factory task tickets. Ticket lists are supplied by the
+    dod_verify overlay, never compiled into the checker.
+
+  target_patterns:
+    - "**/*.pr_citation_facts.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: parent_ticket_only_citation
+      description: "OMN-21504 / T-Q1: cite a task ticket whose contract binds the change, rather than
+        only parent tickets."
+      severity: error
+      enabled: true
+    - rule_id: exemption_cites_task_ticket
+      description: "OMN-21504 / T-Q1: no exemption admits a pull request citing a factory task ticket."
+      severity: error
+      enabled: true
+    - rule_id: pr_citation_facts_invalid
+      description: "OMN-21504 / T-Q1: fail closed on malformed facts or an unreadable or invalid dod_verify
+        overlay."
+      severity: error
+      enabled: true
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

@@ -86,6 +86,7 @@ def _run(
         "PR_EVENT_AUTHOR": author,
         "MERGE_GROUP_HEAD_REF": merge_group_head_ref,
         "GH_REPO": "o/r",
+        "CITES_TASK_TICKET": "false",
     }
     assert set(step["env"]) == set(values)
     result = subprocess.run(
@@ -208,8 +209,10 @@ def test_author_step_has_no_probe_or_pr_body_read() -> None:
 
 def test_every_dod_verify_step_after_bot_exempt_is_gated_on_it() -> None:
     steps = _steps()
-    assert steps[0]["id"] == "bot_exempt"
-    after = steps[1:]
+    assert steps[0]["id"] == "ticket_policy"
+    assert "if" not in steps[0]
+    assert steps[1]["id"] == "bot_exempt"
+    after = steps[2:]
     assert after
     ungated = [
         s["name"]

@@ -48,9 +48,9 @@ def test_caller_workflow_shape() -> None:
     )
     job = data["jobs"]["repo-evidence"]
     assert re.fullmatch(
-        r"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@[0-9a-f]{40}",
+        r"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@(?:[0-9a-f]{40}|dev-\d{14}-[0-9a-f]{12})",
         job["uses"],
-    ), "receipt-gate reusable must be pinned by an immutable full SHA"
+    ), "receipt-gate reusable must be pinned by a full SHA or dev-merge tag"
     assert job["with"]["evidence-source"] == "caller", (
         "caller evidence mode is required"
     )
@@ -85,10 +85,11 @@ def test_caller_pins_the_writer_release_cut_reusable() -> None:
     job = yaml.safe_load(CALLER_PATH.read_text(encoding="utf-8"))["jobs"][
         "repo-evidence"
     ]
-    # omnibase_core#1914's squash commit: it carries #1912's contract-home marker
-    # and adds the OCC writer app's release-cut exemption in dod-verify.
+    # OMN-21504: #2079's dev-merge tag descends from #1914, which carries
+    # #1912's contract-home marker and the writer app's release-cut exemption.
     assert job["uses"].endswith(
         (
+            "@dev-20261022114039-578228977721",
             "@fb0c6c2117d5868a398b0920cd0048d0824415b1",
             "@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1",
         )

@@ -33,7 +33,7 @@ HOOK_ID = "call-repo-evidence-gate-verifier-floor"
 VERIFIER_FLOOR = (0, 4, 303)
 
 _RECEIPT_GATE_USES = re.compile(
-    r"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@[0-9a-f]{40}"
+    r"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@(?:[0-9a-f]{40}|dev-\d{14}-[0-9a-f]{12})"
 )
 
 

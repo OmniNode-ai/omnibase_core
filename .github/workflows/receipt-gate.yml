@@ -35,6 +35,9 @@
 #                   number of seconds from 1 to 900 (OMN-21166). Empty, the
 #                   default, keeps the verifier's own 30 s. Browser checks
 #                   need more than that.
+#   dod-verify-overlay: path in the caller repository of the YAML overlay whose
+#                   dod_verify mapping lists parent_tickets and factory_task_tickets,
+#                   read at the pull request's BASE sha; empty configures no list.
 #
 # Secrets:
 #   (none — contracts are in the caller's repository)
@@ -66,6 +69,11 @@ on:
         default: "false"
       check-timeout-seconds:
         description: "Seconds each dod_verify check may run, 1 to 900; empty keeps the verifier default of 30 (OMN-21166)."
+        type: string
+        required: false
+        default: ""
+      dod-verify-overlay:
+        description: "Path in the caller repository of the YAML overlay document whose dod_verify mapping lists parent_tickets and factory_task_tickets, read at the pull request's BASE sha; empty means no list is configured."
         type: string
         required: false
         default: ""
@@ -131,6 +139,69 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     steps:
+      - name: Enforce parent and factory task ticket policy (OMN-21504 / T-Q1)
+        id: ticket_policy
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          OVERLAY_PATH: ${{ inputs.dod-verify-overlay }}
+        run: |
+          set -euo pipefail
+          cited="$(printf '%s\n' "$PR_TITLE" | tr '[:lower:]' '[:upper:]' | grep -oE 'OMN-[0-9]+' | sort -u || true)"
+          if [ -z "$OVERLAY_PATH" ]; then
+            echo "cites_task_ticket=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! command -v python3 >/dev/null 2>&1; then
+            echo "::error::python3 is required to validate the dod_verify overlay"
+            exit 1
+          fi
+          overlay_file="$(mktemp "$RUNNER_TEMP/dod-verify-overlay.XXXXXX")"
+          trap 'rm -f "$overlay_file"' EXIT
+          if ! gh api "repos/${GH_REPO}/contents/${OVERLAY_PATH}?ref=${BASE_SHA}" --jq .content | tr -d '\r\n' | base64 -d > "$overlay_file"; then
+            echo "::error::cannot read the dod_verify overlay at the pull request base sha"
+            exit 1
+          fi
+          # The predicate mirrors checker_parent_ticket_citation; a parity test pins it.
+          python3 -I - "$overlay_file" "$cited" >> "$GITHUB_OUTPUT" <<'PY'
+          import re
+          import sys
+
+          try:
+              import yaml
+          except ImportError:
+              print("::error::PyYAML is required to validate the dod_verify overlay", file=sys.stderr)
+              sys.exit(1)
+
+          try:
+              with open(sys.argv[1], encoding="utf-8") as stream:
+                  document = yaml.safe_load(stream)
+              if not isinstance(document, dict) or not isinstance(document.get("dod_verify"), dict):
+                  raise ValueError("overlay must contain a dod_verify mapping")
+              overlay = document["dod_verify"]
+              for key in ("parent_tickets", "factory_task_tickets"):
+                  values = overlay.get(key, [])
+                  if not isinstance(values, list) or any(
+                      not isinstance(value, str) or re.fullmatch(r"OMN-[0-9]+", value) is None
+                      for value in values
+                  ):
+                      raise ValueError(f"{key} must be a list of OMN-[0-9]+ strings")
+              cited = sorted(set(sys.argv[2].split()))
+              if cited and all(ticket in overlay.get("parent_tickets", []) for ticket in cited):
+                  raise ValueError(
+                      f"pull request cites only parent ticket(s) {', '.join(cited)}; "
+                      "cite a task ticket whose contract binds this change"
+                  )
+              cites_task = any(ticket in overlay.get("factory_task_tickets", []) for ticket in cited)
+          except (OSError, ValueError, yaml.YAMLError) as exc:
+              print(f"::error::{exc}", file=sys.stderr)
+              sys.exit(1)
+          print(f"cites_task_ticket={str(cites_task).lower()}")
+          PY
+
       # OMN-20073: the caller-evidence path honours the dependency-bot
       # exemption (OMN-13762). An automated release or dependency bump cannot
       # bind evidence of its own, so without this the dod-verify context goes
@@ -160,6 +231,7 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
+          CITES_TASK_TICKET: ${{ steps.ticket_policy.outputs.cites_task_ticket }}
         run: |
           set -euo pipefail
 
@@ -201,6 +273,12 @@ jobs:
               writer_app="true"
               ;;
           esac
+
+          if [ "$CITES_TASK_TICKET" = "true" ]; then
+            exempt="false"
+            writer_app="false"
+            echo "::notice::No exemption admits a pull request citing a factory task ticket (OMN-21504)."
+          fi
 
           if [ "$exempt" = "true" ]; then
             echo "::notice::Receipt-gate exemption (OMN-13762): PR authored by trusted dependency bot '${author_login}'. Dependency-bump PRs carry no Linear ticket or OCC receipt; the evidence gate is not applicable. Receipt-evidence steps are skipped; the job still reports success."
@@ -1763,7 +1841,7 @@ jobs:
             {
               new_path=verified
               refused_step=none
-              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts scope head_verify merge_base base_control; do
+              for step_id in ticket_policy bot_exempt same_repo tickets head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts scope head_verify merge_base base_control; do
                 if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
                   new_path=refused
                   refused_step="$step_id"

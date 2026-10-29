@@ -58,6 +58,7 @@ def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
         "compare-with-occ": "false",
         "shadow": "false",
         "check-timeout-seconds": "",
+        "dod-verify-overlay": "",
     }
     assert set(inputs) == set(expected)
     for name, default in expected.items():
@@ -93,6 +94,7 @@ def test_jobs_run_without_conditions_and_preserve_caller_verification() -> None:
 def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
     steps = _job()["steps"]
     assert [step.get("name") for step in steps] == [
+        "Enforce parent and factory task ticket policy (OMN-21504 / T-Q1)",
         "Detect dependency-bot author (receipt-gate exemption)",
         "Refuse anything but a same-repository pull request",
         "Resolve the cited tickets",

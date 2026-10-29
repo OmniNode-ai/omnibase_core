@@ -17,7 +17,8 @@ CALLER_PATH = (
     Path(__file__).resolve().parents[2]
     / ".github/workflows/call-repo-evidence-gate.yml"
 )
-# Verbatim caller from dev 60ce70d13e07ddfa34539d00527443c90bb0c521.
+# Caller from dev 60ce70d13e07ddfa34539d00527443c90bb0c521, with the
+# OMN-21504 dev-merge pin and its explanatory header updates.
 BASE_CALLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
@@ -38,7 +39,7 @@ BASE_CALLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # Per-PR concurrency cancels superseded runs so the latest event gets a verdict.
 # Read-only contents and pull-requests permissions are all this caller needs;
 # checkout and verification belong to the reusable, with no caller secrets.
-# The full-SHA pin makes the reusable immutable; verifier-version pins the
+# The dev-merge tag pins the reusable; verifier-version pins the
 # released verifier used to read the caller's contracts.
 #
 # The job id is the context prefix: repo-evidence / dod-verify carries the
@@ -46,8 +47,8 @@ BASE_CALLER = """# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # repo-evidence / verify job in this mode (the OCC path, switched off by the
 # input); only repo-evidence / dod-verify carries a verdict.
 #
-# The reusable is pinned by full SHA to omnibase_core#1914's squash commit on dev,
-# which carries #1912's contract-home marker and caller-mode verify no-op.
+# The reusable is pinned by dev-merge tag to omnibase_core#2079's squash commit on dev,
+# which descends from #1914's contract-home marker and caller-mode verify no-op.
 # verifier-version 0.4.305 is the first omnimarket release carrying
 # omnimarket#3563 (node_dod_verify names contract_in_another_repo), the verifier
 # half of #1912. It is not called as
@@ -87,7 +88,7 @@ permissions:
 
 jobs:
   repo-evidence:
-    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@fb0c6c2117d5868a398b0920cd0048d0824415b1 # OMN-20074: immutable full-SHA pin, the squash commit of omnibase_core#1914 on dev (carries #1912's contract-home marker and caller-mode verify no-op, #1911's in-job pin-only verdict, and adds the OCC writer app's release-cut exemption)
+    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261022114039-578228977721 # OMN-21504: the dev-merge tag of the squash commit of omnibase_core#2079 on dev (the pin omnimarket's caller carries); it descends from fb0c6c21 (#1914)
     with:
       evidence-source: caller
       verifier-version: 0.4.305
@@ -109,7 +110,7 @@ def test_caller_disables_occ_comparison() -> None:
 def _assert_preserved(text: str) -> None:
     text = text.replace(
         "@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1",
-        "@fb0c6c2117d5868a398b0920cd0048d0824415b1",
+        "@dev-20261022114039-578228977721",
     )
     base = yaml.safe_load(BASE_CALLER)
     actual = yaml.safe_load(text)

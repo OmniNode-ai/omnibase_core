@@ -80,6 +80,10 @@ jobs:
         run: |
           uv run pytest \
             tests/unit/validation/test_validator_runtime_lane_roles.py \
+            tests/unit/handlers/test_handler_parent_ticket_citation.py \
+            tests/unit/handlers/test_handler_parent_ticket_citation_validator.py \
+            tests/ci/test_receipt_gate_task_ticket_exemptions_omn21504.py \
+            tests/ci/test_repo_evidence_required_on_dev_omn21504.py \
             tests/unit/models/config_overlay/test_runtime_lane_declaration.py \
             tests/unit/models/config_overlay/test_core_names_no_runtime_lane.py \
             tests/unit/validation/test_validator_no_lane_literal_branching.py \
@@ -87,6 +91,9 @@ jobs:
 
       - name: Self-scan omnibase_core contract.yaml files for runtime_lane_roles
         run: uv run python -m omnibase_core.validation.validator_runtime_lane_roles src/
+
+      - name: Validate parent ticket citation facts (OMN-21504 / T-Q1)
+        run: uv run python -m omnibase_core.handlers.handler_parent_ticket_citation_validator .github/
 
       # OMN-19760: no branching on a runtime lane name in core src, against the
       # burn-down baseline. The same hook runs in the Pre-commit Suite job.

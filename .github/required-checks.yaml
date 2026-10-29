@@ -96,6 +96,19 @@ classification: toolchain
 repo: omnibase_core
 
 gates:
+  - name: "repo-evidence / dod-verify"
+    mode: REQUIRED
+    branch: dev
+    producer_kind: cross_repo
+    caller_workflow: call-repo-evidence-gate.yml
+    caller_job: repo-evidence
+    cross_repo_ref: "OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261022114039-578228977721"
+    skip_semantics: never
+    rationale: "OMN-21504 (adopting OMN-21479): dev branch protection does not yet require this context;
+      an operator applies the ruleset change that adds it, quoted in the pull request body. Following
+      the manifest's migration-safety note, this row lands in the same pull request as that change request,
+      with mode REQUIRED because the plan task requires it."
+
   - name: "call-reject-skip-token / scan / reject-skip-gate-token"
     mode: REQUIRED
     producer_kind: cross_repo

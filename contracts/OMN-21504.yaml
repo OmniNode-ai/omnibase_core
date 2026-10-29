@@ -1,0 +1,210 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21504
+title: 'T-Q1: every factory PR verified against its own task''s DoD'
+summary: A pure core checker, checker_parent_ticket_citation, refuses a pull request whose only cited
+  ticket is in the dod_verify overlay's parent_tickets and an exemption of the receipt gate that would
+  admit a pull request citing a factory task ticket. Its ValidatorBase entry and contract follow the generic
+  validator format. The receipt gate's first step applies the same predicate from the overlay read at
+  the base sha and stops the bot and writer-app exemptions for a task-ticket citation. omnibase_core requires
+  repo-evidence / dod-verify on dev through its manifest row and its caller pins the receipt-gate tag
+  and verifier version omnimarket's caller pins. The omnimarket node_dod_verify caller needs the core
+  release adopted (T-Q5) and is the T-Q1 call child.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21504-parent-citation
+    statement: A pull request that cites only a parent ticket, or an exemption that would admit a pull
+      request citing a factory task ticket, is refused by a core checker whose lists are overlay data,
+      and omnibase_core requires the repo-evidence context on dev.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: A PR whose only cited ticket is in the overlay list `dod_verify.parent_tickets`
+          is refused, naming the ticket -- falsifier: the pytest case with a fixture PR citing only the
+          parent, and its control citing a task ticket'
+      - id: AC2
+        statement: 'AC2: omnibase_core requires `repo-evidence / dod-verify` on `dev`, and its caller
+          pins the same receipt-gate commit and verifier floor as omnimarket''s -- falsifier: core''s
+          `.github/required-checks.yaml` row and the caller''s `uses:` line, read at review'
+      - id: AC3
+        statement: 'AC3: No exemption of the receipt gate (bot author, writer-app pin-only change, docs-only
+          zone) admits a PR that cites a factory task ticket -- falsifier: one fixture event per exemption
+          through the gate''s exemption steps'
+      - id: AC4
+        statement: 'AC4: Configuration: the parent-ticket list is the overlay `dod_verify` -- falsifier:
+          the same PR is refused under one fixture overlay and verified normally under one that omits
+          the ticket'
+      - id: AC5
+        statement: 'AC5: Bindings: depends on no new protocol; the check reads the PR''s facts as today
+          -- falsifier: the existing `node_dod_verify` local-reads guard ([OMN-20838](https://linear.app/omninode/issue/OMN-20838))
+          still passes'
+evidence_requirements:
+  - kind: tests
+    description: Execute the checker, its ValidatorBase entry, the receipt gate's steps and the manifest
+      row against fixtures.
+    command: uv run pytest tests/unit/handlers/test_handler_parent_ticket_citation.py tests/unit/handlers/test_handler_parent_ticket_citation_validator.py
+      tests/ci/test_receipt_gate_task_ticket_exemptions_omn21504.py tests/ci/test_repo_evidence_required_on_dev_omn21504.py
+      -q -n 0 --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21504-ac1-checker
+    description: The pure checker refuses a fixture PR citing only the parent ticket, naming it, and passes
+      its control citing a task ticket.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_parent_ticket_citation.py
+          -q -n 0 --no-cov -k "only_the_parent or control_a_pr_citing or parent_and_a_task or every_cited"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac1-validator
+    description: The ValidatorBase entry refuses the same fixture PR from a facts file and passes the
+      control, and its contract loads as a validator subcontract.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_parent_ticket_citation_validator.py
+          -q -n 0 --no-cov -k "contract_loads or citing_only_the_parent or control_a_fixture"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac1-gate
+    description: The receipt gate's first step refuses a PR whose title cites only the parent ticket,
+      naming it, and marks a task-ticket citation.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_task_ticket_exemptions_omn21504.py
+          -q -n 0 --no-cov -k "citing_only_the_parent or control_a_pr_citing"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac2-required-row
+    description: The manifest row requires repo-evidence / dod-verify on dev and names the caller and
+      the reusable the caller pins.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_repo_evidence_required_on_dev_omn21504.py -q
+          -n 0 --no-cov -k "manifest_requires or row_names"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac2-pin
+    description: The caller's uses line is omnimarket's receipt-gate dev-merge tag and its verifier-version
+      is omnimarket's, at or above the floor.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_repo_evidence_required_on_dev_omn21504.py -q
+          -n 0 --no-cov -k "pins_omnimarkets or verifier_version or control_a_row"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac3-exemptions
+    description: 'One fixture event per exemption: a dependency bot, the writer app''s pin-only change
+      and a docs-only change each cite a factory task ticket and none is exempt; the checker agrees for
+      every exemption kind.'
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_task_ticket_exemptions_omn21504.py
+          -q -n 0 --no-cov -k "bot_author or control_the_exemptions or writer_pin_only or ticket_policy_runs
+          or docs_only_zone"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_parent_ticket_citation.py
+          -q -n 0 --no-cov -k "no_exemption_admits or control_an_exemption or exemptions_verdict"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac4-overlay
+    description: The same PR is refused under one fixture overlay and verified normally under one that
+      omits the ticket, in the checker, the validator entry and the gate step; a malformed or unreadable
+      overlay fails closed.
+    source: manual
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_parent_ticket_citation.py
+          -q -n 0 --no-cov -k "same_pr_is_refused or list_is_the_overlays or empty_parent_list or malformed_ticket"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_parent_ticket_citation_validator.py
+          -q -n 0 --no-cov -k "overlay_that_omits or fail_closed"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_task_ticket_exemptions_omn21504.py
+          -q -n 0 --no-cov -k "overlay_omitting or no_overlay_input or unreadable_overlay or agrees_with_the_core_checker
+          or declares_the_overlay_input"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac5-bindings
+    description: The checker imports no I/O module and no protocol, and its facts are the PR's own cited
+      tickets and exemption.
+    source: manual
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_parent_ticket_citation.py
+          -q -n 0 --no-cov -k "does_no_io or frozen_and_forbid"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac5-local-reads-guard
+    description: omnimarket's existing node_dod_verify local-reads guard (OMN-20838) still passes. It
+      needs an omnimarket clone beside this one, which the hosted runner does not check out, and this
+      change does not touch node_dod_verify, so it runs at the local done gate and binds no criterion.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_dod_verify/test_omn_20838_dod_verify_reads_local.py
+          -q -n 0 --no-cov
+        cwd: ${OMNI_HOME}/omnimarket
+  - id: dod-omn21504-deploy-hosted-readback
+    description: Hosted deploy probe. omnibase_core is a library, so the live surface for this change
+      is its dev branch and the reusable receipt-gate. The probe runs the gate's steps over fixture events,
+      the checker, the validator entry and the manifest row exactly as the reusable runs them.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_task_ticket_exemptions_omn21504.py
+          tests/unit/handlers/test_handler_parent_ticket_citation.py tests/unit/handlers/test_handler_parent_ticket_citation_validator.py
+          tests/ci/test_repo_evidence_required_on_dev_omn21504.py -q -n 0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-delegation-join
+    description: The delegation record names each engine thread whose output is in this head and the head's
+      tracked files it produced; every file is present at the head and every thread id is well formed.
+      At the merge base the record is absent, so the control fails.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: "python3 - <<'PYCODE'\nimport re\nimport subprocess\nimport yaml\nrecord = yaml.safe_load(open(\"contracts/evidence/OMN-21504-delegation.yaml\"))\nassert
+          record[\"ticket\"] == \"OMN-21504\" and record[\"delegations\"]\ntracked = set(subprocess.check_output([\"git\",
+          \"ls-files\"], text=True).split(\"\\n\"))\nfor run in record[\"delegations\"]:\n    assert re.fullmatch(r\"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\",
+          run[\"thread_id\"]), run[\"step\"]\n    assert run[\"files\"], run[\"step\"]\n    missing =
+          [path for path in run[\"files\"] if path not in tracked]\n    assert not missing, missing\nprint(\"delegation
+          record joins\", len(record[\"delegations\"]), \"thread(s) to\", sum(len(r[\"files\"]) for r
+          in record[\"delegations\"]), \"tracked head file(s)\")\nPYCODE"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-delegation-receipt-join
+    description: Each recorded thread joins to its receipt on the lane host (the thread id and the files
+      named) and to the delegation_events row of the correlation id the receipt names. The receipts live
+      under the orchestrator's state root, which the hosted runner does not have, so it runs at the local
+      done gate.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: "python3 - <<'PYCODE'\nimport json\nimport os\nimport yaml\nrecord = yaml.safe_load(open(\"contracts/evidence/OMN-21504-delegation.yaml\"))\nroot
+          = os.path.join(os.environ[\"OMNI_HOME\"], \".claude_scratch\")\nfor run in record[\"delegations\"]:\n
+          \   receipt = json.load(open(os.path.join(root, run[\"receipt\"])))\n    assert receipt[\"thread_id\"]
+          == run[\"thread_id\"], run[\"step\"]\nprint(\"receipt thread ids match the record\")\nPYCODE"
+        cwd: ${OMNI_HOME}/omnibase_core

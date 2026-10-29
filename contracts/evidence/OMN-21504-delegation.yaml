@@ -1,0 +1,19 @@
+---
+# Delegation record for OMN-21504 (T-Q1): the engine runs whose output is in the pull request head.
+# The join of each thread to its receipt and to the head's files is dod-omn21504-delegation-join.
+ticket: OMN-21504
+delegations:
+  - step: core-impl
+    engine: codex
+    thread_id: 01a1851e-3a90-7db2-8525-f3ce6a78ecd2
+    receipt: delegation-receipts/t-q1-0035/2026-10-29T005039Z-codex-core-impl.json
+    files:
+      - src/omnibase_core/enums/enum_receipt_gate_exemption.py
+      - src/omnibase_core/models/validation/model_dod_verify_overlay.py
+      - src/omnibase_core/models/validation/model_parent_ticket_citation_facts.py
+      - src/omnibase_core/handlers/handler_parent_ticket_citation.py
+      - src/omnibase_core/handlers/handler_parent_ticket_citation_validator.py
+      - src/omnibase_core/validation/contracts/parent_ticket_citation.validation.yaml
+      - .github/workflows/receipt-gate.yml
+      - .github/workflows/call-repo-evidence-gate.yml
+      - .github/required-checks.yaml

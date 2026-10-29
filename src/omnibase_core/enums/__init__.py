@@ -377,6 +377,7 @@ from .enum_proof_type import EnumProofType
 from .enum_query_parameter_transformation_type import (
     EnumQueryParameterTransformationType,
 )
+from .enum_receipt_gate_exemption import EnumReceiptGateExemption
 
 # Retrieval source type enum (OMN-5231 — context integrity)
 from .enum_redaction_state import EnumRedactionState
@@ -701,6 +702,7 @@ __all__ = [
     "EnumProtocolVersion",
     "EnumRuntimeLanguage",
     "EnumRuntimeSelectionMode",
+    "EnumReceiptGateExemption",
     "EnumMetadataToolComplexity",
     "EnumMetadataToolStatus",
     "EnumMetadataToolType",

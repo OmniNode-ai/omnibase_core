@@ -2242,6 +2242,14 @@ repos:
         always_run: true
         stages: [pre-commit]
 
+      - id: validate-parent-ticket-citation
+        name: Validate parent ticket citations (OMN-21504 / T-Q1)
+        entry: uv run python -m omnibase_core.handlers.handler_parent_ticket_citation_validator .github/
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]
+
       # OMN-19760: no branching on a runtime lane NAME in shipped code. Branch
       # on the lane's role from its runtime.lane overlay document instead.
       # Ratchet baseline: burn-down only (LO10 deletes the two grandfathered
