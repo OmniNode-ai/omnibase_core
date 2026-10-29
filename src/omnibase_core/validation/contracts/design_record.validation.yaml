@@ -1,0 +1,97 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21509: port the tables that were module constants of the merged
+# omnimarket design-record check (OMN-21460) into contract data.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: design_record
+  validator_name: Design Record Validator
+  validator_description: >-
+    Require a design record with an intended state, a live check command, and a nonempty failure-mode
+    table with covered rows and valid severities. Ported from the merged omnimarket check (OMN-21460)
+    for OMN-21509. #magic___^_^___line
+  target_patterns:
+    - "**/*design_record*.md"
+    - "**/*design-record*.md"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: record_missing
+      description: Reject text with no intended state, live check fields, or failure-mode table.
+      severity: error
+      enabled: true
+      parameters:
+        message: "no design record found: no intended state, live check or failure-mode table"
+        part: "design record"
+        intended_state_label: "intended state"
+        live_check_command_label: "live check command"
+        live_check_failing_label: "live check failing reading"
+    - rule_id: intended_state_missing
+      description: Require a nonempty intended state sentence in an existing record.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the record has no 'Intended state:' sentence"
+        part: "intended state"
+    - rule_id: live_check_command_missing
+      description: Require a nonempty live check command in an existing record.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the record has no 'Live check command:' line"
+        part: "live check command"
+    - rule_id: failure_mode_table_missing
+      description: Require a table whose header includes mode, severity, and detector columns.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the record has no failure-mode table (a table with mode, severity and detector columns)"
+        part: "failure-mode table"
+        mode_column: "mode"
+        severity_column: "severity"
+        detector_column: "detector"
+    - rule_id: failure_mode_table_empty
+      description: Require at least one body row in the failure-mode table.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the failure-mode table has no rows"
+        part: "failure-mode table"
+    - rule_id: row_without_detector_or_gap
+      description: Require each failure-mode row to name a detector or explicitly mark a coverage gap.
+      severity: error
+      enabled: true
+      parameters:
+        message: "row {number} has no detector and no GAP mark"
+        part: "failure-mode table"
+        empty_detector_values: ["", "-", "--", "none", "n/a", "tbd", "todo"]
+        gap_pattern: '\bGAP\b'
+    - rule_id: severity_out_of_range
+      description: Require each failure-mode severity to be an integer in the configured levels.
+      severity: error
+      enabled: true
+      parameters:
+        message: "row {number} severity {severity!r} is not one of {levels}"
+        part: "failure-mode table"
+        severity_levels: ["1", "2", "3"]
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

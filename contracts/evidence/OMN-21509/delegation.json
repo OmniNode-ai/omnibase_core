@@ -1,0 +1,12 @@
+{
+  "receipt": {
+    "schema": "harness-delegate.receipt.v1",
+    "run_id": "933acba5-dec5-42b3-a0f9-5c72de02bb36",
+    "ticket": "OMN-21509",
+    "outcome": "done",
+    "exit_code": 0,
+    "rubric_verdict": {
+      "outcome": "PASS"
+    }
+  }
+}
