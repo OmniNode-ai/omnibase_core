@@ -46,8 +46,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py::TestHashEquivalence
-          -q -n 0
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestHashEquivalence
     binds_ac:
       - AC1
   - id: dod-omn21506-ac2-engine-carriage
@@ -56,8 +55,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py::TestEngineCarriesHashes
-          -q -n 0
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestEngineCarriesHashes
     binds_ac:
       - AC2
   - id: dod-omn21506-ac3-configuration
@@ -67,8 +65,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py::TestNoDeploymentValue
-          -q -n 0
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestNoDeploymentValue
     binds_ac:
       - AC3
   - id: dod-omn21506-ac4-bindings
@@ -78,8 +75,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py::TestInProcessParity
-          -q -n 0
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestInProcessParity
     binds_ac:
       - AC4
   - id: dod-omn21506-delegation-join
