@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Check supplied contracts and Python text against the caller's binding rules.
+"""Pure checker: supplied contracts and Python text against the caller's binding rules.
 
 The table, concrete bindings, forbidden imports and private names are request data.
 Pure: parses text without reading files, environment, time or network state.
@@ -506,16 +506,3 @@ def check_binding_conformance(
         checked_nodes=request.checked_nodes,
         issues=tuple(issues),
     )
-
-
-class HandlerBindingConformance:
-    """COMPUTE handler: the rule tables the contract supplied, applied to one request."""
-
-    def __init__(self, rules: ModelBindingRuleTables) -> None:
-        self._rules = rules
-
-    def handle(
-        self, request: ModelBindingConformanceRequest
-    ) -> ModelBindingConformanceResult:
-        """Definition-B canonical entry-point: typed request in, typed result out."""
-        return check_binding_conformance(request, self._rules)

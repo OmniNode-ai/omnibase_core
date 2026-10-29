@@ -214,3 +214,23 @@ def typescript_noncanonical_file_reason() -> str:
         "{components,pages,models,api,generated,contracts,handlers,store,theme}/** "
         "(OMN-21332)."
     )
+
+
+TEST_DIRS: frozenset[str] = frozenset(("tests", "test"))
+
+
+def is_canonical_location(
+    path: str, workspace_roots: frozenset[str] = frozenset()
+) -> bool:
+    if is_shell_script(path, None):
+        return False
+    if _suffix(path) in TYPESCRIPT_EXTENSIONS:
+        return is_typescript_canonical_location(path, workspace_roots)
+    parts = PurePosixPath(path).parts
+    if not parts:
+        return False
+    if parts[0] == "docs" or parts[-1] == "conftest.py":
+        return True
+    if any(part in TEST_DIRS for part in parts[:-1]):
+        return True
+    return is_python_src_location(parts)

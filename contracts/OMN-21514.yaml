@@ -76,7 +76,8 @@ dod_evidence:
     checks:
       - check_type: "test_passes"
         check_value: "uv run pytest tests/unit/validation/binding_conformance/test_binding_conformance_contract.py
-          -q -o addopts=''"
+          tests/unit/validation/binding_conformance/test_validator_binding_conformance_fixtures.py -q
+          -o addopts=''"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac:
       - AC3
@@ -97,7 +98,8 @@ dod_evidence:
   - id: "dod-omn21514-delegation-join"
     description: "The delegation runs whose output is in the PR head: the Codex port (thread 01a18526-3c05-7c32-b1a3-4ffd97c45c53,
       receipt delegation-receipt/2 of lane t-b1b-0035) wrote the checker, the models, the validator entry,
-      the validator contract and the hook entry, and the two GLM runs 646c143f-ad74-4b1c-a8de-efcfbacfcd65
+      the validator contract and the hook entry (this continuation moved the checker and the entry from
+      handlers/ to validation/, the generic format), and the two GLM runs 646c143f-ad74-4b1c-a8de-efcfbacfcd65
       and 05de3f23-b166-4f46-961e-f7a4158b7dce wrote the commit messages. The check reads each run's receipt
       on the launching host (DS-6); the delegation_events row of each run (DS-7) is read from the projection
       by the orchestrator's delegation receipt check, and the run ids are named in the PR body and the

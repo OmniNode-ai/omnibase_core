@@ -5,7 +5,7 @@
 
 The merged omnimarket check (OMN-21473) moved into the generic validator format: the rule
 tables are the contract ``binding_conformance.validation.yaml`` and the predicate is
-``handler_binding_conformance``. These are the merged task's fixtures, run against the checker.
+``checker_binding_conformance``. These are the merged task's fixtures, run against the checker.
 Fixtures use invented names only.
 """
 
@@ -27,13 +27,6 @@ from pydantic import ValidationError
 from omnibase_core.enums.enum_binding_rule import EnumBindingRule
 from omnibase_core.enums.enum_binding_source_kind import EnumBindingSourceKind
 from omnibase_core.enums.enum_private_name_kind import EnumPrivateNameKind
-from omnibase_core.handlers.handler_binding_conformance import (
-    binding_rules_from_contract,
-    check_binding_conformance,
-)
-from omnibase_core.handlers.handler_binding_conformance_cli import (
-    ValidatorBindingConformance,
-)
 from omnibase_core.models.binding_conformance.model_binding_conformance_request import (
     ModelBindingConformanceRequest,
 )
@@ -54,6 +47,13 @@ from omnibase_core.models.binding_conformance.model_concrete_binding import (
 )
 from omnibase_core.models.binding_conformance.model_private_name import (
     ModelPrivateName,
+)
+from omnibase_core.validation.checker_binding_conformance import (
+    binding_rules_from_contract,
+    check_binding_conformance,
+)
+from omnibase_core.validation.validator_binding_conformance import (
+    ValidatorBindingConformance,
 )
 
 pytestmark = pytest.mark.unit

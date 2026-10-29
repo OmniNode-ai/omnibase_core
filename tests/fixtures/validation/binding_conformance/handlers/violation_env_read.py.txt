@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+"""Fixture: reads the process environment."""
+
+import os
+
+VALUE = os.environ["FIXTURE_NAME"]

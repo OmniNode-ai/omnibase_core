@@ -20,14 +20,6 @@ import pytest
 from omnibase_core.enums.enum_binding_rule import EnumBindingRule
 from omnibase_core.enums.enum_binding_source_kind import EnumBindingSourceKind
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers import handler_binding_conformance
-from omnibase_core.handlers.handler_binding_conformance import (
-    binding_rules_from_contract,
-    check_binding_conformance,
-)
-from omnibase_core.handlers.handler_binding_conformance_cli import (
-    ValidatorBindingConformance,
-)
 from omnibase_core.models.binding_conformance.model_binding_conformance_request import (
     ModelBindingConformanceRequest,
 )
@@ -45,6 +37,14 @@ from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
 )
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
+)
+from omnibase_core.validation import checker_binding_conformance
+from omnibase_core.validation.checker_binding_conformance import (
+    binding_rules_from_contract,
+    check_binding_conformance,
+)
+from omnibase_core.validation.validator_binding_conformance import (
+    ValidatorBindingConformance,
 )
 
 pytestmark = pytest.mark.unit
@@ -220,7 +220,7 @@ def test_an_enabled_rule_without_its_table_is_refused_rather_than_passing_empty(
 
 
 def test_the_checker_module_holds_no_rule_table() -> None:
-    source = inspect.getsource(handler_binding_conformance)
+    source = inspect.getsource(checker_binding_conformance)
     tree = ast.parse(source)
     strings = {
         node.value
@@ -280,7 +280,7 @@ def test_file_mode_flags_a_handler_file_through_the_validator_entry(
 
 
 def test_the_checker_imports_nothing_that_reads_state_outside_its_arguments() -> None:
-    tree = ast.parse(inspect.getsource(handler_binding_conformance))
+    tree = ast.parse(inspect.getsource(checker_binding_conformance))
     imported = {
         alias.name.split(".")[0]
         for node in ast.walk(tree)

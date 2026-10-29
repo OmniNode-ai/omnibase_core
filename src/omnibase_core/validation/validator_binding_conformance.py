@@ -1,7 +1,12 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Contract-driven entry for binding conformance and handler literal checks."""
+"""ValidatorBindingConformance: ValidatorBase entry over the pure binding conformance checker (OMN-21514).
+
+The rule tables are ``validation/contracts/binding_conformance.validation.yaml``; the predicate is
+``omnibase_core.validation.checker_binding_conformance``. Pre-commit and CI run this module with the
+handler files to check; ``check`` takes a full request (contracts, tables, private names).
+"""
 
 from __future__ import annotations
 
@@ -9,11 +14,6 @@ import sys
 from pathlib import Path
 
 from omnibase_core.enums.enum_binding_source_kind import EnumBindingSourceKind
-from omnibase_core.handlers.handler_binding_conformance import (
-    HandlerBindingConformance,
-    binding_rules_from_contract,
-    check_source_text,
-)
 from omnibase_core.models.binding_conformance.model_binding_conformance_request import (
     ModelBindingConformanceRequest,
 )
@@ -27,6 +27,11 @@ from omnibase_core.models.common.model_validation_issue import ModelValidationIs
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
+from omnibase_core.validation.checker_binding_conformance import (
+    binding_rules_from_contract,
+    check_binding_conformance,
+    check_source_text,
+)
 from omnibase_core.validation.validator_base import ValidatorBase
 
 
@@ -35,22 +40,13 @@ class ValidatorBindingConformance(ValidatorBase):
 
     validator_id = "binding_conformance"
 
-    def _get_contract_path(self) -> Path:
-        """The contract lives with the other validation contracts, not beside this module."""
-        return (
-            Path(__file__).resolve().parents[1]
-            / "validation"
-            / "contracts"
-            / f"{self.validator_id}.validation.yaml"
-        )
-
     def check(
         self, request: ModelBindingConformanceRequest
     ) -> ModelBindingConformanceResult:
         """Check supplied text against this validator's contract."""
-        return HandlerBindingConformance(
-            binding_rules_from_contract(self.contract)
-        ).handle(request)
+        return check_binding_conformance(
+            request, binding_rules_from_contract(self.contract)
+        )
 
     def _validate_file(
         self, path: Path, contract: ModelValidatorSubcontract

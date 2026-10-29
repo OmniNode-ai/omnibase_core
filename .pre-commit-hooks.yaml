@@ -1383,3 +1383,16 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-binding-conformance
+  name: Binding conformance, handler literals (OMN-21514)
+  description: >
+    Reject process environment access, URL scheme literals and absolute path literals in Python handlers.
+    Contract-driven: environment names and both patterns are parameters of validation/contracts/ binding_conformance.validation.yaml;
+    the predicate is validation/checker_binding_conformance.py.
+  language: python
+  entry: python -m omnibase_core.validation.validator_binding_conformance
+  files: ^.*(/handlers/[^/]+|/handler_[^/]+)\.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

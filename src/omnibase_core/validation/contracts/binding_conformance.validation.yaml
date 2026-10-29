@@ -11,7 +11,7 @@ validation:
   validator_name: Binding Conformance Validator
   validator_description: >-
     Checks supplied contracts and Python sources against protocol tables, concrete bindings, private names
-    and handler literal rules (OMN-21514). #magic___^_^___line
+    and handler literal rules (OMN-21514).
   target_patterns:
     - "**/handlers/*.py"
     - "**/handler_*.py"
