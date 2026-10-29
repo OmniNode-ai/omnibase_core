@@ -177,7 +177,7 @@ dod_evidence:
           source_url="https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py"
           handler_source=$(curl --fail --silent --show-error --location --max-time 15 "$source_url")
           printf "%s\n" "$handler_source" |
-            grep -F "return f\"https://{_GIT_HOST}/{layer_map.github_org}/{repo}\"" > /dev/null
+            grep -E "return f\"https://[{]_GIT_HOST[}]/[{]layer_map[.]github_org[}]/[{]repo[}]\"" > /dev/null
           printf "%s\n" "$handler_source" |
             grep -F "source_url = _source_url()" > /dev/null
           printf "%s\n" "$handler_source" |
