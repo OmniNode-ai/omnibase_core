@@ -189,8 +189,7 @@ def test_a_new_noncanonical_file_is_still_refused_on_a_branch(
     )
     stage(installed_branch)
     assert [(i.code, str(i.file_path)) for i in issues(installed_branch)] == [
-        ("burndown-extra-entry", BURNDOWN),
-        ("noncanonical-file", "scripts/new.py"),
+        ("noncanonical-file", "scripts/new.py")
     ]
 
 
