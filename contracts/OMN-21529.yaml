@@ -106,3 +106,22 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5
+  - id: dod-omn21529-deploy-report-publisher
+    description: Hosted deploy source readback at the checkout commit requires the published writer to
+      resolve the container bus, publish the run and triggered events, and close the bus. The checkout
+      tests verify event counts, the offline copy, the default report path and overlay bindings. This
+      probe needs no private broker and does not claim live Redpanda delivery.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2, AC4]
+    checks:
+      - check_type: command
+        check_value: |
+          curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_validation_report_write_effect/handler_validation_report_publish.py" |
+            uv run python -c 'import sys; source = sys.stdin.read(); assert "bus = self._container.get_service(ModelValidatorRuntimeBus)" in source; assert "await bus.publish(" in source; assert "HandlerValidatorTriggeredEmit(bus.publish).handle(" in source; assert "await bus.close()" in source'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_validation_report_write_effect/test_report_write_publish.py
+          tests/unit/nodes/node_validation_report_write_effect/test_validator_runtime_overlays.py -q --no-cov
+          -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
