@@ -278,24 +278,20 @@ repos:
         files: ^((src|tests)/.*\.py|scripts/ci/check_async_fixture_decorators\.py)$
         stages: [pre-commit]
 
-      # Canonical handler-shape GROWTH RATCHET (OMN-14355)
-      # compliance_sweep checks handler hygiene but is blind to handler SHAPE. This
-      # classifies each node's contract-declared handler (definition B: typed-payload
-      # handle(request)->response adapted by the shared runtime, no envelope in the
-      # core), WARNs the baselined debt, and HARD-FAILS a NEW non-canonical node or
-      # baseline growth. A baselined node flips canonical only with a 3-part proof
-      # (shape + re-derived adequacy receipt + green equivalence replay, OMN-14353).
-      # DIFF-SCOPED: pass_filenames feeds staged files -> only touched nodes are
-      # classified (O(changed)); a change to the classifier / baseline / a
-      # resolution module (runtime adapter, envelope mixin) escalates to a full
-      # scan (fail-closed). Canary scope = omnibase_core.
+      # Canonical handler-shape check (OMN-14355, replaced by the K3 checker in OMN-21536).
+      # Judges EVERY handler class in a nodes/ package, bound by a contract or not:
+      # a handle the shared runtime cannot adapt, a handler module of bare functions, the
+      # event envelope type in a handler core, and a public method that mutates handler
+      # state. The rule rows live in handler_shape.validation.yaml. The hook id is kept.
       - id: canonical-handler-shape-ratchet
-        name: canonical handler-shape growth ratchet (definition B)
-        entry: uv run python scripts/ci/canonical_handler_shape.py
+        name: canonical handler-shape check (definition B)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_handler_shape:ValidatorHandlerShape
         language: system
+        types: [python]
         pass_filenames: true
         require_serial: true
-        files: ^(src/omnibase_core/(.*/)?nodes/.*/contract\.yaml|src/omnibase_core/(.*/)?nodes/.*\.py|src/omnibase_core/runtime/runtime_local(_adapter)?\.py|src/omnibase_core/mixins/mixin_envelope_extraction\.py|scripts/ci/canonical_handler_shape\.py|scripts/ci/test_selection_adjacency\.yaml|scripts/ci/adequacy_receipts/.*)$
+        files: ^src/omnibase_core/(.*/)?nodes/.*(contract\.yaml|\.py)$
         stages: [pre-commit]
 
       # RSD provenance-stamp fail-closed GATE (OMN-15011). The OMN-14355 ratchet

@@ -1,0 +1,131 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21536
+title: "handler_shape checker replaces the canonical_handler_shape repository script and judges every
+  handler class, bound or not"
+summary: The K3 checker judges every handler class, bound by a contract or not, for noncanonical_handle,
+  module_function_handler, envelope_in_core and mutating_public_method. Pure checker, validator that reads,
+  rule rows in handler_shape.validation.yaml, hook id canonical-handler-shape-ratchet kept.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21536-handler-shape
+    statement: Every handler class is judged by the handler_shape rule rows through the generic validator
+      format.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a handler class that no contract binds is classified (today it is skipped), and
+          the four rules have a violation and a clean fixture (`def handle(self, probes, pins, local_backends)`;
+          a `handler_*.py` with module functions only) -- falsifier: `uv run pytest tests/unit/validation/test_checker_handler_shape.py
+          -q`"
+      - id: AC2
+        statement: "AC2: `git ls-files scripts/ci/canonical_handler_shape.py` prints nothing and `git
+          grep -n canonical_handler_shape` finds only the hook id and the new checker's references --
+          falsifier: both commands"
+      - id: AC3
+        statement: "AC3: KC-config: every pattern, name list, threshold and remediation text is a `parameters`
+          entry of the checker's `.validation.yaml` -- falsifier: K10 `rule_table_in_checker` reports
+          zero on the checker module, and a table-driven test mutates every `parameters` key of every
+          rule row in turn, asserting the verdict change on the fixture that key controls and asserting
+          separately that an invalid contract fails to load rather than passing"
+      - id: AC4
+        statement: "AC4: KC-a (Declared and injected): the checker is pure (facts in, issues out); its
+          runtime resolves `node_validation_report_write_effect` and the bus from the container (`models/container/model_onex_container.py`
+          `get_service`) -- falsifier: a container spy in the runtime test records the resolution of the
+          writer and the bus; the checker test calls the checker with facts only while `open` and `Path`
+          reads are patched to raise; and K1 `call_site_construction` reports zero on the runtime module"
+      - id: AC5
+        statement: "AC5: KC-b (No literal): the changed source holds no host, port, topic, model name,
+          timeout or URL -- falsifier: hardcoded_topic, hardcoded_model_config with K6, url_authority
+          and contract_config_compliance report zero on the changed production source and workflow files
+          in the checker's declared scope; the `.validation.yaml` rule data and the planted fixtures are
+          excluded by `exclude_patterns`"
+      - id: AC6
+        statement: "AC6: KC-replay: every T0.8 assertion naming K3 rules is reported with its `rule_id`
+          -- falsifier: disabling a rule's row in the `.validation.yaml` fails that rule's fixture, and
+          fails exactly the corpus assertions that name it"
+      - id: AC7
+        statement: "AC7: KC-c (Two overlays, one commit): the runtime runs on the in-memory default and
+          with the CI bus overlay with no code change, once OMN-21529 lands the overlay pair -- falsifier:
+          on one commit, the ticket's own fixture set run twice, once on the in-memory default and once
+          with the broker overlay; both reports equal the committed golden report after normalising run
+          id and timestamps, and each run puts exactly one `ModelValidatorRunEvent` carrying the report's
+          run id, observed by an in-memory listener in the first run and by a run-event topic consumer
+          filtered by that run id on a lab host in the second; the overlay file is the only difference"
+evidence_requirements:
+  - kind: tests
+    description: Handler-shape checker and runtime tests.
+    command: uv run pytest tests/unit/validation/test_checker_handler_shape.py tests/unit/validation/test_runtime_handler_shape.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21536-ac1
+    description: "Falsifier of AC1 as the ticket states it."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_handler_shape.py -n 0 -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21536-ac2
+    description: "Falsifier of AC2 as the ticket states it."
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "test -z \"$(git ls-files scripts/ci/canonical_handler_shape.py)\""
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21536-ac3
+    description: "Falsifier of AC3 as the ticket states it."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_handler_shape.py -n 0 -q -k \"parameter_key
+          or missing_a_key or does_not_compile\""
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21536-ac4
+    description: "Falsifier of AC4 as the ticket states it."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_runtime_handler_shape.py tests/unit/validation/test_checker_handler_shape.py
+          -n 0 -q -k \"container or pure\""
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21536-ac5
+    description: "Falsifier of AC5 as the ticket states it."
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/validation/checker_handler_shape.py
+          src/omnibase_core/validation/validator_handler_shape.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21536-ac6
+    description: "Falsifier of AC6 as the ticket states it."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_handler_shape.py -n 0 -q -k disabling_a_rule_row"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21536-ac7
+    description: "Falsifier of AC7 as the ticket states it."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_runtime_handler_shape.py -n 0 -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7

@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: handler_shape
+  validator_name: Handler Shape Validator
+  validator_description: Judges every handler class, bound by a contract or not, for a handle the shared
+    runtime cannot adapt, a handler module of bare functions, an envelope type in the core and a public
+    method that mutates handler state. Every pattern, name list, threshold and remediation text is a rule
+    row of this file (OMN-21536, plan task T2.4a, checker K3).
+  target_patterns:
+    - '**/handler*.py'
+    - '**/handlers/**/*.py'
+    - '**/nodes/**/handler*.py'
+  exclude_patterns:
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+    - 'tests/**'
+  rules:
+    - rule_id: noncanonical_handle
+      description: A handler class's handle must take no parameter, keyword arguments, or one typed request.
+      severity: error
+      enabled: true
+      parameters:
+        kind: handle_signature
+        handle_method_name: handle
+        magic_param_names: [request, payload, event, input_model, command, input, cmd, msg]
+        non_model_annotations: [dict, object, Any, "None"]
+        non_model_substrings: [dict, list]
+        model_annotation_markers: [Model]
+        model_annotation_suffixes: [Command, Request, Event, Input]
+        remediation: 'Give handle one typed request parameter, handle(self, request: ModelX) -> ModelY,
+          and move the extra values into the request model.'
+    - rule_id: module_function_handler
+      description: A handler module holds a handler class, not bare module functions.
+      severity: error
+      enabled: true
+      parameters:
+        kind: functions_only_module
+        handler_file_pattern: (^|/)handler_[^/]*\.py$
+        private_function_prefix: _
+        min_public_functions: 1
+        remediation: 'Move the module functions into a handler class with handle(self, request: ModelX)
+          -> ModelY.'
+    - rule_id: envelope_in_core
+      description: A handler core never references the event envelope type; the shared runtime adapts
+        it.
+      severity: error
+      enabled: true
+      parameters:
+        kind: forbidden_reference
+        handle_method_name: handle
+        handler_class_prefixes: [Handler]
+        handler_file_pattern: (^|/)handler_[^/]*\.py$
+        forbidden_names: [ModelEventEnvelope]
+        remediation: 'Take the typed payload model; the envelope boundary is the shared runtime adapter,
+          not the handler.'
+    - rule_id: mutating_public_method
+      description: A public method other than handle must not mutate handler state.
+      severity: error
+      enabled: true
+      parameters:
+        kind: self_mutation
+        handle_method_name: handle
+        handler_class_prefixes: [Handler]
+        private_method_prefix: _
+        exempt_method_names: [initialize, shutdown, close]
+        mutating_call_names: [append, extend, add, update, pop, clear, setdefault, remove, discard, insert]
+        remediation: 'Keep the handler stateless: return the new value from handle, or hold the state
+          in an injected collaborator.'
