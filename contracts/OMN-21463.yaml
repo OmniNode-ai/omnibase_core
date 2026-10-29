@@ -1,0 +1,119 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21463
+title: "T4.1a: hardcoded_model_config families T (tier aliases) and N (engine names)"
+summary: The existing hardcoded_model_config gate gains family T (a model tier alias under a policy-shaped
+  key, in a Literal, or in a tuple, list or set of ladder names) and family N (an engine name of the engine
+  ladder as a value of a policy-shaped key, an enum member, a Literal member or an alias-dict key). The
+  vocabularies and key names are policy.yaml data and the private vocabulary's optional lists; the checker
+  spells none. The current tree gains no baseline entry.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21463-families-t-n
+    statement: The hardcoded_model_config gate refuses a hard-coded model tier alias (T) and a hard-coded
+      engine name (N), on the same baseline and the same private vocabulary, with no suppression marker.
+    acceptance:
+      - id: AC1
+        statement: "AC1: LiteralFamily gains T and N; the tier aliases, policy-shaped keys and engine
+          names are policy.yaml data that the private vocabulary may extend, and emptying any one of the
+          three lists flips exactly the fixtures it decides -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config
+          -q -k 'tn_vocabulary or private_vocabulary_adds_tier'"
+      - id: AC2
+        statement: "AC2: the planted violations are each refused with exactly one finding of their family
+          (ceiling: opus in a contract, a closed enum of engine names in a model module, an engine name
+          as an alias-dict key, a Literal, a tuple and a set of tiers) and the same text in a comment,
+          a docstring or a tests path passes -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config
+          -q -k 'corpus_fixture or tn_comment or tn_families_apply'"
+      - id: AC3
+        statement: "AC3: the whole omnibase_core tree passes the committed baseline with families T and
+          N on, and the baseline gains no entry -- falsifier: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          --all --baseline config/hardcoded_model_config_baseline.yaml, plus uv run pytest tests/unit/validation/hardcoded_model_config
+          -q -k committed_baseline_holds_no_tier_or_engine_entry"
+      - id: AC4
+        statement: "AC4: the one engine-name finding the tree held, the closed Literal of adapter sources
+          in ModelDelegationProvenance, is fixed by taking the source as a nonblank identifier -- falsifier:
+          uv run pytest tests/unit/models/delegation/wire -q"
+evidence_requirements:
+  - kind: tests
+    description: Corpus, vocabulary mutation, private vocabulary and delegation wire tests.
+    command: uv run pytest tests/unit/validation/hardcoded_model_config tests/unit/models/delegation/wire
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21463-ac1-vocabularies
+    description: Every vocabulary key of families T and N decides the fixtures it names, and the private
+      vocabulary extends them.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          tests/unit/validation/hardcoded_model_config/test_lab_denylist_vocabulary.py -q -p no:randomly
+          -k "tn_vocabulary or private_vocabulary_adds_tier or every_tn_violation"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21463-ac2-planted-violations
+    description: Each planted violation yields exactly one finding of its family and its comment form
+      passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -p no:randomly -k "corpus_fixture or tn_comment or tn_families_apply"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21463-ac3-no-baseline-growth
+    description: The whole-tree gate passes against the committed baseline, the baseline holds no T or
+      N entry, and the scanner detects the golden T/N findings without baselining them.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -p no:randomly -k "committed_baseline_holds_no_tier_or_engine_entry or tn_findings_equal_the_committed_golden_report"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21463-ac4-provenance-source
+    description: The delegation provenance model takes its source as a nonblank unpadded identifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_omn21463_provenance_source.py
+          -q -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21463-configuration
+    description: Tier aliases, policy-shaped keys and engine names are policy.yaml data, not checker code.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q -p no:randomly -k tn_vocabularies_are_policy_data
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21463-bindings
+    description: The checker is a pure handler (text and policy in, findings out); the runtime reads the
+      policy and the private vocabulary through the existing effect boundary.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q -p no:randomly -k handler_is_a_typed_pure_compute
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21463-deploy-source
+    description: Read the published pure scanner handler at the checkout commit through the GitHub contents
+      API and require both tier and engine classification. This hosted-runner probe needs no container
+      daemon or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_hardcoded_model_tier_engine.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | uv run python -c 'import sys; source = sys.stdin.read(); assert "def scan_tier_engine(" in source; assert "if value in tiers:" in source; assert "elif value in engines and value is not None:" in source'
+        cwd: ${OMNI_HOME}/omnibase_core

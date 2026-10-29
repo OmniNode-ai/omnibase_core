@@ -1,0 +1,2 @@
+MODEL_CLI_BINARIES = frozenset({"codex", "claude", "gemini"})
+HANDLE_FRAGMENTS = {"codex", "sonnet", "agent", "bot"}

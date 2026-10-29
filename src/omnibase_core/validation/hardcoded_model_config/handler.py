@@ -24,6 +24,8 @@ Families (the policy decides which apply to a path):
 * ``R``: an exact retired lab value. Matched in comments too.
 * ``L``: a ``.example.`` file handed to a loader (``open``, ``read_text``,
   ``safe_load``, ``json.load``) in Python source.
+* ``T`` and ``N``: a model tier alias and an engine name of the engine ladder
+  (OMN-21463); judged by ``handlers.handler_hardcoded_model_tier_engine``.
 
 No inline suppression marker is honoured; the policy file is the whole
 allowlist. Several matches of one family on one line are one finding, because
@@ -39,8 +41,9 @@ import tokenize
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from functools import lru_cache
-from typing import Final
+from typing import Final, get_args
 
+from omnibase_core.handlers.handler_hardcoded_model_tier_engine import scan_tier_engine
 from omnibase_core.validation.hardcoded_model_config.models import (
     LiteralFamily,
     ModelHardcodedModelConfigBaselineEntry,
@@ -62,12 +65,7 @@ __all__ = [
 ]
 
 _FAMILY_ORDER: Final[dict[str, int]] = {
-    "M": 0,
-    "E": 1,
-    "E-LAN": 2,
-    "D": 3,
-    "R": 4,
-    "L": 5,
+    f: i for i, f in enumerate(get_args(LiteralFamily))
 }
 
 _PYTHON_SUFFIXES: Final[frozenset[str]] = frozenset({".py", ".pyi"})
@@ -326,7 +324,7 @@ def scan(
                     record(n, "R", value)
                     break
 
-    if families & {"M", "E", "E-LAN", "D", "L"}:
+    if families & {"M", "E", "E-LAN", "D", "L", "T", "N"}:
         model_id, endpoint_url, endpoint_key, lab_subnet = _compiled(policy)
         fact = _deployment_fact(policy)
         is_python = _suffix(path) in _PYTHON_SUFFIXES
@@ -334,6 +332,8 @@ def scan(
         if views is None:
             views = _generic_views(path, lines)
         code, literals = views
+        for hit in scan_tier_engine(text, code, is_python, policy, families):
+            record(*hit)
         for n in range(1, len(lines) + 1):
             line_code = code.get(n, "")
             line_literals = literals.get(n, [])

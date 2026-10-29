@@ -1,0 +1,6 @@
+"""Prose: ceiling = "opus"; the lane engine is "codex" or "glm"."""
+
+
+def f() -> str:
+    """Returns ("sonnet", "opus") when asked."""
+    return "wide"
