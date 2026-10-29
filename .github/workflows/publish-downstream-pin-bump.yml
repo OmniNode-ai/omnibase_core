@@ -111,24 +111,27 @@ jobs:
         env:
           SHA: ${{ steps.sha.outputs.sha }}
           OVERRIDE_TAG: ${{ inputs.override_tag }}
+          SOURCE_URL: ${{ github.server_url }}/${{ github.repository }}.git
+          TAG_WAIT_ATTEMPTS: ${{ vars.TAG_WAIT_ATTEMPTS || '12' }}
+          TAG_WAIT_SECONDS: ${{ vars.TAG_WAIT_SECONDS || '20' }}
         run: |
           if [ -n "$OVERRIDE_TAG" ]; then
             echo "tag=$OVERRIDE_TAG" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           # dev-merge-tag.yml runs in parallel; wait for its lightweight tag.
-          for ((attempt=1; attempt<=12; attempt++)); do
-            TAG=$(git ls-remote --tags https://github.com/OmniNode-ai/omnibase_core.git "refs/tags/dev-*-${SHA:0:12}" \
+          for ((attempt=1; attempt<=TAG_WAIT_ATTEMPTS; attempt++)); do
+            TAG=$(git ls-remote --tags "$SOURCE_URL" "refs/tags/dev-*-${SHA:0:12}" \
               | awk '{sub("refs/tags/", "", $2); print $2}' | sort | tail -n 1)
             if [ -n "$TAG" ]; then
               echo "tag=$TAG" >> "$GITHUB_OUTPUT"
               exit 0
             fi
-            if [ "$attempt" -lt 12 ]; then
-              sleep 20
+            if [ "$attempt" -lt "$TAG_WAIT_ATTEMPTS" ]; then
+              sleep "$TAG_WAIT_SECONDS"
             fi
           done
-          echo "::error::No dev merge tag found for ${SHA} after 12 attempts (20s apart)"
+          echo "::error::No dev merge tag found for ${SHA} after ${TAG_WAIT_ATTEMPTS} attempts (${TAG_WAIT_SECONDS}s apart)"
           exit 1
 
   bump:
@@ -199,7 +202,7 @@ jobs:
         if: matrix.mode == 'dependency'
         working-directory: omnibase_core
         env:
-          UV_HTTP_TIMEOUT: "600"
+          UV_HTTP_TIMEOUT: ${{ vars.UV_HTTP_TIMEOUT || '600' }}
         run: |
           git config --global http.version HTTP/1.1
           for attempt in 1 2 3; do
@@ -235,6 +238,8 @@ jobs:
         run: uv lock --upgrade-package omnibase-core
 
       - name: Prepare PR metadata
+        env:
+          SOURCE_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           SHORT="${NEW_SHA:0:12}"
           if [ "$MODE" == "dependency" ]; then
@@ -245,7 +250,7 @@ jobs:
           Automated dependency pin bump emitted by \`omnibase_core/publish-downstream-pin-bump.yml\`.
 
           - New dev tag: \`${DEPENDENCY_TAG}\`
-          - Source: https://github.com/OmniNode-ai/omnibase_core/tree/${DEPENDENCY_TAG}
+          - Source: ${SOURCE_REPO_URL}/tree/${DEPENDENCY_TAG}
           - Lock: refreshed with \`uv lock --upgrade-package omnibase-core\`
           - Tracking: OMN-21478
 
@@ -259,7 +264,7 @@ jobs:
           Automated pin bump emitted by \`omnibase_core/publish-downstream-pin-bump.yml\`.
 
           - New SHA: \`${NEW_SHA}\`
-          - Source: https://github.com/OmniNode-ai/omnibase_core/commit/${NEW_SHA}
+          - Source: ${SOURCE_REPO_URL}/commit/${NEW_SHA}
           - Tracking: OMN-9050
 
           Will auto-merge on green CI. If CI regresses, DO NOT manually bump the pin to

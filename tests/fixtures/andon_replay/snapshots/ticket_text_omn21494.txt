@@ -1,0 +1,29 @@
+## Ticket OMN-21494, read from Linear at 2026-10-29T00:23:17Z
+
+The ticket's own title, state, description and acceptance criteria, read once with the launching host's key so a lane with no Linear tool reads them here. Quoted as they stand; never edit a criterion's own line on the ticket.
+
+ticket-criteria: OMN-21494
+> - [ ] AC1: The hygiene gate and the model-config gate read their private vocabulary through the one core handler, which resolves explicit path, then env, then the workspace config root, and holds no age limit in code -- falsifier: pytest cases for the three resolution steps and a pytest case that reads the age bound from the policy data file
+> - [ ] AC2: An unset vocabulary on a contributor host gives one refusal line naming the setting -- falsifier: a pytest case with OMNI_HYGIENE_VOCAB_PATH unset that asserts exactly one refusal line naming the setting
+> - [ ] AC3: With OMNI_HYGIENE_VOCAB_PATH unset and a vocabulary at the config root, a commit to omnimarket that adds no private name passes (today it refuses, FRICTION 2026-10-12T00:58:16Z) -- falsifier: the omnimarket canary commit run through pre-commit run --files with the variable unset
+
+ticket-text: OMN-21494 read=2026-10-29T00:23:17Z
+> Title: T0.1: private vocabulary resolution handler for every core validator
+> State: Backlog
+>
+> created-by-lane: ticket-mint-0001
+>
+> Gate: OmniNode-ai/knowledge-base-internal plan-index-registry.yml
+>
+> Task T0.1 of the plan beta/plans/2026-10-28-validators-to-core-and-hardcoded-rules.md in the knowledge-base-internal repository (parent [OMN-21433](https://linear.app/omninode/issue/OMN-21433); section C of the plan). Target repository: omnibase_core. Paths: src/omnibase_core/validation/hardcoded_model_config/ (the loader that reads vocabularies/hardcoded_model_config_lab_denylist.yaml) and the hygiene gate's vocabulary read (OMNI_HYGIENE_VOCAB_PATH) in scripts/public_repo_hygiene_gate.py users. What moves: the vocabulary loader becomes one core handler (handlers/handler_private_vocabulary.py) that every validator calls by vocabulary name; it resolves explicit path, then env, then the workspace config root, refuses with the setting's name when absent, and has no age limit hard-coded (the cache age bound becomes a policy value). The full task text is task T0.1 in section C of the plan; the criteria below are copied from it.
+>
+> Work in flight: draft pull request omnibase_core#2110 (handler, model-config gate reading through it, resolve-private-vocabulary script; red and green lab runs recorded). Pending before it leaves draft: the hygiene gate consumer (follows once a dev-merge tag of omnibase_core carries the handler) and the omnimarket canary commit.
+>
+> ## Acceptance criteria
+>
+> - [ ] AC1: The hygiene gate and the model-config gate read their private vocabulary through the one core handler, which resolves explicit path, then env, then the workspace config root, and holds no age limit in code -- falsifier: pytest cases for the three resolution steps and a pytest case that reads the age bound from the policy data file
+> - [ ] AC2: An unset vocabulary on a contributor host gives one refusal line naming the setting -- falsifier: a pytest case with OMNI_HYGIENE_VOCAB_PATH unset that asserts exactly one refusal line naming the setting
+> - [ ] AC3: With OMNI_HYGIENE_VOCAB_PATH unset and a vocabulary at the config root, a commit to omnimarket that adds no private name passes (today it refuses, FRICTION 2026-10-12T00:58:16Z) -- falsifier: the omnimarket canary commit run through pre-commit run --files with the variable unset
+
+
+Ticket states read: ticket-state-ack=OMN-13285:Done

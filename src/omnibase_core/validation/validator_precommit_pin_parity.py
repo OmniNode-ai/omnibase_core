@@ -68,10 +68,21 @@ class ValidatorPrecommitPinParity(ValidatorBase):
                     message=f"target does not exist: {path}",
                     error_code=EnumCoreErrorCode.FILE_NOT_FOUND,
                 )
+        patterns = self.contract.target_patterns
+        for path in targets:
+            if path.is_file() and not any(
+                path.resolve().match(pattern) for pattern in patterns
+            ):
+                # A file named on the command line that no pattern covers would
+                # be dropped and the run would print PASS having checked nothing.
+                raise ModelOnexError(
+                    message=f"target is not covered by target_patterns {patterns}: {path}",
+                    error_code=EnumCoreErrorCode.VALIDATION_ERROR,
+                )
         return [
             path
             for path in super()._resolve_targets(targets)
-            if any(path.match(pattern) for pattern in self.contract.target_patterns)
+            if any(path.match(pattern) for pattern in patterns)
         ]
 
     def _validate_file(
