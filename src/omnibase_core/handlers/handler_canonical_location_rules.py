@@ -1,13 +1,34 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure source location rules for canonical file shape."""
+"""Pure Python, TypeScript/React and shell location rules for canonical file shape."""
 
 from __future__ import annotations
 
 import re
 from collections.abc import Iterable
 from pathlib import PurePosixPath
+
+CANONICAL_SRC_DIRS: frozenset[str] = frozenset(
+    ("nodes", "handlers", "models", "protocols", "contracts", "enums")
+)
+# The generic validator format (OMN-21498): a pure checker and a ValidatorBase entry sit
+# directly in src/<pkg>/validation/, beside the contract that carries their rule data.
+GENERIC_VALIDATOR_PREFIXES: tuple[str, ...] = ("checker_", "validator_")
+
+
+def is_python_canonical_src_location(parts: tuple[str, ...]) -> bool:
+    """True for src/<pkg>/<canonical dir>/... and the generic validator format files."""
+    if len(parts) < 4 or parts[0] != "src":
+        return False
+    if parts[2] in CANONICAL_SRC_DIRS:
+        return True
+    return (
+        len(parts) == 4
+        and parts[2] == "validation"
+        and parts[3].startswith(GENERIC_VALIDATOR_PREFIXES)
+    )
+
 
 # OMN-21332: knowledge_base_internal/
 # beta/plans/2026-10-23-canonical-shape-typescript-react-swift.md, rules T1-T17.

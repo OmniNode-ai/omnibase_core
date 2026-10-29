@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Private vocabulary resolution policy (OMN-21494). Settings, paths and cache
+# age bounds live here so consumers share one resolution policy.
+schema_version: 1
+workspace_config_root:
+  env_var: ONEX_WORKSPACE_CONFIG_ROOT
+  home_env_var: OMNI_HOME
+  home_sibling: omnibase_internal
+vocabularies:
+  - name: public_repo_hygiene
+    env_var: OMNI_HYGIENE_VOCAB_PATH
+    relative_path: docs/workflows/_shared/public_repo_hygiene_vocabulary.yaml
+    required: true
+    resolved_at_key: private_repo_names_resolved_at
+    max_age_days: 30
+  - name: hardcoded_model_config_lab_denylist
+    env_var: null
+    relative_path: vocabularies/hardcoded_model_config_lab_denylist.yaml
+    required: false
+    resolved_at_key: null
+    max_age_days: null
