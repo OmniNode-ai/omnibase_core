@@ -16,16 +16,39 @@ defaults naming concrete models). Both were deleted with no shim or alias.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
+from omnibase_core.handlers.handler_private_vocabulary_resolution import (
+    build_container,
+    capture_environment,
+    resolve_private_vocabulary,
+)
 from omnibase_core.validation.hardcoded_model_config.handler import scan
+from omnibase_core.validation.hardcoded_model_config.models import (
+    ModelHardcodedModelConfigPolicy,
+)
 from omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config import (
-    load_policy,
+    load_policy as _load_policy_from,
 )
 
 pytestmark = pytest.mark.unit
+
+
+def load_policy() -> ModelHardcodedModelConfigPolicy:
+    """The shipped policy plus the private denylist resolved from the process."""
+    container = build_container()
+    return _load_policy_from(
+        resolve_private_vocabulary(
+            container,
+            "hardcoded_model_config_lab_denylist",
+            environment=capture_environment(container),
+            now=datetime.now(UTC),
+        )
+    )
+
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SRC = _REPO_ROOT / "src" / "omnibase_core"

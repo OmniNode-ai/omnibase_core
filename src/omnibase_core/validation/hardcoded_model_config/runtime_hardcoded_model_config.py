@@ -33,6 +33,7 @@ import argparse
 import subprocess
 import sys
 from collections import Counter
+from datetime import UTC, datetime
 from importlib import resources
 from pathlib import Path
 from typing import Final
@@ -40,9 +41,12 @@ from typing import Final
 import yaml
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.bootstrap.model_environment_bootstrap import (
-    ModelEnvironmentBootstrap,
+from omnibase_core.handlers.handler_private_vocabulary_resolution import (
+    build_container,
+    capture_environment,
+    resolve_private_vocabulary,
 )
+from omnibase_core.models.private_vocabulary import ModelPrivateVocabularyResolution
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 from omnibase_core.validation.hardcoded_model_config.handler import (
     HandlerHardcodedModelConfigCompute,
@@ -68,7 +72,6 @@ __all__ = [
 ]
 
 _POLICY_RESOURCE: Final[str] = "policy.yaml"
-_LAB_DENYLIST_REL: Final[str] = "vocabularies/hardcoded_model_config_lab_denylist.yaml"
 _SCANNED_SUFFIXES: Final[frozenset[str]] = frozenset(
     {
         ".py",
@@ -119,46 +122,6 @@ class _InputError(Exception):
     """An input the gate cannot read. The gate fails closed on it."""
 
 
-def _workspace_config_root() -> Path | None:
-    """The operator's private config root, or None when none is supplied.
-
-    ``ONEX_WORKSPACE_CONFIG_ROOT`` wins; otherwise the ``omnibase_internal``
-    sibling of ``OMNI_HOME``. A consumer with neither runs the shape rules alone.
-    """
-    captured = ModelEnvironmentBootstrap.capture_process_environment(
-        declared_keys=("ONEX_WORKSPACE_CONFIG_ROOT", "OMNI_HOME")
-    ).environment
-    configured = (captured.optional("ONEX_WORKSPACE_CONFIG_ROOT") or "").strip()
-    if configured:
-        return Path(configured)
-    omni_home = (captured.optional("OMNI_HOME") or "").strip()
-    if omni_home:
-        return Path(omni_home) / ".." / "omnibase_internal"
-    return None
-
-
-def _lab_denylist() -> ModelHardcodedModelConfigLabDenylist | None:
-    """Dead lab endpoints and lab deployment facts from the private vocabulary,
-    when it is present.
-
-    An absent file is the neutral case (shape rules only). A file that is
-    present and unreadable or malformed stops the gate: a denylist that
-    silently fails to load would pass the values it exists to refuse.
-    """
-    root = _workspace_config_root()
-    if root is None:
-        return None
-    path = root / _LAB_DENYLIST_REL
-    if not path.is_file():
-        return None
-    try:
-        return load_yaml_content_as_model(
-            path.read_text(encoding="utf-8"), ModelHardcodedModelConfigLabDenylist
-        )
-    except (OSError, ModelOnexError) as exc:
-        raise _InputError(f"{path}: lab denylist is invalid: {exc}") from exc
-
-
 def _union[T](first: tuple[T, ...], second: tuple[T, ...]) -> tuple[T, ...]:
     return first + tuple(v for v in second if v not in first)
 
@@ -170,7 +133,9 @@ def unjudged_families(policy: ModelHardcodedModelConfigPolicy) -> frozenset[str]
     return frozenset({"D"})
 
 
-def load_policy() -> ModelHardcodedModelConfigPolicy:
+def load_policy(
+    vocabulary: ModelPrivateVocabularyResolution,
+) -> ModelHardcodedModelConfigPolicy:
     """Read the policy shipped inside this package, plus the private lab denylist."""
     package = __package__ or "omnibase_core.validation.hardcoded_model_config"
     raw = resources.files(package).joinpath(_POLICY_RESOURCE).read_text("utf-8")
@@ -181,17 +146,21 @@ def load_policy() -> ModelHardcodedModelConfigPolicy:
     last = policy.path_classes[-1] if policy.path_classes else None
     if last is None or last.name != "SOURCE" or last.globs != ("**",):
         raise _InputError("policy.yaml must end with a SOURCE class globbing '**'")
-    denylist = _lab_denylist()
-    if denylist is not None:
+    if vocabulary.text is not None:
+        # An absent vocabulary is the neutral case (shape rules only); a present
+        # one that is malformed stops the gate rather than pass what it refuses.
+        try:
+            denylist = load_yaml_content_as_model(
+                vocabulary.text, ModelHardcodedModelConfigLabDenylist
+            )
+        except ModelOnexError as exc:
+            raise _InputError(
+                f"{vocabulary.path}: lab denylist is invalid: {exc}"
+            ) from exc
         policy = policy.model_copy(
             update={
-                "retired_values": _union(
-                    policy.retired_values, denylist.retired_values
-                ),
-                "lab_host_names": _union(
-                    policy.lab_host_names, denylist.lab_host_names
-                ),
-                "lab_ports": _union(policy.lab_ports, denylist.lab_ports),
+                field: _union(getattr(policy, field), getattr(denylist, field))
+                for field in ("retired_values", "lab_host_names", "lab_ports")
             }
         )
     return policy
@@ -354,7 +323,17 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _run(args: argparse.Namespace) -> int:
-    policy = load_policy()
+    try:
+        container = build_container()
+        vocabulary = resolve_private_vocabulary(
+            container,
+            "hardcoded_model_config_lab_denylist",
+            environment=capture_environment(container),
+            now=datetime.now(UTC),
+        )
+    except ModelOnexError as exc:
+        raise _InputError(exc.message) from exc
+    policy = load_policy(vocabulary)
     handler = HandlerHardcodedModelConfigCompute(policy)
 
     candidates = _tracked_files() if args.all else list(args.paths)

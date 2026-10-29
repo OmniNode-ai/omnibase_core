@@ -1,0 +1,139 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21494
+title: "T0.1: private vocabulary resolution handler for every core validator"
+summary: Plan task T0.1 (private vocabulary resolution for every core validator) of the validators-to-core
+  and hardcoded-rules plan. One core handler resolves a private vocabulary by name from an explicit path,
+  then the environment, then the workspace config root, and refuses with the setting's name when a required
+  vocabulary is absent. The model-config gate reads through it. The omniclaude hygiene gate reads through
+  it after a dev-merge tag of omnibase_core carries the handler.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21494-t0-1-private-vocabulary-handler
+    statement: T0.1 - Every core validator reads a private vocabulary by name through one handler that
+      resolves an explicit path, then the environment variable, then the workspace config root, refuses
+      with the setting's name when a required vocabulary is absent, and carries no age limit in code.
+    acceptance:
+      - id: AC1
+        statement: "AC1: T0.1 - The model-config gate reads its lab denylist through the handler by name
+          and keeps no loader of its own; the hygiene gate reads through the same handler once a dev-merge
+          tag of omnibase_core carries it (follow-up in omniclaude). -- falsifier: uv run pytest tests/unit/validation/hardcoded_model_config
+          -q -o addopts=''"
+      - id: AC2
+        statement: "AC2: T0.1 - An unset vocabulary on a contributor host gives one refusal line naming
+          the setting, and the cache age bound is a value of the vocabulary contract. -- falsifier: uv
+          run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts='' -k \"one_line
+          or one_refusal_line or age_bound\""
+      - id: AC3
+        statement: "AC3: T0.1 - With OMNI_HYGIENE_VOCAB_PATH unset and the vocabulary at the config root,
+          the handler resolves it where the hygiene gate refuses today. -- falsifier: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py
+          -q -o addopts='' -k \"config_root or variable_unset\""
+evidence_requirements:
+  - kind: tests
+    description: The model-config gate asks the handler for its denylist by name and keeps no loader of
+      its own.
+    command: uv run pytest tests/unit/validation/hardcoded_model_config -q -o addopts=''
+  - kind: tests
+    description: The handler resolves in the order explicit path, environment, config root, refuses a
+      required vocabulary with one line naming the setting, and takes its age bound from the contract.
+    command: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21494-t01-model-config-read
+    description: The model-config gate asks the private-vocabulary handler for its lab denylist by name,
+      resolving the handler and the read effect from the container, and keeps no loader of its own.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_private_vocabulary_read.py
+          tests/unit/validation/hardcoded_model_config/test_lab_denylist_vocabulary.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21494-t01-refusal-and-age
+    description: An unset required vocabulary is one refusal line naming the setting, and the age bound
+      comes from the vocabulary contract.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21494-t01-root-resolves
+    description: With the hygiene variable unset and the vocabulary at the config root, the resolution
+      and the console caller of the node give the resolved path.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py tests/unit/nodes/node_source_file_gather_effect/test_runtime_private_vocabulary.py
+          -q -o addopts='' -k "unset_variable_resolves or cli_prints_the_resolved_path"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21494-configuration
+    description: Configuration - the age bound, the setting names, the relative paths and the required
+      flags are values of the packaged vocabulary contract; the handler holds none of them.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts=''
+          -k "age_bound or packaged_contract"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+      - AC2
+  - id: dod-omn21494-bindings
+    description: Bindings - the handler is pure and takes its contract by injection (no default, no environment,
+      clock or file access), the read is a node under contract.yaml, and callers resolve the handler and
+      the effect from the container.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py tests/unit/handlers/test_handler_private_vocabulary_resolution.py
+          tests/unit/validation/hardcoded_model_config/test_private_vocabulary_read.py -q -o addopts=''
+          -k "every_read_patched or reads_no_clock or no_default_contract or container or gather_effect"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21494-deploy-readback-on-dev
+    description: Deploy readback for the library after merge. Read the composition root from dev through
+      the source-control node and require its container builder, resolver and gather-effect binding. This
+      fails until dev carries the vocabulary resolution implementation; it does not claim that the downstream
+      hygiene consumer or its canary has shipped.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: >-
+          "${OMNI_HOME}/omnibase_infra/scripts/onex" scm file-read OmniNode-ai/omnibase_core --path src/omnibase_core/handlers/handler_private_vocabulary_resolution.py
+          --ref dev | python3 -c 'import json, sys; r = json.load(sys.stdin); assert r["outcome"] == "completed";
+          f = r["result"]; assert f["type"] == "blob" and not f["truncated"]; assert all(s in f["content"]
+          for s in ("def build_container(", "def resolve_private_vocabulary(", "container.get_service(HandlerPrivateVocabulary)",
+          "container.get_service(NodeSourceFileGatherEffect)"))'
+  - id: dod-omn21494-deploy-hosted-readback
+    description: Hosted library runtime smoke. Exercise the packaged contract, container bindings and
+      gather effect, the CLI success and single-line refusal paths with the hygiene variable unset, and
+      the model-config consumer's denylist read through the same container.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py
+          tests/unit/handlers/test_handler_private_vocabulary_resolution.py tests/unit/nodes/node_source_file_gather_effect/test_runtime_private_vocabulary.py
+          tests/unit/validation/hardcoded_model_config/test_private_vocabulary_read.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+      - AC2
+      - AC3
