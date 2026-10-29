@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_demo_path_topic_coherence_check_compute
+node_id: node_demo_path_topic_coherence_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Demo-path topic coherence gate: over contracts carrying metadata.demo_path true, no hand-authored topic
+  literals, publish and subscribe topics byte-match, no orphan producers or consumers, and every widget
+  topic has a producer (OMN-12777).
+input_model: omnibase_core.models.nodes.demo_path_topic_coherence_check.model_demo_path_topic_coherence_check_input.ModelDemoPathTopicCoherenceCheckInput
+output_model: omnibase_core.models.common.model_validation_result.ModelValidationResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeDemoPathTopicCoherenceCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

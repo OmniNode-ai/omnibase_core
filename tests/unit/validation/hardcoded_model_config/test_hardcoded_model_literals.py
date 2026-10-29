@@ -257,7 +257,7 @@ def test_remediation_text_is_the_issue_suggestion_of_its_row() -> None:
 @pytest.mark.unit
 def test_mutation_table_covers_every_parameters_key() -> None:
     covered = {(f, k) for f, k, _, _ in MUTATIONS}
-    outside_table = {"family", "remediation", "org_contract", "registry_contract"}
+    outside_table = {"family", "remediation", "registry_contract"}
     for row in _rows():
         parameters = row.parameters or {}
         for key in parameters:
@@ -357,24 +357,16 @@ def test_exclude_patterns_keep_rule_data_and_declarations_out_of_scope() -> None
 
 def _contract_root(tmp_path: Path, org: str) -> Path:
     (tmp_path / "contracts").mkdir()
-    sibling = yaml.safe_load(
-        (
-            Path(runtime.__file__).parents[2] / "contracts/internal_sibling_pins.yaml"
-        ).read_text()
-    )
-    sibling["github_org"] = org
-    (tmp_path / "contracts/internal_sibling_pins.yaml").write_text(
-        yaml.safe_dump(sibling)
-    )
     layers = yaml.safe_load(
         (Path(runtime.__file__).parents[2] / "contracts/repo_layers.yaml").read_text()
     )
+    layers["github_org"] = org
     (tmp_path / "contracts/repo_layers.yaml").write_text(yaml.safe_dump(layers))
     return tmp_path
 
 
 @pytest.mark.unit
-def test_g_family_reads_github_org_from_the_sibling_pins_contract(
+def test_g_family_reads_github_org_from_the_repo_layers_contract(
     tmp_path: Path,
 ) -> None:
     policy = _policy()
@@ -395,9 +387,9 @@ def test_g_family_reads_github_org_from_the_sibling_pins_contract(
 @pytest.mark.unit
 def test_policy_and_checker_name_no_organisation() -> None:
     package = Path(runtime.__file__).parents[2]
-    real_org = yaml.safe_load(
-        (package / "contracts/internal_sibling_pins.yaml").read_text()
-    )["github_org"]
+    real_org = yaml.safe_load((package / "contracts/repo_layers.yaml").read_text())[
+        "github_org"
+    ]
     for rel in (
         "validation/hardcoded_model_config/policy.yaml",
         "validation/contracts/hardcoded_model_literals.validation.yaml",

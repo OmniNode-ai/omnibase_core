@@ -63,7 +63,7 @@ jobs:
       ticket: ${{ steps.release_evidence.outputs.ticket }}
       evidence_source: ${{ steps.release_evidence.outputs.evidence_source }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
@@ -117,7 +117,7 @@ jobs:
           fi
           echo "Version validated: $PKG_VERSION"
 
-      - uses: astral-sh/setup-uv@v10.3.0
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
         with:
           python-version: '3.12'
 
@@ -222,7 +222,7 @@ jobs:
       # 30674223657 ended with total_count=0 artifacts, so the only way to
       # recover the stranded sdist was to rebuild it from the tag.
       - name: Upload dist artifacts
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: dist-${{ steps.tag.outputs.tag }}
           path: dist/
@@ -299,7 +299,7 @@ jobs:
           UV_PUBLISH_TOKEN: ${{ secrets.PYPI_TOKEN }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           files: |
@@ -319,7 +319,7 @@ jobs:
       - name: Mint onexbot-occ-writer app token
         id: app-token
         if: ${{ !contains(steps.tag.outputs.tag, 'rc') }}
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
@@ -441,7 +441,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
 
@@ -511,7 +511,7 @@ jobs:
       - name: Mint onexbot-occ-writer app token
         id: app-token
         if: steps.sync_tag.outputs.noop == 'false'
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}
@@ -646,7 +646,7 @@ jobs:
       # artifact must not fail this job. The shell below handles an empty
       # dist/ (see test_partial_release_state_survives_an_unresolved_tag_...).
       - name: Download preserved dist artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         continue-on-error: true
         with:
           name: dist-${{ needs.release.outputs.version }}

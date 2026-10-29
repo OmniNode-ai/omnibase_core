@@ -148,8 +148,6 @@ CHANGED_PRODUCTION_SOURCE = (
     "src/omnibase_core/models/validation/model_hardcoded_literal_rule_set.py",
     "src/omnibase_core/validation/hardcoded_model_config/handler.py",
     "src/omnibase_core/validation/hardcoded_model_config/runtime_hardcoded_model_config.py",
-    "src/omnibase_core/handlers/handler_internal_sibling_pins.py",
-    "src/omnibase_core/handlers/handler_internal_sibling_pins_cli.py",
     "src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py",
     ".github/workflows/publish-downstream-pin-bump.yml",
     ".github/workflows/internal-sibling-pins.yml",

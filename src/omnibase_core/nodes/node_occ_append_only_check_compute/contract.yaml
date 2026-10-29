@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_occ_append_only_check_compute
+node_id: node_occ_append_only_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Evaluate the OCC append-only invariant over the parsed base and head contracts, the receipt diff and
+  the branch history: no dod_evidence item may be edited or removed, no receipt file may be modified,
+  deleted or renamed, and no protected record may be rewritten on the branch (OMN-21520).
+input_model: omnibase_core.models.nodes.occ_append_only_check.model_occ_append_only_check_input.ModelOccAppendOnlyCheckInput
+output_model: omnibase_core.models.validation.model_occ_append_only_result.ModelOccAppendOnlyResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeOccAppendOnlyCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

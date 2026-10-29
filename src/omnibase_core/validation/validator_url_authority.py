@@ -106,16 +106,16 @@ Usage Examples:
 
     CLI — pre-commit (staged files)::
 
-        python -m omnibase_core.validation.validator_url_authority file1.py ...
+        python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check file1.py ...
 
     CLI — full repo scan (CI)::
 
-        python -m omnibase_core.validation.validator_url_authority --all \\
+        python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check --all \\
             --repo omnibase_core --repo-root .
 
     CLI — seed / update baseline::
 
-        python -m omnibase_core.validation.validator_url_authority \\
+        python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check \\
             --seed --repo omnibase_core --repo-root .
 
 Suppression:
@@ -140,7 +140,6 @@ import ast
 import hashlib
 import json
 import re
-import sys
 from pathlib import Path
 from typing import ClassVar, Final
 
@@ -289,7 +288,7 @@ def _is_msk_scannable(path: Path) -> bool:
 
 
 # Suppression annotations.
-_SUPPRESS_ANNOTATION: Final[str] = "# url-authority-ok:"
+SUPPRESS_ANNOTATION: Final[str] = "# url-authority-ok:"
 _CONFIG_PATH_ANNOTATION: Final[str] = "# contract-config-ok:"
 
 # Authority files: the URL literals inside them ARE canonical — skip.
@@ -672,7 +671,7 @@ def scan_source(repo: str, path: str, source: str) -> list[ModelUrlAuthorityViol
         # operator ruling with no exception path (OMN-15692) — a free-text
         # justification comment must not be able to waive it (see module
         # docstring "Not suppressible" note).
-        if rule != RULE_MSK_DIRECT_BROKER and _SUPPRESS_ANNOTATION in raw_line:
+        if rule != RULE_MSK_DIRECT_BROKER and SUPPRESS_ANNOTATION in raw_line:
             continue
 
         snippet = stripped[:200]
@@ -911,179 +910,3 @@ class ValidatorUrlAuthority(ValidatorBase):
                 )
             )
         return tuple(issues)
-
-
-# ---------------------------------------------------------------------------
-# CLI — pre-commit hook + CI gate
-# ---------------------------------------------------------------------------
-
-
-def _err(msg: str) -> None:
-    sys.stderr.write(msg + "\n")
-
-
-def _out(msg: str) -> None:
-    sys.stdout.write(msg + "\n")
-
-
-def _update_baseline(
-    repo: str, repo_root: Path, baseline_path: Path, *, seed: bool
-) -> int:
-    """Regenerate this repo's baseline subset (burn-down only)."""
-    prior_entries: list[dict[str, str]] = []
-    if baseline_path.exists():
-        data = json.loads(baseline_path.read_text(encoding="utf-8"))
-        all_entries = data.get("violations", []) if isinstance(data, dict) else []
-        prior_entries = [
-            e for e in all_entries if isinstance(e, dict) and "fingerprint" in e
-        ]
-    repo_before = {e["fingerprint"] for e in prior_entries if e.get("repo") == repo}
-    other_entries = [e for e in prior_entries if e.get("repo") != repo]
-
-    # Debt recorded in the widening seed stays there; it never migrates into
-    # the primary baseline (which would read as growth).
-    widening = load_baseline(baseline_path.parent / _WIDENING_BASELINE_NAME)
-    fresh_violations = [
-        v for v in scan_tree(repo, repo_root) if v.fingerprint not in widening
-    ]
-    fresh: list[dict[str, str]] = [
-        {
-            "repo": v.repo,
-            "path": v.path,
-            "rule": v.rule,
-            "fingerprint": v.fingerprint,
-        }
-        for v in fresh_violations
-    ]
-    repo_after = {e["fingerprint"] for e in fresh}
-
-    if not seed:
-        try:
-            assert_baseline_shrinks_only(repo_before, repo_after)
-        except ValueError as exc:
-            _err(f"URL-AUTHORITY BASELINE REJECTED: {exc}")
-            return 1
-
-    merged = sorted(
-        [*other_entries, *fresh],
-        key=lambda e: (e["repo"], e["path"], e["fingerprint"]),
-    )
-    baseline_path.parent.mkdir(parents=True, exist_ok=True)
-    baseline_path.write_text(
-        json.dumps(
-            {"schema_version": "1.0.0", "count": len(merged), "violations": merged},
-            indent=2,
-        )
-        + "\n",
-        encoding="utf-8",
-    )
-    action = "seeded" if seed else f"burned down {len(repo_before) - len(repo_after)}"
-    _out(
-        f"URL-AUTHORITY BASELINE updated for {repo}: {len(repo_after)} violation(s) "
-        f"({action}). Total across repos: {len(merged)}."
-    )
-    return 0
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entry point.
-
-    Staged-files mode (pre-commit): pass file paths as positional args.
-    Full-repo mode (CI): pass ``--all --repo <name> --repo-root <path>``.
-    Baseline update: pass ``--seed`` or ``--update-baseline``.
-
-    Exit codes:
-        0 — no new violations (or grandfathered-only)
-        1 — new violation(s) found or baseline grew
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        prog="check-url-authority",
-        description="url-authority ratchet gate (OMN-12818).",
-    )
-    parser.add_argument(
-        "paths", nargs="*", help="Explicit files to scan (staged set, pre-commit mode)."
-    )
-    parser.add_argument(
-        "--repo", default="omnibase_core", help="Repo name for fingerprints."
-    )
-    parser.add_argument(
-        "--repo-root", default=".", help="Repo root for repo-relative paths."
-    )
-    parser.add_argument(
-        "--all",
-        action="store_true",
-        help="Full-repo scan (CI mode) instead of explicit staged files.",
-    )
-    parser.add_argument(
-        "--update-baseline",
-        action="store_true",
-        help="Regenerate this repo's baseline subset (burn-down only).",
-    )
-    parser.add_argument(
-        "--seed",
-        action="store_true",
-        help="One-time initialization of this repo's baseline subset (no shrink check).",
-    )
-    parser.add_argument(
-        "--baseline",
-        default=str(_DEFAULT_BASELINE),
-        help="Path to the baseline JSON.",
-    )
-    args = parser.parse_args(argv)
-
-    repo_root = Path(args.repo_root)
-    baseline_path = Path(args.baseline)
-
-    if args.update_baseline or args.seed:
-        return _update_baseline(args.repo, repo_root, baseline_path, seed=args.seed)
-
-    if args.all:
-        violations = scan_tree(args.repo, repo_root)
-    else:
-        if not args.paths:
-            _out("URL-AUTHORITY GATE: no files to scan.")
-            return 0
-        violations = []
-        for raw in args.paths:
-            p = Path(raw)
-            if not p.is_file() or not _is_msk_scannable(p):
-                continue
-            try:
-                source = p.read_text(encoding="utf-8")
-            except (OSError, UnicodeDecodeError):
-                continue
-            try:
-                rel = str(p.resolve().relative_to(repo_root.resolve()))
-            except ValueError:
-                rel = str(p)
-            violations.extend(scan_source(args.repo, rel, source))
-
-    baseline = load_effective_baseline(baseline_path)
-    new, grandfathered = partition_against_baseline(violations, baseline)
-
-    if new:
-        _err(
-            f"URL-AUTHORITY GATE FAILED: {len(new)} NEW violation(s) — every URL must "
-            "resolve from a contract (routing authority / integration catalog), not a "
-            "literal or a *_URL/*_DSN/*_ENDPOINT env read.\n"
-        )
-        for v in new:
-            _err(f"  [{v.rule}] {v.repo}/{v.path}:{v.line}")
-            _err(f"    {v.snippet}")
-            _err(
-                "    -> migrate to the resolver, or annotate "
-                "# url-authority-ok: <reason>"
-            )
-        return 1
-
-    _out(
-        f"URL-AUTHORITY GATE PASSED: 0 new violations "
-        f"({len(grandfathered)} grandfathered)."
-    )
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

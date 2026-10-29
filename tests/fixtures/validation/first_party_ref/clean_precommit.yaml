@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+repos:
+  - repo: https://github.com/OmniNode-ai/tools.git
+    rev: dev-20261018024445-b6ee996befa1

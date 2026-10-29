@@ -9,9 +9,11 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.nodes.node_transport_import_check_compute.runtime_transport_import_check import (
+    main,
+)
 from omnibase_core.validation.validator_transport_import import (
     ValidatorTransportImport,
-    main,
 )
 
 pytestmark = pytest.mark.unit

@@ -23,9 +23,6 @@ from omnibase_core.models.dependency_direction.model_repo_layer_map import (
 from omnibase_core.models.validation.model_hardcoded_literal_rule_set import (
     ModelHardcodedLiteralRuleSet,
 )
-from omnibase_core.models.version_drift.model_internal_sibling_pins_contract import (
-    ModelInternalSiblingPinsContract,
-)
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 from omnibase_core.validation.checker_hardcoded_model_literals import load_rule_set
 from omnibase_core.validation.checker_hardcoded_model_views import file_suffix
@@ -106,10 +103,6 @@ def load_literal_rule_set(
         rules = contract.rules
         by_family = {rule_string(rule, "family"): rule for rule in rules}
         package = root or resources.files("omnibase_core")
-        organisation = load_yaml_content_as_model(
-            read_package_text(package, rule_string(by_family["G"], "org_contract")),
-            ModelInternalSiblingPinsContract,
-        ).github_org
         layer_map = load_yaml_content_as_model(
             read_package_text(
                 package, rule_string(by_family["P"], "registry_contract")
@@ -118,7 +111,7 @@ def load_literal_rule_set(
         )
         return load_rule_set(
             rules,
-            github_org=organisation,
+            github_org=layer_map.github_org,
             repository_names=[entry.repo for entry in layer_map.repos],
             host_names=policy.lab_host_names,
             python_suffixes=policy.python_suffixes,

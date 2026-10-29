@@ -73,7 +73,10 @@ def test_workflow_triggers_and_matrix_object_shape() -> None:
     assert bump["env"]["REPO"] == "${{ matrix.repo }}"
     assert bump["env"]["MODE"] == "${{ matrix.mode }}"
     steps = {s.get("name"): s for s in bump["steps"]}
-    assert steps["Install uv"]["uses"] == "astral-sh/setup-uv@v10.3.0"
+    assert (
+        steps["Install uv"]["uses"]
+        == "astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884"
+    )
     for name in (
         "Install uv",
         "Install omnibase_core handler",

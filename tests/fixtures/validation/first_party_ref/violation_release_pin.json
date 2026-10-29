@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "source": "[project]\nname = \"consumer\"\ndependencies = [\"omnibase-core==1.2.3\"]\n[tool.uv.sources]\nomnibase-core = {git = \"https://github.com/OmniNode-ai/omnibase_core.git\", tag = \"dev-20261018024445-b6ee996befa1\"}\n"
+    }
+  ],
+  "dev_tags": [
+    {
+      "repo": "omnibase_core",
+      "tags": [
+        "dev-20261018024445-b6ee996befa1"
+      ]
+    }
+  ]
+}

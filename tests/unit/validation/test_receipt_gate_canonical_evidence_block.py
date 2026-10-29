@@ -312,13 +312,17 @@ class TestCheckEvidenceSourceShape:
 
 class TestEvidenceShapeCli:
     def test_cli_pass_valid_reference(self, capsys: pytest.CaptureFixture[str]) -> None:
-        from omnibase_core.validation.validator_evidence_shape_cli import main
+        from omnibase_core.nodes.node_evidence_shape_check_compute.runtime_evidence_shape_check import (
+            main,
+        )
 
         rc = main(["--pr-body", "Evidence-Source: OCC#1234\nEvidence-Ticket: OMN-1"])
         assert rc == 0
 
     def test_cli_fail_fenced_only(self, capsys: pytest.CaptureFixture[str]) -> None:
-        from omnibase_core.validation.validator_evidence_shape_cli import main
+        from omnibase_core.nodes.node_evidence_shape_check_compute.runtime_evidence_shape_check import (
+            main,
+        )
 
         rc = main(["--pr-body", "```\nEvidence-Source: OCC#1234\n```"])
         assert rc == 1
@@ -326,7 +330,9 @@ class TestEvidenceShapeCli:
     def test_cli_reads_body_file(
         self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
     ) -> None:
-        from omnibase_core.validation.validator_evidence_shape_cli import main
+        from omnibase_core.nodes.node_evidence_shape_check_compute.runtime_evidence_shape_check import (
+            main,
+        )
 
         body_file = tmp_path / "body.txt"
         body_file.write_text(
@@ -336,7 +342,9 @@ class TestEvidenceShapeCli:
         assert rc == 0
 
     def test_cli_usage_error_without_body(self) -> None:
-        from omnibase_core.validation.validator_evidence_shape_cli import main
+        from omnibase_core.nodes.node_evidence_shape_check_compute.runtime_evidence_shape_check import (
+            main,
+        )
 
         with pytest.raises(SystemExit) as exc:
             main([])

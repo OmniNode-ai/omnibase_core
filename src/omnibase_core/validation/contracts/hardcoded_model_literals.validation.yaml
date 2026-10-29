@@ -69,16 +69,15 @@ validation:
           - '(?i)_TIMEOUT[A-Z_]*\s*[:=]\s*["'']?[0-9]+'
 
     - rule_id: literal_first_party_url
-      description: A first-party repository URL (host plus the organisation of the sibling pins contract)
+      description: A first-party repository URL (host plus the organisation of the repository layer map)
         is a literal.
       severity: error
       enabled: true
       parameters:
         family: 'G'
         remediation: >-
-          Build the URL from the sibling pins contract (github_org and repo) through the injected configuration;
+          Build the URL from the repository layer map (github_org and repo) through the injected configuration;
           do not write the host and organisation in code or a workflow.
-        org_contract: contracts/internal_sibling_pins.yaml
         hosts:
           - github.com
         scheme_patterns:

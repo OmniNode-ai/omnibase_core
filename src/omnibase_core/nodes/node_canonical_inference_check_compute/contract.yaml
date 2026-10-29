@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_canonical_inference_check_compute
+node_id: node_canonical_inference_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Canonical-inference ratchet: split scanned non-canonical model-inference violations (shelled model CLIs,
+  model or provider env reads) into NEW findings that fail the gate and baselined findings that pass (OMN-13219).
+input_model: omnibase_core.models.nodes.canonical_inference_check.model_canonical_inference_check_input.ModelCanonicalInferenceCheckInput
+output_model: omnibase_core.models.nodes.canonical_inference_check.model_canonical_inference_check_output.ModelCanonicalInferenceCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeCanonicalInferenceCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

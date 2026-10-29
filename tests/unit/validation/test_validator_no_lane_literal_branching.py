@@ -17,11 +17,13 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.nodes.node_no_lane_literal_branching_check_compute.runtime_no_lane_literal_branching_check import (
+    main,
+)
 from omnibase_core.validation.validator_no_lane_literal_branching import (
     RULE_LANE_LITERAL_COLLECTION,
     RULE_LANE_LITERAL_COMPARE,
     RULE_LANE_LITERAL_MATCH,
-    main,
     partition_against_baseline,
     scan_source,
 )

@@ -95,6 +95,11 @@ jobs:
 """
 
 
+DEV_MERGE_TAG_USES_TAIL = (
+    "@dev-20261018024445-b6ee996befa1 # Dev-merge tag (OMN-21495)."
+)
+
+
 def _without_s5_comment(text: str) -> str:
     return re.sub(
         r"# S5 shadow count.*?(?=#\n# PR-workflow budget)", "", text, flags=re.DOTALL
@@ -107,10 +112,12 @@ def test_caller_disables_occ_comparison() -> None:
 
 
 def _assert_preserved(text: str) -> None:
-    text = text.replace(
-        "@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1",
-        "@fb0c6c2117d5868a398b0920cd0048d0824415b1",
-    )
+    # OMN-21495 (K11): the reusable is named by a dev-merge tag, not the merge
+    # base's full sha; restore the merge base's line so every other byte compares.
+    base_uses_tail = next(
+        line for line in BASE_CALLER.splitlines() if "receipt-gate.yml@" in line
+    ).split("receipt-gate.yml", 1)[1]
+    text = text.replace(DEV_MERGE_TAG_USES_TAIL, base_uses_tail)
     base = yaml.safe_load(BASE_CALLER)
     actual = yaml.safe_load(text)
     base["jobs"]["repo-evidence"]["with"]["compare-with-occ"] = "false"

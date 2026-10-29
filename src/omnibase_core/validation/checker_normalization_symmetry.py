@@ -37,9 +37,7 @@ IMPORT ORDER CONSTRAINTS (Critical — Do Not Break):
 
 from __future__ import annotations
 
-import argparse
 import ast
-import sys
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -466,18 +464,27 @@ def _parse_source_modules(root: Path) -> list[SourceModule]:
             source = path.read_text(encoding="utf-8")
         except OSError:
             continue
-        try:
-            tree = ast.parse(source, filename=str(path))
-        except SyntaxError:
-            continue
-        modules.append(
-            SourceModule(
-                path=path,
-                module_names=_module_names(root, path),
-                tree=tree,
-            )
-        )
+        module = parse_source_module(root, path, source)
+        if module is not None:
+            modules.append(module)
     return modules
+
+
+def parse_source_module(root: Path, path: Path, source: str) -> SourceModule | None:
+    """Parse already-loaded source text into a :class:`SourceModule`.
+
+    Pure counterpart of the file-reading half of ``_parse_source_modules``:
+    returns ``None`` when the source cannot be parsed.
+    """
+    try:
+        tree = ast.parse(source, filename=str(path))
+    except SyntaxError:
+        return None
+    return SourceModule(
+        path=path,
+        module_names=_module_names(root, path),
+        tree=tree,
+    )
 
 
 def _collect_model_registry(modules: Iterable[SourceModule]) -> ModelRegistry:
@@ -510,7 +517,14 @@ def scan_source_tree(root: Path) -> list[SymmetryFinding]:
     divergent normalization chains and statically discoverable Pydantic model
     field sets.
     """
-    source_modules = _parse_source_modules(root)
+    return scan_source_modules(_parse_source_modules(root))
+
+
+def scan_source_modules(source_modules: list[SourceModule]) -> list[SymmetryFinding]:
+    """Return symmetry findings for already-parsed source modules.
+
+    Pure counterpart of :func:`scan_source_tree`: no filesystem access.
+    """
     model_registry = _collect_model_registry(source_modules)
 
     all_uses: list[TopicUse] = []
@@ -594,39 +608,3 @@ def _schema_symmetry_issue(
                 consumer_fields=consumer_schema.fields,
             )
     return None
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        prog="checker-normalization-symmetry",
-        description=(
-            "Verify producer/consumer topic-normalization symmetry for the ONEX "
-            "event bus. Fails on OMN-9215-class asymmetries (e.g. producer "
-            "strips whitespace, consumer does not)."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        default=["src"],
-        help="Directories to scan recursively for .py files (default: src)",
-    )
-    args = parser.parse_args(argv)
-
-    all_issues: list[SymmetryFinding] = []
-    for path_str in args.paths:
-        root = Path(path_str)
-        if not root.exists():
-            continue
-        all_issues.extend(scan_source_tree(root))
-
-    if not all_issues:
-        return 0
-
-    for issue in all_issues:
-        sys.stderr.write(issue.message + "\n")
-    return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
