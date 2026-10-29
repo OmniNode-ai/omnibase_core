@@ -79,7 +79,7 @@ def test_generic_format_hooks_use_python_language(
 ) -> None:
     """The generic-format validators are module-importable, so they run via
     language: python and the core wheel is installed into the hook environment
-    built from the checked-out hook repo (OMN-21433)."""
+    built from the checked-out hook repo (OMN-21501)."""
     assert hooks[hook_id].get("language") == "python"
     entry = hooks[hook_id].get("entry")
     assert isinstance(entry, str)

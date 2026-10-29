@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Backward compatibility detector and CLI regression coverage (OMN-21433)."""
+"""Backward compatibility detector and CLI regression coverage (OMN-21501)."""
 
 from __future__ import annotations
 

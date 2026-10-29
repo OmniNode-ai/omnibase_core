@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pattern regressions ported from the standalone detector (OMN-21433)."""
+"""Pattern regressions ported from the standalone detector (OMN-21501)."""
 
 from __future__ import annotations
 

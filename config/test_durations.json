@@ -2481,7 +2481,7 @@
   "validation/test_receipt_gate_completion_verify.py::test_completion_verify_handler_registered": 0.9601997560821474,
   "validation/test_remote_hook_exposure_omn13287.py::test_w10b_enum_governance_uses_python_language": 0.02320906799286604,
   "validation/test_remote_hook_exposure_omn13287.py::test_w10b_hook_entry_points_at_core_impl[check-enum-governance-omnibase_core.validation.checker_enum_governance]": 0.0011689859675243497,
-  "validation/test_remote_hook_exposure_omn13287.py::test_w10b_hook_entry_points_at_core_impl[check-no-backward-compat-scripts/validation/validate-no-backward-compatibility.py]": 0.0016020189505070448,
+  "validation/test_remote_hook_exposure_omn13287.py::test_w10b_hook_entry_points_at_core_impl[check-no-backward-compat-omnibase_core.handlers.handler_backward_compat_cli]": 0.0016020189505070448,
   "validation/test_remote_hook_exposure_omn13287.py::test_w10b_hook_id_present[check-enum-governance]": 0.0015075599076226354,
   "validation/test_remote_hook_exposure_omn13287.py::test_w10b_hook_id_present[check-no-backward-compat]": 0.0014912390615791082,
   "validation/test_remote_hook_exposure_omn13287.py::test_w10b_no_backward_compat_uses_script_language": 0.0014431180898100138,

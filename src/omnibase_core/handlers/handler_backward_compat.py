@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure backcompat detection over explicit source pairs (OMN-21433).
+"""Pure backcompat detection over explicit source pairs (OMN-21501).
 
 Rules come from the contract. Independent regex and AST matches intentionally
 remain separate findings, including multiple matches on the same source line.

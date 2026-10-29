@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Shared CLI runtime of the baselined source-finding hooks (OMN-21433).
+"""Shared CLI runtime of the baselined source-finding hooks (OMN-21501).
 
 Backs ``check-no-dict-any`` and ``check-no-backward-compat``. All I/O happens
 here, at the CLI boundary: file discovery and reads, the baseline read and write.

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# Rule data of the check-no-backward-compat hook (OMN-21433). The detector is
+# Rule data of the check-no-backward-compat hook (OMN-21501). The detector is
 # omnibase_core.handlers.handler_backward_compat; nothing here is code.
 ---
 compatibility_comment_patterns:

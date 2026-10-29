@@ -10,7 +10,7 @@ that only moved still matches. A baselined finding passes; a finding outside the
 baseline fails; an in-scope entry with no finding fails as stale, so the baseline is a
 ratchet that cannot keep silent headroom. ``shrink`` never adds an entry.
 
-Pure: no filesystem, no clock, no global state. Ticket: OMN-21433.
+Pure: no filesystem, no clock, no global state. Ticket: OMN-21501.
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ _STALE_REMEDIATION: Final[str] = (
     "The finding is gone: run the hook with --write-baseline to shrink the baseline."
 )
 _HEADER: Final[str] = """\
-# Shrink-only baseline for the {hook} hook (OMN-21433).
+# Shrink-only baseline for the {hook} hook (OMN-21501).
 # One entry per tolerated finding: file path, rule id and the normalized offending
 # source text (never a line number). Entries are counted: two identical findings in
 # one file need two identical entries.

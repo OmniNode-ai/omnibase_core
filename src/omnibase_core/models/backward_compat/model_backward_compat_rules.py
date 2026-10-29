@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Rule data of the backcompat detector (OMN-21433)."""
+"""Rule data of the backcompat detector (OMN-21501)."""
 
 from __future__ import annotations
 

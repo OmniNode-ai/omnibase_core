@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Models of the shared shrink-only finding baseline (OMN-21433)."""
+"""Models of the shared shrink-only finding baseline (OMN-21501)."""
 
 from omnibase_core.models.finding_baseline.model_finding_baseline import (
     ModelFindingBaseline,

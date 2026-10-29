@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# Rule data of the check-no-dict-any hook (OMN-21433). The detector is
+# Rule data of the check-no-dict-any hook (OMN-21501). The detector is
 # omnibase_core.handlers.handler_dict_any; nothing here is code.
 ---
 # A function or class carrying one of these decorators may use dict[str, Any]

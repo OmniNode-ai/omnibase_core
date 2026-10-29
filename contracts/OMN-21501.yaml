@@ -1,0 +1,108 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21501
+title: "T2.1-core: core hook ids and shrink-only baselines for dict-any and backward-compat"
+summary: "Plan task T2.1, omnibase_core slice. The manifest declares check-no-dict-any and gives check-no-backward-compat
+  a baseline option; both run the generic validator format over one shared shrink-only baseline handler,
+  and the two scripts they replace are gone."
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - ".pre-commit-hooks.yaml hook ids check-no-dict-any and check-no-backward-compat"
+evidence_requirements:
+  - kind: "tests"
+    description: "The shrink-only baseline contract holds for both hooks."
+    command: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn-21501-t21-core-1-dict-any-hook
+    description: "T2.1-core-1: the manifest declares check-no-dict-any, and a tree with a new dict[str,
+      Any] finding fails it with the baseline present."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_a_new_finding_fails_and_names_only_the_new_one
+          or test_g_manifest_declares_both_hook_ids_with_a_self_contained_entry'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-t21-core-2-backward-compat-baseline
+    description: "T2.1-core-2: check-no-backward-compat accepts --baseline; a baselined finding passes
+      and a new finding fails."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_a_new_finding_fails_and_names_only_the_new_one
+          or test_b_baselined_finding_passes'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-t21-core-3-baseline-only-shrinks
+    description: "T2.1-core-3: removing a baselined finding shrinks the baseline file on --write-baseline,
+      and --write-baseline never adds an entry."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_c_removed_finding
+          or test_d_write_baseline_refuses or test_e_second_identical'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-t21-core-4-no-second-implementation
+    description: "T2.1-core-4: neither old script exists on the branch and core's own hooks run the generic-format
+      modules."
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "test -z \"$(git ls-files scripts/validation | grep -E 'validate-(dict-any-usage|no-backward-compatibility)[.]py')\"
+          && grep -c 'omnibase_core.handlers.handler_dict_any_cli' .pre-commit-config.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-t21-core-5-consumer-interface-recorded
+    description: "T2.1-core-5: the consumer interface (hook ids, args, baseline format, write command,
+      tag rule) is recorded in the PR body and one STATUS ledger row."
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "grep -c 'check-no-dict-any' .pre-commit-hooks.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-ac1-hook-ids-and-baseline-option
+    description: "AC1: the manifest exports check-no-dict-any and check-no-backward-compat as python hooks,
+      and each takes --baseline FILE where a finding outside the file fails and an entry with no finding
+      fails as stale; both hooks are exercised with and without a baseline."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py tests/validation/test_remote_hook_exposure_omn13287.py
+          -q -n 0 -k 'test_a_new_finding_fails_and_names_only_the_new_one or test_b_baselined_finding_passes
+          or test_c_removed_finding or test_without_baseline_every_finding_fails or test_g_manifest_declares_both_hook_ids
+          or test_generic_format_hooks_use_python_language'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-ac2-write-baseline-only-shrinks
+    description: "AC2: --write-baseline creates the baseline when absent and afterwards only shrinks;
+      a write that would add an entry exits 1 naming the entry and writes nothing."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_d_write_baseline_refuses
+          or test_write_baseline_creates_an_absent_file or test_c_removed_finding'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-ac3-parity-and-scripts-deleted
+    description: "AC3: the new handlers give the findings the two repository scripts gave (the scripts'
+      own regression tests, ported, pass on the handlers), and git grep for the two script paths returns
+      nothing."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_handler_backward_compat.py tests/unit/handlers/test_handler_backward_compat_patterns.py
+          -q -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "test -z \"$(git grep -nE 'validate-(dict-any-usage|no-backward-compatibility)[.]py')\""
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-ac4-manifest-entries-run-from-clean-checkout
+    description: "AC4: the manifest entries are self-contained python hooks that pass a clean file and
+      fail a bad file; the pre-commit try-repo run from a clean checkout is recorded as a lab run in the
+      pull request body."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_g_manifest_declares_both_hook_ids
+          or test_b_baselined_finding_passes or test_without_baseline_every_finding_fails'"
+        cwd: ${OMNI_HOME}/omnibase_core

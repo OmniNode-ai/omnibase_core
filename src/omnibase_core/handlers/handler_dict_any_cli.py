@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI runtime of the check-no-dict-any hook (OMN-21433).
+"""CLI runtime of the check-no-dict-any hook (OMN-21501).
 
 Usage::
 

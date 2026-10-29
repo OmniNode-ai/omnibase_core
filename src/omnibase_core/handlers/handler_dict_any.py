@@ -8,7 +8,7 @@ refactors, hidden bugs. A function or class carrying an allow decorator, or a li
 under an exclusion comment, is exempt; the decorator names, the skipped path
 fragments and the exclusion marker are rule data (``contracts/dict_any_rules.yaml``).
 
-Pure: no filesystem, no clock, no global state. Ticket: OMN-21433.
+Pure: no filesystem, no clock, no global state. Ticket: OMN-21501.
 """
 
 from __future__ import annotations

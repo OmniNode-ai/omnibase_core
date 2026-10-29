@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Backcompat check models (OMN-21433)."""
+"""Backcompat check models (OMN-21501)."""
 
 from omnibase_core.models.backward_compat.model_backward_compat_check_input import (
     ModelBackwardCompatCheckInput,

@@ -4,7 +4,7 @@
 """Shrink-only baseline contract for check-no-dict-any and check-no-backward-compat.
 
 Both hooks run the same shared baseline handler; every behaviour below is asserted
-once per hook (OMN-21433, plan task T2.1 core slice).
+once per hook (OMN-21501, plan task T2.1 core slice).
 """
 
 from __future__ import annotations
