@@ -155,6 +155,6 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/validation/test_checker_handler_di.py -q --no-cov
-          -o addopts='' && .venv/bin/onex --help
+          -o addopts='' && "${UV_PROJECT_ENVIRONMENT:-.venv}/bin/onex" --help
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8]
