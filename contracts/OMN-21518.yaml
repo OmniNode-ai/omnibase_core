@@ -116,16 +116,21 @@ dod_evidence:
     source: manual
     checks:
       - check_type: command
-        check_value: uv run pre-commit run canonical-file-shape --all-files
+        check_value: "! grep -qE 'handler_(action_pin|ci_inheritance|cosmetic_lint|dependency_direction|internal_sibling_pins|merge_queue_parity|no_bare_feature_flags|no_hardcoded_topics)'
+          .onex_ratchets/canonical_file_shape_baseline.txt && uv run pre-commit run canonical-file-shape
+          --all-files"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: uv run pre-commit run check-ci-inheritance --all-files
+        check_value: "grep -qF 'HandlerCiInheritance().handle(' src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py
+          && uv run pre-commit run check-ci-inheritance --all-files"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: uv run pre-commit run check-dependency-direction --all-files
+        check_value: "grep -qF 'HandlerDependencyDirection().handle(' src/omnibase_core/nodes/node_dependency_direction_check_effect/runtime_dependency_direction_check.py
+          && uv run pre-commit run check-dependency-direction --all-files"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: uv run pre-commit run check-merge-queue-parity --all-files
+        check_value: "grep -qF 'HandlerMergeQueueParity().handle(' src/omnibase_core/nodes/node_merge_queue_parity_check_effect/runtime_merge_queue_parity_check.py
+          && uv run pre-commit run check-merge-queue-parity --all-files"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
