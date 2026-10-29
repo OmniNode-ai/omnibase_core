@@ -44,7 +44,11 @@ from omnibase_core.validation.checker_event_registry_drift_sources import (
     parse_registration_contract,
     parse_registration_document,
 )
-from omnibase_core.validation.checker_rule_parameters import rule_int, rule_strings
+from omnibase_core.validation.checker_rule_parameters import (
+    rule_int,
+    rule_string,
+    rule_strings,
+)
 from omnibase_core.validation.validator_base import ValidatorBase
 
 
@@ -75,6 +79,8 @@ class ValidatorEventDeclarationDrift(ValidatorBase):
         unreadable = rules[RULE_SOURCE_UNREADABLE]
         limit = rule_int(unreadable, "max_file_bytes")
         globs = rule_strings(unreadable, "contract_globs")
+        topic_prefix = rule_string(unreadable, "topic_prefix")
+        baseline_kinds = rule_strings(unreadable, "baseline_kinds")
         errors: list[str] = []
 
         def read(file: Path) -> str | None:
@@ -111,7 +117,7 @@ class ValidatorEventDeclarationDrift(ValidatorBase):
                     read_failed = True
                     continue
                 registration, parse_errors = parse_registration_contract(
-                    str(file), text
+                    str(file), text, topic_prefix
                 )
                 errors.extend(parse_errors)
                 if registration is not None:
@@ -126,14 +132,18 @@ class ValidatorEventDeclarationDrift(ValidatorBase):
             text = read(document)
             if text is None:
                 continue
-            parsed, parse_errors = parse_registration_document(str(document), text)
+            parsed, parse_errors = parse_registration_document(
+                str(document), text, topic_prefix
+            )
             source.extend(parsed)
             errors.extend(parse_errors)
 
         registry: tuple[ModelEventRegistration, ...] = ()
         text = read(path)
         if text is not None:
-            registry, registry_errors = parse_emit_registry(str(path), text)
+            registry, registry_errors = parse_emit_registry(
+                str(path), text, topic_prefix
+            )
             errors.extend(registry_errors)
 
         baseline = ModelEventRegistryDriftBaseline()
@@ -141,7 +151,7 @@ class ValidatorEventDeclarationDrift(ValidatorBase):
             text = read(self._baseline)
             if text is not None:
                 parsed_baseline, baseline_errors = parse_baseline(
-                    str(self._baseline), text
+                    str(self._baseline), text, baseline_kinds
                 )
                 errors.extend(baseline_errors)
                 if parsed_baseline is not None:

@@ -33,8 +33,6 @@ Pure — no filesystem access, no clock, no global state.
 
 from __future__ import annotations
 
-from typing import Final
-
 import yaml
 
 from omnibase_core.models.event_registry_drift.model_event_registration import (
@@ -53,8 +51,6 @@ __all__ = [
     "parse_registration_contract",
     "parse_registration_document",
 ]
-
-_TOPIC_PREFIX: Final[str] = "onex."
 
 _Parsed = tuple[tuple[ModelEventRegistration, ...], tuple[str, ...]]
 
@@ -86,7 +82,7 @@ def _partition_key(block: dict[object, object], where: str) -> tuple[str | None,
 
 
 def parse_registration_contract(
-    path: str, source: str
+    path: str, source: str, topic_prefix: str
 ) -> tuple[ModelEventRegistration | None, tuple[str, ...]]:
     """Parse one wire contract; ``(None, ())`` when it declares no registration."""
     doc, error = _load_mapping(path, source)
@@ -115,9 +111,9 @@ def parse_registration_contract(
     else:
         for rule in fan_out:
             topic = rule.get("topic") if isinstance(rule, dict) else None
-            if not isinstance(topic, str) or not topic.startswith(_TOPIC_PREFIX):
+            if not isinstance(topic, str) or not topic.startswith(topic_prefix):
                 errors.append(
-                    f"{path}: every fan_out rule needs a full topic name ({_TOPIC_PREFIX}...)"
+                    f"{path}: every fan_out rule needs a full topic name ({topic_prefix}...)"
                 )
             else:
                 topics.append(topic)
@@ -170,7 +166,7 @@ def parse_registration_contract(
     )
 
 
-def parse_registration_document(path: str, source: str) -> _Parsed:
+def parse_registration_document(path: str, source: str, topic_prefix: str) -> _Parsed:
     """Parse an ``event_registrations:`` document."""
     doc, error = _load_mapping(path, source)
     if doc is None:
@@ -193,7 +189,7 @@ def parse_registration_document(path: str, source: str) -> _Parsed:
         entry_errors = [key_error] if key_error else []
         if not isinstance(event_type, str) or not event_type:
             entry_errors.append(f"{where}: event_type is not declared")
-        if not topics or not all(t.startswith(_TOPIC_PREFIX) for t in topics):
+        if not topics or not all(t.startswith(topic_prefix) for t in topics):
             entry_errors.append(
                 f"{where}: topics must be a non-empty list of full topic names"
             )
@@ -219,7 +215,7 @@ def parse_registration_document(path: str, source: str) -> _Parsed:
     return tuple(registrations), ()
 
 
-def parse_emit_registry(path: str, source: str) -> _Parsed:
+def parse_emit_registry(path: str, source: str, topic_prefix: str) -> _Parsed:
     """Parse an emit daemon's ``topics.yaml`` ``events:`` mapping."""
     doc, error = _load_mapping(path, source)
     if doc is None:
@@ -252,7 +248,7 @@ def parse_emit_registry(path: str, source: str) -> _Parsed:
             {
                 rule["topic"]
                 for rule in fan_out
-                if rule["topic"].startswith(_TOPIC_PREFIX)
+                if rule["topic"].startswith(topic_prefix)
             }
         )
         partition_key_field = event_def.get("partition_key_field")
@@ -283,16 +279,10 @@ def parse_emit_registry(path: str, source: str) -> _Parsed:
 
 
 def parse_baseline(
-    path: str, source: str
+    path: str, source: str, baseline_kinds: tuple[str, ...]
 ) -> tuple[ModelEventRegistryDriftBaseline | None, tuple[str, ...]]:
     """Parse ``<kind> <value>`` baseline lines; ``#`` starts a comment."""
-    # The four kinds are the four fields of the baseline model, not a rule table.
-    entries: dict[str, set[str]] = {
-        "event_source_only": set(),
-        "event_registry_only": set(),
-        "source_only": set(),
-        "registry_only": set(),
-    }
+    entries: dict[str, set[str]] = {kind: set() for kind in baseline_kinds}
     errors: list[str] = []
     for line_number, raw in enumerate(source.splitlines(), start=1):
         line = raw.split("#", 1)[0].strip()
@@ -302,7 +292,7 @@ def parse_baseline(
         if len(parts) != 2 or parts[0] not in entries:
             errors.append(
                 f"{path}:{line_number}: expected '<kind> <value>' with kind one of "
-                f"{', '.join(entries)}"
+                f"{', '.join(baseline_kinds)}"
             )
             continue
         entries[parts[0]].add(parts[1])

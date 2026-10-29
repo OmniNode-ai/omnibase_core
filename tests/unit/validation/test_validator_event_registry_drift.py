@@ -535,3 +535,99 @@ def test_registry_repeating_a_required_field_is_error(
     exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
+
+
+@pytest.mark.parametrize("source_style", ["contracts", "document"])
+@pytest.mark.parametrize("topic_prefix", ["onex.", "other."])
+@pytest.mark.parametrize("source_prefix", ["onex.", "other."])
+def test_drift_source_topic_prefix_comes_from_contract(
+    tmp_path: Path, source_style: str, topic_prefix: str, source_prefix: str
+) -> None:
+    """Changing the declared prefix changes admission for both source formats."""
+    contract_dir, registry = _layout(
+        tmp_path,
+        contracts={
+            "usage.yaml": _USAGE_CONTRACT.replace("onex.", source_prefix),
+            "run_step.yaml": _RUN_STEP_CONTRACT.replace("onex.", source_prefix),
+        },
+        registry=_REGISTRY.replace("onex.", source_prefix),
+    )
+    document = _write(
+        tmp_path / "registrations.yaml",
+        _RUN_STEP_DOCUMENT.replace("onex.", source_prefix),
+    )
+    contract = ValidatorEventDeclarationDrift().contract
+    contract = contract.model_copy(
+        update={
+            "rules": [
+                row.model_copy(
+                    update={
+                        "parameters": {
+                            **(row.parameters or {}),
+                            "topic_prefix": topic_prefix,
+                        }
+                    }
+                )
+                if row.rule_id == "source_unreadable"
+                else row
+                for row in contract.rules
+            ]
+        }
+    )
+    if source_style == "document":
+        (contract_dir / "run_step.yaml").unlink()
+    validator = ValidatorEventDeclarationDrift(
+        contract=contract,
+        source_contracts=(contract_dir,),
+        source_documents=(document,) if source_style == "document" else (),
+    )
+    result = validator.validate(registry)
+    assert result.is_valid == (topic_prefix == source_prefix)
+    assert {issue.code for issue in result.issues} == (
+        set() if topic_prefix == source_prefix else {"source_unreadable"}
+    )
+
+
+@pytest.mark.parametrize("allow_kind", [True, False])
+def test_drift_source_baseline_kinds_come_from_contract(
+    tmp_path: Path, allow_kind: bool
+) -> None:
+    """Removing a baseline kind from the contract refuses that baseline entry."""
+    contract_dir, registry = _layout(
+        tmp_path, registry=_REGISTRY.split("  delegation.run_step:")[0]
+    )
+    baseline = _write(
+        tmp_path / "baseline.txt",
+        f"event_source_only delegation.run_step\nsource_only {_RUN_STEP_TOPIC}\n",
+    )
+    contract = ValidatorEventDeclarationDrift().contract
+    contract = contract.model_copy(
+        update={
+            "rules": [
+                row.model_copy(
+                    update={
+                        "parameters": {
+                            **(row.parameters or {}),
+                            "baseline_kinds": [
+                                "event_registry_only",
+                                "source_only",
+                                "registry_only",
+                                *(["event_source_only"] if allow_kind else []),
+                            ],
+                        }
+                    }
+                )
+                if row.rule_id == "source_unreadable"
+                else row
+                for row in contract.rules
+            ]
+        }
+    )
+    validator = ValidatorEventDeclarationDrift(
+        contract=contract, source_contracts=(contract_dir,), baseline=baseline
+    )
+    result = validator.validate(registry)
+    assert result.is_valid == allow_kind
+    assert {issue.code for issue in result.issues} == (
+        set() if allow_kind else {"source_unreadable"}
+    )
