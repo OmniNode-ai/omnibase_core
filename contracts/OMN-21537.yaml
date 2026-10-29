@@ -151,3 +151,38 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
+  - id: dod-omn21537-deploy-pin-bump-regression
+    description: The pin-bump handler loads the packaged repository layer map, accepts its source URL,
+      preserves consumer text when changing the tag, and rejects invalid sources and tags. These existing
+      regression tests run at the checkout without a private runtime or container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/handlers/test_handler_dependency_pin_bump.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21537-deploy-published-pin-bump-source
+    description: Read the published pin-bump handler at the checkout commit and refuse a source without
+      the repository layer map URL or its use in source validation. This public source probe runs on hosted
+      runners without a private runtime or container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: |
+          bash -e -o pipefail -c '
+          source_url="https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py"
+          handler_source=$(curl --fail --silent --show-error --location --max-time 15 "$source_url")
+          printf "%s\n" "$handler_source" |
+            grep -F "return f\"https://{_GIT_HOST}/{layer_map.github_org}/{repo}\"" > /dev/null
+          printf "%s\n" "$handler_source" |
+            grep -F "source_url = _source_url()" > /dev/null
+          printf "%s\n" "$handler_source" |
+            grep -F "!= source_url.casefold()" > /dev/null
+          '
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
