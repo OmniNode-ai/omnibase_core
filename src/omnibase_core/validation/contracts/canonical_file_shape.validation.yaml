@@ -1,0 +1,208 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: canonical_file_shape
+  validator_name: Canonical File Shape Validator
+  validator_description: |
+    Operator ruling 2026-10-01 (OMN-20297): no new scripts, plugins or
+    exceptions in any repository; every capability is a contract, a node and its
+    handlers. Refuses a new code file outside a canonical location, growth of a
+    baselined file, new baseline, allowlist, waiver or suppression entries, new
+    imperative lines in a SKILL.md, a handler that no contract binds, a command
+    line entry that is not a node runtime, and any change a repository's own
+    lifecycle declaration (.onex/repo_lifecycle.yaml) does not admit. The only
+    state is the shrink-only baseline file named by baseline_path.
+
+  # The validator reads a whole repository through git; the node runtime
+  # gathers the facts, so no file glob applies.
+  target_patterns:
+    - "**/*"
+  exclude_patterns: []
+
+  rules:
+    - rule_id: noncanonical-file
+      description: A code file outside a canonical location and not in the baseline.
+      severity: error
+      enabled: true
+      parameters:
+        code_extensions: [".py", ".pyi", ".sh", ".bash", ".zsh", ".js", ".mjs", ".cjs", ".ts", ".tsx",
+          ".jsx", ".rb", ".pl", ".go", ".rs", ".lua", ".ps1", ".php"]
+        canonical_src_dirs: ["nodes", "handlers", "models", "protocols", "contracts", "enums"]
+        canonical_prefixed_dirs: ["validation:checker_", "validation:validator_"]
+        test_dirs: ["tests", "test"]
+        docs_root: "docs"
+        always_canonical_names: ["conftest.py"]
+        src_root: "src"
+        shebang_prefix: "#!"
+        canonical_src_min_parts: 4
+        noncanonical_text: "new code file outside a canonical location (src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/,
+          tests/, docs/). Build it as a contract + node + handler."
+        shell_text: "shell scripts have no canonical location in any repository (OMN-21332)."
+        baseline_path: ".onex_ratchets/canonical_file_shape_baseline.txt"
+        node_home_baseline_path: ".onex_ratchets/node_home_baseline.txt"
+
+    - rule_id: baseline-stale
+      description: A baseline entry whose file was removed, moved or made canonical.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_stale_text: "entry '{path}' is no longer refused by any file-shape rule; delete the line"
+
+    - rule_id: baseline-growth
+      description: A baseline entry the base revision did not carry and that no base-revision file justifies.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_growth_text: "entry '{path}' is new; the baseline only shrinks"
+
+    - rule_id: baselined-file-growth
+      description: A baselined code file with more code lines than at base.
+      severity: error
+      enabled: true
+      parameters:
+        comment_prefixes: ["#", "//"]
+        baselined_growth_text: "code lines {old} -> {new}; a baselined file only shrinks. Put the new
+          behaviour in a contract + node + handler (rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z)"
+
+    - rule_id: skill-imperative
+      description: More imperative-pattern lines in a SKILL.md than at base.
+      severity: error
+      enabled: true
+      parameters:
+        skill_file_name: "SKILL.md"
+        imperative_patterns: ['^[^`]*\bAgent\(', '\bTeamCreate\b', '(^|[^a-zA-Z])(curl |wget )', '(^|\s)(gh
+            api|gh pr)\s', '(^|\s)(psql|pg_dump|pg_restore)[\s!-/:-@\[-`{-~]', '(^|\s)ssh [^#]', '\basyncio\.run\(',
+          'http://(localhost|192\.168)\b']
+        skill_imperative_text: "imperative lines {old} -> {new}; a skill is a thin dispatch shim, the
+          logic belongs in a node"
+
+    - rule_id: suppression-growth
+      description: More suppression comments in a code or config file than at base.
+      severity: error
+      enabled: true
+      parameters:
+        suppression_patterns: ['#\s*noqa\b', '#\s*type:\s*ignore\b', '#\s*pyright:\s*ignore\b', '#\s*mypy:\s*ignore-errors\b',
+          '#\s*pylint:\s*disable\b', '#\s*ruff:\s*noqa\b', '#\s*pragma:\s*(no\s+cover|allowlist)\b', '#\s*nosec\b',
+          '#\s*shellcheck\s+disable\b', '#\s*yamllint\s+disable\b', '#\s*aislop:\s*ignore\b', '#\s*onex-allow',
+          '#\s*[A-Za-z][\w-]*-ok\b', 'ONEX_EXCLUD[E]', 'NOSONA[R]', 'gitleaks:allo[w]', '(//|/\*)\s*eslint-disable',
+          '@ts-(?:ignor[e]|expect-erro[r]|nochec[k])']
+        config_extensions: [".yaml", ".yml", ".toml", ".cfg", ".ini"]
+        suppression_growth_text: "suppression comments {old} -> {new}; fix the code instead"
+
+    - rule_id: new-exception-file
+      description: A new allowlist, baseline, waiver, exemption or suppression file.
+      severity: error
+      enabled: true
+      parameters:
+        exception_name_pattern: '(allow[-_]?list|white[-_]?list|baseline|waiver|exemption|exception|grandfather|suppress|skip[-_]?list|ignore[-_]?list)'
+        prose_extensions: [".md", ".rst", ".html", ".adoc"]
+        new_exception_text: "new allowlist/baseline/waiver/exemption/suppression file"
+
+    - rule_id: exception-entry-growth
+      description: More entries in an existing exception file than at base.
+      severity: error
+      enabled: true
+      parameters:
+        exception_growth_text: "entries {old} -> {new}; exception lists only shrink"
+
+    - rule_id: declared-gate-lists
+      description: Names the shrink-only gate lists a repository declares, which are not exceptions.
+      severity: error
+      enabled: true
+      parameters:
+        pre_commit_config_path: ".pre-commit-config.yaml"
+        hooks_manifest_path: ".pre-commit-hooks.yaml"
+        workflows_dir: ".github/workflows"
+        gate_hook_ids: ["check-direct-model-call", "check-node-boundary-imports", "check-hardcoded-model-config-compute",
+          "check-dependency-direction", "check-merge-queue-parity", "check-public-runner-placement", "check-ci-inheritance"]
+        node_boundary_hook_name: "check-node-boundary-imports"
+        node_boundary_baseline: ".onex_ratchets/node_boundary_import_baseline.yaml"
+        model_config_hook_name: "check-hardcoded-model-config-compute"
+        model_config_baseline: "config/hardcoded_model_config_baseline.yaml"
+        gate_repo_url_pattern: 'omnibase_core(\.git)?/?$'
+        guard_workflow_uses_pattern: 'OmniNode-ai/omnibase_core/\.github/workflows/imperative-contract-guard\.yml@[^\s@]+'
+        guard_allowlist_input: "allowlist-path"
+
+    - rule_id: repository-lifecycle
+      description: Names the repository lifecycle declaration, its states and the commit trailer that
+        admits growth.
+      severity: error
+      enabled: true
+      parameters:
+        lifecycle_path: ".onex/repo_lifecycle.yaml"
+        lifecycle_state_key: "state"
+        lifecycle_states: ["active", "fix-only", "no-code", "retired"]
+        no_code_state: "no-code"
+        fix_only_state: "fix-only"
+        retired_state: "retired"
+        release_trailer_key: "release"
+
+    - rule_id: lifecycle-no-code
+      description: A repository declared no-code refuses any code file added or grown.
+      severity: error
+      enabled: true
+      parameters:
+        no_code_text: "the repository lifecycle is no-code; a code file is not added or grown"
+
+    - rule_id: lifecycle-fix-only-new-file
+      description: A repository declared fix-only refuses a new code file.
+      severity: error
+      enabled: true
+      parameters:
+        fix_only_new_file_text: "the repository lifecycle is fix-only; a new code file is not added"
+
+    - rule_id: lifecycle-fix-only-growth
+      description: A repository declared fix-only admits growth of an existing code file only with a release
+        trailer.
+      severity: error
+      enabled: true
+      parameters:
+        fix_only_growth_text: "the repository lifecycle is fix-only; code lines {old} -> {new} need a
+          '{key}=' RELEASE-row stamp in the commit trailer"
+
+    - rule_id: lifecycle-retired
+      description: A repository declared retired refuses everything except deletions.
+      severity: error
+      enabled: true
+      parameters:
+        retired_text: "the repository lifecycle is retired; only deletions are admitted"
+
+    - rule_id: handler_outside_node
+      description: A handler_*.py file or Handler* class that no contract.yaml binds.
+      severity: error
+      enabled: true
+      parameters:
+        handler_file_prefix: "handler_"
+        handler_class_pattern: '^class Handler\w*'
+        contract_file_name: "contract.yaml"
+        binding_handler_key: "handler"
+        binding_module_key: "module"
+        binding_default_key: "default_handler"
+        handler_outside_node_text: "handler no contract.yaml binds (handler.module, handler_routing or
+          default_handler); bind it from a node contract or move it into a node"
+
+    - rule_id: cli_entry_outside_node
+      description: An argparse main() or a [project.scripts] entry whose module is not a node runtime.
+      severity: error
+      enabled: true
+      parameters:
+        argparse_pattern: 'argparse\.ArgumentParser\('
+        main_pattern: '^def main\('
+        node_runtime_prefix: "runtime_"
+        scripts_key_path: "project.scripts"
+        cli_entry_outside_node_text: "command line entry outside a node runtime; a node runtime is runtime_*.py
+          beside a contract.yaml"
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

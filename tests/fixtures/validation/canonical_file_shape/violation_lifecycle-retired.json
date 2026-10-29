@@ -1,0 +1,26 @@
+{
+  "base_lifecycle_text": "state: retired\n",
+  "changes": [
+    {
+      "new_text": "row 1\nrow 2\n",
+      "old_path": null,
+      "old_text": "row 1\n",
+      "path": "docs/ledger.md",
+      "status": "M"
+    }
+  ],
+  "commit_messages": null,
+  "has_base": true,
+  "head_lifecycle_text": "state: retired\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "src/pkg/models/model_a.py",
+      "docs/ledger.md"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

@@ -4,57 +4,53 @@
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from omnibase_core.validators import canonical_file_shape
-from omnibase_core.validators.canonical_file_shape import (
-    DEFAULT_BASELINE,
-    INDEX,
-    GitRepo,
-    check,
-    is_canonical_location,
-    render_baseline,
+from omnibase_core.handlers.handler_canonical_location_rules import (
+    is_shell_script,
     typescript_workspace_roots,
 )
-from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
+from omnibase_core.models.validation.model_canonical_file_shape_tree import (
+    ModelCanonicalFileShapeTree,
+)
+from omnibase_core.validation.checker_canonical_file_shape import file_rule_refusals
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    BASELINE,
+    RULES,
+    baseline_text,
+    init_repo,
+    issues,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    git as _git,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    rules_hit as _rules,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    write as _write,
+)
 
 pytestmark = pytest.mark.unit
 
-IDENTITY = ("-c", "user.name=t", "-c", "user.email=t@example.com")
 OLD_TOOL = "scripts/old_tool.py"
 BASE_TEXT = "#!/usr/bin/env python3\na=1\nb=2\nc=3\n"
 
 
-def _git(repo: Path, *args: str) -> None:
-    subprocess.run(
-        ["git", *IDENTITY, *args],
-        cwd=repo,
-        env=scrub_git_location_env(),
-        check=True,
-        capture_output=True,
-    )
-
-
-def _write(repo: Path, rel: str, text: str) -> None:
-    path = repo / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
-
-
 @pytest.fixture
 def repo(tmp_path: Path) -> Path:
-    _git(tmp_path, "init", "-q", "-b", "dev")
-    _write(tmp_path, DEFAULT_BASELINE, render_baseline([]))
-    _git(tmp_path, "add", "-A")
-    _git(tmp_path, "commit", "-q", "-m", "base")
-    return tmp_path
+    return init_repo(tmp_path)
 
 
-def _repo(repo: Path) -> GitRepo:
-    return GitRepo(root=repo, env=scrub_git_location_env())
+def _is_canonical_location(
+    path: str, workspace_roots: frozenset[str] = frozenset()
+) -> bool:
+    tree = ModelCanonicalFileShapeTree(
+        files=(path, *(f"{root}/package.json" for root in sorted(workspace_roots))),
+    )
+    return path not in file_rule_refusals(tree, RULES)
 
 
 def test_typescript_shape_workspace_needs_package_json(repo: Path) -> None:
@@ -67,12 +63,12 @@ def test_typescript_shape_workspace_needs_package_json(repo: Path) -> None:
     _git(repo, "add", "-A")
 
     expected = {(path, "noncanonical-file") for path in refused | {web}}
-    assert {(f.path, f.rule) for f in check(_repo(repo), INDEX, "HEAD")} == expected
+    assert {(f.file_path.as_posix(), f.code) for f in issues(repo)} == expected
     _write(repo, "web/package.json", "{}\n")
-    assert {(f.path, f.rule) for f in check(_repo(repo), INDEX, "HEAD")} == expected
+    assert {(f.file_path.as_posix(), f.code) for f in issues(repo)} == expected
 
     _git(repo, "add", "web/package.json")
-    assert {(f.path, f.rule) for f in check(_repo(repo), INDEX, "HEAD")} == {
+    assert {(f.file_path.as_posix(), f.code) for f in issues(repo)} == {
         (path, "noncanonical-file") for path in refused
     }
 
@@ -112,14 +108,12 @@ def test_typescript_shape_planted_outside_refused_and_admitted_in_location(
         for path in (refused, admitted):
             _write(repo, path, "export const value = 1;\n")
     _git(repo, "add", "-A")
-    findings = check(_repo(repo), INDEX, "HEAD")
-    assert {(f.path, f.rule) for f in findings} == {
+    findings = issues(repo)
+    assert {(f.file_path.as_posix(), f.code) for f in findings} == {
         (refused, "noncanonical-file") for refused, _ in pairs
     }
     for finding in findings:
-        assert "TypeScript" in finding.reason
-        for location in ("src/", "components", "hooks", "app", ".storybook", "docs/"):
-            assert location in finding.reason
+        assert finding.message == RULES.parameters.noncanonical_text
 
 
 @pytest.mark.parametrize(
@@ -174,10 +168,10 @@ def test_typescript_shape_admitted(repo: Path, path: str) -> None:
         _write(repo, f"{root}/package.json", "{}\n")
     _write(repo, path, "export const value = 1;\n")
     _git(repo, "add", "-A")
-    assert check(_repo(repo), INDEX, "HEAD") == []
-    assert is_canonical_location(path, workspace_roots)
+    assert issues(repo) == ()
+    assert _is_canonical_location(path, workspace_roots)
     if workspace_roots:
-        assert not is_canonical_location(path)
+        assert not _is_canonical_location(path)
 
 
 @pytest.mark.parametrize(
@@ -209,9 +203,11 @@ def test_typescript_shape_admitted(repo: Path, path: str) -> None:
 def test_typescript_shape_refused(repo: Path, path: str) -> None:
     _write(repo, path, "export const value = 1;\n")
     _git(repo, "add", "-A")
-    findings = check(_repo(repo), INDEX, "HEAD")
-    assert [(f.path, f.rule) for f in findings] == [(path, "noncanonical-file")]
-    assert not is_canonical_location(path)
+    findings = issues(repo)
+    assert [(f.file_path.as_posix(), f.code) for f in findings] == [
+        (path, "noncanonical-file")
+    ]
+    assert not _is_canonical_location(path)
 
 
 @pytest.mark.parametrize("suffix", ["ts", "tsx", "js", "jsx", "mjs", "cjs"])
@@ -222,7 +218,7 @@ def test_typescript_shape_refused(repo: Path, path: str) -> None:
 def test_typescript_shape_all_suffixes_in_shared_locations(
     suffix: str, directory: str
 ) -> None:
-    assert is_canonical_location(f"{directory}example.{suffix}")
+    assert _is_canonical_location(f"{directory}example.{suffix}")
 
 
 @pytest.mark.parametrize("prefix", ["", "web/", "packages/ui/", "packages/@scope/ui/"])
@@ -248,9 +244,9 @@ def test_typescript_shape_all_suffixes_in_shared_locations(
 )
 def test_typescript_shape_workspace_locations(prefix: str, relative: str) -> None:
     workspace_roots = frozenset({prefix.rstrip("/")}) if prefix else frozenset()
-    assert is_canonical_location(prefix + relative, workspace_roots)
+    assert _is_canonical_location(prefix + relative, workspace_roots)
     if prefix:
-        assert not is_canonical_location(prefix + relative)
+        assert not _is_canonical_location(prefix + relative)
 
 
 @pytest.mark.parametrize("suffix", ["ts", "tsx"])
@@ -279,7 +275,7 @@ def test_typescript_shape_workspace_locations(prefix: str, relative: str) -> Non
     ],
 )
 def test_typescript_shape_next_route_names(name: str, suffix: str) -> None:
-    assert is_canonical_location(f"src/app/(app)/nested/{name}.{suffix}")
+    assert _is_canonical_location(f"src/app/(app)/nested/{name}.{suffix}")
 
 
 @pytest.mark.parametrize("suffix", ["ts", "tsx"])
@@ -296,7 +292,7 @@ def test_typescript_shape_next_route_names(name: str, suffix: str) -> None:
     ],
 )
 def test_typescript_shape_next_entry_names(name: str, suffix: str) -> None:
-    assert is_canonical_location(f"src/{name}.{suffix}")
+    assert _is_canonical_location(f"src/{name}.{suffix}")
 
 
 @pytest.mark.parametrize(
@@ -321,7 +317,7 @@ def test_typescript_shape_next_entry_names(name: str, suffix: str) -> None:
     ],
 )
 def test_typescript_shape_boundaries(path: str) -> None:
-    assert not is_canonical_location(path, frozenset({"web", "packages/@scope/ui"}))
+    assert not _is_canonical_location(path, frozenset({"web", "packages/@scope/ui"}))
 
 
 def test_shell_script_refused_in_every_location(repo: Path) -> None:
@@ -341,19 +337,19 @@ def test_shell_script_refused_in_every_location(repo: Path) -> None:
         _write(repo, path, f"{shebang}\necho hi\n")
     _write(repo, "tests/python_tool", "#!/usr/bin/env python3\nprint('hi')\n")
     _git(repo, "add", "-A")
-    findings = check(_repo(repo), INDEX, "HEAD")
-    assert {(f.path, f.rule) for f in findings} == {
+    findings = issues(repo)
+    assert {(f.file_path.as_posix(), f.code) for f in findings} == {
         (path, "noncanonical-file") for path in paths
     }
     for finding in findings:
         assert (
             "shell scripts have no canonical location in any repository"
-            in finding.reason
+            in finding.message
         )
-        assert "OMN-21332" in finding.reason
+        assert "OMN-21332" in finding.message
     for path in paths:
         if Path(path).suffix:
-            assert not is_canonical_location(path)
+            assert not _is_canonical_location(path)
 
 
 @pytest.mark.parametrize(
@@ -382,39 +378,41 @@ def test_shell_script_refused_in_every_location(repo: Path) -> None:
 def test_shell_script_refused_detection(
     path: str, head_bytes: bytes | None, expected: bool
 ) -> None:
-    assert canonical_file_shape.is_shell_script(path, head_bytes) is expected
+    assert is_shell_script(path, head_bytes) is expected
 
 
 def test_shell_script_refused_existing_baselined_only_shrinks(repo: Path) -> None:
     old, new = "tests/old.sh", "tests/new.sh"
     _write(repo, old, "#!/bin/sh\necho old\n")
-    _write(repo, DEFAULT_BASELINE, render_baseline([old]))
+    _write(repo, BASELINE, baseline_text([old]))
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "baselined shell")
-    assert check(_repo(repo), INDEX, "HEAD") == []
+    assert issues(repo) == ()
 
     _write(repo, new, "#!/bin/sh\necho new\n")
     _git(repo, "add", "-A")
-    findings = check(_repo(repo), INDEX, "HEAD")
-    assert [(f.path, f.rule) for f in findings] == [(new, "noncanonical-file")]
+    findings = issues(repo)
+    assert [(f.file_path.as_posix(), f.code) for f in findings] == [
+        (new, "noncanonical-file")
+    ]
 
-    _write(repo, DEFAULT_BASELINE, render_baseline([old, new]))
+    _write(repo, BASELINE, baseline_text([old, new]))
     _git(repo, "add", "-A")
-    findings = check(_repo(repo), INDEX, "HEAD")
-    assert [f.rule for f in findings] == ["baseline-growth"]
-    assert new in findings[0].reason
+    findings = issues(repo)
+    assert [f.code for f in findings] == ["baseline-growth"]
+    assert new in findings[0].message
 
-    _write(repo, DEFAULT_BASELINE, render_baseline([old]))
+    _write(repo, BASELINE, baseline_text([old]))
     (repo / new).unlink()
     (repo / old).unlink()
     _git(repo, "add", "-A")
-    findings = check(_repo(repo), INDEX, "HEAD")
-    assert [f.rule for f in findings] == ["baseline-stale"]
-    assert old in findings[0].reason
+    findings = issues(repo)
+    assert [f.code for f in findings] == ["baseline-stale"]
+    assert old in findings[0].message
 
-    _write(repo, DEFAULT_BASELINE, render_baseline([]))
+    _write(repo, BASELINE, baseline_text([]))
     _git(repo, "add", "-A")
-    assert check(_repo(repo), INDEX, "HEAD") == []
+    assert issues(repo) == ()
 
 
 def test_shell_script_refused_python_unchanged(repo: Path) -> None:
@@ -425,11 +423,11 @@ def test_shell_script_refused_python_unchanged(repo: Path) -> None:
     ):
         _write(repo, path, "X = 1\n")
     _git(repo, "add", "-A")
-    findings = check(_repo(repo), INDEX, "HEAD")
-    assert [(f.path, f.rule) for f in findings] == [
+    findings = issues(repo)
+    assert [(f.file_path.as_posix(), f.code) for f in findings] == [
         ("scripts/tool.py", "noncanonical-file")
     ]
-    assert findings[0].reason == (
+    assert findings[0].message == (
         "new code file outside a canonical location "
         "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
         "tests/, docs/). Build it as a contract + node + handler."
@@ -438,14 +436,9 @@ def test_shell_script_refused_python_unchanged(repo: Path) -> None:
 
 def _commit_baselined_file(repo: Path, path: str = OLD_TOOL) -> None:
     _write(repo, path, BASE_TEXT)
-    _write(repo, DEFAULT_BASELINE, render_baseline([path]))
+    _write(repo, BASELINE, baseline_text([path]))
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "base")
-
-
-def _rules(repo: Path) -> list[str]:
-    git = GitRepo(root=repo, env=scrub_git_location_env())
-    return sorted(f.rule for f in check(git, INDEX, "HEAD"))
 
 
 @pytest.mark.parametrize(
@@ -465,9 +458,9 @@ def test_baselined_file_growth_any_surface_refused(repo: Path, path: str) -> Non
     _git(repo, "add", "-A")
 
     assert _rules(repo) == ["baselined-file-growth"]
-    finding = check(GitRepo(root=repo, env=scrub_git_location_env()), INDEX, "HEAD")[0]
-    assert finding.path == path
-    assert finding.reason == (
+    finding = issues(repo)[0]
+    assert finding.file_path == Path(path)
+    assert finding.message == (
         "code lines 3 -> 4; a baselined file only shrinks. "
         "Put the new behaviour in a contract + node + handler "
         "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z)"
@@ -483,13 +476,13 @@ def test_baselined_file_growth_any_surface_rename_refused(
     _git(repo, "mv", OLD_TOOL, new_path)
     _write(repo, new_path, BASE_TEXT + "d=4\n")
     if baseline_form == "swap":
-        _write(repo, DEFAULT_BASELINE, render_baseline([new_path]))
+        _write(repo, BASELINE, baseline_text([new_path]))
     _git(repo, "add", "-A")
 
     assert _rules(repo) == ["baselined-file-growth"]
-    finding = check(GitRepo(root=repo, env=scrub_git_location_env()), INDEX, "HEAD")[0]
-    assert finding.path == new_path
-    assert "3 -> 4" in finding.reason
+    finding = issues(repo)[0]
+    assert finding.file_path == Path(new_path)
+    assert "3 -> 4" in finding.message
 
 
 @pytest.mark.parametrize(

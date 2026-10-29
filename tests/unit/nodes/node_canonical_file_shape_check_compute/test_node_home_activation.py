@@ -7,8 +7,9 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
-from omnibase_core.nodes.node_node_home_check_compute.handler import (
+from omnibase_core.nodes.node_canonical_file_shape_check_compute.matcher_node_home import (
     NODE_HOME_BASELINE,
 )
 
@@ -16,8 +17,11 @@ pytestmark = pytest.mark.unit
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 RUNTIME_MODULE = (
-    "omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check"
+    "omnibase_core.nodes.node_canonical_file_shape_check_compute."
+    "runtime_canonical_file_shape_check"
 )
+
+RUNTIME_COMMAND = f"{RUNTIME_MODULE} --rules node-home"
 
 
 def test_baseline_lists_only_existing_node_directories() -> None:
@@ -36,10 +40,17 @@ def test_baseline_lists_only_existing_node_directories() -> None:
 
 def test_pre_commit_runs_the_check() -> None:
     config = (REPO_ROOT / ".pre-commit-config.yaml").read_text()
-    assert "id: check-node-home" in config
-    assert RUNTIME_MODULE in config
+    hooks = [
+        hook
+        for repo in yaml.safe_load(config)["repos"]
+        for hook in repo.get("hooks", [])
+        if hook["id"] == "check-node-home"
+    ]
+    assert len(hooks) == 1
+    assert hooks[0]["entry"] == f"uv run python -m {RUNTIME_COMMAND}"
 
 
 def test_ci_runs_the_check_against_the_merge_base() -> None:
     workflow = (REPO_ROOT / ".github/workflows/ci.yml").read_text()
-    assert f"{RUNTIME_MODULE} --base" in workflow
+    assert f'{RUNTIME_COMMAND} --base "$base"' in workflow
+    assert 'base="$(git merge-base "$base" HEAD)"' in workflow

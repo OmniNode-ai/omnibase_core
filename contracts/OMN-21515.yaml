@@ -1,0 +1,114 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21515
+title: "T1.1: canonical file shape on the core pattern, with a repository-lifecycle rule"
+summary: The canonical-file-shape ratchet is a pure checker over typed facts, a validator contract with
+  every rule parameter, and the node_canonical_file_shape_check_compute node that returns a ModelValidationReport.
+  The hook id canonical-file-shape runs that node. A repository declares its own lifecycle in .onex/repo_lifecycle.yaml
+  (active, fix-only, no-code, retired); handler_outside_node and cli_entry_outside_node refuse a handler
+  no contract binds and a command line entry that is not a node runtime. Node-home is one rule group of
+  the node.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21515-canonical-file-shape-node
+    statement: The canonical-file-shape rules, the lifecycle rule and the two handler and command line
+      rules run as one COMPUTE node on the generic validator format, with the hook id unchanged.
+    acceptance:
+      - id: AC1
+        statement: "AC1: The old hook id canonical-file-shape runs the new node with no id change downstream,
+          the report has one finding per refused path with its rule id, and the baseline file stays the
+          only state -- falsifier: pytest cases over the node's report for a multi-path fixture and a
+          check that the hook id in .pre-commit-hooks.yaml is unchanged"
+      - id: AC2
+        statement: "AC2: A new scripts/x.py in omnimarket is refused -- falsifier: the canary commit that
+          adds scripts/x.py run through pre-commit run --files, plus a pytest case over the rule"
+      - id: AC3
+        statement: "AC3: In a repository whose lifecycle file says no-code, a new src/.../x.py is refused
+          and a ledger-row Markdown append is admitted -- falsifier: two pytest cases over a no-code fixture
+          repository"
+      - id: AC4
+        statement: "AC4: In fix-only, a new file is refused, and a two-line fix to an existing file without
+          the trailer is refused, with the trailer admitted -- falsifier: three pytest cases over a fix-only
+          fixture repository"
+      - id: AC5
+        statement: "AC5 (Configuration): every pattern, name list, path, threshold and remediation text
+          of the rules, and the lifecycle file location, is a parameters entry of validation/contracts/canonical_file_shape.validation.yaml;
+          a table-driven test mutates every parameters key and asserts the verdict change on the scenario
+          that key controls, and a contract with a missing, unknown or duplicated key fails to load --
+          falsifier: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py"
+      - id: AC6
+        statement: "AC6 (Bindings): the checker takes facts only (open and Path reads patched to raise),
+          the runtime resolves the report writer from the container (a container spy records the resolution),
+          and a planted unbound src/<pkg>/handlers/handler_y.py and a console script to it are refused
+          with handlers/ still canonical for a bound handler -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py"
+evidence_requirements:
+  - kind: tests
+    description: The checker, runtime and ported rule tests pass at the pushed head.
+    command: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21515-ac1-report-per-refused-path
+    description: The node's report has one finding per refused path with its rule id, and the hook id
+      canonical-file-shape and its entry in .pre-commit-hooks.yaml run the node runtime.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "one_finding_per_refused_path or hook_id_canonical_file_shape_is_unchanged"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21515-ac2-new-script-refused
+    description: A new scripts/x.py is refused by the rule and by the hook entry on a staged canary.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "new_scripts_file or new_script_is_refused"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21515-ac3-no-code
+    description: A no-code repository refuses a new src/.../x.py and admits a ledger-row Markdown append.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "no_code"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn21515-ac4-fix-only
+    description: A fix-only repository refuses a new file and an untrailered two-line fix, and admits
+      the trailered fix.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "fix_only"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn21515-configuration
+    description: Every parameters key of the validator contract changes a verdict, an invalid contract
+      fails to load, and disabling a rule row clears its violation fixture.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
+  - id: dod-omn21515-bindings
+    description: The checker is pure, the runtime resolves the report writer from the container, and the
+      planted unbound handler and console script are refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          tests/unit/validation/test_checker_canonical_file_shape.py -q --no-cov -n 0 -k "container or
+          handler or console_script or forbid_io or golden"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC6]

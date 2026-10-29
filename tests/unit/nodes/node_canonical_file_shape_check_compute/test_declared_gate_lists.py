@@ -14,19 +14,28 @@ the positive cases fail on a validator that does not read workflow callers.
 
 from __future__ import annotations
 
-import subprocess
 from pathlib import Path
 
 import pytest
 
-from omnibase_core.validators.canonical_file_shape import INDEX, GitRepo, check, main
+from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import (
+    main,
+)
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    git as _git,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    rules_hit,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    write as _write,
 )
 
 pytestmark = pytest.mark.unit
 
-IDENTITY = ("-c", "user.name=t", "-c", "user.email=t@example.com")
 GUARD = "OmniNode-ai/omnibase_core/.github/workflows/imperative-contract-guard.yml"
 # Short refs: the ratchet reads any ref, and a 40-hex literal trips detect-secrets.
 CORE_SHA = "688ef17"
@@ -105,22 +114,6 @@ OMNIMEMORY_CALLER_CORE = _omnimemory_caller(
 )
 
 
-def _git(repo: Path, *args: str) -> None:
-    subprocess.run(
-        ["git", *IDENTITY, *args],
-        cwd=repo,
-        env=scrub_git_location_env(),
-        check=True,
-        capture_output=True,
-    )
-
-
-def _write(repo: Path, rel: str, text: str) -> None:
-    path = repo / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
-
-
 def _caller(uses: str, allowlist_path: str | None = ALLOWLIST) -> str:
     text = (
         "name: Imperative Contract Guard\n"
@@ -146,13 +139,14 @@ def repo(tmp_path: Path) -> Path:
 
 def _rules(repo: Path) -> list[str]:
     _git(repo, "add", "-A")
-    git = GitRepo(root=repo, env=scrub_git_location_env())
-    return sorted(f.rule for f in check(git, INDEX, "HEAD"))
+    return rules_hit(repo)
 
 
 def _main(repo: Path) -> int:
     _git(repo, "add", "-A")
-    return main(["--base", "HEAD"], repo_root=repo, env=scrub_git_location_env())
+    return main(
+        ["--repo-root", str(repo), "--base", "HEAD"], env=scrub_git_location_env()
+    )
 
 
 # --- AC1: a caller of omnibase_core's guard reusable declares its allowlist ---

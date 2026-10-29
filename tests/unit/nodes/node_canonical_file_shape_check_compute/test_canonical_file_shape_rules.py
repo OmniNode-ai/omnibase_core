@@ -8,28 +8,57 @@ comment of its own.
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
-from omnibase_core.nodes.node_node_home_check_compute.handler import NODE_HOME_BASELINE
-from omnibase_core.validators import canonical_file_shape
-from omnibase_core.validators.canonical_file_shape import (
-    DEFAULT_BASELINE,
-    INDEX,
+from omnibase_core.models.validation.model_canonical_file_shape_facts import (
+    ModelCanonicalFileShapeFacts,
+)
+from omnibase_core.models.validation.model_canonical_file_shape_text import (
+    ModelCanonicalFileShapeText,
+)
+from omnibase_core.models.validation.model_canonical_file_shape_tree import (
+    ModelCanonicalFileShapeTree,
+)
+from omnibase_core.nodes.node_canonical_file_shape_check_compute import (
+    runtime_canonical_file_shape_check as runtime,
+)
+from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import (
     GitRepo,
-    check,
-    count_suppressions,
-    declared_gate_baselines,
-    is_canonical_location,
-    is_code_file,
     main,
-    render_baseline,
+)
+from omnibase_core.validation import checker_canonical_file_shape as checker
+from omnibase_core.validation import validator_git_repo as git_reader
+from omnibase_core.validation.checker_canonical_file_shape import (
+    declared_paths,
+    file_rule_refusals,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    BASELINE,
+    INDEX,
+    NODE_HOME_BASELINE,
+    RULES,
+    baseline_text,
+    issues,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    git as _git,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    rules_hit as _rules,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    stage as _stage,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    write as _write,
 )
 
 pytestmark = pytest.mark.unit
@@ -39,27 +68,29 @@ FALLBACK_MARK = "# fallback" + "-ok: reason"
 IMPERATIVE_MARK = "# imperative" + "-ok"
 
 
-IDENTITY = ("-c", "user.name=t", "-c", "user.email=t@example.com")
-
-
 def _env() -> dict[str, str]:
     return scrub_git_location_env()
 
 
-def _git(repo: Path, *args: str) -> None:
-    subprocess.run(
-        ["git", *IDENTITY, *args],
-        cwd=repo,
-        env=scrub_git_location_env(),
-        check=True,
-        capture_output=True,
+def _count_suppressions(text: str) -> int:
+    return sum(
+        len(re.findall(pattern, text))
+        for pattern in RULES.parameters.suppression_patterns
     )
 
 
-def _write(repo: Path, rel: str, text: str) -> None:
-    path = repo / rel
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+def _declared_baselines(text: str | None) -> frozenset[str]:
+    facts = ModelCanonicalFileShapeFacts(
+        head_tree=ModelCanonicalFileShapeTree(),
+        declared_texts=()
+        if text is None
+        else (
+            ModelCanonicalFileShapeText(
+                path=RULES.parameters.pre_commit_config_path, text=text
+            ),
+        ),
+    )
+    return declared_paths(facts, RULES.parameters)
 
 
 @pytest.fixture
@@ -67,22 +98,13 @@ def repo(tmp_path: Path) -> Path:
     _git(tmp_path, "init", "-q", "-b", "dev")
     _write(tmp_path, "scripts/old_tool.py", "print('old')\n")
     _write(tmp_path, "src/pkg/nodes/node_x/handler.py", "X = 1\n")
-    _write(tmp_path, DEFAULT_BASELINE, render_baseline(["scripts/old_tool.py"]))
+    _write(tmp_path, BASELINE, baseline_text(["scripts/old_tool.py"]))
     _write(tmp_path, "config/topic_allowlist.yaml", "- a\n- b\n")
     _write(tmp_path, "plugins/p/skills/s/SKILL.md", "Dispatch via onex run-node.\n")
     _write(tmp_path, "src/pkg/nodes/node_x/legacy.py", f"y = 1  {NOQA}\n")
     _git(tmp_path, "add", "-A")
     _git(tmp_path, "commit", "-q", "-m", "base")
     return tmp_path
-
-
-def _rules(repo: Path) -> list[str]:
-    git = GitRepo(root=repo, env=_env())
-    return sorted(f.rule for f in check(git, INDEX, "HEAD"))
-
-
-def _stage(repo: Path) -> None:
-    _git(repo, "add", "-A")
 
 
 @pytest.mark.parametrize(
@@ -101,7 +123,17 @@ def _stage(repo: Path) -> None:
     ],
 )
 def test_canonical_locations(path: str) -> None:
-    assert is_canonical_location(path)
+    # Supply a binding so this location test also satisfies the handler rule.
+    tree = ModelCanonicalFileShapeTree(
+        files=(path,),
+        contract_texts=(
+            ModelCanonicalFileShapeText(
+                path="src/pkg/nodes/node_a/contract.yaml",
+                text="handler:\n  module: pkg.handlers.handler_a\n",
+            ),
+        ),
+    )
+    assert path not in file_rule_refusals(tree, RULES)
 
 
 @pytest.mark.parametrize(
@@ -117,14 +149,26 @@ def test_canonical_locations(path: str) -> None:
     ],
 )
 def test_noncanonical_locations(path: str) -> None:
-    assert not is_canonical_location(path)
+    tree = ModelCanonicalFileShapeTree(
+        files=(path,),
+        shebang_lines=(
+            ModelCanonicalFileShapeText(path=path, text="#!/usr/bin/env python3"),
+        ),
+    )
+    assert file_rule_refusals(tree, RULES)[path][0] == "noncanonical-file"
 
 
 def test_code_file_detection() -> None:
-    assert is_code_file("a.py", None)
-    assert is_code_file("bin/run", b"#!/bin/sh\n")
-    assert not is_code_file("Makefile", b"all:\n")
-    assert not is_code_file("README.md", None)
+    tree = ModelCanonicalFileShapeTree(
+        files=("a.py", "bin/run", "Makefile", "README.md"),
+        shebang_lines=(ModelCanonicalFileShapeText(path="bin/run", text="#!/bin/sh"),),
+    )
+    assert {
+        path: refusal[0] for path, refusal in file_rule_refusals(tree, RULES).items()
+    } == {
+        "a.py": "noncanonical-file",
+        "bin/run": "noncanonical-file",
+    }
 
 
 def test_clean_tree_passes(repo: Path) -> None:
@@ -159,8 +203,8 @@ def test_baseline_growth_refused(repo: Path) -> None:
     _write(repo, "scripts/new_tool.py", "x = 1\n")
     _write(
         repo,
-        DEFAULT_BASELINE,
-        render_baseline(["scripts/old_tool.py", "scripts/new_tool.py"]),
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", "scripts/new_tool.py"]),
     )
     _stage(repo)
     assert _rules(repo) == ["baseline-growth"]
@@ -174,7 +218,7 @@ def test_baseline_stale_entry_refused(repo: Path) -> None:
 
 def test_baseline_shrink_accepted(repo: Path) -> None:
     (repo / "scripts/old_tool.py").unlink()
-    _write(repo, DEFAULT_BASELINE, render_baseline([]))
+    _write(repo, BASELINE, baseline_text([]))
     _stage(repo)
     assert _rules(repo) == []
 
@@ -187,8 +231,8 @@ def _baselined_tool(repo: Path) -> None:
     _write(repo, "plugins/p/_bin/tool.sh", "#!/bin/sh\n" + BODY)
     _write(
         repo,
-        DEFAULT_BASELINE,
-        render_baseline(["scripts/old_tool.py", "plugins/p/_bin/tool.sh"]),
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", "plugins/p/_bin/tool.sh"]),
     )
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "tool")
@@ -209,7 +253,7 @@ SWAPPED = ["scripts/old_tool.py", NEW_TOOL]
 def test_rename_swap_accepted(repo: Path) -> None:
     _baselined_tool(repo)
     _rename(repo, NEW_TOOL)
-    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _write(repo, BASELINE, baseline_text(SWAPPED))
     _stage(repo)
     assert _rules(repo) == []
 
@@ -224,7 +268,7 @@ def test_rename_baseline_untouched_accepted(repo: Path) -> None:
 def test_rename_with_edit_accepted(repo: Path) -> None:
     _baselined_tool(repo)
     _rename(repo, NEW_TOOL, "# added by the rename edit\n")
-    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _write(repo, BASELINE, baseline_text(SWAPPED))
     _stage(repo)
     assert _rules(repo) == []
 
@@ -242,7 +286,7 @@ def test_rename_plus_extra_script_refused(repo: Path) -> None:
     _baselined_tool(repo)
     _rename(repo, NEW_TOOL)
     _write(repo, "scripts/extra.py", "x = 1\n")
-    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _write(repo, BASELINE, baseline_text(SWAPPED))
     _stage(repo)
     assert _rules(repo) == ["noncanonical-file"]
 
@@ -251,7 +295,7 @@ def test_swap_without_detected_rename_refused(repo: Path) -> None:
     _baselined_tool(repo)
     (repo / "plugins/p/_bin/tool.sh").unlink()
     _write(repo, NEW_TOOL, "#!/bin/sh\necho unrelated\n")
-    _write(repo, DEFAULT_BASELINE, render_baseline(SWAPPED))
+    _write(repo, BASELINE, baseline_text(SWAPPED))
     _stage(repo)
     assert _rules(repo) == ["baseline-growth"]
 
@@ -261,8 +305,8 @@ def test_rename_keeping_old_entry_and_adding_new_refused(repo: Path) -> None:
     _rename(repo, NEW_TOOL)
     _write(
         repo,
-        DEFAULT_BASELINE,
-        render_baseline([*SWAPPED, "plugins/p/_bin/tool.sh"]),
+        BASELINE,
+        baseline_text([*SWAPPED, "plugins/p/_bin/tool.sh"]),
     )
     _stage(repo)
     assert "baseline-growth" in _rules(repo)
@@ -372,8 +416,8 @@ def test_declaration_by_a_local_hook_does_not_count(repo: Path) -> None:
 
 
 def test_declared_gate_baselines_forms() -> None:
-    assert declared_gate_baselines(None) == frozenset()
-    assert declared_gate_baselines("not: [valid") == frozenset()
+    assert _declared_baselines(None) == frozenset()
+    assert _declared_baselines("not: [valid") == frozenset()
     text = (
         "repos:\n"
         "  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
@@ -383,7 +427,7 @@ def test_declared_gate_baselines_forms() -> None:
         "      - id: canonical-file-shape\n"
         "        args: [--baseline, z.txt]\n"
     )
-    assert declared_gate_baselines(text) == frozenset({"x/y.yaml"})
+    assert _declared_baselines(text) == frozenset({"x/y.yaml"})
 
 
 @pytest.mark.parametrize(
@@ -403,7 +447,7 @@ def test_node_boundary_baseline_declarations(
         "    hooks:\n"
         "      - id: check-node-boundary-imports\n" + args
     )
-    assert declared_gate_baselines(config) == frozenset({expected})
+    assert _declared_baselines(config) == frozenset({expected})
     _write(repo, ".pre-commit-config.yaml", config)
     _write(repo, expected, "schema_version: 1\ngate: OMN-17427\nedges: []\n")
     _stage(repo)
@@ -414,7 +458,7 @@ def test_local_node_boundary_declaration_refused(repo: Path) -> None:
     config = (
         "repos:\n  - repo: local\n    hooks:\n      - id: check-node-boundary-imports\n"
     )
-    assert declared_gate_baselines(config) == frozenset()
+    assert _declared_baselines(config) == frozenset()
     _write(repo, ".pre-commit-config.yaml", config)
     _write(repo, ".onex_ratchets/node_boundary_import_baseline.yaml", "edges: []\n")
     _stage(repo)
@@ -431,7 +475,7 @@ def test_both_gate_declarations_and_no_direct_model_default() -> None:
         "        args: [--baseline, direct.yaml]\n"
         "      - id: check-direct-model-call\n"
     )
-    assert declared_gate_baselines(config) == frozenset(
+    assert _declared_baselines(config) == frozenset(
         {
             ".onex_ratchets/node_boundary_import_baseline.yaml",
             "direct.yaml",
@@ -444,7 +488,7 @@ def test_incomplete_boundary_baseline_argument_does_not_declare_default() -> Non
         "repos:\n  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
         "    hooks:\n      - id: check-node-boundary-imports\n        args: [--baseline]\n"
     )
-    assert declared_gate_baselines(config) == frozenset()
+    assert _declared_baselines(config) == frozenset()
 
 
 MODEL_CONFIG_BASELINE = "config/hardcoded_model_config_baseline.yaml"
@@ -474,7 +518,7 @@ def test_hardcoded_model_config_gate_declares_its_baseline(
     args: str, expected: str
 ) -> None:
     """OMN-21147: the model-config guard is a declared shrink-only gate."""
-    assert declared_gate_baselines(_model_config_config(args)) == frozenset({expected})
+    assert _declared_baselines(_model_config_config(args)) == frozenset({expected})
 
 
 def test_hardcoded_model_config_gate_baseline_may_shrink(repo: Path) -> None:
@@ -589,15 +633,16 @@ def test_suppression_kept_count_accepted(repo: Path) -> None:
 
 
 def test_suppression_counter() -> None:
-    assert count_suppressions(f"a = 1  {NOQA}\nb = 2  {FALLBACK_MARK}\n") == 2
-    assert count_suppressions("plain = 'noqa as a word'\n") == 0
+    assert _count_suppressions(f"a = 1  {NOQA}\nb = 2  {FALLBACK_MARK}\n") == 2
+    assert _count_suppressions("plain = 'noqa as a word'\n") == 0
 
 
 def test_validator_source_carries_no_suppression() -> None:
-    import omnibase_core.validators.canonical_file_shape as module
-
-    assert count_suppressions(Path(module.__file__).read_text(encoding="utf-8")) == 0
-    assert count_suppressions(Path(__file__).read_text(encoding="utf-8")) == 0
+    for module in (runtime, checker, git_reader):
+        assert (
+            _count_suppressions(Path(module.__file__).read_text(encoding="utf-8")) == 0
+        )
+    assert _count_suppressions(Path(__file__).read_text(encoding="utf-8")) == 0
 
 
 def test_main_exit_codes_and_explicit_revisions(
@@ -611,18 +656,21 @@ def test_main_exit_codes_and_explicit_revisions(
         capture_output=True,
         text=True,
     ).stdout.strip()
-    assert main([], repo_root=repo, env=_env()) == 0
+    assert main(["--repo-root", str(repo)], env=_env()) == 0
     _write(repo, "src/pkg/nodes/node_x/legacy.py", f"y = 1  {NOQA}\nz = 2  {NOQA}\n")
     _stage(repo)
     _git(repo, "commit", "-q", "-m", "bad")
 
-    assert main([], repo_root=repo, env=_env()) == 0
-    assert main(["--base", base, "--head", "HEAD"], repo_root=repo, env=_env()) == 1
+    assert main(["--repo-root", str(repo)], env=_env()) == 0
+    assert (
+        main(["--repo-root", str(repo), "--base", base, "--head", "HEAD"], env=_env())
+        == 1
+    )
     assert "suppression-growth" in capsys.readouterr().err
 
 
 def test_write_baseline_refused_when_present(repo: Path) -> None:
-    assert main(["--write-baseline"], repo_root=repo, env=_env()) == 1
+    assert main(["--repo-root", str(repo), "--write-baseline"], env=_env()) == 1
 
 
 # The launching Mac's failure mode (OMN-17427): a pipe to the child's stdin is
@@ -648,7 +696,7 @@ if module_file:
     module_spec.loader.exec_module(module)
     GitRepo = module.GitRepo
 else:
-    from omnibase_core.validators.canonical_file_shape import GitRepo
+    from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import GitRepo
 
 
 class StalledPipeSelector(selectors.PollSelector):
@@ -738,7 +786,7 @@ _REAL_CAT_FILE_RUN = """\
             subprocess.run(
                 ["git", "cat-file", "--batch"],
                 cwd=self.root,
-                env=None if self.env is None else dict(self.env),
+                env=self._env(),
                 stdin=requests,
                 stdout=responses,
                 check=True,
@@ -753,7 +801,7 @@ _MUTANT_CAT_FILE_RUN = """\
                 out = subprocess.run(
                     ["git", "cat-file", "--batch"],
                     cwd=self.root,
-                    env=None if self.env is None else dict(self.env),
+                    env=self._env(),
                     input=spec,
                     capture_output=True,
                     check=True,
@@ -763,7 +811,7 @@ _MUTANT_CAT_FILE_RUN = """\
                 subprocess.run(
                     ["git", "cat-file", "--batch"],
                     cwd=self.root,
-                    env=None if self.env is None else dict(self.env),
+                    env=self._env(),
                     stdin=requests,
                     stdout=responses,
                     check=True,
@@ -779,7 +827,7 @@ _CONTROL_TIMEOUT_S = 8
 
 
 def _module_copy(tmp_path: Path, *, mutate: bool) -> Path:
-    source = Path(canonical_file_shape.__file__).read_text(encoding="utf-8")
+    source = Path(git_reader.__file__).read_text(encoding="utf-8")
     assert source.count(_REAL_CAT_FILE_RUN) == 1, (
         "read_blobs no longer has the call shape the mutation control rewrites; "
         "update the control with the change"
@@ -843,7 +891,7 @@ def test_large_staged_delta_completes(repo: Path) -> None:
     _stage(repo)
 
     git = GitRepo(root=repo, env=_env())
-    assert check(git, INDEX, "HEAD") == []
+    assert issues(repo) == ()
     blobs = git.read_blobs(INDEX, [*paths, "docs/delta/absent.md"])
     assert all(blobs[path] == body.encode() for path in paths)
     assert blobs["docs/delta/absent.md"] is None
@@ -861,7 +909,8 @@ def test_read_blobs_fails_loud_when_cat_file_hangs(
     env = _env()
     env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
     monkeypatch.setattr(
-        "omnibase_core.validators.canonical_file_shape.CAT_FILE_TIMEOUT_S", 1
+        "omnibase_core.validation.validator_git_repo.CAT_FILE_TIMEOUT_S",
+        1,
     )
 
     with pytest.raises(subprocess.TimeoutExpired):
@@ -880,8 +929,8 @@ def mod_repo(repo: Path) -> Path:
     _write(repo, LEGACY_HOOK, LEGACY_HOOK_TEXT)
     _write(
         repo,
-        DEFAULT_BASELINE,
-        render_baseline(["scripts/old_tool.py", LEGACY_HOOK]),
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", LEGACY_HOOK]),
     )
     _stage(repo)
     _git(repo, "commit", "-q", "-m", "baselined hook")
@@ -898,10 +947,10 @@ def test_mod_file_growth_refused(mod_repo: Path) -> None:
 def test_mod_file_growth_names_the_node_route(mod_repo: Path) -> None:
     _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "D = 4\n")
     _stage(mod_repo)
-    finding = check(GitRepo(root=mod_repo, env=_env()), INDEX, "HEAD")[0]
-    assert finding.path == LEGACY_HOOK
-    assert "3 -> 4" in finding.reason
-    assert "node" in finding.reason
+    finding = issues(mod_repo)[0]
+    assert finding.file_path == Path(LEGACY_HOOK)
+    assert "3 -> 4" in finding.message
+    assert "node" in finding.message
 
 
 def test_mod_file_shrink_accepted(mod_repo: Path) -> None:
@@ -930,8 +979,8 @@ def test_mod_file_growth_in_renamed_file_refused(mod_repo: Path) -> None:
     _write(mod_repo, new_path, LEGACY_HOOK_TEXT + "D = 4\n")
     _write(
         mod_repo,
-        DEFAULT_BASELINE,
-        render_baseline(["scripts/old_tool.py", new_path]),
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", new_path]),
     )
     _stage(mod_repo)
     assert _rules(mod_repo) == ["baselined-file-growth"]
@@ -954,7 +1003,7 @@ def test_dependency_direction_gate_declares_its_baseline() -> None:
     config = _dependency_direction_config(
         f"        args: [--baseline, {DEPENDENCY_DIRECTION_BASELINE}]\n"
     )
-    assert declared_gate_baselines(config) == frozenset({DEPENDENCY_DIRECTION_BASELINE})
+    assert _declared_baselines(config) == frozenset({DEPENDENCY_DIRECTION_BASELINE})
 
 
 def test_dependency_direction_baseline_undeclared_still_refused(repo: Path) -> None:
@@ -975,7 +1024,7 @@ def test_merge_queue_parity_gate_declares_its_baseline() -> None:
         "      - id: check-merge-queue-parity\n"
         f"        args: [--baseline, {MERGE_QUEUE_PARITY_BASELINE}]\n"
     )
-    assert declared_gate_baselines(config) == frozenset({MERGE_QUEUE_PARITY_BASELINE})
+    assert _declared_baselines(config) == frozenset({MERGE_QUEUE_PARITY_BASELINE})
 
 
 def test_merge_queue_parity_baseline_undeclared_still_refused(repo: Path) -> None:
@@ -998,7 +1047,7 @@ def test_public_runner_placement_gate_declares_its_baseline() -> None:
         "      - id: check-public-runner-placement\n"
         f"        args: [--baseline, {PUBLIC_RUNNER_BASELINE}]\n"
     )
-    assert declared_gate_baselines(config) == frozenset({PUBLIC_RUNNER_BASELINE})
+    assert _declared_baselines(config) == frozenset({PUBLIC_RUNNER_BASELINE})
 
 
 def test_public_runner_placement_baseline_undeclared_still_refused(repo: Path) -> None:
@@ -1019,18 +1068,10 @@ def test_ci_inheritance_gate_declares_its_baseline() -> None:
         "      - id: check-ci-inheritance\n"
         f"        args: [--baseline, {CI_INHERITANCE_BASELINE}]\n"
     )
-    assert declared_gate_baselines(config) == frozenset({CI_INHERITANCE_BASELINE})
+    assert _declared_baselines(config) == frozenset({CI_INHERITANCE_BASELINE})
 
 
 def test_ci_inheritance_baseline_undeclared_still_refused(repo: Path) -> None:
     _write(repo, CI_INHERITANCE_BASELINE, "entries: []\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
-
-
-def test_validator_stays_within_its_code_lines_at_the_previous_main_head() -> None:
-    # OMN-18595: the main push run diffs from the previous main head, where this
-    # baselined file held 731 code lines; the TypeScript and shell location rules
-    # live in the handler so the whole range passes baselined-file-growth.
-    source = Path(canonical_file_shape.__file__).read_text(encoding="utf-8")
-    assert canonical_file_shape.count_code_lines(source) <= 731

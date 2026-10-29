@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure node-home ratchet: new nodes belong in omnimarket (OMN-20702)."""
+"""Pure node-home rule of the canonical-file-shape check: new nodes belong in omnimarket (OMN-20702, OMN-21515)."""
 
 from __future__ import annotations
 
@@ -78,18 +78,45 @@ def _entries(text: str | None) -> set[str]:
     }
 
 
-class NodeNodeHomeCheckCompute:
+def _inherited_directories(
+    request: ModelNodeHomeRatchetRequest,
+    nodes: set[str],
+    base_entries: set[str],
+) -> dict[str, str]:
+    """``new node directory -> baselined old directory`` for a git-detected rename.
+
+    A node directory renamed within the repository keeps its place in the
+    shrink-only baseline, as a renamed baselined file does; the directory it
+    replaces must be gone.
+    """
+    inherited: dict[str, str] = {}
+    for old_path, new_path in request.renamed_paths:
+        old_dirs = [entry for entry in base_entries if old_path.startswith(f"{entry}/")]
+        new_dirs = [node for node in nodes if new_path.startswith(f"{node}/")]
+        for old_dir in old_dirs:
+            for new_dir in new_dirs:
+                if new_dir != old_dir and old_dir not in nodes:
+                    inherited[new_dir] = old_dir
+    return inherited
+
+
+class NodeHomeRule:
     """Check supplied node snapshots without filesystem or Git dependencies."""
 
-    def handle(
-        self, request: ModelNodeHomeRatchetRequest
-    ) -> ModelNodeHomeRatchetResult:
+    def check(self, request: ModelNodeHomeRatchetRequest) -> ModelNodeHomeRatchetResult:
         """Check node placement and baseline shrinking using only the supplied inputs."""
         directories = _node_directories(request.tracked_paths, request.node_class_paths)
         findings: list[ModelNodeHomeRatchetFinding] = []
         nodes = set(directories)
         baseline = _entries(request.head_baseline_text)
-        for path in sorted(nodes - baseline):
+        allowed_baseline = (
+            _entries(request.base_baseline_text)
+            if request.base_baseline_text is not None
+            else request.base_node_directories
+        )
+        inherited = _inherited_directories(request, nodes, set(allowed_baseline))
+        renamed_from = set(inherited.values())
+        for path in sorted(nodes - baseline - set(inherited)):
             findings.append(
                 ModelNodeHomeRatchetFinding(
                     code="node-outside-market",
@@ -97,7 +124,7 @@ class NodeNodeHomeCheckCompute:
                     message="new or renamed node directory; the node moves to omnimarket instead",
                 )
             )
-        for path in sorted(baseline - nodes):
+        for path in sorted(baseline - nodes - renamed_from):
             findings.append(
                 ModelNodeHomeRatchetFinding(
                     code="baseline-stale",
@@ -105,12 +132,7 @@ class NodeNodeHomeCheckCompute:
                     message=f"entry '{path}' is no longer a node directory; delete the line; a renamed node moves to omnimarket instead",
                 )
             )
-        allowed_baseline = (
-            _entries(request.base_baseline_text)
-            if request.base_baseline_text is not None
-            else request.base_node_directories
-        )
-        for path in sorted(baseline - allowed_baseline):
+        for path in sorted(baseline - allowed_baseline - set(inherited)):
             findings.append(
                 ModelNodeHomeRatchetFinding(
                     code="baseline-growth",

@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Tests for the pure node-home ratchet and its indexed CLI (OMN-20702)."""
+"""Tests for the node-home rule and canonical-file-shape CLI (OMN-20702)."""
 
 from __future__ import annotations
 
@@ -16,21 +16,21 @@ from omnibase_core.models.validation import (
     ModelNodeHomeRatchetRequest,
     ModelNodeHomeRatchetResult,
 )
-from omnibase_core.nodes.node_node_home_check_compute import handler as ratchet
-from omnibase_core.nodes.node_node_home_check_compute.handler import (
+from omnibase_core.nodes.node_canonical_file_shape_check_compute.matcher_node_home import (
     NODE_HOME_BASELINE,
-    NodeNodeHomeCheckCompute,
+    NodeHomeRule,
 )
-from omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check import (
+from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import (
+    INDEX,
+    GitRepo,
+    gather_node_home_request,
     main,
-    read_request,
-    render_baseline,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 pytestmark = pytest.mark.unit
 
-handle = NodeNodeHomeCheckCompute().handle
+REPO_ROOT = Path(__file__).resolve().parents[4]
 
 NODE = "src/pkg/nodes/node_zz"
 OLD_NODE = "src/pkg/nodes/node_old"
@@ -57,9 +57,17 @@ def _plant(repo: Path, directory: str = NODE) -> None:
     _write(repo, f"{directory}/handlers/__init__.py")
 
 
+def _request(
+    repo: Path, *, head: str = INDEX, base: str | None = "HEAD"
+) -> ModelNodeHomeRatchetRequest:
+    return gather_node_home_request(
+        GitRepo(repo, env=scrub_git_location_env()), head, base
+    )
+
+
 def _check(repo: Path) -> ModelNodeHomeRatchetResult:
     _git(repo, "add", "-A")
-    return handle(read_request(repo))
+    return NodeHomeRule().check(_request(repo))
 
 
 @pytest.fixture
@@ -73,7 +81,7 @@ def repo(tmp_path: Path) -> Path:
 
 def _commit_baseline(repo: Path) -> None:
     _plant(repo, OLD_NODE)
-    _write(repo, NODE_HOME_BASELINE, render_baseline([OLD_NODE]))
+    _write(repo, NODE_HOME_BASELINE, f"{OLD_NODE}\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "existing node baseline")
 
@@ -84,20 +92,21 @@ def test_refuses_new_node_contract_and_handlers(
     _plant(repo)
     result = _check(repo)
     assert result.node_directories == (NODE,)
+    assert _request(repo).renamed_paths == ()
     assert [(finding.code, finding.path) for finding in result.findings] == [
         ("node-outside-market", NODE)
     ]
-    assert main(["--repo-root", str(repo)]) == 1
-    assert capsys.readouterr().err.startswith(f"node-outside-market {NODE}: ")
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 1
+    assert f"  {NODE}: [node-home:node-outside-market] " in capsys.readouterr().err
 
 
 def test_refuses_new_node_baselined_initial_tree_passes(repo: Path) -> None:
     _plant(repo)
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "pre-existing node without baseline")
-    _write(repo, NODE_HOME_BASELINE, render_baseline([NODE]))
+    _write(repo, NODE_HOME_BASELINE, f"{NODE}\n")
     assert _check(repo).findings == ()
-    assert main(["--repo-root", str(repo)]) == 0
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 0
 
 
 @pytest.mark.parametrize("bases", ["(object)", ""])
@@ -115,7 +124,7 @@ def test_refuses_new_node_class_only(repo: Path, bases: str) -> None:
 def test_refuses_new_node_bare_contract_is_not_node(repo: Path) -> None:
     _write(repo, "src/pkg/contracts/service/contract.yaml", "name: service\n")
     assert _check(repo).node_directories == ()
-    assert main(["--repo-root", str(repo)]) == 0
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 0
 
 
 @pytest.mark.parametrize(
@@ -213,16 +222,18 @@ def test_refuses_new_node_reads_staged_python_and_contracts(repo: Path) -> None:
     )
     _git(repo, "add", "-A")
     _write(repo, "src/pkg/node_candidate/impl.py", "VALUE = 1\n")
-    assert handle(read_request(repo)).node_directories == ("src/pkg/node_candidate",)
+    assert NodeHomeRule().check(_request(repo)).node_directories == (
+        "src/pkg/node_candidate",
+    )
     _git(repo, "add", "-A")
     _plant(repo)
-    assert handle(read_request(repo)).node_directories == ()
+    assert NodeHomeRule().check(_request(repo)).node_directories == ()
 
 
 def test_baseline_only_shrinks_growth_refused(repo: Path) -> None:
     _commit_baseline(repo)
     _plant(repo)
-    _write(repo, NODE_HOME_BASELINE, render_baseline([OLD_NODE, NODE]))
+    _write(repo, NODE_HOME_BASELINE, f"{OLD_NODE}\n{NODE}\n")
     findings = _check(repo).findings
     assert [finding.code for finding in findings] == ["baseline-growth"]
     assert NODE in findings[0].message
@@ -239,87 +250,144 @@ def test_baseline_only_shrinks_stale_refused(repo: Path) -> None:
 def test_baseline_only_shrinks_delete_node_and_entry_passes(repo: Path) -> None:
     _commit_baseline(repo)
     shutil.rmtree(repo / OLD_NODE)
-    _write(repo, NODE_HOME_BASELINE, render_baseline([]))
+    _write(repo, NODE_HOME_BASELINE, "")
     assert _check(repo).findings == ()
 
 
-def test_baseline_only_shrinks_rename_refused(repo: Path) -> None:
+@pytest.mark.parametrize("update_baseline", [False, True])
+@pytest.mark.parametrize("head", [INDEX, "HEAD"])
+def test_baselined_node_rename_inherits_baseline(
+    repo: Path, update_baseline: bool, head: str
+) -> None:
     _commit_baseline(repo)
+    _git(repo, "tag", "rename_base")
     _git(repo, "mv", OLD_NODE, NODE)
-    findings = _check(repo).findings
-    assert {finding.code for finding in findings} == {
-        "node-outside-market",
-        "baseline-stale",
-    }
-    assert all("moves to omnimarket instead" in finding.message for finding in findings)
-    _write(repo, NODE_HOME_BASELINE, render_baseline([NODE]))
-    assert [finding.code for finding in _check(repo).findings] == ["baseline-growth"]
+    if update_baseline:
+        _write(repo, NODE_HOME_BASELINE, f"{NODE}\n")
+    _git(repo, "add", "-A")
+    if head == "HEAD":
+        _git(repo, "commit", "-q", "-m", "rename baselined node")
+
+    request = _request(repo, head=head, base="rename_base")
+    assert (
+        f"{OLD_NODE}/contract.yaml",
+        f"{NODE}/contract.yaml",
+    ) in request.renamed_paths
+    result = NodeHomeRule().check(request)
+    assert result.node_directories == (NODE,)
+    assert result.findings == ()
+    assert (
+        main(
+            [
+                "--rules",
+                "node-home",
+                "--repo-root",
+                str(repo),
+                "--base",
+                "rename_base",
+                "--head",
+                head,
+            ]
+        )
+        == 0
+    )
+
+
+def test_unbaselined_node_rename_is_refused(repo: Path) -> None:
+    _plant(repo, OLD_NODE)
+    _write(repo, NODE_HOME_BASELINE, "")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "unbaselined node")
+    _git(repo, "tag", "rename_base")
+    _git(repo, "mv", OLD_NODE, NODE)
+    _git(repo, "commit", "-q", "-m", "rename unbaselined node")
+
+    request = _request(repo, head="HEAD", base="rename_base")
+    assert (
+        f"{OLD_NODE}/contract.yaml",
+        f"{NODE}/contract.yaml",
+    ) in request.renamed_paths
+    assert [
+        (finding.code, finding.path)
+        for finding in NodeHomeRule().check(request).findings
+    ] == [("node-outside-market", NODE)]
+    assert (
+        main(
+            [
+                "--rules",
+                "node-home",
+                "--repo-root",
+                str(repo),
+                "--base",
+                "rename_base",
+                "--head",
+                "HEAD",
+            ]
+        )
+        == 1
+    )
 
 
 def test_baseline_only_shrinks_reads_indexed_baseline(repo: Path) -> None:
     _plant(repo)
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "pre-existing node without baseline")
-    _write(repo, NODE_HOME_BASELINE, render_baseline([NODE]))
-    assert main(["--repo-root", str(repo)]) == 1
+    _write(repo, NODE_HOME_BASELINE, f"{NODE}\n")
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 1
     _git(repo, "add", "-A")
     (repo / NODE_HOME_BASELINE).unlink()
-    assert main(["--repo-root", str(repo)]) == 0
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 0
 
 
 def test_baseline_only_shrinks_explicit_base_is_used(repo: Path) -> None:
     _commit_baseline(repo)
     _git(repo, "tag", "baseline_base")
     _plant(repo)
-    _write(repo, NODE_HOME_BASELINE, render_baseline([OLD_NODE, NODE]))
+    _write(repo, NODE_HOME_BASELINE, f"{OLD_NODE}\n{NODE}\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "grown baseline")
-    assert main(["--repo-root", str(repo)]) == 0
-    assert main(["--repo-root", str(repo), "--base", "baseline_base"]) == 1
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 0
+    assert (
+        main(
+            [
+                "--rules",
+                "node-home",
+                "--repo-root",
+                str(repo),
+                "--base",
+                "baseline_base",
+            ]
+        )
+        == 1
+    )
 
 
 @pytest.mark.parametrize("argument", ["--baseline", "--allowlist"])
 def test_no_exception_mechanism_cli_rejects_override(repo: Path, argument: str) -> None:
     with pytest.raises(SystemExit) as exc:
-        main(["--repo-root", str(repo), argument, "another.txt"])
+        main(
+            ["--rules", "node-home", "--repo-root", str(repo), argument, "another.txt"]
+        )
     assert exc.value.code == 2
-
-
-def test_no_exception_mechanism_write_baseline_once(repo: Path) -> None:
-    _plant(repo)
-    _git(repo, "add", "-A")
-    _git(repo, "commit", "-q", "-m", "pre-existing node without baseline")
-    (repo / ".onex_ratchets").mkdir(exist_ok=True)
-    args = ["--repo-root", str(repo), "--write-baseline"]
-    assert main(args) == 0
-    assert (repo / NODE_HOME_BASELINE).read_text() == render_baseline([NODE])
-    assert main(args) == 2
-    assert _check(repo).findings == ()
-
-
-def test_no_exception_mechanism_write_refuses_committed_deleted_baseline(
-    repo: Path,
-) -> None:
-    _commit_baseline(repo)
-    (repo / NODE_HOME_BASELINE).unlink()
-    _git(repo, "add", "-A")
-    assert main(["--repo-root", str(repo), "--write-baseline"]) == 2
-    assert not (repo / NODE_HOME_BASELINE).exists()
 
 
 def test_no_exception_mechanism_omnimarket_is_checked_like_any_repo(repo: Path) -> None:
     _commit_baseline(repo)
     _plant(repo)
+    # Distinct files keep git from treating this new node as an inherited rename.
+    _write(repo, f"{NODE}/contract.yaml", "name: new_node\n")
+    _write(repo, f"{NODE}/handlers/__init__.py", "NEW_NODE = True\n")
     shutil.rmtree(repo / OLD_NODE)
-    _write(repo, NODE_HOME_BASELINE, render_baseline([OLD_NODE, NODE]))
+    _write(repo, NODE_HOME_BASELINE, f"{OLD_NODE}\n{NODE}\n")
     _write(repo, "pyproject.toml", '[project]\nname = "omnimarket"\n')
     result = _check(repo)
+    assert _request(repo).renamed_paths == ()
     assert {finding.code for finding in result.findings} == {
         "baseline-stale",
         "baseline-growth",
     }
-    assert main(["--repo-root", str(repo)]) == 1
-    _write(repo, NODE_HOME_BASELINE, render_baseline([]))
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 1
+    _write(repo, NODE_HOME_BASELINE, "")
     assert "node-outside-market" in {finding.code for finding in _check(repo).findings}
 
 
@@ -329,14 +397,26 @@ def test_no_exception_mechanism_unstaged_market_identity_cannot_bypass(
     _plant(repo)
     _git(repo, "add", "-A")
     _write(repo, "pyproject.toml", '[project]\nname = "omnimarket"\n')
-    assert main(["--repo-root", str(repo)]) == 1
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 1
 
 
 def test_usage_and_git_error_exit_two(repo: Path) -> None:
-    assert main(["--repo-root", str(repo), "--base", "missing-revision"]) == 2
+    assert (
+        main(
+            [
+                "--rules",
+                "node-home",
+                "--repo-root",
+                str(repo),
+                "--base",
+                "missing-revision",
+            ]
+        )
+        == 2
+    )
     _write(repo, "pyproject.toml", "invalid toml")
     _git(repo, "add", "-A")
-    assert main(["--repo-root", str(repo)]) == 2
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 2
 
 
 def test_request_and_result_models_are_frozen_and_forbid_extra() -> None:
@@ -352,7 +432,7 @@ def test_request_and_result_models_are_frozen_and_forbid_extra() -> None:
     finding = ModelNodeHomeRatchetFinding(
         code="node-outside-market", path=NODE, message="move"
     )
-    result = handle(request)
+    result = NodeHomeRule().check(request)
     for model in (request, finding, result):
         assert model.model_config["frozen"]
         with pytest.raises(ValidationError):
@@ -362,21 +442,19 @@ def test_request_and_result_models_are_frozen_and_forbid_extra() -> None:
 
 
 def test_this_repository_tree_passes_written_baseline() -> None:
-    root = Path(ratchet.__file__).resolve().parents[4]
-    request = read_request(root, base=None)
-    # Activation is a follow-up. Model that follow-up's base snapshot and
-    # baseline in memory; no repository baseline file is required here.
-    directories = handle(request).node_directories
-    request = request.model_copy(
-        update={
-            "head_baseline_text": render_baseline(directories),
-            "base_node_directories": frozenset(directories),
-            "base_entry_points": request.head_entry_points,
-        }
+    request = gather_node_home_request(
+        GitRepo(REPO_ROOT, env=scrub_git_location_env()), INDEX, "HEAD"
     )
-    result = handle(request)
+    result = NodeHomeRule().check(request)
     assert result.node_directories
     assert result.findings == ()
+    assert (
+        main(
+            ["--rules", "node-home", "--repo-root", str(REPO_ROOT), "--base", "HEAD"],
+            env=scrub_git_location_env(),
+        )
+        == 0
+    )
 
 
 @pytest.mark.parametrize("shape", ["contract", "class"])
@@ -387,11 +465,11 @@ def test_baseline_only_shrinks_bootstrap_new_node_refused(
         _plant(repo)
     else:
         _write(repo, f"{NODE}/impl.py", "class NodeExample:\n    pass\n")
-    _write(repo, NODE_HOME_BASELINE, render_baseline([NODE]))
+    _write(repo, NODE_HOME_BASELINE, f"{NODE}\n")
     findings = _check(repo).findings
     assert [finding.code for finding in findings] == ["baseline-growth"]
     assert NODE in findings[0].message
-    assert main(["--repo-root", str(repo)]) == 1
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 1
 
 
 @pytest.mark.parametrize("shape", ["contract", "class"])
@@ -406,7 +484,7 @@ def test_baseline_only_shrinks_bootstrap_reads_base_tree_and_python(
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "base snapshot without baseline")
     _write(repo, f"{directory}/impl.py", "class NodeExample:\n    pass\n")
-    _write(repo, NODE_HOME_BASELINE, render_baseline([directory]))
+    _write(repo, NODE_HOME_BASELINE, f"{directory}\n")
     findings = _check(repo).findings
     assert [finding.code for finding in findings] == (
         [] if shape == "contract" else ["baseline-growth"]
@@ -418,7 +496,7 @@ def test_baseline_only_shrinks_bootstrap_existing_class_passes(repo: Path) -> No
     _write(repo, f"{directory}/impl.py", "class NodeExample:\n    pass\n")
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "pre-existing class node without baseline")
-    _write(repo, NODE_HOME_BASELINE, render_baseline([directory]))
+    _write(repo, NODE_HOME_BASELINE, f"{directory}\n")
     assert _check(repo).findings == ()
 
 
@@ -432,17 +510,7 @@ def test_baseline_only_shrinks_deleted_baseline_refused(
         shutil.rmtree(repo / OLD_NODE)
     findings = _check(repo).findings
     assert "baseline-removed" in {finding.code for finding in findings}
-    assert main(["--repo-root", str(repo)]) == 1
-
-
-def test_no_exception_mechanism_write_refuses_indexed_deleted_baseline(
-    repo: Path,
-) -> None:
-    _write(repo, NODE_HOME_BASELINE, render_baseline([]))
-    _git(repo, "add", "-A")
-    (repo / NODE_HOME_BASELINE).unlink()
-    assert main(["--repo-root", str(repo), "--write-baseline"]) == 2
-    assert not (repo / NODE_HOME_BASELINE).exists()
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 1
 
 
 @pytest.mark.parametrize("base_project", [None, "", '[project]\nname = "other_repo"\n'])
@@ -466,7 +534,7 @@ def test_refuses_new_node_entry_point_growth(
     assert findings[0].message == (
         "a new onex.nodes registration outside omnimarket; register the node in omnimarket instead"
     )
-    assert main(["--repo-root", str(repo)]) == 1
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 1
 
 
 def test_refuses_new_node_entry_points_read_index_and_explicit_base(repo: Path) -> None:
@@ -476,14 +544,26 @@ def test_refuses_new_node_entry_points_read_index_and_explicit_base(repo: Path) 
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "existing registration")
     _write(repo, "pyproject.toml", project + 'new_node = "pkg:NodeOther"\n')
-    assert handle(read_request(repo)).findings == ()
+    assert NodeHomeRule().check(_request(repo)).findings == ()
     assert [finding.code for finding in _check(repo).findings] == [
         "entry-point-outside-market"
     ]
     _write(repo, "pyproject.toml", project)
     _git(repo, "add", "-A")
-    assert main(["--repo-root", str(repo)]) == 0
-    assert main(["--repo-root", str(repo), "--base", "no_registrations"]) == 1
+    assert main(["--rules", "node-home", "--repo-root", str(repo)]) == 0
+    assert (
+        main(
+            [
+                "--rules",
+                "node-home",
+                "--repo-root",
+                str(repo),
+                "--base",
+                "no_registrations",
+            ]
+        )
+        == 1
+    )
     _write(
         repo, "pyproject.toml", '[project.entry-points."other.group"]\nx = "pkg:X"\n'
     )

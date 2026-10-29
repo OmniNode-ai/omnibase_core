@@ -31,6 +31,10 @@ class ModelNodeHomeRatchetRequest(BaseModel):
     base_entry_points: frozenset[str] = Field(
         description='Base-revision [project.entry-points."onex.nodes"] names'
     )
+    renamed_paths: tuple[tuple[str, str], ...] = Field(
+        default_factory=tuple,
+        description="(old, new) file paths git detects as renamed from base to head",
+    )
 
 
 __all__ = ["ModelNodeHomeRatchetRequest"]

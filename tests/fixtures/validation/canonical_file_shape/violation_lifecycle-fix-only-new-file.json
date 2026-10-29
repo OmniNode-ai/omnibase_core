@@ -1,0 +1,29 @@
+{
+  "base_lifecycle_text": "state: fix-only\n",
+  "changes": [
+    {
+      "new_text": "x = 1\n",
+      "old_path": null,
+      "old_text": null,
+      "path": "src/pkg/models/model_x.py",
+      "status": "A"
+    }
+  ],
+  "commit_messages": [
+    "fix\n"
+  ],
+  "has_base": true,
+  "head_lifecycle_text": "state: fix-only\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "src/pkg/models/model_a.py",
+      "docs/ledger.md",
+      "src/pkg/models/model_x.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

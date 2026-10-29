@@ -1,0 +1,25 @@
+{
+  "base_baseline_text": "\n",
+  "base_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "scripts/new.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  },
+  "has_base": true,
+  "head_baseline_text": "scripts/new.py\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "scripts/new.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}
