@@ -42,8 +42,8 @@ CALLER_INPUTS = {
 }
 
 CLI_MODULES = (
-    "src/omnibase_core/validation/validator_receipt_reprobe.py",
-    "src/omnibase_core/validation/validator_receipt_honesty.py",
+    "src/omnibase_core/nodes/node_receipt_reprobe_check_compute/runtime_receipt_reprobe_check.py",
+    "src/omnibase_core/nodes/node_receipt_honesty_check_compute/runtime_receipt_honesty_check.py",
 )
 
 

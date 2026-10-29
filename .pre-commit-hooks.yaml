@@ -79,7 +79,7 @@
     Covers /Volumes/, /Users/, /home/, and Windows user paths. Add `# local-path-ok` to suppress a specific
     line.
   language: python
-  entry: python -m omnibase_core.validation.validator_local_paths
+  entry: python -m omnibase_core.nodes.node_local_paths_check_compute.runtime_local_paths_check
   types: [text]
   pass_filenames: true
   require_serial: true
@@ -94,7 +94,7 @@
     .duplicate-id-registries.yaml at repo root); a repo with no manifest is a no-op. Consumers pass --manifest
     / --repo-root via args: and scope triggering via files: on the manifest + declared registry paths.
   language: python
-  entry: python -m omnibase_core.validation.validator_duplicate_config_ids
+  entry: python -m omnibase_core.nodes.node_duplicate_config_ids_check_compute.runtime_duplicate_config_ids_check
   pass_filenames: false
   stages: [pre-commit]
 
@@ -238,7 +238,7 @@
     ONEX_INPUT_TOPIC persisted in compose after code removal. Consumer repos MUST override `args:` to
     pass `--kernel-source` pointing at their vendored/checked-out service_kernel.py path.
   language: python
-  entry: python -m omnibase_core.validation.validator_banned_compose_vars
+  entry: python -m omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check
   files: (docker-compose.*\.ya?ml|k8s/.*\.ya?ml|kubernetes/.*\.ya?ml)$
   pass_filenames: true
   require_serial: true
@@ -317,7 +317,8 @@
   description: >
     Compare normalization chains at producer and consumer call sites and reject divergent topic handling.
   language: system
-  entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.checker_normalization_symmetry src
+  entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_normalization_symmetry_check_compute.runtime_normalization_symmetry_check
+    src
   pass_filenames: false
   always_run: true
   stages: [pre-commit]
@@ -331,7 +332,7 @@
     on any violation in supplied receipt files. Operates over a drift/dod_receipts/ when no filenames
     are supplied; pass --receipts-dir to override.
   language: python
-  entry: python -m omnibase_core.validation.validator_receipt_honesty
+  entry: python -m omnibase_core.nodes.node_receipt_honesty_check_compute.runtime_receipt_honesty_check
   types: [yaml]
   files: drift/dod_receipts/.*\.yaml$
   pass_filenames: true
@@ -375,7 +376,7 @@
     (OMN-12856 / OMN-13310). Excludes tests/, conftest.py, __pycache__, .pyc files. Suppression: # omn-allow-env-read
     or # ONEX_EXCLUDE on the offending line. Implemented as a canonical COMPUTE handler on ProtocolMessageHandler.
   language: python
-  entry: uv run python -m omnibase_core.validation.validator_github_token_env_reads
+  entry: uv run python -m omnibase_core.nodes.node_github_token_env_reads_check_compute.runtime_github_token_env_reads_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -408,7 +409,7 @@
     handler. Suppression: # contract-config-ok for bootstrap-config-loader bootstrap env reads. See: OMN-13306
     (W6b).
   language: python
-  entry: python -m omnibase_core.validation.validator_routing_authority
+  entry: python -m omnibase_core.nodes.node_routing_authority_check_compute.runtime_routing_authority_check
   pass_filenames: false
   stages: [pre-commit]
 
@@ -422,7 +423,7 @@
     never grow. Migration debt: OMN-12806 (omnibase_core), OMN-12807 (omnibase_infra), OMN-12808 (others).
     Suppression: # url-authority-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_url_authority
+  entry: python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check
   args: [--repo, omnibase_core, --repo-root, .]
   types: [python]
   pass_filenames: true
@@ -440,7 +441,7 @@
     Usage: add to your repo's .pre-commit-config.yaml referencing omnibase_core and pass --repo <your-repo-name>
     --baseline architecture-handshakes/validator-requirements-baseline.yaml. See OMN-13291 and architecture-handshakes/validator-requirements-baseline.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_requirements_consumer
+  entry: python -m omnibase_core.nodes.node_requirements_consumer_check_compute.runtime_requirements_consumer_check
   pass_filenames: false
   always_run: true
   stages: [pre-commit]
@@ -676,7 +677,7 @@
     to grandfather today's findings by fingerprint; only new ones fail and --update-baseline refuses growth.
     No inline suppression. Pass --repo-root so finding paths are repo-relative.
   language: python
-  entry: python -m omnibase_core.validation.validator_no_lane_literal_branching
+  entry: python -m omnibase_core.nodes.node_no_lane_literal_branching_check_compute.runtime_no_lane_literal_branching_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -693,7 +694,7 @@
     the enclosing node contract.yaml declares descriptor.agent_invocation: true (OMN-13249 — a contract
     fact, never a free-text comment). Suppression: # canonical-inference-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_canonical_inference
+  entry: python -m omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check
   args: [--repo, omnibase_core, --repo-root, .]
   types: [python]
   pass_filenames: true
@@ -764,7 +765,7 @@
     all transport plumbing. TYPE_CHECKING-guarded imports are allowed. Canonical fleet-wide replacement
     for the per-repo validate_no_transport_imports.py scripts. Suppression: # transport-import-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_transport_import
+  entry: python -m omnibase_core.nodes.node_transport_import_check_compute.runtime_transport_import_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -795,7 +796,7 @@
     inside files under a 'nodes' directory. Canonical fleet-wide replacement for the per-repo io_audit
     packages. Suppression: # node-purity-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_node_purity
+  entry: python -m omnibase_core.nodes.node_node_purity_check_compute.runtime_node_purity_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -862,7 +863,7 @@
     blocks a commit; the failing gate on typed machines is analyze_fsm in the consumer's own test. Contracts
     it cannot load strictly are listed NOT_ARMED. Consumers pass the roots to scan via args (default src).
   language: python
-  entry: python -m omnibase_core.validation.validator_contract_walker
+  entry: python -m omnibase_core.nodes.node_contract_walker_check_compute.runtime_contract_walker_check
   files: (^|/)contract\.yaml$
   pass_filenames: false
   verbose: true

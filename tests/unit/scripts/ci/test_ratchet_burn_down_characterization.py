@@ -221,7 +221,7 @@ def test_url_authority_gate_passes_on_real_tree() -> None:
         [
             sys.executable,
             "-m",
-            "omnibase_core.validation.validator_url_authority",
+            "omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check",
             "--repo",
             "omnibase_core",
             "--repo-root",

@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_enum_member_casing_check_compute
+node_id: node_enum_member_casing_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Checks the UPPER_SNAKE_CASE convention for enum members in supplied source text and returns the violation
+  messages (OMN-21520).
+input_model: omnibase_core.models.nodes.enum_member_casing_check.model_enum_member_casing_check_input.ModelEnumMemberCasingCheckInput
+output_model: omnibase_core.models.nodes.enum_member_casing_check.model_enum_member_casing_check_output.ModelEnumMemberCasingCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeEnumMemberCasingCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

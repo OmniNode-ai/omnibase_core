@@ -74,7 +74,7 @@ jobs:
       - name: Scan in-repo DoD receipts (passes cleanly when none present)
         run: |
           if [ -d drift/dod_receipts ]; then
-            uv run python -m omnibase_core.validation.validator_receipt_honesty \
+            uv run python -m omnibase_core.nodes.node_receipt_honesty_check_compute.runtime_receipt_honesty_check \
               --receipts-dir drift/dod_receipts
           else
             echo "RECEIPT HONESTY GATE: no in-repo drift/dod_receipts/ tree — nothing to scan, passing."

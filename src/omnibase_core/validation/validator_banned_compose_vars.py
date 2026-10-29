@@ -42,7 +42,7 @@ Usage::
     violations = validator.check_paths([Path("omni_home")])
 
     # CLI (per repo policy: all Python commands via uv run)
-    uv run python -m omnibase_core.validation.validator_banned_compose_vars \\
+    uv run python -m omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check \\
         --kernel-source ../omnibase_infra/src/omnibase_infra/runtime/service_kernel.py \\
         omni_home/
 
@@ -55,7 +55,6 @@ from __future__ import annotations
 
 import ast
 import re
-import sys
 from pathlib import Path
 from typing import Final
 
@@ -72,7 +71,7 @@ from omnibase_core.models.validation.model_compose_drift_violation import (
 # ---------------------------------------------------------------------------
 
 # Canonical name of the banned-set tuple in service_kernel.py.
-_BANNED_CONSTANT_NAME: Final[str] = "_DEPRECATED_TOPIC_ENV_VARS"
+BANNED_CONSTANT_NAME: Final[str] = "_DEPRECATED_TOPIC_ENV_VARS"
 
 # Filename patterns recognised as compose / k8s manifests.
 _COMPOSE_NAME_PATTERN: Final[re.Pattern[str]] = re.compile(r"^docker-compose.*\.ya?ml$")
@@ -143,43 +142,70 @@ class ValidatorBannedComposeVars(BaseModel):
     def check_paths(self, paths: list[Path]) -> list[ModelComposeDriftViolation]:
         """Scan the given files/directories and return every drift violation."""
         banned = self.banned_env_vars()
-        violations: list[ModelComposeDriftViolation] = []
-
         if not banned:
-            return violations
+            return []
 
+        manifests: list[tuple[Path, str]] = []
         for base in paths:
             for file_path in _iter_yaml_files(base):
                 if not _is_compose_or_k8s_file(file_path):
                     continue
-                for var_name, value in _extract_env_pairs(file_path):
-                    if var_name not in banned:
-                        continue
-                    violations.append(
-                        ModelComposeDriftViolation(
-                            kind=EnumComposeDriftKind.BANNED_VAR,
-                            var_name=var_name,
-                            compose_path=file_path,
-                            contract_path=None,
-                            message=(
-                                f"{file_path} exposes banned env var "
-                                f"{var_name!r} (value: {value!r}). This var "
-                                f"is in the kernel's "
-                                f"{_BANNED_CONSTANT_NAME} tuple; code no "
-                                f"longer reads it (OMN-8784). Remove the "
-                                f"entry from compose/k8s."
-                            ),
-                        )
-                    )
+                text = _read_text_safely(file_path)
+                if text is not None:
+                    manifests.append((file_path, text))
+        return find_banned_env_violations(manifests, banned)
 
-        violations.sort(
-            key=lambda v: (
-                v.kind.value,
-                v.var_name,
-                str(v.compose_path or v.contract_path),
-            )
-        )
+
+def find_banned_env_violations(
+    manifests: list[tuple[Path, str]], banned: frozenset[str]
+) -> list[ModelComposeDriftViolation]:
+    """Return every banned-env-var violation in already-loaded manifest text.
+
+    Pure counterpart of :meth:`ValidatorBannedComposeVars.check_paths`: no
+    filesystem access. Entries whose path is not a compose / k8s manifest are
+    ignored.
+
+    Args:
+        manifests: ``(path, yaml_text)`` pairs; the path is a label and drives
+            compose / k8s recognition.
+        banned: Env var names to flag.
+    """
+    violations: list[ModelComposeDriftViolation] = []
+
+    if not banned:
         return violations
+
+    for file_path, text in manifests:
+        if not _is_compose_or_k8s_file(file_path):
+            continue
+        for var_name, value in _extract_env_pairs_from_text(text):
+            if var_name not in banned:
+                continue
+            violations.append(
+                ModelComposeDriftViolation(
+                    kind=EnumComposeDriftKind.BANNED_VAR,
+                    var_name=var_name,
+                    compose_path=file_path,
+                    contract_path=None,
+                    message=(
+                        f"{file_path} exposes banned env var "
+                        f"{var_name!r} (value: {value!r}). This var "
+                        f"is in the kernel's "
+                        f"{BANNED_CONSTANT_NAME} tuple; code no "
+                        f"longer reads it (OMN-8784). Remove the "
+                        f"entry from compose/k8s."
+                    ),
+                )
+            )
+
+    violations.sort(
+        key=lambda v: (
+            v.kind.value,
+            v.var_name,
+            str(v.compose_path or v.contract_path),
+        )
+    )
+    return violations
 
 
 # ---------------------------------------------------------------------------
@@ -224,7 +250,7 @@ def extract_banned_env_vars_from_kernel(kernel_path: Path) -> frozenset[str]:
             continue
 
         for target in targets:
-            if isinstance(target, ast.Name) and target.id == _BANNED_CONSTANT_NAME:
+            if isinstance(target, ast.Name) and target.id == BANNED_CONSTANT_NAME:
                 return _collect_string_literals(value)
 
     return frozenset()
@@ -267,30 +293,34 @@ def _is_compose_or_k8s_file(path: Path) -> bool:
     return any(component in _COMPOSE_DIR_COMPONENTS for component in path.parts)
 
 
-def _load_yaml_safely(path: Path) -> list[object]:
-    """Return every document in ``path`` as a list.
+def _read_text_safely(path: Path) -> str | None:
+    """Return the file text, or ``None`` on any read failure."""
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except (OSError, PermissionError):
+        return None
+
+
+def _parse_yaml_documents(text: str) -> list[object]:
+    """Return every document in ``text`` as a list.
 
     k8s manifests commonly use multi-document YAML streams (``---`` separator)
     bundling a Deployment + Service + ConfigMap in one file. Using
     :func:`yaml.safe_load` on such a stream raises ``ComposerError``; we must
     use :func:`yaml.safe_load_all` to iterate each document.
 
-    Returns an empty list on any read or parse failure.
+    Returns an empty list on any parse failure.
     """
-    try:
-        text = path.read_text(encoding="utf-8", errors="replace")
-    except (OSError, PermissionError):
-        return []
     try:
         return [doc for doc in yaml.safe_load_all(text) if doc is not None]
     except yaml.YAMLError:
         return []
 
 
-def _extract_env_pairs(path: Path) -> list[tuple[str, str]]:
-    """Return every ``(var_name, value)`` pair from every document in the file."""
+def _extract_env_pairs_from_text(text: str) -> list[tuple[str, str]]:
+    """Return every ``(var_name, value)`` pair from every YAML document in ``text``."""
     pairs: list[tuple[str, str]] = []
-    for doc in _load_yaml_safely(path):
+    for doc in _parse_yaml_documents(text):
         pairs.extend(_walk_env_pairs(doc))
     return pairs
 
@@ -348,95 +378,3 @@ def _walk_env_pairs(node: object) -> list[tuple[str, str]]:
             pairs.extend(_walk_env_pairs(item))
 
     return pairs
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entrypoint.
-
-    Exit codes:
-        0 — no drift
-        2 — drift detected or empty banned set (misconfigured)
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        prog="check-banned-compose-vars",
-        description=(
-            "Detect compose / k8s env vars whose name is in the kernel's "
-            "_DEPRECATED_TOPIC_ENV_VARS banned set. Exits 2 on any violation "
-            "or if the banned set is empty."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        type=Path,
-        default=[Path()],
-        help="Files or directories to scan (default: current directory)",
-    )
-    parser.add_argument(
-        "--kernel-source",
-        type=Path,
-        required=True,
-        help=(
-            "Path to service_kernel.py whose _DEPRECATED_TOPIC_ENV_VARS "
-            "tuple is the canonical banned set."
-        ),
-    )
-    parser.add_argument(
-        "--extra-banned",
-        action="append",
-        default=[],
-        metavar="VAR_NAME",
-        help="Additional env var name to treat as banned (repeatable).",
-    )
-    parser.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Suppress the summary footer",
-    )
-    parsed = parser.parse_args(argv)
-
-    validator = ValidatorBannedComposeVars(
-        kernel_source_path=parsed.kernel_source,
-        extra_banned=frozenset(parsed.extra_banned),
-    )
-
-    banned = validator.banned_env_vars()
-    if not banned:
-        print(
-            f"ERROR: banned set is empty. Check --kernel-source "
-            f"({parsed.kernel_source}) contains {_BANNED_CONSTANT_NAME}.",
-            file=sys.stderr,
-        )
-        return 2
-
-    violations = validator.check_paths(parsed.paths)
-
-    for v in violations:
-        print(f"{v.compose_path}: [{v.kind.value}] {v.var_name}: {v.message}")
-
-    if not parsed.quiet:
-        if violations:
-            print(
-                f"\n{len(violations)} banned compose env var violation(s) "
-                f"(banned set size: {len(banned)}).",
-                file=sys.stderr,
-            )
-        else:
-            print(
-                f"No banned compose env vars found (banned set size: {len(banned)}).",
-                file=sys.stderr,
-            )
-
-    return 2 if violations else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

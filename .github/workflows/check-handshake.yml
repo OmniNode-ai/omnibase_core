@@ -43,7 +43,7 @@ jobs:
       - name: Enforce validator-requirements.yaml
         run: |
           uv sync --all-extras
-          uv run python -m omnibase_core.validation.validator_requirements_consumer \
+          uv run python -m omnibase_core.nodes.node_requirements_consumer_check_compute.runtime_requirements_consumer_check \
             --repo omnibase_core \
             --repo-root . \
             --baseline architecture-handshakes/validator-requirements-baseline.yaml
@@ -56,6 +56,6 @@ jobs:
       # consumer above only proves presence, not that the rollup gates).
       - name: Verify Model-B rollup coverage (OMN-13574)
         run: |
-          uv run python -m omnibase_core.validation.validator_rollup_coverage \
+          uv run python -m omnibase_core.nodes.node_rollup_coverage_check_compute.runtime_rollup_coverage_check \
             --repo omnibase_core \
             --repo-root .

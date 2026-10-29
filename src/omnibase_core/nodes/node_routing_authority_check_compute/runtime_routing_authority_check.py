@@ -1,35 +1,32 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""ValidatorRoutingAuthority — pre-commit CLI wrapper for the routing-authority gate.
+"""Pre-commit CLI runtime for the routing-authority gate (OMN-13306, OMN-21520).
 
 Thin EFFECT boundary: reads files from the filesystem and delegates to the pure
-check logic in ``omnibase_core.validation.checker_routing_authority``. That
-module never reads the filesystem itself (COMPUTE purity constraint) except
-via the explicit ``check_routing_authority_at_path`` I/O helper called here.
+check logic in ``omnibase_core.validation.checker_routing_authority`` (the same
+logic the sibling ``handler.py`` COMPUTE node wraps). The check module never
+reads the filesystem itself except via the explicit
+``check_routing_authority_at_path`` I/O helper called here.
 
 This file replaces omnimarket/scripts/ci/check_routing_authority.py.
-The canonical check logic now lives in:
-    omnibase_core.validation.checker_routing_authority
-It is also wrapped as a dispatchable COMPUTE node at:
-    omnibase_core.nodes.node_routing_authority_check_compute.handler
 
 See: OMN-13306 (W6b), OMN-12821, OMN-12877, OMN-12883, OMN-3210 (OMN-14289)
 
 Suppression: add ``# contract-config-ok`` on an exempted line.
 
 Usage (pre-commit hook):
-    python -m omnibase_core.validation.validator_routing_authority \\
+    python -m omnibase_core.nodes.node_routing_authority_check_compute.runtime_routing_authority_check \\
         --repo-root . \\
         --contract src/omnimarket/nodes/node_generation_consumer/contract.yaml \\
         --source src/omnimarket/nodes/node_generation_consumer/handlers/handler_generation_consumer.py \\
         --bifrost src/omnimarket/configs/bifrost_delegation.yaml
 
 Usage (enforce mode, exit 1 on failure):
-    python -m omnibase_core.validation.validator_routing_authority --enforce
+    python -m omnibase_core.nodes.node_routing_authority_check_compute.runtime_routing_authority_check --enforce
 
 Usage (JSON evidence packet):
-    python -m omnibase_core.validation.validator_routing_authority --json
+    python -m omnibase_core.nodes.node_routing_authority_check_compute.runtime_routing_authority_check --json
 """
 
 from __future__ import annotations
@@ -40,17 +37,21 @@ import sys
 from pathlib import Path
 from typing import cast
 
+from omnibase_core.models.nodes.text_file_write.model_text_file_write_input import (
+    ModelTextFileWriteInput,
+)
 from omnibase_core.models.validation.model_residue_entry import (
     ModelResidueEntry,
 )
 from omnibase_core.models.validation.model_routing_authority_check_output import (
     ModelRoutingAuthorityCheckOutput,
 )
+from omnibase_core.nodes.node_text_file_write_effect.handler import (
+    NodeTextFileWriteEffect,
+)
 from omnibase_core.validation.checker_routing_authority import (
     check_routing_authority_at_path,
 )
-
-__all__ = ["main"]
 
 # ---------------------------------------------------------------------------
 # Default omnimarket configuration (used when no --contract/--source args given)
@@ -95,6 +96,10 @@ _DEFAULT_YAML_RESIDUE: tuple[ModelResidueEntry, ...] = (
 )
 
 
+def _out(message: str) -> None:
+    sys.stdout.write(message + "\n")
+
+
 # ---------------------------------------------------------------------------
 # Repo-root detection
 # ---------------------------------------------------------------------------
@@ -126,7 +131,7 @@ def _print_result(result: ModelRoutingAuthorityCheckOutput) -> None:
                 result.provider_endpoint_shape_audit.get("backends", []),
             )
         )
-        print(
+        _out(
             "[routing-authority-gate] PASS — "
             f"{len(entries)} demo-path entry(ies) resolve from authority; "
             f"negative audit clean; "
@@ -134,14 +139,14 @@ def _print_result(result: ModelRoutingAuthorityCheckOutput) -> None:
             f"{shape_backends} backend(s) shape-compliant."
         )
         for entry in entries:
-            print(
+            _out(
                 f"  {entry['contract']}: provider={entry['provider']!r} "
                 f"model={entry['model']!r} endpoint_ref={entry['endpoint_ref']!r} "
                 f"route_source={entry['route_source']!r}"
             )
         return
 
-    print("[routing-authority-gate] FAIL")
+    _out("[routing-authority-gate] FAIL")
     positive_errors = cast(list[object], result.positive_proof.get("errors", []))
     negative_errors = cast(list[object], result.negative_audit.get("errors", []))
     negative_files = cast(
@@ -155,20 +160,20 @@ def _print_result(result: ModelRoutingAuthorityCheckOutput) -> None:
         list[object], result.provider_endpoint_shape_audit.get("violations", [])
     )
     for err in positive_errors:
-        print(f"  positive-proof error: {err}")
+        _out(f"  positive-proof error: {err}")
     for err in negative_errors:
-        print(f"  negative-audit error: {err}")
+        _out(f"  negative-audit error: {err}")
     for fr in negative_files:
         violations = cast(list[object], fr.get("violations", []))
         for v in violations:
-            print(f"  negative-audit violation: {v}")
+            _out(f"  negative-audit violation: {v}")
     for err in residue_errors:
-        print(f"  residue-audit error: {err}")
+        _out(f"  residue-audit error: {err}")
     for v in residue_violations:
-        print(f"  residue-audit new violation: {v}")
+        _out(f"  residue-audit new violation: {v}")
     for v in shape_violations:
-        print(f"  shape-audit violation: {v}")
-    print(
+        _out(f"  shape-audit violation: {v}")
+    _out(
         "\nFix: every demo-path routing field must resolve from contract / "
         "overlay / routing authority; no env reads / provider literals / "
         "fallback endpoint strings on the demo path. Residue files must not "
@@ -254,14 +259,15 @@ def main(argv: list[str] | None = None) -> int:
     )
 
     if args.emit:
-        out = Path(args.emit)
-        out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(
-            json.dumps(result.model_dump(), indent=2, sort_keys=True), encoding="utf-8"
+        NodeTextFileWriteEffect().handle(
+            ModelTextFileWriteInput(
+                path=args.emit,
+                text=json.dumps(result.model_dump(), indent=2, sort_keys=True),
+            )
         )
 
     if args.json:
-        print(json.dumps(result.model_dump(), indent=2, sort_keys=True))
+        _out(json.dumps(result.model_dump(), indent=2, sort_keys=True))
         return 0 if result.passed else 1
 
     _print_result(result)

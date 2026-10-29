@@ -482,9 +482,7 @@ def test_canonical_baseline_is_structured_and_clean() -> None:
     tree for the source-of-truth repo itself."""
     import yaml as _yaml
 
-    from omnibase_core.validation.validator_requirements_consumer import (
-        _load_baseline,
-    )
+    from omnibase_core.validation.validator_requirements_consumer import _load_baseline
 
     repo_root = Path(__file__).resolve().parent.parent.parent
     baseline_path = (

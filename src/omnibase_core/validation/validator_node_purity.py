@@ -19,11 +19,11 @@ allowed (no runtime dependency).
 Usage Examples:
     CLI — check staged files (pre-commit mode)::
 
-        python -m omnibase_core.validation.validator_node_purity node_a.py node_b.py
+        python -m omnibase_core.nodes.node_node_purity_check_compute.runtime_node_purity_check node_a.py node_b.py
 
     CLI — check a directory recursively::
 
-        python -m omnibase_core.validation.validator_node_purity src/
+        python -m omnibase_core.nodes.node_node_purity_check_compute.runtime_node_purity_check src/
 
 Suppression:
     Add ``# node-purity-ok: <reason>`` anywhere on the offending line::
@@ -392,6 +392,17 @@ class ValidatorNodePurity(BaseModel):
             source = path.read_text(encoding="utf-8")
         except (OSError, PermissionError, UnicodeDecodeError):
             return []
+        return self.check_source(path, source)
+
+    def check_source(self, path: Path, source: str) -> list[ModelNodePurityViolation]:
+        """Check already-read Python source text. Pure: no filesystem access.
+
+        Applies the same scoping as ``check_file``: a non-``.py`` path, a path
+        outside a ``nodes`` directory, an empty source and unparseable source
+        all yield no violations.
+        """
+        if path.suffix != ".py" or not _is_node_scoped(path):
+            return []
         if not source.strip():
             return []
         try:
@@ -415,72 +426,7 @@ class ValidatorNodePurity(BaseModel):
                     if child.is_file():
                         all_violations.extend(self.check_file(child))
             else:
-                print(
-                    f"Warning: node-purity: skipping non-existent path: {p}",
-                    file=sys.stderr,
+                sys.stderr.write(
+                    f"Warning: node-purity: skipping non-existent path: {p}\n"
                 )
         return all_violations
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entrypoint. Accepts files (pre-commit staged mode) or directories.
-
-    Exit codes:
-        0 — no violations
-        1 — violations found
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        prog="node-purity",
-        description=(
-            "Enforce the pure-compute / no-I/O invariant in ONEX node code. "
-            "Only files under a 'nodes' directory are checked."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        type=Path,
-        default=[Path()],
-        help="Files or directories to check (default: current directory)",
-    )
-    parser.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Suppress per-violation hint lines and summary",
-    )
-    parsed = parser.parse_args(argv)
-
-    validator = ValidatorNodePurity()
-    violations = validator.check_paths(parsed.paths)
-
-    for v in violations:
-        print(str(v))
-        if not parsed.quiet:
-            hint = _REMEDIATION.get(v.rule, "")
-            if hint:
-                print(f"  -> Hint: {hint}")
-
-    if not parsed.quiet:
-        if violations:
-            print(
-                f"\n{len(violations)} node-purity violation(s). Nodes must be "
-                f"pure (no network/DB clients, no env reads, no file I/O). Move "
-                f"I/O to an EFFECT node, inject via DI, or add "
-                f"`# {_SUPPRESSION_MARKER}: <reason>` to suppress a boundary line."
-            )
-        else:
-            print("No node-purity violations found.")
-
-    return 1 if violations else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

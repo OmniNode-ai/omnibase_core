@@ -24,6 +24,9 @@ from unittest.mock import patch
 
 import pytest
 
+from omnibase_core.nodes.node_literal_duplication_check_compute.runtime_literal_duplication_check import (
+    main,
+)
 from omnibase_core.validation.checker_literal_duplication import (
     KNOWN_ENUM_NAMES,
     _is_literal_alias_name,
@@ -34,7 +37,6 @@ from omnibase_core.validation.checker_literal_duplication import (
     extract_literal_aliases,
     find_enums_directory,
     get_enum_names_from_directory,
-    main,
     normalize_literal_name,
     validate_file,
     validate_paths,

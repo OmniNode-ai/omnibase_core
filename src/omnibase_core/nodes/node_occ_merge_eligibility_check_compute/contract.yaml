@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_occ_merge_eligibility_check_compute
+node_id: node_occ_merge_eligibility_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Deterministic OCC-first merge eligibility over a PR metadata snapshot and a pinned OCC commit, returning
+  the typed verdict. (OMN-21520).
+input_model: omnibase_core.models.validation.model_occ_eligibility_input.ModelOccEligibilityInput
+output_model: omnibase_core.models.validation.model_occ_eligibility_result.ModelOccEligibilityResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeOccMergeEligibilityCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

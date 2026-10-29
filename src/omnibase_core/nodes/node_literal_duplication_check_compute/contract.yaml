@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_literal_duplication_check_compute
+node_id: node_literal_duplication_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Detects Literal type aliases that duplicate existing enums in supplied source text and returns the error
+  messages (OMN-21520).
+input_model: omnibase_core.models.nodes.literal_duplication_check.model_literal_duplication_check_input.ModelLiteralDuplicationCheckInput
+output_model: omnibase_core.models.nodes.literal_duplication_check.model_literal_duplication_check_output.ModelLiteralDuplicationCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeLiteralDuplicationCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000
