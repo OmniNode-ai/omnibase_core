@@ -49,6 +49,15 @@ requirements:
           of the node-home:node-outside-market row), an ordinary new node is still refused, and every
           node-home name, pattern and text is a parameters entry of the validator contract -- falsifier:
           uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py"
+  - id: req-omn21515-baseline-burn
+    statement: Relocate the baselined validator handlers and command line entries into node homes while
+      preserving their rejection, baseline, reporting and imperative-contract behavior.
+    acceptance:
+      - id: AC8
+        statement: "AC8 (Validator relocation): backward-compatibility and dict-any checks, the shared
+          finding-baseline runtime, validator event emission, and imperative-contract checks retain their
+          behavioral coverage through their node module paths -- falsifier: the bound migration tests
+          pass at the head and fail when overlaid on the merge base without the relocated product modules."
 evidence_requirements:
   - kind: tests
     description: The checker, runtime and ported rule tests pass at the pushed head.
@@ -149,4 +158,17 @@ dod_evidence:
       - check_type: test_passes
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
           -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-baseline-burn-behavior
+    description: Exercise rejection and admission, shrink-only finding baselines, validator run and triggered
+      events, and imperative-contract output parity through the relocated node handlers and runtimes.
+      The head versions of these tests import node modules absent at the merge base.
+    source: manual
+    binds_ac: [AC8]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/handlers/test_handler_backward_compat.py
+          tests/unit/handlers/test_baselined_finding_hooks.py tests/unit/handlers/test_handler_validator_run_events.py
+          tests/unit/handlers/test_handler_validator_triggered_emit.py tests/unit/handlers/test_handler_arch_handler_contract_compliance.py
+          tests/unit/validation/test_imperative_contract_guard_parity.py -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
