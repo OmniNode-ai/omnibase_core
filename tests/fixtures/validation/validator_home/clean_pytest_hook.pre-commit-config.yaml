@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+repos:
+  - repo: https://example.invalid/hooks
+    rev: v1
+    hooks:
+      - id: shared-hook

@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: checker_rule_data
+  validator_name: Checker Rule Data (K10)
+  validator_description: |
+    No path or pattern is a literal in a checker (OMN-21503, plan task T-Q6 K10), and
+    no new validator lands outside the generic format.
+
+    rule_table_in_checker: a module that subclasses ValidatorBase, returns a validation
+    report, is named checker_* or validator_*, sits in the validators package, or is a handler_*_cli.py gate that writes a
+    report through the report-write effect, must hold no module-level frozenset, tuple,
+    set, dict, re.compile or multi-word string bound to a constant. The table is a
+    parameters entry of the checker's .validation.yaml.
+
+    validator_outside_generic_format: a handler_*_cli.py with its own argparse main over a
+    validation report, or one that builds its own report writer, is a one-off; a module that
+    returns a validation report needs the checker_<id>.py, validator_<id>.py and
+    <id>.validation.yaml triple.
+
+    Run it on the files a change touches; it reports a one-off or a rule table in any file
+    it is handed and carries no baseline.
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+  rules:
+    - rule_id: rule_table_in_checker
+      description: >-
+        Move the table into the rules file: every pattern, name list, threshold and remediation text is
+        a parameters entry of the checker's .validation.yaml, read through the rule row.
+      severity: error
+      enabled: true
+      parameters:
+        qualifying_name_prefixes:
+          - 'checker_'
+          - 'validator_'
+        qualifying_path_patterns:
+          - '(^|/)validators/[^/]+\.py$'
+        qualifying_base_names:
+          - 'ValidatorBase'
+        qualifying_return_names:
+          - 'ModelValidationReport'
+        cli_gate_name_pattern: '^handler_.*_cli\.py$'
+        writer_markers:
+          - 'node_validation_report_write_effect'
+          - 'NodeValidationReportWriteEffect'
+        constant_name_pattern: '^_?[A-Z][A-Z0-9_]*$'
+        collection_calls:
+          - 'frozenset'
+          - 'set'
+          - 'dict'
+          - 'tuple'
+          - 're.compile'
+        min_string_words: 2
+
+    - rule_id: validator_outside_generic_format
+      description: >-
+        Build the check in the generic format: a pure checker_<id>.py, a ValidatorBase validator_<id>.py
+        and a contracts/<id>.validation.yaml, run through the validation orchestrator; no handler_*_cli.py
+        with its own argparse main, its own file reads or its own report writer.
+      severity: error
+      enabled: true
+      parameters:
+        one_off_name_pattern: '^handler_.*_cli\.py$'
+        one_off_markers:
+          - 'argparse.ArgumentParser'
+        writer_markers:
+          - 'NodeValidationReportWriteEffect('
+        report_markers:
+          - 'ModelValidationReport'
+          - 'ModelValidationIssue'
+        report_return_names:
+          - 'ModelValidationReport'
+        checker_prefix: 'checker_'
+        validator_prefix: 'validator_'
+        contract_suffix: '.validation.yaml'
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

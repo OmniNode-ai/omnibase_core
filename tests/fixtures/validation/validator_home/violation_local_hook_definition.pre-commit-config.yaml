@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+repos:
+  - repo: local
+    hooks:
+      - id: no-writing-entry
+        name: no writing entry
+        language: pygrep
+        entry: WRITING_ENTRY
+        types: [python]

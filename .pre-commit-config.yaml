@@ -1859,6 +1859,18 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # K10 checker_rule_data (OMN-21503): no rule table in a checker and no validator
+      # outside the generic format. Reports on every file it is handed and carries no
+      # baseline; the files that hold tables today are burn-down children of OMN-21503.
+      - id: check-checker-rule-data
+        name: No rule table in a checker, no validator outside the generic format (OMN-21503)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_checker_rule_data
+        language: system
+        files: ^src/omnibase_core/(handlers/handler_[^/]*_cli|validation/(checker|validator)_[^/]*)\.py$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # Public-repository runner placement (OMN-19998, RULING 2026-10-16T07:07:09Z:
       # "Ci runners should be for private repos only"). Refuses every workflow
       # job whose runs-on is, or can resolve to, a self-hosted label; there is no
