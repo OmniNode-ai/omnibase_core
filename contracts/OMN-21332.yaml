@@ -47,7 +47,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: command
-        check_value: grep -q "canonical-shape-typescript-react-swift" src/omnibase_core/validators/canonical_file_shape.py
+        check_value: grep -q "canonical-shape-typescript-react-swift" src/omnibase_core/handlers/handler_canonical_location_rules.py
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
@@ -68,8 +68,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: command
-        check_value: uv run python -c "from omnibase_core.validators.canonical_file_shape import is_typescript_canonical_location
-          as f; assert f('src/components/A.tsx') and not f('src/lib/a.ts')"
+        check_value: uv run python -c "from omnibase_core.handlers.handler_canonical_location_rules import
+          is_typescript_canonical_location as f; assert f('src/components/A.tsx') and not f('src/lib/a.ts')"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3

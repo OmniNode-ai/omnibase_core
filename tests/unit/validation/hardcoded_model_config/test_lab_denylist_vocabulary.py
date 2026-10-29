@@ -10,10 +10,16 @@ ports (family D, OMN-21147): deployment facts the public policy must not spell.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
+from omnibase_core.handlers.handler_private_vocabulary_resolution import (
+    build_container,
+    capture_environment,
+    resolve_private_vocabulary,
+)
 from omnibase_core.validation.hardcoded_model_config import (
     runtime_hardcoded_model_config as runtime,
 )
@@ -23,6 +29,7 @@ from omnibase_core.validation.hardcoded_model_config.handler import (
 )
 from omnibase_core.validation.hardcoded_model_config.models import (
     ModelHardcodedModelConfigBaselineEntry,
+    ModelHardcodedModelConfigPolicy,
 )
 
 # Synthetic endpoints in the RFC 5737 documentation range, never a real one.
@@ -31,6 +38,19 @@ OTHER_DEAD_ENDPOINT = "198.51.100.5:8099"
 # A synthetic lab host name and port, declared here, never a real one.
 LAB_HOST_NAME = "fixturelab-q7"
 LAB_PORT = 47123
+
+
+def _load_policy() -> ModelHardcodedModelConfigPolicy:
+    """The shipped policy plus the private denylist resolved from the process."""
+    container = build_container()
+    return runtime.load_policy(
+        resolve_private_vocabulary(
+            container,
+            "hardcoded_model_config_lab_denylist",
+            environment=capture_environment(container),
+            now=datetime.now(UTC),
+        )
+    )
 
 
 def _write_vocabulary(root: Path, body: str) -> None:
@@ -47,7 +67,7 @@ def no_ambient_root(monkeypatch: pytest.MonkeyPatch) -> None:
 
 @pytest.mark.unit
 def test_shipped_policy_names_no_lab_endpoint(no_ambient_root: None) -> None:
-    policy = runtime.load_policy()
+    policy = _load_policy()
     assert not any(":8101" in v or ":8099" in v for v in policy.retired_values)
     assert "model_id_pattern" in policy.model_dump()
 
@@ -62,7 +82,7 @@ def test_private_vocabulary_adds_its_dead_endpoints(
         f'  - "{OTHER_DEAD_ENDPOINT}"\n',
     )
     monkeypatch.setenv("ONEX_WORKSPACE_CONFIG_ROOT", str(tmp_path))
-    policy = runtime.load_policy()
+    policy = _load_policy()
     assert DEAD_ENDPOINT in policy.retired_values
     assert OTHER_DEAD_ENDPOINT in policy.retired_values
     findings = scan("src/pkg/notes.py", f"# was {DEAD_ENDPOINT}\n", policy)
@@ -74,7 +94,7 @@ def test_without_the_vocabulary_the_same_line_is_not_flagged(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("ONEX_WORKSPACE_CONFIG_ROOT", str(tmp_path))
-    policy = runtime.load_policy()
+    policy = _load_policy()
     assert scan("src/pkg/notes.py", f"# was {DEAD_ENDPOINT}\n", policy) == []
 
 
@@ -85,7 +105,7 @@ def test_a_malformed_vocabulary_stops_the_gate(
     _write_vocabulary(tmp_path, "schema_version: 1\nretired_values: not-a-list\n")
     monkeypatch.setenv("ONEX_WORKSPACE_CONFIG_ROOT", str(tmp_path))
     with pytest.raises(runtime._InputError, match="lab denylist is invalid"):
-        runtime.load_policy()
+        _load_policy()
 
 
 def _write_fact_vocabulary(root: Path) -> None:
@@ -98,7 +118,7 @@ def _write_fact_vocabulary(root: Path) -> None:
 
 @pytest.mark.unit
 def test_shipped_policy_names_no_lab_host_or_port(no_ambient_root: None) -> None:
-    policy = runtime.load_policy()
+    policy = _load_policy()
     assert policy.lab_host_names == ()
     assert policy.lab_ports == ()
 
@@ -119,7 +139,7 @@ def test_lab_host_names_and_ports_are_family_d(
 ) -> None:
     _write_fact_vocabulary(tmp_path)
     monkeypatch.setenv("ONEX_WORKSPACE_CONFIG_ROOT", str(tmp_path))
-    policy = runtime.load_policy()
+    policy = _load_policy()
     assert LAB_HOST_NAME in policy.lab_host_names
     assert LAB_PORT in policy.lab_ports
     assert [f.family for f in scan(path, text, policy)] == ["D"]
@@ -140,7 +160,7 @@ def test_family_d_matches_whole_values_in_code_only(
 ) -> None:
     _write_fact_vocabulary(tmp_path)
     monkeypatch.setenv("ONEX_WORKSPACE_CONFIG_ROOT", str(tmp_path))
-    policy = runtime.load_policy()
+    policy = _load_policy()
     assert scan("src/pkg/hosts.py", text, policy) == []
 
 

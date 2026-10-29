@@ -83,8 +83,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: command
-        check_value: "! grep -E 'omnibase_core@[0-9a-f]{40}' .github/workflows/ci.yml && grep -q 'rule=.baselined-file-growth.'
-          src/omnibase_core/validators/canonical_file_shape.py"
+        check_value: "! grep -E 'omnibase_core@[0-9a-f]{40}' .github/workflows/ci.yml && grep -q 'RULE_BASELINED_GROWTH
+          = .baselined-file-growth.' src/omnibase_core/validation/checker_canonical_file_shape.py"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC4]
   - id: dod-omn21331-deploy-hosted-ratchet

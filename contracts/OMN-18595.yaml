@@ -146,8 +146,8 @@ dod_evidence:
           -q --no-cov -n 0 -k stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: uv run python -m omnibase_core.validators.canonical_file_shape --base 9d65b648bff53b14d7c8a5fb2eef24896dba39bc
-          --head HEAD
+        check_value: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+          --rules file-shape --base 9d65b648bff53b14d7c8a5fb2eef24896dba39bc --head HEAD
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-deploy-location-rules-handler
     description: Hosted content probe at the commit that moved the location rules; the handler module
@@ -172,5 +172,5 @@ dod_evidence:
         check_value: grep -q 'def is_typescript_canonical_location' src/omnibase_core/handlers/handler_canonical_location_rules.py
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: grep -q 'from omnibase_core.handlers.handler_canonical_location_rules import' src/omnibase_core/validators/canonical_file_shape.py
+        check_value: grep -q 'from omnibase_core.handlers.handler_canonical_location_rules import' src/omnibase_core/validation/checker_canonical_file_shape.py
         cwd: ${OMNI_HOME}/omnibase_core

@@ -116,6 +116,8 @@ def repo(tmp_path: Path) -> Path:
         "src/pkg/protocols/protocol_a.py",
         "src/pkg/contracts/c.py",
         "src/pkg/enums/enum_a.py",
+        "src/pkg/validation/checker_a.py",
+        "src/pkg/validation/validator_a.py",
         "tests/unit/test_a.py",
         "src/pkg/tests/test_a.py",
         "docs/examples/a.py",
@@ -144,8 +146,14 @@ def test_canonical_locations(path: str) -> None:
         "tools/a.sh",
         "bin/a",
         "src/pkg/runtime/a.py",
+        "src/pkg/validation/a.py",
+        "src/pkg/validation/util_a.py",
+        "src/pkg/validation/sub/checker_a.py",
         "src/pkg/a.py",
         ".github/scripts/a.py",
+        "src/pkg/validation/handler_a.py",
+        "src/pkg/validation/checker_a.sh",
+        "src/pkg/validation/Checker_a.py",
     ],
 )
 def test_noncanonical_locations(path: str) -> None:

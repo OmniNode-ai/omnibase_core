@@ -3,83 +3,93 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-21495
-title: Validators-to-core plan, task T0.2 -- pin parity for the shared core hook repo
-summary: One core check refuses a hook of the shared core hook repo whose pinned rev is older than the
-  newest rev that hook repo is pinned at anywhere in the same .pre-commit-config.yaml.
+title: T1.1 support - node-home admits declared validator nodes
+summary: The node-home ratchet (OMN-20702) refused every new node directory in omnibase_core, so the validator
+  and validator-support nodes that plan section D requires in core could not land. A new node directory
+  is admitted when its contract.yaml lists a validator category under the declaration field; the field,
+  the categories and the remediation text are rule data in node_home_rules.yaml. The baseline file is
+  unchanged and no per-entry exemption exists.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
-  - id: req-omn21495-t02-precommit-pin-parity
-    statement: T0.2 -- a hook of the shared core hook repo never pins a rev older than the newest rev
-      that hook repo is pinned at in the same repository's .pre-commit-config.yaml.
+  - id: req-omn21495-node-home-admission
+    statement: A new node directory is admitted by the node-home ratchet only when its contract.yaml declares
+      a validator or validator-support category from the rule data.
     acceptance:
       - id: AC1
-        statement: 'T0.2 AC1: the check refuses a hook of the shared core hook repo whose pinned rev is
-          older than the newest rev that hook repo is pinned at in the same .pre-commit-config.yaml, and
-          admits the converged config -- falsifier: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity.py
-          -q -o addopts='''' -k "older or order or newest or converged or fixture"'
+        statement: 'AC1: A new node directory whose contract.yaml lists a validator category is admitted;
+          an ordinary new node (effect, no declaration) is still refused -- falsifier: pytest cases over
+          a declared validator node, a validator-support node, an undeclared effect node and a mixed tree'
       - id: AC2
-        statement: 'T0.2 AC2: a config shaped like omniclaude-internal .pre-commit-config.yaml with line
-          13 at d7ed23f1 fails the check at line 13, and the same config at the current omnibase_core
-          pin passes -- falsifier: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity.py
-          -q -o addopts='''' -k consumer_config'
+        statement: 'AC2: Admission adds no baseline entry and leaves the baseline file unchanged; a baselined
+          node that declares a category is not reported stale -- falsifier: pytest cases that compare
+          the baseline file before and after the check'
       - id: AC3
-        statement: 'T0.2 AC3: a canary commit that lowers one pin is refused by the CLI, which orders
-          revs by git commit time from a history repository or the pre-commit cache -- falsifier: uv run
-          pytest tests/unit/handlers/test_handler_precommit_pin_parity_cli.py -q -o addopts='''' and pre-commit
-          run --files .pre-commit-config.yaml on the canary commit'
+        statement: 'AC3: Configuration: the declaration field, the admitted categories and the remediation
+          text are rule data in node_home_rules.yaml, loaded as ModelNodeHomeRules; invalid rule data
+          fails to load -- falsifier: a table-driven pytest case mutates every rule-data key and asserts
+          the verdict change, and an invalid file raises'
+      - id: AC4
+        statement: 'AC4: Bindings: the handler stays a pure COMPUTE node; the runtime gathers the git
+          index and contract blobs and loads the rule data -- falsifier: the handler tests run with facts
+          only'
 evidence_requirements:
   - kind: tests
-    description: The pin-parity handler and CLI pass and fail each pin shape, including the canary fixture
-      that lowers one pin.
-    command: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity.py tests/unit/handlers/test_handler_precommit_pin_parity_cli.py
-      -q -o addopts=''
+    description: Node-home ratchet tests pass at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
+  - kind: ci
+    description: Hosted-runner run of the same test directory at the checkout.
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
 emergency_bypass:
   enabled: false
   justification: ''
   follow_up_ticket_id: ''
 dod_evidence:
-  - id: dod-omn21495-t02-handler
-    description: The handler fails a hook pinned older than the newest pin of the same hook repo and passes
-      converged pins.
-    source: manual
-    execution_scope: hosted_and_local
-    binds_ac: [AC1, AC2]
-    checks:
-      - check_type: test_passes
-        check_value: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity.py -q -o addopts=''
-        cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21495-t02-cli-canary
-    description: The CLI refuses the canary that lowers one pin, resolves commit times from git, and refuses
-      a missing or unparsable config.
-    source: manual
-    execution_scope: hosted_and_local
-    binds_ac: [AC3]
-    checks:
-      - check_type: test_passes
-        check_value: uv run pytest tests/unit/handlers/test_handler_precommit_pin_parity_cli.py -q -o
-          addopts=''
-        cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21495-deploy-checkout-test
-    description: Hosted-runner run of the pin-parity handler and CLI tests at the checkout; needs no container
-      daemon or private runtime.
-    source: manual
-    binds_ac: [AC1, AC2, AC3]
-    checks:
-      - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_precommit_pin_parity.py tests/unit/handlers/test_handler_precommit_pin_parity_cli.py
-          -q --no-cov -o addopts=''
-        cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21495-deploy-source
-    description: Read the published handler source at the checkout commit through the GitHub contents
-      API. Fail if the older-than-newest refusal is absent. This hosted-runner probe needs no container
-      daemon or private runtime.
+  - id: dod-omn21495-ac1-admission
+    description: A declared validator node is admitted and an undeclared effect node is refused.
     source: manual
     binds_ac: [AC1]
     checks:
-      - check_type: command
-        check_value: |
-          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_precommit_pin_parity.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -F 'is older than newest rev' > /dev/null
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "ordinary_new_node or validator_support_node or does_not_list_a_category
+          or sibling_without_a_declaration"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac2-baseline
+    description: Admission leaves the baseline file unchanged.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "does_not_loosen_the_baseline"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac3-rule-data
+    description: Every rule-data key changes the verdict and invalid rule data fails to load.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "parameter_key or mutating_a_parameter or outside_market_row"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac4-bindings
+    description: The whole node-home test directory passes with the handler called on facts only.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
+          0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-deploy-checkout-test
+    description: Hosted-runner run of the node-home tests at the checkout; needs no container daemon or
+      private runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
+          0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
