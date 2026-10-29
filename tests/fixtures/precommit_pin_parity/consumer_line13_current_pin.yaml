@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Shape of the omniclaude-internal .pre-commit-config.yaml (OMN-21495, T0.2 AC2): the first
+# omnibase_core pin sits on line 13 and a later hook of the same repo pins the current dev head.
+---
+repos:
+  # padding keeps the first pin's rev on line 13, as in the consumer file
+  # padding
+  # padding
+  # padding
+  # padding
+  - repo: https://github.com/OmniNode-ai/omnibase_core
+    rev: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+    hooks:
+      - id: canonical-file-shape
+  - repo: https://github.com/OmniNode-ai/omnibase_core
+    rev: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+    hooks:
+      - id: check-direct-model-call
