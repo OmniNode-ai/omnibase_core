@@ -64,7 +64,7 @@ requirements:
         statement: "AC8: A public repository's pull request that adds a job whose runs-on is a self-hosted
           label or can resolve to one fails, a baselined job that is new or newly self-hosted against
           the base fails, the shipped baseline may only shrink against the base, and a private repository
-          passes. -- falsifier: uv run pytest tests/unit/handlers/test_handler_public_runner_placement.py
+          passes. -- falsifier: uv run pytest tests/unit/validation/test_validator_public_runner_placement.py
           tests/unit/validators/test_canonical_file_shape.py -q -k 'public_runner or runs_on or negative_control
           or cli_ or shipped_baseline or omnibase_core_passes'"
   - id: req-omn19998-dependency-direction-wired
@@ -84,7 +84,7 @@ requirements:
         statement: "AC10: No workflow's OMNI_TRUSTED_CI_RUNS_ON_JSON fallback names the self-hosted fleet
           except a reusable workflow's private-caller branch, lint and wheel-content-parity run on ubuntu-latest
           and are out of the shipped baseline, and the placement check is a lint-imports step under quality-gate
-          and a pre-commit hook. -- falsifier: uv run pytest tests/ci/test_public_runner_placement_omn19998.py
+          and a pre-commit hook. -- falsifier: uv run pytest tests/unit/validation/test_validator_public_runner_placement.py
           -q"
   - id: req-omn19998-full-suite-once
     statement: The heavy test suites run once per change. A run whose tree already passed the full suite
@@ -161,13 +161,13 @@ evidence_requirements:
     command: "uv run pytest tests/unit/handlers/test_handler_version_drift_cli.py -q"
   - kind: tests
     description: "A public repository adding a self-hosted job fails; the baseline only shrinks."
-    command: "uv run pytest tests/unit/handlers/test_handler_public_runner_placement.py -q"
+    command: "uv run pytest tests/unit/validation/test_validator_public_runner_placement.py -q"
   - kind: tests
     description: "The dependency-direction step and hook run the handler module."
     command: "uv run pytest tests/ci/test_dependency_direction_wiring_omn19998.py -q"
   - kind: tests
     description: "Public workflows fall back to hosted runners; the placement hook and job are wired."
-    command: "uv run pytest tests/ci/test_public_runner_placement_omn19998.py -q"
+    command: "uv run pytest tests/unit/validation/test_validator_public_runner_placement.py -q"
   - kind: tests
     description: "The full-suite reuse probe and marker refuse every unbound marker and run the suites
       on failure."
@@ -290,7 +290,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: "uv run pytest tests/unit/handlers/test_handler_public_runner_placement.py -q"
+        check_value: "uv run pytest tests/unit/validation/test_validator_public_runner_placement.py -q"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
@@ -325,7 +325,8 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/ci/test_runner_placement_module_call_omn19854.py -q -o addopts=
+        check_value: uv run pytest tests/unit/validation/test_validator_public_runner_placement.py -q
+          -o addopts=
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
@@ -337,7 +338,7 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: "uv run pytest tests/ci/test_public_runner_placement_omn19998.py -q"
+        check_value: "uv run pytest tests/unit/validation/test_validator_public_runner_placement.py -q"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC10

@@ -120,3 +120,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
+  - id: dod-omn21503-deploy-checkout-validators
+    description: Hosted-runner execution of the K7, K10 and migrated public-runner-placement validators
+      at the checkout. The focused verdict and purity tests require no private runtime or container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_home.py tests/unit/validation/test_validator_checker_rule_data.py
+          tests/unit/validation/test_validator_public_runner_placement.py -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]
