@@ -23,8 +23,10 @@ import yaml
 from omnibase_core.enums.enum_migration_conflict_type import (
     EnumMigrationConflictType,
 )
-from omnibase_core.handlers.handler_migration_conflicts import (
+from omnibase_core.nodes.node_cross_repo_boundary_check_effect.handler_migration_conflicts import (
     load_inventory_yaml,
+)
+from omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_migration_conflicts import (
     main,
 )
 

@@ -133,7 +133,7 @@ def run_render(mode: str, md_option: str | None) -> tuple[int, list[str]]:
             write_guard.check_file(md_path)
             return _repair(headers[0], events, md_path, index)
         return _compare([*headers], "check", events, md[4], repaired=None)
-    except write_guard.LedgerTestWriteRefusedError as exc:
+    except write_guard.ModelLedgerTestWriteRefusedError as exc:
         return write_guard.EXIT_TEST_WRITE_REFUSED, [
             *headers,
             f"verdict=refused guard={write_guard.GUARD_NAME} mode={mode}",

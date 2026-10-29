@@ -24,17 +24,17 @@ from typing import TypedDict, cast
 
 import pytest
 
-from omnibase_core.handlers.handler_contract_check_values_lint import (
+from omnibase_core.nodes.node_contract_evidence_check_effect.handler_contract_check_values_lint import (
     lint_contract,
     lint_contract_warnings,
 )
-from omnibase_core.handlers.handler_contract_compliance_check import (
+from omnibase_core.nodes.node_contract_evidence_check_effect.handler_contract_compliance_check import (
     is_inert_check,
     non_hermetic_reason,
     substitute_tokens,
     validate_substitution_context,
 )
-from omnibase_core.handlers.handler_contract_substance_floor import (
+from omnibase_core.nodes.node_contract_evidence_check_effect.handler_contract_substance_floor import (
     derive_proof_tier,
     evaluate_contract,
 )

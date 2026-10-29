@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_ledger_write_guard_effect
+node_id: node_ledger_write_guard_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: Refuses a test process's write to a canonical ledger target (OMN-19513).
+input_model: omnibase_core.models.ledger.model_ledger_write_guard_request.ModelLedgerWriteGuardRequest
+output_model: omnibase_core.models.ledger.model_ledger_write_guard_decision.ModelLedgerWriteGuardDecision
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: ledger_write_guard
+      handler:
+        name: HandlerLedgerWriteGuard
+        module: omnibase_core.handlers.handler_ledger_write_guard
+      event_model:
+        name: ModelLedgerWriteGuardRequest
+        module: omnibase_core.models.ledger_write_guard.model_ledger_write_guard_request
+  default_handler: omnibase_core.handlers.handler_ledger_write_guard:HandlerLedgerWriteGuard
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 60000

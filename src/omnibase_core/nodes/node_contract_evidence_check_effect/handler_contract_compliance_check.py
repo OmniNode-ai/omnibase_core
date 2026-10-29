@@ -25,8 +25,15 @@ from omnibase_core.handlers.handler_evidence_admissibility import (
     AdmissibilityVerdict,
     classify_evidence_item,
 )
+from omnibase_core.models.nodes.contract_evidence_check.model_contract_compliance_check_request import (
+    ModelContractComplianceCheckRequest,
+)
+from omnibase_core.models.nodes.contract_evidence_check.model_contract_compliance_check_verdict import (
+    ModelContractComplianceCheckVerdict,
+)
 
 __all__ = [
+    "HandlerContractComplianceCheck",
     "is_inert_check",
     "non_hermetic_reason",
     "substitute_tokens",
@@ -387,3 +394,23 @@ is_inert_check = _is_inert_check
 non_hermetic_reason = _non_hermetic_reason
 substitute_tokens = _substitute_tokens
 validate_substitution_context = _validate_substitution_context
+
+
+class HandlerContractComplianceCheck:
+    """Classify one dod_evidence check: inert or not, hermetic or not."""
+
+    def handle(
+        self, request: ModelContractComplianceCheckRequest
+    ) -> ModelContractComplianceCheckVerdict:
+        """Return the inert verdict and the non-hermetic reason of the check."""
+        changed = (
+            frozenset(request.changed_paths)
+            if request.changed_paths is not None
+            else None
+        )
+        return ModelContractComplianceCheckVerdict(
+            inert=_is_inert_check(request.check_value, changed, request.check_type),
+            non_hermetic_reason=_non_hermetic_reason(
+                {"check_type": request.check_type, "check_value": request.check_value}
+            ),
+        )

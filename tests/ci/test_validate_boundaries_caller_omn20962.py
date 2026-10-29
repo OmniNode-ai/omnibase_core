@@ -107,7 +107,8 @@ def test_the_called_action_runs_core_handlers_that_fail_a_drifted_fixture(
     """Run the module the called action names, as the action runs it, on both fixtures."""
     action = _core_action_file().read_text(encoding="utf-8")
     module = re.search(
-        r"python -m (omnibase_core\.handlers\.handler_boundary_parity)\b", action
+        r"python -m (omnibase_core\.nodes\.node_cross_repo_boundary_check_effect\.runtime_boundary_parity)\b",
+        action,
     )
     assert module is not None, (
         "the called action does not run the boundary-parity handler"

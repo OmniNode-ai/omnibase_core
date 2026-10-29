@@ -13,7 +13,7 @@ from typing import Any
 import pytest
 import yaml
 
-from omnibase_core.handlers.handler_boundary_parity import (
+from omnibase_core.nodes.node_cross_repo_boundary_check_effect.handler_boundary_parity import (
     load_boundary_manifest,
     load_manifest_yaml,
 )

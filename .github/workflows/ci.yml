@@ -2110,7 +2110,7 @@ jobs:
         run: uv run pytest tests/unit/validators/test_shape_gate_independence.py -v
 
       - name: Refuse shape-gate detector jobs that depend on the preflight
-        run: uv run python -m omnibase_core.handlers.handler_shape_gate_independence
+        run: uv run python -m omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence
 
   # ===========================================================================
   # Phase 1 - Migrated decorative validators (OMN-14877, OMN-14430 fast-follow)
