@@ -63,3 +63,23 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
+  - id: dod-omn21498-t26-deploy-hosted-readback
+    description: Read the published handler and CLI at the checkout commit. Refuse a missing rewriting-hook
+      guard or zero-hook error guard, then exercise the handler, CLI and byte-identical canary behavior.
+      This library probe runs on hosted runners without a container daemon or private runtime access.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2]
+    checks:
+      - check_type: command
+        check_value: |
+          curl -fsSL "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/handlers/handler_hook_writes.py" |
+            grep -F 'if rewriting is not None and not is_check_only(hook, rewriting):' > /dev/null &&
+          curl -fsSL "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/handlers/handler_hook_writes_cli.py" |
+            grep -F 'if not runtime_errors and hooks_scanned == 0:' > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/ci/test_check_only_hooks_omn21498.py
+          tests/unit/handlers/test_handler_hook_writes.py tests/unit/handlers/test_handler_hook_writes_cli.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
