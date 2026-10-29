@@ -44,8 +44,14 @@ from omnibase_core.validation.checker_protocol_binding import (
     contract_setting_keys,
     parse_baseline,
 )
+from omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config import (
+    main as hardcoded_model_config_main,
+)
+from omnibase_core.validation.validator_hardcoded_topics import ValidatorHardcodedTopics
 from omnibase_core.validation.validator_hook_writes import ValidatorHookWrites
 from omnibase_core.validation.validator_protocol_binding import ValidatorProtocolBinding
+from omnibase_core.validation.validator_url_authority import ValidatorUrlAuthority
+from omnibase_core.validators.contract_config_compliance import validate_paths
 
 pytestmark = pytest.mark.unit
 
@@ -268,6 +274,29 @@ def test_checker_is_pure_facts_in_issues_out(monkeypatch: pytest.MonkeyPatch) ->
         Path("node_b/contract.yaml"), ("retry_window",), homes, rules
     )
     assert [i.rule_name for i in two] == ["setting_two_homes"]
+
+
+@pytest.mark.parametrize(
+    "source_name", ["checker_protocol_binding.py", "validator_protocol_binding.py"]
+)
+def test_changed_source_has_no_operational_literals(
+    source_name: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC5 scans source contents and refuses absent or empty scan targets."""
+    monkeypatch.chdir(_ROOT)
+    path = Path("src/omnibase_core/validation") / source_name
+    # The scanners may skip absent paths, so require readable source first.
+    assert path.read_text(encoding="utf-8").strip(), f"empty scan target: {path}"
+    for validator in (
+        ValidatorUrlAuthority(repo_root=_ROOT),
+        ValidatorHardcodedTopics(),
+    ):
+        result = validator.validate([path])
+        assert result.metadata is not None
+        assert result.metadata.files_processed == 1
+        assert result.issues == []
+    assert validate_paths([path]) == []
+    assert hardcoded_model_config_main([str(path)]) == 0
 
 
 def test_a_binding_site_may_construct_the_default_implementation() -> None:
