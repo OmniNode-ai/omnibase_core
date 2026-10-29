@@ -48,10 +48,13 @@ import yaml
 
 from omnibase_core.handlers.handler_canonical_location_rules import (
     TYPESCRIPT_EXTENSIONS,
+    is_generic_validator_location,
     is_shell_script,
     is_typescript_canonical_location,
-    typescript_noncanonical_file_reason,
     typescript_workspace_roots,
+)
+from omnibase_core.handlers.handler_canonical_location_rules import (
+    noncanonical_file_reason as _noncanonical_file_reason,
 )
 from omnibase_core.models.validation.model_canonical_file_shape_finding import (
     ModelCanonicalFileShapeFinding,
@@ -289,7 +292,9 @@ def is_canonical_location(
         return True
     if any(part in TEST_DIRS for part in parts[:-1]):
         return True
-    return len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
+    return is_generic_validator_location(path) or (
+        len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
+    )
 
 
 def _entry_module(entry: object) -> str | None:
@@ -487,7 +492,9 @@ def _decode(blob: bytes | None) -> str | None:
     return None if blob is None else blob.decode("utf-8", errors="replace")
 
 
-def noncanonical_code_files(repo: GitRepo, head: str) -> list[str]:
+def noncanonical_code_files(
+    repo: GitRepo, head: str, baselined: frozenset[str] = frozenset()
+) -> list[str]:
     files = repo.list_files(head)
     workspace_roots = typescript_workspace_roots(files)
     extensionless = [f for f in files if _suffix(f) == ""]
@@ -499,19 +506,8 @@ def noncanonical_code_files(repo: GitRepo, head: str) -> list[str]:
         and (
             is_shell_script(f, first_bytes.get(f))
             or not is_canonical_location(f, workspace_roots)
+            or (f in baselined and is_generic_validator_location(f))
         )
-    )
-
-
-def _noncanonical_file_reason(path: str, head_bytes: bytes | None) -> str:
-    if is_shell_script(path, head_bytes):
-        return "shell scripts have no canonical location in any repository (OMN-21332)."
-    if _suffix(path) in TYPESCRIPT_EXTENSIONS:
-        return typescript_noncanonical_file_reason()
-    return (
-        "new code file outside a canonical location "
-        "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
-        "tests/, docs/). Build it as a contract + node + handler."
     )
 
 
@@ -528,7 +524,9 @@ def check(
         _decode(repo.read_blobs(head, [baseline_path])[baseline_path])
     )
     baselined = set(head_baseline)
-    noncanonical = noncanonical_code_files(repo, head)
+    # Existing validator entries retain their shrink-only obligation. Admission
+    # of new validator locations must not require rewriting the frozen baseline.
+    noncanonical = noncanonical_code_files(repo, head, frozenset(baselined))
     noncanonical_set = set(noncanonical)
 
     base_baseline_text = (

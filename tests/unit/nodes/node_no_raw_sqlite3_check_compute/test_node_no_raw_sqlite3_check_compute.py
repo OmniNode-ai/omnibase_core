@@ -251,3 +251,21 @@ def test_empty_input_passes_trivially() -> None:
     assert report.overall_status == "PASS"
     assert report.findings == ()
     assert report.metrics.total == 0
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("path", "permitted"),
+    [
+        ("src/pkg/nodes/node_database_effect/handler.py", True),
+        ("src/pkg/nodes/node_database_compute/handler.py", False),
+        ("src/pkg/handlers/handler_database.py", False),
+        ("src/pkg/nodes/node_database_effect/helper.py", False),
+    ],
+)
+def test_canonical_effect_handler_database_boundary(path: str, permitted: bool) -> None:
+    from omnibase_core.nodes.node_no_raw_sqlite3_check_compute.visitor_raw_sqlite3 import (
+        is_excluded_adapter_filename,
+    )
+
+    assert is_excluded_adapter_filename(path) is permitted
