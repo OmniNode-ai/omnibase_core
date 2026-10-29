@@ -106,3 +106,21 @@ dod_evidence:
         check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_g_manifest_declares_both_hook_ids
           or test_b_baselined_finding_passes or test_without_baseline_every_finding_fails'"
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-21501-deploy-contract-surface
+    description: "Deploy probe. omnibase_core is a library, so the live surface of this change is the
+      published hook source. Read the two hook entry modules, the shared baseline runtime and the manifest
+      entries at the checkout commit through the GitHub contents API; fail when a hook module, the shared
+      runtime or a manifest entry is absent. Runs on hosted runners without a container daemon."
+    source: manual
+    checks:
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_dict_any_cli.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'def main(' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_backward_compat_cli.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'def main(' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_finding_baseline_cli.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'def run_baselined_hook(' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/.pre-commit-hooks.yaml?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'entry: python -m omnibase_core.handlers.handler_dict_any_cli' > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
