@@ -23,7 +23,7 @@ pytestmark = pytest.mark.unit
 VALIDATION = (
     Path(__file__).resolve().parents[2] / "src" / "omnibase_core" / "validation"
 )
-MIGRATED = ("public_runner_placement",)
+MIGRATED = ("public_runner_placement", "event_registry_drift")
 
 
 @pytest.mark.parametrize("validator_id", MIGRATED)

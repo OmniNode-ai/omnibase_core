@@ -1424,7 +1424,7 @@
     A missing, unreadable or malformed source, or a source that declares nothing, is ERROR, never PASS.
     The caller passes its sources as hook args.
   language: python
-  entry: python -m omnibase_core.handlers.handler_event_registry_drift_cli
+  entry: python -m omnibase_core.validation.validator_event_registry_drift
   pass_filenames: false
   always_run: true
   require_serial: true

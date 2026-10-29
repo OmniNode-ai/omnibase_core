@@ -97,8 +97,6 @@ check-action-pins = "omnibase_core.handlers.handler_action_pin_cli:main"
 # OMN-21494: resolve operator-private vocabularies through the shared core node.
 resolve-private-vocabulary = "omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary:main"
 
-# OMN-21416: a producer's contract-declared event registrations against an emit registry.
-check-event-registry-drift = "omnibase_core.handlers.handler_event_registry_drift_cli:main"
 # OMN-21495: shared core hooks must not trail the newest pin in the same config.
 check-precommit-pin-parity = "omnibase_core.handlers.handler_precommit_pin_parity_cli:main"
 # OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator

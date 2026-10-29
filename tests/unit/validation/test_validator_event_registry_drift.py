@@ -12,13 +12,12 @@ duplicate declaration, empty discovery, and a malformed or missing source
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_event_registry_drift_cli import (
-    main,
+from omnibase_core.validation.validator_event_registry_drift import (
+    ValidatorEventDeclarationDrift,
 )
 
 pytestmark = pytest.mark.unit
@@ -106,11 +105,22 @@ def _layout(
     return contract_dir, _write(tmp_path / "topics.yaml", registry)
 
 
-def _run(tmp_path: Path, *args: str) -> tuple[int, dict[str, object]]:
-    report_path = tmp_path / "report.json"
-    exit_code = main([*args, "--report-json", str(report_path)])
-    report = json.loads(report_path.read_text(encoding="utf-8"))
-    return exit_code, report
+def _run(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], *args: str
+) -> tuple[int, dict[str, object]]:
+    capsys.readouterr()
+    exit_code = ValidatorEventDeclarationDrift.main(list(args))
+    lines = [
+        ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("ERROR")
+    ]
+    findings = [
+        {"severity": "ERROR", "rule_id": ln.split("[", 1)[1].split("]", 1)[0]}
+        for ln in lines
+    ]
+    return exit_code, {
+        "overall_status": "ERROR" if findings else "PASS",
+        "findings": findings,
+    }
 
 
 def _rule_ids(report: dict[str, object]) -> list[str]:
@@ -125,9 +135,16 @@ def _severities(report: dict[str, object]) -> set[str]:
     return {str(f["severity"]) for f in findings}
 
 
-def _check(tmp_path: Path, contract_dir: Path, registry: Path, *extra: str):
+def _check(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    contract_dir: Path,
+    registry: Path,
+    *extra: str,
+):
     return _run(
         tmp_path,
+        capsys,
         "--source-contracts",
         str(contract_dir),
         "--registry-topics-yaml",
@@ -136,73 +153,89 @@ def _check(tmp_path: Path, contract_dir: Path, registry: Path, *extra: str):
     )
 
 
-def test_agreeing_sources_pass_with_zero_findings(tmp_path: Path) -> None:
+def test_agreeing_sources_pass_with_zero_findings(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(tmp_path)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 0
     assert report["overall_status"] == "PASS"
     assert report["findings"] == []
 
 
-def test_required_field_order_is_not_drift(tmp_path: Path) -> None:
+def test_required_field_order_is_not_drift(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     reordered = _REGISTRY.replace(
         "[call_id, model_name, tenant_id, timestamp]",
         "[timestamp, tenant_id, model_name, call_id]",
     )
     contract_dir, registry = _layout(tmp_path, registry=reordered)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert (exit_code, report["overall_status"]) == (0, "PASS")
 
 
-def test_registration_missing_from_registry_fails(tmp_path: Path) -> None:
+def test_registration_missing_from_registry_fails(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     registry_text = _REGISTRY.split("  delegation.run_step:")[0]
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
-    assert report["overall_status"] == "FAIL"
+    assert report["overall_status"] == "ERROR"
     assert "event_source_only" in _rule_ids(report)
 
 
-def test_registration_missing_from_source_fails(tmp_path: Path) -> None:
+def test_registration_missing_from_source_fails(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(
         tmp_path, contracts={"usage.yaml": _USAGE_CONTRACT}
     )
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert "event_registry_only" in _rule_ids(report)
 
 
-def test_topic_mismatch_fails(tmp_path: Path) -> None:
+def test_topic_mismatch_fails(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     other = "onex.evt.omnimarket.delegation-usage-call.v2"
     registry_text = _REGISTRY.replace(f"topic: {_USAGE_TOPIC}", f"topic: {other}")
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert "topics_mismatch" in _rule_ids(report)
 
 
-def test_partition_key_mismatch_fails(tmp_path: Path) -> None:
+def test_partition_key_mismatch_fails(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     registry_text = _REGISTRY.replace(
         "partition_key_field: tenant_id", "partition_key_field: call_id"
     )
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert _rule_ids(report) == ["partition_key_mismatch"]
 
 
-def test_required_fields_mismatch_fails(tmp_path: Path) -> None:
+def test_required_fields_mismatch_fails(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     registry_text = _REGISTRY.replace(
         "[call_id, model_name, tenant_id, timestamp]",
         "[call_id, model_name, tenant_id]",
     )
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert _rule_ids(report) == ["required_fields_mismatch"]
 
 
-def test_duplicate_contract_declaration_is_error(tmp_path: Path) -> None:
+def test_duplicate_contract_declaration_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(
         tmp_path,
         contracts={
@@ -211,25 +244,29 @@ def test_duplicate_contract_declaration_is_error(tmp_path: Path) -> None:
             "run_step.yaml": _RUN_STEP_CONTRACT,
         },
     )
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_duplicate_registry_key_is_error(tmp_path: Path) -> None:
+def test_duplicate_registry_key_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     duplicated = (
         _REGISTRY + _REGISTRY.split("events:\n")[1].split("  delegation.run_step:")[0]
     )
     contract_dir, registry = _layout(tmp_path, registry=duplicated)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_no_contract_declares_a_registration_is_error(tmp_path: Path) -> None:
+def test_no_contract_declares_a_registration_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     plain = _USAGE_CONTRACT.split("event_registration:")[0]
     contract_dir, registry = _layout(tmp_path, contracts={"usage.yaml": plain})
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
@@ -270,40 +307,48 @@ def test_no_contract_declares_a_registration_is_error(tmp_path: Path) -> None:
     ],
 )
 def test_malformed_contract_is_error_never_pass(
-    tmp_path: Path, label: str, broken: str
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], label: str, broken: str
 ) -> None:
     contract_dir, registry = _layout(
         tmp_path,
         contracts={"usage.yaml": broken, "run_step.yaml": _RUN_STEP_CONTRACT},
     )
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1, label
     assert report["overall_status"] == "ERROR", label
     assert _severities(report) == {"ERROR"}, label
 
 
-def test_missing_registry_file_is_error(tmp_path: Path) -> None:
+def test_missing_registry_file_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, _ = _layout(tmp_path)
-    exit_code, report = _check(tmp_path, contract_dir, tmp_path / "absent.yaml")
+    exit_code, report = _check(tmp_path, capsys, contract_dir, tmp_path / "absent.yaml")
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_missing_contract_directory_is_error(tmp_path: Path) -> None:
+def test_missing_contract_directory_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     _, registry = _layout(tmp_path)
-    exit_code, report = _check(tmp_path, tmp_path / "no_such_dir", registry)
+    exit_code, report = _check(tmp_path, capsys, tmp_path / "no_such_dir", registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_registry_without_events_is_error(tmp_path: Path) -> None:
+def test_registry_without_events_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(tmp_path, registry="events: {}\n")
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_baselined_registry_only_event_passes(tmp_path: Path) -> None:
+def test_baselined_registry_only_event_passes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(
         tmp_path, contracts={"usage.yaml": _USAGE_CONTRACT}
     )
@@ -313,22 +358,26 @@ def test_baselined_registry_only_event_passes(tmp_path: Path) -> None:
         f"{_RUN_STEP_TOPIC}\n",
     )
     exit_code, report = _check(
-        tmp_path, contract_dir, registry, "--baseline", str(baseline)
+        tmp_path, capsys, contract_dir, registry, "--baseline", str(baseline)
     )
     assert (exit_code, report["overall_status"]) == (0, "PASS")
 
 
-def test_malformed_baseline_is_error(tmp_path: Path) -> None:
+def test_malformed_baseline_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(tmp_path)
     baseline = _write(tmp_path / "baseline.txt", "not_a_kind delegation.run_step\n")
     exit_code, report = _check(
-        tmp_path, contract_dir, registry, "--baseline", str(baseline)
+        tmp_path, capsys, contract_dir, registry, "--baseline", str(baseline)
     )
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_registration_document_joins_contract_sources(tmp_path: Path) -> None:
+def test_registration_document_joins_contract_sources(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(
         tmp_path, contracts={"usage.yaml": _USAGE_CONTRACT}
     )
@@ -341,12 +390,14 @@ def test_registration_document_joins_contract_sources(tmp_path: Path) -> None:
         "    required_fields: [tenant_id, correlation_id, step_sequence]\n",
     )
     exit_code, report = _check(
-        tmp_path, contract_dir, registry, "--source-document", str(document)
+        tmp_path, capsys, contract_dir, registry, "--source-document", str(document)
     )
     assert (exit_code, report["overall_status"]) == (0, "PASS")
 
 
-def test_registration_in_both_contract_and_document_is_error(tmp_path: Path) -> None:
+def test_registration_in_both_contract_and_document_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(tmp_path)
     document = _write(
         tmp_path / "hook_registrations.yaml",
@@ -357,7 +408,7 @@ def test_registration_in_both_contract_and_document_is_error(tmp_path: Path) -> 
         "    required_fields: [tenant_id, correlation_id, step_sequence]\n",
     )
     exit_code, report = _check(
-        tmp_path, contract_dir, registry, "--source-document", str(document)
+        tmp_path, capsys, contract_dir, registry, "--source-document", str(document)
     )
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
@@ -372,12 +423,15 @@ _RUN_STEP_DOCUMENT = (
 )
 
 
-def test_missing_source_document_is_error(tmp_path: Path) -> None:
+def test_missing_source_document_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(
         tmp_path, contracts={"usage.yaml": _USAGE_CONTRACT}
     )
     exit_code, report = _check(
         tmp_path,
+        capsys,
         contract_dir,
         registry,
         "--source-document",
@@ -389,6 +443,7 @@ def test_missing_source_document_is_error(tmp_path: Path) -> None:
 
 def test_contract_directory_declaring_nothing_beside_a_document_is_error(
     tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     plain = _USAGE_CONTRACT.split("event_registration:")[0]
     contract_dir, registry = _layout(tmp_path, contracts={"usage.yaml": plain})
@@ -403,68 +458,80 @@ def test_contract_directory_declaring_nothing_beside_a_document_is_error(
         + "    required_fields: [call_id, model_name, tenant_id, timestamp]\n",
     )
     exit_code, report = _check(
-        tmp_path, contract_dir, registry, "--source-document", str(document)
+        tmp_path, capsys, contract_dir, registry, "--source-document", str(document)
     )
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_unreadable_contract_file_is_error(tmp_path: Path) -> None:
+def test_unreadable_contract_file_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(tmp_path)
     (contract_dir / "undecodable.yaml").write_bytes(b"topic: \xff\xfe\xfd\n")
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_registry_fan_out_rule_without_a_topic_name_is_error(tmp_path: Path) -> None:
+def test_registry_fan_out_rule_without_a_topic_name_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     registry_text = _REGISTRY.replace(
         f"      - topic: {_USAGE_TOPIC}\n",
         f"      - topic: {_USAGE_TOPIC}\n      - topic: 7\n",
     )
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_registry_required_field_that_is_not_a_name_is_error(tmp_path: Path) -> None:
+def test_registry_required_field_that_is_not_a_name_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     registry_text = _REGISTRY.replace(
         "[call_id, model_name, tenant_id, timestamp]",
         "[call_id, model_name, tenant_id, timestamp, 7]",
     )
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_contract_file_too_large_to_read_is_error(tmp_path: Path) -> None:
+def test_contract_file_too_large_to_read_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     contract_dir, registry = _layout(tmp_path)
     oversized = "# padding\n" * (6 * 1024 * 1024 // 10) + "topic: onex.evt.x.v1\n"
     _write(contract_dir / "oversized.yaml", oversized)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_registry_fan_out_repeating_a_topic_is_error(tmp_path: Path) -> None:
+def test_registry_fan_out_repeating_a_topic_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     registry_text = _REGISTRY.replace(
         f"      - topic: {_USAGE_TOPIC}\n",
         f"      - topic: {_USAGE_TOPIC}\n      - topic: {_USAGE_TOPIC}\n",
     )
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
 
 
-def test_registry_repeating_a_required_field_is_error(tmp_path: Path) -> None:
+def test_registry_repeating_a_required_field_is_error(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     registry_text = _REGISTRY.replace(
         "[call_id, model_name, tenant_id, timestamp]",
         "[call_id, model_name, tenant_id, timestamp, call_id]",
     )
     contract_dir, registry = _layout(tmp_path, registry=registry_text)
-    exit_code, report = _check(tmp_path, contract_dir, registry)
+    exit_code, report = _check(tmp_path, capsys, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
