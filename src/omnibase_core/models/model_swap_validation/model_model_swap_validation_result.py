@@ -50,6 +50,13 @@ class ModelModelSwapValidationResult(BaseModel):
     tool_commit: str | None = Field(default=None, pattern=r"^[0-9a-f]{40}$")
     image_digest: str | None = Field(default=None, pattern=r"^sha256:[0-9a-f]{64}$")
     decision: EnumModelSwapDecision | None = None
+    reported_decision: EnumModelSwapDecision | None = Field(
+        default=None,
+        description="Raw scoring verdict before recommendation eligibility gates",
+    )
+    recommendation_effective: bool | None = Field(
+        default=None, description="Whether the reported recommendation is eligible"
+    )
     recommended_model: str | None = Field(default=None, min_length=1)
     lower_bound: float | None = Field(default=None, ge=0, le=1)
     quality_floor: float = Field(gt=0.8, lt=1.0)
