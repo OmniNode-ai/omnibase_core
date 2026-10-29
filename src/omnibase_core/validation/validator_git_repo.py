@@ -58,6 +58,18 @@ class GitRepo:
         )
         return proc.returncode == 0
 
+    def merge_base(self, rev: str, other: str) -> str | None:
+        """The best common ancestor of ``rev`` and ``other``; None when there is none."""
+        proc = subprocess.run(
+            ["git", "merge-base", rev, other],
+            cwd=self.root,
+            env=self._env(),
+            capture_output=True,
+            check=False,
+        )
+        sha = proc.stdout.decode().strip()
+        return sha if proc.returncode == 0 and sha else None
+
     def list_files(self, rev: str) -> list[str]:
         """Tracked file paths at ``rev`` (``INDEX`` for the index), gitlinks skipped."""
         if rev == INDEX:

@@ -134,9 +134,16 @@ MERGE_HEAD = "MERGE_HEAD"
 
 
 def resolve_revisions(
-    repo: GitRepo, base: str | None, head: str | None
+    repo: GitRepo, base: str | None, head: str | None, landing_ref: str
 ) -> tuple[str, str | None]:
-    """``(head, base)``: the flags as given, else the index against ``HEAD``.
+    """``(head, base)``: the flags as given, else the index against its merge base.
+
+    With no ``--base`` the index is compared with the merge base of ``HEAD`` and
+    ``landing_ref``, the way CI compares a pull request: a branch that already
+    committed a file the landing branch lacks (the ticketed burn-down baseline)
+    is judged against the tree the landing branch holds, not against its own
+    ``HEAD``. When ``landing_ref`` does not resolve or shares no history with
+    ``HEAD``, the base is ``HEAD``.
 
     A merge commit in progress (``MERGE_HEAD`` exists) is checked against the branch being
     merged in, the way the CI run checks a head against its merge base: against the first
@@ -148,6 +155,8 @@ def resolve_revisions(
     if resolved_head == INDEX and repo.has_revision(MERGE_HEAD):
         return resolved_head, MERGE_HEAD
     if resolved_head == INDEX and repo.has_revision("HEAD"):
+        if repo.has_revision(landing_ref):
+            return resolved_head, repo.merge_base("HEAD", landing_ref) or "HEAD"
         return resolved_head, "HEAD"
     return resolved_head, None
 
@@ -375,7 +384,7 @@ def run_check(
     validator = ValidatorCanonicalFileShape()
     contract = validator.contract
     p = load_rule_set(contract).parameters
-    resolved_head, resolved_base = resolve_revisions(repo, base, head)
+    resolved_head, resolved_base = resolve_revisions(repo, base, head, p.landing_ref)
     facts = (
         gather_facts(repo, p, resolved_head, resolved_base, commit_message)
         if EnumCanonicalFileShapeRuleGroup.FILE_SHAPE in rule_groups

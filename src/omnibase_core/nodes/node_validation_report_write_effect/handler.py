@@ -11,8 +11,10 @@ node, on the definition-B ``handle(request) -> response`` shape (OMN-14355).
 Every converted check runtime writes its report through this node, so it is also
 the one place a validator's run and fire events are derived: the events go, one
 JSON line each, to ``<report_path>.events.jsonl`` (OMN-17427, RULING
-2026-10-14T20:01:09Z). The CI collector adds the repository, the pull request
-or commit and the duration, and carries the lines to the event bus.
+2026-10-14T20:01:09Z), which stays the offline copy.
+
+``NodeValidationReportPublishEffect`` (OMN-21529, ``handler_validation_report_publish``)
+adds the bus publish on top of this write.
 
 Ticket: OMN-20565 (validator conversion, omnibase_core first batch).
 """
@@ -27,6 +29,9 @@ from omnibase_core.models.nodes.validation_report_write.model_validation_report_
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output import (
     ModelValidationReportWriteOutput,
 )
+from omnibase_core.models.validation.model_validator_run_event import (
+    ModelValidatorRunEvent,
+)
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_run_events import (
     HandlerValidatorRunEvents,
 )
@@ -35,7 +40,7 @@ __all__ = ["NodeValidationReportWriteEffect"]
 
 
 class NodeValidationReportWriteEffect:
-    """EFFECT handler that writes a canonical validation report as JSON."""
+    """EFFECT handler that writes a canonical validation report and its offline events."""
 
     def handle(
         self, request: ModelValidationReportWriteInput
@@ -54,4 +59,13 @@ class NodeValidationReportWriteEffect:
             bytes_written=len(payload),
             events_path=str(events_path),
             events_written=len(events),
+            events_published=self._publish(request, events[0]),
         )
+
+    def _publish(
+        self,
+        request: ModelValidationReportWriteInput,
+        run_event: ModelValidatorRunEvent,
+    ) -> int:
+        """Events put on a bus; this writer has none."""
+        return 0
