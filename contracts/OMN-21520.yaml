@@ -50,6 +50,10 @@ dod_evidence:
         check_value: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
           --rules file-shape
         cwd: .
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_naming_convention_check_compute/test_node_naming_convention_check_compute.py
+          -n 0 -q
+        cwd: .
     binds_ac:
       - AC1
   - id: dod-omn21520-ac2-no-argparse
@@ -68,6 +72,10 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pre-commit run check-local-paths --all-files
+        cwd: .
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_url_authority_check_compute/test_node_url_authority_check_compute.py
+          -n 0 -q
         cwd: .
     binds_ac:
       - AC3
