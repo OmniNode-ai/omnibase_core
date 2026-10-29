@@ -26,7 +26,7 @@ requirements:
       - id: AC3
         statement: "AC3: the baselined validator file holds no more code lines than it did at the previous
           main head (731), with the TypeScript and shell location rules in a handler -- falsifier: the
-          ratchet run with --base 9b083ad32228f078aecfc47f9c71155656b47fae refuses with baselined-file-growth"
+          ratchet run with --base 342000ec57020e5258dde41d571420e7c09ed05b refuses with baselined-file-growth"
 evidence_requirements:
   - kind: tests
     description: Release-cut identity tests, then the canonical documentation scan and package-identity
@@ -147,7 +147,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
-          --rules file-shape --base 9b083ad32228f078aecfc47f9c71155656b47fae --head HEAD
+          --rules file-shape --base 342000ec57020e5258dde41d571420e7c09ed05b --head HEAD
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-deploy-location-rules-handler
     description: Hosted content probe at the commit that moved the location rules; the handler module
