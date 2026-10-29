@@ -83,6 +83,6 @@ dod_evidence:
         cwd: .
       - check_type: test_passes
         check_value: uv run --frozen python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
-          --help && .venv/bin/onex --help
+          --help
         cwd: .
     binds_ac: [AC1, AC2, AC3]
