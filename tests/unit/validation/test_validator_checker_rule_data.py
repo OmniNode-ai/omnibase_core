@@ -348,12 +348,15 @@ def test_the_baseline_holds_exactly_the_tables_the_tree_holds() -> None:
     held: dict[str, int] = {}
     validator = ValidatorCheckerRuleData()
     for path in sorted((ROOT / "src" / "omnibase_core").rglob("*.py")):
+        if path.name.endswith("_cli.py") and path.parent.name == "handlers":
+            continue  # a one-off CLI is migrated and deleted, never baselined
         tables = [i for i in validator.validate(path).issues if i.code == TABLE]
         if tables:
             held[path.relative_to(ROOT).as_posix()] = len(tables)
     assert held == entries
 
 
-def test_the_baseline_names_no_validator_migrated_into_the_generic_format() -> None:
+def test_the_baseline_names_no_one_off_cli_and_no_migrated_validator() -> None:
     entries = checker.parse_baseline(BASELINE_FILE.read_text(encoding="utf-8"))
+    assert not [p for p in entries if p.endswith("_cli.py")]
     assert not [p for p in entries if "public_runner_placement" in p]
