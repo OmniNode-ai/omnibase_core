@@ -9,6 +9,9 @@ including merge conflicts, geometric conflict analysis, resolution tracking,
 and overlay stacking.
 
 Models included:
+    Merge Result (OMN-21506):
+        - ModelContractMergeResult: Expanded contract, overlay refs, and hashes
+
     Core Models (OMN-1127):
         - ModelMergeConflict: Represents a conflict detected during merge
 
@@ -51,6 +54,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.merge.model_conflict_resolution_result import (
         ModelConflictResolutionResult,
     )
+    from omnibase_core.models.merge.model_contract_merge_result import (
+        ModelContractMergeResult,
+    )
     from omnibase_core.models.merge.model_geometric_conflict_details import (
         ModelGeometricConflictDetails,
     )
@@ -62,6 +68,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     "ModelConflictResolutionResult",
+    "ModelContractMergeResult",
     "ModelGeometricConflictDetails",
     "ModelMergeConflict",
     "ModelOverlayRef",
@@ -78,6 +85,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelConflictResolutionResult": (
         "omnibase_core.models.merge.model_conflict_resolution_result",
         "ModelConflictResolutionResult",
+    ),
+    "ModelContractMergeResult": (
+        "omnibase_core.models.merge.model_contract_merge_result",
+        "ModelContractMergeResult",
     ),
     "ModelGeometricConflictDetails": (
         "omnibase_core.models.merge.model_geometric_conflict_details",
