@@ -1300,3 +1300,17 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-fsm-single-source
+  name: Reducer state machine has one source (OMN-21513)
+  description: >
+    A reducer's contract.yaml state_machine is the only place its machine is written. Fails a reducer
+    directory whose Python holds a mapping, set, list, tuple or enum of two or more of the contract's
+    state names, decides in a chain of branches on state literals, or never calls the core executor. Every
+    rule table is the validator's fsm_single_source.validation.yaml contract.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_fsm_single_source_cli
+  files: ^.*contract\.yaml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

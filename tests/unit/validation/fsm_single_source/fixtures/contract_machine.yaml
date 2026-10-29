@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_fixture_reducer
+node_type: REDUCER_GENERIC
+state_machine:
+  version: {major: 1, minor: 0, patch: 0}
+  state_machine_name: fixture_fsm
+  state_machine_version: {major: 1, minor: 0, patch: 0}
+  description: A four-state fixture machine.
+  initial_state: drafted
+  terminal_states: [done]
+  error_states: [refused]
+  states:
+    - {version: {major: 1, minor: 0, patch: 0}, state_name: drafted, state_type: operational, description: Written.}
+    - {version: {major: 1, minor: 0, patch: 0}, state_name: built, state_type: operational, description: Built.}
+    - {version: {major: 1, minor: 0, patch: 0}, state_name: done, state_type: terminal, description: Done.,
+      is_terminal: true}
+    - {version: {major: 1, minor: 0, patch: 0}, state_name: refused, state_type: error, description: Refused.,
+      is_recoverable: true}
+  transitions:
+    - {version: {major: 1, minor: 0, patch: 0}, transition_name: build, from_state: drafted, to_state: built,
+      trigger: build_finished}
+    - {version: {major: 1, minor: 0, patch: 0}, transition_name: finish, from_state: built, to_state: done,
+      trigger: readback_healthy}
+    - {version: {major: 1, minor: 0, patch: 0}, transition_name: refuse, from_state: built, to_state: refused,
+      trigger: readback_unhealthy}

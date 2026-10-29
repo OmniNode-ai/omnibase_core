@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_fixture_reducer
+node_type: REDUCER_GENERIC
+description: A reducer contract that declares no state machine.

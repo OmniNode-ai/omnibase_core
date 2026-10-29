@@ -1,0 +1,5 @@
+"""Never calls the executor."""
+
+
+def fold(state, trigger):
+    return state
