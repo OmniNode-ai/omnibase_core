@@ -8,8 +8,8 @@ node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
 tags: [validator_node]
 description: Refuses a test process's write to a canonical ledger target (OMN-19513).
-input_model: omnibase_core.models.ledger.model_ledger_write_guard_request.ModelLedgerWriteGuardRequest
-output_model: omnibase_core.models.ledger.model_ledger_write_guard_decision.ModelLedgerWriteGuardDecision
+input_model: omnibase_core.models.ledger_write_guard.model_ledger_write_guard_request.ModelLedgerWriteGuardRequest
+output_model: omnibase_core.models.ledger_write_guard.model_ledger_write_guard_decision.ModelLedgerWriteGuardDecision
 handler_routing:
   version: {major: 1, minor: 0, patch: 0}
   routing_strategy: payload_type_match
