@@ -104,6 +104,41 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC7
+  - id: dod-omn21534-ac2-planted-contract-refused
+    description: The validator the hook runs refuses a contract whose check_value is a multi-line python3
+      -c. The refusal of contracts/OMN-21502.yaml on the knowledge_base_internal#1547 branch by the wired
+      knowledge_base_internal hook is not proven by this item; it follows the hook wiring there.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_inline_logic.py -n 0 -q -o addopts=''
+          -k "25_line_python_c or planted_violation"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21534-ac6-no-literal
+    description: The checker, validator and models hold no host, port, topic, model name, timeout or URL;
+      the K10 rule-table gate reports zero on the checker module.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_inline_logic.py
+          src/omnibase_core/validation/validator_inline_logic.py
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21534-ac8-two-overlays
+    description: The in-memory run and the Redpanda-overlay run (bound to a recording bus in this test)
+      both equal the committed golden report after normalising run id and timestamps, and each puts one
+      run event carrying the report's run id. The live-broker run on a lab host is recorded separately
+      after omnibase_core#2145 merges and is not claimed by this item.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_runtime_inline_logic.py -n 0 -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC8
   - id: dod-omn21534-deploy-checker-source
     description: Hosted source readback at the checkout commit requires the inline-logic checker and its
       validation contract to be present in the checkout. The probe needs no private broker.
