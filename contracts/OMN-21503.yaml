@@ -131,3 +131,38 @@ dod_evidence:
           tests/unit/validation/test_validator_public_runner_placement.py -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]
+  - id: dod-omn21503-version-floor-migration
+    description: The version-floor replacement rejects a raised floor before its consumers are ready,
+      reads every rule parameter, refuses invalid configuration and operates over facts without IO.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_version_floor_consumers.py -o
+          addopts='' -q
+        cwd: .
+    binds_ac: [AC4, AC5, AC6]
+  - id: dod-omn21503-workflow-selection
+    description: The merge-queue CLI reads its workflow pattern from a rule row; path boundaries are preserved,
+      changing the parameter changes selection and a missing parameter raises.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_version_drift_cli.py -o addopts=''
+          -q
+        cwd: .
+    binds_ac: [AC5]
+  - id: dod-omn21503-deploy-version-floor-entry
+    description: Deploy smoke for this library's module entry at the checkout. Temporary git repositories
+      exercise the CLI against origin consumer manifests and reject an unreadable base. No service, credentials,
+      Docker daemon or sibling checkout is required on the hosted runner.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_version_floor_consumers.py -o
+          addopts='' -q -k 'floor_cli_checks_origin_consumers or floor_cli_refuses_a_missing_base_ref'
+        cwd: .
+      - check_type: test_passes
+        check_value: gh api repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/checker_version_floor_consumers.py?ref=be2a14d39c72215828efb9eb10387d118f503640
+          --jq '.content' | base64 -d | grep -c 'def check_version_floor_consumers'
+        cwd: .
+    binds_ac: [AC4]

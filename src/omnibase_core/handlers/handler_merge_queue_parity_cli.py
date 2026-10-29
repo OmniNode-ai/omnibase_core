@@ -67,21 +67,14 @@ from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.validation.checker_workflow_selection import (
+    is_workflow,
+    load_workflow_rule,
+)
 
-__all__ = ["is_workflow", "main", "parse_baseline"]
+__all__ = ["is_workflow", "load_workflow_rule", "main", "parse_baseline"]
 
 DEFAULT_BASELINE: Final[str] = ".onex_ratchets/merge_queue_parity_baseline.yaml"
-
-
-def is_workflow(path: str) -> bool:
-    """True for a top-level file of ``.github/workflows``."""
-    head, _, name = path.removeprefix(".github/workflows/").partition("/")
-    return (
-        path.startswith(".github/workflows/")
-        and not name
-        and head.endswith((".yml", ".yaml"))
-        and head not in (".yml", ".yaml")
-    )
 
 
 def parse_baseline(text: str | None) -> tuple[ModelMergeQueueParityBaselineEntry, ...]:

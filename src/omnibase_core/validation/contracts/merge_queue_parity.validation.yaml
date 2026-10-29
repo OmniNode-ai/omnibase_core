@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Workflow selection for the existing merge-queue parity CLI. The remaining
+# parity rules stay in the legacy handler until its generic-format migration.
+version:
+  major: 1
+  minor: 0
+  patch: 0
+validator_id: merge_queue_parity
+validator_name: Merge Queue Parity
+validator_description: Select top-level workflow YAML files for merge-queue parity validation.
+target_patterns:
+  - ".github/workflows/*.yml"
+  - ".github/workflows/*.yaml"
+rules:
+  - rule_id: workflow_path
+    description: Select top-level YAML workflows without normalizing repository paths.
+    severity: error
+    enabled: true
+    parameters:
+      path_pattern: '^\.github/workflows/[^/]+\.ya?ml$'

@@ -409,8 +409,6 @@ src/omnibase_core/handlers/handler_private_vocabulary_resolution.py
 src/omnibase_core/handlers/handler_shape_gate_independence.py
 src/omnibase_core/handlers/handler_todo_format.py
 src/omnibase_core/handlers/handler_validator_run.py
-src/omnibase_core/handlers/handler_version_floor_consumers.py
-src/omnibase_core/handlers/handler_version_floor_consumers_cli.py
 src/omnibase_core/infrastructure/__init__.py
 src/omnibase_core/infrastructure/cache_backends/__init__.py
 src/omnibase_core/infrastructure/execution/__init__.py

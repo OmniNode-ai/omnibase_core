@@ -1218,7 +1218,7 @@
     default branch, beside this repository's canonical clone; an unreadable consumer fails the raise.
     The failure names each consumer pull request that must land first.
   language: python
-  entry: python -m omnibase_core.handlers.handler_version_floor_consumers_cli
+  entry: python -m omnibase_core.validation.validator_version_floor_consumers
   files: (^|/)pyproject\.toml$
   pass_filenames: true
   require_serial: true

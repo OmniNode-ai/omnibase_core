@@ -1843,7 +1843,7 @@ repos:
       # the CI steps in the lint-imports job and .github/workflows/version-drift.yml.
       - id: check-version-floor-consumers
         name: No floor raise ahead of registry consumers (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_version_floor_consumers_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_version_floor_consumers
         language: system
         files: ^pyproject\.toml$
         pass_filenames: true

@@ -739,12 +739,12 @@ jobs:
           if [ -n "${CONSUMER_READ_TOKEN:-}" ]; then
             auth=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$CONSUMER_READ_TOKEN" | base64 | tr -d '\n')")
           fi
-          for repo in $(uv run python -c "from omnibase_core.handlers.handler_version_floor_consumers_cli import load_layer_map; print(' '.join(e.repo for e in load_layer_map().repos))"); do
+          for repo in $(uv run python -c "from omnibase_core.validation.validator_version_floor_consumers import load_layer_map; print(' '.join(e.repo for e in load_layer_map().repos))"); do
             git "${auth[@]}" clone --quiet --depth 1 --no-checkout "https://github.com/OmniNode-ai/${repo}.git" "$consumers/$repo" \
               || echo "::warning::registry consumer ${repo} is not readable from this runner; a floor raise fails until it is"
           done
-          uv run check-version-floor-consumers --repo omnibase_core --base-ref "$RATCHET_BASE_REF" \
-            --consumers-root "$consumers" --report-json version-floor-report.json
+          uv run python -m omnibase_core.validation.validator_version_floor_consumers --repo omnibase_core --base-ref "$RATCHET_BASE_REF" \
+            --consumers-root "$consumers"
 
       # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210) — blocking.
       # import-linter's wildcard ignores are permissive; this freezes protocols->models
