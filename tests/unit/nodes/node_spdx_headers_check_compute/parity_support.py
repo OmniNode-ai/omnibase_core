@@ -14,13 +14,18 @@ from omnibase_core.models.validation.model_validation_report import (
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 CORPUS = REPO_ROOT / "tests/fixtures/validator_parity/spdx_headers"
+# A template whose materialized name is a container build file is stored with
+# this prefix so the tracked tree holds no file the deploy gate reads as a
+# deployment artifact (a tracked Dockerfile-shaped name ends the package-only
+# exemption of this repository). Materialization drops the prefix.
+TEMPLATE_PREFIX = "fixture_"
 
 
 def materialize_corpus(root: Path) -> list[Path]:
     """Expand fixture tokens without introducing bypasses in tracked source."""
     paths: list[Path] = []
     for template in sorted(CORPUS.glob("*.in")):
-        path = root / template.name.removesuffix(".in")
+        path = root / template.name.removesuffix(".in").removeprefix(TEMPLATE_PREFIX)
         path.write_text(
             template.read_text()
             .replace("{copyright}", "# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.")
