@@ -979,7 +979,6 @@ src/omnibase_core/validation/todo_marker/__init__.py
 src/omnibase_core/validation/todo_marker/handler.py
 src/omnibase_core/validation/todo_marker/models.py
 src/omnibase_core/validation/todo_marker/runtime_todo_marker.py
-src/omnibase_core/validation/validator_demo_path_topic_coherence.py
 src/omnibase_core/validation/validators/__init__.py
 src/omnibase_core/validation/validators/validator_common.py
 src/omnibase_core/validation/zone_classifier.py
