@@ -1277,7 +1277,7 @@
     <path>; --base-dir and --base-baseline add the base comparison that refuses a new or re-added baseline
     entry.
   language: python
-  entry: python -m omnibase_core.handlers.handler_ci_inheritance_cli
+  entry: python -m omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: false
   require_serial: true

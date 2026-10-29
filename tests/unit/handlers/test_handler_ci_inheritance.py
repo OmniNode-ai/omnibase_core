@@ -13,15 +13,22 @@ from __future__ import annotations
 
 import pytest
 
-from omnibase_core.handlers.handler_ci_inheritance import (
-    HandlerCiInheritance,
-    extract_org_references,
-)
 from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input import (
     ModelCiInheritanceCheckInput,
 )
+from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_reference_input import (
+    ModelCiInheritanceReferenceInput,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
+)
+from omnibase_core.nodes.node_ci_inheritance_check_compute.handler_ci_inheritance import (
+    HandlerCiInheritance,
+    extract_org_references,
+)
+from omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check import (
+    load_contract,
+    rules_from_contract,
 )
 
 pytestmark = pytest.mark.unit
@@ -48,14 +55,20 @@ jobs:
 """
 
 
+_USES_PATTERN = rules_from_contract(load_contract()).uses_pattern
+
+
 def _request(
     base: dict[str, str], head: dict[str, str]
-) -> ModelCiInheritanceCheckInput:
-    return ModelCiInheritanceCheckInput(
-        organization="OmniNode-ai",
-        host_repository="omnibase_core",
-        base_files=[ModelSourceFile(path=p, source=s) for p, s in base.items()],
-        head_files=[ModelSourceFile(path=p, source=s) for p, s in head.items()],
+) -> ModelCiInheritanceReferenceInput:
+    return ModelCiInheritanceReferenceInput(
+        check=ModelCiInheritanceCheckInput(
+            organization="OmniNode-ai",
+            host_repository="omnibase_core",
+            base_files=[ModelSourceFile(path=p, source=s) for p, s in base.items()],
+            head_files=[ModelSourceFile(path=p, source=s) for p, s in head.items()],
+        ),
+        rules=rules_from_contract(load_contract()),
     )
 
 
@@ -125,12 +138,12 @@ jobs:
     uses: ./.github/workflows/local.yml
     # uses: OmniNode-ai/omnimarket/.github/workflows/y.yml@main
 """
-    assert extract_org_references(source, "OmniNode-ai") == []
+    assert extract_org_references(source, "OmniNode-ai", _USES_PATTERN) == []
 
 
 def test_org_match_is_case_insensitive_and_quoted_values_parse() -> None:
     source = "    - uses: 'omninode-ai/omniclaude/.github/workflows/x.yml@main'\n"
-    refs = extract_org_references(source, "OmniNode-ai")
+    refs = extract_org_references(source, "OmniNode-ai", _USES_PATTERN)
     assert [(r.line, r.repository, r.target) for r in refs] == [
         (1, "omniclaude", "omninode-ai/omniclaude/.github/workflows/x.yml")
     ]

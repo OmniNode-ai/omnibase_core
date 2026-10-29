@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+version:
+  major: 1
+  minor: 0
+  patch: 0
+validator_id: ci_inheritance
+validator_name: CI Inheritance
+validator_description: |
+  Shared CI is inherited from the host repository only (OMN-17427, OMN-21518). A change that adds a
+  `uses:` reference to an organization repository other than the host is refused; references the base
+  already carries are reported as warnings. Workflow text arrives as arguments; the reference pattern,
+  the finding messages and the command line defaults are rule parameters.
+
+target_patterns:
+  - ".github/workflows/*.yml"
+  - ".github/workflows/*.yaml"
+
+exclude_patterns:
+  - "**/__pycache__/**"
+  - "**/.git/**"
+  - "**/node_modules/**"
+  - "**/.venv/**"
+
+rules:
+  - rule_id: org_reference_pattern
+    description: A `uses:` line at job level or in a step list item; the value may be quoted and carry
+      a trailing comment.
+    severity: error
+    enabled: true
+    parameters:
+      uses_pattern: '^\s*(?:-\s+)?uses:\s*[''"]?(?P<value>[^\s''"#]+)'
+  - rule_id: new_org_reference
+    description: A reference the base does not carry, hosted outside the CI host.
+    severity: error
+    enabled: true
+    parameters:
+      message_template: '{location}: new CI reference {target} is hosted outside {host}'
+      remediation_template: >-
+        Host the shared workflow or action in {organization}/{host} and call it from there (RULING 2026-10-14T20:01:09Z,
+        OMN-17427).
+  - rule_id: existing_org_reference
+    description: A reference the base already carries, hosted outside the CI host.
+    severity: warning
+    enabled: true
+    parameters:
+      message_template: '{location}: existing CI reference {target} is hosted outside {host}'
+  - rule_id: command_line_defaults
+    description: Defaults of the check-ci-inheritance command line.
+    severity: error
+    enabled: true
+    parameters:
+      head_dir: '.github/workflows'
+      organization: 'OmniNode-ai'
+      host_repository: 'omnibase_core'
+      workflow_patterns:
+        - '*.yml'
+        - '*.yaml'
+
+suppression_comments: []
+
+fail_on_error: true
+fail_on_warning: false
+max_violations: 0
+severity_default: error
+parallel_execution: true
