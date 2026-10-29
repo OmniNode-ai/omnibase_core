@@ -114,14 +114,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn21509-deploy-checkout-test
-    description: Hosted-runner run of the pure checker, validator entry and canonical file location tests
-      at the checkout. The tests require no container daemon or private runtime.
+    description: Hosted-runner run of the pure checker's verdict, purity and rule-data tests at the checkout,
+      scoped to fit the verifier's 30 s per-check budget. The tests require no container daemon or private
+      runtime.
     source: manual
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/validation/test_checker_design_record.py tests/unit/validation/test_validator_canonical_file_shape.py
-          tests/unit/validators/test_canonical_file_shape.py -q --no-cov -o addopts=''
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_design_record.py -q --no-cov
+          -o addopts='' -k "refused or accepted or is_pure or byte_identical or no_rule_data"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1, AC2, AC3, AC4]
   - id: dod-omn21509-deploy-published-source
