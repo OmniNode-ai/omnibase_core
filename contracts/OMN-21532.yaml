@@ -82,11 +82,13 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_no_io_outside_effects_check_compute -n 0 -q
+        check_value: uv run pytest tests/unit/nodes/node_no_io_outside_effects_check_compute/test_node_no_io_outside_effects_check_compute.py
+          tests/unit/nodes/node_no_io_outside_effects_check_compute/test_runtime_no_io_outside_effects_check.py
+          -n 0 -q
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py::test_each_kind_is_refused_in_a_non_effect_package_and_passes_in_effect
-          -n 0 -q
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py -n 0 -q
+          -k test_each_kind_is_refused_in_a_non_effect_package_and_passes_in_effect
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
@@ -168,3 +170,14 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
+  - id: dod-omn21532-deploy-hosted-runtime
+    description: Hosted deploy probe of the validator runtime on the in-memory and recording-bus overlays.
+      Both runs must match the golden report and publish exactly one run event carrying the report id.
+      The probe runs locally on the hosted runner without a live broker.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects_overlays.py
+          -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
