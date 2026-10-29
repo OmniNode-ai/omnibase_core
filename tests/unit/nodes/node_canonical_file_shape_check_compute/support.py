@@ -75,7 +75,11 @@ def issues(
     rules: ModelCanonicalFileShapeRuleSet = RULES,
 ) -> tuple[ModelValidationIssue, ...]:
     """Every issue for the index (or ``head``) against ``base`` (``HEAD`` by default)."""
-    git_repo = GitRepo(root=repo, env=scrub_git_location_env())
+    git_repo = GitRepo(
+        root=repo,
+        env=scrub_git_location_env(),
+        cat_file_timeout_s=RULES.parameters.cat_file_timeout_s,
+    )
     resolved_head, resolved_base = resolve_revisions(git_repo, base, head)
     facts = gather_facts(
         git_repo, rules.parameters, resolved_head, resolved_base, commit_message

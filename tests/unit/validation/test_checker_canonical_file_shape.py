@@ -111,8 +111,15 @@ def test_every_contract_rule_has_a_planted_fixture_pair() -> None:
         for rule in CONTRACT.rules
         if rule.rule_id in RULES.enabled and rule.rule_id in FIXTURE_RULES
     }
-    config_only = {"declared-gate-lists", "repository-lifecycle"}
-    assert checked | config_only == {rule.rule_id for rule in CONTRACT.rules}
+    config_only = {"declared-gate-lists", "repository-lifecycle", "git-reader"}
+    # The node-home rows read a node inventory, not file-shape facts; their planted
+    # pairs live in fixtures/.../node_home and run in test_node_home_admission.py.
+    node_home = {
+        rule.rule_id for rule in CONTRACT.rules if rule.rule_id.startswith("node-home:")
+    }
+    assert checked | config_only | node_home == {
+        rule.rule_id for rule in CONTRACT.rules
+    }
     for rule in FIXTURE_RULES:
         assert (FIXTURES / f"clean_{rule}.json").is_file()
 
@@ -637,8 +644,15 @@ MUTATIONS: dict[str, tuple[str, object]] = {
     "cli_entry_outside_node_text": ("cli", INERT_STR),
 }
 # Read from the repository by the node runtime (git facts), not by the checker; the
-# runtime test mutates these through a fixture repository.
-READER_KEYS = frozenset({"handler_class_pattern", "argparse_pattern", "main_pattern"})
+# runtime test mutates these through a fixture repository. The node-home keys and
+# the git-reader ceiling are mutated in test_node_home_admission.py.
+READER_KEYS = frozenset(
+    {"handler_class_pattern", "argparse_pattern", "main_pattern", "cat_file_timeout_s"}
+) | {
+    key
+    for key in ModelCanonicalFileShapeRules.model_fields
+    if key.startswith("node_home_")
+} - {"node_home_baseline_path"}
 
 
 def test_every_parameter_key_is_mutated_by_a_table_row() -> None:

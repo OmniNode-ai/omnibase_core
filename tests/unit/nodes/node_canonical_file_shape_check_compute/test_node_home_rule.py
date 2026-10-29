@@ -17,7 +17,6 @@ from omnibase_core.models.validation import (
     ModelNodeHomeRatchetResult,
 )
 from omnibase_core.nodes.node_canonical_file_shape_check_compute.matcher_node_home import (
-    NODE_HOME_BASELINE,
     NodeHomeRule,
 )
 from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import (
@@ -27,6 +26,10 @@ from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonic
     main,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    NODE_HOME_BASELINE,
+    RULES,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -61,13 +64,20 @@ def _request(
     repo: Path, *, head: str = INDEX, base: str | None = "HEAD"
 ) -> ModelNodeHomeRatchetRequest:
     return gather_node_home_request(
-        GitRepo(repo, env=scrub_git_location_env()), head, base
+        GitRepo(
+            repo,
+            env=scrub_git_location_env(),
+            cat_file_timeout_s=RULES.parameters.cat_file_timeout_s,
+        ),
+        head,
+        base,
+        RULES.parameters,
     )
 
 
 def _check(repo: Path) -> ModelNodeHomeRatchetResult:
     _git(repo, "add", "-A")
-    return NodeHomeRule().check(_request(repo))
+    return NodeHomeRule(RULES).check(_request(repo))
 
 
 @pytest.fixture
@@ -222,12 +232,12 @@ def test_refuses_new_node_reads_staged_python_and_contracts(repo: Path) -> None:
     )
     _git(repo, "add", "-A")
     _write(repo, "src/pkg/node_candidate/impl.py", "VALUE = 1\n")
-    assert NodeHomeRule().check(_request(repo)).node_directories == (
+    assert NodeHomeRule(RULES).check(_request(repo)).node_directories == (
         "src/pkg/node_candidate",
     )
     _git(repo, "add", "-A")
     _plant(repo)
-    assert NodeHomeRule().check(_request(repo)).node_directories == ()
+    assert NodeHomeRule(RULES).check(_request(repo)).node_directories == ()
 
 
 def test_baseline_only_shrinks_growth_refused(repo: Path) -> None:
@@ -273,7 +283,7 @@ def test_baselined_node_rename_inherits_baseline(
         f"{OLD_NODE}/contract.yaml",
         f"{NODE}/contract.yaml",
     ) in request.renamed_paths
-    result = NodeHomeRule().check(request)
+    result = NodeHomeRule(RULES).check(request)
     assert result.node_directories == (NODE,)
     assert result.findings == ()
     assert (
@@ -309,7 +319,7 @@ def test_unbaselined_node_rename_is_refused(repo: Path) -> None:
     ) in request.renamed_paths
     assert [
         (finding.code, finding.path)
-        for finding in NodeHomeRule().check(request).findings
+        for finding in NodeHomeRule(RULES).check(request).findings
     ] == [("node-outside-market", NODE)]
     assert (
         main(
@@ -432,7 +442,7 @@ def test_request_and_result_models_are_frozen_and_forbid_extra() -> None:
     finding = ModelNodeHomeRatchetFinding(
         code="node-outside-market", path=NODE, message="move"
     )
-    result = NodeHomeRule().check(request)
+    result = NodeHomeRule(RULES).check(request)
     for model in (request, finding, result):
         assert model.model_config["frozen"]
         with pytest.raises(ValidationError):
@@ -443,9 +453,16 @@ def test_request_and_result_models_are_frozen_and_forbid_extra() -> None:
 
 def test_this_repository_tree_passes_written_baseline() -> None:
     request = gather_node_home_request(
-        GitRepo(REPO_ROOT, env=scrub_git_location_env()), INDEX, "HEAD"
+        GitRepo(
+            REPO_ROOT,
+            env=scrub_git_location_env(),
+            cat_file_timeout_s=RULES.parameters.cat_file_timeout_s,
+        ),
+        INDEX,
+        "HEAD",
+        RULES.parameters,
     )
-    result = NodeHomeRule().check(request)
+    result = NodeHomeRule(RULES).check(request)
     assert result.node_directories
     assert result.findings == ()
     assert (
@@ -544,7 +561,7 @@ def test_refuses_new_node_entry_points_read_index_and_explicit_base(repo: Path) 
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", "existing registration")
     _write(repo, "pyproject.toml", project + 'new_node = "pkg:NodeOther"\n')
-    assert NodeHomeRule().check(_request(repo)).findings == ()
+    assert NodeHomeRule(RULES).check(_request(repo)).findings == ()
     assert [finding.code for finding in _check(repo).findings] == [
         "entry-point-outside-market"
     ]

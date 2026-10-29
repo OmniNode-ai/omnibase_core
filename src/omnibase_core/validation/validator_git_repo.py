@@ -18,16 +18,23 @@ from pathlib import Path
 INDEX = ":"
 # Failure type of a git run, for callers that must not import subprocess themselves.
 GitCommandError = subprocess.SubprocessError
-# Wall-clock ceiling for one cat-file run so a stall fails loud instead of hanging the hook.
-CAT_FILE_TIMEOUT_S = 300
 
 
 class GitRepo:
     """A git working tree and the environment its git commands run with."""
 
-    def __init__(self, root: Path, env: Mapping[str, str] | None = None) -> None:
+    def __init__(
+        self,
+        root: Path,
+        env: Mapping[str, str] | None = None,
+        *,
+        cat_file_timeout_s: float,
+    ) -> None:
         self.root = root
         self.env = env
+        # Wall-clock ceiling for one cat-file run so a stall fails loud instead
+        # of hanging the hook; the validator contract supplies it.
+        self.cat_file_timeout_s = cat_file_timeout_s
 
     def _env(self) -> dict[str, str] | None:
         return None if self.env is None else dict(self.env)
@@ -86,7 +93,7 @@ class GitRepo:
                 stdin=requests,
                 stdout=responses,
                 check=True,
-                timeout=CAT_FILE_TIMEOUT_S,
+                timeout=self.cat_file_timeout_s,
             )
             responses.seek(0)
             out = responses.read()

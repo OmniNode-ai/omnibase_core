@@ -714,9 +714,9 @@ class StalledPipeSelector(selectors.PollSelector):
 subprocess._PopenSelector = StalledPipeSelector
 rev = sys.argv[2]
 paths = sys.argv[3:]
-blobs = GitRepo(root=Path(sys.argv[1]), env=scrub_git_location_env()).read_blobs(
-    rev, paths
-)
+blobs = GitRepo(
+    root=Path(sys.argv[1]), env=scrub_git_location_env(), cat_file_timeout_s=60
+).read_blobs(rev, paths)
 print(sum(1 for path in paths if blobs[path] == f"{path}\\n".encode()))
 """
 
@@ -790,7 +790,7 @@ _REAL_CAT_FILE_RUN = """\
                 stdin=requests,
                 stdout=responses,
                 check=True,
-                timeout=CAT_FILE_TIMEOUT_S,
+                timeout=self.cat_file_timeout_s,
             )
             responses.seek(0)
             out = responses.read()
@@ -805,7 +805,7 @@ _MUTANT_CAT_FILE_RUN = """\
                     input=spec,
                     capture_output=True,
                     check=True,
-                    timeout=CAT_FILE_TIMEOUT_S,
+                    timeout=self.cat_file_timeout_s,
                 ).stdout
             else:
                 subprocess.run(
@@ -815,7 +815,7 @@ _MUTANT_CAT_FILE_RUN = """\
                     stdin=requests,
                     stdout=responses,
                     check=True,
-                    timeout=CAT_FILE_TIMEOUT_S,
+                    timeout=self.cat_file_timeout_s,
                 )
                 responses.seek(0)
                 out = responses.read()
@@ -890,7 +890,9 @@ def test_large_staged_delta_completes(repo: Path) -> None:
         _write(repo, path, body)
     _stage(repo)
 
-    git = GitRepo(root=repo, env=_env())
+    git = GitRepo(
+        root=repo, env=_env(), cat_file_timeout_s=RULES.parameters.cat_file_timeout_s
+    )
     assert issues(repo) == ()
     blobs = git.read_blobs(INDEX, [*paths, "docs/delta/absent.md"])
     assert all(blobs[path] == body.encode() for path in paths)
@@ -900,7 +902,6 @@ def test_large_staged_delta_completes(repo: Path) -> None:
 def test_read_blobs_fails_loud_when_cat_file_hangs(
     repo: Path,
     tmp_path_factory: pytest.TempPathFactory,
-    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     bin_dir = tmp_path_factory.mktemp("bin")
     fake_git = bin_dir / "git"
@@ -908,13 +909,11 @@ def test_read_blobs_fails_loud_when_cat_file_hangs(
     fake_git.chmod(0o755)
     env = _env()
     env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
-    monkeypatch.setattr(
-        "omnibase_core.validation.validator_git_repo.CAT_FILE_TIMEOUT_S",
-        1,
-    )
 
     with pytest.raises(subprocess.TimeoutExpired):
-        GitRepo(root=repo, env=env).read_blobs(INDEX, ["docs/any.md"])
+        GitRepo(root=repo, env=env, cat_file_timeout_s=1).read_blobs(
+            INDEX, ["docs/any.md"]
+        )
 
 
 # --- baselined-file-growth (OMN-21331; every surface) -----------------------

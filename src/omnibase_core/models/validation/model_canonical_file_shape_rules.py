@@ -90,3 +90,23 @@ class ModelCanonicalFileShapeRules(BaseModel):
     node_runtime_prefix: str
     scripts_key_path: str
     cli_entry_outside_node_text: str
+    # git-reader
+    cat_file_timeout_s: float
+    # node-home: new nodes belong in omnimarket unless the contract declares a category
+    node_home_ignored_components: tuple[str, ...]
+    node_home_hidden_prefix: str
+    node_home_source_suffix: str
+    node_home_handler_prefix: str
+    node_home_node_file: str
+    node_home_handlers_dir: str
+    node_home_nodes_dir: str
+    node_home_node_dir_prefix: str
+    node_home_node_class_pattern: str
+    node_home_admitted_field: str
+    node_home_admitted_categories: tuple[str, ...]
+    node_home_entry_point_path: tuple[str, ...]
+    node_home_outside_market_text: str
+    node_home_baseline_stale_text: str
+    node_home_baseline_growth_text: str
+    node_home_baseline_removed_text: str
+    node_home_entry_point_text: str

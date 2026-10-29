@@ -57,9 +57,8 @@ from omnibase_core.nodes.node_canonical_file_shape_check_compute.handler import 
     NodeCanonicalFileShapeCheckCompute,
 )
 from omnibase_core.nodes.node_canonical_file_shape_check_compute.matcher_node_home import (
-    NODE_HOME_BASELINE,
-    _eligible,
-    _node_directories,
+    eligible,
+    node_directories,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
@@ -229,47 +228,53 @@ def gather_facts(
     )
 
 
-_NODE_CLASS = re.compile(r"^Node[A-Z]\w*$")
 RULE_GROUP_FILE_SHAPE = "file-shape"
 RULE_GROUP_NODE_HOME = "node-home"
 RULE_GROUPS = (RULE_GROUP_FILE_SHAPE, RULE_GROUP_NODE_HOME)
 
 
-def _has_node_class(blob: bytes) -> bool:
+def _has_node_class(blob: bytes, p: ModelCanonicalFileShapeRules) -> bool:
+    node_class = re.compile(p.node_home_node_class_pattern)
     tree = ast.parse(blob)
     return any(
         isinstance(statement, ast.ClassDef)
-        and _NODE_CLASS.fullmatch(statement.name) is not None
+        and node_class.fullmatch(statement.name) is not None
         for statement in tree.body
     )
 
 
-def _python_paths(paths: frozenset[str]) -> list[str]:
+def _python_paths(paths: frozenset[str], p: ModelCanonicalFileShapeRules) -> list[str]:
     return sorted(
         path
         for path in paths
-        if path.endswith(".py")
-        and _eligible(posix_path := PurePosixPath(path))
+        if path.endswith(p.node_home_source_suffix)
+        and eligible(posix_path := PurePosixPath(path), p)
         and (
-            posix_path.parent.name.startswith("node_")
-            or (posix_path.parent / "contract.yaml").as_posix() in paths
+            posix_path.parent.name.startswith(p.node_home_node_dir_prefix)
+            or (posix_path.parent / p.contract_file_name).as_posix() in paths
         )
     )
 
 
-def _node_class_paths(blobs: Mapping[str, bytes | None]) -> frozenset[str]:
+def _node_class_paths(
+    blobs: Mapping[str, bytes | None], p: ModelCanonicalFileShapeRules
+) -> frozenset[str]:
     return frozenset(
         path
         for path, blob in blobs.items()
-        if path.endswith(".py") and blob is not None and _has_node_class(blob)
+        if path.endswith(p.node_home_source_suffix)
+        and blob is not None
+        and _has_node_class(blob, p)
     )
 
 
-def _entry_points(blob: bytes | None) -> frozenset[str]:
+def _entry_points(
+    blob: bytes | None, p: ModelCanonicalFileShapeRules
+) -> frozenset[str]:
     if blob is None:
         return frozenset()
     table = tomllib.loads(blob.decode("utf-8"))
-    for key in ("project", "entry-points", "onex.nodes"):
+    for key in p.node_home_entry_point_path:
         value = table.get(key, {})
         if not isinstance(value, dict):
             raise ModelOnexError(
@@ -281,7 +286,7 @@ def _entry_points(blob: bytes | None) -> frozenset[str]:
 
 
 def gather_node_home_request(
-    repo: GitRepo, head: str, base: str | None
+    repo: GitRepo, head: str, base: str | None, p: ModelCanonicalFileShapeRules
 ) -> ModelNodeHomeRatchetRequest:
     """Gather head and base-revision node inventories, registrations and renames."""
     repo.run("rev-parse", "--show-toplevel")
@@ -292,8 +297,16 @@ def gather_node_home_request(
         )
     paths = frozenset(repo.list_files(head))
     blobs = repo.read_blobs(
-        head, [*_python_paths(paths), NODE_HOME_BASELINE, "pyproject.toml"]
+        head,
+        [*_python_paths(paths, p), p.node_home_baseline_path, "pyproject.toml"],
     )
+    node_class_paths = _node_class_paths(blobs, p)
+    contract_paths = [
+        f"{directory}/{p.contract_file_name}"
+        for directory in node_directories(paths, node_class_paths, p)
+        if f"{directory}/{p.contract_file_name}" in paths
+    ]
+    contract_blobs = repo.read_blobs(head, contract_paths)
     base_blob: bytes | None = None
     base_nodes: frozenset[str] = frozenset()
     base_entry_points: frozenset[str] = frozenset()
@@ -304,9 +317,11 @@ def gather_node_home_request(
                 message=f"base revision does not exist: {base}",
                 error_code=EnumCoreErrorCode.VALIDATION_ERROR,
             )
-        base_blobs = repo.read_blobs(base, [NODE_HOME_BASELINE, "pyproject.toml"])
-        base_blob = base_blobs[NODE_HOME_BASELINE]
-        base_entry_points = _entry_points(base_blobs["pyproject.toml"])
+        base_blobs = repo.read_blobs(
+            base, [p.node_home_baseline_path, "pyproject.toml"]
+        )
+        base_blob = base_blobs[p.node_home_baseline_path]
+        base_entry_points = _entry_points(base_blobs["pyproject.toml"], p)
         renamed = tuple(
             (old, path)
             for status, path, old in repo.changed_paths(base, head)
@@ -314,18 +329,23 @@ def gather_node_home_request(
         )
         if base_blob is None:
             base_paths = frozenset(repo.list_files(base))
-            base_python = repo.read_blobs(base, _python_paths(base_paths))
+            base_python = repo.read_blobs(base, _python_paths(base_paths, p))
             base_nodes = frozenset(
-                _node_directories(base_paths, _node_class_paths(base_python))
+                node_directories(base_paths, _node_class_paths(base_python, p), p)
             )
-    head_blob = blobs[NODE_HOME_BASELINE]
+    head_blob = blobs[p.node_home_baseline_path]
     return ModelNodeHomeRatchetRequest(
         tracked_paths=paths,
-        node_class_paths=_node_class_paths(blobs),
+        node_class_paths=node_class_paths,
+        node_contract_texts=tuple(
+            ModelCanonicalFileShapeText(path=path, text=text)
+            for path in contract_paths
+            if (text := _decode(contract_blobs.get(path))) is not None
+        ),
         head_baseline_text=_decode(head_blob),
         base_baseline_text=_decode(base_blob),
         base_node_directories=base_nodes,
-        head_entry_points=_entry_points(blobs["pyproject.toml"]),
+        head_entry_points=_entry_points(blobs["pyproject.toml"], p),
         base_entry_points=base_entry_points,
         renamed_paths=renamed,
     )
@@ -363,7 +383,7 @@ def run_check(
         else None
     )
     node_home = (
-        gather_node_home_request(repo, resolved_head, resolved_base)
+        gather_node_home_request(repo, resolved_head, resolved_base, p)
         if RULE_GROUP_NODE_HOME in rule_groups
         else None
     )
@@ -430,8 +450,10 @@ def main(
 ) -> int:
     """Check the head revision, or write or prune the baseline; return 0, 1 or 2."""
     args = _parse_args(sys.argv[1:] if argv is None else argv)
-    repo = GitRepo(root=args.repo_root, env=env)
     p = load_rule_set(ValidatorCanonicalFileShape().contract).parameters
+    repo = GitRepo(
+        root=args.repo_root, env=env, cat_file_timeout_s=p.cat_file_timeout_s
+    )
     baseline_file = args.repo_root / p.baseline_path
 
     if args.write_baseline or args.prune_baseline:

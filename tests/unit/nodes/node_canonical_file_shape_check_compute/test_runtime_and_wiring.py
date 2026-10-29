@@ -311,7 +311,11 @@ def test_the_runtime_resolves_the_report_writer_from_the_container(
     container = _SpyContainer(writer)
     report = run_check(
         cast(ModelONEXContainer, container),
-        GitRepo(root=repo, env=scrub_git_location_env()),
+        GitRepo(
+            root=repo,
+            env=scrub_git_location_env(),
+            cat_file_timeout_s=RULES.parameters.cat_file_timeout_s,
+        ),
         None,
         None,
         None,
@@ -328,7 +332,11 @@ def test_no_report_is_written_and_no_writer_is_resolved_without_report_json(
     container = _SpyContainer(_SpyWriter())
     run_check(
         cast(ModelONEXContainer, container),
-        GitRepo(root=repo, env=scrub_git_location_env()),
+        GitRepo(
+            root=repo,
+            env=scrub_git_location_env(),
+            cat_file_timeout_s=RULES.parameters.cat_file_timeout_s,
+        ),
         None,
         None,
         None,

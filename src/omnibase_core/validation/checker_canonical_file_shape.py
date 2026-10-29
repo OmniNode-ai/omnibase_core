@@ -328,6 +328,21 @@ def _safe_load(text: str | None) -> object:
         return None
 
 
+def contract_tags(text: str | None, field: str) -> frozenset[str]:
+    """The strings listed under ``field`` at the top level of a ``contract.yaml``.
+
+    Empty when the text is absent, is not a mapping, does not parse, or holds a
+    value that is not a list.
+    """
+    document = _safe_load(text)
+    if not isinstance(document, dict):
+        return frozenset()
+    declared = document.get(field)
+    if not isinstance(declared, list):
+        return frozenset()
+    return frozenset(str(item) for item in declared)
+
+
 def _provided_gate_modules(
     text: str | None, p: ModelCanonicalFileShapeRules
 ) -> dict[str, str]:

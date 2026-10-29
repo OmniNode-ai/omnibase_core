@@ -6,6 +6,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.validation.model_canonical_file_shape_text import (
+    ModelCanonicalFileShapeText,
+)
+
 
 class ModelNodeHomeRatchetRequest(BaseModel):
     """Indexed node inputs, base inventory, baselines and entry-point names."""
@@ -15,6 +19,10 @@ class ModelNodeHomeRatchetRequest(BaseModel):
     tracked_paths: frozenset[str] = Field(description="Repo-relative POSIX file paths")
     node_class_paths: frozenset[str] = Field(
         description="Files defining a top-level class named Node<Upper>..."
+    )
+    node_contract_texts: tuple[ModelCanonicalFileShapeText, ...] = Field(
+        default_factory=tuple,
+        description="contract.yaml text of each head node directory that has one",
     )
     head_baseline_text: str | None = Field(
         description="Baseline in the tree under check"

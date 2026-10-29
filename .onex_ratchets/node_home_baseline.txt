@@ -7,7 +7,6 @@ src/omnibase_core/nodes/node_ai_slop_check_compute
 src/omnibase_core/nodes/node_backend_secret_discipline_compute
 src/omnibase_core/nodes/node_boundary_import_check_compute
 src/omnibase_core/nodes/node_boundary_import_check_effect
-src/omnibase_core/nodes/node_canonical_file_shape_check_compute
 src/omnibase_core/nodes/node_compliance_evidence_effect
 src/omnibase_core/nodes/node_compliance_orchestrator
 src/omnibase_core/nodes/node_compliance_report_reducer

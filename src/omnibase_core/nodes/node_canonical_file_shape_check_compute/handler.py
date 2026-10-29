@@ -15,6 +15,7 @@ from omnibase_core.models.validation.model_validation_report import (
     ModelValidationRequestRef,
 )
 from omnibase_core.nodes.node_canonical_file_shape_check_compute.matcher_node_home import (
+    RULE_PREFIX,
     NodeHomeRule,
 )
 from omnibase_core.validation.checker_canonical_file_shape import (
@@ -22,8 +23,6 @@ from omnibase_core.validation.checker_canonical_file_shape import (
     check,
     load_rule_set,
 )
-
-NODE_HOME_RULE_PREFIX = "node-home:"
 
 
 class NodeCanonicalFileShapeCheckCompute:
@@ -33,14 +32,14 @@ class NodeCanonicalFileShapeCheckCompute:
         self, request: ModelCanonicalFileShapeCheckInput
     ) -> ModelValidationReport:
         """Return the report for ``request.facts`` under ``request.contract``."""
+        try:
+            rules = load_rule_set(request.contract)
+        except ModelOnexError as exc:
+            return ModelValidationReport.from_runtime_errors(
+                VALIDATOR_ID, (exc.message,)
+            )
         findings: list[ModelValidationFindingEmbed] = []
         if request.facts is not None:
-            try:
-                issues = check(request.facts, load_rule_set(request.contract))
-            except ModelOnexError as exc:
-                return ModelValidationReport.from_runtime_errors(
-                    VALIDATOR_ID, (exc.message,)
-                )
             findings.extend(
                 ModelValidationFindingEmbed(
                     validator_id=VALIDATOR_ID,
@@ -49,7 +48,7 @@ class NodeCanonicalFileShapeCheckCompute:
                     message=issue.message,
                     rule_id=issue.code,
                 )
-                for issue in issues
+                for issue in check(request.facts, rules)
             )
         if request.node_home is not None:
             findings.extend(
@@ -58,9 +57,9 @@ class NodeCanonicalFileShapeCheckCompute:
                     severity="FAIL",
                     location=f"{finding.path}:1",
                     message=finding.message,
-                    rule_id=f"{NODE_HOME_RULE_PREFIX}{finding.code}",
+                    rule_id=f"{RULE_PREFIX}{finding.code}",
                 )
-                for finding in NodeHomeRule().check(request.node_home).findings
+                for finding in NodeHomeRule(rules).check(request.node_home).findings
             )
         return ModelValidationReport.from_findings(
             findings=tuple(findings),

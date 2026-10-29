@@ -1,0 +1,19 @@
+{
+  "base_baseline_text": null,
+  "base_entry_points": [],
+  "base_node_directories": [],
+  "head_baseline_text": null,
+  "head_entry_points": [],
+  "node_class_paths": [],
+  "node_contract_texts": [
+    {
+      "path": "src/pkg/nodes/node_a/contract.yaml",
+      "text": "name: a\ntags: [validator]\n"
+    }
+  ],
+  "renamed_paths": [],
+  "tracked_paths": [
+    "src/pkg/nodes/node_a/contract.yaml",
+    "src/pkg/nodes/node_a/handlers/h.py"
+  ]
+}

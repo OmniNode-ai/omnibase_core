@@ -199,6 +199,66 @@ validation:
         cli_entry_outside_node_text: "command line entry outside a node runtime; a node runtime is runtime_*.py
           beside a contract.yaml"
 
+    - rule_id: git-reader
+      description: Names the wall-clock ceiling of one git cat-file run of the fact gatherer.
+      severity: error
+      enabled: true
+      parameters:
+        cat_file_timeout_s: 300
+
+    - rule_id: "node-home:node-outside-market"
+      description: A new or renamed node directory outside omnimarket, unless its contract.yaml declares
+        a validator or validator-support node.
+      severity: error
+      enabled: true
+      parameters:
+        node_home_ignored_components: ["tests", "test", "fixtures", "examples", "__pycache__", "docs"]
+        node_home_hidden_prefix: "."
+        node_home_source_suffix: ".py"
+        node_home_handler_prefix: "handler"
+        node_home_node_file: "node.py"
+        node_home_handlers_dir: "handlers"
+        node_home_nodes_dir: "nodes"
+        node_home_node_dir_prefix: "node_"
+        node_home_node_class_pattern: '^Node[A-Z]\w*$'
+        node_home_admitted_field: "tags"
+        node_home_admitted_categories: ["validator", "validator-support"]
+        node_home_outside_market_text: "new or renamed node directory; the node moves to omnimarket instead,
+          unless its contract.yaml lists 'validator' or 'validator-support' under tags"
+
+    - rule_id: "node-home:baseline-stale"
+      description: A node-home baseline entry that is no longer a node directory.
+      severity: error
+      enabled: true
+      parameters:
+        node_home_baseline_stale_text: "entry '{path}' is no longer a node directory; delete the line;
+          a renamed node moves to omnimarket instead"
+
+    - rule_id: "node-home:baseline-growth"
+      description: A node-home baseline entry the base revision did not carry.
+      severity: error
+      enabled: true
+      parameters:
+        node_home_baseline_growth_text: "entry '{path}' is new; the baseline only shrinks and bootstraps
+          from base-revision nodes; the node moves to omnimarket instead"
+
+    - rule_id: "node-home:baseline-removed"
+      description: The node-home baseline file was deleted.
+      severity: error
+      enabled: true
+      parameters:
+        node_home_baseline_removed_text: "the baseline file must remain, even when empty; it can only
+          shrink"
+
+    - rule_id: "node-home:entry-point-outside-market"
+      description: A new onex.nodes entry point registered outside omnimarket.
+      severity: error
+      enabled: true
+      parameters:
+        node_home_entry_point_path: ["project", "entry-points", "onex.nodes"]
+        node_home_entry_point_text: "a new onex.nodes registration outside omnimarket; register the node
+          in omnimarket instead"
+
   suppression_comments: []
 
   fail_on_error: true

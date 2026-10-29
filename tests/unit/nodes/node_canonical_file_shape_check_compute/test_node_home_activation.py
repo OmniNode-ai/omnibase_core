@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from omnibase_core.nodes.node_canonical_file_shape_check_compute.matcher_node_home import (
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
     NODE_HOME_BASELINE,
 )
 
