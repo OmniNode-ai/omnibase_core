@@ -1,0 +1,3 @@
+Intended state: the queue drains within one hour.
+Live check command: onex run-node node_queue_probe
+Live check failing reading: depth 40 before the build.

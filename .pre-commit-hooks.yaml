@@ -1370,3 +1370,16 @@
   pass_filenames: true
   require_serial: true
   stages: [commit-msg]
+
+- id: check-design-record
+  name: Design record check (OMN-21509)
+  description: >
+    A design record carries an intended state, a live check command and a failure-mode table whose rows
+    each name a detector or mark a gap, with severities from the levels the contract lists. Every rule
+    table is data of design_record.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.validation.validator_design_record
+  files: (design[-_]record)[^/]*\.md$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

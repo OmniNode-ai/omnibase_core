@@ -13,9 +13,9 @@ exception-entry-growth, suppression-growth and baselined-file-growth
 (a baselined code file with more code lines than at base; OMN-21331).
 
 Python canonical locations: src/<pkg>/{nodes,handlers,models,protocols,
-contracts,enums}/, tests/, test/, conftest.py and docs/, plus the generic validator
-format: src/<pkg>/validation/{checker_,validator_}*.py directly in that directory
-(OMN-21498).
+contracts,enums}/, tests/, test/, conftest.py and docs/, plus the generic
+validator format's checker_<id>.py and validator_<id>.py directly under
+src/<pkg>/validation/ (RULING 2026-10-28T13:48:11Z).
 TypeScript/React and shell location rules live in
 handlers.handler_canonical_location_rules (OMN-21332).
 
@@ -50,7 +50,7 @@ import yaml
 
 from omnibase_core.handlers.handler_canonical_location_rules import (
     TYPESCRIPT_EXTENSIONS,
-    is_python_canonical_src_location,
+    is_python_src_location,
     is_shell_script,
     is_typescript_canonical_location,
     typescript_noncanonical_file_reason,
@@ -289,7 +289,7 @@ def is_canonical_location(
         return True
     if any(part in TEST_DIRS for part in parts[:-1]):
         return True
-    return is_python_canonical_src_location(parts)
+    return is_python_src_location(parts)
 
 
 def _entry_module(entry: object) -> str | None:

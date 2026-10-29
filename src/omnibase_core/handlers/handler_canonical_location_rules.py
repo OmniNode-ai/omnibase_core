@@ -12,6 +12,9 @@ from pathlib import PurePosixPath
 CANONICAL_SRC_DIRS: frozenset[str] = frozenset(
     ("nodes", "handlers", "models", "protocols", "contracts", "enums")
 )
+VALIDATION_DIR = "validation"
+GENERIC_VALIDATOR_FILE = re.compile(r"^(checker|validator)_[a-z0-9_]+\.py$")
+
 # The generic validator format (OMN-21498): a pure checker and a ValidatorBase entry sit
 # directly in src/<pkg>/validation/, beside the contract that carries their rule data.
 GENERIC_VALIDATOR_PREFIXES: tuple[str, ...] = ("checker_", "validator_")
@@ -92,6 +95,17 @@ SHELL_SHEBANG = re.compile(
     rb"^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-S[ \t]+)?(?:\S*/)?)?"
     rb"(?:sh|bash|zsh|dash|ksh)(?:[ \t]|$)"
 )
+
+
+def is_python_src_location(parts: tuple[str, ...]) -> bool:
+    """A canonical src/<pkg>/ directory, or a generic-format validator file.
+
+    The generic validator format (RULING 2026-10-28T13:48:11Z) is
+    ``src/<pkg>/validation/checker_<id>.py`` and ``validator_<id>.py``.
+    """
+    if len(parts) == 4 and parts[0] == "src" and parts[2] == VALIDATION_DIR:
+        return GENERIC_VALIDATOR_FILE.fullmatch(parts[3]) is not None
+    return len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
 
 
 def _suffix(path: str) -> str:
