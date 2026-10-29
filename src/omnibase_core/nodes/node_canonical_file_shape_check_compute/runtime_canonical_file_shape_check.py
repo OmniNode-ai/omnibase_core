@@ -133,14 +133,31 @@ def gather_tree(
 MERGE_HEAD = "MERGE_HEAD"
 
 
+def target_merge_base(repo: GitRepo, p: ModelCanonicalFileShapeRules) -> str | None:
+    """The merge base of ``HEAD`` and the first target-branch ref that exists, else None."""
+    for ref in p.target_branch_refs:
+        if repo.has_revision(ref) and (found := repo.merge_base(ref, "HEAD")):
+            return found
+    return None
+
+
 def resolve_revisions(
-    repo: GitRepo, base: str | None, head: str | None
+    repo: GitRepo,
+    base: str | None,
+    head: str | None,
+    p: ModelCanonicalFileShapeRules,
 ) -> tuple[str, str | None]:
-    """``(head, base)``: the flags as given, else the index against ``HEAD``.
+    """``(head, base)``: the flags as given, else the index against the change's base.
 
     A merge commit in progress (``MERGE_HEAD`` exists) is checked against the branch being
     merged in, the way the CI run checks a head against its merge base: against the first
     parent every file the merged-in branch brings would read as a new file of the change.
+
+    Any other index run is checked against the merge base of ``HEAD`` and the target branch
+    (``p.target_branch_refs``), which is the change the CI run sees after it resets to the merge
+    base. Against branch ``HEAD`` alone, a branch whose earlier commit installed a baseline file
+    reads the next correct line as growth of an installed file, and CI, which compares with the
+    merge base, accepts that line. With no target ref, or no common ancestor, ``HEAD`` is the base.
     """
     resolved_head = head or INDEX
     if base is not None:
@@ -148,7 +165,7 @@ def resolve_revisions(
     if resolved_head == INDEX and repo.has_revision(MERGE_HEAD):
         return resolved_head, MERGE_HEAD
     if resolved_head == INDEX and repo.has_revision("HEAD"):
-        return resolved_head, "HEAD"
+        return resolved_head, target_merge_base(repo, p) or "HEAD"
     return resolved_head, None
 
 
@@ -211,8 +228,14 @@ def gather_facts(
         )
         for status, path, old in raw_changes
     )
-    if commit_message is not None:
-        messages: tuple[str, ...] | None = (commit_message,)
+    if commit_message is not None and head == INDEX and repo.has_revision("HEAD"):
+        # The CI run reads every message of the range; the commit being made is the last one.
+        messages: tuple[str, ...] | None = (
+            *repo.commit_messages(base, "HEAD"),
+            commit_message,
+        )
+    elif commit_message is not None:
+        messages = (commit_message,)
     elif head != INDEX:
         messages = repo.commit_messages(base, head)
     else:
@@ -375,7 +398,7 @@ def run_check(
     validator = ValidatorCanonicalFileShape()
     contract = validator.contract
     p = load_rule_set(contract).parameters
-    resolved_head, resolved_base = resolve_revisions(repo, base, head)
+    resolved_head, resolved_base = resolve_revisions(repo, base, head, p)
     facts = (
         gather_facts(repo, p, resolved_head, resolved_base, commit_message)
         if EnumCanonicalFileShapeRuleGroup.FILE_SHAPE in rule_groups

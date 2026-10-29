@@ -930,9 +930,12 @@
     A pre-commit run on the index knows no message and defers that check to the canonical-file-shape-release-trailer
     commit-msg hook and to a revision run (--base and --head), so install the commit-msg hook type and
     name the burn-down ticket id in the commit message of the switch change. There is no allowlist and
-    no suppression comment. Checks the whole index against HEAD. CI runs the same hook after `git reset
-    --soft <merge-base>`, so the index holds the pull request's change. Includes the node-home rule group
-    (also available alone as check-node-home).
+    no suppression comment. Checks the whole index against the merge base of HEAD and the target branch
+    (origin/HEAD, else origin/dev, else origin/main; HEAD when none exists or on a first commit), so a
+    branch that installed a baseline file in an earlier commit is judged on the whole change, as CI judges
+    it. CI runs the same hook after `git reset --soft <merge-base>`, so the index holds the pull request's
+    change. The commit-msg stage reads the messages of the commits since that merge base and the one being
+    made. Includes the node-home rule group (also available alone as check-node-home).
   language: python
   entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
   pass_filenames: false
