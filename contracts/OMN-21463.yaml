@@ -51,8 +51,9 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q -p no:randomly -k "tn_vocabulary
-          or private_vocabulary_adds_tier or every_tn_violation"
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          tests/unit/validation/hardcoded_model_config/test_lab_denylist_vocabulary.py -q -p no:randomly
+          -k "tn_vocabulary or private_vocabulary_adds_tier or every_tn_violation"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
@@ -62,8 +63,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q -p no:randomly -k "corpus_fixture
-          or tn_comment or tn_families_apply"
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -p no:randomly -k "corpus_fixture or tn_comment or tn_families_apply"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
