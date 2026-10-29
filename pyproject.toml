@@ -96,6 +96,10 @@ check-dependency-direction = "omnibase_core.handlers.handler_dependency_directio
 check-action-pins = "omnibase_core.handlers.handler_action_pin_cli:main"
 # OMN-21495: shared core hooks must not trail the newest pin in the same config.
 check-precommit-pin-parity = "omnibase_core.handlers.handler_precommit_pin_parity_cli:main"
+# OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator
+# format, each with an optional shrink-only baseline (--baseline FILE, --write-baseline).
+check-no-dict-any = "omnibase_core.handlers.handler_dict_any_cli:main"
+check-no-backward-compat = "omnibase_core.handlers.handler_backward_compat_cli:main"
 # OMN-19998: version drift at source. Refuse a floor raise on a sibling registry
 # package ahead of the registry consumers that install it, and a job the merge
 # queue runs that pull request CI skips; every repository runs both via
