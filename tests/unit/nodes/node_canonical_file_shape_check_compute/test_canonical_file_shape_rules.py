@@ -219,6 +219,48 @@ def test_baseline_growth_refused(repo: Path) -> None:
     assert _rules(repo) == ["baseline-growth"]
 
 
+def test_planted_baseline_growth_for_a_base_revision_file_refused(repo: Path) -> None:
+    """A file the base revision already held, unbaselined, cannot be baselined later.
+
+    This is the change that adds a rule: every file the new rule refuses exists at
+    the base revision, and baselining them all was the 82-line growth of OMN-21515.
+    The baseline admits no entry except a one-for-one move of a baselined file.
+    """
+    _write(repo, "scripts/legacy_two.py", "x = 2\n")
+    _git(repo, "add", "-A")
+    _git(
+        repo,
+        "commit",
+        "-q",
+        "-m",
+        "a file the base revision holds without a baseline entry",
+    )
+    _write(
+        repo,
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", "scripts/legacy_two.py"]),
+    )
+    _stage(repo)
+    assert _rules(repo) == ["baseline-growth"]
+
+
+def test_planted_baseline_growth_in_bulk_refused(repo: Path) -> None:
+    names = [f"scripts/legacy_{i}.py" for i in range(5)]
+    for name in names:
+        _write(repo, name, "x = 1\n")
+    _git(repo, "add", "-A")
+    _git(
+        repo,
+        "commit",
+        "-q",
+        "-m",
+        "files the base revision holds without baseline entries",
+    )
+    _write(repo, BASELINE, baseline_text(["scripts/old_tool.py", *names]))
+    _stage(repo)
+    assert _rules(repo) == ["baseline-growth"] * len(names)
+
+
 def test_baseline_stale_entry_refused(repo: Path) -> None:
     (repo / "scripts/old_tool.py").unlink()
     _stage(repo)

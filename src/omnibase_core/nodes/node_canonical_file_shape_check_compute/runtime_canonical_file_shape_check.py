@@ -205,14 +205,6 @@ def gather_facts(
         )
         for status, path, old in raw_changes
     )
-    new_entries = set(parse_baseline(head_baseline)) - set(
-        parse_baseline(base_baseline)
-    )
-    base_tree = (
-        gather_tree(repo, base, p)
-        if base_baseline is not None and new_entries
-        else None
-    )
     if commit_message is not None:
         messages: tuple[str, ...] | None = (commit_message,)
     elif head != INDEX:
@@ -221,7 +213,6 @@ def gather_facts(
         messages = None
     return ModelCanonicalFileShapeFacts(
         head_tree=head_tree,
-        base_tree=base_tree,
         has_base=True,
         head_baseline_text=head_baseline,
         base_baseline_text=base_baseline,

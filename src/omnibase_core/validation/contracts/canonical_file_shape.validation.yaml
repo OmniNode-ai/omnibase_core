@@ -62,7 +62,9 @@ validation:
         baseline_stale_text: "entry '{path}' is no longer refused by any file-shape rule; delete the line"
 
     - rule_id: baseline-growth
-      description: A baseline entry the base revision did not carry and that no base-revision file justifies.
+      description: A baseline entry the base revision did not carry that is not a one-for-one move of
+        a baselined file the same change renames. A change that adds a rule cannot baseline the files
+        the rule refuses; it fixes them or lands the rule disabled.
       severity: error
       enabled: true
       parameters:

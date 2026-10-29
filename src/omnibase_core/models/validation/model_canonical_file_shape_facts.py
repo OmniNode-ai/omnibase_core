@@ -21,8 +21,6 @@ from omnibase_core.models.validation.model_canonical_file_shape_tree import (
 class ModelCanonicalFileShapeFacts(BaseModel):
     """Everything the checker reads: head tree, base facts, changes, texts.
 
-    ``base_tree`` is present only when the head baseline holds an entry the base
-    baseline lacks (the bootstrap proof needs the base revision's refused paths).
     ``commit_messages`` is None when no message is known (a pre-commit run on the
     index); the release-trailer rule is then deferred to the commit-msg stage and
     to the revision run, which both know the message.
@@ -31,7 +29,6 @@ class ModelCanonicalFileShapeFacts(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     head_tree: ModelCanonicalFileShapeTree
-    base_tree: ModelCanonicalFileShapeTree | None = None
     has_base: bool = False
     head_baseline_text: str | None = None
     base_baseline_text: str | None = None

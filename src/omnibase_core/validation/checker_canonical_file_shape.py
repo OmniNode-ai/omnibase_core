@@ -666,15 +666,8 @@ def check(
         return tuple(issues)
 
     if facts.base_baseline_text is not None and RULE_BASELINE_GROWTH in rules.enabled:
-        proven = (
-            set(file_rule_refusals(facts.base_tree, rules))
-            if facts.base_tree is not None
-            else set()
-        )
         for path in sorted(baselined - base_entries):
             if path in renames and renames[path] not in baselined:
-                continue
-            if path in proven:
                 continue
             issues.append(
                 _issue(
