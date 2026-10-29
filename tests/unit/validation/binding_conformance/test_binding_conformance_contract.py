@@ -266,13 +266,17 @@ def test_file_mode_flags_a_handler_file_through_the_validator_entry(
     handler = tmp_path / "handlers" / "handler_fixture.py"
     handler.parent.mkdir()
     handler.write_text("import os\nvalue = os.environ['X']\n", encoding="utf-8")
-    result = ValidatorBindingConformance().validate_file(handler)
+    # A pytest tmp dir is named after the test, so the contract's test-file exclusion would match it.
+    entry = ValidatorBindingConformance(
+        contract=_shipped().model_copy(update={"exclude_patterns": []})
+    )
+    result = entry.validate_file(handler)
     assert result.is_valid is False
     assert [i.code for i in result.issues] == ["env_read"]
     assert [i.line_number for i in result.issues] == [2]
     clean = tmp_path / "handlers" / "handler_clean.py"
     clean.write_text("value = 1\n", encoding="utf-8")
-    assert ValidatorBindingConformance().validate_file(clean).is_valid is True
+    assert entry.validate_file(clean).is_valid is True
 
 
 def test_the_checker_imports_nothing_that_reads_state_outside_its_arguments() -> None:
