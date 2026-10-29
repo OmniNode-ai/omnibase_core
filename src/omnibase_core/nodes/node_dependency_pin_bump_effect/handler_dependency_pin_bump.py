@@ -28,6 +28,8 @@ from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 __all__ = ["HandlerDependencyPinBump"]
 
+_DISTRIBUTION = "omnibase-core"
+
 
 class HandlerDependencyPinBump:
     """Rewrite only the declared git source tag, preserving the consumer's text."""
@@ -52,7 +54,14 @@ class HandlerDependencyPinBump:
                 message=(f"repository {repo!r} has no declared dependency_pin"),
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
             )
-        if re.fullmatch(load_contract().dev_tag_pattern, dependency_tag) is None:
+        contract = load_contract()
+        source_repo = next(
+            sibling.repo
+            for sibling in contract.siblings
+            if sibling.distribution == _DISTRIBUTION
+        )
+        source_url = f"https://{contract.git_host}/{contract.github_org}/{source_repo}"
+        if re.fullmatch(contract.dev_tag_pattern, dependency_tag) is None:
             raise ModelOnexError(
                 message=(f"dependency tag {dependency_tag!r} is not a dev merge tag"),
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
@@ -62,7 +71,7 @@ class HandlerDependencyPinBump:
         content = path.read_bytes().decode("utf-8")
         document = tomllib.loads(content)
         try:
-            source = document["tool"]["uv"]["sources"]["omnibase-core"]
+            source = document["tool"]["uv"]["sources"][_DISTRIBUTION]
         except (KeyError, TypeError) as exc:
             raise ModelOnexError(
                 message=(f"{path}: missing omnibase-core git source"),
@@ -72,7 +81,7 @@ class HandlerDependencyPinBump:
             not isinstance(source, dict)
             or not isinstance(source.get("git"), str)
             or source["git"].rstrip("/").removesuffix(".git").casefold()
-            != "https://github.com/OmniNode-ai/omnibase_core".casefold()
+            != source_url.casefold()
             or not isinstance(source.get("tag"), str)
             or "rev" in source
             or "branch" in source
@@ -80,7 +89,7 @@ class HandlerDependencyPinBump:
             raise ModelOnexError(
                 message=(
                     f"{path}: omnibase-core must be a tagged git source of "
-                    "https://github.com/OmniNode-ai/omnibase_core without rev or branch"
+                    f"{source_url} without rev or branch"
                 ),
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
             )

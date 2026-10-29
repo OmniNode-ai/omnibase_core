@@ -87,20 +87,22 @@ def _relative(root: Path, path: str) -> str:
         return path
 
 
-def read_dev_tags(org: str, repo: str) -> ModelSiblingDevTags:
+def read_dev_tags(
+    contract: ModelInternalSiblingPinsContract, repo: str
+) -> ModelSiblingDevTags:
     """Read one sibling's dev tags; git errors propagate to the CLI boundary."""
     result = subprocess.run(
         [
             "git",
             "ls-remote",
             "--tags",
-            f"https://github.com/{org}/{repo}.git",
+            f"{contract.repo_url(repo)}.git",
             "refs/tags/dev-*",
         ],
         check=True,
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=contract.ls_remote_timeout_seconds,
     )
     prefix = "refs/tags/"
     tags = set()
@@ -197,9 +199,7 @@ def main(argv: list[str] | None = None) -> int:
                 for file in files
                 for repo in declared_sibling_repos(tomllib.loads(file.source), contract)
             }
-            dev_tags = tuple(
-                read_dev_tags(contract.github_org, repo) for repo in sorted(repos)
-            )
+            dev_tags = tuple(read_dev_tags(contract, repo) for repo in sorted(repos))
         except (OSError, subprocess.SubprocessError, tomllib.TOMLDecodeError) as exc:
             message = f"cannot read sibling dev tags: {exc}"
             _write_report(

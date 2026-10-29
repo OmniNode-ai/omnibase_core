@@ -185,13 +185,17 @@ def test_dev_tag_resolution_waits_for_parallel_tag_workflow(
     assert step["id"] == "tag"
     assert "github.ref == 'refs/heads/dev'" in step["if"]
     assert "inputs.override_tag != ''" in step["if"]
+    assert (
+        step["env"]["SOURCE_URL"]
+        == "${{ github.server_url }}/${{ github.repository }}.git"
+    )
     sha = "a" * 40
     tag = f"dev-20261028010203-{sha[:12]}"
     (tmp_path / "reads").write_text("0\n")
     git = tmp_path / "git"
     git.write_text("""#!/bin/bash
 set -euo pipefail
-[[ "$*" == "ls-remote --tags https://github.com/OmniNode-ai/omnibase_core.git refs/tags/dev-*-${SHA:0:12}" ]]
+[[ "$*" == "ls-remote --tags $SOURCE_URL refs/tags/dev-*-${SHA:0:12}" ]]
 reads=$(cat "$TEST_ROOT/reads")
 reads=$((reads + 1))
 echo "$reads" > "$TEST_ROOT/reads"
@@ -214,6 +218,9 @@ echo sleep >> "$TEST_ROOT/sleeps"
             "GITHUB_OUTPUT": str(output),
             "SHA": sha,
             "OVERRIDE_TAG": "",
+            "SOURCE_URL": "https://git.invalid/org/repo.git",
+            "TAG_WAIT_ATTEMPTS": "12",
+            "TAG_WAIT_SECONDS": "20",
             "TEST_ROOT": str(tmp_path),
             "APPEARS_ON": str(appears_on or 99),
             "TEST_TAG": tag,

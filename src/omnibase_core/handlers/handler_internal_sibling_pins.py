@@ -79,7 +79,7 @@ _GIT_URL = re.compile(r"^git\+(?P<url>[^@#\s]+?)(?:@(?P<ref>[^#\s]+))?(?:#.*)?$"
 
 _REMEDIATION: Final[str] = (
     "Pin the sibling in [tool.uv.sources] to its newest green dev merge tag: "
-    '<dist> = { git = "https://github.com/OmniNode-ai/<repo>.git", tag = '
+    '<dist> = { git = "https://<git_host>/<github_org>/<repo>.git", tag = '
     '"dev-<YYYYMMDDHHMMSS>-<sha12>" }, and keep a version range (never ==) in '
     "[project] dependencies for external installs. Repin stale pins to the newest "
     "dev tag. RULINGs 2026-10-16T07:34:18Z "
@@ -286,7 +286,7 @@ class HandlerInternalSiblingPins:
                 "dev merge tag (rule not_dev_tag)",
             )
             return
-        expected = _repo_url(f"https://github.com/{contract.github_org}/{repo}")
+        expected = _repo_url(contract.repo_url(repo))
         if _repo_url(str(source["git"])) != expected:
             yield self._finding(
                 location,
@@ -384,7 +384,7 @@ class HandlerInternalSiblingPins:
                 "(rule not_dev_tag)",
             )
             return
-        expected = _repo_url(f"https://github.com/{contract.github_org}/{repo}")
+        expected = _repo_url(contract.repo_url(repo))
         if _repo_url(match.group("url")) != expected:
             yield self._finding(
                 location,

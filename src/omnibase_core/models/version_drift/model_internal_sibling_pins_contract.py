@@ -19,6 +19,8 @@ class ModelInternalSiblingPinsContract(BaseModel):
 
     Attributes:
         github_org: The organisation every sibling repository lives in.
+        git_host: The git host every sibling repository is cloned from.
+        ls_remote_timeout_seconds: Bound on one remote dev tag read.
         dev_tag_pattern: Regular expression a dev merge tag name matches.
         max_trailing_merges: Maximum dev merges a pin may trail the newest tag.
         max_trailing_hours: Maximum timestamp gap from the newest dev tag.
@@ -28,7 +30,13 @@ class ModelInternalSiblingPinsContract(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     github_org: str = Field(min_length=1)
+    git_host: str = Field(min_length=1)
+    ls_remote_timeout_seconds: int = Field(gt=0, strict=True)
     dev_tag_pattern: str = Field(min_length=1)
     max_trailing_merges: int = Field(gt=0, strict=True)
     max_trailing_hours: int = Field(gt=0, strict=True)
     siblings: tuple[ModelInternalSibling, ...] = Field(min_length=1)
+
+    def repo_url(self, repo: str) -> str:
+        """The clone URL of one sibling repository."""
+        return f"https://{self.git_host}/{self.github_org}/{repo}"

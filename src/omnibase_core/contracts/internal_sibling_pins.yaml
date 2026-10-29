@@ -15,6 +15,10 @@
 # [project] dependencies stays for external installs only.
 
 github_org: OmniNode-ai
+# The git host of every sibling repository, and the bound on one remote tag read (OMN-21537:
+# the code builds the URL and the timeout from here and spells neither).
+git_host: github.com
+ls_remote_timeout_seconds: 30
 dev_tag_pattern: '^dev-[0-9]{14}-[0-9a-f]{12}$'
 # A dev merge tag is one dev merge. A pin trailing the newest dev tag by more
 # than either bound is stale; these policy bounds live only in this contract.

@@ -363,8 +363,10 @@ def test_cli_fails_a_release_pin_and_passes_a_dev_tag(
 ) -> None:
     calls = []
 
-    def read_tags(org: str, repo: str) -> ModelSiblingDevTags:
-        calls.append((org, repo))
+    def read_tags(
+        contract: ModelInternalSiblingPinsContract, repo: str
+    ) -> ModelSiblingDevTags:
+        calls.append((contract.github_org, repo))
         return ModelSiblingDevTags(repo=repo, tags=(DEV_TAG,))
 
     monkeypatch.setattr(cli, "read_dev_tags", read_tags)
@@ -404,7 +406,9 @@ def test_cli_tag_read_failure_is_an_error(
         _pyproject(f'omnibase-core = {{ git = "{CORE_GIT}", tag = "{DEV_TAG}" }}')
     )
 
-    def fail(org: str, repo: str) -> ModelSiblingDevTags:
+    def fail(
+        contract: ModelInternalSiblingPinsContract, repo: str
+    ) -> ModelSiblingDevTags:
         raise error
 
     monkeypatch.setattr(cli, "read_dev_tags", fail)
@@ -429,7 +433,7 @@ def test_cli_enforces_staleness_by_default(
     monkeypatch.setattr(
         cli,
         "read_dev_tags",
-        lambda org, repo: ModelSiblingDevTags(
+        lambda contract, repo: ModelSiblingDevTags(
             repo=repo, tags=(newest,) if missing else (DEV_TAG, newest)
         ),
     )
@@ -452,7 +456,9 @@ def test_tag_reader_uses_bounded_argv_and_ignores_peeled_tags(
         )
 
     monkeypatch.setattr(cli.subprocess, "run", run)
-    assert cli.read_dev_tags("OmniNode-ai", "omnibase_core") == ModelSiblingDevTags(
+    assert cli.read_dev_tags(
+        cli.load_contract(), "omnibase_core"
+    ) == ModelSiblingDevTags(
         repo="omnibase_core",
         tags=(DEV_TAG,),
     )
