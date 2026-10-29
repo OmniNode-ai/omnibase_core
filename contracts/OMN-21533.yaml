@@ -121,14 +121,36 @@ dod_evidence:
           -k 'checker_is_pure or runtime_resolves'
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21533-ac5-no-literal
-    description: hardcoded_topics, url_authority, hardcoded_model_config and contract_config_compliance
-      report zero on the changed production source; the test reads each source file before scanning so
-      an absent or empty target fails.
+    description: The changed source files exist and the hardcoded topic, model config, URL authority and
+      contract config validators report zero on them.
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC5
     checks:
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/checker_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          --baseline config/hardcoded_model_config_baseline.yaml src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_hardcoded_topics src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_checker_protocol_binding.py
           -q --no-cov -o addopts='' -k changed_source_has_no_operational_literals
