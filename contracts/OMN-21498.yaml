@@ -108,7 +108,8 @@ dod_evidence:
           -k "container or injected"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation -q -o addopts='' -k "checker_is_pure"
+        check_value: uv run pytest tests/unit/validation/test_validator_hook_writes.py tests/unit/validation/test_validator_commit_hygiene.py
+          -q -o addopts='' -k "checker_is_pure"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21498-deploy-checkout-runtime
     description: Exercise the generic validator runtime at the checkout on a hosted runner. The container
