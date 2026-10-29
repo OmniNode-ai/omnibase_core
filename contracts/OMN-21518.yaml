@@ -42,12 +42,45 @@ emergency_bypass:
 dod_evidence:
   - id: dod-omn21518-ac1-file-shape-baseline
     description: The canonical-file-shape ratchet passes on the checkout and the baseline holds no line
-      of the BD-1 families.
+      of the BD-1 families. Each test file runs separately within the verifier budget; the pipe mutation
+      cases run separately from the remaining file-shape rules. All ratchet cases are retained.
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_checkout_has_no_handler_outside_node.py
-          tests/unit/nodes/node_canonical_file_shape_check_compute -q --no-cov -n 0
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -k 'not stalled_pipe_check'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -k stalled_pipe_check
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_checkout_has_no_handler_outside_node.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_activation.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_rule.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: "! grep -E 'handler_(action_pin|ci_inheritance|cosmetic_lint|dependency_direction|internal_sibling_pins|merge_queue_parity|no_bare_feature_flags|no_hardcoded_topics|version_floor_consumers)'
@@ -109,3 +142,52 @@ dod_evidence:
           -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2, AC3]
+  - id: dod-omn21518-deploy-published-node-runtimes
+    description: Read each relocated runtime from the public product repository at the checkout commit.
+      A missing published runtime or a runtime without its relocated handler call fails. The existing
+      checkout tests exercise admission, refusal and rule mutations; these readbacks require only public
+      HTTPS access on hosted runners.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2, AC3]
+    checks:
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_action_pin_check_effect/runtime_action_pin_check.py" |
+            grep -F "HandlerActionPin().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py" |
+            grep -F "HandlerCiInheritance().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_cosmetic_lint_check_compute/runtime_cosmetic_lint_check.py" |
+            grep -F "HandlerCosmeticLint().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_dependency_direction_check_effect/runtime_dependency_direction_check.py" |
+            grep -F "HandlerDependencyDirection().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_internal_sibling_pins_check_effect/runtime_internal_sibling_pins_check.py" |
+            grep -F "HandlerInternalSiblingPins().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_merge_queue_parity_check_effect/runtime_merge_queue_parity_check.py" |
+            grep -F "HandlerMergeQueueParity().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_no_bare_feature_flags_check_compute/runtime_no_bare_feature_flags_check.py" |
+            grep -F "HandlerNoBareFeatureFlags().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_no_hardcoded_topics_check_compute/runtime_no_hardcoded_topics_check.py" |
+            grep -F "HandlerNoHardcodedTopics().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
