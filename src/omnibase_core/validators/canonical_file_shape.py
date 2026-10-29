@@ -50,9 +50,8 @@ import yaml
 
 from omnibase_core.handlers.handler_canonical_location_rules import (
     TYPESCRIPT_EXTENSIONS,
-    is_python_src_location,
+    is_canonical_location,
     is_shell_script,
-    is_typescript_canonical_location,
     typescript_noncanonical_file_reason,
     typescript_workspace_roots,
 )
@@ -116,7 +115,6 @@ CODE_EXTENSIONS: frozenset[str] = frozenset(
 CONFIG_EXTENSIONS: frozenset[str] = frozenset(
     (".yaml", ".yml", ".toml", ".cfg", ".ini")
 )
-TEST_DIRS: frozenset[str] = frozenset(("tests", "test"))
 # The omniclaude thin-shim gate's patterns (OMN-12237), verbatim in meaning.
 SKILL_IMPERATIVE_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^[^`]*\bAgent\("),
@@ -273,23 +271,6 @@ def is_code_file(path: str, head_bytes: bytes | None) -> bool:
     if suffix == "" and head_bytes is not None:
         return head_bytes.startswith(b"#!")
     return False
-
-
-def is_canonical_location(
-    path: str, workspace_roots: frozenset[str] = frozenset()
-) -> bool:
-    if is_shell_script(path, None):
-        return False
-    if _suffix(path) in TYPESCRIPT_EXTENSIONS:
-        return is_typescript_canonical_location(path, workspace_roots)
-    parts = PurePosixPath(path).parts
-    if not parts:
-        return False
-    if parts[0] == "docs" or parts[-1] == "conftest.py":
-        return True
-    if any(part in TEST_DIRS for part in parts[:-1]):
-        return True
-    return is_python_src_location(parts)
 
 
 def _entry_module(entry: object) -> str | None:

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+"""Fixture: takes every value as an argument."""
+
+
+def handle(location: str) -> str:
+    return location
