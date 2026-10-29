@@ -1,0 +1,13 @@
+**T0.1 Private vocabulary resolution for every core validator (UPDATE).**
+- Repo and paths: omnibase_core `src/omnibase_core/validation/hardcoded_model_config/` (the loader that reads `vocabularies/hardcoded_model_config_lab_denylist.yaml`); the hygiene gate's vocabulary read (`OMNI_HYGIENE_VOCAB_PATH`) in `scripts/public_repo_hygiene_gate.py` users (omniclaude `.pre-commit-config.yaml:837,858`).
+- What moves: the vocabulary loader becomes one core handler (`handlers/handler_private_vocabulary.py`) that every validator calls by vocabulary name; it resolves explicit path, then env, then the workspace config root, refuses with the setting's name when absent, and has no age limit hard-coded (the cache age bound becomes a policy value).
+- Acceptance: the hygiene gate and the model-config gate read through it; an unset vocabulary on a contributor host gives one refusal line naming the setting. Falsifier: with `OMNI_HYGIENE_VOCAB_PATH` unset and a vocabulary at the config root, a commit to omnimarket that adds no private name passes (today it refuses, FRICTION 2026-10-12T00:58:16Z).
+- Canary: omnimarket canary commit with the variable unset.
+- Depends on: nothing.
+
+**T0.2 Pin parity for the shared core hook repo (UPDATE).**
+- Repo and paths: `precommit-pin-parity` (core:2379, infra:2402, omniclaude:1837, omnimarket:2376) and the pins in A.3.
+- What moves: one core check node, built in this task and not in T2.3 (T2.3 only deletes the four copies), replaces them and refuses a hook of the shared core hook repo whose pinned rev is older than the newest rev that hook repo is pinned at anywhere in the same repository's `.pre-commit-config.yaml`.
+- Acceptance and falsifier: omniclaude-internal `.pre-commit-config.yaml:13` at `d7ed23f1` fails the check; at the current core pin it passes.
+- Canary: a canary commit that lowers one pin.
+- Depends on: nothing.
