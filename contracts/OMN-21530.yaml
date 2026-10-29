@@ -1,0 +1,80 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21530
+title: "T0.8a: replay corpus of the mechanically coverable canon-audit findings at their audited revisions"
+summary: Part (a) of the replay task. tests/fixtures/andon_replay/corpus.yaml holds one or more assertions
+  per canon-audit finding that a checker covers (47 findings, F43's pin half included), each naming its
+  expected rule_id and an input bundle (a code input is a repository, a full revision, a path, a line,
+  a quote and the fact bundle the rule needs; a text input is a snapshot with its sha256). The replay
+  driver is generic code that holds no revision, path or rule id. Part (b), the integrated replay of every
+  checker over the corpus, waits for the checkers and is not part of this change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21530-corpus
+    statement: The corpus is frozen data that covers every mechanical finding of the finding table and
+      resolves to real revisions and matching snapshots; the driver holds none of that data.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the corpus holds an assertion for each of the 47 findings that have a mechanical
+          part (F43 pin half included), each with a `rule_id` and an input bundle that names a revision
+          or a snapshot sha256 -- falsifier: `uv run pytest tests/unit/andon_replay -q -k corpus_covers_findings`
+          compares the finding ids in the corpus against D.3 and fails on a missing id"
+      - id: AC2
+        statement: "AC2: every code input resolves to a real revision in a canonical clone and every text
+          snapshot matches its recorded sha256 -- falsifier: `uv run pytest tests/unit/andon_replay -q
+          -k inputs_resolve`"
+      - id: AC5
+        statement: "AC5: Configuration: the corpus is data; the replay driver holds no revision, path
+          or rule id in code -- falsifier: K10 `rule_table_in_checker` and hardcoded_model_config report
+          zero on the driver"
+evidence_requirements:
+  - kind: tests
+    description: Corpus coverage, input resolution and the planted-violation copies.
+    command: uv run pytest tests/unit/andon_replay -q -n 0 --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21530-ac1-corpus-covers-findings
+    description: The corpus names every finding of the D.3 table snapshot that is not marked none (47
+      ids) and fails on a copy with one finding id removed and on a copy that gives an excluded finding
+      an assertion.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/andon_replay -q --no-cov -o addopts='' -k corpus_covers_findings
+        cwd: .
+    binds_ac:
+      - AC1
+  - id: dod-omn21530-ac2-inputs-resolve
+    description: Every snapshot matches its sha256 (the test fails on a copy with one sha256 altered and
+      on a copy with edited snapshot text); every code input is a full revision whose quote sits at its
+      path and line in the canonical clone. The clone read runs when the clone root is set and is required
+      by the require-clones variable the corpus names; the lab run sets it.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/andon_replay -q --no-cov -o addopts='' -k inputs_resolve
+        cwd: .
+    binds_ac:
+      - AC2
+  - id: dod-omn21530-ac5-configuration
+    description: The driver holds no repository name, revision, path, rule id, clone directory, environment
+      variable name or timeout; all are corpus fields. The core literal validators report zero on it.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data tests/fixtures/andon_replay/driver.py
+        cwd: .
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          tests/fixtures/andon_replay/driver.py
+        cwd: .
+    binds_ac:
+      - AC5
