@@ -43,7 +43,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute -q
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py -n 0 -q
         cwd: .
       - check_type: test_passes
         check_value: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
@@ -79,5 +80,9 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run --frozen python -m omnibase_core.nodes.node_naming_convention_check_compute.runtime_naming_convention_check
           --help
+        cwd: .
+      - check_type: test_passes
+        check_value: uv run --frozen python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+          --help && .venv/bin/onex --help
         cwd: .
     binds_ac: [AC1, AC2, AC3]
