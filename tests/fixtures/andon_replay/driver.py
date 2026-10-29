@@ -430,7 +430,7 @@ def resolve_inputs(
     root_value = env.get(corpus.resolution.clone_root_env, "")
     report.clones_required = bool(env.get(corpus.resolution.require_clones_env, ""))
     report.clones_reachable = bool(root_value) and Path(root_value).is_dir()
-    if report.clones_reachable:
+    if report.clones_reachable and report.clones_required:
         problems, resolved = _clone_problems(corpus, Path(root_value))
         report.problems.extend(problems)
         report.code_inputs_resolved_in_clones = resolved
