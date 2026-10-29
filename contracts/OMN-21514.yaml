@@ -81,26 +81,33 @@ dod_evidence:
     binds_ac:
       - AC3
   - id: "dod-omn21514-ac4-bindings-pure"
-    description: "Bindings: the checker runs with open, stat, listing and environment reads refused and
-      gives the same bytes as a repeat run, as the validator entry and as a JSON round trip. The parity
-      harness (T-B2) is not in the tree; the validator entry is the in-process route."
+    description: "Bindings: the checker runs with open, stat and listing reads refused, imports no environment,
+      filesystem, clock or network module, and gives the same bytes as a repeat run, as the validator
+      entry and as a JSON round trip. The parity harness (T-B2) is not in the tree; the validator entry
+      is the in-process route."
     source: "manual"
     execution_scope: "hosted_and_local"
     checks:
       - check_type: "test_passes"
         check_value: "uv run pytest tests/unit/validation/binding_conformance -q -o addopts='' -k 'guard
-          or byte_identical'"
+          or byte_identical or imports_nothing'"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac:
       - AC4
   - id: "dod-omn21514-delegation-join"
-    description: "The delegation runs whose output is in the PR head, joined to the head through their
-      receipts (DS-6) and their delegation_events rows (DS-7); the run ids are named in the PR body and
-      the lane TERMINAL."
+    description: "The delegation runs whose output is in the PR head: the Codex port (thread 01a18526-3c05-7c32-b1a3-4ffd97c45c53,
+      receipt delegation-receipt/2 of lane t-b1b-0035) wrote the checker, the models, the validator entry,
+      the validator contract and the hook entry, and the two GLM runs 646c143f-ad74-4b1c-a8de-efcfbacfcd65
+      and 05de3f23-b166-4f46-961e-f7a4158b7dce wrote the commit messages. The check reads each run's receipt
+      on the launching host (DS-6); the delegation_events row of each run (DS-7) is read from the projection
+      by the orchestrator's delegation receipt check, and the run ids are named in the PR body and the
+      lane TERMINAL."
     source: "manual"
     execution_scope: "local"
     checks:
       - check_type: "command"
-        check_value: "test -s \"${OMNI_HOME}/.onex_state/runs/RUN_IDS_FILLED_BEFORE_READY/receipt.json\""
+        check_value: "test -s \"${OMNI_HOME}/.claude_scratch/delegation-receipts/t-b1b-0035/2026-10-29T005651Z-codex-port-checker.json\"
+          && test -d \"${OMNI_HOME}/.onex_state/harness-delegate/646c143f-ad74-4b1c-a8de-efcfbacfcd65\"
+          && test -d \"${OMNI_HOME}/.onex_state/harness-delegate/05de3f23-b166-4f46-961e-f7a4158b7dce\""
     binds_ac:
       - AC1
