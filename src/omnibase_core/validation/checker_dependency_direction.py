@@ -18,7 +18,6 @@ from collections.abc import Mapping
 from functools import cache
 from importlib import resources
 from pathlib import Path
-from typing import Final
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -35,7 +34,6 @@ from omnibase_core.models.dependency_direction.model_repo_layer_map import (
     ModelRepoLayerMap,
 )
 from omnibase_core.utils.util_safe_yaml_loader import (
-    load_and_validate_yaml_model,
     load_yaml_content_as_model,
 )
 from omnibase_core.validation.checker_rule_parameters import (
@@ -145,14 +143,14 @@ def load_dependency_direction_rules() -> ModelDependencyDirectionRules:
     return rules_from_rows({row.rule_id: row for row in contract.rules})
 
 
-LAYER_MAP_PATH: Final[Path] = (
-    Path(__file__).parents[1] / "contracts" / "repo_layers.yaml"
-)
-
-
-def load_layer_map(path: Path = LAYER_MAP_PATH) -> ModelRepoLayerMap:
-    """Read the declared layer order."""
-    return load_and_validate_yaml_model(path, ModelRepoLayerMap)
+def load_layer_map() -> ModelRepoLayerMap:
+    """Read the declared layer order shipped inside the package."""
+    return load_yaml_content_as_model(
+        resources.files("omnibase_core")
+        .joinpath("contracts/repo_layers.yaml")
+        .read_text("utf-8"),
+        ModelRepoLayerMap,
+    )
 
 
 def infer_repo(
