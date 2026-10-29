@@ -69,8 +69,6 @@ RULE_FIX_ONLY_GROWTH = "lifecycle-fix-only-growth"
 RULE_RETIRED = "lifecycle-retired"
 RULE_HANDLER = "handler_outside_node"
 RULE_CLI_ENTRY = "cli_entry_outside_node"
-# Refused-path rules in precedence order; the first that refuses a path wins.
-FILE_RULES = (RULE_NONCANONICAL, RULE_HANDLER, RULE_CLI_ENTRY)
 
 
 def load_rule_set(
