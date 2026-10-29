@@ -1,0 +1,3 @@
+{
+  "prompt": "Lane brief\n\n# Standing rules for every dispatched lane (read fully before the first tool call)\nDependencies and DI: every dependency is declared in the contract and injected.\nNo literal: no host, port, topic, model name, timeout or URL in changed source.\nTwo overlays: a falsifier runs the in-memory default and the broker overlay with no code change.\nNo Plugin class: no class named Plugin* in a node package.\nNo envelope in compute: a compute handler returns its typed result, never an envelope.\nZero literal: the literal validators report zero on the changed files.\nOpen PR: a PR is opened as a draft against the landing branch.\nA check met at commit time costs a rewrite instead of at design time.\n\nTask follows."
+}
