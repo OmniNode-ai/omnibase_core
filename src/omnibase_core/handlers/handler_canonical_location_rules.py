@@ -234,3 +234,28 @@ def is_canonical_location(
     if any(part in TEST_DIRS for part in parts[:-1]):
         return True
     return is_python_src_location(parts)
+
+
+def is_generic_validator_location(path: str) -> bool:
+    """Admit only direct checker/validator Python entrypoints in validation/."""
+    parts = PurePosixPath(path).parts
+    return (
+        len(parts) == 4
+        and parts[0] == "src"
+        and parts[2] == "validation"
+        and parts[-1].endswith(".py")
+        and parts[-1].startswith(("checker_", "validator_"))
+    )
+
+
+def noncanonical_file_reason(path: str, head_bytes: bytes | None) -> str:
+    if is_shell_script(path, head_bytes):
+        return "shell scripts have no canonical location in any repository (OMN-21332)."
+    if PurePosixPath(path).suffix.lower() in TYPESCRIPT_EXTENSIONS:
+        return typescript_noncanonical_file_reason()
+    return (
+        "new code file outside a canonical location "
+        "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
+        "src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). "
+        "Build it as a contract + node + handler."
+    )
