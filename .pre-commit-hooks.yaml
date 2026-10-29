@@ -1246,7 +1246,7 @@
     Pre-existing violations recorded in the repository's .onex_ratchets/merge_queue_parity_baseline.yaml
     warn; the baseline only shrinks against the base in CI through .github/workflows/version-drift.yml.
   language: python
-  entry: python -m omnibase_core.handlers.handler_merge_queue_parity_cli
+  entry: python -m omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: true
   require_serial: true

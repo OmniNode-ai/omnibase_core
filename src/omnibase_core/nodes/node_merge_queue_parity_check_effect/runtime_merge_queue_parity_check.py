@@ -1,15 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI runtime for the merge-queue parity check (OMN-19998).
+"""CLI runtime for the merge-queue parity check (OMN-19998, OMN-21518).
 
 Backs the ``check-merge-queue-parity`` pre-commit hook, the reusable
 ``version-drift.yml`` workflow every repository inherits, and manual runs. All
 I/O happens here: the tracked-file listing (``node_git_file_listing_effect``),
 file reads (``node_source_file_gather_effect``), the baseline YAML at the tree
 and at the ratchet base, and the report write
-(``node_validation_report_write_effect``). The verdict is the pure
-``HandlerMergeQueueParity``.
+(``node_validation_report_write_effect``, resolved from the container). The
+verdict is the pure ``HandlerMergeQueueParity``, handed the rule rows of
+``merge_queue_parity.validation.yaml``.
 
 Usage::
 
@@ -29,10 +30,7 @@ import sys
 from pathlib import Path
 from typing import Final
 
-from omnibase_core.handlers.handler_merge_queue_parity import (
-    VALIDATOR_ID,
-    HandlerMergeQueueParity,
-)
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.nodes.git_file_listing.model_git_file_listing_input import (
     ModelGitFileListingInput,
 )
@@ -60,19 +58,24 @@ from omnibase_core.models.version_drift.model_merge_queue_parity_input import (
 from omnibase_core.nodes.node_git_file_listing_effect.handler import (
     NodeGitFileListingEffect,
 )
+from omnibase_core.nodes.node_merge_queue_parity_check_effect.handler_merge_queue_parity import (
+    VALIDATOR_ID,
+    HandlerMergeQueueParity,
+)
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 from omnibase_core.validation.checker_workflow_selection import (
     is_workflow,
-    load_workflow_rule,
+    load_parity_rules,
 )
 
-__all__ = ["is_workflow", "load_workflow_rule", "main", "parse_baseline"]
+__all__ = ["build_container", "main", "parse_baseline"]
 
 DEFAULT_BASELINE: Final[str] = ".onex_ratchets/merge_queue_parity_baseline.yaml"
 
@@ -147,15 +150,31 @@ def _out(line: str) -> None:
     sys.stdout.write(line + "\n")
 
 
-def _write_report(path: str | None, report: ModelValidationReport) -> None:
-    if path is not None:
-        NodeValidationReportWriteEffect().handle(
-            ModelValidationReportWriteInput(report_path=path, report=report)
+def build_container() -> ModelONEXContainer:
+    """The composition root: a container with the report writer registered."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry()
+    run_coro_sync(
+        registry.register_instance(
+            NodeValidationReportWriteEffect, NodeValidationReportWriteEffect()
         )
+    )
+    return container
 
 
-def main(argv: list[str] | None = None) -> int:
+def _write_report(
+    container: ModelONEXContainer, path: str | None, report: ModelValidationReport
+) -> None:
+    if path is not None:
+        writer = container.get_service(NodeValidationReportWriteEffect)
+        writer.handle(ModelValidationReportWriteInput(report_path=path, report=report))
+
+
+def main(
+    argv: list[str] | None = None, container: ModelONEXContainer | None = None
+) -> int:
     """CLI entry. Returns 0 on PASS/WARN, 1 on FAIL/ERROR or baseline growth."""
+    container = container or build_container()
     parser = argparse.ArgumentParser(
         prog="check-merge-queue-parity",
         description=(
@@ -204,19 +223,20 @@ def main(argv: list[str] | None = None) -> int:
         report = ModelValidationReport.from_runtime_errors(
             VALIDATOR_ID, tuple(runtime_errors)
         )
-        _write_report(parsed.report_json, report)
+        _write_report(container, parsed.report_json, report)
         for message in runtime_errors:
             _out(f"ERROR: {message}")
         return 1
 
     report = HandlerMergeQueueParity().handle(
         ModelMergeQueueParityInput(
+            rules=load_parity_rules(),
             files=tuple(files),
             baseline=baseline,
             report_stale_baseline=not parsed.filenames,
         )
     )
-    _write_report(parsed.report_json, report)
+    _write_report(container, parsed.report_json, report)
     for finding in report.findings:
         _out(f"{finding.severity}: {finding.message}")
     if report.overall_status in ("PASS", "WARN"):

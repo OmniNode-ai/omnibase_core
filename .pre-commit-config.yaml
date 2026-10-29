@@ -1854,7 +1854,7 @@ repos:
 
       - id: check-merge-queue-parity
         name: Pull request CI runs every merge-queue job (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_merge_queue_parity_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check
         language: system
         args: [--baseline, .onex_ratchets/merge_queue_parity_baseline.yaml]
         files: ^\.github/workflows/[^/]+\.ya?ml$

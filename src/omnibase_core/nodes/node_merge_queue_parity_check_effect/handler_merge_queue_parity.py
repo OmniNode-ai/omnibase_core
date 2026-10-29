@@ -23,7 +23,9 @@ on ``merge_group``, this handler refuses:
 Findings in the caller's baseline WARN; the baseline only shrinks. Jobs of a
 reusable workflow a job ``uses:`` are not followed.
 
-Pure: no filesystem, no clock, no global state. Ticket: OMN-19998.
+Pure: no filesystem, no clock, no global state; every pattern, trigger name,
+bound and message comes from the request's rules (the ``merge_queue_parity``
+rule rows). Ticket: OMN-19998, OMN-21518.
 """
 
 from __future__ import annotations
@@ -44,26 +46,15 @@ from omnibase_core.models.validation.model_validation_report import (
 from omnibase_core.models.version_drift.model_merge_queue_parity_input import (
     ModelMergeQueueParityInput,
 )
+from omnibase_core.models.version_drift.model_merge_queue_parity_rules import (
+    ModelMergeQueueParityRules,
+)
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_duplicates
 
 __all__ = ["VALIDATOR_ID", "HandlerMergeQueueParity", "merge_queue_only"]
 
 VALIDATOR_ID: Final[str] = "merge_queue_parity"
 _PROFILE: Final[Literal["strict", "default", "advisory"]] = "default"
-_REMEDIATION: Final[str] = (
-    "Run the job on pull_request whenever it runs on merge_group: drop the "
-    "merge_group-only condition, the pull_request path filter, or the event-name "
-    "branch in the gate job. Never add it to the baseline."
-)
-_PR_EVENTS: Final[tuple[str, ...]] = ("pull_request", "pull_request_target")
-_MAX_UNKNOWNS: Final[int] = 10
-_EVENT_ATOM = re.compile(
-    r"""^\s*(?:github\.event_name\s*(==|!=)\s*['"]([^'"]*)['"]"""
-    r"""|['"]([^'"]*)['"]\s*(==|!=)\s*github\.event_name)\s*$"""
-)
-_DRAFT_ATOM = re.compile(r"^\s*github\.event\.pull_request\.draft\s*$")
-_NEEDS_OUTPUT = re.compile(r"needs\.([A-Za-z0-9_-]+)\.outputs\.")
-_ANY_EVENT_NAME = re.compile(r"github\.event_name")
 
 
 def _strip_expression(text: str) -> str:
@@ -183,12 +174,14 @@ def _truth(tokens: list[str], values: Mapping[str, bool]) -> bool | None:
     return result if pos == len(tokens) else None
 
 
-def _event_value(atom: str, event: str) -> bool | None:
+def _event_value(
+    atom: str, event: str, rules: ModelMergeQueueParityRules
+) -> bool | None:
     # A pull request reaches the merge queue only once it is ready for review,
     # and a merge group has no pull request: the draft flag is false for both.
-    if _DRAFT_ATOM.match(atom):
+    if re.match(rules.draft_atom_pattern, atom):
         return False
-    match = _EVENT_ATOM.match(atom)
+    match = re.match(rules.event_atom_pattern, atom)
     if match is None:
         return None
     op = match.group(1) or match.group(4)
@@ -196,7 +189,7 @@ def _event_value(atom: str, event: str) -> bool | None:
     return (name == event) if op == "==" else (name != event)
 
 
-def merge_queue_only(condition: str) -> bool:
+def merge_queue_only(condition: str, rules: ModelMergeQueueParityRules) -> bool:
     """True when ``condition`` can hold on ``merge_group`` and fail on ``pull_request``.
 
     Atoms that compare ``github.event_name`` are evaluated per event; every
@@ -207,13 +200,14 @@ def merge_queue_only(condition: str) -> bool:
     if not tokens:
         return False
     atoms = sorted({t for t in tokens if t not in ("(", ")", "&&", "||", "!")})
-    unknowns = [a for a in atoms if _event_value(a, "merge_group") is None]
-    if len(unknowns) > _MAX_UNKNOWNS:
+    queue, pull_request = rules.queue_event, rules.pull_request_event
+    unknowns = [a for a in atoms if _event_value(a, queue, rules) is None]
+    if len(unknowns) > rules.max_unknowns:
         return False
     for combo in itertools.product((False, True), repeat=len(unknowns)):
         fixed = dict(zip(unknowns, combo, strict=True))
-        on_queue = _truth(tokens, {**fixed, **_event_map(atoms, "merge_group")})
-        on_pr = _truth(tokens, {**fixed, **_event_map(atoms, "pull_request")})
+        on_queue = _truth(tokens, {**fixed, **_event_map(atoms, queue, rules)})
+        on_pr = _truth(tokens, {**fixed, **_event_map(atoms, pull_request, rules)})
         if on_queue is None or on_pr is None:
             return False
         if on_queue and not on_pr:
@@ -221,10 +215,12 @@ def merge_queue_only(condition: str) -> bool:
     return False
 
 
-def _event_map(atoms: list[str], event: str) -> dict[str, bool]:
+def _event_map(
+    atoms: list[str], event: str, rules: ModelMergeQueueParityRules
+) -> dict[str, bool]:
     mapped: dict[str, bool] = {}
     for atom in atoms:
-        value = _event_value(atom, event)
+        value = _event_value(atom, event, rules)
         if value is not None:
             mapped[atom] = value
     return mapped
@@ -255,6 +251,7 @@ class HandlerMergeQueueParity:
 
     def handle(self, request: ModelMergeQueueParityInput) -> ModelValidationReport:
         """Definition-B canonical entry-point: typed request in, typed report out."""
+        rules = request.rules
         errors: list[str] = []
         raw: list[tuple[str, str, EnumMergeQueueParityRule, int, str]] = []
         for file in sorted(request.files, key=lambda f: f.path):
@@ -265,7 +262,7 @@ class HandlerMergeQueueParity:
             except (yaml.YAMLError, ValueError) as exc:
                 errors.append(f"{file.path}: workflow does not parse: {exc}")
                 continue
-            raw.extend(self._violations(file.path, file.source, document))
+            raw.extend(self._violations(file.path, file.source, document, rules))
         if errors:
             return ModelValidationReport.from_runtime_errors(
                 VALIDATOR_ID, tuple(errors)
@@ -277,7 +274,9 @@ class HandlerMergeQueueParity:
         for path, job, rule, line, detail in raw:
             key = (path, job, rule.value)
             seen.add(key)
-            message = f"{path}:{line}: {rule.value}: {detail}"
+            message = rules.finding_template.format(
+                path=path, line=line, rule=rule.value, detail=detail
+            )
             recorded = baseline.get(key)
             findings.append(
                 ModelValidationFindingEmbed(
@@ -285,11 +284,13 @@ class HandlerMergeQueueParity:
                     severity="WARN" if recorded is not None else "FAIL",
                     location=f"{path}:{line}",
                     message=(
-                        f"baselined ({recorded.ticket}): {message}"
+                        rules.baselined_template.format(
+                            ticket=recorded.ticket, message=message
+                        )
                         if recorded is not None
                         else message
                     ),
-                    remediation=_REMEDIATION,
+                    remediation=rules.remediation,
                 )
             )
         if request.report_stale_baseline:
@@ -301,10 +302,11 @@ class HandlerMergeQueueParity:
                         validator_id=VALIDATOR_ID,
                         severity="WARN",
                         location=entry.path,
-                        message=(
-                            f"stale baseline entry ({entry.ticket}): {entry.path} job "
-                            f"{entry.job} no longer violates {entry.rule.value}; "
-                            "remove it from the baseline"
+                        message=rules.stale_template.format(
+                            ticket=entry.ticket,
+                            path=entry.path,
+                            job=entry.job,
+                            rule=entry.rule.value,
                         ),
                         remediation=None,
                     )
@@ -317,14 +319,17 @@ class HandlerMergeQueueParity:
 
     @staticmethod
     def _violations(
-        path: str, source: str, document: Mapping[object, object]
+        path: str,
+        source: str,
+        document: Mapping[object, object],
+        rules: ModelMergeQueueParityRules,
     ) -> list[tuple[str, str, EnumMergeQueueParityRule, int, str]]:
         triggers = _triggers(document)
-        if "merge_group" not in triggers:
+        if rules.queue_event not in triggers:
             return []
         found: list[tuple[str, str, EnumMergeQueueParityRule, int, str]] = []
         on_line = _line_of(source, "on", 0)
-        pr_events = [e for e in _PR_EVENTS if e in triggers]
+        pr_events = [e for e in rules.pull_request_events if e in triggers]
         if not pr_events:
             found.append(
                 (
@@ -332,13 +337,13 @@ class HandlerMergeQueueParity:
                     "*",
                     EnumMergeQueueParityRule.NO_PULL_REQUEST_TRIGGER,
                     on_line,
-                    "the workflow triggers on merge_group and not on pull_request",
+                    rules.no_pull_request_trigger_message,
                 )
             )
         for event in pr_events:
             config = triggers[event]
-            if isinstance(config, dict) and (
-                "paths" in config or "paths-ignore" in config
+            if isinstance(config, dict) and any(
+                key in config for key in rules.path_filter_keys
             ):
                 found.append(
                     (
@@ -346,7 +351,7 @@ class HandlerMergeQueueParity:
                         "*",
                         EnumMergeQueueParityRule.PULL_REQUEST_PATH_FILTER,
                         _line_of(source, event, 2),
-                        f"the {event} trigger filters on paths; merge_group runs unfiltered",
+                        rules.pull_request_path_filter_message.format(event=event),
                     )
                 )
 
@@ -361,31 +366,33 @@ class HandlerMergeQueueParity:
                 continue
             condition = str(condition)
             line = _line_of(source, str(job_id), 2)
-            if merge_queue_only(condition):
+            if merge_queue_only(condition, rules):
                 found.append(
                     (
                         path,
                         str(job_id),
                         EnumMergeQueueParityRule.MERGE_QUEUE_ONLY_IF,
                         line,
-                        f"job {job_id} can run on merge_group and be skipped on "
-                        f"pull_request: if: {' '.join(condition.split())}",
+                        rules.merge_queue_only_if_message.format(
+                            job=job_id, condition=" ".join(condition.split())
+                        ),
                     )
                 )
                 continue
-            for gate in sorted(set(_NEEDS_OUTPUT.findall(condition))):
+            for gate in sorted(set(re.findall(rules.needs_output_pattern, condition))):
                 gate_job = jobs.get(gate)
                 if not isinstance(gate_job, dict):
                     continue
-                if _ANY_EVENT_NAME.search(repr(gate_job.get("steps", []))):
+                if re.search(rules.event_name_pattern, repr(gate_job.get("steps", []))):
                     found.append(
                         (
                             path,
                             str(job_id),
                             EnumMergeQueueParityRule.EVENT_DEPENDENT_GATE,
                             line,
-                            f"job {job_id} is gated on needs.{gate}.outputs and job "
-                            f"{gate}'s steps branch on github.event_name",
+                            rules.event_dependent_gate_message.format(
+                                job=job_id, gate=gate
+                            ),
                         )
                     )
                     break
