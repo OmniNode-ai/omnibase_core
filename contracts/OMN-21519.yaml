@@ -44,8 +44,19 @@ dod_evidence:
     source: manual
     binds_ac: [AC1]
     checks:
+      # Keep all file-shape tests. Each mutation control deliberately waits for
+      # an eight-second stall; run them separately to fit the verifier's unchanged
+      # 30-second budget for each command, including cold pytest startup.
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -n 0 -k 'not test_stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest 'tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py::test_stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant[:]'
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest 'tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py::test_stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant[HEAD]'
           -q --no-cov -n 0
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
@@ -75,5 +86,17 @@ dod_evidence:
           tests/unit/validation/hardcoded_model_config tests/unit/validation/test_occ_contract_view_layouts.py
           tests/unit/validation/test_handler_validator_run.py tests/unit/handlers/test_handler_ci_repository_jobs.py
           tests/unit/validation/test_validator_backend_secret_discipline.py tests/unit/handlers/test_handler_private_vocabulary.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21519-deploy-validator-runtime
+    description: Hosted deploy smoke for the relocated validator runtime. The checkout tests resolve the
+      report writer from the container, exercise the module entry, and require the planted violation to
+      produce the golden report. No service, container daemon or sibling checkout is required.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_handler_validator_run.py
           -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
