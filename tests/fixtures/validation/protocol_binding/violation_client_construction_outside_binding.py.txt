@@ -1,0 +1,2 @@
+async def make_admin(servers):
+    return AIOKafkaAdminClient(bootstrap_servers=servers)

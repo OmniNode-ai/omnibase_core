@@ -1988,6 +1988,21 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # Protocol binding (OMN-21533, K5): no default implementation constructed, no branch on an
+      # implementation class, no module-level binding table and no broker client built outside a
+      # binding site, and no setting with a literal value in two node contracts. Binding sites, class
+      # lists and the shrink-only baseline (.onex_ratchets/protocol_binding_baseline.txt) are rule
+      # data of protocol_binding.validation.yaml. Runs in CI through the precommit-suite job.
+      - id: check-protocol-binding
+        name: No protocol bound to its implementation in code (OMN-21533, K5)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_protocol_binding:ValidatorProtocolBinding --baseline .onex_ratchets/protocol_binding_baseline.txt
+        language: system
+        files: ^src/.*(\.py|/contract\.yaml)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # No raw sqlite3.connect() outside *_adapter.py (OMN-14659, self-wired
       # OMN-14665). The 1 pre-existing finding — the local-harness projection
       # store (harness_projection_store_sqlite.py), which IS a zero-infra

@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: protocol_binding
+  validator_name: Protocol Binding Validator
+  validator_description: Refuses code that binds a protocol to an implementation outside a binding site,
+    and a setting that two node contracts both hold a literal value for. The binding sites, the default
+    implementation classes, the implementation classes, the client classes, the key pattern, the contract
+    sections and the remediation texts are the rule rows of this file (OMN-21533, plan task T0.5, K5).
+  target_patterns:
+    - '**/*.py'
+    - '**/contract.yaml'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/validation/contracts/**'
+  rules:
+    - rule_id: default_implementation_construction
+      description: A default implementation of a protocol constructed outside a binding site.
+      severity: error
+      enabled: true
+      parameters:
+        kind: construction
+        classes: [EventBusInmemory, ServiceStateDisk]
+        binding_sites:
+          - '*/container/container_auto_config.py'
+        stale_message: '{path} constructs {count} default implementation(s), baselined {baselined}; lower
+          the entry'
+        remediation: Resolve the protocol from the container (get_service); the default implementation
+          is bound in the container's registration or an overlay, never constructed in the caller.
+    - rule_id: implementation_isinstance_branch
+      description: A branch on which implementation class a protocol value is.
+      severity: error
+      enabled: true
+      parameters:
+        kind: isinstance_branch
+        classes: [EventBusKafka, EventBusInmemory, ServiceStateDisk]
+        binding_sites:
+          - '*/container/container_auto_config.py'
+        remediation: Call the protocol's methods; the binding site chooses the implementation, and a caller
+          never branches on which one it was given.
+    - rule_id: code_side_binding_table
+      description: A module-level table that maps protocol names or binding ids to implementations.
+      severity: error
+      enabled: true
+      parameters:
+        kind: binding_table
+        key_pattern: ^Protocol[A-Z]\w*$
+        reexport_value_pattern: ^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$
+        remediation: Declare the binding in the node contract's protocol_dependencies or an overlay; code
+          holds no table of bindings.
+    - rule_id: client_construction_outside_binding
+      description: A broker or admin client class constructed outside a binding site.
+      severity: error
+      enabled: true
+      parameters:
+        kind: construction
+        classes: [AIOKafkaAdminClient, AIOKafkaProducer, AIOKafkaConsumer, KafkaAdminClient]
+        binding_sites:
+          - '*/event_bus/event_bus_kafka*.py'
+        remediation: Resolve the client through the protocol from the container; the binding site builds
+          the client from the overlay's settings.
+    - rule_id: setting_two_homes
+      description: One setting key holding a literal value in two node contracts.
+      severity: error
+      enabled: true
+      parameters:
+        kind: setting_homes
+        sections: [settings, config, parameters]
+        min_homes: 2
+        remediation: Keep the setting in one contract or overlay and have the other read it from the container.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

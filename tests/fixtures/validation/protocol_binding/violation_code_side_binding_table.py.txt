@@ -1,0 +1,1 @@
+_LOCAL_BACKENDS = {"ProtocolEventBus": "inmemory"}

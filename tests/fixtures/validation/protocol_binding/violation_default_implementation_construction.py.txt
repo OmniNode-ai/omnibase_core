@@ -1,0 +1,2 @@
+def build_local_bus():
+    return EventBusInmemory(name="local")
