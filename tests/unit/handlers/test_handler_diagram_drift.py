@@ -30,7 +30,7 @@ from tests.unit.handlers.diagram_drift_support.helpers import (
     diagram_blocks,
     fragment_blocks,
 )
-from tests.unit.handlers.diagram_drift_support.renderer import FixtureRenderer
+from tests.unit.handlers.diagram_drift_support.renderer import load_fixture_fragment
 
 ANDON = "node_andon_stop_reducer:state_machine"
 LEASE = "node_lane_lease_reducer:state_machine"
@@ -74,7 +74,7 @@ def plan_text() -> str:
 
 
 def check(text: str, rules: ModelDiagramDriftRules) -> ModelDiagramDriftReport:
-    return HandlerDiagramDrift().check(text, rules, FixtureRenderer())
+    return HandlerDiagramDrift().check(text, rules, load_fixture_fragment)
 
 
 def kinds(report: ModelDiagramDriftReport) -> list[str | None]:
@@ -387,12 +387,10 @@ def test_the_marker_pattern_is_the_contracts(plan_text: str) -> None:
 
 def test_the_full_view_only_kinds_are_the_contracts(plan_text: str) -> None:
     other = _with_parameter("view_support", "full_view_only_kinds", ["graph"])
-    marked = plan_text.replace(
-        f"<!-- diagram-contract: {LEASE} -->",
-        f"<!-- diagram-contract: {LEASE} collapsed -->",
-    )
 
-    assert "view_not_supported" not in kinds(check(marked, rules_from(other)))
+    assert any(collapsed for _, _, collapsed, _ in diagram_blocks(plan_text))
+    assert check(plan_text, rules_from(_contract_data())).issues == ()
+    assert kinds(check(plan_text, rules_from(other))) == ["view_not_supported"]
 
 
 def test_a_contract_missing_a_required_table_is_refused() -> None:

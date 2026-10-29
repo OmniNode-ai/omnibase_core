@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 """Test-side copy of the omnimarket renderer (the renderer stays in omnimarket, it is not a validator).
 
-The diagram-drift checker takes a renderer by protocol; this copy is the fixture renderer that reproduces
+The diagram-drift checker takes a fragment loader; this copy is the fixture renderer that reproduces
 the merged node's verdicts on the merged task's fixtures.
 
 ``render_contract_diagram``: a contract fragment's text to Mermaid, by fixed structural rules.
@@ -34,6 +34,9 @@ from omnibase_core.models.contracts.model_contract_workflow_definition import (
 )
 from omnibase_core.models.contracts.subcontracts.model_fsm_subcontract import (
     ModelFSMSubcontract,
+)
+from omnibase_core.models.diagram_drift.model_loaded_diagram_fragment import (
+    ModelLoadedDiagramFragment,
 )
 
 EnumDiagramView = Literal["full", "collapsed"]
@@ -199,24 +202,13 @@ def render_loaded_fragment(fragment: ModelLoadedFragment, view: EnumDiagramView)
     return _render_graph(fragment, view)
 
 
-class LoadedFragmentAdapter:
-    """A loaded fragment as the checker's protocol sees it: its kind and its drawing per view."""
-
-    def __init__(self, fragment: ModelLoadedFragment) -> None:
-        self._fragment = fragment
-
-    @property
-    def kind(self) -> str:
-        return self._fragment.kind
-
-    def render(self, view: str) -> str:
-        if view not in ("full", "collapsed"):
-            raise ValueError(f"unknown view {view}")
-        return render_loaded_fragment(self._fragment, view)
-
-
-class FixtureRenderer:
-    """The renderer protocol over this module's loader and drawer."""
-
-    def load(self, fragment_text: str) -> LoadedFragmentAdapter:
-        return LoadedFragmentAdapter(load_fragment(fragment_text))
+def load_fixture_fragment(fragment_text: str) -> ModelLoadedDiagramFragment:
+    """The caller-side loader: the fixture renderer's drawing of each view the fragment kind offers."""
+    fragment = load_fragment(fragment_text)
+    views: tuple[EnumDiagramView, ...] = (
+        ("full",) if fragment.kind == "state_machine" else ("full", "collapsed")
+    )
+    return ModelLoadedDiagramFragment(
+        kind=fragment.kind,
+        drawings={view: render_loaded_fragment(fragment, view) for view in views},
+    )
