@@ -23,7 +23,8 @@ Sources:
   producer whose registrations are exported rather than declared in contracts.
 * **Emit registry** — an emit daemon's ``topics.yaml`` (``events:`` mapping of
   event type to ``partition_key_field``, ``required_fields`` and ``fan_out``).
-  As in the registry's own drift check, only fan-out topics named in full
+  Every fan-out rule must name a topic and every required field must be a
+  name; as in the registry's own drift check, only fan-out topics named in full
   (``onex.`` prefix) are compared.
 * **Baseline** — ``<kind> <value>`` lines declaring intentional divergence.
 
@@ -248,12 +249,14 @@ def parse_emit_registry(path: str, source: str) -> _Parsed:
         ):
             errors.append(f"{where}.fan_out must be a list of mappings")
             continue
+        if not all(isinstance(r.get("topic"), str) and r["topic"] for r in fan_out):
+            errors.append(f"{where}.fan_out has a rule without a topic name")
+            continue
         topics = sorted(
             {
                 rule["topic"]
                 for rule in fan_out
-                if isinstance(rule.get("topic"), str)
-                and rule["topic"].startswith(_TOPIC_PREFIX)
+                if rule["topic"].startswith(_TOPIC_PREFIX)
             }
         )
         partition_key_field = event_def.get("partition_key_field")
@@ -261,15 +264,17 @@ def parse_emit_registry(path: str, source: str) -> _Parsed:
             errors.append(f"{where}.partition_key_field must be a string or null")
             continue
         required_raw = event_def.get("required_fields", [])
-        if not isinstance(required_raw, list):
-            errors.append(f"{where}.required_fields must be a list")
+        if not isinstance(required_raw, list) or not all(
+            isinstance(item, str) and item for item in required_raw
+        ):
+            errors.append(f"{where}.required_fields must be a list of field names")
             continue
         registrations.append(
             ModelEventRegistration(
                 event_type=event_type,
                 topics=tuple(topics),
                 partition_key_field=partition_key_field,
-                required_fields=tuple(str(item) for item in required_raw),
+                required_fields=tuple(required_raw),
                 source=path,
             )
         )

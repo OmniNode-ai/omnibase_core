@@ -105,7 +105,9 @@ def _read_contract_dir(
     errors = [
         f"{skipped.path}: {skipped.reason}"
         for skipped in output.skipped
-        if skipped.reason.startswith(("read error:", "error checking file size:"))
+        if skipped.reason.startswith(
+            ("read error:", "error checking file size:", "exceeds max file size")
+        )
     ]
     if not output.files and not errors:
         errors.append(
