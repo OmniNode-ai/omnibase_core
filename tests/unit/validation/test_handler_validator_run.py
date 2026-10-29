@@ -42,7 +42,7 @@ pytestmark = pytest.mark.unit
 _ROOT = Path(__file__).resolve().parents[3]
 _FIXTURES = _ROOT / "tests/fixtures/validation/hook_writes"
 _PLANTED = _FIXTURES / "violation_hook_writes_fix_flag.yaml"
-_GOLDEN = _FIXTURES / "golden_report_hook_writes_fix_flag.json"
+_GOLDEN = _FIXTURES / "golden_hook_writes_fix_flag.json"
 _NORMALISED = "<normalised>"
 
 
