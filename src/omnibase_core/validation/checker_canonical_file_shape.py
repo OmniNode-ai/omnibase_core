@@ -11,7 +11,8 @@ the ``parameters`` of the rule rows in
 Rules: noncanonical-file, handler_outside_node, cli_entry_outside_node (file
 rules, refused paths that the shrink-only baseline may carry), baseline-stale,
 baseline-growth, baselined-file-growth, burndown-ticket-missing,
-burndown-baseline-removed, skill-imperative, suppression-growth,
+burndown-baseline-removed, burndown-extra-entry, burndown-ticket-uncited,
+skill-imperative, suppression-growth,
 new-exception-file, exception-entry-growth, and the repository-lifecycle rules
 (lifecycle-no-code, lifecycle-fix-only-new-file, lifecycle-fix-only-growth,
 lifecycle-retired). The only state is the baseline file and the ticketed
@@ -62,6 +63,8 @@ RULE_BASELINE_GROWTH = "baseline-growth"
 RULE_BASELINED_GROWTH = "baselined-file-growth"
 RULE_BURNDOWN_TICKET = "burndown-ticket-missing"
 RULE_BURNDOWN_REMOVED = "burndown-baseline-removed"
+RULE_BURNDOWN_EXTRA = "burndown-extra-entry"
+RULE_BURNDOWN_UNCITED = "burndown-ticket-uncited"
 RULE_SKILL_IMPERATIVE = "skill-imperative"
 RULE_SUPPRESSION_GROWTH = "suppression-growth"
 RULE_NEW_EXCEPTION = "new-exception-file"
@@ -635,8 +638,8 @@ def _lifecycle_issues(
     return issues
 
 
-def _burndown_ticket_named(text: str, p: ModelCanonicalFileShapeRules) -> bool:
-    """Whether the first comment line of the burn-down file names a ticket."""
+def _burndown_ticket_line(text: str, p: ModelCanonicalFileShapeRules) -> str | None:
+    """The first comment line of the burn-down file that reads as its ticket header."""
     first = next(
         (
             line
@@ -645,10 +648,62 @@ def _burndown_ticket_named(text: str, p: ModelCanonicalFileShapeRules) -> bool:
         ),
         None,
     )
-    return (
-        first is not None
-        and _regex(p.burndown_ticket_pattern).search(first) is not None
-    )
+    if first is None or _regex(p.burndown_ticket_pattern).search(first) is None:
+        return None
+    return first
+
+
+def _burndown_ticket_named(text: str, p: ModelCanonicalFileShapeRules) -> bool:
+    """Whether the first comment line of the burn-down file names a ticket."""
+    return _burndown_ticket_line(text, p) is not None
+
+
+def _burndown_install_issues(
+    facts: ModelCanonicalFileShapeFacts,
+    rules: ModelCanonicalFileShapeRuleSet,
+    head_burndown: str,
+) -> list[ModelValidationIssue]:
+    """First install only: the entries must be base findings, under the change's own ticket."""
+    p = rules.parameters
+    issues: list[ModelValidationIssue] = []
+    if RULE_BURNDOWN_EXTRA in rules.enabled:
+        status_of = {change.path: change.status for change in facts.changes}
+        listed = set(parse_baseline(facts.head_baseline_text))
+        for path in sorted(set(parse_baseline(head_burndown))):
+            status = status_of.get(path)
+            if status is not None and status not in p.burndown_base_statuses:
+                reason = p.burndown_extra_added_text.format(path=path, status=status)
+            elif path in listed:
+                reason = p.burndown_extra_duplicate_text.format(
+                    path=path, baseline=p.baseline_path
+                )
+            else:
+                continue
+            issues.append(
+                _issue(rules, p.burndown_baseline_path, RULE_BURNDOWN_EXTRA, reason)
+            )
+    line = _burndown_ticket_line(head_burndown, p)
+    found = None if line is None else _regex(p.burndown_ticket_id_pattern).search(line)
+    if (
+        RULE_BURNDOWN_UNCITED in rules.enabled
+        and facts.commit_messages is not None
+        and found is not None
+    ):
+        ticket = found.group(0)
+        cited = _regex(
+            p.burndown_ticket_citation_pattern.replace("{ticket}", re.escape(ticket)),
+            True,
+        )
+        if not any(cited.search(message) for message in facts.commit_messages):
+            issues.append(
+                _issue(
+                    rules,
+                    p.burndown_baseline_path,
+                    RULE_BURNDOWN_UNCITED,
+                    p.burndown_ticket_uncited_text.format(ticket=ticket),
+                )
+            )
+    return issues
 
 
 def check(
@@ -759,6 +814,9 @@ def check(
                 p.burndown_removed_text,
             )
         )
+
+    if facts.base_burndown_text is None and facts.head_burndown_text is not None:
+        issues.extend(_burndown_install_issues(facts, rules, facts.head_burndown_text))
 
     grown_set = baselined | set(renames)
     for change in facts.changes:
