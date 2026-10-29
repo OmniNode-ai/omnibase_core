@@ -61,5 +61,7 @@ def test_no_registry_names_a_deleted_validator() -> None:
 
 def test_registries_still_name_a_kept_validator() -> None:
     """Positive control: the registry scan above can find a validator path at all."""
-    baseline = (REPO_ROOT / _REGISTRIES[0]).read_text(encoding="utf-8")
-    assert _KEPT[0] in baseline
+    # validation/validator_*.py is a canonical location (OMN-21515), so the
+    # shrink-only baseline no longer lists it; the CI scope registry still does.
+    scope = (REPO_ROOT / _REGISTRIES[1]).read_text(encoding="utf-8")
+    assert _KEPT[0] in scope

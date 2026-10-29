@@ -34,7 +34,8 @@ requirements:
 evidence_requirements:
   - kind: tests
     description: TypeScript and React locations admitted and refused, shell scripts refused everywhere.
-    command: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+      -q
 emergency_bypass:
   enabled: false
   justification: ""
@@ -56,8 +57,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -n 0 -q
-          -k typescript_shape
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -n 0 -q -k typescript_shape
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
@@ -77,8 +78,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -n 0 -q
-          -k shell_script_refused
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -n 0 -q -k shell_script_refused
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC4

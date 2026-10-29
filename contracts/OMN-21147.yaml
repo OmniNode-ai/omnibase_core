@@ -59,7 +59,7 @@ requirements:
 evidence_requirements:
   - kind: tests
     description: Corpus, policy-shape, family D, ratchet and gate-registration tests of the guard.
-    command: uv run pytest tests/unit/validation/hardcoded_model_config tests/unit/validators/test_canonical_file_shape.py
+    command: uv run pytest tests/unit/validation/hardcoded_model_config tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
       -q
 dod_evidence:
   - id: dod-omn21147-guard-tests
@@ -126,7 +126,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k hardcoded_model_config
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q -k hardcoded_model_config
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
