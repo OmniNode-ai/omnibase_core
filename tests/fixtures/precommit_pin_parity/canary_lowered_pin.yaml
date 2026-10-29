@@ -1,6 +1,6 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-# Canary defect file (OMN-21433, T0.2): the first hook pins an older rev than the second.
+# Canary defect file (OMN-21495, T0.2): the first hook pins an older rev than the second.
 ---
 repos:
   - repo: https://github.com/OmniNode-ai/omnibase_core

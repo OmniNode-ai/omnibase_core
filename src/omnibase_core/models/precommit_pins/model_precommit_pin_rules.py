@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Rule data for the pre-commit pin-parity check (OMN-21433)."""
+"""Rule data for the pre-commit pin-parity check (OMN-21495)."""
 
 from __future__ import annotations
 

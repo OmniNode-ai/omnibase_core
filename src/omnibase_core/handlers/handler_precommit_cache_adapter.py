@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Commit-time lookups for the pin-parity check (OMN-21433).
+"""Commit-time lookups for the pin-parity check (OMN-21495).
 
 The one place the check touches git and the pre-commit cache index. The file name
 ends in ``_adapter.py`` because reading the cache index is a raw ``sqlite3`` call,

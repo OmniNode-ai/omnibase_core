@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""One pre-commit repository entry with its source location (OMN-21433)."""
+"""One pre-commit repository entry with its source location (OMN-21495)."""
 
 from __future__ import annotations
 

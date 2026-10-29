@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure handler for pre-commit hook repository pin parity (OMN-21433)."""
+"""Pure handler for pre-commit hook repository pin parity (OMN-21495)."""
 
 from __future__ import annotations
 

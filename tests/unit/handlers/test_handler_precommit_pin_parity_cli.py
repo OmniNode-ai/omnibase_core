@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for the check-precommit-pin-parity CLI (OMN-21433, plan task T0.2).
+"""Tests for the check-precommit-pin-parity CLI (OMN-21495, plan task T0.2).
 
 The CLI reads the config, resolves each rev's commit time (from a history
 repository, else from the pre-commit cache), runs the pure handler and exits 0

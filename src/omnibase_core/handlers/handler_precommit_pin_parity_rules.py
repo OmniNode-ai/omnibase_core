@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure URL normalization and YAML pin extraction (OMN-21433)."""
+"""Pure URL normalization and YAML pin extraction (OMN-21495)."""
 
 from __future__ import annotations
 

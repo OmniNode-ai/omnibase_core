@@ -94,7 +94,7 @@ check-dependency-direction = "omnibase_core.handlers.handler_dependency_directio
 # OMN-17427: how a workflow `uses:` ref must be pinned. Third-party actions take a full
 # 40-hex sha; first-party refs take the dev-merge tag the repository's overlay names.
 check-action-pins = "omnibase_core.handlers.handler_action_pin_cli:main"
-# OMN-21433: shared core hooks must not trail the newest pin in the same config.
+# OMN-21495: shared core hooks must not trail the newest pin in the same config.
 check-precommit-pin-parity = "omnibase_core.handlers.handler_precommit_pin_parity_cli:main"
 # OMN-19998: version drift at source. Refuse a floor raise on a sibling registry
 # package ahead of the registry consumers that install it, and a job the merge

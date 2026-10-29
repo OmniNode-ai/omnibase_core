@@ -1811,14 +1811,14 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
-      # Pin parity for the shared core hook repo (OMN-21433, plan task T0.2). Refuses a
+      # Pin parity for the shared core hook repo (OMN-21495, plan task T0.2). Refuses a
       # hook of the shared core hook repo whose pinned rev is older than the newest rev
       # that repo is pinned at anywhere in this .pre-commit-config.yaml; revs are ordered
       # by git commit time from the pre-commit cache. CI runs it through the
       # `pre-commit run --all-files` step. The repo-local copies in downstream
       # repositories are removed by a later task.
       - id: check-precommit-pin-parity
-        name: Pre-commit pin parity for the shared core hook repo (OMN-21433)
+        name: Pre-commit pin parity for the shared core hook repo (OMN-21495)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_precommit_pin_parity_cli
         language: system
         files: ^\.pre-commit-config\.yaml$

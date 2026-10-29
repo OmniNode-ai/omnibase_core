@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for the pre-commit pin-parity rule (OMN-21433, plan task T0.2).
+"""Tests for the pre-commit pin-parity rule (OMN-21495, plan task T0.2).
 
 A hook of the shared core hook repo may not pin a rev older than the newest rev
 that hook repo is pinned at anywhere in the same ``.pre-commit-config.yaml``.
@@ -13,6 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+import yaml
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.handlers.handler_precommit_pin_parity import (
@@ -141,3 +142,32 @@ def test_canary_lowered_pin_fixture_fails_and_the_converged_fixture_passes() -> 
     assert failed.overall_status == "FAIL"
     assert [f.location for f in failed.findings] == [".pre-commit-config.yaml:7"]
     assert _run(converged).overall_status == "PASS"
+
+
+# Real omnibase_core commit times (git show -s --format=%ct) of the two revs the T0.2
+# falsifier names: the pin omniclaude-internal carries at .pre-commit-config.yaml:13
+# and the omnibase_core dev head it is compared with. The revs are read from the fixture.
+_CONSUMER_LAGGING = (_FIXTURES / "consumer_line13_d7ed23f1.yaml").read_text(
+    encoding="utf-8"
+)
+_CONSUMER_REVS = [entry["rev"] for entry in yaml.safe_load(_CONSUMER_LAGGING)["repos"]]
+_CONSUMER_TIMES = (
+    ModelPrecommitRevTime(rev=_CONSUMER_REVS[0], committed_at=1_792_090_542),
+    ModelPrecommitRevTime(rev=_CONSUMER_REVS[1], committed_at=1_793_219_092),
+)
+
+
+def test_consumer_config_pinned_at_d7ed23f1_on_line_13_fails_and_the_current_pin_passes() -> (
+    None
+):
+    current = (_FIXTURES / "consumer_line13_current_pin.yaml").read_text(
+        encoding="utf-8"
+    )
+    assert _CONSUMER_REVS[0].startswith("d7ed23f1")
+    assert _CONSUMER_REVS[1].startswith("b8b19b0b")
+    failed = _run(_CONSUMER_LAGGING, times=_CONSUMER_TIMES)
+    assert failed.overall_status == "FAIL"
+    assert [f.location for f in failed.findings] == [".pre-commit-config.yaml:13"]
+    assert _CONSUMER_REVS[0] in failed.findings[0].message
+    assert _CONSUMER_REVS[1] in failed.findings[0].message
+    assert _run(current, times=_CONSUMER_TIMES).overall_status == "PASS"

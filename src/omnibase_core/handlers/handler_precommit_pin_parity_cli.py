@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI I/O for the pre-commit pin-parity check (OMN-21433).
+"""CLI I/O for the pre-commit pin-parity check (OMN-21495).
 
 Read rule data and config source, resolve commit times from a history checkout
 or the read-only pre-commit cache, then run the pure handler and write its report.
@@ -108,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
     """CLI entry. Return 0 on PASS/WARN, 1 on FAIL/ERROR."""
     parser = argparse.ArgumentParser(
         prog="check-precommit-pin-parity",
-        description="Refuse older pins of shared hook repositories (OMN-21433).",
+        description="Refuse older pins of shared hook repositories (OMN-21495).",
     )
     parser.add_argument(
         "filenames", nargs="*", help="Repository-relative staged files."

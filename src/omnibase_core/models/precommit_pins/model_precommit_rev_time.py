@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""One resolved revision's commit time (OMN-21433)."""
+"""One resolved revision's commit time (OMN-21495)."""
 
 from __future__ import annotations
 
