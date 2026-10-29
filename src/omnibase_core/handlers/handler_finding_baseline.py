@@ -51,20 +51,6 @@ from omnibase_core.models.validation.model_validation_report import (
 __all__ = ["HandlerFindingBaseline", "normalize_text"]
 
 _PROFILE: Final[Literal["strict", "default", "advisory"]] = "default"
-_STALE_REMEDIATION: Final[str] = (
-    "The finding is gone: run the hook with --write-baseline to shrink the baseline."
-)
-_HEADER: Final[str] = """\
-# Shrink-only baseline for the {hook} hook (OMN-21501).
-# One entry per tolerated finding: file path, rule id and the normalized offending
-# source text (never a line number). Entries are counted: two identical findings in
-# one file need two identical entries.
-#
-# RULE: entries only leave. A finding not listed here fails. An entry whose finding
-# is gone fails until it is removed. --write-baseline creates this file when absent
-# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
-# would add an entry.
-"""
 
 
 def normalize_text(line: str) -> str:
@@ -106,7 +92,10 @@ class HandlerFindingBaseline:
                         f"{entry.text!r} has no finding any more; run the hook with "
                         "--write-baseline to shrink the baseline"
                     ),
-                    remediation=_STALE_REMEDIATION,
+                    remediation=(
+                        "The finding is gone: run the hook with --write-baseline "
+                        "to shrink the baseline."
+                    ),
                 )
             )
         return ModelValidationReport.from_findings(
@@ -196,4 +185,15 @@ class HandlerFindingBaseline:
             default_flow_style=False,
             width=10_000,
         )
-        return _HEADER.format(hook=baseline.hook) + "---\n" + body
+        header = (
+            f"# Shrink-only baseline for the {baseline.hook} hook (OMN-21501).\n"
+            "# One entry per tolerated finding: file path, rule id and the normalized offending\n"
+            "# source text (never a line number). Entries are counted: two identical findings in\n"
+            "# one file need two identical entries.\n"
+            "#\n"
+            "# RULE: entries only leave. A finding not listed here fails. An entry whose finding\n"
+            "# is gone fails until it is removed. --write-baseline creates this file when absent\n"
+            "# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that\n"
+            "# would add an entry.\n"
+        )
+        return header + "---\n" + body

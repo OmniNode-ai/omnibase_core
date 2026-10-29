@@ -1860,6 +1860,22 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # K10 checker_rule_data (OMN-21503): no rule table in a checker and no validator
+      # outside the generic format. The rule tables that sat in checkers before K10 are
+      # burn-down children of OMN-21503 and the only ones admitted: the baseline holds
+      # exactly those, a baselined file never grows, and CI refuses an entry the base
+      # branch lacks (--base-ref). A NEW validator outside the generic format (a module HEAD
+      # lacks) is refused; the one-offs that exist are migrated and deleted, never baselined.
+      - id: check-checker-rule-data
+        name: No rule table in a checker, no validator outside the generic format (OMN-21503)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_checker_rule_data
+        language: system
+        args: [--baseline, .onex_ratchets/checker_rule_data_baseline.txt, --base-ref, HEAD]
+        files: ^src/omnibase_core/(handlers/handler_[^/]*_cli|validation/(checker|validator)_[^/]*)\.py$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # Public-repository runner placement (OMN-19998, RULING 2026-10-16T07:07:09Z:
       # "Ci runners should be for private repos only"). Refuses every workflow
       # job whose runs-on is, or can resolve to, a self-hosted label; there is no
@@ -1867,7 +1883,7 @@ repos:
       # .github/workflows/version-drift.yml.
       - id: check-public-runner-placement
         name: Public repositories add no self-hosted CI job (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_public_runner_placement_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_public_runner_placement
         language: system
         args: [--repo, omnibase_core]
         files: ^\.github/workflows/[^/]+\.ya?ml$

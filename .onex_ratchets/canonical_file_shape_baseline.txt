@@ -420,8 +420,6 @@ src/omnibase_core/handlers/handler_precommit_pin_parity_cli.py
 src/omnibase_core/handlers/handler_precommit_pin_parity_rules.py
 src/omnibase_core/handlers/handler_private_vocabulary.py
 src/omnibase_core/handlers/handler_private_vocabulary_resolution.py
-src/omnibase_core/handlers/handler_public_runner_placement.py
-src/omnibase_core/handlers/handler_public_runner_placement_cli.py
 src/omnibase_core/handlers/handler_shape_gate_independence.py
 src/omnibase_core/handlers/handler_todo_format.py
 src/omnibase_core/handlers/handler_validator_run.py
