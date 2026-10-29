@@ -1,0 +1,5 @@
+model_clis:
+  - crush
+  - codex
+description: >
+  the exec of a model CLI (crush, codex, claude -p) from Python

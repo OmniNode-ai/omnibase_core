@@ -1327,7 +1327,7 @@
     same repo in .pre-commit-config.yaml. Resolve revisions from a history checkout or the pre-commit
     cache; unresolved revisions fail closed when multiple distinct pins need comparison.
   language: python
-  entry: python -m omnibase_core.handlers.handler_precommit_pin_parity_cli
+  entry: python -m omnibase_core.nodes.node_precommit_rev_time_effect.runtime_precommit_pin_parity
   files: ^\.pre-commit-config\.yaml$
   pass_filenames: true
   require_serial: true

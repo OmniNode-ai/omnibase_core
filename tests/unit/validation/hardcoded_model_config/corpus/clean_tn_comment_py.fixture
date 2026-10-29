@@ -1,0 +1,4 @@
+# ceiling: opus
+# RUNGS = ("sonnet", "opus")
+# ALIASES = {"codex": "x"}
+VALUE = 1  # engine = "codex"

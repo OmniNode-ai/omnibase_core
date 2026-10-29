@@ -14,9 +14,8 @@ Detects ``sqlite3.connect(...)`` (via ``import sqlite3``) and
 except where the call site carries a ``# di-ok`` annotation on its opening
 line, closing line, or the line immediately preceding it.
 
-File-level exclusion: files whose name ends in ``_adapter.py`` are the
-authorised call site for a direct connection and are skipped entirely
-(oracle ``EXCLUDED_FILENAME_PATTERNS``) — the caller-scoped ``CHECKED_DIRS``
+File-level exclusion: adapter files and canonical effect-node handlers are
+authorised database boundaries and are skipped entirely. The caller-scoped ``CHECKED_DIRS``
 / ``tests/`` root-scoping in the oracle is a full-tree-walk concern, not
 reproduced here (see the paired ``runtime_no_raw_sqlite3_check.py`` CLI's
 ``--root`` default for the generic equivalent).
@@ -46,11 +45,17 @@ _DI_OK_MARKER: Final[str] = "# di-ok"
 
 
 def is_excluded_adapter_filename(path: str) -> bool:
-    """Return True if ``path``'s filename ends in ``_adapter.py`` (oracle
-    ``EXCLUDED_FILENAME_PATTERNS``) — the authorised direct-connection call site."""
-    return PurePosixPath(path.replace("\\", "/")).name.endswith(
-        _EXCLUDED_FILENAME_SUFFIX
+    """Permit adapters and canonical effect-node handlers as database boundaries."""
+    normalized = PurePosixPath(path.replace("\\", "/"))
+    parts = normalized.parts
+    effect_handler = (
+        len(parts) >= 3
+        and parts[-3] == "nodes"
+        and parts[-2].startswith("node_")
+        and parts[-2].endswith("_effect")
+        and parts[-1] == "handler.py"
     )
+    return normalized.name.endswith(_EXCLUDED_FILENAME_SUFFIX) or effect_handler
 
 
 def _call_has_annotation(source_lines: list[str], node: ast.Call) -> bool:
