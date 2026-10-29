@@ -1419,6 +1419,22 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-no-io-outside-effects
+  name: No I/O outside EFFECT nodes, in every module of the package (OMN-21532, K4)
+  description: >
+    Every Python module under a node directory whose contract.yaml does not declare an effect archetype,
+    handlers and nested packages included, is refused when it imports a database, network, subprocess,
+    git or Linear client, writes a file, constructs a bus or adapter, reads a file, reads a clock or reads
+    the environment. A module is judged against the nearest contract above it, and a contract that names
+    no recognised archetype is refused. Every list and pattern is a parameters entry of a rule row of
+    no_io_outside_effects.validation.yaml; there is no suppression comment.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_no_io_outside_effects:ValidatorNoIoOutsideEffects
+  files: ^(.*/)?(contract\.yaml|[^/]+\.py)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: commit-hygiene
   name: Commit hygiene (final newline, staged tmp/ files; check-only)
   description: >

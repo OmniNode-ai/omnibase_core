@@ -1,0 +1,247 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: no_io_outside_effects
+  validator_name: No I/O Outside Effects (K4)
+  validator_description: |
+    I/O is permitted only in EFFECT nodes (OMN-21532, plan task T0.4, findings F28, F39, F40).
+    Every Python module anywhere under a node directory whose contract.yaml does not declare an
+    exempt archetype is judged, handlers and nested packages included. A module is judged against
+    the nearest contract above it.
+
+    Each rule row below names one surface through matcher parameters: import_roots, import_modules,
+    callee_patterns, method_names, command_executables with command_callee_patterns, subscripts,
+    url_substrings, open_names with open_mode_chars and open_when, and any key ending in
+    _class_patterns. A call or import is reported once, under the first row that matches it, in
+    the order of this file. package_scope holds the archetype seam; the two parse rows report a
+    contract or module that cannot be read.
+
+    The checker holds no list, pattern or text: every value is a parameters entry of a row.
+    There is no suppression comment and no baseline.
+
+  target_patterns:
+    - "**/*.py"
+    - "**/contract.yaml"
+
+  exclude_patterns:
+    - "**/tests/fixtures/validation/no_io_outside_effects/**"
+    - "tests/fixtures/validation/no_io_outside_effects/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+  rules:
+    - rule_id: package_scope
+      description: >-
+        A node contract that names no recognised archetype cannot place its package; it is judged as non-EFFECT
+        (fail closed) and refused until it declares one.
+      severity: error
+      enabled: true
+      parameters:
+        contract_filename: 'contract.yaml'
+        archetype_fields:
+          - 'node_type'
+          - 'descriptor.node_archetype'
+        known_archetypes:
+          - 'compute'
+          - 'effect'
+          - 'reducer'
+          - 'orchestrator'
+        exempt_archetypes:
+          - 'effect'
+        remediation: >-
+          Declare node_type (or descriptor.node_archetype) as compute, effect, reducer or orchestrator
+          in the node's contract.yaml; only an effect contract exempts its package from this check. #magic___^_^___line
+    - rule_id: import_database
+      description: A database driver is imported in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        import_roots:
+          - 'sqlite3'
+          - 'aiosqlite'
+          - 'psycopg'
+          - 'psycopg2'
+          - 'asyncpg'
+          - 'sqlalchemy'
+        remediation: &remediation >-
+          Only EFFECT nodes may perform I/O. Move it into a dedicated EFFECT node and inject adapters
+          and buses through container.get_service instead of constructing them. #magic___^_^___line
+    - rule_id: import_network
+      description: A network or HTTP client is imported in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        import_roots:
+          - 'httpx'
+          - 'requests'
+          - 'aiohttp'
+          - 'urllib3'
+          - 'socket'
+        import_modules:
+          - 'urllib.request'
+          - 'urllib.error'
+        remediation: *remediation
+
+    - rule_id: git_invocation
+      description: Git is invoked from a non-EFFECT node package, by library or by command.
+      severity: error
+      enabled: true
+      parameters:
+        import_roots:
+          - 'git'
+          - 'pygit2'
+        command_executables:
+          - 'git'
+        command_callee_patterns:
+          - 'subprocess\.\w+'
+          - 'os\.(system|popen|spawn\w*|exec\w*)'
+        remediation: *remediation
+
+    - rule_id: subprocess_execution
+      description: A process is spawned from a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        import_roots:
+          - 'subprocess'
+        callee_patterns:
+          - 'subprocess\.\w+'
+          - 'os\.(system|popen|spawn\w*|exec\w*)'
+        remediation: *remediation
+
+    - rule_id: linear_access
+      description: The Linear API is reached from a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        import_roots:
+          - 'linear'
+          - 'linear_sdk'
+          - 'linear_api'
+          - 'linear_client'
+        url_substrings:
+          - 'linear.app'
+        remediation: *remediation
+
+    - rule_id: filesystem_write
+      description: A file or directory is written, moved or removed in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        open_names:
+          - 'open'
+        open_mode_chars: 'wax+'
+        open_when: 'write'
+        method_names:
+          - 'write_text'
+          - 'write_bytes'
+          - 'mkdir'
+          - 'rmdir'
+          - 'unlink'
+          - 'touch'
+          - 'rmtree'
+          - 'symlink_to'
+          - 'hardlink_to'
+          - 'chmod'
+          - 'lchmod'
+        callee_patterns:
+          - 'os\.(remove|mkdir|makedirs|rmdir|removedirs|unlink|rename|renames|replace|chmod|chown|symlink|link|truncate|mkfifo|mknod)'
+          - 'shutil\.(copy|copy2|copyfile|copytree|copymode|copystat|move|rmtree|make_archive|unpack_archive|chown)'
+        remediation: *remediation
+
+    - rule_id: direct_bus
+      description: An event bus or broker client is constructed in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        bus_class_patterns:
+          - 'EventBus\w*'
+          - '\w*EventBus'
+          - 'KafkaProducer'
+          - 'KafkaConsumer'
+          - 'AIOKafkaProducer'
+          - 'AIOKafkaConsumer'
+        callee_patterns:
+          - 'confluent_kafka\.\w+'
+        remediation: *remediation
+
+    - rule_id: direct_adapter
+      description: An infra adapter is constructed in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        adapter_class_patterns:
+          - '[A-Z]\w*Adapter'
+        remediation: *remediation
+
+    - rule_id: file_read
+      description: A file is read in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        open_names:
+          - 'open'
+        open_mode_chars: 'wax+'
+        open_when: 'read'
+        method_names:
+          - 'read_text'
+          - 'read_bytes'
+        remediation: *remediation
+
+    - rule_id: clock
+      description: The wall clock or a monotonic clock is read in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        callee_patterns:
+          - 'time\.(time|time_ns|monotonic|monotonic_ns|perf_counter|perf_counter_ns|process_time)'
+          - '(datetime\.)?datetime\.(now|utcnow|today)'
+          - '(datetime\.)?date\.today'
+        remediation: >-
+          A non-EFFECT node reads no clock: take the time as an input field supplied by the caller or
+          by an EFFECT node. #magic___^_^___line
+    - rule_id: env_read
+      description: The process environment is read in a non-EFFECT node package.
+      severity: error
+      enabled: true
+      parameters:
+        callee_patterns:
+          - '(os\.)?getenv'
+          - '(os\.)?environ\.get'
+        subscripts:
+          - 'os.environ'
+          - 'environ'
+        remediation: >-
+          A non-EFFECT node reads no environment: declare the setting in the node contract and take it
+          as an input field. #magic___^_^___line
+    - rule_id: contract_does_not_parse
+      description: A node contract that is not valid YAML cannot place its package, so the check fails.
+      severity: error
+      enabled: true
+      parameters:
+        remediation: Repair the contract.yaml so it parses; an unreadable contract is never a pass.
+
+    - rule_id: module_does_not_parse
+      description: A module of a non-EFFECT node package that is not valid Python cannot be judged, so
+        the check fails.
+      severity: error
+      enabled: true
+      parameters:
+        remediation: Repair the module so it parses; an unreadable module is never a pass.
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
