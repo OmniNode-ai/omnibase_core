@@ -1,0 +1,106 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-21514"
+title: "T-B1b: binding conformance check moved to omnibase_core"
+summary: "The predicate of omnimarket node_binding_conformance_compute and its rule tables become a core
+  checker in the generic validator format, with the rule tables in binding_conformance.validation.yaml.
+  This is the omnibase_core half; the omnimarket caller is the child task T-B1b-call and needs the core
+  release adopted (T-Q5)."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: "req-omn21514-checker"
+    statement: "The binding conformance predicate lives in omnibase_core as a pure checker and a ValidatorBase
+      entry, and its rule tables are the validator contract."
+    acceptance:
+      - id: "AC1"
+        statement: "AC1: The core checker reproduces the merged check's verdicts on the merged task's
+          fixtures, and the omnimarket node returns the checker's issues unchanged -- falsifier: the merged
+          task's tests, run against the caller after the move"
+      - id: "AC2"
+        statement: "AC2: The omnimarket node holds no predicate and no rule table -- falsifier: T-Q6's
+          validator over the node's package counts zero"
+      - id: "AC3"
+        statement: "AC3: Configuration: every rule table that was a module constant is the checker's `.validation.yaml`
+          contract -- falsifier: a fixture contract that removes one entry changes the verdict on the
+          fixture that entry catches"
+      - id: "AC4"
+        statement: "AC4: Bindings: pure -- falsifier: byte-identical results in process and through the
+          local in-process entry of the parity harness (T-B2)"
+evidence_requirements:
+  - kind: "tests"
+    description: "The core checker gives the merged check's verdicts on the merged fixtures, reads every
+      rule table from the validator contract, and gives byte-identical results called directly, through
+      the validator entry and through a JSON round trip."
+    command: "uv run pytest tests/unit/validation/binding_conformance -q -o addopts=''"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-omn21514-ac1-merged-fixtures"
+    description: "Core half of AC1: the checker gives the merged check's verdicts on the merged task's
+      fixtures (concrete bindings, protocol rows, private names, environment reads, URL and path literals,
+      purity, unparseable and missing sources). The omnimarket node returning these issues unchanged is
+      the caller task T-B1b-call, after the T-Q5 adoption of this change."
+    source: "manual"
+    execution_scope: "hosted_and_local"
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/validation/binding_conformance/test_checker_binding_conformance.py
+          -q -o addopts=''"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac:
+      - AC1
+  - id: "dod-omn21514-ac2-single-entry"
+    description: "Core half of AC2: the predicate and every rule table now live in core behind one pure
+      entry whose result equals the checker's, so the node needs to hold neither. The count of predicates
+      in the omnimarket package under T-Q6 is the caller task's evidence."
+    source: "manual"
+    execution_scope: "hosted_and_local"
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/validation/binding_conformance/test_binding_conformance_contract.py
+          -q -o addopts='' -k 'byte_identical or holds_no_rule_table'"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac:
+      - AC2
+  - id: "dod-omn21514-ac3-configuration"
+    description: "Configuration: environment names, the URL pattern, the absolute-path pattern and each
+      rule's enabled flag come from binding_conformance.validation.yaml; a fixture contract that drops
+      one entry changes the verdict on the fixture that entry catches, and the checker module holds none
+      of the strings."
+    source: "manual"
+    execution_scope: "hosted_and_local"
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/validation/binding_conformance/test_binding_conformance_contract.py
+          -q -o addopts=''"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac:
+      - AC3
+  - id: "dod-omn21514-ac4-bindings-pure"
+    description: "Bindings: the checker runs with open, stat, listing and environment reads refused and
+      gives the same bytes as a repeat run, as the validator entry and as a JSON round trip. The parity
+      harness (T-B2) is not in the tree; the validator entry is the in-process route."
+    source: "manual"
+    execution_scope: "hosted_and_local"
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/validation/binding_conformance -q -o addopts='' -k 'guard
+          or byte_identical'"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac:
+      - AC4
+  - id: "dod-omn21514-delegation-join"
+    description: "The delegation runs whose output is in the PR head, joined to the head through their
+      receipts (DS-6) and their delegation_events rows (DS-7); the run ids are named in the PR body and
+      the lane TERMINAL."
+    source: "manual"
+    execution_scope: "local"
+    checks:
+      - check_type: "command"
+        check_value: "test -s \"${OMNI_HOME}/.onex_state/runs/RUN_IDS_FILLED_BEFORE_READY/receipt.json\""
+    binds_ac:
+      - AC1
