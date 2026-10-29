@@ -934,6 +934,7 @@
   entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
     --rules file-shape --commit-message-file
   pass_filenames: true
+  require_serial: true
   always_run: true
   stages: [commit-msg]
 - id: check-node-home
