@@ -58,6 +58,14 @@ requirements:
           finding-baseline runtime, validator event emission, and imperative-contract checks retain their
           behavioral coverage through their node module paths -- falsifier: the bound migration tests
           pass at the head and fail when overlaid on the merge base without the relocated product modules."
+  - id: req-omn21515-baseline-growth
+    statement: Refuse baseline additions for files already present at the base revision while preserving
+      the existing one-for-one move exception.
+    acceptance:
+      - id: AC9
+        statement: "AC9 (Baseline growth): planting one or five baseline additions for files already present
+          at the base revision reports baseline-growth for each addition. The head tests pass and the
+          overlaid merge-base tests fail -- falsifier: the two planted_baseline_growth tests in test_canonical_file_shape_rules.py."
 evidence_requirements:
   - kind: tests
     description: The checker, runtime and ported rule tests pass at the pushed head.
@@ -191,4 +199,15 @@ dod_evidence:
           tests/unit/handlers/test_baselined_finding_hooks.py tests/unit/handlers/test_handler_validator_run_events.py
           tests/unit/handlers/test_handler_validator_triggered_emit.py tests/unit/handlers/test_handler_arch_handler_contract_compliance.py
           tests/unit/validation/test_imperative_contract_guard_parity.py -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-baseline-growth-refused
+    description: Plant one and five baseline additions for files already present at the base revision
+      and require baseline-growth for every added entry. The head tests pass and the overlaid merge-base
+      tests fail without removal of the base-tree refusal carve-out.
+    source: manual
+    binds_ac: [AC9]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -o addopts='' -k planted_baseline_growth
         cwd: ${OMNI_HOME}/omnibase_core
