@@ -46,6 +46,7 @@ from omnibase_core.validation.validator_version_floor_consumers import (
 pytestmark = pytest.mark.unit
 
 LAYER_MAP = load_layer_map()
+_floor_main = ValidatorVersionFloorConsumers.main
 ROOT = Path(__file__).resolve().parents[3]
 FIXTURES = ROOT / "tests" / "fixtures" / "validation" / "version_floor_consumers"
 
@@ -563,7 +564,7 @@ def test_floor_cli_checks_origin_consumers(
     repo = _entry_repo(tmp_path)
     registry = _consumers(tmp_path, pin)
     assert (
-        cli.ValidatorVersionFloorConsumers.main(
+        _floor_main(
             [
                 "--root",
                 str(repo),
@@ -603,7 +604,7 @@ def test_floor_cli_ignores_staged_files_that_are_not_pyproject(
     no_io = Mock(side_effect=AssertionError("non-pyproject staged files triggered I/O"))
     monkeypatch.setattr(cli, "load_layer_map", no_io)
     monkeypatch.setattr(cli, "_git", no_io)
-    assert cli.ValidatorVersionFloorConsumers.main(["--root", str(tmp_path), "src/a.py"]) == 0
+    assert _floor_main(["--root", str(tmp_path), "src/a.py"]) == 0
     no_io.assert_not_called()
 
 
@@ -612,7 +613,7 @@ def test_floor_cli_refuses_a_missing_base_ref(
 ) -> None:
     repo = _entry_repo(tmp_path)
     assert (
-        cli.ValidatorVersionFloorConsumers.main(
+        _floor_main(
             ["--root", str(repo), "--repo", "omnimarket", "--base-ref", "no-such-ref"]
         )
         == 1
@@ -621,7 +622,7 @@ def test_floor_cli_refuses_a_missing_base_ref(
 
 
 def test_floor_cli_passes_without_a_pyproject(tmp_path: Path) -> None:
-    assert cli.ValidatorVersionFloorConsumers.main(["--root", str(tmp_path)]) == 0
+    assert _floor_main(["--root", str(tmp_path)]) == 0
 
 
 def test_entry_accepts_staged_pyproject_and_infers_repository(
@@ -630,7 +631,7 @@ def test_entry_accepts_staged_pyproject_and_infers_repository(
     repo = _entry_repo(tmp_path)
     registry = _consumers(tmp_path, "0.47.44")
     assert (
-        cli.ValidatorVersionFloorConsumers.main(
+        _floor_main(
             [
                 "--root",
                 str(repo),
