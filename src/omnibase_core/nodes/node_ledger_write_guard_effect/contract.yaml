@@ -21,7 +21,7 @@ handler_routing:
       event_model:
         name: ModelLedgerWriteGuardRequest
         module: omnibase_core.models.ledger_write_guard.model_ledger_write_guard_request
-  default_handler: omnibase_core.handlers.handler_ledger_write_guard:HandlerLedgerWriteGuard
+  default_handler: handler:NodeLedgerWriteGuardEffect
 descriptor:
   node_archetype: effect
   purity: side_effecting
