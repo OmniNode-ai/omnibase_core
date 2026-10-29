@@ -27,12 +27,12 @@ requirements:
           newlines, a staged tmp/ file and a commit message carrying the AI co-author trailer, and writes
           nothing -- falsifier: pytest cases over the four rules and a canary commit through pre-commit
           run on the published hook ids'
-      - id: Configuration
+      - id: AC4
         statement: 'Configuration: every pattern, hook id, argument list, count floor and remediation
           text of both rules is a parameters entry of a rule row of the .validation.yaml, and an invalid
           contract fails to load -- falsifier: the table-driven tests mutate every parameters key of every
           rule row and assert the verdict change'
-      - id: Bindings
+      - id: AC5
         statement: 'Bindings: the checker is pure and the runtime resolves the report writer from the
           container -- falsifier: a container spy records the resolution, a second injected writer gives
           the golden report with no code change; the broker overlay half is a stated blocker until the
@@ -89,7 +89,7 @@ dod_evidence:
       and a rule row missing a key or carrying an uncompilable pattern fails to load.
     source: manual
     execution_scope: hosted_and_local
-    binds_ac: [Configuration]
+    binds_ac: [AC4]
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/test_validator_hook_writes.py tests/unit/validation/test_validator_commit_hygiene.py
@@ -101,7 +101,7 @@ dod_evidence:
       reads patched to raise.
     source: manual
     execution_scope: hosted_and_local
-    binds_ac: [Bindings]
+    binds_ac: [AC5]
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/test_handler_validator_run.py -q -o addopts=''
@@ -109,4 +109,29 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation -q -o addopts='' -k "checker_is_pure"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21498-deploy-checkout-runtime
+    description: Exercise the generic validator runtime at the checkout on a hosted runner. The container
+      resolution, injected writer, canonical report and CLI refusal cases need no container daemon or
+      private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_handler_validator_run.py -q --no-cov
+          -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21498-deploy-published-runtime
+    description: Read the published generic validator runtime at the checkout commit. Refuse a missing
+      source or a runtime without container resolution of the report writer. The public source probe runs
+      on hosted runners without a private runtime or container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5]
+    checks:
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 60 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/handlers/handler_validator_run.py" |
+            grep -F "writer = container.get_service(NodeValidationReportWriteEffect)" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
