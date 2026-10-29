@@ -637,6 +637,25 @@ def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
     assert '>> "$GITHUB_ENV"' in export["run"]
 
 
+def test_rootless_pg16_apt_state_keeps_the_host_deb822_sources() -> None:
+    # OMN-20413: Ubuntu 24.04 (noble) lists its archive only in deb822
+    # /etc/apt/sources.list.d/ubuntu.sources. A private apt state that reads
+    # /etc/apt/sources.list alone and turns source parts off sees PGDG and
+    # nothing else, so postgresql-common's libjson-perl is not installable and
+    # every pull request routed to an h203-light runner is refused
+    # (omninode_infra job 123513710017, 2026-10-29).
+    tools = _step(PG_TOOLS_STEP)["run"]
+    assert "Dir::Etc::sourceparts=-" not in tools
+    assert '-o Dir::Etc::sourceparts="${apt_dir}/sources.list.d"' in tools
+    assert (
+        "find /etc/apt/sources.list.d -maxdepth 1 -type f "
+        "\\( -name '*.list' -o -name '*.sources' \\) "
+        '-exec cp {} "${apt_dir}/sources.list.d/" \\;'
+    ) in tools
+    # A host with no /etc/apt/sources.list at all still reaches PGDG.
+    assert "{ cat /etc/apt/sources.list 2>/dev/null || true; }" in tools
+
+
 def _service_password() -> str:
     password = _job()["services"]["postgres"]["env"]["POSTGRES_PASSWORD"]
     assert isinstance(password, str)

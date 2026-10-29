@@ -722,6 +722,11 @@ jobs:
       # dpkg-deb extracts them there; no package script runs and nothing outside
       # RUNNER_TEMP is written. The step still refuses by name when neither
       # path yields a working PG16 initdb.
+      # Ubuntu 24.04 (noble) lists its archive in deb822
+      # /etc/apt/sources.list.d/ubuntu.sources and leaves /etc/apt/sources.list
+      # empty, so the private apt state copies the host's source parts too;
+      # without them postgresql-common's libjson-perl is not installable
+      # (h203-light runners, omninode_infra job 123513710017).
       - name: Provide the PostgreSQL 16 server tools
         id: pg_tools
         continue-on-error: ${{ inputs.shadow == 'true' }}
@@ -736,11 +741,12 @@ jobs:
               pg_root="${RUNNER_TEMP}/pg16"
               apt_dir="${RUNNER_TEMP}/pg16-apt"
               rm -rf "${pg_root}" "${apt_dir}"
-              mkdir -p "${pg_root}" "${apt_dir}/lists/partial" "${apt_dir}/archives/partial" "${apt_dir}/preferences.d"
+              mkdir -p "${pg_root}" "${apt_dir}/lists/partial" "${apt_dir}/archives/partial" "${apt_dir}/preferences.d" "${apt_dir}/sources.list.d"
+              find /etc/apt/sources.list.d -maxdepth 1 -type f \( -name '*.list' -o -name '*.sources' \) -exec cp {} "${apt_dir}/sources.list.d/" \; 2>/dev/null || true
               codename="$(. /etc/os-release && echo "${VERSION_CODENAME}")"
               if ! {
                 curl -fsSL --retry 3 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o "${apt_dir}/pgdg.asc" &&
-                { cat /etc/apt/sources.list &&
+                { { cat /etc/apt/sources.list 2>/dev/null || true; } &&
                   echo "deb [signed-by=${apt_dir}/pgdg.asc] https://apt.postgresql.org/pub/repos/apt ${codename}-pgdg main"
                 } > "${apt_dir}/sources.list" &&
                 apt_opts=(
@@ -749,7 +755,7 @@ jobs:
                   -o Dir::Cache="${apt_dir}"
                   -o Dir::Cache::archives="${apt_dir}/archives"
                   -o Dir::Etc::sourcelist="${apt_dir}/sources.list"
-                  -o Dir::Etc::sourceparts=-
+                  -o Dir::Etc::sourceparts="${apt_dir}/sources.list.d"
                   -o Dir::Etc::preferencesparts="${apt_dir}/preferences.d"
                   -o APT::Install-Recommends=false
                   -o Acquire::Retries=3
