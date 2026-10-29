@@ -67,3 +67,6 @@ def test_registries_still_name_a_kept_validator() -> None:
     """
     baseline = (REPO_ROOT / _REGISTRIES[0]).read_text(encoding="utf-8")
     assert "src/omnibase_core/validation/completion_verify.py" in baseline
+    # The kept validator remains registered in the ai_slop scope.
+    scope = (REPO_ROOT / _REGISTRIES[1]).read_text(encoding="utf-8")
+    assert _KEPT[0] in scope
