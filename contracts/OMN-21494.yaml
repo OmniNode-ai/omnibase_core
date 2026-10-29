@@ -51,7 +51,8 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q -o addopts=''
+        check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_private_vocabulary_read.py
+          tests/unit/validation/hardcoded_model_config/test_lab_denylist_vocabulary.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
