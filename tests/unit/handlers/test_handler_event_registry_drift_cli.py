@@ -415,3 +415,34 @@ def test_unreadable_contract_file_is_error(tmp_path: Path) -> None:
     exit_code, report = _check(tmp_path, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
+
+
+def test_registry_fan_out_rule_without_a_topic_name_is_error(tmp_path: Path) -> None:
+    registry_text = _REGISTRY.replace(
+        f"      - topic: {_USAGE_TOPIC}\n",
+        f"      - topic: {_USAGE_TOPIC}\n      - topic: 7\n",
+    )
+    contract_dir, registry = _layout(tmp_path, registry=registry_text)
+    exit_code, report = _check(tmp_path, contract_dir, registry)
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
+
+
+def test_registry_required_field_that_is_not_a_name_is_error(tmp_path: Path) -> None:
+    registry_text = _REGISTRY.replace(
+        "[call_id, model_name, tenant_id, timestamp]",
+        "[call_id, model_name, tenant_id, timestamp, 7]",
+    )
+    contract_dir, registry = _layout(tmp_path, registry=registry_text)
+    exit_code, report = _check(tmp_path, contract_dir, registry)
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
+
+
+def test_contract_file_too_large_to_read_is_error(tmp_path: Path) -> None:
+    contract_dir, registry = _layout(tmp_path)
+    oversized = "# padding\n" * (6 * 1024 * 1024 // 10) + "topic: onex.evt.x.v1\n"
+    _write(contract_dir / "oversized.yaml", oversized)
+    exit_code, report = _check(tmp_path, contract_dir, registry)
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
