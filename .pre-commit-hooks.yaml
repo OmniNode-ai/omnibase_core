@@ -1229,7 +1229,7 @@
     is no baseline (OMN-21280): every such job of a public repository fails. Pass --repo <name> when the
     checkout directory is not the repository name; a private repository passes --visibility private.
   language: python
-  entry: python -m omnibase_core.handlers.handler_public_runner_placement_cli
+  entry: python -m omnibase_core.validation.validator_public_runner_placement
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: true
   require_serial: true

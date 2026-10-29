@@ -669,8 +669,8 @@ jobs:
         env:
           VISIBILITY: ${{ github.event.repository.private && 'private' || 'public' }}
         run: |
-          args=(--repo omnibase_core --visibility "$VISIBILITY" --report-json public-runner-placement-report.json)
-          uv run python -m omnibase_core.handlers.handler_public_runner_placement_cli "${args[@]}"
+          args=(--repo omnibase_core --visibility "$VISIBILITY")
+          uv run python -m omnibase_core.validation.validator_public_runner_placement "${args[@]}"
 
       # Version drift at source (OMN-19998) — blocking. A floor raise on a
       # sibling registry package fails while a registry consumer is not ready

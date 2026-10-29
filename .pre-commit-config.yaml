@@ -1878,7 +1878,7 @@ repos:
       # .github/workflows/version-drift.yml.
       - id: check-public-runner-placement
         name: Public repositories add no self-hosted CI job (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_public_runner_placement_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_public_runner_placement
         language: system
         args: [--repo, omnibase_core]
         files: ^\.github/workflows/[^/]+\.ya?ml$
