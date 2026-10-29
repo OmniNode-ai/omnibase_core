@@ -1,0 +1,60 @@
+{
+  "report_id": "<normalised>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "inline_logic",
+      "severity": "FAIL",
+      "location": "tests/fixtures/validation/inline_logic/violation_inline_loop.yml",
+      "message": "job work step work: a for, while or until loop in a run block is program logic -- Move the loop into a node or a core hook and call it with onex run-node <node> or a core hook id; a workflow step only names it.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "inline_loop"
+    },
+    {
+      "validator_id": "inline_logic",
+      "severity": "FAIL",
+      "location": "tests/fixtures/validation/inline_logic/violation_inline_program.yaml",
+      "message": "check dod-fixture-ac1: 234 characters, at most 200 allowed, holds a newline (a long or multi-line python -c or shell -c body is a program inline) -- Replace the body with onex run-node <node> or a core hook id; a check value only names the check that runs.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "inline_program"
+    },
+    {
+      "validator_id": "inline_logic",
+      "severity": "FAIL",
+      "location": "tests/fixtures/validation/inline_logic/violation_inline_python.yml",
+      "message": "job matrix step build matrix: a run step with shell python, python -c or a python heredoc is a program inline -- Move the program into a node or a core hook and call it with onex run-node <node> or a core hook id; a workflow step only names it.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "inline_python"
+    },
+    {
+      "validator_id": "inline_logic",
+      "severity": "FAIL",
+      "location": "tests/fixtures/validation/inline_logic/violation_run_block_length.yml",
+      "message": "job work step work: 16 lines, at most 15 allowed (a long run block is a script inline) -- Move the script into a node or a core hook and call it with onex run-node <node> or a core hook id; a workflow step only names it.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "run_block_length"
+    }
+  ],
+  "metrics": {
+    "total": 4,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 4,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "inline_logic"
+    ]
+  }
+}
