@@ -30,13 +30,10 @@ from omnibase_core.validators.no_unguarded_git_subprocess import (
 pytestmark = pytest.mark.unit
 
 _ROOT = Path(__file__).resolve().parents[2]
-_CHECK_ONLY = (
-    "ruff-format",
-    "ruff-fix",
-    "check-end-of-file",
-    "reject-staged-tmp-files",
-    "reject-ai-coauthor-trailer",
-)
+_FROM_CONFIG = ("ruff-format", "ruff-fix")
+# K8 commit_hygiene: consumed by id from the published hook file, as a consumer does.
+_PUBLISHED = ("commit-hygiene", "commit-hygiene-message")
+_MESSAGE = ".git/COMMIT_EDITMSG"
 _TRAILER = "Co-Authored-By: Claude <noreply@anthropic.com>"
 
 
@@ -47,17 +44,29 @@ def _hooks() -> dict[str, dict[str, object]]:
     }
 
 
+def _published() -> dict[str, dict[str, object]]:
+    hooks = yaml.safe_load((_ROOT / ".pre-commit-hooks.yaml").read_text("utf-8"))
+    return {hook["id"]: hook for hook in hooks}
+
+
 def _canary_config(tmp_path: Path) -> Path:
-    """The five hooks as local hooks, with ``uv run`` dropped (the venv is on PATH)."""
+    """The converted hooks as local hooks, with ``uv run`` dropped (the venv is on PATH)."""
     hooks = _hooks()
-    missing = [hook_id for hook_id in _CHECK_ONLY if hook_id not in hooks]
-    assert not missing, f"hooks absent from .pre-commit-config.yaml: {missing}"
-    lifted = []
-    for hook_id in _CHECK_ONLY:
+    published = _published()
+    missing = [h for h in _FROM_CONFIG if h not in hooks] + [
+        h for h in _PUBLISHED if h not in published
+    ]
+    assert not missing, f"hooks absent from the hook files: {missing}"
+    lifted: list[dict[str, object]] = []
+    for hook_id in _FROM_CONFIG:
         hook = dict(hooks[hook_id])
         entry = hook.get("entry")
         if isinstance(entry, str) and entry.startswith("uv run "):
             hook["entry"] = entry.removeprefix("uv run ")
+        lifted.append(hook)
+    for hook_id in _PUBLISHED:
+        hook = dict(published[hook_id])
+        hook["language"] = "system"
         lifted.append(hook)
     path = tmp_path / "canary-config.yaml"
     path.write_text(
@@ -126,6 +135,14 @@ def _stage(repo: Path, rel: str, content: bytes) -> None:
 
 def test_every_converted_hook_is_check_only_in_the_config() -> None:
     hooks = _hooks()
+    assert "check-end-of-file" not in hooks
+    assert "reject-staged-tmp-files" not in hooks
+    assert "reject-ai-coauthor-trailer" not in hooks
+    for hook_id in _PUBLISHED:
+        assert hook_id in hooks, f"{hook_id} is published but core does not run it"
+        assert str(hooks[hook_id]["entry"]).endswith(
+            str(_published()[hook_id]["entry"])
+        )
     assert "end-of-file-fixer" not in hooks
     assert "clean-tmp-directory" not in hooks
     assert "strip-ai-coauthor-trailer" not in hooks
@@ -138,9 +155,9 @@ def test_every_converted_hook_is_check_only_in_the_config() -> None:
     [
         ("ruff-format", "src/pkg/bad.py", b"x=1\n"),
         ("ruff-fix", "src/pkg/bad.py", b"import os\n"),
-        ("check-end-of-file", "notes.txt", b"no final newline"),
-        ("check-end-of-file", "extra.txt", b"two trailing newlines\n\n"),
-        ("reject-staged-tmp-files", "tmp/scratch.txt", b"scratch\n"),
+        ("commit-hygiene", "notes.txt", b"no final newline"),
+        ("commit-hygiene", "extra.txt", b"two trailing newlines\n\n"),
+        ("commit-hygiene", "tmp/scratch.txt", b"scratch\n"),
     ],
 )
 def test_canary_is_refused_and_tree_is_byte_identical(
@@ -161,14 +178,17 @@ def test_unformatted_file_and_trailer_canary_is_refused_whole(
     """The plan's canary: an unformatted file plus a trailer, refused with the tree untouched."""
     config = _canary_config(tmp_path)
     _stage(repo, "src/pkg/bad.py", b"x=1\n")
-    message = repo / "COMMIT_MSG"
+    _stage(repo, "notes.txt", b"no final newline")
+    _stage(repo, "tmp/scratch.txt", b"scratch\n")
+    message = repo / _MESSAGE
+    message.parent.mkdir(parents=True, exist_ok=True)
     message.write_text(f"feat: canary\n\n{_TRAILER}\n", encoding="utf-8")
     before = _tree_digest(repo)
     files = _pre_commit(repo, config, "--all-files", "--hook-stage", "pre-commit")
     trailer = _pre_commit(
         repo,
         config,
-        "reject-ai-coauthor-trailer",
+        "commit-hygiene-message",
         "--hook-stage",
         "commit-msg",
         "--commit-msg-filename",
@@ -176,6 +196,11 @@ def test_unformatted_file_and_trailer_canary_is_refused_whole(
     )
     assert files.returncode != 0, files.stdout
     assert trailer.returncode != 0, trailer.stdout
+    for hook_name in ("ruff format --check", "ruff check", "Commit hygiene"):
+        assert hook_name in files.stdout, files.stdout
+    for rule_id in ("missing_final_newline", "staged_tmp_file"):
+        assert rule_id in files.stdout, files.stdout
+    assert "ai_coauthor_trailer" in trailer.stdout, trailer.stdout
     assert _tree_digest(repo) == before
 
 
@@ -184,14 +209,15 @@ def test_clean_control_passes_every_hook(repo: Path, tmp_path: Path) -> None:
     config = _canary_config(tmp_path)
     _stage(repo, "src/pkg/good.py", b"x = 1\n")
     _stage(repo, "notes.txt", b"one final newline\n")
-    message = repo / "COMMIT_MSG"
+    message = repo / _MESSAGE
+    message.parent.mkdir(parents=True, exist_ok=True)
     message.write_text("feat: canary\n\nbody\n", encoding="utf-8")
     before = _tree_digest(repo)
     files = _pre_commit(repo, config, "--all-files", "--hook-stage", "pre-commit")
     trailer = _pre_commit(
         repo,
         config,
-        "reject-ai-coauthor-trailer",
+        "commit-hygiene-message",
         "--hook-stage",
         "commit-msg",
         "--commit-msg-filename",

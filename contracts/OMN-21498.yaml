@@ -22,64 +22,91 @@ requirements:
         statement: 'AC2: A canary commit with an unformatted file and an AI co-author trailer is refused
           and the working tree is byte-identical after the hook run -- falsifier: pytest case that hashes
           the tree before and after the hook run, plus pre-commit run --files on the canary commit'
+      - id: AC3
+        statement: 'AC3: K8 commit_hygiene refuses a file without a final newline, a file with extra final
+          newlines, a staged tmp/ file and a commit message carrying the AI co-author trailer, and writes
+          nothing -- falsifier: pytest cases over the four rules and a canary commit through pre-commit
+          run on the published hook ids'
+      - id: Configuration
+        statement: 'Configuration: every pattern, hook id, argument list, count floor and remediation
+          text of both rules is a parameters entry of a rule row of the .validation.yaml, and an invalid
+          contract fails to load -- falsifier: the table-driven tests mutate every parameters key of every
+          rule row and assert the verdict change'
+      - id: Bindings
+        statement: 'Bindings: the checker is pure and the runtime resolves the report writer from the
+          container -- falsifier: a container spy records the resolution, a second injected writer gives
+          the golden report with no code change; the broker overlay half is a stated blocker until the
+          report-writer publish task lands'
 evidence_requirements:
   - kind: "tests"
-    description: "The canary tests, the hook-writes handler tests and the CLI tests pass at the head and
+    description: "The hook-writes, commit-hygiene and runtime tests and the canary pass at the head and
       fail at the merge base"
-    command: "uv run pytest tests/ci/test_check_only_hooks_omn21498.py tests/unit/handlers/test_handler_hook_writes.py
-      tests/unit/handlers/test_handler_hook_writes_cli.py -q -o addopts=''"
+    command: "uv run pytest tests/unit/validation/test_validator_hook_writes.py tests/unit/validation/test_validator_commit_hygiene.py
+      tests/unit/validation/test_handler_validator_run.py tests/ci/test_check_only_hooks_omn21498.py -q
+      -o addopts=''"
 emergency_bypass:
   enabled: false
   justification: ""
   follow_up_ticket_id: ""
 dod_evidence:
-  - id: dod-omn21498-t26-ac1-canary
-    description: Each rewriting hook is lifted out of the config and run through pre-commit on its canary;
-      every one refuses, the tree digest is unchanged, and the clean control passes.
+  - id: dod-omn21498-ac1-hook-writes-rule
+    description: The hook-writes validator refuses each writing entry shape and known rewriting id, passes
+      the check-only forms, and this repository's own hook files hold no writer.
     source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_hook_writes.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_hook_writes .pre-commit-config.yaml
+          .pre-commit-hooks.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21498-ac2-canary
+    description: Each converted hook runs through pre-commit on its canary; every one refuses, the whole
+      canary (unformatted file, file without a final newline, staged tmp/ file, trailer) is refused, the
+      tree digest is unchanged, and the clean control passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_check_only_hooks_omn21498.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC2
-  - id: dod-omn21498-t26-ac2-hook-writes-rule
-    description: The handler fails each writing entry shape and known rewriting id, passes the check-only
-      forms and a temporary-directory writer, and the CLI refuses a missing overlay and zero hooks.
-    source: manual
-    checks:
-      - check_type: test_passes
-        check_value: uv run pytest tests/unit/handlers/test_handler_hook_writes.py tests/unit/handlers/test_handler_hook_writes_cli.py
-          -q -o addopts=''
-        cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC1
-  - id: dod-omn21498-t26-ac3-repo-has-no-writer
-    description: The rule run over this repository's own hook files exits 0 and reports the hooks it read.
-    source: manual
-    checks:
-      - check_type: command
-        check_value: uv run python -m omnibase_core.handlers.handler_hook_writes_cli --root .
-        cwd: ${OMNI_HOME}/omnibase_core
-    binds_ac:
-      - AC1
-  - id: dod-omn21498-t26-deploy-hosted-readback
-    description: Read the published handler and CLI at the checkout commit. Refuse a missing rewriting-hook
-      guard or zero-hook error guard, then exercise the handler, CLI and byte-identical canary behavior.
-      This library probe runs on hosted runners without a container daemon or private runtime access.
+  - id: dod-omn21498-ac3-commit-hygiene
+    description: The four commit_hygiene rules each yield exactly one issue on their planted fixture and
+      none on the clean fixture, and the validator never writes.
     source: manual
     execution_scope: hosted_and_local
-    binds_ac: [AC1, AC2]
+    binds_ac: [AC3]
     checks:
-      - check_type: command
-        check_value: |
-          curl -fsSL "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/handlers/handler_hook_writes.py" |
-            grep -F 'if rewriting is not None and not is_check_only(hook, rewriting):' > /dev/null &&
-          curl -fsSL "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/handlers/handler_hook_writes_cli.py" |
-            grep -F 'if not runtime_errors and hooks_scanned == 0:' > /dev/null
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_commit_hygiene.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21498-configuration
+    description: Every parameters key of every rule row of both contracts changes the verdict it controls,
+      and a rule row missing a key or carrying an uncompilable pattern fails to load.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [Configuration]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_hook_writes.py tests/unit/validation/test_validator_commit_hygiene.py
+          -q -o addopts='' -k "parameter or compile or disabling"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21498-bindings
+    description: A container spy records the report writer resolved by the runtime; a second injected
+      writer gives the committed golden report with no code change; the checkers run with open and Path
+      reads patched to raise.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [Bindings]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_handler_validator_run.py -q -o addopts=''
+          -k "container or injected"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
-        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/ci/test_check_only_hooks_omn21498.py
-          tests/unit/handlers/test_handler_hook_writes.py tests/unit/handlers/test_handler_hook_writes_cli.py
-          -q -o addopts=''
+        check_value: uv run pytest tests/unit/validation -q -o addopts='' -k "checker_is_pure"
         cwd: ${OMNI_HOME}/omnibase_core

@@ -1,0 +1,66 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: commit_hygiene
+  validator_name: Commit Hygiene Validator
+  validator_description: Refuses a file without its final newline, a file with extra final newlines, a
+    staged tmp/ file and a commit message carrying an AI co-author trailer. Each rule is a refusal and
+    none writes (OMN-21498, K8). The patterns and remediation texts are the rule rows of this file.
+  target_patterns:
+    - '**/*'
+  exclude_patterns:
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+    - '**/tests/fixtures/validation/commit_hygiene/violation_*'
+  rules:
+    - rule_id: missing_final_newline
+      description: A non-empty file must end in a newline.
+      severity: error
+      enabled: true
+      parameters:
+        kind: final_newline_missing
+        path_pattern: .*
+        remediation: Add one newline at the end of the file and stage it again. The hook does not edit
+          the file.
+    - rule_id: extra_final_newline
+      description: A file must not end in more than one newline.
+      severity: error
+      enabled: true
+      parameters:
+        kind: final_newline_extra
+        path_pattern: .*
+        remediation: Remove the extra trailing newlines so the file ends in exactly one, then stage it
+          again. The hook does not edit the file.
+    - rule_id: staged_tmp_file
+      description: A file under tmp/ is scratch space and is never committed.
+      severity: error
+      enabled: true
+      parameters:
+        kind: path_refused
+        path_pattern: ^tmp/
+        remediation: Unstage the file (git restore --staged <file>) and keep tmp/ ignored. The hook deletes
+          nothing.
+    - rule_id: ai_coauthor_trailer
+      description: A commit message must not carry an AI Co-Authored-By trailer.
+      severity: error
+      enabled: true
+      parameters:
+        kind: content_line_refused
+        path_pattern: (^|/)COMMIT_EDITMSG$
+        line_pattern: (?i)^co-authored-by:.*claude.*noreply@anthropic\.com
+        remediation: Delete the trailer line from the commit message and commit again. The hook does not
+          edit the message.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

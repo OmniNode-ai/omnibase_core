@@ -13,7 +13,9 @@ exception-entry-growth, suppression-growth and baselined-file-growth
 (a baselined code file with more code lines than at base; OMN-21331).
 
 Python canonical locations: src/<pkg>/{nodes,handlers,models,protocols,
-contracts,enums}/, tests/, test/, conftest.py and docs/.
+contracts,enums}/, tests/, test/, conftest.py and docs/, plus the generic validator
+format: src/<pkg>/validation/{checker_,validator_}*.py directly in that directory
+(OMN-21498).
 TypeScript/React and shell location rules live in
 handlers.handler_canonical_location_rules (OMN-21332).
 
@@ -48,6 +50,7 @@ import yaml
 
 from omnibase_core.handlers.handler_canonical_location_rules import (
     TYPESCRIPT_EXTENSIONS,
+    is_python_canonical_src_location,
     is_shell_script,
     is_typescript_canonical_location,
     typescript_noncanonical_file_reason,
@@ -112,9 +115,6 @@ CODE_EXTENSIONS: frozenset[str] = frozenset(
 )
 CONFIG_EXTENSIONS: frozenset[str] = frozenset(
     (".yaml", ".yml", ".toml", ".cfg", ".ini")
-)
-CANONICAL_SRC_DIRS: frozenset[str] = frozenset(
-    ("nodes", "handlers", "models", "protocols", "contracts", "enums")
 )
 TEST_DIRS: frozenset[str] = frozenset(("tests", "test"))
 # The omniclaude thin-shim gate's patterns (OMN-12237), verbatim in meaning.
@@ -289,7 +289,7 @@ def is_canonical_location(
         return True
     if any(part in TEST_DIRS for part in parts[:-1]):
         return True
-    return len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
+    return is_python_canonical_src_location(parts)
 
 
 def _entry_module(entry: object) -> str | None:
