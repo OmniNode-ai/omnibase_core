@@ -12,20 +12,19 @@ from ``_ORG`` so this file holds no literal first-party reference.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal
 
 import pytest
+import yaml
 from pydantic import ValidationError
 
-from omnibase_core.handlers.handler_action_pin import HandlerActionPin
-from omnibase_core.handlers.handler_action_pin_rules import (
-    extract_uses,
-    is_candidate,
-)
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.action_pins import (
     ModelActionPinCheckInput,
     ModelActionPinKnownException,
     ModelActionPinOverlay,
+    ModelActionPinRules,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
@@ -33,6 +32,15 @@ from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
 )
+from omnibase_core.nodes.node_action_pin_check_effect import matcher_action_pin
+from omnibase_core.nodes.node_action_pin_check_effect.handler_action_pin import (
+    HandlerActionPin,
+)
+from omnibase_core.nodes.node_action_pin_check_effect.runtime_action_pin_check import (
+    load_rules,
+)
+from omnibase_core.validation.checker_action_pin import action_pin_rules
+from omnibase_core.validation.validator_action_pin import ValidatorActionPin
 
 pytestmark = pytest.mark.unit
 
@@ -43,6 +51,15 @@ _TAG_PATTERN = r"dev-\d{14}-[0-9a-f]{12}"
 _FIRST = f"{_ORG}/omnibase_core/.github/workflows/zone-filter.yml"
 _OTHER_FIRST = f"{_ORG}/omniclaude/.github/workflows/kb-gate.yml"
 _PATH = ".github/workflows/ci.yml"
+_RULES = load_rules()
+
+
+def extract_uses(source: str) -> tuple[tuple[int, str], ...]:
+    return matcher_action_pin.extract_uses(source, _RULES)
+
+
+def is_candidate(path: str) -> bool:
+    return matcher_action_pin.is_candidate(path, _RULES)
 
 
 def _overlay(
@@ -67,6 +84,7 @@ def _check(
     body = "jobs:\n  a:\n    steps:\n" + "".join(f"      - uses: {u}\n" for u in uses)
     return HandlerActionPin().handle(
         ModelActionPinCheckInput(
+            rules=_RULES,
             overlay=overlay or _overlay(),
             files=(ModelSourceFile(path=path, source=body),),
             report_stale_exceptions=stale,
@@ -272,3 +290,128 @@ class TestScanning:
         report = _check("a/b@v1")
         assert report.findings[0].validator_id == "action-pins"
         assert report.findings[0].remediation
+
+
+_CONTRACT = Path(matcher_action_pin.__file__).parent / "contract.yaml"
+_SHA_ONLY_7 = "[0-9a-f]{7}"
+_NO_MATCH = "^(?!)"
+
+
+def _block(*uses: str) -> str:
+    return "jobs:\n  a:\n    steps:\n" + "".join(f"      - uses: {u}\n" for u in uses)
+
+
+def _mutated_rules(rule_id: str, key: str, value: object) -> ModelActionPinRules:
+    rows = {r.rule_id: r for r in ValidatorActionPin().contract.rules}
+    row = rows[rule_id]
+    rows[rule_id] = row.model_copy(
+        update={"parameters": {**(row.parameters or {}), key: value}}
+    )
+    return action_pin_rules(rows)
+
+
+def _projection(
+    rules: ModelActionPinRules,
+    source: str,
+    *,
+    overlay: ModelActionPinOverlay,
+    path: str = _PATH,
+    stale: bool = False,
+) -> tuple[object, ...]:
+    report = HandlerActionPin().handle(
+        ModelActionPinCheckInput(
+            rules=rules,
+            overlay=overlay,
+            files=(ModelSourceFile(path=path, source=source),),
+            report_stale_exceptions=stale,
+        )
+    )
+    return (
+        report.overall_status,
+        tuple(
+            (f.validator_id, f.severity, f.message, f.remediation)
+            for f in report.findings
+        ),
+    )
+
+
+_EXCEPTION = ModelActionPinKnownException(
+    uses=f"{_OTHER_FIRST}@{_SHA}", reason="no dev-merge tag exists for this commit"
+)
+_THIRD = _block("actions/checkout@v4")
+_FIRST_SHA = _block(f"{_FIRST}@{_SHA}")
+_FIRST_MAIN = _block(f"{_FIRST}@main")
+_EXC_USED = _block(f"{_OTHER_FIRST}@{_SHA}")
+_FIRST_TAG = _block(f"{_FIRST}@{_TAG}")
+_FLOW = "      - {uses: actions/checkout@v4}\n"
+_MUT = "mutated {location}"
+
+# (rule id, parameter key, mutated value, workflow source, overlay, file path, stale flag)
+_PARAMETER_CASES = [
+    ("uses_extraction", "report_validator_name", "other-id", _THIRD, _overlay(), _PATH, False),
+    ("uses_extraction", "workflow_dir", "ci", _THIRD, _overlay(), _PATH, False),
+    ("uses_extraction", "workflow_suffixes", [".yml"], _THIRD, _overlay(), ".github/workflows/ci.yaml", False),
+    ("uses_extraction", "local_prefixes", ["zz"], _block("./.github/actions/local"), _overlay(), _PATH, False),
+    ("uses_extraction", "block_uses_pattern", _NO_MATCH, _THIRD, _overlay(), _PATH, False),
+    ("uses_extraction", "flow_uses_pattern", _NO_MATCH, _FLOW, _overlay(), _PATH, False),
+    ("third_party_not_sha", "full_sha_pattern", _SHA_ONLY_7, _block(f"actions/checkout@{_SHA}"), _overlay(), _PATH, False),
+    ("third_party_not_sha", "message_template", _MUT, _THIRD, _overlay(), _PATH, False),
+    ("third_party_not_sha", "remediation", "mutated remediation", _THIRD, _overlay(), _PATH, False),
+    ("first_party_not_tag", "message_template", _MUT, _FIRST_SHA, _overlay(), _PATH, False),
+    ("first_party_not_tag", "remediation", "mutated remediation", _FIRST_SHA, _overlay(), _PATH, False),
+    ("first_party_not_tag", "main_ref", "trunk", _FIRST_MAIN, _overlay(main="warn"), _PATH, False),
+    ("first_party_main_allowance", "message_template", _MUT, _FIRST_MAIN, _overlay(main="warn"), _PATH, False),
+    ("known_exception_used", "message_template", _MUT, _EXC_USED, _overlay(exceptions=(_EXCEPTION,)), _PATH, False),
+    ("known_exception_stale", "message_template", "mutated {uses}", _FIRST_TAG, _overlay(exceptions=(_EXCEPTION,)), _PATH, True),
+]  # fmt: skip
+
+
+class TestContractRuleData:
+    def test_contract_binds_the_handler(self) -> None:
+        routing = yaml.safe_load(_CONTRACT.read_text(encoding="utf-8"))[
+            "handler_routing"
+        ]
+        module, _, name = routing["default_handler"].partition(":")
+        assert module == "handler_action_pin"
+        assert name == HandlerActionPin.__name__
+        assert (_CONTRACT.parent / f"{module}.py").is_file()
+
+    def test_every_contract_parameter_is_covered_by_a_mutation_case(self) -> None:
+        declared = {
+            (row.rule_id, key)
+            for row in ValidatorActionPin().contract.rules
+            for key in (row.parameters or {})
+        }
+        assert declared == {(case[0], case[1]) for case in _PARAMETER_CASES}
+
+    @pytest.mark.parametrize(
+        ("rule_id", "key", "value", "source", "overlay", "path", "stale"),
+        _PARAMETER_CASES,
+        ids=[f"{case[0]}.{case[1]}" for case in _PARAMETER_CASES],
+    )
+    def test_mutating_a_parameter_changes_the_verdict(
+        self,
+        rule_id: str,
+        key: str,
+        value: object,
+        source: str,
+        overlay: ModelActionPinOverlay,
+        path: str,
+        stale: bool,
+    ) -> None:
+        base = _projection(_RULES, source, overlay=overlay, path=path, stale=stale)
+        changed = _projection(
+            _mutated_rules(rule_id, key, value),
+            source,
+            overlay=overlay,
+            path=path,
+            stale=stale,
+        )
+        assert changed != base
+
+    def test_missing_parameter_fails_the_contract_load(self) -> None:
+        rows = {r.rule_id: r for r in ValidatorActionPin().contract.rules}
+        row = rows["third_party_not_sha"]
+        rows["third_party_not_sha"] = row.model_copy(update={"parameters": {}})
+        with pytest.raises(ModelOnexError):
+            action_pin_rules(rows)

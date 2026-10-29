@@ -13,16 +13,22 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
+from typing import Any, cast
 
 import pytest
 import yaml
 
-from omnibase_core.handlers.handler_action_pin_cli import (
+from omnibase_core.models.action_pins import ModelActionPinOverlay
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.nodes.node_action_pin_check_effect.runtime_action_pin_check import (
     DEFAULT_OVERLAY,
+    build_container,
     main,
     overlay_exception_growth,
 )
-from omnibase_core.models.action_pins import ModelActionPinOverlay
+from omnibase_core.nodes.node_validation_report_write_effect.handler import (
+    NodeValidationReportWriteEffect,
+)
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
 )
@@ -213,3 +219,31 @@ class TestReport:
         report = json.loads(out.read_text(encoding="utf-8"))
         assert report["overall_status"] == "FAIL"
         assert report["findings"][0]["validator_id"] == "action-pins"
+
+
+class _SpyContainer:
+    """A container that records every protocol resolved through it."""
+
+    def __init__(self, inner: ModelONEXContainer) -> None:
+        self._inner = inner
+        self.resolved: list[type] = []
+
+    def get_service(self, protocol_type: type, service_name: str | None = None) -> Any:
+        self.resolved.append(protocol_type)
+        return self._inner.get_service(protocol_type, service_name)
+
+
+class TestContainerWriter:
+    def test_report_writer_is_resolved_from_the_container(self, tmp_path: Path) -> None:
+        root = _repo(tmp_path, "actions/checkout@v4")
+        container = _SpyContainer(build_container())
+        out = tmp_path / "report.json"
+        assert (
+            main(
+                ["--root", str(root), "--report-json", str(out)],
+                container=cast(ModelONEXContainer, container),
+            )
+            == 1
+        )
+        assert container.resolved == [NodeValidationReportWriteEffect]
+        assert out.is_file()

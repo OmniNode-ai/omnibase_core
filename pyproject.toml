@@ -93,7 +93,7 @@ check-imperative-contracts = "omnibase_core.nodes.node_imperative_contract_guard
 check-dependency-direction = "omnibase_core.handlers.handler_dependency_direction_cli:main"
 # OMN-17427: how a workflow `uses:` ref must be pinned. Third-party actions take a full
 # 40-hex sha; first-party refs take the dev-merge tag the repository's overlay names.
-check-action-pins = "omnibase_core.handlers.handler_action_pin_cli:main"
+check-action-pins = "omnibase_core.nodes.node_action_pin_check_effect.runtime_action_pin_check:main"
 # OMN-21494: resolve operator-private vocabularies through the shared core node.
 resolve-private-vocabulary = "omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary:main"
 # OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator

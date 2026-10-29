@@ -1346,7 +1346,7 @@
     known exception with a reason, and a first-party @main is a finding when the overlay keeps it. The
     overlay is the only source of the organisation, the tag pattern and the exceptions.
   language: python
-  entry: python -m omnibase_core.handlers.handler_action_pin_cli
+  entry: python -m omnibase_core.nodes.node_action_pin_check_effect.runtime_action_pin_check
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: true
   require_serial: true

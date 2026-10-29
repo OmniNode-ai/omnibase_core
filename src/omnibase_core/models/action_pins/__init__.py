@@ -12,9 +12,13 @@ from omnibase_core.models.action_pins.model_action_pin_known_exception import (
 from omnibase_core.models.action_pins.model_action_pin_overlay import (
     ModelActionPinOverlay,
 )
+from omnibase_core.models.action_pins.model_action_pin_rules import (
+    ModelActionPinRules,
+)
 
 __all__ = [
     "ModelActionPinCheckInput",
     "ModelActionPinKnownException",
     "ModelActionPinOverlay",
+    "ModelActionPinRules",
 ]

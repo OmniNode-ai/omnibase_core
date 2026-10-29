@@ -1,19 +1,20 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI runtime for the action-pin check (OMN-17427).
+"""CLI runtime for the action-pin check (OMN-17427, OMN-21518).
 
 Backs the ``check-action-pins`` pre-commit hook and manual runs. All I/O
 happens here, at the CLI boundary: overlay YAML loading, workflow discovery
 and reads, the base-ref overlay read for the shrink-only ratchet, and the
-report write. The verdict is the pure ``HandlerActionPin``.
+report write, resolved from the container. The verdict is the pure
+``HandlerActionPin``; its rule data is the ``action_pin`` validation contract.
 
 Usage::
 
-    check-action-pins
-    check-action-pins --root ../omnibase_core
-    check-action-pins .github/workflows/ci.yml
-    check-action-pins --ratchet-base-ref origin/dev --report-json r.json
+    python -m omnibase_core.nodes.node_action_pin_check_effect.runtime_action_pin_check
+    python -m ...runtime_action_pin_check --root ../omnibase_core
+    python -m ...runtime_action_pin_check .github/workflows/ci.yml
+    python -m ...runtime_action_pin_check --ratchet-base-ref origin/dev --report-json r.json
 
 Exit codes: 0 -- PASS or WARN only; 1 -- FAIL/ERROR, or the overlay grew.
 """
@@ -28,18 +29,16 @@ from typing import Final
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_action_pin import HandlerActionPin
-from omnibase_core.handlers.handler_action_pin_rules import (
-    VALIDATOR_ID,
-    extract_uses,
-    is_candidate,
-)
 from omnibase_core.models.action_pins.model_action_pin_check_input import (
     ModelActionPinCheckInput,
 )
 from omnibase_core.models.action_pins.model_action_pin_overlay import (
     ModelActionPinOverlay,
 )
+from omnibase_core.models.action_pins.model_action_pin_rules import (
+    ModelActionPinRules,
+)
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
 )
@@ -49,18 +48,51 @@ from omnibase_core.models.nodes.validation_report_write.model_validation_report_
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
 )
+from omnibase_core.nodes.node_action_pin_check_effect.handler_action_pin import (
+    HandlerActionPin,
+)
+from omnibase_core.nodes.node_action_pin_check_effect.matcher_action_pin import (
+    extract_uses,
+    is_candidate,
+)
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.utils.util_safe_yaml_loader import (
     load_and_validate_yaml_model,
     load_yaml_content_as_model,
 )
+from omnibase_core.validation.checker_action_pin import action_pin_rules
+from omnibase_core.validation.validator_action_pin import ValidatorActionPin
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
-__all__ = ["DEFAULT_OVERLAY", "main", "overlay_exception_growth"]
+__all__ = [
+    "DEFAULT_OVERLAY",
+    "build_container",
+    "load_rules",
+    "main",
+    "overlay_exception_growth",
+]
 
 DEFAULT_OVERLAY: Final[str] = ".action-pin-overlay.yaml"
+
+
+def load_rules() -> ModelActionPinRules:
+    """The rule data of the ``action_pin`` validation contract."""
+    return action_pin_rules({r.rule_id: r for r in ValidatorActionPin().contract.rules})
+
+
+def build_container() -> ModelONEXContainer:
+    """The composition root: a container with the report writer registered."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry()
+    run_coro_sync(
+        registry.register_instance(
+            NodeValidationReportWriteEffect, NodeValidationReportWriteEffect()
+        )
+    )
+    return container
 
 
 def overlay_exception_growth(
@@ -78,12 +110,14 @@ def overlay_exception_growth(
     ]
 
 
-def gather(root: Path, filenames: list[str]) -> tuple[list[ModelSourceFile], list[str]]:
+def gather(
+    root: Path, filenames: list[str], rules: ModelActionPinRules
+) -> tuple[list[ModelSourceFile], list[str]]:
     """Read candidate workflows directly, retaining repository-relative paths."""
     if filenames:
-        relative = [filename for filename in filenames if is_candidate(filename)]
+        relative = [filename for filename in filenames if is_candidate(filename, rules)]
     else:
-        workflows = root / ".github" / "workflows"
+        workflows = root / rules.workflow_dir
         if not workflows.is_dir():
             return [], [
                 f"missing workflows directory {workflows}: a full-tree run that "
@@ -91,7 +125,7 @@ def gather(root: Path, filenames: list[str]) -> tuple[list[ModelSourceFile], lis
             ]
         relative = sorted(
             path.relative_to(root).as_posix()
-            for pattern in ("*.yml", "*.yaml")
+            for pattern in (f"*{suffix}" for suffix in rules.workflow_suffixes)
             for path in workflows.glob(pattern)
         )
 
@@ -162,23 +196,34 @@ def _out(line: str) -> None:
     sys.stdout.write(line + "\n")
 
 
-def _write_report(path: str | None, report: ModelValidationReport) -> None:
+def _write_report(
+    container: ModelONEXContainer, path: str | None, report: ModelValidationReport
+) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        container.get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
 
-def _runtime_failure(errors: list[str], report_path: str | None) -> int:
-    report = ModelValidationReport.from_runtime_errors(VALIDATOR_ID, tuple(errors))
-    _write_report(report_path, report)
+def _runtime_failure(
+    container: ModelONEXContainer,
+    rules: ModelActionPinRules,
+    errors: list[str],
+    report_path: str | None,
+) -> int:
+    report = ModelValidationReport.from_runtime_errors(
+        rules.report_validator_name, tuple(errors)
+    )
+    _write_report(container, report_path, report)
     for message in errors:
         _out(f"ERROR: {message}")
     _out("ERROR: action-pin check could not complete")
     return 1
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None, *, container: ModelONEXContainer | None = None
+) -> int:
     """CLI entry. Return 0 on PASS/WARN, 1 on FAIL/ERROR or overlay growth."""
     parser = argparse.ArgumentParser(
         prog="check-action-pins",
@@ -210,11 +255,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     parsed = parser.parse_args(argv)
 
+    rules = load_rules()
     if parsed.filenames and not any(
-        is_candidate(filename) for filename in parsed.filenames
+        is_candidate(filename, rules) for filename in parsed.filenames
     ):
         return 0
 
+    container = container or build_container()
     try:
         root = Path(parsed.root).resolve()
         overlay = load_and_validate_yaml_model(
@@ -222,22 +269,26 @@ def main(argv: list[str] | None = None) -> int:
         )
     except (OSError, ValueError, ModelOnexError) as exc:
         return _runtime_failure(
+            container,
+            rules,
             [f"cannot load overlay {parsed.overlay!r}: {exc}"],
             parsed.report_json,
         )
 
     try:
-        files, runtime_errors = gather(root, parsed.filenames)
+        files, runtime_errors = gather(root, parsed.filenames, rules)
     except (OSError, ValueError, ModelOnexError) as exc:
         return _runtime_failure(
+            container,
+            rules,
             [f"cannot scan workflows under {root}: {exc}"],
             parsed.report_json,
         )
 
     if not parsed.filenames and not runtime_errors:
-        if not any(True for file in files for _ in extract_uses(file.source)):
+        if not any(True for file in files for _ in extract_uses(file.source, rules)):
             runtime_errors.append(
-                f"zero uses: lines under {root / '.github' / 'workflows'}: "
+                f"zero uses: lines under {root / rules.workflow_dir}: "
                 "a full-tree run that scans nothing is ERROR, never PASS"
             )
 
@@ -259,16 +310,17 @@ def main(argv: list[str] | None = None) -> int:
             )
 
     if runtime_errors:
-        return _runtime_failure(runtime_errors, parsed.report_json)
+        return _runtime_failure(container, rules, runtime_errors, parsed.report_json)
 
     report = HandlerActionPin().handle(
         ModelActionPinCheckInput(
+            rules=rules,
             overlay=overlay,
             files=tuple(files),
             report_stale_exceptions=not parsed.filenames,
         )
     )
-    _write_report(parsed.report_json, report)
+    _write_report(container, parsed.report_json, report)
 
     for finding in report.findings:
         _out(f"{finding.severity}: {finding.message}")
