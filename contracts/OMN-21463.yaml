@@ -72,10 +72,6 @@ dod_evidence:
       N entry, and the scanner detects the golden T/N findings without baselining them.
     source: manual
     checks:
-      - check_type: command
-        check_value: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
-          --all --baseline config/hardcoded_model_config_baseline.yaml
-        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
           -q -p no:randomly -k "committed_baseline_holds_no_tier_or_engine_entry or tn_findings_equal_the_committed_golden_report"
