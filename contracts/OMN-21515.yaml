@@ -43,6 +43,12 @@ requirements:
           the runtime resolves the report writer from the container (a container spy records the resolution),
           and a planted unbound src/<pkg>/handlers/handler_y.py and a console script to it are refused
           with handlers/ still canonical for a bound handler -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py"
+      - id: AC7
+        statement: "AC7 (Node-home admission): a new node directory is admitted when its contract.yaml
+          lists a validator or validator-support category under tags (field and category names are parameters
+          of the node-home:node-outside-market row), an ordinary new node is still refused, and every
+          node-home name, pattern and text is a parameters entry of the validator contract -- falsifier:
+          uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py"
 evidence_requirements:
   - kind: tests
     description: The checker, runtime and ported rule tests pass at the pushed head.
@@ -112,3 +118,13 @@ dod_evidence:
           handler or console_script or forbid_io or golden"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC6]
+  - id: dod-omn21515-node-home-admission
+    description: An ordinary new node is refused and a declared validator node admitted; every node-home
+      parameters key changes a verdict; each node-home row has a planted violation and a clean fixture.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC7]
