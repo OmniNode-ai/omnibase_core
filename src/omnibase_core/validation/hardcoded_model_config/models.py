@@ -2,10 +2,9 @@
 # SPDX-License-Identifier: MIT
 """Typed models for the hardcoded model-configuration COMPUTE validator (OMN-19252).
 
-The policy, the per-file scan input, the finding, the scan result and the
-baseline entry of one validator. They are co-located for the same reason as the
-``validation/private_ip/models.py`` triad: none of them has a consumer outside
-this validator.
+The policy, scan input, finding, scan result and baseline entry of one validator,
+co-located like the ``validation/private_ip/models.py`` triad: none has a consumer
+outside this validator.
 """
 
 from __future__ import annotations
@@ -28,8 +27,8 @@ __all__ = [
 
 # M: model id. E: endpoint. E-LAN: a private or lab-subnet host. D: a lab
 # deployment fact (lab host name or lab port, OMN-21147). R: a retired lab
-# value. L: an example file loaded by code.
-LiteralFamily = Literal["M", "E", "E-LAN", "D", "R", "L"]
+# value. L: an example file loaded by code. S: a ruling stamp.
+LiteralFamily = Literal["M", "E", "E-LAN", "D", "R", "L", "S"]
 
 LiteralPathClass = Literal[
     "HISTORICAL",
@@ -74,6 +73,7 @@ class ModelHardcodedModelConfigPolicy(BaseModel):
     model_id_pattern: str = Field(
         description="Case-insensitive model-family regex (family M)"
     )
+    ruling_stamp_pattern: str = Field(description="Ruling stamp regex (family S)")
     endpoint_path_suffixes: tuple[str, ...] = Field(
         description="URL path endings that make a URL an inference endpoint (E)"
     )

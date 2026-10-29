@@ -71,7 +71,7 @@ _HOSTED_FALLBACK = re.compile(
 _REMEDIATION: Final[str] = (
     "Run the job on a GitHub-hosted label (ubuntu-latest), or move it to a bus "
     "node the private lab runs (plan: knowledge_base_internal#1340). CI runners are "
-    "for private repositories only (RULING 2026-10-16T07:07:09Z, OMN-19998); there "
+    "for private repositories only (OMN-19998); there "
     "is no baseline to record the job in (OMN-21280)."
 )
 

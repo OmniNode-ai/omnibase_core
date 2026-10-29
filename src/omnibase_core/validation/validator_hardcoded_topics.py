@@ -50,6 +50,16 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
+from omnibase_core.handlers.handler_hardcoded_host_list import host_list_issues
+from omnibase_core.handlers.handler_hardcoded_topics_approved_files import (
+    APPROVED_BASENAMES as _APPROVED_BASENAMES,
+)
+from omnibase_core.handlers.handler_hardcoded_topics_approved_files import (
+    APPROVED_SUFFIXES as _APPROVED_SUFFIXES,
+)
+from omnibase_core.handlers.handler_hardcoded_topics_approved_files import (
+    EXCLUDED_PATH_PARTS as _EXCLUDED_PATH_PARTS,
+)
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -71,54 +81,9 @@ _LINE_SUPPRESSION_MARKERS: frozenset[str] = frozenset(
     }
 )
 
-_APPROVED_BASENAMES: frozenset[str] = frozenset(
-    {
-        "topics.py",
-        "topics.ts",
-        "topics.yaml",
-        "topic_constants.py",
-        "constants.py",
-        "constants_event_types.py",
-        "constants_topic_taxonomy.py",
-        "platform_topic_suffixes.py",
-        "topic_naming_baseline.txt",
-        "governance_emitter.py",
-        "contract_topic_extractor.py",
-        "check_topic_drift.py",
-        "validator_topic_suffix.py",
-        "topic_allowlist.yaml",
-        "topic_registry.yaml",
-        "service_topic_registry.py",
-        "validation_exemptions.yaml",
-    }
-)
-
-_APPROVED_SUFFIXES: frozenset[str] = frozenset(
-    {
-        "/contract.yaml",
-        "/handler_contract.yaml",
-    }
-)
-
 _RULE_TOPIC_LITERAL = "hardcoded_topic_literal"
 _RULE_TOPIC_ENV_VAR = "hardcoded_topic_env_var"
-
-# Path parts that are always excluded regardless of contract configuration.
-# This provides defense-in-depth for programmatic usage with minimal contracts
-# (e.g. tests that construct ModelValidatorSubcontract with exclude_patterns=[]).
-_EXCLUDED_PATH_PARTS: frozenset[str] = frozenset(
-    {
-        ".venv",
-        "__pycache__",
-        "build",
-        "dist",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".mypy_cache",
-        "node_modules",
-        ".git",
-    }
-)
+_RULE_HOST_LIST = "hardcoded_host_list"
 
 
 class ValidatorHardcodedTopics(ValidatorBase):
@@ -143,6 +108,7 @@ class ValidatorHardcodedTopics(ValidatorBase):
     ) -> tuple[ModelValidationIssue, ...]:
         issues: list[ModelValidationIssue] = []
 
+        issues.extend(self._host_list_issues(path, contract))
         if self._is_approved_file(path):
             return tuple(issues)
 
@@ -198,6 +164,22 @@ class ValidatorHardcodedTopics(ValidatorBase):
             )
 
         return tuple(issues)
+
+    def _host_list_issues(
+        self, path: Path, contract: ModelValidatorSubcontract
+    ) -> list[ModelValidationIssue]:
+        enabled, severity = self._get_rule_config(_RULE_HOST_LIST, contract)
+        rule = next((r for r in contract.rules if r.rule_id == _RULE_HOST_LIST), None)
+        if not enabled or rule is None or path.suffix != ".py":
+            return []
+        text = path.read_text(encoding="utf-8", errors="replace")
+        return host_list_issues(
+            path=path,
+            text=text,
+            rule=rule,
+            severity=severity,
+            is_suppressed=self._line_is_suppressed,
+        )
 
     @staticmethod
     def _is_approved_file(path: Path) -> bool:

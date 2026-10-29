@@ -100,7 +100,11 @@ path_classes:
   - name: SOURCE
     globs:
       - "**"
-    families: [M, E, E-LAN, D, R, L]
+    families: [M, E, E-LAN, D, R, L, S]
+
+# Family S: a ruling and an ISO UTC stamp separated by at most 120 characters.
+ruling_stamp_pattern: >-
+  \bruling\b[^\r\n]{0,120}\b20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z\b|\b20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z\b[^\r\n]{0,120}\bruling\b
 
 # Family M: the plan's P1 model-family regex, applied case-insensitively.
 model_id_pattern: >-

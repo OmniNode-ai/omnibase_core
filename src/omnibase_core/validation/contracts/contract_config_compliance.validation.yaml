@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version: {major: 1, minor: 0, patch: 0}
+  validator_id: contract_config_compliance
+  validator_name: Contract Config Compliance Validator
+  validator_description: Reject numeric configuration thresholds outside contracts and overlays.
+  target_patterns: ["**/*.py"]
+  rules:
+    - rule_id: hardcoded_threshold
+      description: Numeric thresholds must be declared in contracts or overlays.
+      severity: error
+      enabled: true
+      parameters:
+        name_pattern: '[A-Z][A-Z0-9_]*(THRESHOLD|LIMIT|TIMEOUT|MAX|MIN|RATIO|BUDGET)[A-Z0-9_]*'
+        baseline_path: config/hardcoded_threshold_baseline.json
+  fail_on_error: true
+  severity_default: error

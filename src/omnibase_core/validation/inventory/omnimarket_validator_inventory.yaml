@@ -1,0 +1,489 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Inventory of the validators resident in omnimarket (OMN-21503, plan task T-Q6;
+# plan section 0a, RULING 2026-10-28T13:48:11Z). Read from the omnimarket dev
+# branch on 2026-10-29: the check/validate/detect/verify scripts under
+# scripts/ci and scripts/validation, and the validator-shaped nodes.
+#
+# validator_class
+#   validator  judges an artifact (a file, document, contract, manifest, text,
+#              reference or code tree): it moves to omnibase_core in the generic
+#              validator format and its omnimarket implementation is deleted.
+#   decision   admits an action from runtime facts: it stays in omnimarket, and
+#              the rules, thresholds and lists it applies are contract or overlay
+#              data checked by the hard-coded-value validators.
+#   other      neither (an executor, a request builder).
+# replacing_core_validator names the existing omnibase_core validator that covers
+# a validator entry (replacement_exists: true) or the checker that will replace it
+# (replacement_exists: false). child_ticket is the migration child of OMN-21503;
+# a validator entry without one is reported at the contract's
+# child_ticket_severity until the orchestrator mints the children.
+# The first-pass class comes from each artifact's name and opening description; a
+# migration child ticket confirms or corrects it.
+---
+schema_version: 1
+entries:
+  - path: scripts/ci/check_aiokafka_construction_auth.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_aiokafka_construction_auth
+    replacement_exists: false
+  - path: scripts/ci/check_auto_merge_hold.py
+    kind: script
+    validator_class: decision
+  - path: scripts/ci/check_backend_secret_discipline.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: validator_backend_secret_discipline
+    replacement_exists: true
+  - path: scripts/ci/check_branch_identity.py
+    kind: script
+    validator_class: decision
+  - path: scripts/ci/check_ci_bus_overlay_parity.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_ci_bus_overlay_parity
+    replacement_exists: false
+  - path: scripts/ci/check_contract_publish_parity.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_contract_publish_parity
+    replacement_exists: false
+  - path: scripts/ci/check_corpus_criteria_vocabulary.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_corpus_criteria_vocabulary
+    replacement_exists: false
+  - path: scripts/ci/check_coverage_ignore_parity.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_coverage_ignore_parity
+    replacement_exists: false
+  - path: scripts/ci/check_delegation_env_reads.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: contract_config_compliance
+    replacement_exists: true
+  - path: scripts/ci/check_entry_point_format.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_entry_point_format
+    replacement_exists: false
+  - path: scripts/ci/check_generated_checks_red_derivable.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_generated_checks_red_derivable
+    replacement_exists: false
+  - path: scripts/ci/check_github_token_env_reads.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: validator_github_token_env_reads
+    replacement_exists: true
+  - path: scripts/ci/check_golden_chain_coverage.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_golden_chain_coverage
+    replacement_exists: false
+  - path: scripts/ci/check_hold_gate_selftest.py
+    kind: script
+    validator_class: decision
+  - path: scripts/ci/check_integration_skips.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_integration_skips
+    replacement_exists: false
+  - path: scripts/ci/check_lane_job_placement.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_lane_job_placement
+    replacement_exists: false
+  - path: scripts/ci/check_merge_reason_codes.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_merge_reason_codes
+    replacement_exists: false
+  - path: scripts/ci/check_migration_base_before_view.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_migration_base_before_view
+    replacement_exists: false
+  - path: scripts/ci/check_mixed_category_routing.sh
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_mixed_category_routing
+    replacement_exists: false
+  - path: scripts/ci/check_model_registry_served_names.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_model_registry_served_names
+    replacement_exists: false
+  - path: scripts/ci/check_nightly_corpus_budget.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_nightly_corpus_budget
+    replacement_exists: false
+  - path: scripts/ci/check_no_hardcoded_topics.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: validator_hardcoded_topics
+    replacement_exists: true
+  - path: scripts/ci/check_node_metadata_dependencies.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_node_metadata_dependencies
+    replacement_exists: false
+  - path: scripts/ci/check_pr_hold_marker.py
+    kind: script
+    validator_class: decision
+  - path: scripts/ci/check_projection_write_path_db_gate.py
+    kind: script
+    validator_class: decision
+  - path: scripts/ci/check_registry_projection_reconcile.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_registry_projection_reconcile
+    replacement_exists: false
+  - path: scripts/ci/check_rls_read_tenant_seam.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_rls_read_tenant_seam
+    replacement_exists: false
+  - path: scripts/ci/check_shell_hygiene.sh
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_shell_hygiene
+    replacement_exists: false
+  - path: scripts/ci/check_single_hold_vocabulary.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_single_hold_vocabulary
+    replacement_exists: false
+  - path: scripts/ci/check_subscriber_dispatcher_resolution.sh
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_subscriber_dispatcher_resolution
+    replacement_exists: false
+  - path: scripts/ci/check_test_deletion_parity_receipt.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_test_deletion_parity_receipt
+    replacement_exists: false
+  - path: scripts/ci/check_topic_drift.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_topic_drift
+    replacement_exists: false
+  - path: scripts/ci/check_topic_enum_drift.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_topic_enum_drift
+    replacement_exists: false
+  - path: scripts/ci/check_unimported_handlers.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_unimported_handlers
+    replacement_exists: false
+  - path: scripts/ci/check_uv_lock_pin_reachability.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: pin_hygiene
+    replacement_exists: true
+  - path: scripts/ci/check_watchdog_topic_authority.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_watchdog_topic_authority
+    replacement_exists: false
+  - path: scripts/ci/check_wire_compatibility.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_wire_compatibility
+    replacement_exists: false
+  - path: scripts/ci/check_workflow_module_refs.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_workflow_module_refs
+    replacement_exists: false
+  - path: scripts/ci/verify_pypi_pin_resolvability.py
+    kind: script
+    validator_class: decision
+  - path: scripts/validation/check_exposed_identifiers.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_exposed_identifiers
+    replacement_exists: false
+  - path: scripts/validation/check_internal_relation_tenant_posture.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_internal_relation_tenant_posture
+    replacement_exists: false
+  - path: scripts/validation/check_leaked_literals.sh
+    kind: script
+    validator_class: validator
+    replacing_core_validator: hardcoded_model_config
+    replacement_exists: true
+  - path: scripts/validation/check_precommit_additional_dependencies.sh
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_precommit_additional_dependencies
+    replacement_exists: false
+  - path: scripts/validation/detect_llm_config_hardcoding.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: hardcoded_model_config
+    replacement_exists: true
+  - path: scripts/validation/validate_contract_overlay_boundary.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_contract_overlay_boundary
+    replacement_exists: false
+  - path: scripts/validation/validate_no_env_fallbacks.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: url_authority
+    replacement_exists: true
+  - path: scripts/validation/validate_precommit_fail_loud.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_precommit_fail_loud
+    replacement_exists: false
+  - path: scripts/validation/validate_precommit_interpreter.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_precommit_interpreter
+    replacement_exists: false
+  - path: scripts/validation/validate_precommit_pin_parity.py
+    kind: script
+    validator_class: validator
+    replacing_core_validator: checker_precommit_pin_parity
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_automation_liveness_overlay_check_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_automation_liveness_overlay_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_binding_conformance_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_binding_conformance
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_branch_claim_check_effect
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_branch_protection_audit_effect
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_bus_audit_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_changelog_audit_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_changelog_audit
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_closeout_verifier_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_compliance_sweep
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_compliance_sweep
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_contract_drift_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_contract_drift
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_contract_projection_check_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_contract_projection_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_contract_projection_check_effect
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_contract_projection_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_delegation_dod_verify_request_compute
+    kind: node
+    validator_class: other
+  - path: src/omnimarket/nodes/node_delegation_rubric_check_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_delegation_rubric_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_demo_drift_detector
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_design_record_check_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_design_record_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_dod_verify
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_dod_verify
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_external_deadman_check_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_extraction_verify_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_extraction_verify
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_fsm_single_source_check_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_fsm_single_source_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_generated_code_validator
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_generated_code_validator
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_harness_invocation_check_effect
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_install_superset_guard_effect
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_internal_release_path_guard_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_lab_first_routing_check_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_lab_job_check_effect
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_lab_job_check_schedule_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_lane_guard_admission_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_legacy_worktree_audit_effect
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_mypy_check_effect
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_mypy_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_omnigate_check_executor
+    kind: node
+    validator_class: other
+  - path: src/omnimarket/nodes/node_omnigate_receipt_verifier
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_omnigate_receipt_verifier
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_overseer_verifier
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_pipeline_audit_orchestrator
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_plan_audit_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_plan_audit
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_pr_title_check_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_pr_title_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_projection_replay_check_compute
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_push_validation_effect
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_push_validation
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_release_pin_guard_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_release_pin_guard
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_report_validation_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_report_validation
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_retired_model_reference_check_effect
+    kind: node
+    validator_class: validator
+    replacing_core_validator: hardcoded_model_config
+    replacement_exists: true
+  - path: src/omnimarket/nodes/node_rsd_b1_projection_binding_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_rsd_b1_projection_binding_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_rsd_offline_c0_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_rsd_offline_c0_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_rsd_target_delivery_artifact_manifest_v2_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_rsd_target_delivery_artifact_manifest_v2_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_rsd_v4_artifact_evidence_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_rsd_v4_artifact_evidence_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_rsd_v4_static_profile_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_rsd_v4_static_profile_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_rsd_v5_artifact_evidence_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_rsd_v5_artifact_evidence_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_rsd_v5_oci_safe_config_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_rsd_v5_oci_safe_config_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_semantic_antipattern_validator_orchestrator
+    kind: node
+    validator_class: validator
+    replacing_core_validator: antipattern_checker
+    replacement_exists: true
+  - path: src/omnimarket/nodes/node_skill_contract_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_skill_contract_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_skill_functional_audit_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_skill_functional_audit
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_skill_hygiene_validate_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_skill_hygiene_validate
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_skill_overseer_verify_orchestrator
+    kind: node
+    validator_class: decision
+  - path: src/omnimarket/nodes/node_standup_draft_check_compute
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_standup_draft_check
+    replacement_exists: false
+  - path: src/omnimarket/nodes/node_volume_config_drift_sweep
+    kind: node
+    validator_class: validator
+    replacing_core_validator: checker_volume_config_drift_sweep
+    replacement_exists: false

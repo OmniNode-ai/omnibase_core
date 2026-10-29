@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: omnimarket_validator_residency
+  validator_name: Omnimarket Validator Residency Ratchet
+  validator_description: |
+    Counts the validator predicates resident in omnimarket against a shrink-only
+    baseline (OMN-21503, plan task T-Q6).
+
+    All validator logic lives in omnibase_core's generic validator format. A
+    script or node in omnimarket that judges an artifact is a resident validator.
+    A resident the inventory classes as a decision (runtime facts) is not
+    counted; a resident the inventory does not list is counted. The baseline may
+    only shrink, and wave 4 is not accepted while it is non-empty.
+
+    The scan policy below is the whole configuration: the checker holds no path,
+    glob or name pattern.
+
+  target_patterns:
+    - "**"
+
+  exclude_patterns:
+    - "**/.git/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/node_modules/**"
+    - "**/__pycache__/**"
+    - "**/dist/**"
+    - "**/build/**"
+
+  rules:
+    - rule_id: validator_residency
+      description: >-
+        Counts resident validators (scripts and nodes) against the shrink-only baseline and holds the
+        inventory to the files. A new resident validator, an unclassified resident, a stale inventory
+        entry, a validator without a replacing core validator, or a baseline that grew, fails.
+      severity: error
+      enabled: true
+      parameters:
+        script_globs:
+          - "scripts/ci/check_*"
+          - "scripts/ci/validate_*"
+          - "scripts/ci/verify_*"
+          - "scripts/validation/check_*"
+          - "scripts/validation/validate_*"
+          - "scripts/validation/detect_*"
+        node_root: "src/omnimarket/nodes"
+        node_name_patterns:
+          - "node_.*validat.*"
+          - "node_.*_check_.*"
+          - "node_.*conformance.*"
+          - "node_.*verifier.*"
+          - "node_.*_verify.*"
+          - "node_.*_audit.*"
+          - "node_.*_guard_.*"
+          - "node_.*_lint.*"
+          - "node_.*drift.*"
+          - "node_.*compliance.*"
+        child_ticket_severity: warning
+        acceptance_wave: 4
+        wave_obligation: omnimarket_validator_baseline_zero
+        inventory_path: inventory/omnimarket_validator_inventory.yaml
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

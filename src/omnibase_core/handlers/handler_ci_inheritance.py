@@ -124,7 +124,7 @@ class HandlerCiInheritance:
                         remediation=(
                             f"Host the shared workflow or action in "
                             f"{request.organization}/{request.host_repository} and call "
-                            "it from there (RULING 2026-10-14T20:01:09Z, OMN-17427)."
+                            "it from there (OMN-17427)."
                         ),
                     )
                 )

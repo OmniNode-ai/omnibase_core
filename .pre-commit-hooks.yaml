@@ -1204,11 +1204,11 @@
 - id: check-public-runner-placement
   name: Public repositories add no self-hosted CI job (OMN-19998)
   description: >
-    CI runners are for private repositories only (RULING 2026-10-16T07:07:09Z). Refuse a job whose runs-on
-    is, or can resolve to, anything but a GitHub-hosted label (a literal such as self-hosted or omnibase-ci,
-    or an expression that names one or reads vars, needs, matrix, inputs, env, secrets or steps). There
-    is no baseline (OMN-21280): every such job of a public repository fails. Pass --repo <name> when the
-    checkout directory is not the repository name; a private repository passes --visibility private.
+    CI runners are for private repositories only (OMN-19998). Refuse a job whose runs-on is, or can resolve
+    to, anything but a GitHub-hosted label (a literal such as self-hosted or omnibase-ci, or an expression
+    that names one or reads vars, needs, matrix, inputs, env, secrets or steps). There is no baseline
+    (OMN-21280): every such job of a public repository fails. Pass --repo <name> when the checkout directory
+    is not the repository name; a private repository passes --visibility private.
   language: python
   entry: python -m omnibase_core.handlers.handler_public_runner_placement_cli
   files: ^\.github/workflows/[^/]+\.ya?ml$
@@ -1299,4 +1299,46 @@
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: true
   require_serial: true
+  stages: [pre-commit]
+
+- id: check-omnimarket-validator-residency
+  name: Omnimarket validator residency ratchet (OMN-21503)
+  description: >
+    Counts the validator predicates resident in omnimarket (check, validate, detect and verify scripts
+    and the validator-shaped nodes the inventory classes as validators) against the repository's committed
+    shrink-only baseline. A resident validator the inventory does not list, a stale inventory entry, a
+    validator with no replacing core validator, and a baseline that grew against --previous-baseline all
+    fail. Every path, name pattern and severity is the .validation.yaml contract's.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_omnimarket_validator_residency_cli
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]
+
+- id: check-hardcoded-thresholds
+  name: No hard-coded numeric thresholds (OMN-21503)
+  description: >
+    A module- or class-level constant whose name the contract's name_pattern matches (a threshold, limit,
+    timeout, maximum, minimum, ratio or budget) and that holds a number other than 0 or 1 is a finding:
+    thresholds are contract or overlay data. Pre-existing findings are tolerated only through the repository's
+    committed shrink-only baseline (--baseline), and --previous-baseline fails a baseline that grew. The
+    pattern and the baseline path come from contract_config_compliance.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_hardcoded_value_kinds_cli --kind threshold
+  types: [python]
+  pass_filenames: true
+  stages: [pre-commit]
+
+- id: check-hardcoded-host-lists
+  name: No hard-coded host lists (OMN-21503)
+  description: >
+    A list, tuple, set or frozenset literal of host names is a finding: hosts are contract or overlay
+    data. The element pattern, the minimum size and the baseline path are the hardcoded_host_list rule's
+    parameters in hardcoded_topics.validation.yaml. Pre-existing findings are tolerated only through the
+    repository's committed shrink-only baseline (--baseline); --previous-baseline fails a baseline that
+    grew.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_hardcoded_value_kinds_cli --kind host_list
+  types: [python]
+  pass_filenames: true
   stages: [pre-commit]

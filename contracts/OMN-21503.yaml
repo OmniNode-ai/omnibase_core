@@ -1,0 +1,136 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21503
+title: "T-Q6: validator home inventory, migration and the omnimarket validator ratchet"
+summary: The omnibase_core half of plan task T-Q6. An inventory data file classing every omnimarket validator
+  (the check, validate, detect and verify scripts and the validator-shaped nodes) as a validator, a decision
+  or other, with its replacing core validator; a pure handler that counts the validators resident in a
+  supplied tree against a shrink-only baseline, with a ValidatorBase entry and a .validation.yaml contract;
+  and the extension of the hardcoded_model_config, hardcoded_topics and contract_config_compliance validators
+  to ruling stamps, host lists and numeric thresholds. The required omnimarket ci step that runs the ratchet
+  is a separate omnimarket pull request after the core release is adopted, and the per-validator migration
+  children are minted by the orchestrator.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21503-validator-residency
+    statement: The validators resident in omnimarket are inventoried, counted against a shrink-only baseline,
+      and refused when one is added or the baseline grows; every kind of hard-coded value is refused outside
+      a contract or overlay.
+    acceptance:
+      - id: AC1
+        statement: "AC1: The inventory lists every omnimarket validator with its class and its replacing
+          core validator, and every entry classed as a validator has a child ticket -- falsifier: a test
+          that compares the inventory with the files under `scripts/ci`, `scripts/validation` and the
+          validator nodes"
+      - id: AC2
+        statement: "AC2: A PR that adds a validator predicate to omnimarket fails omnimarket's required
+          `ci`, and the baseline may only shrink -- falsifier: a fixture PR that adds a check script,
+          and one that raises the baseline count"
+      - id: AC3
+        statement: "AC3: The manifest's wave-4 obligations include the committed baseline at zero, so
+          wave 4 is not accepted while an omnimarket validator remains -- falsifier: a fixture manifest
+          with a nonzero baseline rejects wave 4 through T-Q2"
+      - id: AC4
+        statement: "AC4: A ruling stamp, a model name, a host name or a numeric threshold in omnimarket
+          code outside a contract or overlay fails the extended core validators, each against its own
+          shrink-only baseline -- falsifier: four fixture files, one per kind"
+      - id: AC5
+        statement: "AC5: Configuration: the scanned paths, the kinds and the baselines are the validators'
+          `.validation.yaml` contracts and committed baseline files, and no path or pattern is a literal
+          in the checkers -- falsifier: a fixture contract that adds a path changes the count"
+      - id: AC6
+        statement: "AC6: Bindings: pure checkers over a supplied tree -- falsifier: byte-identical results
+          in process and through the local in-process entry of the parity harness (T-B2)"
+evidence_requirements:
+  - kind: tests
+    description: The residency handler, its CLI entry, the shrink-only comparator and the four kinds of
+      hard-coded value.
+    command: uv run pytest tests/unit/handlers/test_handler_omnimarket_validator_residency.py tests/unit/handlers/test_handler_omnimarket_validator_residency_cli.py
+      tests/unit/handlers/test_handler_shrink_only_baseline.py tests/unit/validation/test_hardcoded_value_kinds_fixtures.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21503-ac1-inventory
+    description: The inventory test compares the committed inventory with a tree of exactly the files
+      it names, requires a replacing core validator on every validator entry, and a stale or unlisted
+      resident fails. The child tickets are reported at the contract's child_ticket_severity until the
+      orchestrator mints them.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_omnimarket_validator_residency_cli.py
+          tests/unit/handlers/test_handler_omnimarket_validator_residency.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21503-ac2-ratchet
+    description: A tree that adds a check script fails with baseline_added and inventory_unclassified,
+      and a baseline that holds an id its previous revision lacks fails with baseline_raised.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_omnimarket_validator_residency.py
+          tests/unit/handlers/test_handler_shrink_only_baseline.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21503-ac3-wave-four
+    description: A fixture manifest whose wave-4 obligations lack the baseline-at-zero obligation, or
+      whose baseline is nonzero, is rejected.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_omnimarket_validator_residency.py
+          tests/unit/handlers/test_handler_omnimarket_validator_residency_cli.py -n 0 -q -k wave
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21503-ac4-four-kinds
+    description: One fixture file per kind (ruling stamp, model name, host name, numeric threshold) is
+      refused by the validator that owns the kind, each against its own shrink-only baseline.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_hardcoded_value_kinds_fixtures.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21503-ac5-configuration
+    description: A policy that adds a glob changes the count with no code change, and the handler holds
+      no path or pattern string literal.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_omnimarket_validator_residency.py
+          -n 0 -q -k "Configuration"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21503-ac6-bindings
+    description: The pure handler and the I/O entry give byte-identical canonical JSON over the same listing.
+      The parity harness (T-B2) is not in this repository at this base; the canonical JSON is the byte
+      surface it compares.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_omnimarket_validator_residency.py
+          tests/unit/handlers/test_handler_omnimarket_validator_residency_cli.py -n 0 -q -k "byte_identical"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21503-delegation-join
+    description: The delegation runs whose output is in the PR head are joined to the head through their
+      receipts (the delegated cells of the lane TERMINAL carry the run ids and the Codex thread id).
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -q "lane=t-q6-0035" "${ONEX_LEDGER_PATH}"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1

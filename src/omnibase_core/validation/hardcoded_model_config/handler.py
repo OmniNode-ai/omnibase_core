@@ -62,12 +62,7 @@ __all__ = [
 ]
 
 _FAMILY_ORDER: Final[dict[str, int]] = {
-    "M": 0,
-    "E": 1,
-    "E-LAN": 2,
-    "D": 3,
-    "R": 4,
-    "L": 5,
+    family: rank for rank, family in enumerate(("M", "E", "E-LAN", "D", "R", "L", "S"))
 }
 
 _PYTHON_SUFFIXES: Final[frozenset[str]] = frozenset({".py", ".pyi"})
@@ -326,8 +321,13 @@ def scan(
                     record(n, "R", value)
                     break
 
-    if families & {"M", "E", "E-LAN", "D", "L"}:
+    if families & {"M", "E", "E-LAN", "D", "L", "S"}:
         model_id, endpoint_url, endpoint_key, lab_subnet = _compiled(policy)
+        ruling_stamp = re.compile(policy.ruling_stamp_pattern, re.IGNORECASE)
+        pairs: tuple[tuple[LiteralFamily, re.Pattern[str]], ...] = (
+            ("M", model_id),
+            ("S", ruling_stamp),
+        )
         fact = _deployment_fact(policy)
         is_python = _suffix(path) in _PYTHON_SUFFIXES
         views = _python_views(text, lines) if is_python else None
@@ -339,11 +339,11 @@ def scan(
             line_literals = literals.get(n, [])
             if not line_code.strip() and not line_literals:
                 continue
-            if "M" in families:
-                for literal in line_literals:
-                    m = model_id.search(literal)
+            for family, pattern in pairs:
+                for literal in line_literals if family in families else ():
+                    m = pattern.search(literal)
                     if m:
-                        record(n, "M", m.group(0))
+                        record(n, family, m.group(0))
                         break
             if "E" in families:
                 for literal in line_literals:

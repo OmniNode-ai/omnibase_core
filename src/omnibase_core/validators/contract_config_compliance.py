@@ -44,6 +44,10 @@ from pathlib import Path
 
 import yaml  # ONEX_EXCLUDE: manual_yaml - validator reads adjacent contract.yaml files
 
+from omnibase_core.handlers.handler_hardcoded_threshold import (
+    EXCLUDED_PATH_PARTS as _EXCLUDED_PATH_PARTS,
+)
+from omnibase_core.handlers.handler_hardcoded_threshold import file_threshold_findings
 from omnibase_core.models.validation.model_contract_config_compliance_finding import (
     ModelContractConfigComplianceFinding,
 )
@@ -74,22 +78,6 @@ INFRA_ALLOWLIST: frozenset[str] = frozenset(
 )
 
 SUPPRESSION_MARKER = "contract-config-ok:"
-
-_EXCLUDED_PATH_PARTS: frozenset[str] = frozenset(
-    {
-        ".venv",
-        "__pycache__",
-        "build",
-        "dist",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".mypy_cache",
-        "node_modules",
-        ".git",
-        "archived",
-        "archive",
-    }
-)
 
 _DEFAULT_SCAN_ROOTS = (Path("src"), Path("scripts"))
 
@@ -429,6 +417,9 @@ def validate_file(
         {"bare_env_read", "bus_bypass_import", "missing_contract_config"}
     )
     findings: list[ModelContractConfigComplianceFinding] = []
+
+    if "hardcoded_threshold" in active:
+        findings.extend(file_threshold_findings(path, tree, lines, SUPPRESSION_MARKER))
 
     if "bare_env_read" in active and _is_handler_file(path):
         findings.extend(_check_bare_env_reads(path, tree, lines))
