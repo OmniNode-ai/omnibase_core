@@ -8,7 +8,7 @@ summary: "Plan task T2.1, omnibase_core slice. The manifest declares check-no-di
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
-  - ".pre-commit-hooks.yaml hook ids check-no-dict-any and check-no-backward-compat"
+  - public_api
 evidence_requirements:
   - kind: "tests"
     description: "The shrink-only baseline contract holds for both hooks."
@@ -54,7 +54,7 @@ dod_evidence:
         check_value: "test -z \"$(git ls-files scripts/validation | grep -E 'validate-(dict-any-usage|no-backward-compatibility)[.]py')\"
           && grep -c 'omnibase_core.handlers.handler_dict_any_cli' .pre-commit-config.yaml"
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn-21501-t21-core-5-consumer-interface-recorded
+  - id: dod-omn-21501-t21-core-5-consumer-interface
     description: "T2.1-core-5: the consumer interface (hook ids, args, baseline format, write command,
       tag rule) is recorded in the PR body and one STATUS ledger row."
     source: manual
@@ -74,6 +74,7 @@ dod_evidence:
           or test_c_removed_finding or test_without_baseline_every_finding_fails or test_g_manifest_declares_both_hook_ids
           or test_generic_format_hooks_use_python_language'"
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
   - id: dod-omn-21501-ac2-write-baseline-only-shrinks
     description: "AC2: --write-baseline creates the baseline when absent and afterwards only shrinks;
       a write that would add an entry exits 1 naming the entry and writes nothing."
@@ -83,6 +84,7 @@ dod_evidence:
         check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_d_write_baseline_refuses
           or test_write_baseline_creates_an_absent_file or test_c_removed_finding'"
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
   - id: dod-omn-21501-ac3-parity-and-scripts-deleted
     description: "AC3: the new handlers give the findings the two repository scripts gave (the scripts'
       own regression tests, ported, pass on the handlers), and git grep for the two script paths returns
@@ -96,7 +98,8 @@ dod_evidence:
       - check_type: command
         check_value: "test -z \"$(git grep -nE 'validate-(dict-any-usage|no-backward-compatibility)[.]py')\""
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn-21501-ac4-manifest-entries-run-from-clean-checkout
+    binds_ac: [AC3]
+  - id: dod-omn-21501-ac4-manifest-clean-checkout
     description: "AC4: the manifest entries are self-contained python hooks that pass a clean file and
       fail a bad file; the pre-commit try-repo run from a clean checkout is recorded as a lab run in the
       pull request body."
@@ -106,6 +109,7 @@ dod_evidence:
         check_value: "uv run pytest tests/unit/handlers/test_baselined_finding_hooks.py -q -n 0 -k 'test_g_manifest_declares_both_hook_ids
           or test_b_baselined_finding_passes or test_without_baseline_every_finding_fails'"
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
   - id: dod-omn-21501-deploy-contract-surface
     description: "Deploy probe. omnibase_core is a library, so the live surface of this change is the
       published hook source. Read the two hook entry modules, the shared baseline runtime and the manifest
