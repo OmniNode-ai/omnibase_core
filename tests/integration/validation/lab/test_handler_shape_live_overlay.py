@@ -38,7 +38,7 @@ pytestmark = pytest.mark.integration
 
 _ROOT = Path(__file__).resolve().parents[4]
 _FIXTURES = _ROOT / "tests/fixtures/validation/handler_shape"
-_GOLDEN = _FIXTURES / "golden_report.json"
+_GOLDEN = _FIXTURES / "golden_handler_shape.json"
 _CONSUMER_GROUP = "validator-runtime-lab-consumer"
 _WAIT_SECONDS = 30.0
 

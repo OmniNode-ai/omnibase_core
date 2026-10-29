@@ -57,7 +57,7 @@ pytestmark = pytest.mark.unit
 
 _ROOT = Path(__file__).resolve().parents[3]
 _FIXTURES = _ROOT / "tests/fixtures/validation/handler_shape"
-_GOLDEN = _FIXTURES / "golden_report.json"
+_GOLDEN = _FIXTURES / "golden_handler_shape.json"
 _NODE = Path(handler_validator_runtime_overlay.__file__).resolve().parent
 _INMEMORY = _NODE / "overlays/validator_runtime.inmemory.overlay.yaml"
 _REDPANDA = _NODE / "overlays/validator_runtime.redpanda.overlay.yaml"
