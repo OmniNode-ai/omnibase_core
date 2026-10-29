@@ -85,4 +85,9 @@ dod_evidence:
         check_value: uv run --frozen python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
           --help
         cwd: .
+      - check_type: test_passes
+        check_value: >-
+          bash -o pipefail -c 'gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_text_file_write_effect/handler.py?ref=omn-21520-bd3-node-runtimes"
+          --jq .content | base64 -d | grep -F "class NodeTextFileWriteEffect" > /dev/null'
+        cwd: .
     binds_ac: [AC1, AC2, AC3]
