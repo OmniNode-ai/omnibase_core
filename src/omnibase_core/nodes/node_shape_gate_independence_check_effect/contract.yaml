@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_shape_gate_independence_check_effect
+node_id: node_shape_gate_independence_check_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: Refuses shape-gate detector jobs that need the OCC preflight (OMN-20298).
+input_model: omnibase_core.models.validation.model_shape_gate_independence_request.ModelShapeGateIndependenceRequest
+output_model: omnibase_core.models.validation.model_shape_gate_independence_report.ModelShapeGateIndependenceReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_shape_gate_independence:HandlerShapeGateIndependence
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 60000

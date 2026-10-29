@@ -12,10 +12,13 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from omnibase_core.handlers.handler_todo_format import check_file, main
 from omnibase_core.models.validation.model_todo_format_finding import (
     ModelTodoFormatFinding,
 )
+from omnibase_core.nodes.node_todo_format_check_effect.handler_todo_format import (
+    check_file,
+)
+from omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format import main
 
 pytestmark = pytest.mark.unit
 
@@ -219,7 +222,10 @@ def test_exported_hook_preserves_consumer_id_and_handler_entry() -> None:
         f"Require all {FIRST_MARKER}/{SECOND_MARKER}/{THIRD_MARKER} comments to reference a Linear ticket (OMN-XXXX). "
         "Ported from onex_change_control (OMN-20068, S8).\n"
     )
-    assert hook["entry"] == "python -m omnibase_core.handlers.handler_todo_format"
+    assert (
+        hook["entry"]
+        == "python -m omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format"
+    )
     assert hook["language"] == "python"
     assert hook["types"] == ["python"]
     assert hook["stages"] == ["pre-commit"]

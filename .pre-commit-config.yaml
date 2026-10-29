@@ -627,7 +627,7 @@ repos:
       # change-control preflight says. Zero baseline, no allowlist.
       - id: check-shape-gate-independence
         name: Shape-gate detectors never depend on the OCC preflight (OMN-20298)
-        entry: uv run python -m omnibase_core.handlers.handler_shape_gate_independence
+        entry: uv run python -m omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence
         language: system
         files: ^\.github/workflows/.*\.ya?ml$
         pass_filenames: true
@@ -2366,7 +2366,7 @@ repos:
       - id: no-untracked-todos
         name: No untracked TODO/FIXME/HACK comments
         language: system
-        entry: uv run python -m omnibase_core.handlers.handler_todo_format
+        entry: uv run python -m omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format
         require_serial: true
         types: [python]
         exclude: ^src/omnibase_core/validation/todo_marker/

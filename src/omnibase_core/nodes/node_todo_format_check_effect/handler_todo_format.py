@@ -8,7 +8,7 @@ line-by-line scanning heuristics and output format are preserved.
 
 Usage::
 
-    python -m omnibase_core.handlers.handler_todo_format [files...]
+    python -m omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format [files...]
 
 Exit code 0 = clean. Exit code 1 = violations found.
 """
@@ -16,12 +16,16 @@ Exit code 0 = clean. Exit code 1 = violations found.
 from __future__ import annotations
 
 import re
-import sys
-from collections.abc import Sequence
 from pathlib import Path
 
 from omnibase_core.models.validation.model_todo_format_finding import (
     ModelTodoFormatFinding,
+)
+from omnibase_core.models.validation.model_todo_format_report import (
+    ModelTodoFormatReport,
+)
+from omnibase_core.models.validation.model_todo_format_request import (
+    ModelTodoFormatRequest,
 )
 
 # Any of the three unfinished-work markers without an immediate ticket reference:
@@ -159,21 +163,12 @@ def check_file(path: str) -> list[ModelTodoFormatFinding]:
     return _scan_lines(text, path)
 
 
-def main(argv: Sequence[str] | None = None) -> int:
-    """Run the exported hook on the given files, or command-line arguments."""
-    files = sys.argv[1:] if argv is None else argv
-    all_violations: list[ModelTodoFormatFinding] = []
-    for path in files:
-        all_violations.extend(check_file(path))
-    if all_violations:
-        for finding in all_violations:
-            sys.stdout.write(f"{finding.format()}\n")
-        sys.stdout.write(
-            f"\n{len(all_violations)} violation(s). Use format: {TICKET_FORMAT}\n"
-        )
-        return 1
-    return 0
+class HandlerTodoFormat:
+    """Check files for unfinished-work markers without a ticket reference."""
 
-
-if __name__ == "__main__":
-    sys.exit(main())
+    def handle(self, request: ModelTodoFormatRequest) -> ModelTodoFormatReport:
+        """Return the findings of every requested file."""
+        findings: list[ModelTodoFormatFinding] = []
+        for path in request.paths:
+            findings.extend(check_file(path))
+        return ModelTodoFormatReport(findings=tuple(findings))

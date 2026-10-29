@@ -8,7 +8,12 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_shape_gate_independence import main, validate_paths
+from omnibase_core.nodes.node_shape_gate_independence_check_effect.handler_shape_gate_independence import (
+    validate_paths,
+)
+from omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence import (
+    main,
+)
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 

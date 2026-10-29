@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Unit tests for omnibase_core.handlers.handler_done_write_receipt_gate (OMN-20368).
+"""Unit tests for omnibase_core.nodes.node_done_write_receipt_gate_compute.handler_done_write_receipt_gate (OMN-20368).
 
 The rule under test: a Done write needs a PASS dod_verify verdict whose checks
 bind every acceptance criterion through ``binds_ac``. A merged PR is never
@@ -14,7 +14,7 @@ from typing import Any
 
 import pytest
 
-from omnibase_core.handlers.handler_done_write_receipt_gate import (
+from omnibase_core.nodes.node_done_write_receipt_gate_compute.handler_done_write_receipt_gate import (
     ac_binding_gap,
     acceptance_criteria_items,
     canonical_ac_label,

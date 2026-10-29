@@ -12,6 +12,12 @@ from omnibase_core.models.version_drift.model_declared_floor import (
 from omnibase_core.models.version_drift.model_dependency_pin import (
     ModelDependencyPin,
 )
+from omnibase_core.models.version_drift.model_dependency_pin_bump_request import (
+    ModelDependencyPinBumpRequest,
+)
+from omnibase_core.models.version_drift.model_dependency_pin_bump_result import (
+    ModelDependencyPinBumpResult,
+)
 from omnibase_core.models.version_drift.model_dependency_pin_manifest import (
     ModelDependencyPinManifest,
 )
@@ -53,6 +59,8 @@ __all__ = [
     "ModelConsumerPyproject",
     "ModelDeclaredFloor",
     "ModelDependencyPin",
+    "ModelDependencyPinBumpRequest",
+    "ModelDependencyPinBumpResult",
     "ModelDependencyPinManifest",
     "ModelDependencyPinRepo",
     "ModelDependencyPinSite",

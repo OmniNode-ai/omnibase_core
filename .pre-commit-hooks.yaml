@@ -54,7 +54,7 @@
     Require all TODO/FIXME/HACK comments to reference a Linear ticket (OMN-XXXX). Ported from onex_change_control
     (OMN-20068, S8).
   language: python
-  entry: python -m omnibase_core.handlers.handler_todo_format
+  entry: python -m omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -963,7 +963,7 @@
     on a preflight job without always()) or branches on the preflight result in a step. A detector must
     run on every PR. No baseline, no allowlist, no suppression comment.
   language: python
-  entry: python -m omnibase_core.handlers.handler_shape_gate_independence
+  entry: python -m omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence
   files: ^\.github/workflows/.*\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1301,7 +1301,7 @@
     predicates pinned to mutable state and inert token prefixes in a ticket contract's dod_evidence check_value
     fields; reports SIGPIPE-fragile pipelines as a warning.
   language: python
-  entry: python -m omnibase_core.handlers.handler_contract_check_values_lint
+  entry: python -m omnibase_core.nodes.node_contract_evidence_check_effect.runtime_contract_check_values_lint
   files: ^contracts/OMN-[0-9]+\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1314,7 +1314,7 @@
     checks must carry at least one check at proof tier L1 or above; existence probes derive L0 and do
     not count.
   language: python
-  entry: python -m omnibase_core.handlers.handler_contract_substance_floor
+  entry: python -m omnibase_core.nodes.node_contract_evidence_check_effect.runtime_contract_substance_floor
   files: ^contracts/OMN-[0-9]+\.ya?ml$
   pass_filenames: true
   require_serial: true

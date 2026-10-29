@@ -216,7 +216,7 @@ jobs:
         working-directory: omnibase_core
         run: |
           if [ "$MODE" == "dependency" ]; then
-            uv run --no-sync python -m omnibase_core.handlers.handler_dependency_pin_bump \
+            uv run --no-sync python -m omnibase_core.nodes.node_dependency_pin_bump_effect.runtime_dependency_pin_bump \
               --manifest docs/downstream-repos.yaml \
               --repo "$REPO" \
               --repo-root "$GITHUB_WORKSPACE/downstream" \
