@@ -291,18 +291,6 @@ entries:
   - path: examples/demo/model-validate/mock-responses/candidate/response_015_negative_sentiment.json
     family: M
     content_sha1: 97d9cf751cd928ef09eb16ee03c288374796603d
-  - path: scripts/ci/canonical_handler_shape.py
-    family: F
-    content_sha1: 06044849d13314eb2adc61ade8bb7fafedc05a49
-  - path: scripts/ci/canonical_handler_shape.py
-    family: F
-    content_sha1: db85f5b6b17c2246a49b2f7cfa0a84ddf3249634
-  - path: scripts/ci/canonical_handler_shape.py
-    family: F
-    content_sha1: dda2717507560049d66c1093afa4949c63d962e0
-  - path: scripts/ci/canonical_handler_shape.py
-    family: F
-    content_sha1: f605f529926e213a24c3214209e6ba28569f8362
   - path: scripts/ci/check_async_fixture_decorators.py
     family: F
     content_sha1: dda2717507560049d66c1093afa4949c63d962e0

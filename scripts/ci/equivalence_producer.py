@@ -3,7 +3,7 @@
 
 """Deterministic producer + byte-compare comparator for equivalence artifacts (OMN-14905).
 
-``canonical_handler_shape.verify_equivalence_replay`` TRUSTS ``status == "pass"`` and
+``validator_flip_artifacts.verify_equivalence_replay`` TRUSTS ``status == "pass"`` and
 never re-runs the replay it gates (blind spot E1). The first attempt to close E1
 (omnibase_core#1472, ``verify_flip_bundle._assert_independent_author``) asserted an
 **author identity** property — ``authored_by != git-author(def_b_commit)``. Identity is
@@ -28,7 +28,7 @@ fabricated input hash, or a golden that no longer matches live code all diverge 
 byte-compare. Who typed the file is irrelevant, which is the point.
 
 Why the legacy side cannot be fabricated: it is read from git, never from a committed
-golden. This mirrors ``canonical_handler_shape.verify_handflip_proof``, which already
+golden. This mirrors ``validator_flip_receipts.verify_handflip_proof``, which already
 git-re-derives its verbatim-preservation proof — and which is exactly why the hand-flip
 path was already exempt from the identity assertion.
 

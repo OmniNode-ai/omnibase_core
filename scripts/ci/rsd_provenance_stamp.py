@@ -16,7 +16,7 @@ handler, ``_provenance_stamp_json``, for the producer side):
   filename -> ``sha256:<hex>``, MUST include ``contract.yaml``, the triggering
   artifact). The gate RECOMPUTES every listed digest from the live file on disk
   and rejects any mismatch — it never trusts the stamp's self-asserted content,
-  mirroring ``canonical_handler_shape.py``'s ``verify_adequacy_receipt`` staleness
+  mirroring ``validator_flip_artifacts``'s ``verify_adequacy_receipt`` staleness
   recompute. This proves stamp/content self-consistency (anti-copy-paste,
   anti-staleness) — it is NOT a cryptographic non-repudiation / PKI proof of
   causal RSD authorship (no trusted-signer infra exists here); that is the same
@@ -318,7 +318,7 @@ def _resolve_scope(
 ) -> tuple[Path, str]:
     """Compute ``(src_root, nodes_glob)`` for a scope.
 
-    Mirrors ``canonical_handler_shape.py``'s ``_resolve_scope``: every argument
+    Mirrors ``validator_flip_scope``'s ``_resolve_scope``: every argument
     defaults to the omnibase_core value already in effect, so
     ``package="omnibase_core"`` with all other args ``None`` reproduces today's
     constants exactly.

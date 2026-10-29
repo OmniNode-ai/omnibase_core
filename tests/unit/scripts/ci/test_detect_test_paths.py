@@ -593,7 +593,6 @@ def test_selector_own_files_still_escalate(selector_file: str) -> None:
     [
         "scripts/ci/ci_summary_gate.py",
         "scripts/ci/verify_flip_bundle.py",
-        "scripts/ci/canonical_handler_shape.py",
         "scripts/ci/product_readiness.py",
         "scripts/ci/product_reason_graph.py",
     ],
