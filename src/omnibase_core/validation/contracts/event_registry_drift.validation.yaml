@@ -75,6 +75,12 @@ validation:
         contract_globs:
           - "*.yaml"
           - "*.yml"
+        topic_prefix: "onex."
+        baseline_kinds:
+          - "event_source_only"
+          - "event_registry_only"
+          - "source_only"
+          - "registry_only"
 
   suppression_comments: []
 
