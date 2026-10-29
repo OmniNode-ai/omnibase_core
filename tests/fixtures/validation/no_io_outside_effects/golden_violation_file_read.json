@@ -6,8 +6,8 @@
     {
       "validator_id": "no_io_outside_effects",
       "severity": "FAIL",
-      "location": "tests/fixtures/validation/no_io_outside_effects/violation_file_read/handlers/handler_x.py:7",
-      "message": "tests/fixtures/validation/no_io_outside_effects/violation_file_read/handlers/handler_x.py:7: read_text(...) in a non-EFFECT node package (rule file_read): A file is read in a non-EFFECT node package.",
+      "location": "violation_file_read/handlers/handler_x.py:7",
+      "message": "violation_file_read/handlers/handler_x.py:7: read_text(...) in a non-EFFECT node package (rule file_read): A file is read in a non-EFFECT node package.",
       "remediation": null,
       "evidence": {},
       "rule_id": "file_read"

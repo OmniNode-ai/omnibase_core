@@ -38,6 +38,11 @@ requirements:
       - id: AC7
         statement: "AC7: disabling a rule row fails that rule's fixture and only that rule's -- falsifier:
           the disable test"
+      - id: AC8
+        statement: "AC8: the runtime runs on the in-memory default and with the broker overlay with no
+          code change -- falsifier: the planted fixture run on both overlays on one commit equals the
+          committed golden report after normalising run id and timestamps, one run event per run, the
+          second run observed on a lab host by a run-event consumer filtered by run id"
 evidence_requirements:
   - kind: tests
     description: Checker, validator and runtime tests, and the existing node tests.
@@ -121,3 +126,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC7
+  - id: dod-omn21532-ac8-two-overlays
+    description: The planted fixture run on the in-memory overlay and on the Redpanda overlay equals the
+      golden report after normalising run id and timestamps, with one run event per run; the live broker
+      run is the lab receipt in the PR body.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects_overlays.py
+          -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC8

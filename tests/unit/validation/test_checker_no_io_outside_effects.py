@@ -74,6 +74,7 @@ _BROKEN_CONTRACT = "name: [unclosed\n"
 _CLEAN_MODULE = "x = 1\n"
 _ENV_MODULE = 'import os\n\nVALUE = os.getenv("X")\n'
 _HANDLER = "handlers/handler_x.py"
+_PLANTED = "violation_file_read"
 
 
 def _contract() -> ModelValidatorSubcontract:
@@ -141,6 +142,13 @@ def _validate(
 ) -> list[ModelValidationIssue]:
     validator = ValidatorNoIoOutsideEffects(contract=_unexcluded(contract))
     return list(validator.validate([root]).issues)
+
+
+def _stage_planted(tmp_path: Path) -> Path:
+    """The planted file-read fixture in a work directory the real contract does not exclude."""
+    work = tmp_path / "work"
+    shutil.copytree(_FIXTURES / _PLANTED, work / _PLANTED)
+    return work
 
 
 def _tree(tmp_path: Path, rule_id: str, kind: str) -> Path:
@@ -510,15 +518,16 @@ def test_runtime_resolves_the_writer_and_the_bus_from_the_container(
         resolved.append(protocol_type)
         return real(self, protocol_type, service_name)
 
-    monkeypatch.chdir(_ROOT)
+    work = _stage_planted(tmp_path)
+    monkeypatch.chdir(work)
     monkeypatch.setattr(ModelONEXContainer, "get_service", spy)
     handler = HandlerValidatorRuntimeOverlay()
     profile = handler.load(handler.default_overlay_path()).profile
     report_path = tmp_path / "report.json"
     result = run_validator(
         build_validator_container(),
-        ValidatorNoIoOutsideEffects(contract=_unexcluded(_contract())),
-        [_FIXTURES / "violation_file_read"],
+        ValidatorNoIoOutsideEffects(),
+        [Path(_PLANTED)],
         str(report_path),
         profile,
         "example-repository",
