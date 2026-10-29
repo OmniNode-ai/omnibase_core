@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Overlay-owned rule values for the hook-writes check (OMN-21433)."""
+"""Overlay-owned rule values for the hook-writes check (OMN-21498)."""
 
 from __future__ import annotations
 

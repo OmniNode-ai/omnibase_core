@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""The hooks of a pre-commit file, in either of its two shapes (OMN-21433)."""
+"""The hooks of a pre-commit file, in either of its two shapes (OMN-21498)."""
 
 from __future__ import annotations
 

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure hook parsing and check-only predicates for hook-writes (OMN-21433).
+"""Pure hook parsing and check-only predicates for hook-writes (OMN-21498).
 
 All rule values belong to the overlay. These helpers perform no filesystem I/O.
 """

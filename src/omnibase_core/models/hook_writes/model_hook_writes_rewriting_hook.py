@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""An overlay-defined rewriting hook id and its check-only arguments (OMN-21433)."""
+"""An overlay-defined rewriting hook id and its check-only arguments (OMN-21498)."""
 
 from __future__ import annotations
 

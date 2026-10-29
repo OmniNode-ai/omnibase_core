@@ -1,5 +1,5 @@
 ---
-# Rule values of the hook-writes check (OMN-21433, plan task T2.6).
+# Rule values of the hook-writes check (OMN-21498, plan task T2.6).
 #
 # A pre-commit hook checks and refuses; it never rewrites the files it was given.
 # The rule is the handler `HandlerHookWrites`; every value it judges by is here.

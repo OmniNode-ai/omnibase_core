@@ -1302,7 +1302,7 @@
   stages: [pre-commit]
 
 - id: check-hook-writes
-  name: Pre-commit hooks check, never rewrite (OMN-21433)
+  name: Pre-commit hooks check, never rewrite (OMN-21498)
   description: >
     A hook in .pre-commit-config.yaml or .pre-commit-hooks.yaml whose entry or args rewrite files, or
     that is a known rewriting hook id run without its check-only argument, is refused. The signals and

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for the hook-writes rule (OMN-21433, plan task T2.6).
+"""Tests for the hook-writes rule (OMN-21498, plan task T2.6).
 
 A pre-commit hook must check, never rewrite: a hook whose entry (or a known
 rewriting hook id from a remote repository) changes files is a FAIL. The signals

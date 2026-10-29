@@ -94,7 +94,7 @@ check-dependency-direction = "omnibase_core.handlers.handler_dependency_directio
 # OMN-17427: how a workflow `uses:` ref must be pinned. Third-party actions take a full
 # 40-hex sha; first-party refs take the dev-merge tag the repository's overlay names.
 check-action-pins = "omnibase_core.handlers.handler_action_pin_cli:main"
-# OMN-21433 (T2.6): a pre-commit hook checks and refuses, it never rewrites. Refuses a hook
+# OMN-21498 (T2.6): a pre-commit hook checks and refuses, it never rewrites. Refuses a hook
 # whose entry or args write, judged by the repository's .hook-writes-overlay.yaml.
 check-hook-writes = "omnibase_core.handlers.handler_hook_writes_cli:main"
 # OMN-19998: version drift at source. Refuse a floor raise on a sibling registry

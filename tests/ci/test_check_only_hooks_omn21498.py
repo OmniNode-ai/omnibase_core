@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Canary for plan task T2.6 (OMN-21433): the pre-commit hooks check, never rewrite.
+"""Canary for plan task T2.6 (OMN-21498): the pre-commit hooks check, never rewrite.
 
 Each hook converted from a rewriting form is lifted out of ``.pre-commit-config.yaml``
 into a throwaway git repository and run through ``pre-commit`` itself on a canary:

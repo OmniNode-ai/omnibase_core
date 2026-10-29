@@ -1,8 +1,7 @@
 ---
 schema_version: "1.0.0"
-ticket_id: OMN-21433
-title: The software factory has a formal design and failure process, with every station proven against
-  canonical shapes at its seams
+ticket_id: OMN-21498
+title: "T2.6: check-only pre-commit hooks in omnibase_core"
 summary: Items of plan task T2.6 (validators-to-core and hardcoded-rules migration plan), omnibase_core
   slice. The pre-commit hooks that rewrote files check and refuse instead, and one core rule refuses a
   hook whose entry writes.
@@ -10,50 +9,41 @@ is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
-  - id: req-omn21433-t26-check-only-hooks
+  - id: req-omn21498-t26-check-only-hooks
     statement: T2.6 - no pre-commit hook of omnibase_core rewrites a file. Formatting, lint, end-of-file,
       tmp/ and the AI co-author trailer are checks that refuse, and one core rule refuses a new hook whose
       entry writes.
     acceptance:
-      - id: AC2601
-        statement: 'AC2601: (T2.6) a canary of an unformatted file, an unused import, a file with no final
-          newline, a staged tmp/ file and a commit message carrying the AI co-author trailer is refused
-          by the repository hooks and the working tree is byte-identical after the run, while a clean
-          control passes every hook -- falsifier: uv run pytest tests/ci/test_check_only_hooks_omn21433.py
-          -q fails at the merge base'
-      - id: AC2602
-        statement: 'AC2602: (T2.6) one core rule, check-hook-writes, fails a hook whose entry or args
-          write (ruff format and ruff check --fix, sed -i and perl -i, rm outside a temporary directory,
-          git add, a --write flag) and a known rewriting hook id run without its check-only argument,
-          takes every signal and id from the repository overlay, and the CLI refuses a missing overlay
-          and a scan of zero hooks -- falsifier: uv run pytest tests/unit/handlers/test_handler_hook_writes.py
-          tests/unit/handlers/test_handler_hook_writes_cli.py -q fails at the merge base'
-      - id: AC2603
-        statement: 'AC2603: (T2.6) no hook in omnibase_core .pre-commit-config.yaml or .pre-commit-hooks.yaml
-          is judged a writer by the rule, and the run reads at least one hook -- falsifier: uv run python
-          -m omnibase_core.handlers.handler_hook_writes_cli exits non-zero when a hook is made to write'
+      - id: AC1
+        statement: 'AC1: No hook of omnibase_core rewrites a file or a commit message: each Appendix 1
+          REWRITES FILES row of this repository is a check that refuses -- falsifier: pytest cases over
+          the converted hook config and a git grep of the config for hooks whose entry writes'
+      - id: AC2
+        statement: 'AC2: A canary commit with an unformatted file and an AI co-author trailer is refused
+          and the working tree is byte-identical after the hook run -- falsifier: pytest case that hashes
+          the tree before and after the hook run, plus pre-commit run --files on the canary commit'
 evidence_requirements:
   - kind: "tests"
     description: "The canary tests, the hook-writes handler tests and the CLI tests pass at the head and
       fail at the merge base"
-    command: "uv run pytest tests/ci/test_check_only_hooks_omn21433.py tests/unit/handlers/test_handler_hook_writes.py
+    command: "uv run pytest tests/ci/test_check_only_hooks_omn21498.py tests/unit/handlers/test_handler_hook_writes.py
       tests/unit/handlers/test_handler_hook_writes_cli.py -q -o addopts=''"
 emergency_bypass:
   enabled: false
   justification: ""
   follow_up_ticket_id: ""
 dod_evidence:
-  - id: dod-omn21433-t26-ac1-canary
+  - id: dod-omn21498-t26-ac1-canary
     description: Each rewriting hook is lifted out of the config and run through pre-commit on its canary;
       every one refuses, the tree digest is unchanged, and the clean control passes.
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/ci/test_check_only_hooks_omn21433.py -q -o addopts=''
+        check_value: uv run pytest tests/ci/test_check_only_hooks_omn21498.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
-      - AC2601
-  - id: dod-omn21433-t26-ac2-hook-writes-rule
+      - AC2
+  - id: dod-omn21498-t26-ac2-hook-writes-rule
     description: The handler fails each writing entry shape and known rewriting id, passes the check-only
       forms and a temporary-directory writer, and the CLI refuses a missing overlay and zero hooks.
     source: manual
@@ -63,8 +53,8 @@ dod_evidence:
           -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
-      - AC2602
-  - id: dod-omn21433-t26-ac3-repo-has-no-writer
+      - AC1
+  - id: dod-omn21498-t26-ac3-repo-has-no-writer
     description: The rule run over this repository's own hook files exits 0 and reports the hooks it read.
     source: manual
     checks:
@@ -72,4 +62,4 @@ dod_evidence:
         check_value: uv run python -m omnibase_core.handlers.handler_hook_writes_cli --root .
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
-      - AC2603
+      - AC1

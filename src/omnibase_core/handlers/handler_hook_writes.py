@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure handler requiring pre-commit hooks to check without rewriting (OMN-21433)."""
+"""Pure handler requiring pre-commit hooks to check without rewriting (OMN-21498)."""
 
 from __future__ import annotations
 

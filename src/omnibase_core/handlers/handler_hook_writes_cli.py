@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI runtime for the hook-writes check (OMN-21433, plan task T2.6).
+"""CLI runtime for the hook-writes check (OMN-21498, plan task T2.6).
 
 Overlay loading, hook file discovery and reads, and report writes happen here.
 The verdict is the pure ``HandlerHookWrites``. Exit codes: 0 for PASS, 1 for
@@ -95,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
     """Check supplied or discovered hook files; return 0 on PASS, 1 on FAIL/ERROR."""
     parser = argparse.ArgumentParser(
         prog="check-hook-writes",
-        description="Require pre-commit hooks to check without rewriting (OMN-21433).",
+        description="Require pre-commit hooks to check without rewriting (OMN-21498).",
     )
     parser.add_argument("filenames", nargs="*", help="Repository-relative hook files.")
     parser.add_argument("--root", default=".", help="Repository root (default: .)")

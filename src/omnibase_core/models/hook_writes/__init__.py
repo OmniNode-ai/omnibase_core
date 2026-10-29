@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Hook-writes check models (OMN-21433)."""
+"""Hook-writes check models (OMN-21498)."""
 
 from omnibase_core.models.hook_writes.model_hook_writes_check_input import (
     ModelHookWritesCheckInput,

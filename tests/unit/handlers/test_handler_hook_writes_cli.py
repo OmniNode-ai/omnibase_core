@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for the check-hook-writes CLI (OMN-21433, plan task T2.6).
+"""Tests for the check-hook-writes CLI (OMN-21498, plan task T2.6).
 
 The CLI reads the overlay and the hook files, runs the pure handler and exits 0
 on PASS and 1 on FAIL or ERROR. It never reports PASS for a scan that read no

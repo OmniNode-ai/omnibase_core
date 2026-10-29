@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Input to the pure hook-writes check (OMN-21433)."""
+"""Input to the pure hook-writes check (OMN-21498)."""
 
 from __future__ import annotations
 
