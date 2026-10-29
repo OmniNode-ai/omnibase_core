@@ -1442,6 +1442,19 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-task-criteria
+  name: Task criteria check (OMN-21535)
+  description: >
+    Every plan task and contract criterion carries a Configuration and a Bindings criterion and a falsifier
+    that names an action and an observable result; runtime tasks carry the two-overlay, zero-literal and
+    container-resolution criteria. Every pattern, list, digest and remedy text is data of task_criteria.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_task_criteria:ValidatorTaskCriteria
+  files: (beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-event-registry-drift
   name: Event-registry drift (OMN-21416)
   description: >

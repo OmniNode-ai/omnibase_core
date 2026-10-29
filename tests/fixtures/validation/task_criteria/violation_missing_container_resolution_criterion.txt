@@ -1,0 +1,7 @@
+**T9.1 Example handler (NEW).**
+- Repo and paths: omnibase_core `src/omnibase_core/validation/checker_example.py`
+- Configuration: every pattern and threshold is a `parameters` entry of the contract -- falsifier: `uv run pytest tests/unit/test_example.py -q` reports every key changing a verdict
+- Bindings: the report writer and the bus bind from the overlay -- falsifier: `uv run pytest tests/unit/test_example.py -q` passes and the consumer on a lab host reports one event
+- Two overlays: the runtime runs on the in-memory default and on the broker overlay with no code change -- falsifier: `uv run pytest tests/unit/test_example.py -q` passes on both
+- Zero literal: hardcoded_topic, url_authority and contract_config_compliance report zero on the changed source -- falsifier: `uv run onex validate` prints zero findings
+- Replay: disabling a rule row fails its fixture -- falsifier: `uv run pytest tests/unit/test_example.py -q` fails for that rule

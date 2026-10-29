@@ -1,0 +1,160 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21535: K12 task_criteria. The section words, overlay keywords, block digest and every
+# diagnostic are rule data; the checker module holds none of them.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: task_criteria
+  validator_name: Task Criteria Validator
+  validator_description: >-
+    Judge the acceptance criteria of plan tasks, ticket descriptions, contract criteria and lane briefs:
+    the Configuration and Bindings criteria, a falsifier for every criterion, the two-overlay, zero-literal
+    and container-resolution criteria, the standing rule block of a brief and the frozen-repository lifecycle.
+
+  target_patterns:
+    - "**/beta/plans/*.md"
+    - "**/contracts/OMN-*.yaml"
+    - "**/job.json"
+    - "**/rules.md"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: missing_configuration_criterion
+      description: Require a Configuration criterion in every task.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} has no Configuration criterion (every pattern, list, threshold and remedy
+          text a parameters entry of the contract)"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        task_heading_pattern: '^\*\*(T[0-9][\w.\-]*)\s'
+        criterion_pattern: '^\s*(?:>\s*)?(?:[-*]\s+(?:\[[ xX]\]\s+)?(?:AC\d+|KC-[\w-]+|Acceptance|Configuration|Bindings|Replay|Declared|Two
+          overlays|Zero literal)\b|statement:\s*"(?:AC\d+|KC-[\w-]+))'
+        configuration_pattern: '(?i)\bconfiguration\b|KC-config'
+    - rule_id: missing_bindings_criterion
+      description: Require a Bindings criterion in every task.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} has no Bindings criterion"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        bindings_pattern: '(?i)\bbindings?\b'
+    - rule_id: criterion_without_falsifier
+      description: Require every criterion to carry a falsifier that names an action and an observable
+        result.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject}: criterion has no falsifier naming an action and an observable result:
+          {criterion}"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        falsifier_pattern: '(?is)\bfalsifiers?\b[^:]*:\s*(.*)$'
+        action_pattern: '(?i)`[^`]+`|\b(?:run|runs|call|calls|grep|exercise|exercises|read|reads)\b'
+        observable_pattern: '(?i)\b(?:reports?|prints?|fails?|passes|refused|equals?|zero|exit|returns?|lists?|nothing|records?)\b|\b0\b'
+    - rule_id: missing_two_overlay_falsifier
+      description: Require a criterion naming an in-memory overlay, a broker overlay and no code change
+        in any runtime task.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} has no criterion naming an in-memory overlay, a broker overlay and 'no
+          code change'"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        applies_pattern: '(?i)\b(?:runtime|overlay)\b'
+        in_memory_pattern: '(?i)in-memory'
+        broker_pattern: '(?i)\bbroker\b'
+        no_code_change_pattern: '(?i)no code change'
+    - rule_id: replay_only_bindings_falsifier
+      description: Reject a Bindings falsifier that names only a local run and a recorded transcript.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject}: the Bindings falsifier names only a local run and a recorded transcript"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        replay_only_pattern: '(?i)\b(?:local|locally|recorded transcript|transcript)\b'
+        live_evidence_pattern: '(?i)\b(?:lab host|broker|consumer|live)\b'
+    - rule_id: missing_zero_literal_falsifier
+      description: Require a criterion that the core literal validators report zero on the changed files.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} has no criterion that the literal validators report zero on the changed
+          source"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        applies_pattern: '(?i)\bsrc/|\.py\b|\bworkflow\b'
+        zero_pattern: '(?i)\bzero\b'
+        validator_names: ["hardcoded_topic", "url_authority", "contract_config_compliance"]
+    - rule_id: missing_container_resolution_criterion
+      description: Require a criterion that a handler or controller is resolved from the container.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} adds a handler or controller with no criterion that it is resolved from
+          the container"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        applies_pattern: '(?i)\b(?:handler|controller)\b'
+        resolution_pattern: '(?i)get_service|resolved from the container'
+    - rule_id: brief_missing_rule_block
+      description: Require a brief or job.json to carry the standing block whose digest the rule lists.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{subject} lacks the standing rule block (digest read {digest})"
+        source_pattern: '(?:^|/)job\.json$'
+        block_start: "# Standing rules for every dispatched lane (read fully before the first tool call)"
+        block_end: "instead of at design time."
+        escaped_newline: '\n'
+        accepted_digests: ["712dee29bf92997dff21d01c084be6596b96b3f0fa894386f1ddb5ea4daef674"]
+    - rule_id: rule_block_incomplete
+      description: Require the standing-block source or a rules.md to hold every required item.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{subject}: the rule block lacks required items: {items}"
+        source_pattern: '(?:^|/)(?:rules|lane-rules-block)\.md$'
+        block_start: "# Standing rules for every dispatched lane (read fully before the first tool call)"
+        block_end: "instead of at design time."
+        required_items:
+          - 'Dependencies and DI'
+          - '(?i)\bno literal\b'
+          - '(?i)\btwo overlays\b'
+          - 'Plugin\*'
+          - '(?i)no envelope in compute'
+          - '(?i)\bzero literal\b'
+          - '(?i)\bopen PR\b'
+    - rule_id: task_in_frozen_repository
+      description: Reject a task whose files lie in a frozen repository without a permitted operation
+        or a scoped RELEASE.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} changes files in {repository} (lifecycle {state}) with no permitted operation
+          or scoped RELEASE"
+        source_pattern: '(?:beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml|^ticket:)'
+        files_pattern: '(?im)^\s*[-*]\s+(?:Repo and paths|Files?)\s*:\s*(.*)$'
+        repository_pattern: '[A-Za-z][A-Za-z0-9_]*'
+        fix_pattern: '(?i)\b(?:fix|check wiring)\b'
+        release_pattern: '\bRELEASE \d{4}-\d{2}-\d{2}T\S+'
+        frozen_states: ["no-code", "fix-only"]
+        fix_permitted_states: ["fix-only"]
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
