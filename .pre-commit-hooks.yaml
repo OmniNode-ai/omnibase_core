@@ -634,16 +634,35 @@
 - id: check-no-backward-compat
   name: ONEX No Backward Compatibility Anti-Pattern Detection (OMN-13287)
   description: >
-    Reject backward-compatibility anti-patterns (canonical core script scripts/validation/validate-no-backward-compatibility.py,
-    W10B consolidation): @deprecated decorators, backward-compat comments/docstrings, _legacy/_compat/_backward
-    re-export aliases, and Protocol* backward-compat conditions. Scans the directories passed via --dir
-    (default src/); file-level architectural exemptions live in the script's ARCHITECTURAL_EXEMPTIONS.
-    language: script runs the file from the checked-out hook repo (the script is not packaged in the wheel).
-  language: script
-  entry: scripts/validation/validate-no-backward-compatibility.py
+    Reject backward-compatibility anti-patterns (generic validator format, OMN-21433; formerly the script
+    scripts/validation/validate-no-backward-compatibility.py): @deprecated decorators, backward-compat
+    comments/docstrings, _legacy/_compat/_backward re-export aliases, and Protocol* backward-compat conditions.
+    Scans the directories passed via --dir (default src/). Pattern and file-level exemption data live
+    in omnibase_core/contracts/backward_compat_rules.yaml. Optional shrink-only baseline: pass --baseline
+    .onex/baselines/check-no-backward-compat.yaml to tolerate today's findings; a finding not in it fails,
+    an entry whose finding is gone fails as stale, and --write-baseline creates the file or shrinks it
+    and refuses to add an entry. Without --baseline every finding fails.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_backward_compat_cli
   args: [--dir, src/]
   types: [python]
   pass_filenames: false
+  stages: [pre-commit]
+
+- id: check-no-dict-any
+  name: ONEX dict[str, Any] Anti-Pattern Detection (OMN-21433)
+  description: >
+    Reject dict[str, Any] annotations (generic validator format; formerly the script scripts/validation/validate-dict-any-usage.py).
+    A function or class decorated with @allow_dict_any or @allow_dict_str_any, or a line under an exclusion
+    comment, is exempt; decorators, skipped path fragments and the marker are rule data in omnibase_core/contracts/dict_any_rules.yaml.
+    Receives the staged filenames (--dir scans a tree). Optional shrink-only baseline: pass --baseline
+    .onex/baselines/check-no-dict-any.yaml to tolerate today's findings; a finding not in it fails, an
+    entry whose finding is gone fails as stale, and --write-baseline creates the file or shrinks it and
+    refuses to add an entry. Without --baseline every finding fails.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_dict_any_cli
+  types: [python]
+  pass_filenames: true
   stages: [pre-commit]
 
 - id: check-no-lane-literal-branching

@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Rule data of the check-no-dict-any hook (OMN-21433). The detector is
+# omnibase_core.handlers.handler_dict_any; nothing here is code.
+---
+# A function or class carrying one of these decorators may use dict[str, Any]
+# anywhere in its body.
+allow_decorators:
+  - allow_dict_any
+  - allow_dict_str_any
+# A file whose path contains one of these fragments is not checked.
+skip_path_fragments:
+  - /tests/
+  - /scripts/validation/
+  - /archive/
+  - /archived/
+  # Type alias files define type aliases.
+  - /types/
+# A comment holding the joined marker parts and the tag excludes its own line and the next
+# exclude_window_lines lines (a multi-line signature).
+exclude_marker_parts: ["ONEX_", "EXCLUDE:"]
+exclude_tag: dict_str_any
+exclude_window_lines: 5

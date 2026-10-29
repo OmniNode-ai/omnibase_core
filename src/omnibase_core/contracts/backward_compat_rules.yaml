@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Rule data of the check-no-backward-compat hook (OMN-21433). The detector is
+# omnibase_core.handlers.handler_backward_compat; nothing here is code.
+---
+compatibility_comment_patterns:
+  - 'backward\s+compatibility'
+  - 'backwards\s+compatibility'
+  - 'for\s+compatibility'
+  - 'legacy\s+support'
+  - 'maintain\s+compatibility'
+  - 'compatibility\s+layer'
+  - 'compatibility\s+wrapper'
+  - 'migration\s+path'
+  - 'deprecated\s+for\s+compatibility'
+negative_patterns:
+  - 'no\s+(backward|backwards)\s+compatibility'
+  - 'prevent\s+(backward|backwards)\s+compatibility'
+  - 'avoid\s+(backward|backwards)\s+compatibility'
+  - 'without\s+(backward|backwards)\s+compatibility'
+  - 'not\s+(backward|backwards)\s+compatibility'
+  - 'reject\s+(backward|backwards)\s+compatibility'
+  - 'forbid\s+(backward|backwards)\s+compatibility'
+compatibility_method_patterns:
+  - 'def\s+.*_legacy\s*\('
+  - 'def\s+.*_compat\s*\('
+  - 'def\s+.*_backward\s*\('
+  - 'def\s+.*_backwards\s*\('
+  - 'def\s+to_dict\s*\([^)]*\)\s*:\s*\n\s*[\"'']{3}.*backward.*compatibility'
+  - 'def\s+to_dict\s*\([^)]*\)\s*:\s*\n\s*[\"'']{3}.*legacy.*support'
+deprecated_method_pattern: 'def\s+.*_deprecated\s*\('
+legitimate_deprecated_methods:
+  - 'is_deprecated'
+  - 'create_deprecated'
+  - 'get_deprecated'
+  - 'mark_deprecated'
+  - 'check_deprecated'
+extra_allow_same_line_patterns:
+  - 'extra\s*=\s*["\'']allow["\'']\s*#.*(compat|backward|backwards|legacy|migration)'
+  - '#.*(compat|backward|backwards|legacy|migration).*extra\s*=\s*["\'']allow["\'']'
+extra_allow_pattern: 'extra\s*=\s*["\'']allow["\'']'
+method_name_pattern: 'def\s+(\w+)'
+extra_allow_keywords:
+  - 'backward'
+  - 'backwards'
+  - 'compat'
+  - 'legacy'
+  - 'migration'
+extra_allow_context_before: 3
+extra_allow_context_after: 1
+protocol_compat_patterns:
+  - 'startswith\s*\(\s*["\'']Protocol["\''].*compatibility'
+  - '#.*Protocol.*backward.*compatibility'
+  - '#.*Protocol.*legacy.*support'
+  - '#.*simple.*Protocol.*names.*compatibility'
+  - 'if.*startswith\s*\(\s*["\'']Protocol["\'']'
+function_name_suffixes:
+  - '_legacy'
+  - '_deprecated'
+  - '_compat'
+  - '_backward'
+  - '_backwards'
+docstring_phrases:
+  - 'backward compatibility'
+  - 'backwards compatibility'
+  - 'legacy support'
+  - 'migration path'
+protocol_condition_keywords:
+  - 'backward'
+  - 'backwards'
+  - 'compatibility'
+  - 'legacy'
+  - 'support'
+protocol_condition_context_before: 2
+protocol_condition_context_after: 2
+protocol_startswith_constant: 'Protocol'
+startswith_method: 'startswith'
+dunder_marker: '__'
+protocol_import_prefixes:
+  - 'from '
+  - 'import '
+protocol_assignment_marker: '='
+protocol_import_keyword: 'import'
+architectural_exemptions:
+  'models/epic/model_epic_state.py': 'intentional migration-phase capture model (OMN-4402)'
+skip_dir_parts:
+  - '.git'
+  - '.mypy_cache'
+  - '.pytest_cache'
+  - '.tox'
+  - '.venv'
+  - '__pycache__'
+  - 'build'
+  - 'dist'
+  - 'node_modules'
+  - 'venv'
+max_file_size_bytes: 10485760
+encodings:
+  - 'utf-8'
+  - 'utf-8-sig'
+  - 'latin1'
+  - 'cp1252'
+# One message per rule id; {line} is the offending source line, {name} the function name.
+messages:
+  compat-comment: "Backward compatibility comment detected - '{line}'. No consumers exist, remove legacy
+    support."
+  compat-method: "Backward compatibility method detected - remove legacy support methods"
+  compat-extra-allow: "Configuration allowing extra fields for compatibility - remove permissive configuration"
+  compat-protocol: "Protocol backward compatibility pattern detected - remove Protocol* legacy support"
+  compat-function-name: "Backward compatibility function '{name}' - remove legacy support methods"
+  compat-docstring: "Function '{name}' has backward compatibility docstring - remove legacy support"
+  compat-protocol-condition: "Protocol backward compatibility condition - remove Protocol* legacy support"
+remediation: >-
+  Remove ALL backward compatibility patterns and legacy support code completely. Use fully qualified protocol
+  paths and model_dump() directly instead of wrapper methods; use proper ONEX patterns from day one.

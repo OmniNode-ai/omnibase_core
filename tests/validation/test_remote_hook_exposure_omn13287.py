@@ -30,9 +30,8 @@ HOOKS_FILE = REPO_ROOT / ".pre-commit-hooks.yaml"
 # hook_id -> substring that MUST appear in the hook's entry (canonical core impl).
 EXPECTED_HOOKS: dict[str, str] = {
     "check-enum-governance": "omnibase_core.validation.checker_enum_governance",
-    "check-no-backward-compat": (
-        "scripts/validation/validate-no-backward-compatibility.py"
-    ),
+    "check-no-backward-compat": "omnibase_core.handlers.handler_backward_compat_cli",
+    "check-no-dict-any": "omnibase_core.handlers.handler_dict_any_cli",
 }
 
 
@@ -74,13 +73,17 @@ def test_w10b_hook_entry_points_at_core_impl(
 
 
 @pytest.mark.unit
-def test_w10b_no_backward_compat_uses_script_language(
-    hooks: dict[str, dict[str, object]],
+@pytest.mark.parametrize("hook_id", ["check-no-backward-compat", "check-no-dict-any"])
+def test_generic_format_hooks_use_python_language(
+    hooks: dict[str, dict[str, object]], hook_id: str
 ) -> None:
-    """The no-backward-compat validator is a scripts/ file not packaged in the
-    wheel, so it must run via language: script (the repo is checked out for
-    remote consumers) rather than language: python (isolated wheel install)."""
-    assert hooks["check-no-backward-compat"].get("language") == "script"
+    """The generic-format validators are module-importable, so they run via
+    language: python and the core wheel is installed into the hook environment
+    built from the checked-out hook repo (OMN-21433)."""
+    assert hooks[hook_id].get("language") == "python"
+    entry = hooks[hook_id].get("entry")
+    assert isinstance(entry, str)
+    assert entry.startswith("python -m ")
 
 
 @pytest.mark.unit

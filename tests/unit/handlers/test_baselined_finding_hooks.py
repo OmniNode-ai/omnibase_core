@@ -268,7 +268,9 @@ def test_dict_any_decorator_and_comment_exemptions_still_pass(
     )
     assert main(["--dir", "src"]) == 0, capsys.readouterr().out
     source.write_text(
-        source.read_text("utf-8") + "\ndef bare(x: dict[str, Any]) -> None: ...\n",
+        source.read_text("utf-8")
+        + "\n" * 8
+        + "def bare(x: dict[str, Any]) -> None: ...\n",
         "utf-8",
     )
     assert main(["--dir", "src"]) == 1

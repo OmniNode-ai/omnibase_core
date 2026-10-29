@@ -15,6 +15,7 @@ Tests the integration of all validation scripts including:
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -26,6 +27,7 @@ from omnibase_core.validators.no_unguarded_git_subprocess import (
 
 # Get the path to validation scripts
 VALIDATION_SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts" / "validation"
+BACKWARD_COMPAT_CLI = "omnibase_core.handlers.handler_backward_compat_cli"
 
 
 def _git(
@@ -169,15 +171,13 @@ description: "User data processing contract"
             assert result.returncode == 0
 
         # Test backward compatibility validation
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), "--dir", str(temp_repo)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            assert result.returncode == 0
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, "--dir", str(temp_repo)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode == 0
 
         # Test contract validation
         contract_script = VALIDATION_SCRIPTS_DIR / "validate-contracts.py"
@@ -236,16 +236,14 @@ description: "Invalid contract"
                 violations_detected += 1
 
         # Test backward compatibility validation - should detect violations
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), "--dir", str(temp_repo)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode != 0:
-                violations_detected += 1
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, "--dir", str(temp_repo)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            violations_detected += 1
 
         # Test contract validation - should detect violations
         contract_script = VALIDATION_SCRIPTS_DIR / "validate-contracts.py"
@@ -347,15 +345,13 @@ description: "Invalid contract"
         (contracts_dir / "invalid_contract.yaml").write_text(invalid_contract)
 
         # Run validators - should detect partial violations
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), "--dir", str(temp_repo)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            assert result.returncode != 0  # Should detect backward compatibility issues
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, "--dir", str(temp_repo)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert result.returncode != 0  # Should detect backward compatibility issues
 
         contract_script = VALIDATION_SCRIPTS_DIR / "validate-contracts.py"
         if contract_script.exists():
@@ -397,18 +393,21 @@ class ModelLegacy(BaseModel):
         _git(git_repo, "add", str(problematic_file))
 
         # Simulate pre-commit validation on staged file
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), str(problematic_file)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, str(problematic_file)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-            # Should fail validation (blocking commit)
-            assert result.returncode != 0
-            assert "backward compatibility" in result.stdout.lower()
+        # Should fail validation (blocking commit)
+        assert result.returncode != 0
+        assert any(
+            line.startswith(f"FAIL: {problematic_file}:")
+            and "backward compatibility" in line.lower()
+            for line in result.stdout.splitlines()
+        )
+        assert "FAILED: check-no-backward-compat" in result.stdout
 
     def test_pre_commit_validation_file_list(self, git_repo):
         """Test validation with file list as would be provided by pre-commit."""
@@ -453,17 +452,15 @@ class ModelProblem(BaseModel):
             _git(git_repo, "add", file_path)
 
         # Test validation with file list (pre-commit style)
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script)] + files_to_validate,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI] + files_to_validate,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-            # Should fail due to problematic file
-            assert result.returncode != 0
+        # Should fail due to problematic file
+        assert result.returncode != 0
 
     def test_pre_commit_no_python_files(self, git_repo):
         """Test pre-commit scenario with no Python files to validate."""
@@ -473,17 +470,15 @@ class ModelProblem(BaseModel):
         _git(git_repo, "add", str(readme_file))
 
         # Test validation with non-Python files
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), str(readme_file)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, str(readme_file)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
-            # Should handle gracefully
-            assert result.returncode in [0, 1]  # May skip or report no Python files
+        # Should handle gracefully
+        assert result.returncode in [0, 1]  # May skip or report no Python files
 
 
 @pytest.mark.integration
@@ -562,15 +557,13 @@ description: "Data processor"
             validation_results["naming"] = result.returncode
 
         # Backward compatibility validation
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), "--dir", str(temp_repo)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            validation_results["compatibility"] = result.returncode
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, "--dir", str(temp_repo)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        validation_results["compatibility"] = result.returncode
 
         # Contract validation
         contract_script = VALIDATION_SCRIPTS_DIR / "validate-contracts.py"
@@ -611,13 +604,17 @@ class ModelTest{i}(BaseModel):
 
         def run_validator(script_name, args):
             """Run a validator script."""
-            script_path = VALIDATION_SCRIPTS_DIR / script_name
-            if not script_path.exists():
-                return (script_name, 0, "Script not found")
+            if script_name == BACKWARD_COMPAT_CLI:
+                command = [sys.executable, "-m", script_name, *args]
+            else:
+                script_path = VALIDATION_SCRIPTS_DIR / script_name
+                if not script_path.exists():
+                    return (script_name, 0, "Script not found")
+                command = ["python", str(script_path), *args]
 
             start_time = time.time()
             result = subprocess.run(
-                ["python", str(script_path)] + args,
+                command,
                 capture_output=True,
                 text=True,
                 check=False,
@@ -629,7 +626,7 @@ class ModelTest{i}(BaseModel):
         # Run validators in parallel
         validators = [
             ("validate_naming.py", [str(temp_repo)]),
-            ("validate-no-backward-compatibility.py", ["--dir", str(temp_repo)]),
+            (BACKWARD_COMPAT_CLI, ["--dir", str(temp_repo)]),
             ("validate-contracts.py", [str(temp_repo)]),
         ]
 
@@ -822,16 +819,14 @@ outputs:
                 validation_passed = False
 
         # Backward compatibility validation
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), str(new_model)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            if result.returncode != 0:
-                validation_passed = False
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, str(new_model)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            validation_passed = False
 
         # Contract validation
         contract_script = VALIDATION_SCRIPTS_DIR / "validate-contracts.py"
@@ -903,17 +898,15 @@ class ModelUser(BaseModel):
             )
             assert result.returncode == 0  # Should still pass
 
-        compat_script = VALIDATION_SCRIPTS_DIR / "validate-no-backward-compatibility.py"
-        if compat_script.exists():
-            result = subprocess.run(
-                ["python", str(compat_script), str(original_model)],
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            assert (
-                result.returncode == 0
-            )  # Should not introduce backward compatibility issues
+        result = subprocess.run(
+            [sys.executable, "-m", BACKWARD_COMPAT_CLI, str(original_model)],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert (
+            result.returncode == 0
+        )  # Should not introduce backward compatibility issues
 
 
 if __name__ == "__main__":
