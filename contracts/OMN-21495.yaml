@@ -1,68 +1,92 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 ---
 schema_version: "1.0.0"
-ticket_id: "OMN-21495"
-title: "T1.1 support: node-home admits declared validator nodes (OMN-21495)"
-summary: >
-  The node-home ratchet (OMN-20702) refused every new node directory in omnibase_core, so the validator
+ticket_id: OMN-21495
+title: T1.1 support - node-home admits declared validator nodes
+summary: The node-home ratchet (OMN-20702) refused every new node directory in omnibase_core, so the validator
   and validator-support nodes that plan section D requires in core could not land. A new node directory
-  is now admitted when its contract.yaml lists a validator category under the declaration field; the field,
+  is admitted when its contract.yaml lists a validator category under the declaration field; the field,
   the categories and the remediation text are rule data in node_home_rules.yaml. The baseline file is
-  unchanged and no per-entry exemption exists. This is the ratchet-definition fix, not a bypass.
+  unchanged and no per-entry exemption exists.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
+requirements:
+  - id: req-omn21495-node-home-admission
+    statement: A new node directory is admitted by the node-home ratchet only when its contract.yaml declares
+      a validator or validator-support category from the rule data.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: A new node directory whose contract.yaml lists a validator category is admitted;
+          an ordinary new node (effect, no declaration) is still refused -- falsifier: pytest cases over
+          a declared validator node, a validator-support node, an undeclared effect node and a mixed tree'
+      - id: AC2
+        statement: 'AC2: Admission adds no baseline entry and leaves the baseline file unchanged; a baselined
+          node that declares a category is not reported stale -- falsifier: pytest cases that compare
+          the baseline file before and after the check'
+      - id: AC3
+        statement: 'AC3: Configuration: the declaration field, the admitted categories and the remediation
+          text are rule data in node_home_rules.yaml, loaded as ModelNodeHomeRules; invalid rule data
+          fails to load -- falsifier: a table-driven pytest case mutates every rule-data key and asserts
+          the verdict change, and an invalid file raises'
+      - id: AC4
+        statement: 'AC4: Bindings: the handler stays a pure COMPUTE node; the runtime gathers the git
+          index and contract blobs and loads the rule data -- falsifier: the handler tests run with facts
+          only'
 evidence_requirements:
-  - kind: "tests"
-    description: "Node-home ratchet tests pass: declared validator node admitted, undeclared effect node
-      refused"
-    command: "uv run pytest tests/unit/nodes/node_node_home_check_compute -n 0"
+  - kind: tests
+    description: Node-home ratchet tests pass at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+  - kind: ci
+    description: Hosted-runner run of the same test directory at the checkout.
+    command: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
 emergency_bypass:
   enabled: false
-  justification: ""
-  follow_up_ticket_id: ""
+  justification: ''
+  follow_up_ticket_id: ''
 dod_evidence:
-  - id: "AC1"
-    description: "A new node directory whose contract.yaml declares a validator category is admitted;
-      an ordinary new node (effect, no declaration) is still refused"
-    source: "manual"
+  - id: dod-omn21495-ac1-admission
+    description: A declared validator node is admitted and an undeclared effect node is refused.
+    source: manual
+    binds_ac: [AC1]
     checks:
-      - check_type: "command"
-        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -k 'admits_declared or undeclared_effect or only_the_declaring'"
-  - id: "AC2"
-    description: "Every rule-data key changes the verdict and invalid rule data fails to load"
-    source: "manual"
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -n 0 -q --no-cov -k "admits_declared or undeclared_effect or only_the_declaring or malformed_declaration"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac2-baseline
+    description: Admission leaves the baseline file unchanged.
+    source: manual
+    binds_ac: [AC2]
     checks:
-      - check_type: "command"
-        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -k 'rule_data'"
-  - id: "AC3"
-    description: "Admission adds no baseline entry and leaves the baseline file unchanged"
-    source: "manual"
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -n 0 -q --no-cov -k "baseline"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac3-rule-data
+    description: Every rule-data key changes the verdict and invalid rule data fails to load.
+    source: manual
+    binds_ac: [AC3]
     checks:
-      - check_type: "command"
-        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -k 'baseline'"
-  - id: "Configuration"
-    description: "Declaration field, admitted categories and remediation text are rule data in node_home_rules.yaml,
-      loaded as ModelNodeHomeRules"
-    source: "manual"
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
+          -n 0 -q --no-cov -k "rule_data or remediation_text"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac4-bindings
+    description: The whole node-home test directory passes with the handler called on facts only.
+    source: manual
+    binds_ac: [AC4]
     checks:
-      - check_type: "command"
-        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -k 'rule_data'"
-  - id: "Bindings"
-    description: "The ratchet remains a pure COMPUTE handler; the runtime gathers the git index and contract
-      blobs and loads the rule data"
-    source: "manual"
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-deploy-checkout-test
+    description: Hosted-runner run of the node-home tests at the checkout; needs no container daemon or
+      private runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4]
     checks:
-      - check_type: "command"
-        check_value: "uv run pytest tests/unit/nodes/node_node_home_check_compute -n 0"
-  - id: "dod-deploy"
-    description: "Deploy-gate evidence: a ratchet rule-data change only; no Docker image, daemon, broker
-      topic, runtime process, docker exec, or service deploy is required before merge"
-    source: "manual"
-    checks:
-      - check_type: "command"
-        check_value: "echo 'deploy-gate: OMN-21495 changes the node-home ratchet only; no Docker image,
-          daemon, broker topic, runtime process, docker exec, or service deploy is required before merge'"
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
