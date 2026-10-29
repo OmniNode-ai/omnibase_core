@@ -9,9 +9,6 @@ import argparse
 import sys
 from pathlib import Path
 
-from omnibase_core.handlers.handler_validator_run_events import (
-    HandlerValidatorRunEvents,
-)
 from omnibase_core.models.nodes.readme_only_docs.model_readme_only_docs_input import (
     ModelReadmeOnlyDocsInput,
 )
@@ -23,6 +20,9 @@ from omnibase_core.nodes.node_git_file_listing_effect.handler_readme_only_docs i
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_run_events import (
+    HandlerValidatorRunEvents,
 )
 
 

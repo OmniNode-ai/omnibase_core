@@ -17,16 +17,18 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_boundary_parity import (
-    HandlerBoundaryParity,
-    load_boundary_manifest,
-    load_manifest_yaml,
-    main,
-)
 from omnibase_core.models.nodes.boundary_parity.model_boundary_parity_input import (
     ModelBoundaryParityInput,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
+from omnibase_core.nodes.node_cross_repo_boundary_check_effect.handler_boundary_parity import (
+    HandlerBoundaryParity,
+    load_boundary_manifest,
+    load_manifest_yaml,
+)
+from omnibase_core.nodes.node_cross_repo_boundary_check_effect.runtime_boundary_parity import (
+    main,
+)
 
 pytestmark = pytest.mark.unit
 

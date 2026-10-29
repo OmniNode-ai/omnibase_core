@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: version_floor_consumers
+  validator_name: Version Floor Consumers
+  validator_description: |
+    Refuse a raised floor on a sibling registry distribution until every consumer
+    is ready (OMN-19998, OMN-21503). A consumer must admit the new floor; a consumer
+    of the raising repository must also declare at least that floor. Unreadable
+    consumers are never assumed compatible. Repository and consumer sources are
+    arguments; patterns, operators, remediation and error templates are rule parameters.
+
+  target_patterns:
+    - "pyproject.toml"
+    - "**/pyproject.toml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/tests/**"
+    - "**/fixtures/**"
+
+  rules:
+    - rule_id: floor_raised_ahead_of_consumers
+      description: A sibling floor is raised before registry consumers can accept it.
+      severity: error
+      enabled: true
+      parameters:
+        name_pattern: '^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*(.*)$'
+        clause_pattern: '^\s*(===|==|~=|>=|<=|!=|>|<)\s*([^\s,]+)\s*$'
+        lower_operators: ["===", "==", "~=", ">=", ">"]
+        upper_operators: ["===", "==", "~=", "<=", "<"]
+        remediation: >-
+          Raise the floor in every consumer named here first (land those pull requests), then raise it
+          at the source. Never raise a floor ahead of its consumers.
+    - rule_id: repo_not_in_registry
+      description: The changed repository must be declared in the registry.
+      severity: error
+      enabled: true
+      parameters:
+        message_template: >-
+          repository {repo!r} is not declared in the registry; declare it in contracts/repo_layers.yaml
+    - rule_id: pyproject_unparsable
+      description: The changed repository's base and head pyproject must parse as TOML.
+      severity: error
+      enabled: true
+      parameters:
+        message_template: '{repo} pyproject.toml does not parse: {error}'
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

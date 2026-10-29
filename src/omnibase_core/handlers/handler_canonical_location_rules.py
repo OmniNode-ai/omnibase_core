@@ -1,37 +1,13 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Pure Python, TypeScript/React and shell location rules for canonical file shape."""
+"""Pure TypeScript/React and shell location rules for canonical file shape."""
 
 from __future__ import annotations
 
 import re
 from collections.abc import Iterable
 from pathlib import PurePosixPath
-
-CANONICAL_SRC_DIRS: frozenset[str] = frozenset(
-    ("nodes", "handlers", "models", "protocols", "contracts", "enums")
-)
-VALIDATION_DIR = "validation"
-GENERIC_VALIDATOR_FILE = re.compile(r"^(checker|validator)_[a-z0-9_]+\.py$")
-
-# The generic validator format (OMN-21498): a pure checker and a ValidatorBase entry sit
-# directly in src/<pkg>/validation/, beside the contract that carries their rule data.
-GENERIC_VALIDATOR_PREFIXES: tuple[str, ...] = ("checker_", "validator_")
-
-
-def is_python_canonical_src_location(parts: tuple[str, ...]) -> bool:
-    """True for src/<pkg>/<canonical dir>/... and the generic validator format files."""
-    if len(parts) < 4 or parts[0] != "src":
-        return False
-    if parts[2] in CANONICAL_SRC_DIRS:
-        return True
-    return (
-        len(parts) == 4
-        and parts[2] == "validation"
-        and parts[3].startswith(GENERIC_VALIDATOR_PREFIXES)
-    )
-
 
 # OMN-21332: knowledge_base_internal/
 # beta/plans/2026-10-23-canonical-shape-typescript-react-swift.md, rules T1-T17.
@@ -95,17 +71,6 @@ SHELL_SHEBANG = re.compile(
     rb"^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-S[ \t]+)?(?:\S*/)?)?"
     rb"(?:sh|bash|zsh|dash|ksh)(?:[ \t]|$)"
 )
-
-
-def is_python_src_location(parts: tuple[str, ...]) -> bool:
-    """A canonical src/<pkg>/ directory, or a generic-format validator file.
-
-    The generic validator format (RULING 2026-10-28T13:48:11Z) is
-    ``src/<pkg>/validation/checker_<id>.py`` and ``validator_<id>.py``.
-    """
-    if len(parts) == 4 and parts[0] == "src" and parts[2] == VALIDATION_DIR:
-        return GENERIC_VALIDATOR_FILE.fullmatch(parts[3]) is not None
-    return len(parts) >= 4 and parts[0] == "src" and parts[2] in CANONICAL_SRC_DIRS
 
 
 def _suffix(path: str) -> str:
@@ -214,23 +179,3 @@ def typescript_noncanonical_file_reason() -> str:
         "{components,pages,models,api,generated,contracts,handlers,store,theme}/** "
         "(OMN-21332)."
     )
-
-
-TEST_DIRS: frozenset[str] = frozenset(("tests", "test"))
-
-
-def is_canonical_location(
-    path: str, workspace_roots: frozenset[str] = frozenset()
-) -> bool:
-    if is_shell_script(path, None):
-        return False
-    if _suffix(path) in TYPESCRIPT_EXTENSIONS:
-        return is_typescript_canonical_location(path, workspace_roots)
-    parts = PurePosixPath(path).parts
-    if not parts:
-        return False
-    if parts[0] == "docs" or parts[-1] == "conftest.py":
-        return True
-    if any(part in TEST_DIRS for part in parts[:-1]):
-        return True
-    return is_python_src_location(parts)

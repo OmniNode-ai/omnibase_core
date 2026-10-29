@@ -55,7 +55,9 @@ def test_no_untracked_todos_is_a_local_hook_running_the_in_repo_handler() -> Non
     assert repo == "local"
     entry = hook["entry"]
     assert isinstance(entry, str)
-    assert "omnibase_core.handlers.handler_todo_format" in entry
+    assert (
+        "omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format" in entry
+    )
 
 
 def test_no_untyped_metadata_runs_the_in_repo_node() -> None:
@@ -135,7 +137,8 @@ def test_the_in_repo_todo_hook_is_exported_under_the_same_id() -> None:
     hooks = _mappings(yaml.safe_load(EXPORTED_HOOKS.read_text(encoding="utf-8")))
     assert any(
         hook.get("id") == "no-untracked-todos"
-        and hook.get("entry") == "python -m omnibase_core.handlers.handler_todo_format"
+        and hook.get("entry")
+        == "python -m omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format"
         for hook in hooks
     )
 

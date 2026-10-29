@@ -28,7 +28,6 @@ src/omnibase_core/nodes/node_no_io_outside_effects_check_compute
 src/omnibase_core/nodes/node_no_raw_sqlite3_check_compute
 src/omnibase_core/nodes/node_no_untyped_metadata_check_compute
 src/omnibase_core/nodes/node_no_utcnow_check_compute
-src/omnibase_core/nodes/node_node_home_check_compute
 src/omnibase_core/nodes/node_precommit_interpreter_check_compute
 src/omnibase_core/nodes/node_private_ip_check_compute
 src/omnibase_core/nodes/node_release_identity_check_compute

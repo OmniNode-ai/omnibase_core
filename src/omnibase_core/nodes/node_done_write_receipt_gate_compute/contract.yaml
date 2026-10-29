@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_done_write_receipt_gate_compute
+node_id: node_done_write_receipt_gate_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: Decides whether a Done write may proceed from the dod_verify verdict (OMN-20368).
+input_model: omnibase_core.models.ticket.model_done_write_receipt_request.ModelDoneWriteReceiptRequest
+output_model: omnibase_core.models.ticket.model_done_write_decision.ModelDoneWriteDecision
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_done_write_receipt_gate:HandlerDoneWriteReceiptGate
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

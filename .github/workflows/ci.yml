@@ -739,12 +739,12 @@ jobs:
           if [ -n "${CONSUMER_READ_TOKEN:-}" ]; then
             auth=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$CONSUMER_READ_TOKEN" | base64 | tr -d '\n')")
           fi
-          for repo in $(uv run python -c "from omnibase_core.handlers.handler_version_floor_consumers_cli import load_layer_map; print(' '.join(e.repo for e in load_layer_map().repos))"); do
+          for repo in $(uv run python -c "from omnibase_core.validation.validator_version_floor_consumers import load_layer_map; print(' '.join(e.repo for e in load_layer_map().repos))"); do
             git "${auth[@]}" clone --quiet --depth 1 --no-checkout "https://github.com/OmniNode-ai/${repo}.git" "$consumers/$repo" \
               || echo "::warning::registry consumer ${repo} is not readable from this runner; a floor raise fails until it is"
           done
-          uv run check-version-floor-consumers --repo omnibase_core --base-ref "$RATCHET_BASE_REF" \
-            --consumers-root "$consumers" --report-json version-floor-report.json
+          uv run python -m omnibase_core.validation.validator_version_floor_consumers --repo omnibase_core --base-ref "$RATCHET_BASE_REF" \
+            --consumers-root "$consumers"
 
       # Import-Layering GROWTH RATCHET (OMN-14340, epic OMN-3210) — blocking.
       # import-linter's wildcard ignores are permissive; this freezes protocols->models
@@ -2110,7 +2110,7 @@ jobs:
         run: uv run pytest tests/unit/validators/test_shape_gate_independence.py -v
 
       - name: Refuse shape-gate detector jobs that depend on the preflight
-        run: uv run python -m omnibase_core.handlers.handler_shape_gate_independence
+        run: uv run python -m omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence
 
   # ===========================================================================
   # Phase 1 - Migrated decorative validators (OMN-14877, OMN-14430 fast-follow)
@@ -2274,10 +2274,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Run ratchet unit tests
-        run: uv run pytest tests/unit/validators/test_canonical_file_shape.py tests/unit/validation/test_validator_canonical_file_shape.py -v
-
-      - name: Run node-home ratchet unit tests
-        run: uv run pytest tests/unit/nodes/node_node_home_check_compute -v
+        run: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute tests/unit/validation/test_checker_canonical_file_shape.py -v
 
       - name: Positive control (planted bad sample refused, clean sample accepted)
         run: |
@@ -2285,7 +2282,7 @@ jobs:
           mkdir -p scripts tests
           printf 'print("planted")\n' > scripts/zz_canary_planted.py
           git add scripts/zz_canary_planted.py
-          if uv run python -m omnibase_core.validators.canonical_file_shape; then
+          if uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check; then
             echo "POSITIVE CONTROL FAILED: planted scripts/zz_canary_planted.py was accepted"
             exit 1
           fi
@@ -2294,7 +2291,7 @@ jobs:
           rm scripts/zz_canary_planted.py
           printf 'def test_canary() -> None:\n    assert True\n' > tests/zz_canary_clean.py
           git add tests/zz_canary_clean.py
-          uv run python -m omnibase_core.validators.canonical_file_shape
+          uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
           echo "positive control: clean sample accepted"
           git rm -q --cached tests/zz_canary_clean.py
           rm tests/zz_canary_clean.py
@@ -2309,10 +2306,10 @@ jobs:
           base="${PR_BASE:-${MQ_BASE:-${PUSH_BEFORE:-}}}"
           if [ -n "$base" ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
             base="$(git merge-base "$base" HEAD)"
-            uv run python -m omnibase_core.validators.canonical_file_shape --base "$base" --head HEAD
+            uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --base "$base" --head HEAD
           else
             echo "no base revision on this event; checking the tree against the baseline only"
-            uv run python -m omnibase_core.validators.canonical_file_shape --head HEAD
+            uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --head HEAD
           fi
 
       - name: Node-home positive control (planted node refused, clean tree accepted)
@@ -2323,14 +2320,14 @@ jobs:
           printf 'name: node_zz_canary_planted_compute\n' > "$planted/contract.yaml"
           printf 'class NodeZzCanaryPlantedCompute:\n    pass\n' > "$planted/handler.py"
           git add "$planted"
-          if uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check; then
+          if uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --rules node-home; then
             echo "POSITIVE CONTROL FAILED: planted $planted was accepted"
             exit 1
           fi
           echo "positive control: planted node refused"
           git rm -q -r --cached "$planted"
           rm -r "$planted"
-          uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check
+          uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --rules node-home
           echo "positive control: clean tree accepted"
 
       - name: Refuse new ONEX nodes outside omnimarket
@@ -2344,13 +2341,13 @@ jobs:
           base="${PR_BASE:-${MQ_BASE:-${PUSH_BEFORE:-}}}"
           if [ -n "$base" ] && git cat-file -e "${base}^{commit}" 2>/dev/null; then
             base="$(git merge-base "$base" HEAD)"
-            uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check --base "$base"
+            uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --rules node-home --base "$base"
           elif [ "$EVENT_NAME" = "pull_request" ] || [ "$EVENT_NAME" = "merge_group" ]; then
             echo "node-home ratchet: no resolvable base revision on $EVENT_NAME; refusing"
             exit 1
           else
             echo "no base revision on this event; checking the tree against HEAD"
-            uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check --base HEAD
+            uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --rules node-home --base HEAD
           fi
 
   # Migrated from validator-banned-compose-vars.yml (OMN-14877, OMN-14430

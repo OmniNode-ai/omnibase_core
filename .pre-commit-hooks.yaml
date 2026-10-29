@@ -54,7 +54,7 @@
     Require all TODO/FIXME/HACK comments to reference a Linear ticket (OMN-XXXX). Ported from onex_change_control
     (OMN-20068, S8).
   language: python
-  entry: python -m omnibase_core.handlers.handler_todo_format
+  entry: python -m omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -642,7 +642,7 @@
     in it fails, an entry whose finding is gone fails as stale, and --write-baseline creates the file
     or shrinks it and refuses to add an entry. Without --baseline every finding fails.
   language: python
-  entry: python -m omnibase_core.handlers.handler_backward_compat_cli
+  entry: python -m omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check
   args: [--dir, src/]
   types: [python]
   pass_filenames: false
@@ -659,7 +659,7 @@
     and --write-baseline creates the file or shrinks it and refuses to add an entry. Without --baseline
     every finding fails.
   language: python
-  entry: python -m omnibase_core.handlers.handler_dict_any_cli
+  entry: python -m omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -907,18 +907,43 @@
 - id: canonical-file-shape
   name: Canonical-file-shape ratchet (OMN-20304)
   description: >
-    Operator ruling 2026-10-01 (OMN-20297): no new scripts, plugins or exceptions in any repository. Refuses
-    a new code file outside src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/ and docs/
-    (new scripts/, plugins/, tools/, bin/ and skill-directory code included), new imperative lines in
-    a SKILL.md (the omniclaude OMN-12237 thin-shim patterns), and any new baseline, allowlist, waiver,
-    exemption or suppression entry. Existing files live in the shrink-only baseline .onex_ratchets/canonical_file_shape_baseline.txt
-    (create it once with --write-baseline). There is no allowlist and no suppression comment. Checks the
-    whole index against HEAD. CI runs the same hook after `git reset --soft <merge-base>`, so the index
-    holds the pull request's change.
+    Runs as the canonical COMPUTE node node_canonical_file_shape_check_compute on the generic validator
+    format (rules and parameters in validation/contracts/canonical_file_shape.validation.yaml). Operator
+    ruling 2026-10-01 (OMN-20297): no new scripts, plugins or exceptions in any repository. Refuses a
+    new code file outside src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/ and docs/
+    (new scripts/, plugins/, tools/, bin/ and skill-directory code included), a handler no contract.yaml
+    binds, a command line entry that is not a node runtime, new imperative lines in a SKILL.md (the omniclaude
+    OMN-12237 thin-shim patterns), any new baseline, allowlist, waiver, exemption or suppression entry,
+    and any change the repository's own .onex/repo_lifecycle.yaml (active, fix-only, no-code, retired)
+    does not admit. Existing files live in the shrink-only baseline .onex_ratchets/canonical_file_shape_baseline.txt
+    (create it once with --write-baseline). A repository that already has that file installs the findings
+    a new rule adds once, in a second shrink-only file, .onex_ratchets/canonical_file_shape_burndown_baseline.txt:
+    run --write-burndown-baseline OMN-<n> (the burn-down ticket; its header's first comment line reads
+    '# Burn-down ticket: OMN-<n> ...'); it lists the refused paths the baseline does not, the baseline
+    file is not edited, and a path either file lists is admitted. The base revision having no burn-down
+    file is what admits the install; after that an added line is refused as baseline-growth (a one-for-one
+    rename is admitted), --prune-baseline shrinks it, and it stays even when empty (burndown-baseline-removed).
+    There is no allowlist and no suppression comment. Checks the whole index against HEAD. CI runs the
+    same hook after `git reset --soft <merge-base>`, so the index holds the pull request's change. Includes
+    the node-home rule group (also available alone as check-node-home).
   language: python
-  entry: python -m omnibase_core.validators.canonical_file_shape
+  entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
   pass_filenames: false
   always_run: true
+- id: canonical-file-shape-release-trailer
+  name: Canonical-file-shape release trailer (OMN-21515)
+  description: >
+    The commit-msg stage of canonical-file-shape. A repository whose .onex/repo_lifecycle.yaml says fix-only
+    admits growth of an existing code file only with a release=<RELEASE-row stamp> line in the commit
+    message; the pre-commit stage cannot see the message, so it defers that rule to this stage and to
+    the CI run over the commit range.
+  language: python
+  entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+    --rules file-shape --commit-message-file
+  pass_filenames: true
+  require_serial: true
+  always_run: true
+  stages: [commit-msg]
 - id: check-node-home
   name: Node-home ratchet (OMN-20702)
   description: >
@@ -927,7 +952,8 @@
     --write-baseline; no allowlist, no suppression; omnimarket, the home for nodes, does not install this
     hook.
   language: python
-  entry: python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check
+  entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+    --rules node-home
   pass_filenames: false
   always_run: true
 - id: check-shape-gate-independence
@@ -937,7 +963,7 @@
     on a preflight job without always()) or branches on the preflight result in a step. A detector must
     run on every PR. No baseline, no allowlist, no suppression comment.
   language: python
-  entry: python -m omnibase_core.handlers.handler_shape_gate_independence
+  entry: python -m omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence
   files: ^\.github/workflows/.*\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1199,7 +1225,7 @@
     default branch, beside this repository's canonical clone; an unreadable consumer fails the raise.
     The failure names each consumer pull request that must land first.
   language: python
-  entry: python -m omnibase_core.handlers.handler_version_floor_consumers_cli
+  entry: python -m omnibase_core.validation.validator_version_floor_consumers
   files: (^|/)pyproject\.toml$
   pass_filenames: true
   require_serial: true
@@ -1275,7 +1301,7 @@
     predicates pinned to mutable state and inert token prefixes in a ticket contract's dod_evidence check_value
     fields; reports SIGPIPE-fragile pipelines as a warning.
   language: python
-  entry: python -m omnibase_core.handlers.handler_contract_check_values_lint
+  entry: python -m omnibase_core.nodes.node_contract_evidence_check_effect.runtime_contract_check_values_lint
   files: ^contracts/OMN-[0-9]+\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1288,7 +1314,7 @@
     checks must carry at least one check at proof tier L1 or above; existence probes derive L0 and do
     not count.
   language: python
-  entry: python -m omnibase_core.handlers.handler_contract_substance_floor
+  entry: python -m omnibase_core.nodes.node_contract_evidence_check_effect.runtime_contract_substance_floor
   files: ^contracts/OMN-[0-9]+\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1327,7 +1353,7 @@
     same repo in .pre-commit-config.yaml. Resolve revisions from a history checkout or the pre-commit
     cache; unresolved revisions fail closed when multiple distinct pins need comparison.
   language: python
-  entry: python -m omnibase_core.handlers.handler_precommit_pin_parity_cli
+  entry: python -m omnibase_core.nodes.node_precommit_rev_time_effect.runtime_precommit_pin_parity
   files: ^\.pre-commit-config\.yaml$
   pass_filenames: true
   require_serial: true
@@ -1412,6 +1438,21 @@
   entry: python -m omnibase_core.validation.validator_design_record
   files: (design[-_]record)[^/]*\.md$
   pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-event-registry-drift
+  name: Event-registry drift (OMN-21416)
+  description: >
+    A producer's contract-declared event registrations (wire contracts with an event_registration block,
+    or an exported event_registrations document) must match the consumer's emit registry (topics.yaml):
+    the same event types, fan-out topics, partition key and required fields, minus the declared baseline.
+    A missing, unreadable or malformed source, or a source that declares nothing, is ERROR, never PASS.
+    The caller passes its sources as hook args.
+  language: python
+  entry: python -m omnibase_core.validation.validator_event_registry_drift
+  pass_filenames: false
+  always_run: true
   require_serial: true
   stages: [pre-commit]
 

@@ -1,0 +1,14 @@
+{
+  "has_base": false,
+  "head_baseline_text": "scripts/gone.py\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "src/pkg/models/model_a.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

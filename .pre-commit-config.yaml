@@ -608,7 +608,7 @@ repos:
       # suppression entry. Shrink-only baseline, no allowlist, no suppression.
       - id: canonical-file-shape
         name: Canonical-file-shape ratchet (OMN-20304)
-        entry: uv run python -m omnibase_core.validators.canonical_file_shape
+        entry: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
         language: system
         pass_filenames: false
         always_run: true
@@ -618,7 +618,8 @@ repos:
       # suppression; the baseline only shrinks.
       - id: check-node-home
         name: Node-home ratchet (OMN-20702)
-        entry: uv run python -m omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check
+        entry: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+          --rules node-home
         language: system
         pass_filenames: false
         always_run: true
@@ -626,7 +627,7 @@ repos:
       # change-control preflight says. Zero baseline, no allowlist.
       - id: check-shape-gate-independence
         name: Shape-gate detectors never depend on the OCC preflight (OMN-20298)
-        entry: uv run python -m omnibase_core.handlers.handler_shape_gate_independence
+        entry: uv run python -m omnibase_core.nodes.node_shape_gate_independence_check_effect.runtime_shape_gate_independence
         language: system
         files: ^\.github/workflows/.*\.ya?ml$
         pass_filenames: true
@@ -905,7 +906,7 @@ repos:
 
       - id: validate-no-backward-compatibility
         name: ONEX Backward Compatibility Anti-Pattern Detection
-        entry: uv run python -m omnibase_core.handlers.handler_backward_compat_cli
+        entry: uv run python -m omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check
         language: system
         pass_filenames: true
         require_serial: true
@@ -922,10 +923,10 @@ repos:
         pass_filenames: true
         require_serial: true
         files: ^.*\.py$
-        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validators/canonical_file_shape\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
+        exclude: ^(scripts/validation/validate-contracts\.py|scripts/validation/validate-string-versions\.py|scripts/validation/check_stub_implementations\.py|scripts/validation/validate-no-manual-yaml\.py|scripts/validation/validate_pr_deploy_required\.py|scripts/compute_contract_fingerprint\.py|scripts/lint_contract\.py|scripts/ci/canonical_handler_shape\.py|src/omnibase_core/utils/safe_yaml_loader\.py|src/omnibase_core/utils/util_safe_yaml_loader\.py|src/omnibase_core/validation/contracts\.py|src/omnibase_core/validation/contract_validator\.py|src/omnibase_core/validation/validator_base\.py|src/omnibase_core/validation/validator_any_type\.py|src/omnibase_core/validation/validator_contract_linter\.py|src/omnibase_core/validation/validator_requirements_consumer\.py|src/omnibase_core/validation/validator_rollup_coverage\.py|src/omnibase_core/validation/validator_standalone_workflow_registry\.py|src/omnibase_core/validation/validator_pull_request_workflow_ratchet\.py|src/omnibase_core/validation/validator_runtime_profiles\.py|src/omnibase_core/discovery/mixin_discovery\.py|src/omnibase_core/cli/cli_demo\.py|tests/fixtures/validation/|src/omnibase_core/validation/scripts/validate_string_versions\.py|src/omnibase_core/validators/contract_config_compliance\.py|src/omnibase_core/validators/gitignore_baseline\.py|src/omnibase_core/validation/checker_canonical_file_shape\.py|src/omnibase_core/validators/skill_dispatch_receipt_mode\.py|src/omnibase_core/validators/backend_secret_discipline\.py|src/omnibase_core/validators/operation_match_requires_operation\.py|src/omnibase_core/validators/dispatched_contract_operation\.py|src/omnibase_core/validators/command_category_requires_event_model\.py|src/omnibase_core/validators/generated_node_model_class_exists\.py|src/omnibase_core/validators/projection_exposure_drift\.py|src/omnibase_core/validators/no_noncanonical_lifecycle_classes\.py|\.github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors\.py|\.github/actions/required-check-skip-guard/_workflow_model\.py)
         stages: [pre-commit]
         # validate_string_versions.py: validation script that must load YAML to validate it (OMN-4402)
-        # canonical_file_shape.py (OMN-17427): reads the target repo's .pre-commit-config.yaml to find the
+        # checker_canonical_file_shape.py (OMN-17427): reads the target repo's .pre-commit-config.yaml to find the
         # --baseline path its check-direct-model-call hook declares; that is a third-party-shaped config,
         # not an ONEX contract, so a Pydantic contract model does not apply.
         # required-check-skip-guard/*.py (OMN-14863): vendored from omniclaude
@@ -1288,7 +1289,7 @@ repos:
       # In directory mode (CI), compares against --max-violations threshold
       - id: validate-dict-any-usage
         name: ONEX dict[str, Any] Anti-Pattern Detection
-        entry: uv run python -m omnibase_core.handlers.handler_dict_any_cli
+        entry: uv run python -m omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check
         language: system
         pass_filenames: true
         require_serial: true
@@ -1828,7 +1829,7 @@ repos:
       # repositories are removed by a later task.
       - id: check-precommit-pin-parity
         name: Pre-commit pin parity for the shared core hook repo (OMN-21495)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_precommit_pin_parity_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_precommit_rev_time_effect.runtime_precommit_pin_parity
         language: system
         files: ^\.pre-commit-config\.yaml$
         pass_filenames: true
@@ -1842,7 +1843,7 @@ repos:
       # the CI steps in the lint-imports job and .github/workflows/version-drift.yml.
       - id: check-version-floor-consumers
         name: No floor raise ahead of registry consumers (OMN-19998)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_version_floor_consumers_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_version_floor_consumers
         language: system
         files: ^pyproject\.toml$
         pass_filenames: true
@@ -2365,7 +2366,7 @@ repos:
       - id: no-untracked-todos
         name: No untracked TODO/FIXME/HACK comments
         language: system
-        entry: uv run python -m omnibase_core.handlers.handler_todo_format
+        entry: uv run python -m omnibase_core.nodes.node_todo_format_check_effect.runtime_todo_format
         require_serial: true
         types: [python]
         exclude: ^src/omnibase_core/validation/todo_marker/

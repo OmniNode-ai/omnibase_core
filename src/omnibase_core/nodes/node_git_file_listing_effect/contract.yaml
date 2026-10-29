@@ -13,6 +13,15 @@ input_model: omnibase_core.models.nodes.git_file_listing.model_git_file_listing_
 output_model: omnibase_core.models.nodes.git_file_listing.model_git_file_listing_output.ModelGitFileListingOutput
 handler_routing:
   version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: readme_only_docs
+      handler:
+        name: HandlerReadmeOnlyDocs
+        module: omnibase_core.nodes.node_git_file_listing_effect.handler_readme_only_docs
+      event_model:
+        name: ModelReadmeOnlyDocsInput
+        module: omnibase_core.models.nodes.readme_only_docs.model_readme_only_docs_input
   default_handler: handler:NodeGitFileListingEffect
 descriptor:
   node_archetype: effect

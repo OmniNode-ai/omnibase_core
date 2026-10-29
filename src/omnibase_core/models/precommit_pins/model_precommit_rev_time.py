@@ -15,5 +15,6 @@ class ModelPrecommitRevTime(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
+    repo: str = Field(min_length=1)
     rev: str = Field(min_length=1)
     committed_at: int

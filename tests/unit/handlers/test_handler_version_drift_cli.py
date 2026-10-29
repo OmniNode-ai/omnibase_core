@@ -12,7 +12,6 @@ import pytest
 
 from omnibase_core.handlers import (
     handler_merge_queue_parity_cli,
-    handler_version_floor_consumers_cli,
 )
 
 pytestmark = pytest.mark.unit
@@ -43,124 +42,6 @@ def _commit(repo: Path, files: dict[str, str], message: str) -> str:
     _git(repo, "add", "-A")
     _git(repo, "commit", "-q", "-m", message)
     return _git(repo, "rev-parse", "HEAD")
-
-
-def _clone_with_origin(tmp: Path, name: str, files: dict[str, str]) -> Path:
-    upstream = tmp / "upstream" / name
-    upstream.mkdir(parents=True)
-    _git(upstream, "init", "-q", "-b", "dev")
-    _commit(upstream, files, "init")
-    clone = tmp / "registry" / name
-    clone.parent.mkdir(parents=True, exist_ok=True)
-    _git(tmp, "clone", "-q", str(upstream), str(clone))
-    return clone
-
-
-def _market(core_spec: str) -> str:
-    return (
-        '[project]\nname = "omnimarket"\nversion = "1"\n'
-        f'dependencies = ["omnibase-core{core_spec}"]\n'
-    )
-
-
-def _infra(exact: str) -> str:
-    return (
-        '[project]\nname = "omnibase-infra"\ndependencies = ["omnibase-core>=0.47.0"]\n'
-        f'[tool.uv]\noverride-dependencies = ["omnibase-core=={exact}"]\n'
-    )
-
-
-@pytest.fixture
-def market(tmp_path: Path) -> tuple[Path, str]:
-    repo = _clone_with_origin(
-        tmp_path, "omnimarket", {"pyproject.toml": _market(">=0.47.39")}
-    )
-    base = _git(repo, "rev-parse", "HEAD")
-    _commit(repo, {"pyproject.toml": _market(">=0.47.44")}, "raise")
-    return repo, base
-
-
-def test_floor_cli_fails_a_raise_ahead_of_a_cloned_consumer(
-    tmp_path: Path, market: tuple[Path, str], capsys: pytest.CaptureFixture[str]
-) -> None:
-    repo, base = market
-    _clone_with_origin(
-        tmp_path, "omnibase_infra", {"pyproject.toml": _infra("0.47.39")}
-    )
-    _clone_with_origin(tmp_path, "omnidash", {"package.json": "{}"})
-    code = handler_version_floor_consumers_cli.main(
-        [
-            "--root",
-            str(repo),
-            "--repo",
-            "omnimarket",
-            "--base-ref",
-            base,
-            "--consumers-root",
-            str(tmp_path / "registry"),
-        ]
-    )
-    out = capsys.readouterr().out
-    assert code == 1
-    assert (
-        "omnibase_infra: omnimarket raises its omnibase-core floor 0.47.39 -> 0.47.44"
-        in out
-    )
-    assert "origin/dev" in out
-    assert "omnidash" not in out
-
-
-def test_floor_cli_passes_when_the_consumer_already_pins_the_floor(
-    tmp_path: Path, market: tuple[Path, str]
-) -> None:
-    repo, base = market
-    for name in (
-        "omnibase_compat",
-        "omnibase_spi",
-        "onex_change_control",
-        "omnimemory",
-        "omniintelligence",
-        "omniclaude",
-        "omnigemini",
-        "omnidash",
-        "omniweb",
-        "omnibase_internal",
-        "omninode_infra",
-    ):
-        _clone_with_origin(tmp_path, name, {"README": "x"})
-    _clone_with_origin(
-        tmp_path, "omnibase_infra", {"pyproject.toml": _infra("0.47.44")}
-    )
-    code = handler_version_floor_consumers_cli.main(
-        [
-            "--root",
-            str(repo),
-            "--repo",
-            "omnimarket",
-            "--base-ref",
-            base,
-            "--consumers-root",
-            str(tmp_path / "registry"),
-        ]
-    )
-    assert code == 0
-
-
-def test_floor_cli_ignores_staged_files_that_are_not_pyproject(
-    market: tuple[Path, str],
-) -> None:
-    repo, _ = market
-    assert (
-        handler_version_floor_consumers_cli.main(["--root", str(repo), "src/a.py"]) == 0
-    )
-
-
-def test_floor_cli_refuses_a_missing_base_ref(market: tuple[Path, str]) -> None:
-    repo, _ = market
-    code = handler_version_floor_consumers_cli.main(
-        ["--root", str(repo), "--repo", "omnimarket", "--base-ref", "no-such-ref"]
-    )
-    assert code == 1
 
 
 _QUEUE_ONLY = (
@@ -209,3 +90,49 @@ def test_parity_cli_refuses_baseline_growth_against_the_base(tmp_path: Path) -> 
         )
         == 1
     )
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    [
+        (".github/workflows/ci.yml", True),
+        (".github/workflows/ci.yaml", True),
+        (".github/workflows/.ci.yml", True),
+        (".github/workflows/.yaml", False),
+        (".github/workflows/ci.yaml.bak", False),
+        (".github/workflows/ci.YML", False),
+        (".github/workflows/nested/ci.yml", False),
+        (".github/workflows//ci.yml", False),
+        ("./.github/workflows/ci.yml", False),
+        ("/.github/workflows/ci.yml", False),
+        ("other/.github/workflows/ci.yml", False),
+        (".github/workflows/ci", False),
+        (".github/workflows/", False),
+    ],
+)
+def test_parity_workflow_selection_preserves_path_boundaries(
+    path: str, expected: bool
+) -> None:
+    assert handler_merge_queue_parity_cli.is_workflow(path) is expected
+
+
+def test_parity_workflow_selection_uses_rule_parameter() -> None:
+    row = handler_merge_queue_parity_cli.load_workflow_rule()
+    changed = row.model_copy(
+        update={"parameters": {"path_pattern": r"^custom/[^/]+\.yml$"}}
+    )
+    assert not handler_merge_queue_parity_cli.is_workflow(
+        ".github/workflows/ci.yml", rule=changed
+    )
+    assert handler_merge_queue_parity_cli.is_workflow("custom/ci.yml", rule=changed)
+
+
+def test_parity_workflow_selection_refuses_missing_parameter() -> None:
+    from omnibase_core.errors.model_onex_error import ModelOnexError
+
+    row = handler_merge_queue_parity_cli.load_workflow_rule()
+    broken = row.model_copy(update={"parameters": {}})
+    with pytest.raises(ModelOnexError):
+        handler_merge_queue_parity_cli.is_workflow(
+            ".github/workflows/ci.yml", rule=broken
+        )

@@ -46,21 +46,21 @@ evidence_requirements:
     description: A caller of omnibase_core's imperative-contract-guard reusable at a ref declares its
       allowlist-path, so the allowlist is admitted and only the guard owns its growth, as for a pre-commit
       --baseline declaration.
-    command: uv run pytest tests/unit/validators/test_canonical_file_shape_guard_allowlist.py -q -p no:randomly
-      -k "core_guard_caller_declares or only_shrinks_by_guard or unparseable_workflow"
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
+      -q -p no:randomly -k "core_guard_caller_declares or only_shrinks_by_guard or unparseable_workflow"
   - kind: tests
     description: With no declaring caller, or a caller of another repository's reusable, a local workflow,
       another core workflow, no ref, a nested or non-workflow path or an unparseable file, the allowlist
       is refused as new-exception-file; the core-caller cases are the positive control.
-    command: uv run pytest tests/unit/validators/test_canonical_file_shape_guard_allowlist.py -q -p no:randomly
-      -k "without_core_guard_caller_refused or does_not_admit_other or core_guard_caller_declares"
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
+      -q -p no:randomly -k "without_core_guard_caller_refused or does_not_admit_other or core_guard_caller_declares"
   - kind: tests
     description: 'The omnimemory canary caller (byte-identical to omnimemory dev''s caller with the canary
       patch applied) and its allowlist (byte-identical to onex_change_control 725d2967 allowlists/omnimemory.yaml)
       pass, and the same tree with allowlist-path removed exits 1; the lab run is on the pull request
       body Lab: line.'
-    command: uv run pytest tests/unit/validators/test_canonical_file_shape_guard_allowlist.py -q -p no:randomly
-      -k "omnimemory_canary"
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
+      -q -p no:randomly -k "omnimemory_canary"
   - kind: manual
     description: 'Lab run on a lab host of the head validator over omnimemory dev plus the canary caller
       and allowlist (exit 0) and the same tree with allowlist-path removed (exit 1); host, command and
@@ -77,7 +77,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape_guard_allowlist.py
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
           -q -p no:randomly -k "core_guard_caller_declares or only_shrinks_by_guard or unparseable_workflow"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
@@ -89,7 +89,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape_guard_allowlist.py
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
           -q -p no:randomly -k "without_core_guard_caller_refused or does_not_admit_other or core_guard_caller_declares"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
@@ -102,7 +102,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape_guard_allowlist.py
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
           -q -p no:randomly -k "omnimemory_canary"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:

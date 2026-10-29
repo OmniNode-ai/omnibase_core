@@ -23,7 +23,9 @@ import pytest
 import yaml
 
 from omnibase_core.enums.ticket.enum_proof_tier import EnumProofTier
-from omnibase_core.handlers import handler_contract_substance_floor as _mod
+from omnibase_core.nodes.node_contract_evidence_check_effect import (
+    handler_contract_substance_floor as _mod,
+)
 
 derive_proof_tier = _mod.derive_proof_tier
 evaluate_contract = _mod.evaluate_contract

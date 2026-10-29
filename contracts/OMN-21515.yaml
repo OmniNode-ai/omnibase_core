@@ -1,0 +1,313 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21515
+title: "T1.1: canonical file shape on the core pattern, with a repository-lifecycle rule"
+summary: The canonical-file-shape ratchet is a pure checker over typed facts, a validator contract with
+  every rule parameter, and the node_canonical_file_shape_check_compute node that returns a ModelValidationReport.
+  The hook id canonical-file-shape runs that node. A repository declares its own lifecycle in .onex/repo_lifecycle.yaml
+  (active, fix-only, no-code, retired); handler_outside_node and cli_entry_outside_node refuse a handler
+  no contract binds and a command line entry that is not a node runtime. Node-home is one rule group of
+  the node.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21515-canonical-file-shape-node
+    statement: The canonical-file-shape rules, the lifecycle rule and the two handler and command line
+      rules run as one COMPUTE node on the generic validator format, with the hook id unchanged.
+    acceptance:
+      - id: AC1
+        statement: "AC1: The old hook id canonical-file-shape runs the new node with no id change downstream,
+          the report has one finding per refused path with its rule id, and the baseline file stays the
+          only state -- falsifier: pytest cases over the node's report for a multi-path fixture and a
+          check that the hook id in .pre-commit-hooks.yaml is unchanged"
+      - id: AC2
+        statement: "AC2: A new scripts/x.py in omnimarket is refused -- falsifier: the canary commit that
+          adds scripts/x.py run through pre-commit run --files, plus a pytest case over the rule"
+      - id: AC3
+        statement: "AC3: In a repository whose lifecycle file says no-code, a new src/.../x.py is refused
+          and a ledger-row Markdown append is admitted -- falsifier: two pytest cases over a no-code fixture
+          repository"
+      - id: AC4
+        statement: "AC4: In fix-only, a new file is refused, and a two-line fix to an existing file without
+          the trailer is refused, with the trailer admitted -- falsifier: three pytest cases over a fix-only
+          fixture repository"
+      - id: AC5
+        statement: "AC5 (Configuration): every pattern, name list, path, threshold and remediation text
+          of the rules, and the lifecycle file location, is a parameters entry of validation/contracts/canonical_file_shape.validation.yaml;
+          a table-driven test mutates every parameters key and asserts the verdict change on the scenario
+          that key controls, and a contract with a missing, unknown or duplicated key fails to load --
+          falsifier: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py"
+      - id: AC6
+        statement: "AC6 (Bindings): the checker takes facts only (open and Path reads patched to raise),
+          the runtime resolves the report writer from the container (a container spy records the resolution),
+          and a planted unbound src/<pkg>/handlers/handler_y.py and a console script to it are refused
+          with handlers/ still canonical for a bound handler -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py"
+      - id: AC7
+        statement: "AC7 (Node-home admission): a new node directory is admitted when its contract.yaml
+          lists a validator or validator-support category under tags (field and category names are parameters
+          of the node-home:node-outside-market row), an ordinary new node is still refused, and every
+          node-home name, pattern and text is a parameters entry of the validator contract -- falsifier:
+          uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py"
+  - id: req-omn21515-baseline-burn
+    statement: Relocate the baselined validator handlers and command line entries into node homes while
+      preserving their rejection, baseline, reporting and imperative-contract behavior.
+    acceptance:
+      - id: AC8
+        statement: "AC8 (Validator relocation): backward-compatibility and dict-any checks, the shared
+          finding-baseline runtime, validator event emission, and imperative-contract checks retain their
+          behavioral coverage through their node module paths -- falsifier: the bound migration tests
+          pass at the head and fail when overlaid on the merge base without the relocated product modules."
+  - id: req-omn21515-baseline-growth
+    statement: Refuse baseline additions for files already present at the base revision while preserving
+      the existing one-for-one move exception.
+    acceptance:
+      - id: AC9
+        statement: "AC9 (Baseline growth): planting one or five baseline additions for files already present
+          at the base revision reports baseline-growth for each addition. The head tests pass and the
+          overlaid merge-base tests fail -- falsifier: the two planted_baseline_growth tests in test_canonical_file_shape_rules.py."
+  - id: req-omn21515-burndown-baseline
+    statement: A second, ticketed burn-down baseline admits the file-rule findings a new rule adds in
+      a repository that already has baseline_path, without extending baseline_path and without weakening
+      the shrink-only guarantee.
+    acceptance:
+      - id: AC10
+        statement: "AC10 (Burn-down install): when the base revision has no burn-down file, the head file
+          may list any path the head tree is refused for and baseline_path is not extended; an entry that
+          is not currently refused is baseline-stale; a first comment line without the ticket pattern
+          is burndown-ticket-missing; and a path either file lists is admitted -- falsifier: uv run pytest
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py"
+      - id: AC11
+        statement: "AC11 (Burn-down shrink): against a base that has the burn-down file an added line
+          is baseline-growth with only a one-for-one rename admitted, deleting the file is burndown-baseline-removed
+          even when it is empty, and every other new baseline file is still new-exception-file -- falsifier:
+          uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py"
+      - id: AC12
+        statement: "AC12 (Burn-down configuration): burndown_baseline_path, burndown_baseline_header,
+          burndown_ticket_pattern and the burndown_*_text keys are parameters entries of the validator
+          contract, each changes a verdict in the table-driven mutation test, and the two new rules have
+          a violation and a clean fixture -- falsifier: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py"
+evidence_requirements:
+  - kind: tests
+    description: The checker, runtime and ported rule tests pass at the pushed head.
+    command: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21515-drift-source-placement-and-parameters
+    description: The drift validator's pure parser occupies a canonical path without a handler binding.
+      Its topic prefix and accepted baseline kinds come from the validator contract; changing either parameter
+      changes admission for the corresponding source.
+    source: manual
+    binds_ac: [AC5, AC6]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
+          tests/unit/validation/test_validator_event_registry_drift.py -q --no-cov -o addopts='' -k drift_source
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-ac1-report-per-refused-path
+    description: The node's report has one finding per refused path with its rule id, and the hook id
+      canonical-file-shape and its entry in .pre-commit-hooks.yaml run the node runtime.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "one_finding_per_refused_path or hook_id_canonical_file_shape_is_unchanged"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21515-ac2-new-script-refused
+    description: A new scripts/x.py is refused by the rule and by the hook entry on a staged canary.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "new_scripts_file or new_script_is_refused"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21515-ac3-no-code
+    description: A no-code repository refuses a new src/.../x.py and admits a ledger-row Markdown append.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "no_code"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn21515-ac4-fix-only
+    description: A fix-only repository refuses a new file and an untrailered two-line fix, and admits
+      the trailered fix.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -n 0 -k "fix_only"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn21515-configuration
+    description: Every parameters key of the validator contract changes a verdict, an invalid contract
+      fails to load, and disabling a rule row clears its violation fixture.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
+  - id: dod-omn21515-bindings
+    description: The checker is pure, the runtime resolves the report writer from the container, and the
+      planted unbound handler and console script are refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          tests/unit/validation/test_checker_canonical_file_shape.py -q --no-cov -n 0 -k "container or
+          handler or console_script or forbid_io or golden"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC6]
+  - id: dod-omn21515-node-home-admission
+    description: An ordinary new node is refused and a declared validator node admitted; every node-home
+      parameters key changes a verdict; each node-home row has a planted violation and a clean fixture.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC7]
+  - id: dod-omn21515-deploy-runtime-surface
+    description: Deploy probe for this library's published hook surface. Read the node contract, handler
+      and runtime at the checkout commit through the GitHub contents API; fail if the COMPUTE handler
+      binding, validation report construction or container-resolved report writer is absent. The runtime
+      and wiring tests exercise rejection and admission through the hook entry. Runs on hosted runners
+      without a container daemon or access to a private runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC6]
+    checks:
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_canonical_file_shape_check_compute/contract.yaml?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'default_handler: handler:NodeCanonicalFileShapeCheckCompute' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_canonical_file_shape_check_compute/handler.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'return ModelValidationReport.from_findings(' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_canonical_file_shape_check_compute/runtime_canonical_file_shape_check.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'writer = container.get_service(NodeValidationReportWriteEffect)' > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-checkout-passes-ratchet
+    description: The checkout passes the canonical-file-shape ratchet with no stray handler.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_checkout_has_no_handler_outside_node.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-baseline-burn-behavior
+    description: Exercise rejection and admission, shrink-only finding baselines, validator run and triggered
+      events, and imperative-contract output parity through the relocated node handlers and runtimes.
+      The head versions of these tests import node modules absent at the merge base.
+    source: manual
+    binds_ac: [AC8]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/handlers/test_handler_backward_compat.py
+          tests/unit/handlers/test_baselined_finding_hooks.py tests/unit/handlers/test_handler_validator_run_events.py
+          tests/unit/handlers/test_handler_validator_triggered_emit.py tests/unit/handlers/test_handler_arch_handler_contract_compliance.py
+          tests/unit/validation/test_imperative_contract_guard_parity.py -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-baseline-growth-refused
+    description: Plant one and five baseline additions for files already present at the base revision
+      and require baseline-growth for every added entry. The head tests pass and the overlaid merge-base
+      tests fail without removal of the base-tree refusal carve-out.
+    source: manual
+    binds_ac: [AC9]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -o addopts='' -k planted_baseline_growth
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-install
+    description: First install of the burn-down baseline in a repository that has baseline_path is admitted,
+      baseline_path is not extended, a stale entry and a missing ticket header are refused, and the runtime
+      writes the file from the refused paths the baseline lacks.
+    source: manual
+    binds_ac: [AC10]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -q --no-cov -n 0 -o addopts='' -k "first_install or either_file or never_extended or without_the_burndown
+          or ticket or write_burndown"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-shrink
+    description: After install an added line is baseline-growth, a one-for-one rename is admitted, the
+      file cannot be deleted even when empty, and every other new baseline file is still new-exception-file.
+    source: manual
+    binds_ac: [AC11]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -q --no-cov -n 0 -o addopts='' -k "after_install or planted_growth or rename or deleting or
+          empty or exception_file or shrinks or grows or prune"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-configuration
+    description: Every burn-down parameters key changes a verdict, each new rule has a planted and a clean
+      fixture, and the table of keys covers the contract.
+    source: manual
+    binds_ac: [AC12]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
+          -q --no-cov -n 0 -o addopts='' -k "burndown or every_parameter_key or every_contract_rule"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-group-d-handler-bindings
+    description: The group d handlers expose typed handle request entries after moving into their node
+      contracts. The published hook runtimes import those node handlers, and the checkout has no unbound
+      handler. These checks exercise the group d migration independently of inherited checker evidence.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/handlers/test_handle_request_shape_omn21515.py
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_checkout_has_no_handler_outside_node.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          uv run python - <<'PY'
+          from importlib import import_module
+          from pathlib import Path
+          import yaml
+          root = Path('src/omnibase_core/nodes')
+          for node, runtime in (
+              ('node_cross_repo_boundary_check_effect', 'runtime_boundary_parity'),
+              ('node_cross_repo_boundary_check_effect', 'runtime_migration_conflicts'),
+              ('node_dependency_pin_bump_effect', 'runtime_dependency_pin_bump'),
+              ('node_todo_format_check_effect', 'runtime_todo_format'),
+              ('node_shape_gate_independence_check_effect', 'runtime_shape_gate_independence'),
+              ('node_contract_evidence_check_effect', 'runtime_contract_check_values_lint'),
+              ('node_contract_evidence_check_effect', 'runtime_contract_substance_floor'),
+          ):
+              contract = yaml.safe_load((root / node / 'contract.yaml').read_text())
+              handler_module, handler_class = contract['handler_routing']['default_handler'].split(':')
+              handler = getattr(import_module(f'omnibase_core.nodes.{node}.{handler_module}'), handler_class)
+              assert callable(handler.handle), node
+              module = import_module(f'omnibase_core.nodes.{node}.{runtime}')
+              assert callable(module.main), (node, runtime)
+          PY
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-ledger-node-default-handler
+    description: The published ledger guard default resolves inside its node and classifies canonical
+      and scratch targets through the shared CLI guard. Its node passes all eight compliance checks.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/test_node_ledger_write_guard_effect.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

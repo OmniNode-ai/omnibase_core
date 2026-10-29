@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_contract_evidence_check_effect
+node_id: node_contract_evidence_check_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: Lints, substance-checks and classifies a ticket contract's dod_evidence (OMN-17427).
+input_model: omnibase_core.models.nodes.contract_evidence_check.model_contract_check_values_lint_request.ModelContractCheckValuesLintRequest
+output_model: omnibase_core.models.nodes.contract_evidence_check.model_contract_check_values_lint_report.ModelContractCheckValuesLintReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: contract_check_values_lint
+      handler:
+        name: HandlerContractCheckValuesLint
+        module: omnibase_core.nodes.node_contract_evidence_check_effect.handler_contract_check_values_lint
+      event_model:
+        name: ModelContractCheckValuesLintRequest
+        module: omnibase_core.models.nodes.contract_evidence_check.model_contract_check_values_lint_request
+    - operation: contract_substance_floor
+      handler:
+        name: HandlerContractSubstanceFloor
+        module: omnibase_core.nodes.node_contract_evidence_check_effect.handler_contract_substance_floor
+      event_model:
+        name: ModelContractSubstanceFloorRequest
+        module: omnibase_core.models.nodes.contract_evidence_check.model_contract_substance_floor_request
+    - operation: contract_compliance_check
+      handler:
+        name: HandlerContractComplianceCheck
+        module: omnibase_core.nodes.node_contract_evidence_check_effect.handler_contract_compliance_check
+      event_model:
+        name: ModelContractComplianceCheckRequest
+        module: omnibase_core.models.nodes.contract_evidence_check.model_contract_compliance_check_request
+  default_handler: handler_contract_check_values_lint:HandlerContractCheckValuesLint
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 120000

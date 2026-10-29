@@ -67,8 +67,9 @@ evidence_requirements:
   - kind: tests
     description: The canonical-file-shape tests accept the baseline declared by the core hook and refuse
       a local node-boundary declaration.
-    command: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k "test_node_boundary_baseline_declarations
-      or test_local_node_boundary_declaration_refused or test_both_gate_declarations_and_no_direct_model_default"
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+      -q -k "test_node_boundary_baseline_declarations or test_local_node_boundary_declaration_refused
+      or test_both_gate_declarations_and_no_direct_model_default"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -135,8 +136,9 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q -k "test_node_boundary_baseline_declarations
-          or test_local_node_boundary_declaration_refused or test_both_gate_declarations_and_no_direct_model_default"
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q -k "test_node_boundary_baseline_declarations or test_local_node_boundary_declaration_refused
+          or test_both_gate_declarations_and_no_direct_model_default"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6

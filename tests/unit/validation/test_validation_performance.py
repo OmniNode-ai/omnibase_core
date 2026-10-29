@@ -27,12 +27,16 @@ from pathlib import Path
 
 import psutil
 
-from omnibase_core.handlers.handler_backward_compat import HandlerBackwardCompat
-from omnibase_core.handlers.handler_backward_compat_cli import load_rules
 from omnibase_core.models.backward_compat.model_backward_compat_check_input import (
     ModelBackwardCompatCheckInput,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
+from omnibase_core.nodes.node_backward_compat_check_compute.handler_backward_compat import (
+    HandlerBackwardCompat,
+)
+from omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check import (
+    load_rules,
+)
 
 sys.path.insert(
     0,

@@ -9,7 +9,14 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.validators.canonical_file_shape import is_canonical_location
+from omnibase_core.models.validation.model_canonical_file_shape_text import (
+    ModelCanonicalFileShapeText,
+)
+from omnibase_core.models.validation.model_canonical_file_shape_tree import (
+    ModelCanonicalFileShapeTree,
+)
+from omnibase_core.validation.checker_canonical_file_shape import file_rule_refusals
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import RULES
 
 
 @pytest.mark.unit
@@ -33,7 +40,17 @@ def test_agent_skill_modules_have_canonical_file_shape(module_name: str) -> None
     root = Path(__file__).resolve().parents[4]
     relative = path.relative_to(root).as_posix()
     assert relative == f"src/omnibase_core/{module_name.replace('.', '/')}.py"
-    assert is_canonical_location(relative)
+    # This test checks locations; supply a handler binding for the codec.
+    shape_tree = ModelCanonicalFileShapeTree(
+        files=(relative,),
+        contract_texts=(
+            ModelCanonicalFileShapeText(
+                path="src/omnibase_core/nodes/node_skill/contract.yaml",
+                text="handler:\n  module: omnibase_core.handlers.handler_agent_skill_codec\n",
+            ),
+        ),
+    )
+    assert relative not in file_rule_refusals(shape_tree, RULES)
 
     tree = ast.parse(path.read_text(encoding="utf-8"))
     classes = [node for node in tree.body if isinstance(node, ast.ClassDef)]

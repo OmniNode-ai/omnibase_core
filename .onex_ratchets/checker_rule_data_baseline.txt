@@ -12,7 +12,6 @@ src/omnibase_core/handlers/handler_internal_sibling_pins.py 6
 src/omnibase_core/handlers/handler_merge_queue_parity.py 6
 src/omnibase_core/handlers/handler_no_bare_feature_flags.py 7
 src/omnibase_core/handlers/handler_no_hardcoded_topics.py 5
-src/omnibase_core/handlers/handler_version_floor_consumers.py 5
 src/omnibase_core/models/validation/model_validation_report.py 2
 src/omnibase_core/nodes/node_git_file_listing_effect/handler_readme_only_docs.py 2
 src/omnibase_core/nodes/node_integration_skips_check_compute/runtime_integration_skips_check.py 2
@@ -73,7 +72,6 @@ src/omnibase_core/validation/validator_workflow_step.py 3
 src/omnibase_core/validators/backend_secret_discipline.py 8
 src/omnibase_core/validators/breaking_schema_change.py 1
 src/omnibase_core/validators/bypass_token_blocklist.py 4
-src/omnibase_core/validators/canonical_file_shape.py 10
 src/omnibase_core/validators/contract_config_compliance.py 3
 src/omnibase_core/validators/dispatch_surface_test_required.py 3
 src/omnibase_core/validators/environment_reader_inventory.py 1

@@ -30,8 +30,8 @@ HOOKS_FILE = REPO_ROOT / ".pre-commit-hooks.yaml"
 # hook_id -> substring that MUST appear in the hook's entry (canonical core impl).
 EXPECTED_HOOKS: dict[str, str] = {
     "check-enum-governance": "omnibase_core.validation.checker_enum_governance",
-    "check-no-backward-compat": "omnibase_core.handlers.handler_backward_compat_cli",
-    "check-no-dict-any": "omnibase_core.handlers.handler_dict_any_cli",
+    "check-no-backward-compat": "omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check",
+    "check-no-dict-any": "omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check",
 }
 
 

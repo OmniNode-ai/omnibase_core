@@ -512,7 +512,7 @@ required_validators:
   no-untracked-todos:
     description: |
       Blocks bare TODO/FIXME. Requires # TODO(OMN-XXXX): format.
-    central_source: "omnibase_core.handlers.handler_todo_format"
+    central_source: "omnibase_core.nodes.node_todo_format_check_effect.handler_todo_format"
     pre_commit: required
     ci_workflow: required
     required_check_on_main: "ARCH-Invariants / no-untracked-todos"
@@ -747,7 +747,7 @@ required_validators:
       exemption or suppression entry. Existing files are listed in the
       shrink-only .onex_ratchets/canonical_file_shape_baseline.txt. There is
       no allowlist and no suppression comment. OMN-20304.
-    central_source: "omnibase_core.validators.canonical_file_shape"
+    central_source: "omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check"
     pre_commit: required
     ci_workflow: required
     required_check_on_main: "CI Summary"
@@ -772,7 +772,7 @@ required_validators:
       result, so no detector result existed on those PRs. This guard refuses
       both shapes in .github/workflows. It has no baseline, no allowlist and
       no suppression comment. OMN-20298.
-    central_source: "omnibase_core.handlers.handler_shape_gate_independence"
+    central_source: "omnibase_core.nodes.node_shape_gate_independence_check_effect.handler_shape_gate_independence"
     pre_commit: required
     ci_workflow: required
     required_check_on_main: "CI Summary"

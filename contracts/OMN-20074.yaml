@@ -993,10 +993,10 @@ dod_evidence:
           -k "packaged_manifest or a_boundary_produced_by_change_control"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: uv run python -c 'from omnibase_core.handlers.handler_boundary_parity import load_boundary_manifest,
-          load_manifest_yaml; deployed_manifest = load_boundary_manifest(load_manifest_yaml()); assert
-          len(deployed_manifest) == 5; assert all("onex_change_control" not in (entry.producer_repo, entry.consumer_repo)
-          for entry in deployed_manifest)'
+        check_value: uv run python -c 'from omnibase_core.nodes.node_cross_repo_boundary_check_effect.handler_boundary_parity
+          import load_boundary_manifest, load_manifest_yaml; deployed_manifest = load_boundary_manifest(load_manifest_yaml());
+          assert len(deployed_manifest) == 5; assert all("onex_change_control" not in (entry.producer_repo,
+          entry.consumer_repo) for entry in deployed_manifest)'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC46

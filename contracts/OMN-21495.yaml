@@ -34,13 +34,31 @@ requirements:
         statement: 'AC4: Bindings: the handler stays a pure COMPUTE node; the runtime gathers the git
           index and contract blobs and loads the rule data -- falsifier: the handler tests run with facts
           only'
+  - id: req-omn21495-pin-parity
+    statement: The shared core hook repo is pinned at one rev per pre-commit config, checked by a validator
+      in the generic format whose commit-time lookup is an effect node resolved from the container.
+    acceptance:
+      - id: AC5
+        statement: 'AC5: The check refuses a hook of the shared core hook repo whose pinned rev is older
+          than the newest rev that hook repo is pinned at in the same .pre-commit-config.yaml, and admits
+          the converged config -- falsifier: pytest cases over a canary fixture and a converged fixture'
+      - id: AC6
+        statement: 'AC6: A config shaped like omniclaude-internal .pre-commit-config.yaml line 13 pinned
+          at d7ed23f1 fails the check; at the current core pin it passes -- falsifier: the check run against
+          both consumer-shaped fixtures'
+      - id: AC7
+        statement: 'AC7: Configuration: the git timeout, the cache directory default, the cache index
+          names, the hook repositories and the remediation text are parameters of the validation contract;
+          the rev-time lookup is an effect node and the runtime resolves it and the report writer from
+          the container -- falsifier: a table-driven test mutates every parameter, an invalid contract
+          fails to load, and a container spy records both resolutions'
 evidence_requirements:
   - kind: tests
     description: Node-home ratchet tests pass at the checkout; no live service is required.
-    command: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
   - kind: ci
     description: Hosted-runner run of the same test directory at the checkout.
-    command: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
 emergency_bypass:
   enabled: false
   justification: ''
@@ -52,8 +70,9 @@ dod_evidence:
     binds_ac: [AC1]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -q --no-cov -k "admits_declared or undeclared_effect or only_the_declaring or malformed_declaration"
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "ordinary_new_node or validator_support_node or does_not_list_a_category
+          or sibling_without_a_declaration"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac2-baseline
     description: Admission leaves the baseline file unchanged.
@@ -61,8 +80,8 @@ dod_evidence:
     binds_ac: [AC2]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -q --no-cov -k "baseline"
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "does_not_loosen_the_baseline"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac3-rule-data
     description: Every rule-data key changes the verdict and invalid rule data fails to load.
@@ -70,8 +89,8 @@ dod_evidence:
     binds_ac: [AC3]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -q --no-cov -k "rule_data or remediation_text"
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "parameter_key or mutating_a_parameter or outside_market_row"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac4-bindings
     description: The whole node-home test directory passes with the handler called on facts only.
@@ -79,7 +98,8 @@ dod_evidence:
     binds_ac: [AC4]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
+          0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-deploy-checkout-test
     description: Hosted-runner run of the node-home tests at the checkout; needs no container daemon or
@@ -88,5 +108,60 @@ dod_evidence:
     binds_ac: [AC1, AC2, AC3, AC4]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
+          0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac5-canary-converged
+    description: The canary config is refused and the converged config is admitted.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
+          -n 0 -q --no-cov -k "older_than or clean or violation"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac6-consumer-fixtures
+    description: The consumer-shaped config fails at the stale rev and passes at the current pin.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
+          -n 0 -q --no-cov -k "consumer"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac7-parameters-di
+    description: Every parameter changes a verdict, an invalid contract fails to load, and the runtime
+      resolves its effects from the container.
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
+          tests/unit/nodes/node_precommit_rev_time_effect -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-deploy-pin-parity-checkout
+    description: Exercise the pin-parity validator and its commit-time effect at the checkout on a hosted
+      runner. The stale and converged pins, rule parameters, container resolution and report checks need
+      no container daemon or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5, AC6, AC7]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
+          tests/unit/nodes/node_precommit_rev_time_effect/test_node_precommit_rev_time_effect.py -q --no-cov
+          -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-deploy-published-runtime
+    description: Read the published pin-parity runtime at the checkout commit. Refuse a missing source
+      or a runtime without container resolution of the commit-time effect. The public source probe runs
+      on hosted runners without a private runtime or container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC7]
+    checks:
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 60 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_precommit_rev_time_effect/runtime_precommit_pin_parity.py" |
+            grep -F "resolver = container.get_service(" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
