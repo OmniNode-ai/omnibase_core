@@ -80,11 +80,10 @@ validation:
       severity: error
       enabled: true
       parameters:
-        remediation: >-
-          Pin the sibling in [tool.uv.sources] to its newest green dev merge tag: <dist> = { git = "https://github.com/OmniNode-ai/<repo>.git",
-          tag = "dev-<YYYYMMDDHHMMSS>-<sha12>" }, and keep a version range (never ==) in [project] dependencies
-          for external installs. Repin stale pins to the newest dev tag. RULINGs 2026-10-16T07:34:18Z
-          and 2026-10-16T09:35:49Z (OMN-19998). #magic___^_^___line
+        remediation: 'Pin the sibling in [tool.uv.sources] to its newest green dev merge tag: <dist> =
+          { git = "https://github.com/OmniNode-ai/<repo>.git", tag = "dev-<YYYYMMDDHHMMSS>-<sha12>" },
+          and keep a version range (never ==) in [project] dependencies for external installs. Repin stale
+          pins to the newest dev tag. RULINGs 2026-10-16T07:34:18Z and 2026-10-16T09:35:49Z (OMN-19998).'
   suppression_comments: []
 
   fail_on_error: true

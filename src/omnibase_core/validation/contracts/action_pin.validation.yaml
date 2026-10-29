@@ -77,8 +77,7 @@ validation:
       severity: warning
       enabled: true
       parameters:
-        message_template: >-
-          known exception {uses} ({reason}) is no longer used; remove it from the overlay #magic___^_^___line
+        message_template: 'known exception {uses} ({reason}) is no longer used; remove it from the overlay'
   suppression_comments: []
 
   fail_on_error: true

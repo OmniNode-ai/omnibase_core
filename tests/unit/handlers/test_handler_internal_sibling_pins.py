@@ -703,7 +703,7 @@ def test_rules_model_is_frozen_and_closed() -> None:
 def test_node_contract_binds_the_handler() -> None:
     document = yaml.safe_load((NODE_DIR / "contract.yaml").read_text())
     assert document["name"] == "node_internal_sibling_pins_check_effect"
-    assert document["node_type"] == "compute"
+    assert document["node_type"] == "effect"
     routing = document["handler_routing"]
     assert routing["default_handler"] == (
         "handler_internal_sibling_pins:HandlerInternalSiblingPins"
