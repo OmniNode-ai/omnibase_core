@@ -490,7 +490,7 @@ def test_canary_lowered_pin_refused_with_rule_id_converged_admitted(
     assert _hook_run([target, *base, "--report-json", str(out)]) == 1
     [finding] = json.loads(out.read_text())["findings"]
     assert finding["rule_id"] == "older_than_newest_pin"
-    assert finding["location"].endswith(".pre-commit-config.yaml:6")
+    assert finding["location"].endswith(".pre-commit-config.yaml:7")
 
     config.write_text(
         (CANARY_DIR / "converged_pins.yaml").read_text().replace(FIXTURE_NEW, new)
