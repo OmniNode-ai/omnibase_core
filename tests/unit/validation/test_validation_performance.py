@@ -22,9 +22,17 @@ import shutil
 import sys
 import tempfile
 import time
+from collections.abc import Iterable
 from pathlib import Path
 
 import psutil
+
+from omnibase_core.handlers.handler_backward_compat import HandlerBackwardCompat
+from omnibase_core.handlers.handler_backward_compat_cli import load_rules
+from omnibase_core.models.backward_compat.model_backward_compat_check_input import (
+    ModelBackwardCompatCheckInput,
+)
+from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
 
 sys.path.insert(
     0,
@@ -34,10 +42,32 @@ sys.path.insert(
 try:
     from validate_contracts import validate_yaml_file
     from validate_naming import NamingConventionValidator
-    from validate_no_backward_compatibility import BackwardCompatibilityDetector
     from validate_structure import OmniStructureValidator
 except ImportError as e:
     pytest.skip(f"Could not import validation modules: {e}", allow_module_level=True)
+
+
+def _validate_compat_files(paths: Iterable[Path]) -> tuple[bool, list[str], int]:
+    """Gather sources with the CLI size limit and return validation facts."""
+    rules = load_rules()
+    sources = []
+    errors = []
+    for path in paths:
+        size = path.stat().st_size
+        if size > rules.max_file_size_bytes:
+            errors.append(f"{path}: File too large ({size} bytes), skipping")
+            continue
+        sources.append(
+            ModelSourceFile(path=str(path), source=path.read_text(encoding="utf-8"))
+        )
+    result = HandlerBackwardCompat().handle(
+        ModelBackwardCompatCheckInput(files=tuple(sources), rules=rules)
+    )
+    errors.extend(
+        f"{finding.path}: Line {finding.line}: {finding.message}"
+        for finding in result.findings
+    )
+    return not errors, errors, result.files_checked
 
 
 @pytest.fixture
@@ -196,8 +226,7 @@ class ModelProcessor{i:03d}(BaseModel):
         start_time = time.time()
         memory_monitor.check_memory()
 
-        detector = BackwardCompatibilityDetector()
-        is_valid = detector.validate_python_file(large_file)
+        is_valid, _, _ = _validate_compat_files([large_file])
 
         end_time = time.time()
         peak_memory = memory_monitor.get_peak_usage()
@@ -477,7 +506,6 @@ class TestMemoryOptimization:
         models_dir = temp_repo / "src" / "omnibase_core" / "models"
         models_dir.mkdir(parents=True)
 
-        detector = BackwardCompatibilityDetector()
         memory_measurements = []
 
         # Process files one by one and measure memory
@@ -502,7 +530,7 @@ class ModelMemoryTest{i:03d}(BaseModel):
 
             # Validate and measure memory
             memory_before = memory_monitor.check_memory()
-            detector.validate_python_file(test_file)
+            _validate_compat_files([test_file])
             memory_after = memory_monitor.check_memory()
 
             memory_measurements.append(memory_after - memory_before)
@@ -527,12 +555,11 @@ class ModelMemoryTest{i:03d}(BaseModel):
 
             # Check if file exceeds size limit
             if large_file.stat().st_size > 10 * 1024 * 1024:  # 10MB limit
-                detector = BackwardCompatibilityDetector()
-                result = detector.validate_python_file(large_file)
+                result, errors, _ = _validate_compat_files([large_file])
 
                 # Should reject the file
                 assert result is False
-                assert any("too large" in error.lower() for error in detector.errors)
+                assert any("too large" in error.lower() for error in errors)
             else:
                 pytest.skip("Could not create file large enough to test size limit")
 
@@ -572,11 +599,11 @@ class ModelConcurrent{i:03d}(BaseModel):
         def validate_worker(file_subset):
             """Worker function for concurrent validation."""
             start_time = time.time()
-            detector = BackwardCompatibilityDetector()
 
             errors = 0
             for file_path in file_subset:
-                if not detector.validate_python_file(file_path):
+                success, _, _ = _validate_compat_files([file_path])
+                if not success:
                     errors += 1
 
             end_time = time.time()
@@ -657,9 +684,13 @@ class ModelScale{i:04d}(BaseModel):
         start_time = time.time()
         memory_monitor.check_memory()
 
-        detector = BackwardCompatibilityDetector()
-        python_files = detector.find_python_files_in_directory(temp_repo)
-        success = detector.validate_all_python_files(python_files)
+        skip_dir_parts = frozenset(load_rules().skip_dir_parts)
+        python_files = [
+            path
+            for path in temp_repo.rglob("*.py")
+            if not skip_dir_parts.intersection(path.parts)
+        ]
+        success, _, checked_files = _validate_compat_files(python_files)
 
         end_time = time.time()
         peak_memory = memory_monitor.get_peak_usage()
@@ -676,13 +707,13 @@ class ModelScale{i:04d}(BaseModel):
             f"Processing rate was {files_per_second:.1f} files/s"
         )
         assert success is True, "All files should pass validation"
+        assert checked_files == num_files
 
     def test_file_size_progression_performance(self, temp_repo, memory_monitor):
         """Test performance with progressively larger files."""
         models_dir = temp_repo / "src" / "omnibase_core" / "models"
         models_dir.mkdir(parents=True)
 
-        detector = BackwardCompatibilityDetector()
         processing_times = []
 
         # Test with progressively larger files
@@ -705,7 +736,7 @@ class ModelSize{size_factor}_{i:03d}(BaseModel):
 
             # Measure processing time
             start_time = time.time()
-            detector.validate_python_file(test_file)
+            _validate_compat_files([test_file])
             end_time = time.time()
 
             processing_times.append(end_time - start_time)
@@ -809,8 +840,7 @@ class ModelComplexAST(BaseModel):
         start_time = time.time()
         memory_monitor.check_memory()
 
-        detector = BackwardCompatibilityDetector()
-        success = detector.validate_python_file(complex_file)
+        success, _, _ = _validate_compat_files([complex_file])
 
         end_time = time.time()
         peak_memory = memory_monitor.get_peak_usage()
