@@ -132,9 +132,13 @@ def test_planted_remediation_and_allowlist_are_named() -> None:
     assert [i.message.split()[0] for i in base.issues] == ["INFRA_ALLOWLIST"]
 
 
+BASELINE = "rule_table_baseline"
+BASELINE_KEYS = ("grew_message", "stale_message", "growth_message")
+
+
 def test_every_parameter_of_every_rule_row_has_a_control() -> None:
     declared = {(r.rule_id, k) for r in _contract().rules for k in (r.parameters or {})}
-    assert declared == set(CONTROLS)
+    assert declared == set(CONTROLS) | {(BASELINE, k) for k in BASELINE_KEYS}
 
 
 @pytest.mark.parametrize(("rule_id", "key"), sorted(CONTROLS))
@@ -226,3 +230,130 @@ def test_reports_the_constants_still_held_by_the_gates(
 def test_the_new_checkers_hold_no_rule_table(module: str) -> None:
     path = ROOT / "src" / "omnibase_core" / "validation" / f"{module}.py"
     assert ValidatorCheckerRuleData().validate(path).issues == []
+
+
+# --- the shrink-only baseline of the rule tables that predate K10 -------------------
+
+BASELINE_FILE = ROOT / ".onex_ratchets" / "checker_rule_data_baseline.txt"
+TABLE_FIXTURE = FIXTURES / f"{_T}_base" / "x_base.py"
+
+
+def _baselined(count: int, contract: ModelValidatorSubcontract | None = None) -> list:
+    validator = ValidatorCheckerRuleData(
+        contract=contract or _contract(),
+        baseline={TABLE_FIXTURE.relative_to(ROOT).as_posix(): count},
+        root=ROOT,
+    )
+    return list(validator.validate(TABLE_FIXTURE).issues)
+
+
+def test_a_file_at_its_baseline_entry_passes() -> None:
+    assert _baselined(1) == []
+
+
+def test_a_file_with_no_entry_keeps_its_table_finding() -> None:
+    assert [i.code for i in _baselined(0)] == [TABLE]
+
+
+def test_a_baselined_file_holding_more_than_its_entry_fails() -> None:
+    rules = {r.rule_id: r for r in _contract().rules}
+    held = checker.apply_baseline(Path("checker_p.py"), _two_tables(), 1, rules)
+    assert [i.code for i in held] == [TABLE, TABLE, BASELINE]
+
+
+def test_an_entry_above_what_the_file_holds_is_stale() -> None:
+    issues = _baselined(3)
+    assert [i.code for i in issues] == [BASELINE]
+    assert "lower the entry to 1" in issues[0].message
+
+
+def test_an_entry_the_base_lacks_or_raises_is_baseline_growth() -> None:
+    rules = {r.rule_id: r for r in _contract().rules}
+    grown = checker.baseline_growth(
+        {"a.py": 2, "b.py": 1, "c.py": 1}, {"a.py": 2, "b.py": 0}, BASELINE_FILE, rules
+    )
+    assert sorted(i.message.split()[0] for i in grown) == ["b.py", "c.py"]
+    assert checker.baseline_growth({"a.py": 1}, {"a.py": 2}, BASELINE_FILE, rules) == ()
+
+
+def _two_tables() -> tuple:
+    rules = {r.rule_id: r for r in _contract().rules}
+    fact = ModelCheckerRuleDataModuleFact(
+        "checker_p.py",
+        "checker_p.py",
+        'A = frozenset({"a"})\nB = frozenset({"b"})\n',
+        frozenset(),
+        frozenset(),
+    )
+    return checker.check_module(Path("checker_p.py"), fact, rules)
+
+
+_SCENARIOS = {
+    "grew_message": lambda rules: checker.apply_baseline(
+        Path("x.py"), _two_tables(), 1, rules
+    ),
+    "stale_message": lambda rules: checker.apply_baseline(Path("x.py"), (), 2, rules),
+    "growth_message": lambda rules: checker.baseline_growth(
+        {"x.py": 2}, {}, BASELINE_FILE, rules
+    ),
+}
+
+
+@pytest.mark.parametrize("key", BASELINE_KEYS)
+def test_baseline_messages_are_rule_parameters(key: str) -> None:
+    contract = _contract()
+    row = next(r for r in contract.rules if r.rule_id == BASELINE)
+    params = {**(row.parameters or {}), key: f"marker-for-{key} {{path}}"}
+    mutated = contract.model_copy(
+        update={
+            "rules": [
+                r.model_copy(update={"parameters": params}) if r is row else r
+                for r in contract.rules
+            ]
+        }
+    )
+    rules = {r.rule_id: r for r in mutated.rules}
+    shipped = {r.rule_id: r for r in contract.rules}
+    changed = " ".join(i.message for i in _SCENARIOS[key](rules))
+    original = " ".join(i.message for i in _SCENARIOS[key](shipped))
+    assert f"marker-for-{key}" in changed
+    assert f"marker-for-{key}" not in original
+
+
+def test_a_new_validator_is_refused_and_an_existing_one_is_left_to_its_migration() -> (
+    None
+):
+    fixture = FIXTURES / f"{_F}_cli" / "handler_x_cli.py"
+    rules = {r.rule_id: r for r in _contract().rules}
+    source = fixture.read_text(encoding="utf-8")
+    new = ModelCheckerRuleDataModuleFact(
+        fixture.name, fixture.name, source, frozenset(), frozenset()
+    )
+    existing = ModelCheckerRuleDataModuleFact(
+        fixture.name,
+        fixture.name,
+        source,
+        frozenset(),
+        frozenset(),
+        new_in_change=False,
+    )
+    assert [i.code for i in checker.check_module(fixture, new, rules)] == [FORMAT]
+    assert checker.check_module(fixture, existing, rules) == ()
+
+
+def test_the_baseline_holds_exactly_the_tables_the_tree_holds() -> None:
+    """Every entry equals what its file holds today; no other source file holds a table."""
+    entries = checker.parse_baseline(BASELINE_FILE.read_text(encoding="utf-8"))
+    assert entries
+    held: dict[str, int] = {}
+    validator = ValidatorCheckerRuleData()
+    for path in sorted((ROOT / "src" / "omnibase_core").rglob("*.py")):
+        tables = [i for i in validator.validate(path).issues if i.code == TABLE]
+        if tables:
+            held[path.relative_to(ROOT).as_posix()] = len(tables)
+    assert held == entries
+
+
+def test_the_baseline_names_no_validator_migrated_into_the_generic_format() -> None:
+    entries = checker.parse_baseline(BASELINE_FILE.read_text(encoding="utf-8"))
+    assert not [p for p in entries if "public_runner_placement" in p]

@@ -90,6 +90,22 @@ validation:
         validator_prefix: 'validator_'
         contract_suffix: '.validation.yaml'
 
+    - rule_id: rule_table_baseline
+      description: >-
+        The rule tables that sat in checkers before K10 are burn-down children of OMN-21503 and the only
+        ones admitted; the baseline holds exactly those and only shrinks.
+      severity: error
+      enabled: true
+      parameters:
+        grew_message: >-
+          {path} holds {count} rule tables, baselined at {baselined}: a baselined file never grows; move
+          the new table into the checker's .validation.yaml.
+        stale_message: >-
+          {path} holds {count} rule tables, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: >-
+          {path} is baselined at {count} and the base revision has {baselined}: the baseline only shrinks;
+          fix the table instead of adding an entry. #magic___^_^___line
   suppression_comments: []
 
   fail_on_error: true

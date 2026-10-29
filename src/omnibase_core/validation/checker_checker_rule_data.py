@@ -9,7 +9,16 @@ names beside it), ``ModelValidationIssue`` out: no file read, no clock, no
 environment. Every name, marker and pattern is a ``parameters`` entry of the
 matching rule row in ``contracts/checker_rule_data.validation.yaml``.
 
-Rules: rule_table_in_checker, validator_outside_generic_format.
+Rules: rule_table_in_checker, validator_outside_generic_format, rule_table_baseline.
+
+``validator_outside_generic_format`` refuses a NEW validator: when the entry names a base
+revision, a module that revision already holds is migrated by deleting it, not refused
+on every edit; with no base revision every module is refused.
+
+``rule_table_baseline`` is the shrink-only ratchet over the rule tables that sat in
+checkers before K10 existed: the baseline file maps a path to the number of tables it
+holds, a file may not hold more than its entry, an entry must equal what the file holds,
+and an entry the base revision does not have (or has lower) fails.
 """
 
 from __future__ import annotations
@@ -34,6 +43,7 @@ from omnibase_core.validation.checker_rule_parameters import (
 
 RULE_TABLE = "rule_table_in_checker"
 RULE_FORMAT = "validator_outside_generic_format"
+RULE_BASELINE = "rule_table_baseline"
 
 
 def _issue(
@@ -205,14 +215,80 @@ def check_module(
     issues: list[ModelValidationIssue] = []
     if _active(rules, RULE_TABLE):
         issues.extend(_check_rule_table(path, fact, tree, rules[RULE_TABLE]))
-    if _active(rules, RULE_FORMAT):
+    if _active(rules, RULE_FORMAT) and fact.new_in_change:
         issues.extend(_check_generic_format(path, fact, tree, rules[RULE_FORMAT]))
     return tuple(issues)
 
 
+def parse_baseline(text: str | None) -> dict[str, int]:
+    """Path -> number of rule tables, from ``<path> <count>`` lines; ``#`` lines are prose."""
+    entries: dict[str, int] = {}
+    for line in (text or "").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        path, _, count = stripped.rpartition(" ")
+        if path and count.isdigit():
+            entries[path] = int(count)
+    return entries
+
+
+def apply_baseline(
+    path: Path,
+    issues: tuple[ModelValidationIssue, ...],
+    baselined: int,
+    rules: Mapping[str, ModelValidatorRule],
+) -> tuple[ModelValidationIssue, ...]:
+    """Hold a file to its baseline entry: no more tables than baselined, and none fewer unrecorded."""
+    if not _active(rules, RULE_BASELINE):
+        return issues
+    row = rules[RULE_BASELINE]
+    tables = [i for i in issues if i.code == RULE_TABLE]
+    others = tuple(i for i in issues if i.code != RULE_TABLE)
+    values = {"path": path.as_posix(), "count": len(tables), "baselined": baselined}
+    if len(tables) > baselined:
+        grown = (
+            (_issue(row, path, rule_string(row, "grew_message").format(**values)),)
+            if baselined
+            else ()
+        )
+        return (*issues, *grown)
+    if len(tables) < baselined:
+        stale = _issue(row, path, rule_string(row, "stale_message").format(**values))
+        return (*others, stale)
+    return others
+
+
+def baseline_growth(
+    head: Mapping[str, int],
+    base: Mapping[str, int],
+    baseline_path: Path,
+    rules: Mapping[str, ModelValidatorRule],
+) -> tuple[ModelValidationIssue, ...]:
+    """An entry the base revision lacks, or holds at a lower count, is a baseline that grew."""
+    if not _active(rules, RULE_BASELINE):
+        return ()
+    row = rules[RULE_BASELINE]
+    return tuple(
+        _issue(
+            row,
+            baseline_path,
+            rule_string(row, "growth_message").format(
+                path=path, count=count, baselined=base.get(path, 0)
+            ),
+        )
+        for path, count in sorted(head.items())
+        if count > base.get(path, 0)
+    )
+
+
 __all__ = [
+    "RULE_BASELINE",
     "RULE_FORMAT",
     "RULE_TABLE",
     "ModelCheckerRuleDataModuleFact",
+    "apply_baseline",
+    "baseline_growth",
     "check_module",
+    "parse_baseline",
 ]

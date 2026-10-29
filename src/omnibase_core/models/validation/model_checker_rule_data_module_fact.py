@@ -10,10 +10,11 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True, slots=True)
 class ModelCheckerRuleDataModuleFact:
-    """One Python module: its file name, source and the names that sit beside it."""
+    """One Python module: its file name, source, the names beside it and whether the change adds it."""
 
     name: str
     posix_path: str
     source: str
     sibling_names: frozenset[str]
     contract_names: frozenset[str]
+    new_in_change: bool = True

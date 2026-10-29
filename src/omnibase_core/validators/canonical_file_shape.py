@@ -74,6 +74,7 @@ GATE_HOOK_IDS = (
     "check-merge-queue-parity",
     "check-public-runner-placement",
     "check-ci-inheritance",
+    "check-checker-rule-data",
 )
 NODE_BOUNDARY_BASELINE = ".onex_ratchets/node_boundary_import_baseline.yaml"
 # The manifest default of the model-config hook's ``args`` (OMN-21147).
@@ -437,12 +438,8 @@ def is_exception_file(
 
 
 def count_entries(text: str) -> int:
-    count = 0
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped and not stripped.startswith(("#", "//")):
-            count += 1
-    return count
+    stripped = (line.strip() for line in text.splitlines())
+    return sum(1 for s in stripped if s and not s.startswith(("#", "//")))
 
 
 def count_code_lines(text: str) -> int:

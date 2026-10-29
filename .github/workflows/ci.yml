@@ -659,6 +659,24 @@ jobs:
           fi
           uv run python -m omnibase_core.handlers.handler_dependency_direction_cli --repo omnibase_core "${args[@]}"
 
+      # K10 checker_rule_data (OMN-21503) — blocking. No rule table in a checker and no
+      # validator outside the generic format; the tables that sat in checkers before K10
+      # are burn-down children in .onex_ratchets/checker_rule_data_baseline.txt, which may
+      # only shrink against the pull request's base.
+      - name: Run checker rule-data check
+        env:
+          RATCHET_BASE_REF: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          args=(--baseline .onex_ratchets/checker_rule_data_baseline.txt)
+          if [ -n "$RATCHET_BASE_REF" ]; then
+            git fetch --no-tags --depth=1 origin "$RATCHET_BASE_REF"
+            args+=(--base-ref "$RATCHET_BASE_REF")
+          else
+            echo "::notice::no ratchet base ref (push event): baseline and new-validator ratchets skipped"
+            args+=(--base-ref HEAD)
+          fi
+          git ls-files 'src/omnibase_core/handlers/handler_*_cli.py' 'src/omnibase_core/validation/checker_*.py' 'src/omnibase_core/validation/validator_*.py' 'src/omnibase_core/validators/*.py' | xargs uv run python -m omnibase_core.validation.validator_checker_rule_data "${args[@]}"
+
       # Public-repository runner placement (OMN-19998, RULING 2026-10-16T07:07:09Z:
       # "Ci runners should be for private repos only") — blocking. A public
       # repository has no job whose runs-on is, or can resolve to, a

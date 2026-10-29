@@ -1406,7 +1406,8 @@
     re.compile or multi-word string constant; the table is a parameters entry of the checker's .validation.yaml.
     A handler_*_cli.py with its own argparse main over a validation report, and a module that returns
     a validation report without the checker_<id>.py, validator_<id>.py and <id>.validation.yaml triple,
-    are refused. Reports on every file it is handed; carries no baseline.
+    are refused. Reports on every file it is handed; --baseline FILE admits the tables a repository held
+    when it adopted the hook, and only shrinks.
   language: python
   entry: python -m omnibase_core.validation.validator_checker_rule_data
   types: [python]

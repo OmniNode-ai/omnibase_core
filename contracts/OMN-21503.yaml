@@ -38,12 +38,12 @@ requirements:
         statement: "AC4: Each migrated one-off is checker_<id>.py + validator_<id>.py + <id>.validation.yaml
           with the one-off copy, its console script, its pre-commit entry and its tests deleted, and the
           hook id unchanged -- falsifier: the test module of each migrated validator and tests/ci/test_one_off_validators_migrated_omn21503.py"
-      - id: Configuration
+      - id: AC5
         statement: "Configuration: every pattern, name list, threshold and remediation text is a parameters
           entry of the checker's .validation.yaml -- falsifier: K10 rule_table_in_checker reports zero
           on the new checker and validator modules, and the table-driven tests mutate every parameters
           key of every rule row and assert the verdict change"
-      - id: Bindings
+      - id: AC6
         statement: "Bindings: the checkers are pure (facts in, issues out) -- falsifier: the checker tests
           call the checker with open and Path reads patched to raise"
 evidence_requirements:
@@ -108,7 +108,7 @@ dod_evidence:
           -n 0 -q -k "parameter or invalid or constants_still_held or hold_no_rule_table"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
-      - Configuration
+      - AC5
   - id: dod-omn21503-bindings
     description: The checkers read no file and no path while open, read_text and iterdir are patched to
       raise.
@@ -119,4 +119,4 @@ dod_evidence:
           -n 0 -q -k pure
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
-      - Bindings
+      - AC6

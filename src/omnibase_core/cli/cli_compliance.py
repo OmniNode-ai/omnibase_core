@@ -73,11 +73,12 @@ def check(repo_root: str, output: str) -> None:
     output_path = Path(output)
 
     # Discover contract.yaml files (skip examples/ — demo contracts may
-    # intentionally lack handler implementations).
+    # intentionally lack handler implementations — and fixtures/, whose planted
+    # contract.yaml files are inputs of validator tests, not nodes).
     contracts = sorted(
         p
         for p in repo_root_path.rglob("contract.yaml")
-        if "examples" not in p.relative_to(repo_root_path).parts
+        if not {"examples", "fixtures"} & set(p.relative_to(repo_root_path).parts)
     )
 
     if not contracts:
