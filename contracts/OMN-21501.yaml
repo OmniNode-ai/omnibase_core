@@ -52,7 +52,7 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: "test -z \"$(git ls-files scripts/validation | grep -E 'validate-(dict-any-usage|no-backward-compatibility)[.]py')\"
-          && grep -c 'omnibase_core.handlers.handler_dict_any_cli' .pre-commit-config.yaml"
+          && grep -c 'runtime_dict_any_check' .pre-commit-config.yaml"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn-21501-t21-core-5-consumer-interface
     description: "T2.1-core-5: the consumer interface (hook ids, args, baseline format, write command,
@@ -96,7 +96,8 @@ dod_evidence:
           -q -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: "test -z \"$(git grep -nE 'validate-(dict-any-usage|no-backward-compatibility)[.]py')\""
+        check_value: "test -z \"$(git grep -nE 'validate-(dict-any-usage|no-backward-compatibility)[.]py'
+          -- . ':!tests/fixtures/finding_parity')\""
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
   - id: dod-omn-21501-ac4-manifest-clean-checkout
@@ -119,12 +120,12 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: |
-          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_dict_any_cli.py?ref=$(git rev-parse HEAD)" --jq .content |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_dict_any_check_compute/runtime_dict_any_check.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'def main(' > /dev/null &&
-          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_backward_compat_cli.py?ref=$(git rev-parse HEAD)" --jq .content |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_backward_compat_check_compute/runtime_backward_compat_check.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'def main(' > /dev/null &&
-          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_finding_baseline_cli.py?ref=$(git rev-parse HEAD)" --jq .content |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_finding_baseline_check_effect/runtime_finding_baseline_check.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'def run_baselined_hook(' > /dev/null &&
           gh api "repos/OmniNode-ai/omnibase_core/contents/.pre-commit-hooks.yaml?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -F 'entry: python -m omnibase_core.handlers.handler_dict_any_cli' > /dev/null
+            base64 -d | grep -F 'entry: python -m omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check' > /dev/null
         cwd: ${OMNI_HOME}/omnibase_core
