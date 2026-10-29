@@ -212,3 +212,19 @@ def test_gateway_token_counts_are_nonnegative_integers(count: object) -> None:
             cost_usd=None,
             cost_measurement_source="unpriced",
         )
+
+
+def test_ineligible_recommendation_preserves_reported_decision() -> None:
+    result = ModelModelSwapValidationResult.model_validate(
+        result_data()
+        | {
+            "decision": "inconclusive",
+            "reported_decision": "recommend",
+            "recommendation_effective": False,
+            "recommended_model": None,
+        }
+    )
+    payload = json.loads(result.model_dump_json())
+    assert payload["decision"] == "inconclusive"
+    assert payload["reported_decision"] == "recommend"
+    assert payload["recommendation_effective"] is False
