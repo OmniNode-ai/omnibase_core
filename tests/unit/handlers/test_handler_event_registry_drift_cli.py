@@ -446,3 +446,25 @@ def test_contract_file_too_large_to_read_is_error(tmp_path: Path) -> None:
     exit_code, report = _check(tmp_path, contract_dir, registry)
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
+
+
+def test_registry_fan_out_repeating_a_topic_is_error(tmp_path: Path) -> None:
+    registry_text = _REGISTRY.replace(
+        f"      - topic: {_USAGE_TOPIC}\n",
+        f"      - topic: {_USAGE_TOPIC}\n      - topic: {_USAGE_TOPIC}\n",
+    )
+    contract_dir, registry = _layout(tmp_path, registry=registry_text)
+    exit_code, report = _check(tmp_path, contract_dir, registry)
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
+
+
+def test_registry_repeating_a_required_field_is_error(tmp_path: Path) -> None:
+    registry_text = _REGISTRY.replace(
+        "[call_id, model_name, tenant_id, timestamp]",
+        "[call_id, model_name, tenant_id, timestamp, call_id]",
+    )
+    contract_dir, registry = _layout(tmp_path, registry=registry_text)
+    exit_code, report = _check(tmp_path, contract_dir, registry)
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
