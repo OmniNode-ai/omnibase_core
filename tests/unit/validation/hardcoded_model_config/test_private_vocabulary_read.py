@@ -11,7 +11,6 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_private_vocabulary import HandlerPrivateVocabulary
 from omnibase_core.handlers.handler_private_vocabulary_resolution import (
     build_container,
     resolve_private_vocabulary,
@@ -22,6 +21,9 @@ from omnibase_core.models.private_vocabulary import (
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
+)
+from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
+    HandlerPrivateVocabulary,
 )
 from omnibase_core.validation.hardcoded_model_config import (
     runtime_hardcoded_model_config as runtime,

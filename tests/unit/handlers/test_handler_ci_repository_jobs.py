@@ -17,14 +17,14 @@ from __future__ import annotations
 
 import pytest
 
-from omnibase_core.handlers.handler_ci_repository_jobs import (
-    HandlerCiRepositoryJobs,
-)
 from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_check_input import (
     ModelCiInheritanceCheckInput,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
+)
+from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
+    HandlerCiRepositoryJobs,
 )
 
 pytestmark = pytest.mark.unit

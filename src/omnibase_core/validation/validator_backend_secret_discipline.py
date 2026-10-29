@@ -44,10 +44,12 @@ credential in committed config is never acceptable.
 
 COMPUTE handler usage (definition B — typed request/response)
 ---------------------------------------------------------------
-::
+The handler is the node's, bound in its ``contract.yaml``::
 
-    from omnibase_core.validation.validator_backend_secret_discipline import (
+    from omnibase_core.nodes.node_backend_secret_discipline_compute.handler_backend_secret_discipline import (
         HandlerBackendSecretDisciplineCompute,
+    )
+    from omnibase_core.validation.validator_backend_secret_discipline import (
         ModelBackendSecretDisciplineInput,
     )
 
@@ -61,9 +63,9 @@ CLI / pre-commit usage
 ----------------------
 ::
 
-    python -m omnibase_core.validation.validator_backend_secret_discipline
-    python -m omnibase_core.validation.validator_backend_secret_discipline --json
-    python -m omnibase_core.validation.validator_backend_secret_discipline file1.yaml file2.yaml
+    python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline
+    python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline --json
+    python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline file1.yaml file2.yaml
 
 Port equivalence
 ----------------
@@ -82,18 +84,11 @@ Schema Version:
 
 from __future__ import annotations
 
-import argparse
-import json
 import re
-import sys
-from collections.abc import Sequence
-from pathlib import Path
 from typing import cast
 
 from yaml import YAMLError, safe_load
 
-from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
-from omnibase_core.enums.enum_node_kind import EnumNodeKind
 from omnibase_core.models.validation.model_backend_ref_violation import (
     ModelBackendRefViolation,
 )
@@ -108,8 +103,6 @@ from omnibase_core.models.validation.model_credential_violation import (
 )
 
 __all__ = [
-    "HandlerBackendSecretDisciplineCompute",
-    "NodeBackendSecretDisciplineCompute",
     "ModelBackendSecretDisciplineInput",
     "ModelBackendSecretDisciplineOutput",
     "scan_literal_credentials",
@@ -120,8 +113,6 @@ __all__ = [
 # ---------------------------------------------------------------------------
 # Constants — identical to the ported script
 # ---------------------------------------------------------------------------
-
-_REPO_ROOT_MARKER = ".git"
 
 # Literal-credential signatures. A match means a real secret value leaked into
 # committed config — always a hard failure.
@@ -149,7 +140,6 @@ _NO_SECRET_BACKEND_IDS: frozenset[str] = frozenset(
     {"cli-claude", "cli-opencode", "cloud-sonnet", "cloud-haiku"}
 )
 
-_CONFIG_SUFFIXES: frozenset[str] = frozenset({".yaml", ".yml", ".json"})
 _SUPPRESSION_TOKEN = "# backend-secret-ok:"  # secret-ok: detector grammar
 
 # ---------------------------------------------------------------------------
@@ -334,197 +324,3 @@ def build_report_from_files(
         errors=errors,
         passed=len(all_violations) == 0 and len(errors) == 0,
     )
-
-
-# ---------------------------------------------------------------------------
-# COMPUTE handler — ProtocolMessageHandler implementation
-# ---------------------------------------------------------------------------
-
-
-class HandlerBackendSecretDisciplineCompute:
-    """Backend-secret-discipline validator as a canonical COMPUTE handler.
-
-    Implements ``ProtocolMessageHandler`` (structural protocol, not base-class
-    inheritance). The handler is pure and deterministic: all file-loading I/O
-    happens at the EFFECT boundary (CLI / runner); the handler receives only
-    pre-loaded content via the envelope payload.
-
-    Node archetype: COMPUTE (pure, idempotent, no side effects).
-    """
-
-    # --- ProtocolMessageHandler protocol ---
-
-    @property
-    def handler_id(self) -> str:
-        return "node.backend-secret-discipline.compute"
-
-    @property
-    def category(self) -> EnumMessageCategory:
-        return EnumMessageCategory.COMMAND
-
-    @property
-    def message_types(self) -> set[str]:
-        return {"BackendSecretDisciplineCheck"}
-
-    @property
-    def node_kind(self) -> EnumNodeKind:
-        return EnumNodeKind.COMPUTE
-
-    def handle(
-        self, request: ModelBackendSecretDisciplineInput
-    ) -> ModelBackendSecretDisciplineOutput:
-        """Run the backend-secret-discipline check and return a typed verdict.
-
-        Definition-B canonical shape (OMN-14355): typed request in, typed
-        response out, no envelope reference in the core. The shared runtime
-        adapter (``omnibase_core.runtime.runtime_local_adapter``) owns the
-        envelope boundary and adapts this call from the bus message.
-
-        ``request`` supplies all file contents to scan; the handler performs
-        no filesystem I/O.
-
-        Args:
-            request: ``ModelBackendSecretDisciplineInput`` payload.
-
-        Returns:
-            ``ModelBackendSecretDisciplineOutput`` verdict.
-        """
-        return build_report_from_files(request.config_contents)
-
-
-NodeBackendSecretDisciplineCompute = HandlerBackendSecretDisciplineCompute
-
-
-# ---------------------------------------------------------------------------
-# CLI entry-point — preserves original invocation contract
-# ---------------------------------------------------------------------------
-
-
-def _find_repo_root(start: Path) -> Path:
-    candidate = start
-    while candidate != candidate.parent:
-        if (candidate / _REPO_ROOT_MARKER).exists():
-            return candidate
-        candidate = candidate.parent
-    return start
-
-
-def _run_on_files(paths: list[Path]) -> ModelBackendSecretDisciplineOutput:
-    """Run the check on the explicitly supplied file paths."""
-    repo_root = _find_repo_root(paths[0] if paths else Path.cwd())
-    contents: dict[str, str] = {}
-    for path in paths:
-        try:
-            rel = str(path.relative_to(repo_root))
-        except ValueError:
-            rel = str(path)
-        contents[rel] = path.read_text(encoding="utf-8")
-    return build_report_from_files(contents)
-
-
-def _git_changed_files(base: str) -> list[Path]:
-    import subprocess
-
-    proc = subprocess.run(
-        ["git", "diff", "--name-only", f"{base}...HEAD"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        sys.stderr.write(proc.stderr)
-        raise SystemExit(2)  # error-ok: CLI exit code at the git-hook boundary
-    return [Path(p) for p in proc.stdout.splitlines() if p.strip()]
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    """CLI entry-point for pre-commit hook and standalone invocation.
-
-    Returns:
-        0 on PASS, 1 on FAIL.
-    """
-    parser = argparse.ArgumentParser(
-        description="Backend secret-ref / credential-ref discipline gate (OMN-13305)"
-    )
-    parser.add_argument("--json", action="store_true", help="Print the report as JSON")
-    parser.add_argument(
-        "--base",
-        default=None,
-        help="Git base ref to diff HEAD against (CI mode); scans changed config files.",
-    )
-    parser.add_argument(
-        "filenames",
-        nargs="*",
-        help="Files to check (pre-commit passes staged filenames here)",
-    )
-    args = parser.parse_args(list(argv) if argv is not None else None)
-
-    if args.base is not None:
-        paths = _git_changed_files(args.base)
-    else:
-        paths = [Path(f) for f in args.filenames]
-
-    config_paths = [p for p in paths if p.suffix in _CONFIG_SUFFIXES]
-    if not config_paths:
-        if args.json:
-            print(
-                json.dumps(
-                    {
-                        "gate": "backend-secret-discipline",
-                        "passed": True,
-                        "note": "no config files to check",
-                    },
-                    indent=2,
-                )
-            )
-        else:
-            print("[backend-secret-discipline] PASS - no config files to check.")
-        return 0
-
-    report = _run_on_files(config_paths)
-
-    if args.json:
-        # Convert Pydantic models to dicts for JSON output.
-        print(
-            json.dumps(
-                {
-                    "ticket": report.ticket,
-                    "gate": report.gate,
-                    "literal_credential_violations": [
-                        v.model_dump() for v in report.literal_credential_violations
-                    ],
-                    "backend_ref_violations": [
-                        v.model_dump() for v in report.backend_ref_violations
-                    ],
-                    "errors": report.errors,
-                    "passed": report.passed,
-                },
-                indent=2,
-                sort_keys=True,
-            )
-        )
-        return 0 if report.passed else 1
-
-    if report.passed:
-        print(
-            "[backend-secret-discipline] PASS — no literal credentials; every "
-            "authenticated cloud backend declares a logical secret/credential ref."
-        )
-        return 0
-
-    print("[backend-secret-discipline] FAIL")
-    for err in report.errors:
-        print(f"  error: {err}")
-    for cred_v in report.literal_credential_violations:
-        print(f"  literal-credential: {cred_v.message}")
-    for ref_v in report.backend_ref_violations:
-        print(f"  backend-ref: {ref_v.message}")
-    print(
-        "\nFix: keep credential VALUES in the secret store; declare only logical "
-        "refs (secret_ref / credential_ref) in routing-authority config."
-    )
-    return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())

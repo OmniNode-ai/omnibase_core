@@ -13,13 +13,15 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_private_vocabulary import HandlerPrivateVocabulary
 from omnibase_core.handlers.handler_private_vocabulary_resolution import (
     build_container,
     read_file_fact,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
+)
+from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
+    HandlerPrivateVocabulary,
 )
 from omnibase_core.validators.handler_di_gate import validate_paths
 
@@ -98,7 +100,10 @@ def test_a_missing_contract_is_one_refusal_line(tmp_path: Path) -> None:
 
 def test_the_handler_di_gate_reports_nothing_on_the_handler_and_its_root() -> None:
     changed = [
-        _SRC / "handlers" / "handler_private_vocabulary.py",
+        _SRC
+        / "nodes"
+        / "node_source_file_gather_effect"
+        / "handler_private_vocabulary.py",
         _SRC / "handlers" / "handler_private_vocabulary_resolution.py",
     ]
     assert validate_paths(changed) == []
@@ -122,7 +127,10 @@ def test_no_source_builds_the_handler_at_a_call_site_or_defaults_a_contract() ->
     for path in _SRC.rglob("*.py"):
         text = path.read_text(encoding="utf-8")
         assert "HandlerPrivateVocabulary()" not in text, path
-    handler_text = (_SRC / "handlers" / "handler_private_vocabulary.py").read_text(
-        encoding="utf-8"
-    )
+    handler_text = (
+        _SRC
+        / "nodes"
+        / "node_source_file_gather_effect"
+        / "handler_private_vocabulary.py"
+    ).read_text(encoding="utf-8")
     assert "contract=None" not in handler_text

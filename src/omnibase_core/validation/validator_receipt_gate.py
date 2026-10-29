@@ -75,10 +75,6 @@ from pydantic import ValidationError
 from omnibase_core.enums.governance.enum_evidence_class import EnumEvidenceClass
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_occ_contract_view import (
-    load_occ_contract_view,
-    per_pr_contract_dir,
-)
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 from omnibase_core.models.contracts.ticket.model_receipt_check_result import (
     ModelReceiptCheckResult,
@@ -88,6 +84,10 @@ from omnibase_core.models.contracts.ticket.model_receipt_gate_result import (
 )
 from omnibase_core.utils.util_contract_schema_version import (
     validate_contract_schema_version,
+)
+from omnibase_core.validation.checker_occ_contract_view import (
+    load_occ_contract_view,
+    per_pr_contract_dir,
 )
 from omnibase_core.validation.completion_verify import verify as _completion_verify
 from omnibase_core.validation.runtime_sha_match import (

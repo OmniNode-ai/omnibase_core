@@ -35,7 +35,7 @@ src/omnibase_core/validation/db/validator_db_table_access.py 2
 src/omnibase_core/validation/delegation/validator_delegation_profile.py 2
 src/omnibase_core/validation/phases/validator_expanded_contract.py 4
 src/omnibase_core/validation/phases/validator_merge.py 3
-src/omnibase_core/validation/validator_backend_secret_discipline.py 7
+src/omnibase_core/validation/validator_backend_secret_discipline.py 6
 src/omnibase_core/validation/validator_banned_compose_vars.py 3
 src/omnibase_core/validation/validator_base.py 3
 src/omnibase_core/validation/validator_canonical_inference.py 6
