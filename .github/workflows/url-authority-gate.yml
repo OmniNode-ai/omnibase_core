@@ -59,7 +59,7 @@ jobs:
 
       - name: Run url-authority gate (full-repo, against frozen baseline)
         run: |
-          uv run python -m omnibase_core.validation.validator_url_authority \
+          uv run python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check \
             --all --repo omnibase_core --repo-root .
 
       - name: Assert baseline did not grow (anti-gaming)

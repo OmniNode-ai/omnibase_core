@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_receipt_honesty_check_compute
+node_id: node_receipt_honesty_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Scans DoD receipts for gamed probes, deferred evidence, self-attestation, fake human verifiers and deploy-keyword
+  echo receipts. (OMN-21520).
+input_model: omnibase_core.models.nodes.receipt_honesty_check.model_receipt_honesty_check_input.ModelReceiptHonestyCheckInput
+output_model: omnibase_core.models.nodes.receipt_honesty_check.model_receipt_honesty_check_output.ModelReceiptHonestyCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeReceiptHonestyCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

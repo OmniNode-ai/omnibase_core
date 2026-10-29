@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_node_purity_check_compute
+node_id: node_node_purity_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Check explicit (path, source) pairs for node-purity violations (network/DB client imports, environment
+  access, file I/O) in files under a nodes directory, and return the findings (OMN-21520).
+input_model: omnibase_core.models.nodes.node_purity_check.model_node_purity_check_input.ModelNodePurityCheckInput
+output_model: omnibase_core.models.nodes.node_purity_check.model_node_purity_check_output.ModelNodePurityCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNodePurityCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

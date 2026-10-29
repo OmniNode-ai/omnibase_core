@@ -19,10 +19,12 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.enums.enum_compose_drift_kind import EnumComposeDriftKind
+from omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check import (
+    main,
+)
 from omnibase_core.validation.validator_banned_compose_vars import (
     ValidatorBannedComposeVars,
     extract_banned_env_vars_from_kernel,
-    main,
 )
 
 

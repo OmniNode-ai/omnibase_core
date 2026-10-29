@@ -21,9 +21,11 @@ from omnibase_core.enums.enum_contract_walk import (
     EnumContractWalkLinkEvidence,
     EnumContractWalkPathKind,
 )
+from omnibase_core.nodes.node_contract_walker_check_compute.runtime_contract_walker_check import (
+    main,
+)
 from omnibase_core.validation.validator_contract_walker import (
     find_unknown_fsm_keys,
-    main,
     walk_contracts,
 )
 
@@ -367,8 +369,9 @@ def test_cli_hook_is_exported() -> None:
         (_REPO / ".pre-commit-hooks.yaml").read_text(encoding="utf-8")
     )
     (hook,) = [h for h in hooks if h["id"] == "report-contract-walk"]
-    assert (
-        hook["entry"] == "python -m omnibase_core.validation.validator_contract_walker"
+    assert hook["entry"] == (
+        "python -m omnibase_core.nodes.node_contract_walker_check_compute"
+        ".runtime_contract_walker_check"
     )
     assert hook["pass_filenames"] is False
 

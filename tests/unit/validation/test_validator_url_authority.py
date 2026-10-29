@@ -1022,7 +1022,9 @@ class TestScanTree:
 @pytest.mark.unit
 class TestCLI:
     def test_no_files_exit_0(self, capsys: pytest.CaptureFixture[str]) -> None:
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         rc = main([])
         assert rc == 0
@@ -1030,7 +1032,9 @@ class TestCLI:
         assert "no files" in captured.out.lower()
 
     def test_new_violation_exit_1(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         f = _write(tmp_path, 'BASE_URL = "https://api.new-host.io/v1"\n', "mod.py")
         baseline = tmp_path / "baseline.json"
@@ -1052,7 +1056,9 @@ class TestCLI:
         assert rc == 1
 
     def test_grandfathered_violation_exit_0(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         snippet = 'BASE_URL = "https://api.new-host.io/v1"'
         f = _write(tmp_path, snippet + "\n", "mod.py")
@@ -1077,7 +1083,9 @@ class TestCLI:
         literal must fail the gate (RED); the identical fixture with those
         two lines removed must pass (GREEN). Uses the real --all full-repo
         path, matching how the CI job invokes this gate."""
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         (tmp_path / "docker").mkdir()
         fixture = tmp_path / "docker" / "docker-compose.gateway.yml"
@@ -1123,7 +1131,9 @@ class TestCLI:
         """Negative control: an unrelated public-https literal in a .py file
         (rules 1-4's existing territory) is untouched by this change and the
         MSK rule does not fire on ordinary infra config."""
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         (tmp_path / "docker").mkdir()
         (tmp_path / "docker" / "unrelated.yml").write_text(
@@ -1155,7 +1165,9 @@ class TestCLI:
         must be scanned. ``Path(".env").suffix`` is EMPTY (OMN-15692
         verifier round #3), so the CLI's own file-selection filter is the
         thing under test here, independent of scan_source's correctness."""
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         f = tmp_path / ".env"
         f.write_text(f'MSK_HOST="{_MSK_HOSTNAME_LITERAL}"\n', encoding="utf-8")
@@ -1192,7 +1204,9 @@ class TestCLI:
         assert rc_green == 0, "GREEN expected: no MSK literal in the fixture"
 
     def test_seed_creates_baseline(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "m.py").write_text(
@@ -1216,7 +1230,9 @@ class TestCLI:
         assert data["count"] >= 1
 
     def test_update_baseline_rejects_growth(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_url_authority import main
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
 
         # Baseline has one fingerprint; repo has a different one (growing the set)
         (tmp_path / "src").mkdir()
@@ -1466,9 +1482,11 @@ class TestWideningSeedBaseline:
         )
 
     def test_seed_fingerprints_grandfather_in_cli(self, tmp_path: Path) -> None:
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
         from omnibase_core.validation.validator_url_authority import (
             _WIDENING_BASELINE_NAME,
-            main,
         )
 
         repo = tmp_path / "repo"
@@ -1487,9 +1505,11 @@ class TestWideningSeedBaseline:
     def test_update_baseline_does_not_pull_seed_into_primary(
         self, tmp_path: Path
     ) -> None:
+        from omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check import (
+            main,
+        )
         from omnibase_core.validation.validator_url_authority import (
             _WIDENING_BASELINE_NAME,
-            main,
         )
 
         repo = tmp_path / "repo"

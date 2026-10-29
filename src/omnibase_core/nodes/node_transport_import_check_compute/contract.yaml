@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_transport_import_check_compute
+node_id: node_transport_import_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Ban transport and I/O library imports in node code (ARCH-002) over the supplied files and directories,
+  allowing TYPE_CHECKING-guarded imports, and return the findings (OMN-21520).
+input_model: omnibase_core.models.nodes.transport_import_check.model_transport_import_check_input.ModelTransportImportCheckInput
+output_model: omnibase_core.models.nodes.transport_import_check.model_transport_import_check_output.ModelTransportImportCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeTransportImportCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

@@ -35,8 +35,10 @@ from omnibase_core.models.validation.model_github_token_scan_result import (
 from omnibase_core.models.validation.model_github_token_violation import (
     ModelGithubTokenViolation,
 )
-from omnibase_core.validation.validator_github_token_env_reads import (
+from omnibase_core.nodes.node_github_token_env_reads_check_compute.runtime_github_token_env_reads_check import (
     main,
+)
+from omnibase_core.validation.validator_github_token_env_reads import (
     scan_paths,
     scan_source,
 )

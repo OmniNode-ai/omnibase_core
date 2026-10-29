@@ -2021,7 +2021,7 @@ jobs:
 
       - name: Check for duplicate ids in manifest-declared registries
         run: |
-          uv run python -m omnibase_core.validation.validator_duplicate_config_ids \
+          uv run python -m omnibase_core.nodes.node_duplicate_config_ids_check_compute.runtime_duplicate_config_ids_check \
             --manifest .duplicate-id-registries.yaml \
             --repo-root .
 
@@ -2231,7 +2231,7 @@ jobs:
       - name: Scan committed receipts for a runtime-identity block
         run: |
           uv run python -m \
-            omnibase_core.validation.validator_receipt_runtime_identity \
+            omnibase_core.nodes.node_receipt_runtime_identity_check_compute.runtime_receipt_runtime_identity_check \
             --receipts-dir .
 
   # Node-home check (OMN-20702), activated in this repository: a new
@@ -2406,7 +2406,7 @@ jobs:
               "ONEX_OUTPUT_TOPIC",
           )
           EOF
-          uv run python -m omnibase_core.validation.validator_banned_compose_vars \
+          uv run python -m omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check \
             --kernel-source /tmp/synthetic_kernel.py \
             .
 
@@ -3374,7 +3374,7 @@ jobs:
 
       - name: Ratchet pull_request-triggered workflow files against the frozen budget (OMN-14907)
         run: |
-          .venv/bin/python -m omnibase_core.validation.validator_pull_request_workflow_ratchet --repo-root .
+          .venv/bin/python -m omnibase_core.nodes.node_pull_request_workflow_ratchet_check_compute.runtime_pull_request_workflow_ratchet_check --repo-root .
 
   # Migrated from validator-no-unguarded-git-subprocess.yml (OMN-16281, permanent
   # closure of the OMN-16280 waiver — do not renew a third time). Same OMN-14877

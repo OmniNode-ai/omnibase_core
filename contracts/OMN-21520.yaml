@@ -1,0 +1,83 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21520
+title: "omnibase_core: give each of 26 validation modules a node runtime in place of its argparse main"
+summary: Plan task BD-3. Each of 26 modules under src/omnibase_core/validation/ held an argparse main()
+  outside a node runtime. Each main now lives in runtime_<id>_check.py of a node_<id>_check_compute node
+  (an existing node where one existed), the module keeps only the pure checker or validator, and every
+  hook entry, workflow, console script and test calls the runtime. Twenty-six lines leave the canonical-file-shape
+  baseline.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21520-node-runtimes
+    statement: No validation module keeps an argparse main; each moved command line entry is a node runtime.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the 26 BD-3 paths are gone from the canonical-file-shape baseline and the diff
+          against the merge base holds only removed lines -- falsifier: `uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute
+          -q` passes and `uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+          --rules file-shape` exits 0"
+      - id: AC2
+        statement: "AC2: no validation module keeps an argparse main -- falsifier: `git grep -l -E 'argparse|if
+          __name__' -- 'src/omnibase_core/validation/checker_*.py' 'src/omnibase_core/validation/validator_*.py'`
+          lists none of the 26 modules"
+      - id: AC3
+        statement: "AC3: every moved hook id still runs and passes -- falsifier: `uv run pre-commit run
+          --all-files` lists each moved hook id as Passed"
+evidence_requirements:
+  - kind: tests
+    description: File-shape rules, the moved runtimes and the existing module tests.
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21520-ac1-baseline
+    description: The file-shape rule tests pass and the file-shape check over the tree exits 0 with the
+      26 lines removed from the baseline.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute -q
+        cwd: .
+      - check_type: test_passes
+        check_value: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+          --rules file-shape
+        cwd: .
+    binds_ac:
+      - AC1
+  - id: dod-omn21520-ac2-no-argparse
+    description: None of the 26 validation modules holds argparse or an if __name__ block; the grep over
+      the checker and validator modules names none of them.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_occ_mode_removed_omn20074.py -n 0 -q
+        cwd: .
+    binds_ac:
+      - AC2
+  - id: dod-omn21520-ac3-hooks
+    description: Each moved hook id runs against the tree through its runtime module and passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pre-commit run check-local-paths --all-files
+        cwd: .
+    binds_ac:
+      - AC3
+  - id: dod-omn21520-deploy-runtimes
+    description: Hosted-runner smoke for the moved runtimes at the checkout. Each runtime answers --help
+      with exit 0; no service, credentials, Docker daemon or sibling checkout is required.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen python -m omnibase_core.nodes.node_naming_convention_check_compute.runtime_naming_convention_check
+          --help
+        cwd: .
+    binds_ac: [AC1, AC2, AC3]

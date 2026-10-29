@@ -401,7 +401,8 @@ repos:
       # divergent .strip() chains between sides. Std-lib only; no warn-only mode.
       - id: normalization-symmetry
         name: ONEX Producer/Consumer Normalization Symmetry (OMN-9333)
-        entry: uv run python -m omnibase_core.validation.checker_normalization_symmetry src
+        entry: uv run python -m omnibase_core.nodes.node_normalization_symmetry_check_compute.runtime_normalization_symmetry_check
+          src
         language: system
         pass_filenames: false
         always_run: true
@@ -678,7 +679,7 @@ repos:
       # unrelated commits do not pay for it.
       - id: pull-request-workflow-ratchet
         name: Pull-request workflow-file ratchet (OMN-14907)
-        entry: uv run --frozen python -m omnibase_core.validation.validator_pull_request_workflow_ratchet
+        entry: uv run --frozen python -m omnibase_core.nodes.node_pull_request_workflow_ratchet_check_compute.runtime_pull_request_workflow_ratchet_check
           --repo-root .
         language: system
         files: ^(\.github/workflows/.*\.(yml|yaml)|architecture-handshakes/pull-request-workflow-budget\.yaml)$
@@ -830,7 +831,7 @@ repos:
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: validate-file-naming-conventions
         name: ONEX File Naming Convention Validation
-        entry: uv run python -m omnibase_core.validation.checker_naming_convention
+        entry: uv run python -m omnibase_core.nodes.node_naming_convention_check_compute.runtime_naming_convention_check
         args: ['--warning-mode']
         language: system
         pass_filenames: false
@@ -1267,7 +1268,7 @@ repos:
       # Allows: ACTIVE, HTTP_2, V1_BETA, SHA256 (UPPER_SNAKE_CASE)
       - id: check-enum-member-casing
         name: ONEX Enum Member Casing Validation
-        entry: uv run python -m omnibase_core.validation.checker_enum_member_casing
+        entry: uv run python -m omnibase_core.nodes.node_enum_member_casing_check_compute.runtime_enum_member_casing_check
         language: system
         pass_filenames: true
         require_serial: true
@@ -1357,7 +1358,7 @@ repos:
       # Suppress legitimate lines with: # local-path-ok
       - id: check-local-paths
         name: No hardcoded local/machine-specific paths (OMN-9043)
-        entry: uv run python -m omnibase_core.validation.validator_local_paths
+        entry: uv run python -m omnibase_core.nodes.node_local_paths_check_compute.runtime_local_paths_check
         language: system
         types: [text]
         # OMN-17159: scripts/hooks/prepush_dispatch.sh is a VENDORED, byte-identical
@@ -1393,7 +1394,7 @@ repos:
       # repo has no routing_tiers.yaml/prod_promotion_grants.yaml of its own).
       - id: check-duplicate-registry-ids
         name: No duplicate ids in config/registry YAML files (OMN-14401)
-        entry: uv run python -m omnibase_core.validation.validator_duplicate_config_ids
+        entry: uv run python -m omnibase_core.nodes.node_duplicate_config_ids_check_compute.runtime_duplicate_config_ids_check
         language: system
         files: ^(\.duplicate-id-registries\.yaml|src/omnibase_core/contracts/antipattern_registry\.yaml)$
         pass_filenames: false
@@ -1708,7 +1709,7 @@ repos:
       # skip). Only fires on receipt files matching the path pattern.
       - id: check-receipt-honesty
         name: Receipt Honesty Gate (OMN-12791)
-        entry: uv run python -m omnibase_core.validation.validator_receipt_honesty
+        entry: uv run python -m omnibase_core.nodes.node_receipt_honesty_check_compute.runtime_receipt_honesty_check
         language: system
         types: [yaml]
         files: drift/dod_receipts/.*\.yaml$
@@ -1733,7 +1734,7 @@ repos:
       - id: check-receipt-runtime-identity
         name: Runtime Identity Gate (OMN-17308)
         entry: >-
-          uv run python -m omnibase_core.validation.validator_receipt_runtime_identity
+          uv run python -m omnibase_core.nodes.node_receipt_runtime_identity_check_compute.runtime_receipt_runtime_identity_check
         language: system
         types: [json]
         pass_filenames: true
@@ -1758,7 +1759,7 @@ repos:
       # for "which files this gate touches").
       - id: check-url-authority
         name: URL Authority Gate (OMN-12818)
-        entry: uv run python -m omnibase_core.validation.validator_url_authority
+        entry: uv run python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check
         args: [--repo, omnibase_core, --repo-root, .]
         language: system
         files: (^|/)Dockerfile(\.[^/]*)?$|(^|/)\.env(\.[^/]*)?$|\.(py|ya?ml|sh|env|cfg|conf|toml|ini|json|tf)$
@@ -2022,7 +2023,7 @@ repos:
       # burn-down only. Suppress with: # canonical-inference-ok: <reason>
       - id: check-canonical-inference
         name: Canonical Inference Gate (OMN-13219)
-        entry: uv run python -m omnibase_core.validation.validator_canonical_inference
+        entry: uv run python -m omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check
         args: [--repo, omnibase_core, --repo-root, .]
         language: system
         types: [python]
@@ -2257,8 +2258,8 @@ repos:
       # ratchet pattern (established precedent: validate-dict-any-usage).
       - id: validate-validator-requirements
         name: Enforce validator-requirements.yaml (OMN-9115)
-        entry: uv run python -m omnibase_core.validation.validator_requirements_consumer --repo omnibase_core
-          --repo-root . --baseline architecture-handshakes/validator-requirements-baseline.yaml
+        entry: uv run python -m omnibase_core.nodes.node_requirements_consumer_check_compute.runtime_requirements_consumer_check
+          --repo omnibase_core --repo-root . --baseline architecture-handshakes/validator-requirements-baseline.yaml
         language: system
         pass_filenames: false
         always_run: true
@@ -2270,8 +2271,8 @@ repos:
       # continue-on-error. Non-opted repos exit 0 (pilot scope, fleet OMN-13576).
       - id: validate-rollup-coverage
         name: Verify Model-B rollup coverage (OMN-13574)
-        entry: uv run python -m omnibase_core.validation.validator_rollup_coverage --repo omnibase_core
-          --repo-root .
+        entry: uv run python -m omnibase_core.nodes.node_rollup_coverage_check_compute.runtime_rollup_coverage_check
+          --repo omnibase_core --repo-root .
         language: system
         pass_filenames: false
         always_run: true
@@ -2306,8 +2307,8 @@ repos:
       # collections). No inline suppression.
       - id: check-no-lane-literal-branching
         name: No branching on a runtime lane name (OMN-19760)
-        entry: uv run python -m omnibase_core.validation.validator_no_lane_literal_branching --repo-root
-          . --baseline src/omnibase_core/validation/baselines/no_lane_literal_branching_baseline.json
+        entry: uv run python -m omnibase_core.nodes.node_no_lane_literal_branching_check_compute.runtime_no_lane_literal_branching_check
+          --repo-root . --baseline src/omnibase_core/validation/baselines/no_lane_literal_branching_baseline.json
         language: system
         types: [python]
         files: ^src/
