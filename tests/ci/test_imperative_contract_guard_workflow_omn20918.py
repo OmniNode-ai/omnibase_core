@@ -156,6 +156,7 @@ def test_imperative_contract_guard_workflow_keeps_the_job_name_and_least_privile
 def test_imperative_contract_guard_workflow_cli_entry_point_is_declared() -> None:
     pyproject = (REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8")
     assert (
-        'check-imperative-contracts = "omnibase_core.handlers.'
-        'handler_imperative_contract_guard_cli:main"'
+        'check-imperative-contracts = "omnibase_core.nodes.'
+        "node_imperative_contract_guard_check_effect."
+        'runtime_imperative_contract_guard_check:main"'
     ) in pyproject

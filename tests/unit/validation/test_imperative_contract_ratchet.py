@@ -17,13 +17,15 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_imperative_allowlist_ratchet import (
+from omnibase_core.models.nodes.imperative_contract_guard.model_allowlist_ratchet_input import (
+    ModelAllowlistRatchetInput,
+)
+from omnibase_core.nodes.node_imperative_contract_guard_check_effect.handler_imperative_allowlist_ratchet import (
     HandlerImperativeAllowlistRatchet,
     allowlisted_paths,
 )
-from omnibase_core.handlers.handler_imperative_contract_guard_cli import main
-from omnibase_core.models.nodes.imperative_contract_guard.model_allowlist_ratchet_input import (
-    ModelAllowlistRatchetInput,
+from omnibase_core.nodes.node_imperative_contract_guard_check_effect.runtime_imperative_contract_guard_check import (
+    main,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
