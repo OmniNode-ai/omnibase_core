@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Planted fixture for the hook_writes rule (OMN-21498).
+repos:
+  - repo: local
+    hooks:
+      - id: planted
+        name: planted
+        entry: echo build
+        language: system

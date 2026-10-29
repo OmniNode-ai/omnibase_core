@@ -13,6 +13,7 @@ from __future__ import annotations
 import copy
 import importlib.util
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 from types import ModuleType
 
@@ -23,6 +24,11 @@ from omnibase_core.enums.enum_config_overlay_key import EnumConfigOverlayKey
 from omnibase_core.enums.enum_config_overlay_source import EnumConfigOverlaySource
 from omnibase_core.enums.enum_llm_pricing_source import EnumLlmPricingSource
 from omnibase_core.enums.enum_llm_tier_class import EnumLlmTierClass
+from omnibase_core.handlers.handler_private_vocabulary_resolution import (
+    build_container,
+    capture_environment,
+    resolve_private_vocabulary,
+)
 from omnibase_core.models.config_overlay import (
     ModelConfigOverlayDocument,
     ModelConfigOverlayScope,
@@ -293,7 +299,15 @@ def test_schema_export_matches_model() -> None:
 
 
 def test_no_model_or_endpoint_literal_in_the_new_package() -> None:
-    policy = load_policy()
+    container = build_container()
+    policy = load_policy(
+        resolve_private_vocabulary(
+            container,
+            "hardcoded_model_config_lab_denylist",
+            environment=capture_environment(container),
+            now=datetime.now(UTC),
+        )
+    )
     roots = [
         _REPO_ROOT / "src" / "omnibase_core" / "models" / "config_overlay",
         _REPO_ROOT / "src" / "omnibase_core" / "schemas" / "config_overlay",

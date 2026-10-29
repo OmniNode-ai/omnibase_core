@@ -60,6 +60,10 @@ def test_no_registry_names_a_deleted_validator() -> None:
 
 
 def test_registries_still_name_a_kept_validator() -> None:
-    """Positive control: the registry scan above can find a validator path at all."""
+    """Positive control: the registry scan above can find a validation path at all.
+
+    ``validation/validator_*.py`` is a canonical location, so the kept validators no
+    longer appear in the shrink-only baseline; a validation module outside it does.
+    """
     baseline = (REPO_ROOT / _REGISTRIES[0]).read_text(encoding="utf-8")
-    assert _KEPT[0] in baseline
+    assert "src/omnibase_core/validation/completion_verify.py" in baseline

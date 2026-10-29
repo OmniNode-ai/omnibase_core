@@ -91,6 +91,8 @@ check-imperative-contracts = "omnibase_core.handlers.handler_imperative_contract
 # the declared order, through any channel; every repository runs it via
 # .github/workflows/dependency-direction.yml and the pre-commit hook.
 check-dependency-direction = "omnibase_core.handlers.handler_dependency_direction_cli:main"
+# OMN-21494: resolve operator-private vocabularies through the shared core node.
+resolve-private-vocabulary = "omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary:main"
 # OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator
 # format, each with an optional shrink-only baseline (--baseline FILE, --write-baseline).
 check-no-dict-any = "omnibase_core.handlers.handler_dict_any_cli:main"
