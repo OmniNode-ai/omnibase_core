@@ -128,3 +128,25 @@ dod_evidence:
           -q --no-cov -n 0
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC7]
+  - id: dod-omn21515-deploy-runtime-surface
+    description: Deploy probe for this library's published hook surface. Read the node contract, handler
+      and runtime at the checkout commit through the GitHub contents API; fail if the COMPUTE handler
+      binding, validation report construction or container-resolved report writer is absent. The runtime
+      and wiring tests exercise rejection and admission through the hook entry. Runs on hosted runners
+      without a container daemon or access to a private runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC6]
+    checks:
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_canonical_file_shape_check_compute/contract.yaml?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'default_handler: handler:NodeCanonicalFileShapeCheckCompute' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_canonical_file_shape_check_compute/handler.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'return ModelValidationReport.from_findings(' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_canonical_file_shape_check_compute/runtime_canonical_file_shape_check.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'writer = container.get_service(NodeValidationReportWriteEffect)' > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
