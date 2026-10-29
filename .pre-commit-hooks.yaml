@@ -1301,16 +1301,15 @@
   require_serial: true
   stages: [pre-commit]
 
-- id: check-hook-writes
-  name: Pre-commit hooks check, never rewrite (OMN-21498)
+- id: check-precommit-pin-parity
+  name: Pre-commit pin parity for the shared core hook repo (OMN-21495)
   description: >
-    A hook in .pre-commit-config.yaml or .pre-commit-hooks.yaml whose entry or args rewrite files, or
-    that is a known rewriting hook id run without its check-only argument, is refused. The signals and
-    the known ids are the repository's .hook-writes-overlay.yaml; a missing overlay or a scan of zero
-    hooks is an error, never a pass.
+    Refuse a shared core hook repo entry whose rev has an older commit time than the newest pin of the
+    same repo in .pre-commit-config.yaml. Resolve revisions from a history checkout or the pre-commit
+    cache; unresolved revisions fail closed when multiple distinct pins need comparison.
   language: python
-  entry: python -m omnibase_core.handlers.handler_hook_writes_cli
-  files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml|\.hook-writes-overlay\.yaml)$
-  pass_filenames: false
+  entry: python -m omnibase_core.handlers.handler_precommit_pin_parity_cli
+  files: ^\.pre-commit-config\.yaml$
+  pass_filenames: true
   require_serial: true
   stages: [pre-commit]
