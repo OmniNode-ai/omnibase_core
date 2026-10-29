@@ -1229,7 +1229,7 @@
     is no baseline (OMN-21280): every such job of a public repository fails. Pass --repo <name> when the
     checkout directory is not the repository name; a private repository passes --visibility private.
   language: python
-  entry: python -m omnibase_core.handlers.handler_public_runner_placement_cli
+  entry: python -m omnibase_core.validation.validator_public_runner_placement
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1333,6 +1333,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-validator-home
+  name: Validator logic lives in omnibase_core (OMN-21503, K7)
+  description: >
+    Run in every repository but omnibase_core. A validator node, a repo local check hook, a hook that
+    runs a repository script or pytest, and a test that pins hook or workflow text hold validator logic
+    outside its home. Every pattern and marker is a rule-row parameter of validator_home.validation.yaml;
+    a behavioural canary that runs the hook is admitted by its marker.
+  language: python
+  entry: python -m omnibase_core.validation.validator_validator_home
+  files: (pre-commit-config\.yaml|(^|/)contract\.yaml|(^|/|\.)test_[^/]*\.py)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-hook-writes
   name: Pre-commit hooks check, never rewrite (OMN-21498)
   description: >
@@ -1343,6 +1357,23 @@
   language: python
   entry: python -m omnibase_core.validation.validator_hook_writes
   files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-checker-rule-data
+  name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
+  description: >
+    A module that subclasses ValidatorBase, returns a validation report, is named checker_* or validator_*,
+    or is a handler_*_cli.py gate that writes a report holds no module-level frozenset, tuple, set, dict,
+    re.compile or multi-word string constant; the table is a parameters entry of the checker's .validation.yaml.
+    A handler_*_cli.py with its own argparse main over a validation report, and a module that returns
+    a validation report without the checker_<id>.py, validator_<id>.py and <id>.validation.yaml triple,
+    are refused. Reports on every file it is handed; --baseline FILE admits the tables a repository held
+    when it adopted the hook, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.validation.validator_checker_rule_data
+  types: [python]
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]

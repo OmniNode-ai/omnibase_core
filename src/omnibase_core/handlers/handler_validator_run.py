@@ -48,8 +48,6 @@ from omnibase_core.validation.validator_base import EXIT_ERRORS, ValidatorBase
 
 __all__ = ["build_report", "build_validator_container", "main", "run_validator"]
 
-_FAILING = frozenset({EnumSeverity.ERROR, EnumSeverity.CRITICAL, EnumSeverity.FATAL})
-
 
 def _location(path: Path | None, line: int | None, root: Path) -> str | None:
     if path is None:
@@ -68,10 +66,11 @@ def build_report(
 
     Locations are relative to ``root`` when the path lies under it.
     """
+    failing = (EnumSeverity.ERROR, EnumSeverity.CRITICAL, EnumSeverity.FATAL)
     findings = tuple(
         ModelValidationFindingEmbed(
             validator_id=validator_id,
-            severity="FAIL" if issue.severity in _FAILING else "WARN",
+            severity="FAIL" if issue.severity in failing else "WARN",
             location=_location(issue.file_path, issue.line_number, root),
             rule_id=issue.rule_name or issue.code,
             message=issue.message,

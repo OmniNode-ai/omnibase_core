@@ -118,6 +118,7 @@ def test_canonical_locations(path: str) -> None:
         "src/pkg/validation/util_a.py",
         "src/pkg/validation/sub/checker_a.py",
         "src/pkg/a.py",
+        "src/pkg/validation/helper_checker_a.py",
         ".github/scripts/a.py",
         "src/pkg/validation/handler_a.py",
         "src/pkg/validation/checker_a.sh",
