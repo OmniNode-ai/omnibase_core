@@ -2,16 +2,16 @@
 # SPDX-License-Identifier: MIT
 ---
 schema_version: "1.0.0"
-ticket_id: OMN-21433
+ticket_id: OMN-21490
 title: "T-V1 (core half only: checker_delivery_reference): delivery check, core checker"
 summary: The delivery-reference checker classifies how a consumer reads a delivered artifact and refuses
   every reference except the kind its path role permits, in the generic validator format with all rules
-  in the delivery_paths overlay. Placeholder contract the orchestrator renames to the task ticket.
+  in the delivery_paths overlay.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
-  - id: req-omn21433-delivery-reference-checker
+  - id: req-omn21490-delivery-reference-checker
     statement: A pure checker classifies each delivery reference and refuses all but the permitted kind
       for the path role, with every rule held in overlay data.
     acceptance:
@@ -71,7 +71,7 @@ emergency_bypass:
   justification: ""
   follow_up_ticket_id: ""
 dod_evidence:
-  - id: dod-omn21433-ac1
+  - id: dod-omn21490-ac1
     description: "AC1: nine pytest cases built from the real forms (a branch-following marketplace entry,
       a cache key from a version string, a sha, a workflow uses line at a branch, a bump branch, a matching
       tag, a candidate tag on a declared pre-PR path, the same candidate tag on a continuous path, and
@@ -83,7 +83,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
           --no-cov -k ac1
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac2
+  - id: dod-omn21490-ac2
     description: "AC2: a facts file with a reference form that matches none of the listed kinds is refused
       through the validator."
     source: manual
@@ -93,7 +93,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py tests/unit/handlers/test_handler_delivery_reference_cli.py
           -q --no-cov -k ac2
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac3
+  - id: dod-omn21490-ac3
     description: "AC3: the fixture with a branch named like the tag pattern."
     source: manual
     binds_ac: [AC3]
@@ -102,7 +102,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
           --no-cov -k ac3
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac4
+  - id: dod-omn21490-ac4
     description: "AC4: a fixture bump workflow is refused, and the three declared mechanisms pass only
       while declared."
     source: manual
@@ -112,7 +112,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
           --no-cov -k ac4
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac5
+  - id: dod-omn21490-ac5
     description: "AC5: three pytest cases (a uses line at a literal tag, an undeclared sha pin, and a
       declared bootstrap pin with a run-time resolution step)."
     source: manual
@@ -122,7 +122,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
           --no-cov -k ac5
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac6
+  - id: dod-omn21490-ac6
     description: "AC6: a fixture that adds a branch-based consumer absent from the overlay is refused,
       and an unreadable declaration is blocked."
     source: manual
@@ -132,7 +132,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py tests/unit/handlers/test_handler_delivery_reference_cli.py
           -q --no-cov -k ac6
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac7
+  - id: dod-omn21490-ac7
     description: "AC7: the pytest case with a same-name retarget."
     source: manual
     binds_ac: [AC7]
@@ -141,7 +141,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
           --no-cov -k ac7
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac8
+  - id: dod-omn21490-ac8
     description: "AC8: the same fixture is refused under one overlay pattern and passes under another."
     source: manual
     binds_ac: [AC8]
@@ -150,7 +150,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
           --no-cov -k ac8
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-ac9
+  - id: dod-omn21490-ac9
     description: "AC9: the same facts give byte-identical results across a JSON round trip, and no protocol_dependencies
       entry or protocol import appears in the checker."
     source: manual
@@ -160,7 +160,7 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py -q
           --no-cov -k ac9
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn21433-checkout-test
+  - id: dod-omn21490-checkout-test
     description: Hosted-runner run of both test files at the checkout; needs no container daemon or private
       runtime.
     source: manual
@@ -170,3 +170,14 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/handlers/test_handler_delivery_reference.py tests/unit/handlers/test_handler_delivery_reference_cli.py
           -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21490-delegation-join
+    description: "Delegation join: the delegation runs whose output is in the head (Codex thread 01a1849d-9978-7f22-8e74-01fd02c18091,
+      GLM text runs d983504e-c975-46e4-8463-ec8fa026b69c and 54c27ddb-d57f-42cc-86e5-f3b21d38b08e) are
+      named in the commit history of the head, so each receipt id joins to the head it produced; the delegation_events
+      side of the join is read from the lab projection by the lane."
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "for id in 01a1849d-9978-7f22-8e74-01fd02c18091 d983504e-c975-46e4-8463-ec8fa026b69c
+          54c27ddb-d57f-42cc-86e5-f3b21d38b08e; do git log --format=%B | grep -F -q \"Delegation-Id: $id\"
+          || { echo \"missing $id\"; exit 1; }; done"

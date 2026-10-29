@@ -131,7 +131,7 @@ from .enum_database_schema_domain import EnumDatabaseSchemaDomain
 # Decision type enums (OMN-1235)
 from .enum_decision_type import EnumDecisionType
 
-# Delivery reference enums (OMN-21433)
+# Delivery reference enums (OMN-21490)
 from .enum_delivery_path_role import EnumDeliveryPathRole
 from .enum_delivery_reference_kind import EnumDeliveryReferenceKind
 from .enum_delivery_resolved_kind import EnumDeliveryResolvedKind
