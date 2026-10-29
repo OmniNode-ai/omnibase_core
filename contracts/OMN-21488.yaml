@@ -1,16 +1,16 @@
 ---
 schema_version: "1.0.0"
-ticket_id: OMN-21433
-title: "T-C2: contract loader strict on duplicate keys, measured first"
+ticket_id: OMN-21488
+title: "T-C2: contract loader refuses duplicate keys, measured first"
 summary: The contract.yaml files of omnibase_core, omnibase_spi, omnibase_infra and omnimarket were loaded
   through the strict loader first and none repeats a key, so IncludeLoader now refuses a repeated mapping
-  key at the top level, in a nested mapping and through an include, naming the key and line. Placeholder
-  contract for the factory plan parent OMN-21433; the orchestrator renames it to the task ticket.
+  key at the top level, in a nested mapping and through an include, naming the key and line. Task T-C2
+  of the factory plan, child of OMN-21433.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
-  - id: req-omn21433-loader-measured-then-strict
+  - id: req-omn21488-loader-measured-then-strict
     statement: The general contract loader must be measured against the contracts of the four repositories
       first, and refuse a repeated mapping key at load once that count reads zero.
     acceptance:
@@ -43,7 +43,7 @@ emergency_bypass:
   justification: ""
   follow_up_ticket_id: ""
 dod_evidence:
-  - id: dod-omn21433-ac1-measured-count
+  - id: dod-omn21488-ac1-measured-count
     description: The shipped omnibase_core contract.yaml files load through the strict loader with zero
       duplicate keys (the cross-repository count of the four repositories, with its command and output,
       is in the PR body).
@@ -56,7 +56,7 @@ dod_evidence:
     binds_ac:
       - AC1
       - AC3
-  - id: dod-omn21433-ac2-refuses-and-existing-load
+  - id: dod-omn21488-ac2-refuses-and-existing-load
     description: A contract file with a repeated key is refused naming the key and line, and the existing
       contract-loading tests and every shipped contract still load.
     source: manual
@@ -68,7 +68,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
-  - id: dod-omn21433-ac4-three-cases-through-include-loader
+  - id: dod-omn21488-ac4-three-cases-through-include-loader
     description: IncludeLoader itself refuses a repeated key at the top level, in a nested mapping and
       through an include.
     source: manual
@@ -79,7 +79,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC4
-  - id: dod-omn21433-ac5-no-environment-read
+  - id: dod-omn21488-ac5-no-environment-read
     description: The loader module source reads no environment variable and no overlay.
     source: manual
     checks:
@@ -89,7 +89,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5
-  - id: dod-omn21433-ac6-file-and-string-parity
+  - id: dod-omn21488-ac6-file-and-string-parity
     description: The same text loads to the same mapping from a file and from a string, and a repeated
       key is refused with the same key and line both ways.
     source: manual
@@ -100,3 +100,22 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
+  - id: dod-omn21488-delegation-join
+    description: >-
+      The delegation runs whose output is in the PR head resolve to receipts (DS-6) inside each lane's
+      window. Predecessor lane factory-t-c2-2215 cited runs b1d869cd-e375-4096-8591-b454080c3c3b, 17c10d17-8e7b-4686-a452-92625565d4cf
+      and 0fec05a7-ba22-4a48-a3dc-3bdc2d6da604 (Codex thread 01a1849b-5809-7302-bd11-44bd19d3497f); finishing
+      lane fin-core2109-0035 cites its own in its report. Each receipt's correlation id is then matched
+      to a delegation_events row (DS-7) by onex-delegation-accounting over a lab delegation_events export.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --project ${OMNI_HOME}/../omnibase_internal onex-delegation-receipt-check ${OMNI_HOME}/.claude_scratch/reports/factory-t-c2-2215-2026-10-28T2300Z.md
+          --since 2026-10-28T22:20:16Z --until 2026-10-28T22:59:00Z
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          uv run --project ${OMNI_HOME}/../omnibase_internal onex-delegation-receipt-check ${OMNI_HOME}/.claude_scratch/reports/fin-core2109-0035-2026-10-29T0200Z.md
+          --since 2026-10-29T00:34:13Z
+        cwd: ${OMNI_HOME}/omnibase_core
