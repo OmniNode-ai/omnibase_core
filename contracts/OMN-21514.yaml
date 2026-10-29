@@ -114,7 +114,7 @@ dod_evidence:
           && test -d \"${OMNI_HOME}/.onex_state/harness-delegate/05de3f23-b166-4f46-961e-f7a4158b7dce\""
   - id: dod-omn21514-deploy-validator-source
     description: read the handler source from raw.githubusercontent.com at the checkout HEAD; require
-      the core validator-format package constant and the is_validator_format_file function; the hosted
+      the GENERIC_VALIDATOR_PREFIXES constant and the shared is_canonical_location function; the hosted
       runner needs no private runtime. This is the source readback probe for the pure library change of
       OMN-21514.
     source: manual
@@ -123,6 +123,6 @@ dod_evidence:
       - check_type: command
         check_value: curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git
           rev-parse HEAD)/src/omnibase_core/handlers/handler_canonical_location_rules.py" | python3 -c
-          'import sys; source = sys.stdin.read(); assert "VALIDATOR_FORMAT_PACKAGE = \"omnibase_core\""
-          in source; assert "def is_validator_format_file(" in source'
+          'import sys; source = sys.stdin.read(); assert "GENERIC_VALIDATOR_PREFIXES" in source; assert
+          "def is_canonical_location(" in source'
         cwd: ${OMNI_HOME}/omnibase_core

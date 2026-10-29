@@ -135,14 +135,13 @@ def test_noncanonical_locations(path: str) -> None:
         "src/omnibase_core/validation/validator_binding_conformance.py",
     ],
 )
-def test_the_generic_validator_format_is_canonical_in_core(path: str) -> None:
+def test_the_generic_validator_format_is_canonical(path: str) -> None:
     assert is_canonical_location(path)
 
 
 @pytest.mark.parametrize(
     "path",
     [
-        "src/omnimarket/validation/checker_binding_conformance.py",
         "src/omnibase_core/validation/helper_binding_conformance.py",
         "src/omnibase_core/validation/sub/checker_binding_conformance.py",
         "src/omnibase_core/runtime/checker_binding_conformance.py",
