@@ -71,10 +71,11 @@ def _git_repo(repo: Path) -> GitRepo:
 
 @pytest.fixture
 def base_repo(tmp_path: Path) -> Path:
-    """The target branch: scripts/a.py baselined, scripts/b.py and scripts/c.py refused unlisted."""
+    """The target branch: scripts/a.py baselined; scripts/b.py, c.py and d.py refused unlisted."""
     write(tmp_path, "scripts/a.py", CODE)
     write(tmp_path, "scripts/b.py", CODE + "# b\n")
     write(tmp_path, "scripts/c.py", CODE + "# c\n")
+    write(tmp_path, "scripts/d.py", CODE + "# d\n")
     write(tmp_path, "src/pkg/models/model_ok.py", "ok = 1\n")
     init_repo(tmp_path, baselined=["scripts/a.py"])
     git(tmp_path, "update-ref", "refs/remotes/origin/dev", "HEAD")
@@ -83,9 +84,9 @@ def base_repo(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def installed_branch(base_repo: Path) -> Path:
-    """A feature branch whose earlier commit installed the burn-down file listing scripts/b.py."""
+    """A feature branch whose earlier commit installed the burn-down file for b.py and c.py."""
     git(base_repo, "checkout", "-q", "-b", "feature")
-    write(base_repo, BURNDOWN, _burndown("scripts/b.py"))
+    write(base_repo, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py"))
     stage(base_repo)
     git(base_repo, "commit", "-q", "-m", f"install the burn-down for {TICKET}")
     return base_repo
@@ -98,7 +99,11 @@ def test_a_correct_burndown_line_after_an_earlier_install_commit_is_accepted(
     installed_branch: Path,
 ) -> None:
     """CI accepts this change against the merge base; so must the index run."""
-    write(installed_branch, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py"))
+    write(
+        installed_branch,
+        BURNDOWN,
+        _burndown("scripts/b.py", "scripts/c.py", "scripts/d.py"),
+    )
     stage(installed_branch)
     assert rules_hit(installed_branch) == []
 
@@ -107,7 +112,11 @@ def test_planted_old_base_refuses_the_same_correct_line_as_baseline_growth(
     installed_branch: Path,
 ) -> None:
     """Falsifier: against branch HEAD, the old base, the line above is baseline-growth."""
-    write(installed_branch, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py"))
+    write(
+        installed_branch,
+        BURNDOWN,
+        _burndown("scripts/b.py", "scripts/c.py", "scripts/d.py"),
+    )
     stage(installed_branch)
     assert rules_hit(installed_branch, base="HEAD") == ["baseline-growth"]
 
@@ -130,7 +139,11 @@ def test_a_burndown_entry_for_a_file_the_change_adds_is_still_refused(
     installed_branch: Path,
 ) -> None:
     write(installed_branch, "scripts/new.py", CODE)
-    write(installed_branch, BURNDOWN, _burndown("scripts/b.py", "scripts/new.py"))
+    write(
+        installed_branch,
+        BURNDOWN,
+        _burndown("scripts/b.py", "scripts/c.py", "scripts/d.py", "scripts/new.py"),
+    )
     stage(installed_branch)
     found = issues(installed_branch)
     assert [(issue.code, str(issue.file_path)) for issue in found] == [
@@ -141,7 +154,11 @@ def test_a_burndown_entry_for_a_file_the_change_adds_is_still_refused(
 def test_a_burndown_entry_the_baseline_already_lists_is_still_refused(
     installed_branch: Path,
 ) -> None:
-    write(installed_branch, BURNDOWN, _burndown("scripts/a.py", "scripts/b.py"))
+    write(
+        installed_branch,
+        BURNDOWN,
+        _burndown("scripts/a.py", "scripts/b.py", "scripts/c.py", "scripts/d.py"),
+    )
     stage(installed_branch)
     assert rules_hit(installed_branch) == ["burndown-extra-entry"]
 
@@ -157,7 +174,7 @@ def test_growth_of_the_baseline_committed_earlier_on_the_branch_is_refused(
     git(base_repo, "commit", "-q", "-m", "grow the baseline")
     write(base_repo, "src/pkg/models/model_ok.py", "ok = 2\n")
     stage(base_repo)
-    assert rules_hit(base_repo, base="HEAD") == []
+    assert "baseline-growth" not in rules_hit(base_repo, base="HEAD")
     assert "baseline-growth" in rules_hit(base_repo)
 
 
@@ -165,8 +182,16 @@ def test_a_new_noncanonical_file_is_still_refused_on_a_branch(
     installed_branch: Path,
 ) -> None:
     write(installed_branch, "scripts/new.py", CODE)
+    write(
+        installed_branch,
+        BURNDOWN,
+        _burndown("scripts/b.py", "scripts/c.py", "scripts/d.py"),
+    )
     stage(installed_branch)
-    assert rules_hit(installed_branch) == ["noncanonical-file"]
+    assert [(i.code, str(i.file_path)) for i in issues(installed_branch)] == [
+        ("burndown-extra-entry", BURNDOWN),
+        ("noncanonical-file", "scripts/new.py"),
+    ]
 
 
 # --- the commit-message rule reads the range, as the CI run does -----------------------
@@ -175,7 +200,11 @@ def test_a_new_noncanonical_file_is_still_refused_on_a_branch(
 def test_a_ticket_cited_by_an_earlier_commit_of_the_range_is_cited(
     installed_branch: Path,
 ) -> None:
-    write(installed_branch, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py"))
+    write(
+        installed_branch,
+        BURNDOWN,
+        _burndown("scripts/b.py", "scripts/c.py", "scripts/d.py"),
+    )
     stage(installed_branch)
     assert rules_hit(installed_branch, commit_message="burn down one more path") == []
 
@@ -184,10 +213,12 @@ def test_planted_ticket_cited_by_no_commit_of_the_range_is_refused(
     base_repo: Path,
 ) -> None:
     git(base_repo, "checkout", "-q", "-b", "feature")
-    write(base_repo, BURNDOWN, _burndown("scripts/b.py"))
+    write(base_repo, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py"))
     stage(base_repo)
     git(base_repo, "commit", "-q", "-m", "install a burn-down")
-    write(base_repo, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py"))
+    write(
+        base_repo, BURNDOWN, _burndown("scripts/b.py", "scripts/c.py", "scripts/d.py")
+    )
     stage(base_repo)
     assert rules_hit(base_repo, commit_message="burn down one more path") == [
         "burndown-ticket-uncited"
@@ -242,3 +273,16 @@ def test_an_explicit_base_wins_over_the_target_branch(installed_branch: Path) ->
         ":",
         "HEAD",
     )
+
+
+def test_the_target_refs_parameter_controls_the_default_base(
+    installed_branch: Path,
+) -> None:
+    """With no ref named the base is HEAD, whatever refs exist."""
+    git_repo = _git_repo(installed_branch)
+    assert target_merge_base(git_repo, P) is not None
+    inert = P.model_copy(
+        update={"target_branch_refs": ("refs/remotes/origin/zz-none",)}
+    )
+    assert target_merge_base(git_repo, inert) is None
+    assert resolve_revisions(git_repo, None, None, inert) == (":", "HEAD")
