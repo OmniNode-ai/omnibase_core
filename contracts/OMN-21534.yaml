@@ -117,12 +117,34 @@ dod_evidence:
     binds_ac:
       - AC2
   - id: dod-omn21534-ac6-no-literal
-    description: The checker, validator and models hold no host, port, topic, model name, timeout or URL;
-      the K10 rule-table gate reports zero on the checker module.
+    description: The changed source files exist and the hardcoded topic, model config, URL authority and
+      contract config validators report zero on them.
     source: manual
     checks:
       - check_type: command
         check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_inline_logic.py
+          src/omnibase_core/validation/validator_inline_logic.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/checker_inline_logic.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/validator_inline_logic.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_hardcoded_topics src/omnibase_core/validation/checker_inline_logic.py
+          src/omnibase_core/validation/validator_inline_logic.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          src/omnibase_core/validation/checker_inline_logic.py src/omnibase_core/validation/validator_inline_logic.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_inline_logic.py
+          src/omnibase_core/validation/validator_inline_logic.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/validation/checker_inline_logic.py
           src/omnibase_core/validation/validator_inline_logic.py
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
