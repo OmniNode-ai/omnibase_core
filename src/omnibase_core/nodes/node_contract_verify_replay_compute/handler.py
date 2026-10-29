@@ -60,7 +60,10 @@ import yaml
 
 from omnibase_core.enums.enum_check_status import EnumCheckStatus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_overall_status import EnumOverallStatus
+from omnibase_core.enums.enum_overall_status import (
+    EnumOverallStatus,
+    aggregate_overall_status,
+)
 from omnibase_core.enums.enum_verify_tier import EnumVerifyTier
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.merge.contract_merge_engine import ContractMergeEngine
@@ -171,7 +174,7 @@ class NodeContractVerifyReplayCompute:
             # declares replay artifacts as required. See _tier2_result().
             checks = [self._tier2_result(manifest)]
 
-        overall = self._aggregate_overall_status(checks)
+        overall = aggregate_overall_status(c.status for c in checks)
 
         # Build report (without digest/sig fields first so we can hash it).
         report_dict = self._build_report_dict(
@@ -204,33 +207,8 @@ class NodeContractVerifyReplayCompute:
         )
 
     # =========================================================================
-    # Status aggregation (OMN-15862)
+    # Tier 2 replay status (OMN-15862)
     # =========================================================================
-
-    @staticmethod
-    def _aggregate_overall_status(
-        checks: list[ModelVerifyCheckResult],
-    ) -> EnumOverallStatus:
-        """Aggregate per-check results with FAIL > SKIP > PASS precedence.
-
-        A SKIP is an absence of evidence, not evidence of correctness, so it
-        must never be aggregated into a PASS. Before OMN-15862 this method's
-        inline predecessor treated "no FAIL" as PASS, which reported a run
-        where nothing executed — including the hardcoded tier-2 skip — as a
-        verified package.
-
-        Args:
-            checks: All per-check results produced by this run.
-
-        Returns:
-            ``FAIL`` if any check failed; else ``SKIP`` if any check was
-            skipped; else ``PASS``.
-        """
-        if any(c.status == EnumCheckStatus.FAIL for c in checks):
-            return EnumOverallStatus.FAIL
-        if any(c.status == EnumCheckStatus.SKIP for c in checks):
-            return EnumOverallStatus.SKIP
-        return EnumOverallStatus.PASS
 
     @staticmethod
     def _declares_required_replay_artifacts(manifest: ModelOncpManifest) -> bool:
@@ -257,7 +235,8 @@ class NodeContractVerifyReplayCompute:
         such a package cannot be verified at the tier it itself declares as
         required, and reporting that as a skip understates the gap. Packages
         with no required replay artifacts report SKIP, which
-        :meth:`_aggregate_overall_status` keeps out of PASS.
+        :func:`~omnibase_core.enums.enum_overall_status.aggregate_overall_status`
+        keeps out of PASS.
 
         Args:
             manifest: Parsed manifest from the bundle.
