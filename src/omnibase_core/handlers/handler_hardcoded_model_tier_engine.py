@@ -284,6 +284,8 @@ def scan_tier_engine(
     Python, docstrings) blanked.
     """
     families = families & {"T", "N"}
+    if not families:
+        return []
     tree_hits = _python_hits(text, policy, families) if is_python else None
     hits: list[Hit] = list(tree_hits or [])
     for n in code:
