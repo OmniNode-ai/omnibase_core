@@ -896,12 +896,12 @@ repos:
 
       - id: validate-no-backward-compatibility
         name: ONEX Backward Compatibility Anti-Pattern Detection
-        entry: uv run python scripts/validation/validate-no-backward-compatibility.py
+        entry: uv run python -m omnibase_core.handlers.handler_backward_compat_cli
         language: system
         pass_filenames: true
         require_serial: true
         files: ^src/.*\.py$
-        exclude: ^(scripts/validation/validate-no-backward-compatibility\.py|archived/.*)$
+        exclude: ^archived/.*$
         stages: [pre-commit]
 
       # Exclusions:
@@ -1279,7 +1279,7 @@ repos:
       # In directory mode (CI), compares against --max-violations threshold
       - id: validate-dict-any-usage
         name: ONEX dict[str, Any] Anti-Pattern Detection
-        entry: uv run python scripts/validation/validate-dict-any-usage.py
+        entry: uv run python -m omnibase_core.handlers.handler_dict_any_cli
         language: system
         pass_filenames: true
         require_serial: true
