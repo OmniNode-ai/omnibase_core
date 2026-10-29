@@ -50,13 +50,6 @@ import yaml
 from pydantic import ValidationError
 
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
-    VALIDATOR_ID as JOBS_VALIDATOR_ID,
-)
-from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
-    HandlerCiRepositoryJobs,
-    repository_specific_jobs,
-)
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
@@ -95,6 +88,13 @@ from omnibase_core.models.validation.model_validation_report import (
 from omnibase_core.nodes.node_ci_inheritance_check_compute.handler_ci_inheritance import (
     VALIDATOR_ID,
     HandlerCiInheritance,
+)
+from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
+    VALIDATOR_ID as JOBS_VALIDATOR_ID,
+)
+from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
+    HandlerCiRepositoryJobs,
+    repository_specific_jobs,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
