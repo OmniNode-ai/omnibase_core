@@ -1,0 +1,1713 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Replay corpus of the canon-audit findings at their audited revisions (OMN-21530, T0.8a).
+# Data only: the replay driver (driver.py) holds no revision, path or rule id.
+schema_version: 1
+resolution:
+  clone_root_env: OMNI_HOME
+  require_clones_env: ONEX_ANDON_REPLAY_REQUIRE_CLONES
+  git_timeout_seconds: 120
+  clone_dirs:
+    omnibase_core: omnibase_core
+    omnimarket: omnimarket
+    omnibase_infra: omnibase_infra
+    omniclaude: omniclaude
+    knowledge_base_internal: knowledge-base-internal
+findings:
+  table_snapshot: d3_findings_table
+  id_prefix: F
+  class_column: 2
+  not_mechanical_class: none
+  not_mechanical:
+    - F02
+    - F13
+snapshots:
+  - id: d3_findings_table
+    path: snapshots/d3_findings_table.txt
+    sha256: b0cafdab779a3080d7e93717bb57fb6af66cba7f705a5c4278bccb3fa3ec390d
+    provenance:
+      kind: plan-section
+      repository: knowledge_base_internal
+      revision: cf81f1338040eaabb912697e01f6750a2dfb7e79
+      path: beta/plans/2026-10-28-validators-to-core-and-hardcoded-rules.md
+      lines:
+        - 338
+        - 394
+      section: D.3
+      transform: &id001
+        - lines quoting operator wording removed
+        - email addresses, home paths, registry directory name, model ids and person names replaced by
+          placeholders
+  - id: job_json_fin_claude3019_0035
+    path: snapshots/job_fin_claude3019_0035.json
+    sha256: 0962f3f3f40b0407a4708fec9afdcbf17004bf197d8b7174d21d35a6f2b459c3
+    provenance:
+      kind: job.json
+      source: remote-lanes/fin-claude3019-0035/rlane-fin-claude3019-0035-bbcf79.job.json
+      source_sha256: e05f5380ef6a5873a53b3d1849217108651dd18cfb86d084c38e3d192941fe31
+      source_bytes: 78537
+      transform:
+        - lines quoting operator wording removed
+        - email addresses, home paths, registry directory name, model ids and person names replaced by
+          placeholders
+        - re-serialised as indented JSON with sorted keys
+  - id: rules_md_lab_fill_2230
+    path: snapshots/rules_lab_fill_2230.txt
+    sha256: 3a7f2c28705b19d50659e5f93158aeed3ed9206f0a5dd3618c2ebe2d13919c67
+    provenance:
+      kind: rules.md
+      source: briefs/lab-fill-2230/rules.md
+      source_sha256: cc93e589da55ee131ab346e14b19771f2a942e3c8d321ffce9f16167c20dafee
+      source_bytes: 25694
+      transform: *id001
+  - id: brief_factory_t_c2_2215
+    path: snapshots/brief_factory_t_c2_2215.txt
+    sha256: 2fcb1deea5eaaef2a7530fbdd454e3bd8f9e581d3f66a4b4e81f0a2275ee5767
+    provenance:
+      kind: brief
+      source: briefs/factory-wave0-2215/factory-t-c2-2215-brief.md
+      source_sha256: d663244a8030cad2a7bf541cb0fb3852bebd3b2d9ea45e7100ee4a973fcd1d0f
+      source_bytes: 82735
+      transform: *id001
+  - id: brief_v2c_t01_2230
+    path: snapshots/brief_v2c_t01_2230.txt
+    sha256: bbbedc36c7480a2669d24e2396ee55a160816d0100f8220c7c1e5a43d1b1bee8
+    provenance:
+      kind: brief
+      source: briefs/lab-fill-2230/v2c-t01-2230-brief.md
+      source_sha256: 0f526591f09115fa4006a73e627b0a715eea3784720afae049d8063a8490d3d9
+      source_bytes: 78584
+      transform: *id001
+  - id: ticket_text_omn21494
+    path: snapshots/ticket_text_omn21494.txt
+    sha256: d7e69210a0d8dba55073a4f47464e7b4e1b4960f54fa710415eccdc540c65a85
+    provenance:
+      kind: ticket-description
+      ticket: OMN-21494
+      source: briefs/plan-dispatch-0035/fin-core2110-0035-brief.md, section 'Ticket OMN-21494'
+      read_at: '2026-10-29T00:23:17Z'
+      source_sha256: d7e69210a0d8dba55073a4f47464e7b4e1b4960f54fa710415eccdc540c65a85
+      transform: *id001
+  - id: ticket_text_omn21515
+    path: snapshots/ticket_text_omn21515.txt
+    sha256: 8250051dd223cd42a773b7b73558187742dd50e26186226672582739671a34ce
+    provenance:
+      kind: ticket-description
+      source: briefs/andon-s1-steward-0405/tt21515.md
+      source_sha256: 8250051dd223cd42a773b7b73558187742dd50e26186226672582739671a34ce
+      source_bytes: 4032
+      transform: *id001
+assertions:
+  - id: F01-1
+    finding: F01
+    rule_id: task_criteria:brief_missing_rule_block
+    input:
+      kind: text
+      snapshot: job_json_fin_claude3019_0035
+    note: one of the 25 job.json files; its spec is the brief text as dispatched
+  - id: F03-1
+    finding: F03
+    rule_id: task_criteria:rule_block_incomplete
+    input:
+      kind: text
+      snapshot: rules_md_lab_fill_2230
+    note: the four rules.md copies share one digest
+  - id: F03-2
+    finding: F03
+    rule_id: task_criteria:brief_missing_rule_block
+    input:
+      kind: text
+      snapshot: brief_factory_t_c2_2215
+  - id: F04-1
+    finding: F04
+    rule_id: task_criteria:brief_missing_rule_block
+    input:
+      kind: text
+      snapshot: brief_factory_t_c2_2215
+    note: one of the 15 earlier-wave briefs
+  - id: F04-2
+    finding: F04
+    rule_id: task_criteria:brief_missing_rule_block
+    input:
+      kind: text
+      snapshot: brief_v2c_t01_2230
+    note: second of the 15 earlier-wave briefs
+  - id: F05-1
+    finding: F05
+    rule_id: task_criteria:missing_configuration_criterion
+    input:
+      kind: text
+      snapshot: ticket_text_omn21494
+    note: ticket text as read at 2026-10-29T00:23:17Z
+  - id: F05-2
+    finding: F05
+    rule_id: task_criteria:missing_bindings_criterion
+    input:
+      kind: text
+      snapshot: ticket_text_omn21494
+  - id: F06-1
+    finding: F06
+    rule_id: task_criteria:missing_two_overlay_falsifier
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 491
+      quote: and one other through the parity run
+  - id: F06-2
+    finding: F06
+    rule_id: task_criteria:replay_only_bindings_falsifier
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 491
+      quote: and one other through the parity run
+  - id: F07-1
+    finding: F07
+    rule_id: task_criteria:missing_configuration_criterion
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-28-validators-to-core-and-hardcoded-rules.md
+      line: 135
+      quote: '**T0.1 Private vocabulary resolution'
+  - id: F07-2
+    finding: F07
+    rule_id: task_criteria:missing_bindings_criterion
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-28-validators-to-core-and-hardcoded-rules.md
+      line: 135
+      quote: '**T0.1 Private vocabulary resolution'
+  - id: F08-1
+    finding: F08
+    rule_id: task_criteria:replay_only_bindings_falsifier
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 3355
+      quote: '- Bindings: this task makes the lab and cloud bindings discoverable'
+  - id: F09-1
+    finding: F09
+    rule_id: task_criteria:missing_zero_literal_falsifier
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 3614
+      quote: '**T-Q6 The validator home'
+  - id: F10-1
+    finding: F10
+    rule_id: validator_home:validator_node_outside_core
+    input:
+      kind: code
+      repository: omnimarket
+      revision: fa159ce952c5a5d7a92f276bbfa9e491ecc21fdb
+      revision_short: fa159ce95
+      path: src/omnimarket/nodes/node_binding_conformance_compute/contract.yaml
+      line: 1
+      quote: 'name: node_binding_conformance_compute'
+    note: name matches the row's validator_node_patterns; the node judges artifacts and lives outside
+      core
+  - id: F10-2
+    finding: F10
+    rule_id: checker_rule_data:rule_table_in_checker
+    input:
+      kind: code
+      repository: omnimarket
+      revision: fa159ce952c5a5d7a92f276bbfa9e491ecc21fdb
+      revision_short: fa159ce95
+      path: src/omnimarket/nodes/node_binding_conformance_compute/handlers/handler_binding_conformance.py
+      line: 41
+      quote: _ENVIRONMENT_NAMES = frozenset
+  - id: F11-1
+    finding: F11
+    rule_id: validator_home:repo_script_hook
+    input:
+      kind: code
+      repository: omnimarket
+      revision: abffc1ad6de5e53803e214f06e6f098e207974b3
+      revision_short: abffc1ad6
+      path: .pre-commit-config.yaml
+      line: 1821
+      quote: 'id: andon-stop-model'
+    note: D.3 names repo_script_hook; the audited hook entry runs a pytest module that drives the runner
+      script
+  - id: F11-2
+    finding: F11
+    rule_id: noncanonical-file
+    input:
+      kind: code
+      repository: omnimarket
+      revision: abffc1ad6de5e53803e214f06e6f098e207974b3
+      revision_short: abffc1ad6
+      path: tests/formal/andon_stop_tlc.sh
+      line: 15
+      quote: JAR_URL=
+  - id: F11-3
+    finding: F11
+    rule_id: inline_logic:run_block_length
+    input:
+      kind: code
+      repository: omnimarket
+      revision: abffc1ad6de5e53803e214f06e6f098e207974b3
+      revision_short: abffc1ad6
+      path: .github/workflows/ci.yml
+      line: 738
+      quote: uv run pytest tests/formal/test_andon_stop_model.py
+    note: the CI step D.3 assigns to K9
+  - id: F12-1
+    finding: F12
+    rule_id: task_criteria:missing_two_overlay_falsifier
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 3663
+      quote: '**T-V0c The pre-PR pool builds and installs from a candidate tag'
+  - id: F12-2
+    finding: F12
+    rule_id: baselined-file-growth
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 54e3b0c938f83b6e1c140740545c3c2338c8ccb0
+      revision_short: 54e3b0c93
+      path: scripts/runtime_build/prepr_runtime_pool.py
+      line: 2033
+      quote: INFRA_TAG
+      facts:
+        - role: base_revision
+          kind: revision
+          repository: omnibase_infra
+          revision: 4090b069f179a06a5b1357f967b8e3d5730002e2
+    note: head of omnibase_infra#5425 against its merge base
+  - id: F14-1
+    finding: F14
+    rule_id: task_criteria:missing_container_resolution_criterion
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-28-validators-to-core-and-hardcoded-rules.md
+      line: 242
+      quote: '**T4.2 The lane model policy as policy data'
+  - id: F14-2
+    finding: F14
+    rule_id: task_criteria:task_in_frozen_repository
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 15a09756180faf79359347e26c14bbfd8be85e13
+      revision_short: 15a09756
+      path: beta/plans/2026-10-28-validators-to-core-and-hardcoded-rules.md
+      line: 242
+      quote: '**T4.2 The lane model policy as policy data'
+  - id: F15-1
+    finding: F15
+    rule_id: task_criteria:missing_configuration_criterion
+    input:
+      kind: text
+      snapshot: ticket_text_omn21515
+    note: OMN-21515 text read at 2026-10-29T04:29:09Z; OMN-21516 has no snapshot in the lane workspace
+  - id: F15-2
+    finding: F15
+    rule_id: task_criteria:missing_bindings_criterion
+    input:
+      kind: text
+      snapshot: ticket_text_omn21515
+  - id: F16-1
+    finding: F16
+    rule_id: lint-contract-check-values:inline_program
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: 22b0524578bfd60f0bb653d4274abb68a3b0bd8c
+      revision_short: 22b052457
+      path: contracts/OMN-21502.yaml
+      line: 46
+      quote: python3 -c "import re,yaml
+  - id: F17-1
+    finding: F17
+    rule_id: task_criteria:missing_configuration_criterion
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: ba41dd46e96d56a28163d708449fdd09de34316f
+      revision_short: ba41dd46e
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 3627
+      quote: '**T-M1 The work contract'
+  - id: F17-2
+    finding: F17
+    rule_id: task_criteria:missing_bindings_criterion
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: ba41dd46e96d56a28163d708449fdd09de34316f
+      revision_short: ba41dd46e
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 3627
+      quote: '**T-M1 The work contract'
+  - id: F17-3
+    finding: F17
+    rule_id: task_criteria:task_in_frozen_repository
+    input:
+      kind: code
+      repository: knowledge_base_internal
+      revision: ba41dd46e96d56a28163d708449fdd09de34316f
+      revision_short: ba41dd46e
+      path: beta/plans/2026-10-26-factory-design-and-failure-process-seam-proof-delegation-first.md
+      line: 3643
+      quote: '**T-M3 The runner writes the missing'
+  - id: F18-1
+    finding: F18
+    rule_id: task_criteria:brief_missing_rule_block
+    input:
+      kind: text
+      snapshot: brief_factory_t_c2_2215
+    note: a 2215 brief
+  - id: F18-2
+    finding: F18
+    rule_id: task_criteria:brief_missing_rule_block
+    input:
+      kind: text
+      snapshot: brief_v2c_t01_2230
+    note: a 2230 brief
+  - id: F19-1
+    finding: F19
+    rule_id: protocol_binding:code_side_binding_table
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+      revision_short: 4d1cb72e3
+      path: src/omnibase_core/container/container_auto_config.py
+      line: 26
+      quote: _LOCAL_BACKENDS = {
+  - id: F19-2
+    finding: F19
+    rule_id: protocol_binding:default_implementation_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+      revision_short: 4d1cb72e3
+      path: src/omnibase_core/container/container_auto_config.py
+      line: 65
+      quote: EventBusInmemory()
+  - id: F19-3
+    finding: F19
+    rule_id: hardcoded_model_config:F
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+      revision_short: 4d1cb72e3
+      path: src/omnibase_core/container/container_auto_config.py
+      line: 32
+      quote: 'state_root: str | Path = ".onex_state"'
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F20-1
+    finding: F20
+    rule_id: handler_shape:noncanonical_handle
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+      revision_short: 4d1cb72e3
+      path: src/omnibase_core/handlers/handler_backend_selection.py
+      line: 24
+      quote: 'probes: BackendProbes,'
+    note: handle takes probes, pins and local_backends as separate positional parameters
+  - id: F20-2
+    finding: F20
+    rule_id: handler_shape:mutating_public_method
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+      revision_short: 4d1cb72e3
+      path: src/omnibase_core/handlers/handler_backend_override.py
+      line: 84
+      quote: register(
+  - id: F20-3
+    finding: F20
+    rule_id: handler_di:reflective_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+      revision_short: 4d1cb72e3
+      path: src/omnibase_core/handlers/handler_backend_override.py
+      line: 58
+      quote: instance = backend_cls()
+  - id: F20-4
+    finding: F20
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+      revision_short: 4d1cb72e3
+      path: src/omnibase_core/handlers/handler_backend_override.py
+      line: 25
+      quote: class Handler
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 4d1cb72e36c5d033d463094cdab9bedd2358bcc4
+          glob: '*contract.yaml'
+  - id: F21-1
+    finding: F21
+    rule_id: hardcoded_model_config:G
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: src/omnibase_core/handlers/handler_dependency_pin_bump.py
+      line: 70
+      quote: https://github.com/OmniNode-ai/omnibase_core
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F21-2
+    finding: F21
+    rule_id: hardcoded_model_config:G
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: src/omnibase_core/handlers/handler_internal_sibling_pins_cli.py
+      line: 97
+      quote: https://github.com/{org}/{repo}.git
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F21-3
+    finding: F21
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: src/omnibase_core/handlers/handler_internal_sibling_pins_cli.py
+      line: 103
+      quote: timeout=30
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F21-4
+    finding: F21
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: .github/workflows/publish-downstream-pin-bump.yml
+      line: 128
+      quote: sleep 20
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F21-5
+    finding: F21
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: .github/workflows/publish-downstream-pin-bump.yml
+      line: 202
+      quote: 'UV_HTTP_TIMEOUT: "600"'
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F22-1
+    finding: F22
+    rule_id: inline_logic:inline_python
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: .github/workflows/publish-downstream-pin-bump.yml
+      line: 89
+      quote: 'shell: python'
+  - id: F22-2
+    finding: F22
+    rule_id: inline_logic:inline_loop
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: .github/workflows/publish-downstream-pin-bump.yml
+      line: 120
+      quote: for ((attempt=1; attempt<=12; attempt++)); do
+  - id: F22-3
+    finding: F22
+    rule_id: handler_shape:noncanonical_handle
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: src/omnibase_core/handlers/handler_dependency_pin_bump.py
+      line: 33
+      quote: dependency_tag
+  - id: F22-4
+    finding: F22
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: src/omnibase_core/handlers/handler_dependency_pin_bump.py
+      line: 50
+      quote: load_contract().dev_tag_pattern
+  - id: F22-5
+    finding: F22
+    rule_id: cli_entry_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: src/omnibase_core/handlers/handler_dependency_pin_bump.py
+      line: 103
+      quote: def main(
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+          glob: '*contract.yaml'
+  - id: F23-1
+    finding: F23
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 5a28e29cc02e59e39b688033cd7d00f174884cc9
+      revision_short: 5a28e29cc
+      path: src/omnibase_core/handlers/handler_dependency_pin_bump.py
+      line: 112
+      quote: HandlerDependencyPinBump().handle(
+  - id: F24-1
+    finding: F24
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+      revision_short: b8b19b0b4
+      path: src/omnibase_core/handlers/handler_action_pin_cli.py
+      line: 23
+      quote: import argparse
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+          glob: '*contract.yaml'
+  - id: F24-2
+    finding: F24
+    rule_id: cli_entry_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+      revision_short: b8b19b0b4
+      path: src/omnibase_core/handlers/handler_action_pin_cli.py
+      line: 183
+      quote: argparse.ArgumentParser
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+          glob: '*contract.yaml'
+  - id: F25-1
+    finding: F25
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+      revision_short: b8b19b0b4
+      path: src/omnibase_core/handlers/handler_action_pin_cli.py
+      line: 264
+      quote: HandlerActionPin().handle(
+  - id: F25-2
+    finding: F25
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: b8b19b0b4bff39cb865ed82ea12702eb2a7ab331
+      revision_short: b8b19b0b4
+      path: src/omnibase_core/handlers/handler_action_pin_cli.py
+      line: 167
+      quote: NodeValidationReportWriteEffect().handle(
+  - id: F26-1
+    finding: F26
+    rule_id: handler_shape:module_function_handler
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 6ac8500acb1efe9905148e9cc7cdb788fdbf3e0a
+      revision_short: 6ac8500ac
+      path: src/omnibase_core/handlers/handler_delivery_reference.py
+      line: 42
+      quote: def classify_reference
+  - id: F26-2
+    finding: F26
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 6ac8500acb1efe9905148e9cc7cdb788fdbf3e0a
+      revision_short: 6ac8500ac
+      path: src/omnibase_core/handlers/handler_delivery_reference_cli.py
+      line: 30
+      quote: ValidatorDeliveryReference(ValidatorBase)
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 6ac8500acb1efe9905148e9cc7cdb788fdbf3e0a
+          glob: '*contract.yaml'
+  - id: F27-1
+    finding: F27
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+      revision_short: 687a0ffea
+      path: src/omnibase_core/validation/hardcoded_model_config/runtime_hardcoded_model_config.py
+      line: 131
+      quote: HandlerPrivateVocabulary().handle(
+  - id: F27-2
+    finding: F27
+    rule_id: handler_di:constructor_signature
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+      revision_short: 687a0ffea
+      path: src/omnibase_core/handlers/handler_private_vocabulary.py
+      line: 110
+      quote: 'contract: ModelPrivateVocabularyContract | None = None'
+  - id: F27-3
+    finding: F27
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+      revision_short: 687a0ffea
+      path: src/omnibase_core/handlers/handler_private_vocabulary.py
+      line: 111
+      quote: load_contract()
+  - id: F28-1
+    finding: F28
+    rule_id: no_io_outside_effects:file-read
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+      revision_short: 687a0ffea
+      path: src/omnibase_core/handlers/handler_private_vocabulary.py
+      line: 60
+      quote: .read_text(
+  - id: F28-2
+    finding: F28
+    rule_id: cli_entry_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+      revision_short: 687a0ffea
+      path: pyproject.toml
+      line: 98
+      quote: resolve-private-vocabulary
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+          glob: '*contract.yaml'
+  - id: F28-3
+    finding: F28
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+      revision_short: 687a0ffea
+      path: src/omnibase_core/handlers/handler_private_vocabulary.py
+      line: 107
+      quote: class HandlerPrivateVocabulary
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 687a0ffeac262a3457e44e8bc1f3587a2cc191e4
+          glob: '*contract.yaml'
+  - id: F29-1
+    finding: F29
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: d22fbb0dd526e058d4c161e4c5b54ac0b05e23f6
+      revision_short: d22fbb0dd
+      path: src/omnibase_core/handlers/handler_precommit_cache_adapter.py
+      line: 33
+      quote: timeout=30
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F29-2
+    finding: F29
+    rule_id: hardcoded_model_config:F
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: d22fbb0dd526e058d4c161e4c5b54ac0b05e23f6
+      revision_short: d22fbb0dd
+      path: src/omnibase_core/handlers/handler_precommit_pin_parity_cli.py
+      line: 132
+      quote: Path.home() / ".cache" / "pre-commit"
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F30-1
+    finding: F30
+    rule_id: no_raw_sqlite3
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: d22fbb0dd526e058d4c161e4c5b54ac0b05e23f6
+      revision_short: d22fbb0dd
+      path: src/omnibase_core/handlers/handler_precommit_cache_adapter.py
+      line: 50
+      quote: sqlite3.connect(
+    note: matched by validator_id and location
+  - id: F30-2
+    finding: F30
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: d22fbb0dd526e058d4c161e4c5b54ac0b05e23f6
+      revision_short: d22fbb0dd
+      path: src/omnibase_core/handlers/handler_precommit_cache_adapter.py
+      line: 14
+      quote: import subprocess
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: d22fbb0dd526e058d4c161e4c5b54ac0b05e23f6
+          glob: '*contract.yaml'
+  - id: F30-3
+    finding: F30
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: d22fbb0dd526e058d4c161e4c5b54ac0b05e23f6
+      revision_short: d22fbb0dd
+      path: src/omnibase_core/handlers/handler_precommit_pin_parity_cli.py
+      line: 150
+      quote: HandlerPrecommitPinParity().handle(
+  - id: F31-1
+    finding: F31
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 3ef37e3e1490302348e5f37cc78fa6bd16eebe8d
+      revision_short: 3ef37e3e1
+      path: src/omnibase_core/handlers/handler_hook_writes_cli.py
+      line: 138
+      quote: HandlerHookWrites().handle(
+  - id: F31-2
+    finding: F31
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 3ef37e3e1490302348e5f37cc78fa6bd16eebe8d
+      revision_short: 3ef37e3e1
+      path: src/omnibase_core/handlers/handler_hook_writes_cli.py
+      line: 13
+      quote: import argparse
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 3ef37e3e1490302348e5f37cc78fa6bd16eebe8d
+          glob: '*contract.yaml'
+  - id: F31-3
+    finding: F31
+    rule_id: cli_entry_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 3ef37e3e1490302348e5f37cc78fa6bd16eebe8d
+      revision_short: 3ef37e3e1
+      path: src/omnibase_core/handlers/handler_hook_writes_cli.py
+      line: 96
+      quote: argparse.ArgumentParser
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 3ef37e3e1490302348e5f37cc78fa6bd16eebe8d
+          glob: '*contract.yaml'
+  - id: F32-1
+    finding: F32
+    rule_id: checker_rule_data:rule_table_in_checker
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 48b3f4317647bf9292fa22116c2898f009667b0d
+      revision_short: 48b3f4317
+      path: src/omnibase_core/handlers/handler_dict_any_cli.py
+      line: 70
+      quote: default_dirs=("src",)
+  - id: F32-2
+    finding: F32
+    rule_id: checker_rule_data:rule_table_in_checker
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 48b3f4317647bf9292fa22116c2898f009667b0d
+      revision_short: 48b3f4317
+      path: src/omnibase_core/handlers/handler_dict_any_cli.py
+      line: 42
+      quote: _REMEDIATION
+  - id: F32-3
+    finding: F32
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 48b3f4317647bf9292fa22116c2898f009667b0d
+      revision_short: 48b3f4317
+      path: src/omnibase_core/handlers/handler_dict_any_cli.py
+      line: 57
+      quote: HandlerDictAny()
+  - id: F32-4
+    finding: F32
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_core
+      revision: 48b3f4317647bf9292fa22116c2898f009667b0d
+      revision_short: 48b3f4317
+      path: src/omnibase_core/handlers/handler_finding_baseline_cli.py
+      line: 224
+      quote: HandlerFindingBaseline()
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_core
+          revision: 48b3f4317647bf9292fa22116c2898f009667b0d
+          glob: '*contract.yaml'
+  - id: F33-1
+    finding: F33
+    rule_id: handler_di:optional_port_default
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 35aecd5b820f54bd7af3a682fa6c342f70712eed
+      revision_short: 35aecd5b
+      path: src/omnimarket/nodes/node_release_grant_read_effect/handlers/handler_check_release_gate.py
+      line: 38
+      quote: reader
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 35aecd5b820f54bd7af3a682fa6c342f70712eed
+          path: src/omnimarket/nodes/node_release_grant_read_effect/contract.yaml
+  - id: F33-2
+    finding: F33
+    rule_id: handler_di:fallback_construction
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 35aecd5b820f54bd7af3a682fa6c342f70712eed
+      revision_short: 35aecd5b
+      path: src/omnimarket/nodes/node_release_grant_read_effect/handlers/handler_check_release_gate.py
+      line: 45
+      quote: classifier if classifier is not None else
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 35aecd5b820f54bd7af3a682fa6c342f70712eed
+          path: src/omnimarket/nodes/node_release_grant_read_effect/contract.yaml
+  - id: F33-3
+    finding: F33
+    rule_id: handler_di:constructor_signature
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 35aecd5b820f54bd7af3a682fa6c342f70712eed
+      revision_short: 35aecd5b
+      path: src/omnimarket/nodes/node_release_grant_read_effect/handlers/handler_check_release_gate.py
+      line: 36
+      quote: def __init__(
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 35aecd5b820f54bd7af3a682fa6c342f70712eed
+          path: src/omnimarket/nodes/node_release_grant_read_effect/contract.yaml
+  - id: F34-1
+    finding: F34
+    rule_id: protocol_binding:default_implementation_construction
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 3ca2dbcbac4fd7d42722266abe70a6d8a24ea55d
+      revision_short: 3ca2dbcba
+      path: src/omnimarket/nodes/node_binding_parity_orchestrator/handlers/handler_run_local.py
+      line: 35
+      quote: EventBusInmemory(
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 3ca2dbcbac4fd7d42722266abe70a6d8a24ea55d
+          path: src/omnimarket/nodes/node_binding_parity_orchestrator/contract.yaml
+  - id: F34-2
+    finding: F34
+    rule_id: protocol_binding:code_side_binding_table
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 3ca2dbcbac4fd7d42722266abe70a6d8a24ea55d
+      revision_short: 3ca2dbcba
+      path: src/omnimarket/nodes/node_binding_parity_orchestrator/stubs/stub_registry.py
+      line: 32
+      quote: BUS_FACTORIES
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 3ca2dbcbac4fd7d42722266abe70a6d8a24ea55d
+          path: src/omnimarket/nodes/node_binding_parity_orchestrator/contract.yaml
+  - id: F34-3
+    finding: F34
+    rule_id: handler_di:reflective_construction
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 3ca2dbcbac4fd7d42722266abe70a6d8a24ea55d
+      revision_short: 3ca2dbcba
+      path: src/omnimarket/nodes/node_binding_parity_orchestrator/handlers/handler_run_local.py
+      line: 59
+      quote: getattr(handler_module, handler_ref["name"])()
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 3ca2dbcbac4fd7d42722266abe70a6d8a24ea55d
+          path: src/omnimarket/nodes/node_binding_parity_orchestrator/contract.yaml
+  - id: F35-1
+    finding: F35
+    rule_id: hardcoded_model_config:E
+    input:
+      kind: code
+      repository: omnimarket
+      revision: a1898a7f9d5d4edd0298c7ecf021d3acbce63470
+      revision_short: a1898a7f
+      path: config/hardcoded_model_config_baseline.yaml
+      line: 448
+      quote: local_runtime_dispatch.py
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+    note: an admitted entry in a baseline with no zero target
+  - id: F36-1
+    finding: F36
+    rule_id: first_party_ref:first_party_ref_two_homes
+    input:
+      kind: code
+      repository: omnimarket
+      revision: a1898a7f9d5d4edd0298c7ecf021d3acbce63470
+      revision_short: a1898a7f
+      path: .github/workflows/ci.yml
+      line: 482
+      quote: 'ACTION_PINS_CORE:'
+      facts:
+        - role: comparison_file
+          kind: git_file
+          repository: omnimarket
+          revision: a1898a7f9d5d4edd0298c7ecf021d3acbce63470
+          path: .pre-commit-config.yaml
+  - id: F37-1
+    finding: F37
+    rule_id: hardcoded_model_config:N
+    input:
+      kind: code
+      repository: omnimarket
+      revision: ecdc16607c73b57fe196287c158346aee41b52c9
+      revision_short: ecdc16607
+      path: src/omnimarket/models/model_engine_experiment.py
+      line: 23
+      quote: CLAUDE_RUNGS
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F37-2
+    finding: F37
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnimarket
+      revision: ecdc16607c73b57fe196287c158346aee41b52c9
+      revision_short: ecdc16607
+      path: src/omnimarket/models/model_backlog_item.py
+      line: 74
+      quote: load_policy()
+  - id: F37-3
+    finding: F37
+    rule_id: handler_di:fallback_construction
+    input:
+      kind: code
+      repository: omnimarket
+      revision: ecdc16607c73b57fe196287c158346aee41b52c9
+      revision_short: ecdc16607
+      path: src/omnimarket/models/model_engine_ladder.py
+      line: 64
+      quote: load_engine_ladder()
+  - id: F37-4
+    finding: F37
+    rule_id: handler_di:sibling_handler_import
+    input:
+      kind: code
+      repository: omnimarket
+      revision: ecdc16607c73b57fe196287c158346aee41b52c9
+      revision_short: ecdc16607
+      path: src/omnimarket/nodes/node_seam_classify_compute/handlers/classify_backlog_engine_seams.py
+      line: 22
+      quote: resolve_lane_model
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: ecdc16607c73b57fe196287c158346aee41b52c9
+          path: src/omnimarket/nodes/node_seam_classify_compute/contract.yaml
+  - id: F38-1
+    finding: F38
+    rule_id: hardcoded_model_config:N
+    input:
+      kind: code
+      repository: omnimarket
+      revision: d40a6c78571f92b734ada9453b57e6d134874c50
+      revision_short: d40a6c785
+      path: src/omnimarket/models/lane_brief/enum_lane_engine.py
+      line: 10
+      quote: class EnumLaneEngine(StrEnum)
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F38-2
+    finding: F38
+    rule_id: hardcoded_model_config:N
+    input:
+      kind: code
+      repository: omnimarket
+      revision: d40a6c78571f92b734ada9453b57e6d134874c50
+      revision_short: d40a6c785
+      path: src/omnimarket/nodes/node_lane_brief_parse_compute/handlers/handler_lane_brief_parse.py
+      line: 42
+      quote: _ALIASES
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F38-3
+    finding: F38
+    rule_id: handler_di:reflective_construction
+    input:
+      kind: code
+      repository: omnimarket
+      revision: d40a6c78571f92b734ada9453b57e6d134874c50
+      revision_short: d40a6c785
+      path: src/omnimarket/nodes/node_lane_brief_gate_orchestrator/handlers/handler_lane_brief_gate_run.py
+      line: 37
+      quote: getattr(module, entry["handler"]["name"])()
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: d40a6c78571f92b734ada9453b57e6d134874c50
+          path: src/omnimarket/nodes/node_lane_brief_gate_orchestrator/contract.yaml
+  - id: F38-4
+    finding: F38
+    rule_id: handler_di:contract_value_literal
+    input:
+      kind: code
+      repository: omnimarket
+      revision: d40a6c78571f92b734ada9453b57e6d134874c50
+      revision_short: d40a6c785
+      path: src/omnimarket/nodes/node_lane_brief_gate_orchestrator/handlers/handler_lane_brief_gate_run.py
+      line: 25
+      quote: PARSE_EDGE
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: d40a6c78571f92b734ada9453b57e6d134874c50
+          path: src/omnimarket/nodes/node_lane_brief_gate_orchestrator/contract.yaml
+  - id: F38-5
+    finding: F38
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnimarket
+      revision: d40a6c78571f92b734ada9453b57e6d134874c50
+      revision_short: d40a6c785
+      path: src/omnimarket/nodes/node_lane_brief_gate_orchestrator/handlers/handler_lane_brief_gate_run.py
+      line: 29
+      quote: _contract_handler
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: d40a6c78571f92b734ada9453b57e6d134874c50
+          path: src/omnimarket/nodes/node_lane_brief_gate_orchestrator/contract.yaml
+  - id: F39-1
+    finding: F39
+    rule_id: hardcoded_model_config:F
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 50db7899a58547d3b663d725719997df9822a0d1
+      revision_short: 50db7899a
+      path: src/omnimarket/nodes/node_delegation_seam_measure_compute/handlers/handler_load_delegation_workflows.py
+      line: 21
+      quote: REGISTRY_PATH
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F39-2
+    finding: F39
+    rule_id: no_io_outside_effects:file-read
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 50db7899a58547d3b663d725719997df9822a0d1
+      revision_short: 50db7899a
+      path: src/omnimarket/nodes/node_delegation_seam_measure_compute/handlers/handler_load_delegation_workflows.py
+      line: 27
+      quote: contract_section(path, "station_shapes")
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 50db7899a58547d3b663d725719997df9822a0d1
+          path: src/omnimarket/nodes/node_delegation_seam_measure_compute/contract.yaml
+    note: file read through the contract_section helper in a compute node
+  - id: F39-3
+    finding: F39
+    rule_id: handler_di:contract_value_literal
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 50db7899a58547d3b663d725719997df9822a0d1
+      revision_short: 50db7899a
+      path: src/omnimarket/nodes/node_delegation_seam_orchestrator/handlers/handler_plan_seam_reads.py
+      line: 17
+      quote: _STEPS
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 50db7899a58547d3b663d725719997df9822a0d1
+          path: src/omnimarket/nodes/node_delegation_seam_orchestrator/contract.yaml
+  - id: F39-4
+    finding: F39
+    rule_id: handler_di:module_singleton
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 50db7899a58547d3b663d725719997df9822a0d1
+      revision_short: 50db7899a
+      path: src/omnimarket/nodes/node_delegation_routing_reducer/handlers/handler_delegation_routing.py
+      line: 744
+      quote: global _config
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 50db7899a58547d3b663d725719997df9822a0d1
+          path: src/omnimarket/nodes/node_delegation_routing_reducer/contract.yaml
+  - id: F39-5
+    finding: F39
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 54a6d7231bbac488f4794aa0ad69a180f0a59053
+      revision_short: 54a6d7231
+      path: tests/unit/delegation/test_routing_globals_isolated_omn21433.py
+      line: 49
+      quote: timeout=240
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F40-1
+    finding: F40
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 94f785dae3375aedd112e3801169259f2d548012
+      revision_short: 94f785dae
+      path: src/omnimarket/nodes/node_flow_measures_compute/handlers/handler_flow_measures.py
+      line: 30
+      quote: CONTRACT_PATH
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: 94f785dae3375aedd112e3801169259f2d548012
+          path: src/omnimarket/nodes/node_flow_measures_compute/contract.yaml
+  - id: F40-2
+    finding: F40
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnimarket
+      revision: d78815a875dadae99c68cba54e9af33eaaba41b7
+      revision_short: d78815a87
+      path: src/omnimarket/nodes/node_seam_reading_compute/handlers/handler_seam_reading.py
+      line: 30
+      quote: ORCHESTRATOR_CONTRACT_PATH
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: d78815a875dadae99c68cba54e9af33eaaba41b7
+          path: src/omnimarket/nodes/node_seam_reading_compute/contract.yaml
+  - id: F40-3
+    finding: F40
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnimarket
+      revision: e9266e5ff9c5b744ae396490163a54356c22afba
+      revision_short: e9266e5ff
+      path: src/omnimarket/nodes/node_wip_gate_reducer/handlers/handler_wip_gate.py
+      line: 22
+      quote: load_wip_gate_contract()
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: e9266e5ff9c5b744ae396490163a54356c22afba
+          path: src/omnimarket/nodes/node_wip_gate_reducer/contract.yaml
+  - id: F40-4
+    finding: F40
+    rule_id: handler_di:contract_self_load
+    input:
+      kind: code
+      repository: omnimarket
+      revision: f25bc8d9c9d21b3bd6c4c82481bbd7613c55fc27
+      revision_short: f25bc8d9
+      path: src/omnimarket/nodes/node_delivery_path_reducer/handlers/handler_delivery_path.py
+      line: 31
+      quote: CONTRACT_PATH
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: f25bc8d9c9d21b3bd6c4c82481bbd7613c55fc27
+          path: src/omnimarket/nodes/node_delivery_path_reducer/contract.yaml
+  - id: F40-5
+    finding: F40
+    rule_id: no_io_outside_effects:file-read
+    input:
+      kind: code
+      repository: omnimarket
+      revision: f25bc8d9c9d21b3bd6c4c82481bbd7613c55fc27
+      revision_short: f25bc8d9
+      path: src/omnimarket/nodes/node_delivery_path_reducer/handlers/handler_delivery_path.py
+      line: 79
+      quote: contract_section(contract_path, "state_machine")
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: f25bc8d9c9d21b3bd6c4c82481bbd7613c55fc27
+          path: src/omnimarket/nodes/node_delivery_path_reducer/contract.yaml
+    note: file read through the contract_section helper in a reducer node
+  - id: F40-6
+    finding: F40
+    rule_id: protocol_binding:setting_two_homes
+    input:
+      kind: code
+      repository: omnimarket
+      revision: fa159ce952c5a5d7a92f276bbfa9e491ecc21fdb
+      revision_short: fa159ce95
+      path: src/omnimarket/nodes/node_flow_measures_compute/contract.yaml
+      line: 23
+      quote: trailing_days
+      facts:
+        - role: node_contract
+          kind: git_file
+          repository: omnimarket
+          revision: fa159ce952c5a5d7a92f276bbfa9e491ecc21fdb
+          path: src/omnimarket/nodes/node_flow_measures_compute/contract.yaml
+        - role: comparison_file
+          kind: git_file
+          repository: omnimarket
+          revision: fa159ce952c5a5d7a92f276bbfa9e491ecc21fdb
+          path: src/omnimarket/nodes/node_wip_gate_reducer/contract.yaml
+    note: read at the origin/dev revision of the plan header, where both contracts carry the key
+  - id: F41-1
+    finding: F41
+    rule_id: validator_home:config_pinning_test
+    input:
+      kind: code
+      repository: omnimarket
+      revision: 25d2440fa6db603a6c9b71d1e58f8082ef21b7cc
+      revision_short: 25d2440f
+      path: tests/ci/test_check_only_hooks_omn21496.py
+      line: 42
+      quote: WRITING_ENTRY
+  - id: F42-1
+    finding: F42
+    rule_id: noncanonical-file
+    input:
+      kind: code
+      repository: omnimarket
+      revision: abffc1ad6de5e53803e214f06e6f098e207974b3
+      revision_short: abffc1ad6
+      path: tests/formal/andon_stop_tlc.sh
+      line: 14
+      quote: JAR_SHA
+  - id: F42-2
+    finding: F42
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnimarket
+      revision: abffc1ad6de5e53803e214f06e6f098e207974b3
+      revision_short: abffc1ad6
+      path: tests/formal/andon_stop_tlc.sh
+      line: 45
+      quote: HEAP:-4g
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F43-1
+    finding: F43
+    rule_id: action-pins
+    input:
+      kind: code
+      repository: omnimarket
+      revision: ceb582d9f3ed89c517f75241a532a155263b6681
+      revision_short: ceb582d9
+      path: .github/workflows/internal-sibling-pins.yml
+      line: 22
+      quote: '@97c5d1c2802acbdd13940c1a4ab1b07cf4fb7418'
+    note: matched by validator_id and location; the PR cites a ticket that describes other work, which
+      no artifact check reads
+  - id: F43-2
+    finding: F43
+    rule_id: first_party_ref:cross_repo_ref_not_dev_tag
+    input:
+      kind: code
+      repository: omnimarket
+      revision: ceb582d9f3ed89c517f75241a532a155263b6681
+      revision_short: ceb582d9
+      path: .github/required-checks.yaml
+      line: 92
+      quote: 'cross_repo_ref:'
+  - id: F44-1
+    finding: F44
+    rule_id: protocol_binding:implementation_isinstance_branch
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+      revision_short: 1af1c33e7
+      path: src/omnibase_infra/runtime/service_kernel.py
+      line: 2155
+      quote: isinstance(event_bus, EventBusKafka)
+  - id: F44-2
+    finding: F44
+    rule_id: handler_di:call_site_construction
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+      revision_short: 1af1c33e7
+      path: src/omnibase_infra/runtime/service_kernel.py
+      line: 4646
+      quote: HandlerKafkaTopicDemandSource(event_bus.config)
+  - id: F45-1
+    finding: F45
+    rule_id: handler_outside_node
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+      revision_short: 1af1c33e7
+      path: src/omnibase_infra/handlers/handler_kafka_topic_demand_source.py
+      line: 40
+      quote: class HandlerKafkaTopicDemandSource
+      facts:
+        - role: node_contracts
+          kind: tree_glob
+          repository: omnibase_infra
+          revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+          glob: '*contract.yaml'
+  - id: F45-2
+    finding: F45
+    rule_id: handler_shape:noncanonical_handle
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+      revision_short: 1af1c33e7
+      path: src/omnibase_infra/handlers/handler_kafka_topic_demand_source.py
+      line: 56
+      quote: watch_idle_topics
+  - id: F45-3
+    finding: F45
+    rule_id: protocol_binding:client_construction_outside_binding
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+      revision_short: 1af1c33e7
+      path: src/omnibase_infra/handlers/handler_kafka_topic_demand_source.py
+      line: 67
+      quote: AIOKafkaAdminClient(
+  - id: F46-1
+    finding: F46
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+      revision_short: 1af1c33e7
+      path: src/omnibase_infra/handlers/handler_kafka_topic_demand_source.py
+      line: 34
+      quote: _POLL_TIMEOUT_MS = 1000
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F46-2
+    finding: F46
+    rule_id: hardcoded_model_config:O
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 1af1c33e703fe1a0babb28e8bdafbef736e26348
+      revision_short: 1af1c33e7
+      path: src/omnibase_infra/handlers/handler_kafka_topic_demand_source.py
+      line: 37
+      quote: _OFFSET_CHUNK = 100
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F47-1
+    finding: F47
+    rule_id: hardcoded_model_config:P
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 54e3b0c938f83b6e1c140740545c3c2338c8ccb0
+      revision_short: 54e3b0c93
+      path: scripts/runtime_build/prepr_verify_rendered_slot.py
+      line: 103
+      quote: BUILD_ONLY_SERVICES
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+    note: head of omnibase_infra#5425, recorded at build
+  - id: F47-2
+    finding: F47
+    rule_id: hardcoded_model_config:G
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 54e3b0c938f83b6e1c140740545c3c2338c8ccb0
+      revision_short: 54e3b0c93
+      path: scripts/runtime_build/prepr_pool_prove.sh
+      line: 283
+      quote: https://github.com/OmniNode-ai/
+      facts:
+        - role: policy
+          kind: git_file
+          repository: omnibase_core
+          revision: d86adfa28231f6e415929df7465eb81173b2eda0
+          path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
+  - id: F47-3
+    finding: F47
+    rule_id: baselined-file-growth
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 54e3b0c938f83b6e1c140740545c3c2338c8ccb0
+      revision_short: 54e3b0c93
+      path: scripts/runtime_build/prepr_pool_prove.sh
+      line: 56
+      quote: tag
+      facts:
+        - role: base_revision
+          kind: revision
+          repository: omnibase_infra
+          revision: 4090b069f179a06a5b1357f967b8e3d5730002e2
+    note: head against the merge base the audit read
+  - id: F48-1
+    finding: F48
+    rule_id: validator_home:local_hook_definition
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 2d47ced74acb3f42b0e37a1da7bb93ab05689d82
+      revision_short: 2d47ced74
+      path: .pre-commit-config.yaml
+      line: 490
+      quote: 'id: check-end-of-file'
+    note: head of omnibase_infra#5428, recorded at build
+  - id: F48-2
+    finding: F48
+    rule_id: validator_home:local_hook_definition
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 2d47ced74acb3f42b0e37a1da7bb93ab05689d82
+      revision_short: 2d47ced74
+      path: .pre-commit-config.yaml
+      line: 672
+      quote: 'id: refuse-staged-tmp-files'
+  - id: F48-3
+    finding: F48
+    rule_id: validator_home:local_hook_definition
+    input:
+      kind: code
+      repository: omnibase_infra
+      revision: 2d47ced74acb3f42b0e37a1da7bb93ab05689d82
+      revision_short: 2d47ced74
+      path: .pre-commit-config.yaml
+      line: 2279
+      quote: 'id: refuse-ai-coauthor-trailer'
+  - id: F49-1
+    finding: F49
+    rule_id: validator_home:local_hook_definition
+    input:
+      kind: code
+      repository: omniclaude
+      revision: ecb14fc1a9c83b5d6d9ce38040d21b7aa04c4d64
+      revision_short: ecb14fc1a
+      path: .pre-commit-config.yaml
+      line: 267
+      quote: 'id: end-of-file-fixer'
+    note: 'local language: system hook of a third-party hook id'
+  - id: F49-2
+    finding: F49
+    rule_id: validator_home:local_hook_definition
+    input:
+      kind: code
+      repository: omniclaude
+      revision: ecb14fc1a9c83b5d6d9ce38040d21b7aa04c4d64
+      revision_short: ecb14fc1a
+      path: .pre-commit-config.yaml
+      line: 506
+      quote: 'id: strip-ai-coauthor-trailer'
