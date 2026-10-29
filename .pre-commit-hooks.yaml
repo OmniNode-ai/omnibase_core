@@ -1300,3 +1300,13 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-delivery-reference
+  name: Delivery reference policy
+  description: Enforce the delivery_paths overlay against consumer-collected delivery facts.
+  language: python
+  entry: python -m omnibase_core.handlers.handler_delivery_reference_cli
+  files: \.delivery-facts\.ya?ml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

@@ -131,6 +131,12 @@ from .enum_database_schema_domain import EnumDatabaseSchemaDomain
 # Decision type enums (OMN-1235)
 from .enum_decision_type import EnumDecisionType
 
+# Delivery reference enums (OMN-21490)
+from .enum_delivery_path_role import EnumDeliveryPathRole
+from .enum_delivery_reference_kind import EnumDeliveryReferenceKind
+from .enum_delivery_resolved_kind import EnumDeliveryResolvedKind
+from .enum_delivery_status import EnumDeliveryStatus
+
 # Demo enums (OMN-1397)
 from .enum_demo_recommendation import EnumDemoRecommendation
 from .enum_demo_verdict import EnumDemoVerdict
@@ -590,6 +596,10 @@ from .overseer.enum_verifier_verdict import EnumVerifierVerdict
 
 
 __all__ = [
+    "EnumDeliveryPathRole",
+    "EnumDeliveryReferenceKind",
+    "EnumDeliveryResolvedKind",
+    "EnumDeliveryStatus",
     # CLI contribution contract enums (OMN-2536)
     "EnumCliCommandRisk",
     "EnumCliCommandVisibility",
