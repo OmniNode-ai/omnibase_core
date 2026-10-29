@@ -1,0 +1,87 @@
+{
+  "report_id": "<normalised>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "task_criteria",
+      "severity": "FAIL",
+      "location": "beta/plans/criterion_without_falsifier.md",
+      "message": "task T9.1: criterion has no falsifier naming an action and an observable result: - Replay: disabling a rule row fails its fixture",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "criterion_without_falsifier"
+    },
+    {
+      "validator_id": "task_criteria",
+      "severity": "FAIL",
+      "location": "beta/plans/missing_bindings_criterion.md",
+      "message": "task T9.1 has no Bindings criterion",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "missing_bindings_criterion"
+    },
+    {
+      "validator_id": "task_criteria",
+      "severity": "FAIL",
+      "location": "beta/plans/missing_configuration_criterion.md",
+      "message": "task T9.1 has no Configuration criterion (every pattern, list, threshold and remedy text a parameters entry of the contract)",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "missing_configuration_criterion"
+    },
+    {
+      "validator_id": "task_criteria",
+      "severity": "FAIL",
+      "location": "beta/plans/missing_container_resolution_criterion.md",
+      "message": "task T9.1 adds a handler or controller with no criterion that it is resolved from the container",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "missing_container_resolution_criterion"
+    },
+    {
+      "validator_id": "task_criteria",
+      "severity": "FAIL",
+      "location": "beta/plans/missing_two_overlay_falsifier.md",
+      "message": "task T9.1 has no criterion naming an in-memory overlay, a broker overlay and 'no code change'",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "missing_two_overlay_falsifier"
+    },
+    {
+      "validator_id": "task_criteria",
+      "severity": "FAIL",
+      "location": "beta/plans/missing_zero_literal_falsifier.md",
+      "message": "task T9.1 has no criterion that the literal validators report zero on the changed source",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "missing_zero_literal_falsifier"
+    },
+    {
+      "validator_id": "task_criteria",
+      "severity": "FAIL",
+      "location": "beta/plans/replay_only_bindings_falsifier.md",
+      "message": "task T9.1: the Bindings falsifier names only a local run and a recorded transcript",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "replay_only_bindings_falsifier"
+    }
+  ],
+  "metrics": {
+    "total": 7,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 7,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "task_criteria"
+    ]
+  }
+}
