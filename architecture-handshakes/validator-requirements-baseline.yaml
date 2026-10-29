@@ -17,7 +17,7 @@
 # when the corresponding wiring work lands in this repo. See
 # the archived validator-inventory audit for the per-validator roadmap.
 #
-# Spec consumer: OMN-9115. Baseline pattern mirrors validate-dict-any-usage
+# Spec consumer: OMN-9115. Baseline pattern mirrors check-no-dict-any
 # (pre-commit-config --max-violations), which is the established ratchet
 # precedent in this repo.
 #

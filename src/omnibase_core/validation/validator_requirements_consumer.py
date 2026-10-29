@@ -413,7 +413,7 @@ def main(argv: list[str] | None = None) -> int:
             "Optional baseline YAML listing accepted gaps as "
             "[{repo, validator, kind}, ...]. Any gap NOT in the baseline fails "
             "the check. Baseline entries NOT reproduced by the scan also fail "
-            "(stale baseline). Mirrors the validate-dict-any-usage ratchet."
+            "(stale baseline). Mirrors the check-no-dict-any baseline ratchet."
         ),
     )
     args = parser.parse_args(argv)
