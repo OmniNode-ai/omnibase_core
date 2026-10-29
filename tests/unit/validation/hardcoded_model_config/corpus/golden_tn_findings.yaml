@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Golden findings of families T and N over the OMN-21463 corpus fixtures (regenerate only with a reviewed policy change).
+findings:
+  clean_tn_comment_py.fixture: []
+  clean_tn_comment_yaml.fixture: []
+  clean_tn_docstring.fixture: []
+  clean_tn_mixed_vocabulary.fixture: []
+  clean_tn_test_path.fixture: []
+  clean_tn_yaml_other_key.fixture: []
+  violation_n_alias_key.fixture:
+    - family: N
+      line: 1
+      matched_text: codex
+      path_class: SOURCE
+  violation_n_alias_tier_key.fixture:
+    - family: N
+      line: 1
+      matched_text: sonnet
+      path_class: SOURCE
+  violation_n_enum.fixture:
+    - family: N
+      line: 5
+      matched_text: codex
+      path_class: SOURCE
+  violation_n_keyword.fixture:
+    - family: N
+      line: 2
+      matched_text: glm
+      path_class: SOURCE
+  violation_n_literal.fixture:
+    - family: N
+      line: 3
+      matched_text: glm
+      path_class: SOURCE
+  violation_n_yaml_list.fixture:
+    - family: N
+      line: 3
+      matched_text: code-edit
+      path_class: SOURCE
+  violation_n_yaml_value.fixture:
+    - family: N
+      line: 2
+      matched_text: codex
+      path_class: SOURCE
+  violation_t_assign.fixture:
+    - family: T
+      line: 1
+      matched_text: opus
+      path_class: SOURCE
+  violation_t_key.fixture:
+    - family: T
+      line: 4
+      matched_text: opus
+      path_class: SOURCE
+  violation_t_literal.fixture:
+    - family: T
+      line: 3
+      matched_text: sonnet
+      path_class: SOURCE
+  violation_t_set.fixture:
+    - family: T
+      line: 1
+      matched_text: opus
+      path_class: SOURCE
+  violation_t_tuple.fixture:
+    - family: T
+      line: 1
+      matched_text: sonnet
+      path_class: SOURCE
+  violation_t_yaml_flow.fixture:
+    - family: T
+      line: 2
+      matched_text: sonnet
+      path_class: SOURCE
+  violation_t_yaml_list.fixture:
+    - family: T
+      line: 3
+      matched_text: sonnet
+      path_class: SOURCE

@@ -89,7 +89,7 @@ def test_corpus_fixture_yields_its_family(
 @pytest.mark.unit
 def test_corpus_covers_every_family_and_clean_cases() -> None:
     families = {spec["family"] for spec in FIXTURES.values()}
-    assert families == {"M", "E", "E-LAN", "R", "L", None}
+    assert families == {"M", "E", "E-LAN", "R", "L", "T", "N", None}
 
 
 @pytest.mark.unit
@@ -549,3 +549,195 @@ def test_model_id_pattern_does_not_name_the_retired_gpt_oss_model(
     assert pattern.search("qwen3-coder") is not None
     assert pattern.search("gpt-4o") is not None
     assert "oss" not in policy.model_id_pattern.lower()
+
+
+# ---------------------------------------------------------------------------
+# OMN-21463 (K6): families T (tier aliases) and N (engine names)
+# ---------------------------------------------------------------------------
+
+_TN_VIOLATIONS = sorted(
+    name
+    for name, spec in FIXTURES.items()
+    if spec["family"] in ("T", "N") and name.startswith("violation_")
+)
+
+
+def _scan_fixture(name: str, policy: ModelHardcodedModelConfigPolicy) -> list[str]:
+    path = FIXTURES[name]["path"]
+    assert isinstance(path, str)
+    text = (CORPUS_DIR / name).read_text(encoding="utf-8")
+    return [f.family for f in scan(path, text, policy)]
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("fixture_name", _TN_VIOLATIONS)
+def test_tn_comment_form_of_a_violation_passes(
+    fixture_name: str, policy: ModelHardcodedModelConfigPolicy
+) -> None:
+    """The same text in a comment is allowed as provenance (no marker needed)."""
+    path = FIXTURES[fixture_name]["path"]
+    assert isinstance(path, str)
+    text = (CORPUS_DIR / fixture_name).read_text(encoding="utf-8")
+    prefix = "# "
+    commented = "\n".join(
+        prefix + line if line.strip() else line for line in text.splitlines()
+    )
+    assert scan(path, commented + "\n", policy) == []
+
+
+# The vocabulary keys that decide each violation fixture's verdict.
+_DECIDED_BY: dict[str, frozenset[str]] = {
+    "violation_t_key.fixture": frozenset({"tier_aliases", "tier_keys"}),
+    "violation_t_assign.fixture": frozenset({"tier_aliases", "tier_keys"}),
+    "violation_t_literal.fixture": frozenset({"tier_aliases"}),
+    "violation_t_tuple.fixture": frozenset({"tier_aliases"}),
+    "violation_t_set.fixture": frozenset({"tier_aliases"}),
+    "violation_t_yaml_list.fixture": frozenset({"tier_aliases"}),
+    "violation_t_yaml_flow.fixture": frozenset({"tier_aliases"}),
+    "violation_n_enum.fixture": frozenset({"engine_names"}),
+    "violation_n_alias_key.fixture": frozenset({"engine_names"}),
+    "violation_n_alias_tier_key.fixture": frozenset({"tier_aliases"}),
+    "violation_n_literal.fixture": frozenset({"engine_names"}),
+    "violation_n_keyword.fixture": frozenset({"engine_names", "tier_keys"}),
+    "violation_n_yaml_value.fixture": frozenset({"engine_names", "tier_keys"}),
+    "violation_n_yaml_list.fixture": frozenset({"engine_names", "tier_keys"}),
+}
+
+
+@pytest.mark.unit
+def test_every_tn_violation_fixture_declares_what_decides_it() -> None:
+    assert set(_DECIDED_BY) == set(_TN_VIOLATIONS)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "vocabulary_key", ["tier_aliases", "tier_keys", "engine_names"]
+)
+def test_each_tn_vocabulary_key_decides_its_verdict(
+    vocabulary_key: str, policy: ModelHardcodedModelConfigPolicy
+) -> None:
+    """Mutate every vocabulary key in turn: the fixtures it decides stop failing
+    without it, and no other fixture's verdict changes."""
+    emptied = policy.model_copy(update={vocabulary_key: ()})
+    for name in _TN_VIOLATIONS:
+        before = _scan_fixture(name, policy)
+        after = _scan_fixture(name, emptied)
+        assert before == [FIXTURES[name]["family"]]
+        if vocabulary_key in _DECIDED_BY[name]:
+            assert after == [], f"{vocabulary_key} must decide {name}"
+        else:
+            assert after == before, f"{vocabulary_key} must not decide {name}"
+
+
+@pytest.mark.unit
+def test_tn_vocabularies_are_policy_data_not_checker_code(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    assert {"sonnet", "opus", "haiku", "claude_opus", "claude_sonnet"} <= set(
+        policy.tier_aliases
+    )
+    assert {"ceiling", "model", "engine", "ladder", "order"} <= set(policy.tier_keys)
+    assert {"codex", "glm", "code-edit"} <= set(policy.engine_names)
+    handler_source = (
+        Path(__file__).parents[4]
+        / "src/omnibase_core/validation/hardcoded_model_config/handler.py"
+    ).read_text(encoding="utf-8")
+    for name in ("sonnet", "opus", "codex", "glm", "ceiling"):
+        assert f'"{name}"' not in handler_source
+
+
+@pytest.mark.unit
+def test_tn_families_apply_to_source_only(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    for path_class in policy.path_classes:
+        has = {"T", "N"} & set(path_class.families)
+        assert has == ({"T", "N"} if path_class.name == "SOURCE" else set()), (
+            path_class.name
+        )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "path", ["tests/unit/test_router.py", "config/lane.example.yaml", "README.md"]
+)
+def test_tn_disabled_path_does_no_tier_engine_scanning(
+    path: str,
+    policy: ModelHardcodedModelConfigPolicy,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Ineligible paths must not spend the whole-tree scan budget on T/N work."""
+    from omnibase_core.handlers import handler_hardcoded_model_tier_engine
+
+    def unexpected_scan(*args: object) -> None:
+        raise AssertionError("T/N detection ran for a path with neither family")
+
+    monkeypatch.setattr(
+        handler_hardcoded_model_tier_engine, "_python_hits", unexpected_scan
+    )
+    monkeypatch.setattr(
+        handler_hardcoded_model_tier_engine, "_line_hits", unexpected_scan
+    )
+    assert scan(path, 'ceiling = "opus"\n', policy) == []
+
+
+@pytest.mark.unit
+def test_tn_findings_baseline_by_content_like_every_family(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    from omnibase_core.validation.hardcoded_model_config.handler import (
+        compare_with_baseline,
+    )
+    from omnibase_core.validation.hardcoded_model_config.models import (
+        ModelHardcodedModelConfigBaselineEntry,
+    )
+
+    findings = scan("src/pkg/a.py", 'ceiling = "opus"\n', policy)
+    assert [f.family for f in findings] == ["T"]
+    new, stale = compare_with_baseline(
+        findings, [], frozenset({"src/pkg/a.py"}), frozenset()
+    )
+    assert new == findings and stale == []
+    entry = ModelHardcodedModelConfigBaselineEntry(
+        path="src/pkg/a.py", family="T", content_sha1=findings[0].content_sha1
+    )
+    new, stale = compare_with_baseline(
+        findings, [entry], frozenset({"src/pkg/a.py"}), frozenset()
+    )
+    assert new == [] and stale == []
+
+
+@pytest.mark.unit
+def test_committed_baseline_holds_no_tier_or_engine_entry() -> None:
+    """OMN-21463: the current tree was fixed, not baselined, for families T and N."""
+    baseline = yaml.safe_load(
+        (
+            Path(__file__).parents[4] / "config/hardcoded_model_config_baseline.yaml"
+        ).read_text(encoding="utf-8")
+    )
+    assert {e["family"] for e in baseline["entries"]}.isdisjoint({"T", "N"})
+
+
+@pytest.mark.unit
+def test_tn_findings_equal_the_committed_golden_report(
+    policy: ModelHardcodedModelConfigPolicy,
+) -> None:
+    golden = yaml.safe_load(
+        (CORPUS_DIR / "golden_tn_findings.yaml").read_text(encoding="utf-8")
+    )["findings"]
+    actual: dict[str, list[dict[str, object]]] = {}
+    for name in golden:
+        path = FIXTURES[name]["path"]
+        assert isinstance(path, str)
+        text = (CORPUS_DIR / name).read_text(encoding="utf-8")
+        actual[name] = [
+            {
+                "line": f.line,
+                "family": f.family,
+                "matched_text": f.matched_text,
+                "path_class": f.path_class,
+            }
+            for f in scan(path, text, policy)
+        ]
+    assert actual == golden
+    assert set(golden) >= set(_TN_VIOLATIONS)

@@ -1,0 +1,5 @@
+# ceiling: opus
+name: x  # engine: codex
+lane:
+  # order: [sonnet, opus]
+  size: 1

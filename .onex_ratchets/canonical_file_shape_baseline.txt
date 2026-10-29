@@ -402,6 +402,7 @@ src/omnibase_core/handlers/handler_evidence_admissibility.py
 src/omnibase_core/handlers/handler_finding_baseline.py
 src/omnibase_core/handlers/handler_finding_baseline_cli.py
 src/omnibase_core/handlers/handler_freestanding_imperative_io.py
+src/omnibase_core/handlers/handler_hardcoded_model_tier_engine.py
 src/omnibase_core/handlers/handler_imperative_allowlist_ratchet.py
 src/omnibase_core/handlers/handler_imperative_contract_guard.py
 src/omnibase_core/handlers/handler_imperative_contract_guard_cli.py

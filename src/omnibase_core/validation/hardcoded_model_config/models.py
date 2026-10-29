@@ -14,6 +14,10 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.validation.model_hardcoded_model_config_tier_engine_vocabulary import (
+    ModelHardcodedModelConfigTierEngineVocabulary,
+)
+
 __all__ = [
     "LiteralFamily",
     "LiteralPathClass",
@@ -28,8 +32,9 @@ __all__ = [
 
 # M: model id. E: endpoint. E-LAN: a private or lab-subnet host. D: a lab
 # deployment fact (lab host name or lab port, OMN-21147). R: a retired lab
-# value. L: an example file loaded by code.
-LiteralFamily = Literal["M", "E", "E-LAN", "D", "R", "L"]
+# value. L: an example file loaded by code. T: a model tier alias. N: an engine
+# name of the engine ladder (K6, OMN-21463).
+LiteralFamily = Literal["M", "E", "E-LAN", "D", "R", "L", "T", "N"]
 
 LiteralPathClass = Literal[
     "HISTORICAL",
@@ -62,7 +67,7 @@ class ModelHardcodedModelConfigPathClass(BaseModel):
     )
 
 
-class ModelHardcodedModelConfigPolicy(BaseModel):
+class ModelHardcodedModelConfigPolicy(ModelHardcodedModelConfigTierEngineVocabulary):
     """The whole allowlist and every detector input. Lives in ``policy.yaml``."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -94,27 +99,6 @@ class ModelHardcodedModelConfigPolicy(BaseModel):
     retired_values: tuple[str, ...] = Field(
         description="Exact retired lab strings (R); matched in comments too"
     )
-
-
-class ModelHardcodedModelConfigLabDenylist(BaseModel):
-    """The operator's private list of dead endpoints (OMN-20939) and lab
-    deployment facts (OMN-21147).
-
-    Lives outside this repository, in the workspace config root's vocabularies,
-    and is added to the policy's ``retired_values``, ``lab_host_names`` and
-    ``lab_ports`` when present.
-    """
-
-    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
-
-    schema_version: int = Field(ge=1, description="Vocabulary schema version")
-    retired_values: tuple[str, ...] = Field(
-        min_length=1, description="Exact retired endpoint strings (family R)"
-    )
-    lab_host_names: tuple[str, ...] = Field(
-        default=(), description="Lab host names (family D)"
-    )
-    lab_ports: tuple[int, ...] = Field(default=(), description="Lab ports (family D)")
 
 
 class ModelHardcodedModelConfigScanInput(BaseModel):

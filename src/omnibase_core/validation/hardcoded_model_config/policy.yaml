@@ -100,7 +100,7 @@ path_classes:
   - name: SOURCE
     globs:
       - "**"
-    families: [M, E, E-LAN, D, R, L]
+    families: [M, E, E-LAN, D, R, L, T, N]
 
 # Family M: the plan's P1 model-family regex, applied case-insensitively.
 model_id_pattern: >-
@@ -146,3 +146,38 @@ retired_values:
   - "ds4-flash"
   - "qwen38-serve"
   - "BIFROST_LOCAL_DS_V4_FLASH"
+
+# Family T (OMN-21463, K6): a model tier alias is a model choice. It is refused as
+# the value of one of tier_keys, inside a Literal[...] and inside a tuple, list or
+# set. The aliases are the Claude rungs of the engine ladder and the host-engine
+# ids that name them; the operator's private vocabulary may add more.
+tier_aliases:
+  - sonnet
+  - opus
+  - haiku
+  - claude_sonnet
+  - claude_opus
+  - claude_haiku
+
+tier_keys:
+  - ceiling
+  - floor
+  - model
+  - engine
+  - ladder
+  - order
+  - tier
+  - default_tier
+  - rung
+
+# Family N (OMN-21463, K6): an engine name of the engine ladder (the rungs and
+# host engines of node_remote_lane_compute's engine_ladder that are not tier
+# aliases), as a whole string value, an enum member, a Literal[...] member or an
+# alias-dict key. A tier alias used as an alias-dict key is family N too. The
+# ladder is contract data; this list is the detector's vocabulary of it.
+engine_names:
+  - code-edit
+  - glm
+  - codex
+  - antigravity
+  - local-agent

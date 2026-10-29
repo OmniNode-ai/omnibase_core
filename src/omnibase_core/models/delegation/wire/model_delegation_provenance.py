@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Self
+from typing import Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -25,9 +25,13 @@ class ModelDelegationProvenance(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    source: Literal["claude-code", "codex", "external-client"] = Field(
+    source: str = Field(
         ...,
-        description="Registered adapter source at delegation ingress.",
+        description=(
+            "Registered adapter source at delegation ingress. The registered "
+            "adapter names are contract data of the ingress, not a closed list "
+            "in this model."
+        ),
     )
     traffic_class: EnumDelegationTrafficClass = Field(
         default=EnumDelegationTrafficClass.UNCLASSIFIED,
@@ -47,10 +51,13 @@ class ModelDelegationProvenance(BaseModel):
         description="Named request initiator, when one was declared at ingress.",
     )
 
-    @field_validator("source_surface", "requested_by")
+    @field_validator("source", "source_surface", "requested_by")
     @classmethod
     def validate_optional_identifier(cls, value: str | None) -> str | None:
-        """Reject blank or padded identifiers so stored values are query-stable."""
+        """Reject blank or padded identifiers so stored values are query-stable.
+
+        ``source`` is required, so only the optional fields can be ``None`` here.
+        """
         if value is not None and (not value.strip() or value != value.strip()):
             raise ValueError("provenance identifiers must be nonblank and unpadded")
         return value

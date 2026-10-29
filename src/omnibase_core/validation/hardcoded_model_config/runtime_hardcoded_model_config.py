@@ -47,6 +47,9 @@ from omnibase_core.handlers.handler_private_vocabulary_resolution import (
     resolve_private_vocabulary,
 )
 from omnibase_core.models.private_vocabulary import ModelPrivateVocabularyResolution
+from omnibase_core.models.validation.model_hardcoded_model_config_lab_denylist import (
+    ModelHardcodedModelConfigLabDenylist,
+)
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 from omnibase_core.validation.hardcoded_model_config.handler import (
     HandlerHardcodedModelConfigCompute,
@@ -58,7 +61,6 @@ from omnibase_core.validation.hardcoded_model_config.models import (
     ModelHardcodedModelConfigBaseline,
     ModelHardcodedModelConfigBaselineEntry,
     ModelHardcodedModelConfigFinding,
-    ModelHardcodedModelConfigLabDenylist,
     ModelHardcodedModelConfigPolicy,
     ModelHardcodedModelConfigScanInput,
 )
@@ -159,8 +161,9 @@ def load_policy(
             ) from exc
         policy = policy.model_copy(
             update={
-                field: _union(getattr(policy, field), getattr(denylist, field))
-                for field in ("retired_values", "lab_host_names", "lab_ports")
+                name: _union(getattr(policy, name), values)
+                for name, values in denylist
+                if name != "schema_version"
             }
         )
     return policy
@@ -297,11 +300,7 @@ def _print_finding(finding: ModelHardcodedModelConfigFinding) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="check-hardcoded-model-config-compute",
-        description=(
-            "Refuse new hardcoded lab model configuration: model ids, inference "
-            "endpoints, private and lab-subnet hosts, retired lab values and "
-            "loaded example files (OMN-19252)."
-        ),
+        description="Refuse hardcoded model config, tier aliases and engine names.",
     )
     parser.add_argument("paths", nargs="*", help="Files to scan (pre-commit mode)")
     parser.add_argument(

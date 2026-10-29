@@ -178,3 +178,29 @@ def test_family_d_entries_are_not_judged_without_the_vocabulary() -> None:
         [], [entry], scanned, frozenset(), unjudged_families=frozenset({"D"})
     )
     assert stale == []
+
+
+@pytest.mark.unit
+def test_private_vocabulary_adds_tier_and_engine_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """OMN-21463: families T and N take further names from the private vocabulary."""
+    _write_vocabulary(
+        tmp_path,
+        f'schema_version: 1\nretired_values:\n  - "{DEAD_ENDPOINT}"\n'
+        'tier_aliases:\n  - "fixturetier"\ntier_keys:\n  - "fixturecap"\n'
+        'engine_names:\n  - "fixtureengine"\n',
+    )
+    monkeypatch.setenv("ONEX_WORKSPACE_CONFIG_ROOT", str(tmp_path))
+    policy = _load_policy()
+    assert {"fixturetier", "sonnet"} <= set(policy.tier_aliases)
+    assert {"fixturecap", "ceiling"} <= set(policy.tier_keys)
+    assert {"fixtureengine", "codex"} <= set(policy.engine_names)
+    families = [
+        [f.family for f in scan("src/pkg/a.py", text, policy)]
+        for text in (
+            'fixturecap = "fixturetier"\n',
+            'ENGINE = {"fixtureengine": 1}\n',
+        )
+    ]
+    assert families == [["T"], ["N"]]
