@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -116,7 +117,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
             step.get("with", {}).get("repository") != "OmniNode-ai/onex_change_control"
         )
     checkout = _step("Check out the pull request head")
-    assert checkout["uses"] in {"actions/checkout@v7", "actions/checkout@v7.0.1"}
+    assert re.fullmatch(r"actions/checkout@[0-9a-f]{40}", checkout["uses"])
     assert checkout["with"] == {
         "repository": "${{ github.repository }}",
         "ref": "${{ github.event.pull_request.head.sha }}",
@@ -125,10 +126,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "path": ".dod-verify/head_home/${{ github.event.repository.name }}",
     }
     assert _step("Set up Python 3.13")["with"]["python-version"] == "3.13"
-    assert _step("Install uv")["uses"] in {
-        "astral-sh/setup-uv@v7",
-        "astral-sh/setup-uv@v10.3.0",
-    }
+    assert re.fullmatch(r"astral-sh/setup-uv@[0-9a-f]{40}", _step("Install uv")["uses"])
 
 
 def test_caller_scripts_use_env_for_expression_values() -> None:

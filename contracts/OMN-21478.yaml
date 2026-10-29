@@ -114,8 +114,8 @@ dod_evidence:
     binds_ac: [AC5]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_internal_sibling_pins.py
-          -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_first_party_ref_parameters.py
+          tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21478-pin-currency-dependency-bump
     description: The dependency pin bump handler rewrites the omnibase-core tag for opted-in consumers
@@ -136,8 +136,10 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: |
-          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_internal_sibling_pins.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -F 'if merges > contract.max_trailing_merges or hours > contract.max_trailing_hours:' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/checker_first_party_ref.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'merges > policy.max_trailing_merges' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/checker_first_party_ref.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F '> timedelta(hours=policy.max_trailing_hours)' > /dev/null &&
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'source["tag"] = dependency_tag' > /dev/null
         cwd: ${OMNI_HOME}/omnibase_core

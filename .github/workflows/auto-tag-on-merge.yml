@@ -57,7 +57,7 @@ jobs:
       # separate credential file and includes it through `includeIf.gitdir`, so
       # it overrides the App credential in the push URL below and the push
       # authenticates as github-actions[bot] again.
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
 
@@ -100,7 +100,7 @@ jobs:
       - name: Mint onexbot-occ-writer app token
         id: app-token
         if: steps.check.outputs.exists == 'false'
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510
         with:
           app-id: ${{ secrets.ONEXBOT_OCC_APP_ID }}
           private-key: ${{ secrets.ONEXBOT_OCC_PRIVATE_KEY }}

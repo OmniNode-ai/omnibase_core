@@ -1286,16 +1286,12 @@
 - id: check-internal-sibling-pins
   name: Internal siblings resolve from dev merge tags (OMN-19998)
   description: >
-    Internal siblings are consumed from the dev merge tag dev-<UTC YYYYMMDDHHMMSS>-<sha12>, not a release
-    (RULINGs 2026-10-16T07:34:18Z and 2026-10-16T09:35:49Z). For every internal sibling in omnibase_core's
-    packaged contracts/internal_sibling_pins.yaml that pyproject.toml declares, refuse a missing [tool.uv.sources]
-    entry, a rev or direct URL sha, a release tag, a branch, any other ref or non-git source, a git source
-    naming another repository, and an exact == version. CI runs the same node through .github/workflows/internal-sibling-pins.yml.
+    Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
+    Third-party workflow actions require full commit SHAs.
   language: python
-  entry: python -m omnibase_core.handlers.handler_internal_sibling_pins_cli
-  args: [--no-staleness]
-  files: (^|/)pyproject\.toml$
-  pass_filenames: true
+  entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
+  files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
+  pass_filenames: false
   require_serial: true
   stages: [pre-commit]
 
@@ -1340,15 +1336,12 @@
 - id: check-action-pins
   name: Workflow action pins (OMN-17427)
   description: >
-    Third-party `uses:` refs in .github/workflows must be a full 40-hex commit sha. First-party refs (the
-    organisations the repository's .action-pin-overlay.yaml names) must be a dev-merge tag matching the
-    overlay's tag pattern; a first-party sha is refused unless the overlay lists that exact value as a
-    known exception with a reason, and a first-party @main is a finding when the overlay keeps it. The
-    overlay is the only source of the organisation, the tag pattern and the exceptions.
+    Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
+    Third-party workflow actions require full commit SHAs.
   language: python
-  entry: python -m omnibase_core.handlers.handler_action_pin_cli
-  files: ^\.github/workflows/[^/]+\.ya?ml$
-  pass_filenames: true
+  entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
+  files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
+  pass_filenames: false
   require_serial: true
   stages: [pre-commit]
 

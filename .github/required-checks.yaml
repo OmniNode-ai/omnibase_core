@@ -101,7 +101,7 @@ gates:
     producer_kind: cross_repo
     caller_workflow: call-reject-skip.yml
     caller_job: call-reject-skip-token
-    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@main"
+    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@dev-20261028182048-9b4a103acd8d"
     skip_semantics: never
     rationale: "Live required status check on omnibase_core dev branch protection (cross-repo reusable
       caller)."
@@ -781,7 +781,7 @@ gates:
     producer_kind: cross_repo
     caller_workflow: call-reject-skip.yml
     caller_job: call-reject-skip-token
-    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@4358450ccbba0cee11e390208dd0b8b1728e94ab"
+    cross_repo_ref: "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml@dev-20261024070526-1781420eb3f9"
     skip_semantics: never
     rationale: "OMN-20074 (OCC retirement S6 part 1): the pinned reusable (omniclaude#2540) no longer
       runs the nested change-control preflight, so nothing produces this context. It leaves dev branch

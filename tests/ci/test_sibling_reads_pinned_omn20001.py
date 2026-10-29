@@ -8,6 +8,10 @@ merge in one repo cannot turn another repo red. This gate parses every
 ``.github/workflows`` file and fails on a cross-repo ``uses:`` or a sibling
 ``actions/checkout`` whose ``ref`` is absent or a branch name.
 
+OMN-21495 (K11): a first-party ``uses:`` ref is a dev-merge tag. A checkout
+``with.ref`` still names a commit sha, which the first-party-ref checker does
+not rewrite. Either form is a pin; a branch name or no ref is not.
+
 An expression ref (``${{ ... }}``) is accepted: it is resolved from a recorded
 sha at run time (the receipt-gate / occ-preflight OCC evidence sha, the
 ``core-ref`` input), not a moving branch.
@@ -25,6 +29,7 @@ WORKFLOWS_DIR = Path(__file__).resolve().parent.parent.parent / ".github" / "wor
 _ORG = "OmniNode-ai/"
 _SELF = "omnibase_core"
 _SHA = re.compile(r"^[0-9a-f]{40}$")
+_DEV_MERGE_TAG = re.compile(r"^dev-[0-9]{14}-[0-9a-f]{12}$")
 # Matrix-target checkouts are the WRITE side of the producer-notifies-consumer
 # flow (they push a pin-bump PR to the downstream repo), not a read for a check.
 _WRITE_TARGET = "${{ matrix.repo }}"
@@ -72,7 +77,11 @@ def _is_pinned(ref: str | None) -> bool:
     if ref is None:
         return False
     ref = str(ref)
-    return bool(_SHA.match(ref)) or ref.startswith("${{")
+    return (
+        bool(_SHA.match(ref))
+        or bool(_DEV_MERGE_TAG.match(ref))
+        or ref.startswith("${{")
+    )
 
 
 @pytest.mark.unit
@@ -106,6 +115,7 @@ jobs:
         with:
           repository: OmniNode-ai/omnibase_spi
           ref: b6117e4efb1b734e974a8695f175cdac1f964db9
+      - uses: OmniNode-ai/omniclaude/.github/workflows/y.yml@dev-20261024003136-bdfb38684f2b
 """,
         encoding="utf-8",
     )

@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_first_party_tag_inventory_effect
+node_id: node_first_party_tag_inventory_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_support_node]
+description: >-
+  Lists a sibling repository's dev-merge tags using the explicit URL template, git binary, arguments,
+  pattern and timeout supplied in the request policy.
+input_model: omnibase_core.models.validation.model_first_party_tag_inventory_request.ModelFirstPartyTagInventoryRequest
+output_model: omnibase_core.models.validation.model_first_party_tag_inventory_result.ModelFirstPartyTagInventoryResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeFirstPartyTagInventoryEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
