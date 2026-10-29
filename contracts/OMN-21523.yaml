@@ -1,0 +1,58 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21523
+title: "omnibase_core: the canonical-file-shape index run compares with the merge base of the target branch"
+summary: The canonical-file-shape pre-commit hook compared the index with branch HEAD while CI compares
+  with the merge base of the target branch. On a branch whose earlier commit installed the burn-down baseline
+  file, the next correct burn-down line was refused as baseline-growth by the hook and accepted by CI.
+  The index run now resolves its base to the merge base of HEAD and the first existing ref of the contract
+  parameter target_branch_refs, and the commit-msg stage reads the messages of that range.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21523-merge-base
+    statement: The index run of canonical-file-shape judges the whole change against the merge base with
+      the target branch, as the CI run does, and real baseline growth is still refused.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a correct burn-down line on a branch that installed the burn-down file in an
+          earlier commit is accepted by the index run, and the old comparison base (HEAD) refuses the
+          same line -- falsifier: `uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_index_base_is_merge_base.py
+          -q` fails on the first test if resolve_revisions returns HEAD"
+      - id: AC2
+        statement: "AC2: growth of a baseline, an entry for a file the change adds, an entry the baseline
+          already lists and a new noncanonical file are still refused on a branch -- falsifier: the four
+          still-refused tests of the same file fail when the comparison base is removed"
+evidence_requirements:
+  - kind: tests
+    description: The canonical-file-shape node tests, including the planted merge-base fixtures.
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute tests/unit/validation/test_checker_canonical_file_shape.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21523-ac1-accepted
+    description: The merge-base fixtures pass, including the planted case in which the old base refuses
+      the same correct line.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_index_base_is_merge_base.py
+          -n 0 -q
+        cwd: .
+    binds_ac:
+      - AC1
+  - id: dod-omn21523-ac2-growth
+    description: The existing canonical-file-shape rule tests and the contract parameter table pass, so
+      real growth is still refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute tests/unit/validation/test_checker_canonical_file_shape.py
+          -n 0 -q
+        cwd: .
+    binds_ac:
+      - AC2
