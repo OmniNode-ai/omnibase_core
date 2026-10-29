@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_cosmetic_lint_check_compute
+node_id: node_cosmetic_lint_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Judges an explicit repository snapshot against the cosmetic standards spec (SPDX headers, pyproject
+  fields, pre-commit revisions, README badges, .github templates) from the cosmetic_lint rule data and
+  returns the findings (OMN-20074, OMN-21518).
+input_model: omnibase_core.models.nodes.cosmetic_lint.model_cosmetic_lint_input.ModelCosmeticLintInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_cosmetic_lint:HandlerCosmeticLint
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

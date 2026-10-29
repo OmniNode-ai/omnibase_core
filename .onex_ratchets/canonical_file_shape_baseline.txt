@@ -375,7 +375,6 @@ src/omnibase_core/gate/config_loader.py
 src/omnibase_core/gate/diff_hash.py
 src/omnibase_core/gate/receipt_canonical.py
 src/omnibase_core/handlers/handler_canonical_location_rules.py
-src/omnibase_core/handlers/handler_cosmetic_lint.py
 src/omnibase_core/handlers/handler_dependency_direction.py
 src/omnibase_core/handlers/handler_dependency_direction_cli.py
 src/omnibase_core/handlers/handler_dependency_direction_rules.py

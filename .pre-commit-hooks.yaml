@@ -66,7 +66,7 @@
     Cross-repo cosmetic linter enforcing OmniNode platform standards. Ported from onex_change_control
     (OMN-20074, S8) under the same hook id, so a consumer changes only repo: and rev:.
   language: python
-  entry: python -m omnibase_core.handlers.handler_cosmetic_lint check
+  entry: python -m omnibase_core.nodes.node_cosmetic_lint_check_compute.runtime_cosmetic_lint_check check
   types: [file]
   pass_filenames: false
   always_run: true
