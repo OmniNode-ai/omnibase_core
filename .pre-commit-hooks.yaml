@@ -1332,3 +1332,41 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-hook-writes
+  name: Pre-commit hooks check, never rewrite (OMN-21498)
+  description: >
+    A hook in .pre-commit-config.yaml or .pre-commit-hooks.yaml whose entry or args rewrite files, or
+    that is a known rewriting hook id run without its check-only argument, is refused. The signals, the
+    known ids and the scan set are the rule rows of hook_writes.validation.yaml; a hook file that yields
+    no hooks is an issue, never a pass.
+  language: python
+  entry: python -m omnibase_core.validation.validator_hook_writes
+  files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: commit-hygiene
+  name: Commit hygiene (final newline, staged tmp/ files; check-only)
+  description: >
+    Refuse a staged file without its final newline (missing_final_newline), one with more than one (extra_final_newline)
+    and a staged tmp/ file (staged_tmp_file). Each rule is a refusal; nothing is written or deleted. The
+    patterns are the rule rows of commit_hygiene.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  types: [file]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: commit-hygiene-message
+  name: Reject AI-generated Co-Authored-By trailers in commit messages
+  description: >
+    Refuse a commit message carrying an AI co-author trailer (ai_coauthor_trailer) and leave the message
+    as written. The trailer pattern is a rule row of commit_hygiene.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  pass_filenames: true
+  require_serial: true
+  stages: [commit-msg]
