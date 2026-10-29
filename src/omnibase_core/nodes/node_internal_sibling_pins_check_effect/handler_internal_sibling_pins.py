@@ -41,6 +41,7 @@ import re
 import tomllib
 from collections.abc import Iterator, Mapping
 from datetime import UTC, datetime, timedelta
+from functools import lru_cache
 from typing import Final, Literal
 
 from omnibase_core.models.validation.model_validation_finding import (
@@ -57,6 +58,9 @@ from omnibase_core.models.version_drift.model_internal_sibling_pins_contract imp
 from omnibase_core.models.version_drift.model_internal_sibling_pins_input import (
     ModelInternalSiblingPinsInput,
 )
+from omnibase_core.models.version_drift.model_internal_sibling_pins_rules import (
+    ModelInternalSiblingPinsRules,
+)
 
 __all__ = [
     "VALIDATOR_ID",
@@ -69,22 +73,10 @@ __all__ = [
 VALIDATOR_ID: Final[str] = "internal_sibling_pins"
 _PROFILE: Final[Literal["strict", "default", "advisory"]] = "default"
 
-_NAME = re.compile(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)")
-_SHA = re.compile(r"^[0-9a-f]{7,40}$")
-# Consume each numeric component and suffix once; never repartition a failed ref.
-_RELEASE_TAG = re.compile(r"^v?\d++(?:\.\d++)++(?:[.-]?[A-Za-z0-9]++)*+$")
-# An exact version clause: == or === followed by a version with no wildcard.
-_EXACT = re.compile(r"(?:^|[,\s(])===?\s*[^,;\s*]+(?=\s*(?:[,;)]|$))")
-_GIT_URL = re.compile(r"^git\+(?P<url>[^@#\s]+?)(?:@(?P<ref>[^#\s]+))?(?:#.*)?$")
 
-_REMEDIATION: Final[str] = (
-    "Pin the sibling in [tool.uv.sources] to its newest green dev merge tag: "
-    '<dist> = { git = "https://github.com/OmniNode-ai/<repo>.git", tag = '
-    '"dev-<YYYYMMDDHHMMSS>-<sha12>" }, and keep a version range (never ==) in '
-    "[project] dependencies for external installs. Repin stale pins to the newest "
-    "dev tag. RULINGs 2026-10-16T07:34:18Z "
-    "and 2026-10-16T09:35:49Z (OMN-19998)."
-)
+@lru_cache(maxsize=32)
+def _re(pattern: str) -> re.Pattern[str]:
+    return re.compile(pattern)
 
 
 def normalize_name(name: str) -> str:
@@ -92,16 +84,18 @@ def normalize_name(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def classify_ref(ref: str | None, dev_tag: re.Pattern[str]) -> str | None:
+def classify_ref(
+    ref: str | None, dev_tag: re.Pattern[str], rules: ModelInternalSiblingPinsRules
+) -> str | None:
     """None for a dev merge tag; else the rule a git ref breaks."""
     if ref is None or not ref.strip():
         return "branch"
     ref = ref.strip()
     if dev_tag.match(ref):
         return None
-    if _SHA.match(ref):
+    if _re(rules.sha_pattern).match(ref):
         return "bare_sha"
-    if _RELEASE_TAG.match(ref):
+    if _re(rules.release_tag_pattern).match(ref):
         return "release_tag"
     return "not_dev_tag"
 
@@ -147,12 +141,14 @@ def _uv(document: Mapping[str, object]) -> Mapping[str, object]:
 
 
 def declared_sibling_repos(
-    document: Mapping[str, object], contract: ModelInternalSiblingPinsContract
+    document: Mapping[str, object],
+    contract: ModelInternalSiblingPinsContract,
+    rules: ModelInternalSiblingPinsRules,
 ) -> tuple[str, ...]:
     """Sibling repositories judged in this document, excluding the consumer."""
     names = set()
     for _, requirement in _requirement_strings(document):
-        match = _NAME.match(requirement)
+        match = _re(rules.name_pattern).match(requirement)
         if match:
             names.add(normalize_name(match.group(1)))
     sources = _uv(document).get("sources")
@@ -174,6 +170,7 @@ class HandlerInternalSiblingPins:
     def handle(self, request: ModelInternalSiblingPinsInput) -> ModelValidationReport:
         """Definition-B canonical entry-point (OMN-14355). Pure, no I/O, no clock."""
         contract = request.contract
+        rules = request.rules
         dev_tag = re.compile(contract.dev_tag_pattern)
         dev_tags = (
             {sibling.repo: sibling.tags for sibling in request.dev_tags}
@@ -189,7 +186,7 @@ class HandlerInternalSiblingPins:
                 errors.append(f"{file.path}: pyproject does not parse: {exc}")
                 continue
             findings.extend(
-                self._judge(file.path, document, contract, dev_tag, dev_tags)
+                self._judge(file.path, document, contract, rules, dev_tag, dev_tags)
             )
         if errors:
             return ModelValidationReport.from_runtime_errors(
@@ -202,6 +199,7 @@ class HandlerInternalSiblingPins:
         path: str,
         document: Mapping[str, object],
         contract: ModelInternalSiblingPinsContract,
+        rules: ModelInternalSiblingPinsRules,
         dev_tag: re.Pattern[str],
         dev_tags: Mapping[str, tuple[str, ...]] | None,
     ) -> Iterator[ModelValidationFinding]:
@@ -221,7 +219,7 @@ class HandlerInternalSiblingPins:
 
         declared: dict[str, list[str]] = {}
         for table, requirement in _requirement_strings(document):
-            match = _NAME.match(requirement)
+            match = _re(rules.name_pattern).match(requirement)
             if not match:
                 continue
             name = normalize_name(match.group(1))
@@ -233,15 +231,16 @@ class HandlerInternalSiblingPins:
             if url:
                 declared[name].append("url")
                 yield from self._judge_url(
-                    location, name, url, siblings[name].repo, contract, dev_tag
+                    location, name, url, siblings[name].repo, contract, rules, dev_tag
                 )
                 continue
             specifier = head[match.end() :].split(";", 1)[0]
-            if _EXACT.search(specifier):
+            if _re(rules.exact_pattern).search(specifier):
                 yield self._finding(
                     location,
                     f"{location}: {name} is pinned to an exact release "
                     f"({requirement.strip()}) (rule release_pin)",
+                    rules,
                 )
 
         for name in sorted(set(declared) | (set(sources) & set(siblings))):
@@ -255,13 +254,21 @@ class HandlerInternalSiblingPins:
                         location,
                         f"{location}: {name} has no [tool.uv.sources] entry, so uv "
                         "sync resolves a release from the index (rule missing_source)",
+                        rules,
                     )
                 continue
             entries = sources[name]
             items = entries if isinstance(entries, list) else [entries]
             for item in items:
                 yield from self._judge_source(
-                    location, name, item, sibling.repo, contract, dev_tag, dev_tags
+                    location,
+                    name,
+                    item,
+                    sibling.repo,
+                    contract,
+                    rules,
+                    dev_tag,
+                    dev_tags,
                 )
 
     def _judge_source(
@@ -271,6 +278,7 @@ class HandlerInternalSiblingPins:
         source: object,
         repo: str,
         contract: ModelInternalSiblingPinsContract,
+        rules: ModelInternalSiblingPinsRules,
         dev_tag: re.Pattern[str],
         dev_tags: Mapping[str, tuple[str, ...]] | None,
     ) -> Iterator[ModelValidationFinding]:
@@ -284,6 +292,7 @@ class HandlerInternalSiblingPins:
                 location,
                 f"{location}: {name} resolves from a non-git source ({kind}), not a "
                 "dev merge tag (rule not_dev_tag)",
+                rules,
             )
             return
         expected = _repo_url(f"https://github.com/{contract.github_org}/{repo}")
@@ -292,35 +301,46 @@ class HandlerInternalSiblingPins:
                 location,
                 f"{location}: {name} git source {source['git']} is not "
                 f"{expected} (rule wrong_repo)",
+                rules,
             )
         if "branch" in source:
             yield self._finding(
                 location,
                 f"{location}: {name} follows branch {source['branch']!r}, which "
                 "moves (rule branch)",
+                rules,
             )
             return
         if "rev" in source:
             rev = str(source["rev"])
-            rev_rule = classify_ref(rev, dev_tag) or "not_dev_tag"
+            rev_rule = classify_ref(rev, dev_tag, rules) or "not_dev_tag"
             yield self._finding(
                 location,
                 f"{location}: {name} is pinned by rev {rev!r}; pin tag = a dev "
                 f"merge tag (rule {rev_rule})",
+                rules,
             )
             return
         tag = source.get("tag")
-        rule = classify_ref(None if tag is None else str(tag), dev_tag)
+        rule = classify_ref(None if tag is None else str(tag), dev_tag, rules)
         if rule is not None:
             shown = f"tag {tag!r}" if tag is not None else "no ref"
             yield self._finding(
                 location,
                 f"{location}: {name} git source has {shown}, not a dev merge tag "
                 f"(rule {rule})",
+                rules,
             )
         elif dev_tags is not None:
             yield from self._judge_staleness(
-                location, name, str(tag).strip(), repo, contract, dev_tag, dev_tags
+                location,
+                name,
+                str(tag).strip(),
+                repo,
+                contract,
+                rules,
+                dev_tag,
+                dev_tags,
             )
 
     def _judge_staleness(
@@ -330,6 +350,7 @@ class HandlerInternalSiblingPins:
         pinned: str,
         repo: str,
         contract: ModelInternalSiblingPinsContract,
+        rules: ModelInternalSiblingPinsRules,
         dev_tag: re.Pattern[str],
         dev_tags: Mapping[str, tuple[str, ...]],
     ) -> Iterator[ModelValidationFinding]:
@@ -339,6 +360,7 @@ class HandlerInternalSiblingPins:
                 location,
                 f"{location}: {name} pinned tag {pinned!r} is absent from the "
                 f"supplied dev tags for {repo} (rule unverifiable_pin)",
+                rules,
             )
             return
         newest = max(tags)
@@ -355,6 +377,7 @@ class HandlerInternalSiblingPins:
                 location,
                 f"{location}: {name} cannot read UTC timestamps for pinned tag "
                 f"{pinned!r} and newest tag {newest!r} (rule unverifiable_pin)",
+                rules,
             )
             return
         hours = (newest_time - pinned_time) / timedelta(hours=1)
@@ -365,6 +388,7 @@ class HandlerInternalSiblingPins:
                 f"{newest!r} by {merges} merges and {hours:g} hours; bounds are "
                 f"{contract.max_trailing_merges} merges and "
                 f"{contract.max_trailing_hours} hours (rule stale_pin)",
+                rules,
             )
 
     def _judge_url(
@@ -374,14 +398,16 @@ class HandlerInternalSiblingPins:
         url: str,
         repo: str,
         contract: ModelInternalSiblingPinsContract,
+        rules: ModelInternalSiblingPinsRules,
         dev_tag: re.Pattern[str],
     ) -> Iterator[ModelValidationFinding]:
-        match = _GIT_URL.match(url.split(";", 1)[0].strip())
+        match = _re(rules.git_url_pattern).match(url.split(";", 1)[0].strip())
         if not match:
             yield self._finding(
                 location,
                 f"{location}: {name} is a non-git direct URL, not a dev merge tag "
                 "(rule not_dev_tag)",
+                rules,
             )
             return
         expected = _repo_url(f"https://github.com/{contract.github_org}/{repo}")
@@ -390,24 +416,28 @@ class HandlerInternalSiblingPins:
                 location,
                 f"{location}: {name} direct URL {match.group('url')} is not "
                 f"{expected} (rule wrong_repo)",
+                rules,
             )
         ref = match.group("ref")
-        rule = classify_ref(ref, dev_tag)
+        rule = classify_ref(ref, dev_tag, rules)
         if rule is not None:
             yield self._finding(
                 location,
                 f"{location}: {name} direct URL ref {ref!r} is not a dev merge tag "
                 f"(rule {rule})",
+                rules,
             )
 
     @staticmethod
-    def _finding(location: str, message: str) -> ModelValidationFinding:
+    def _finding(
+        location: str, message: str, rules: ModelInternalSiblingPinsRules
+    ) -> ModelValidationFinding:
         return ModelValidationFinding(
             validator_id=VALIDATOR_ID,
             severity="FAIL",
             location=location,
             message=message,
-            remediation=_REMEDIATION,
+            remediation=rules.remediation,
         )
 
     @staticmethod

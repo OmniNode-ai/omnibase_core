@@ -11,6 +11,7 @@ and every release, sha or branch form of the same pin fails.
 
 from __future__ import annotations
 
+import importlib
 import re
 import subprocess
 import tomllib
@@ -21,14 +22,15 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from omnibase_core.handlers import handler_internal_sibling_pins_cli as cli
-from omnibase_core.handlers.handler_internal_sibling_pins import (
-    HandlerInternalSiblingPins,
-    classify_ref,
-    declared_sibling_repos,
-)
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
+    ModelValidationReportWriteInput,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output import (
+    ModelValidationReportWriteOutput,
 )
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
@@ -39,8 +41,25 @@ from omnibase_core.models.version_drift.model_internal_sibling_pins_contract imp
 from omnibase_core.models.version_drift.model_internal_sibling_pins_input import (
     ModelInternalSiblingPinsInput,
 )
+from omnibase_core.models.version_drift.model_internal_sibling_pins_rules import (
+    ModelInternalSiblingPinsRules,
+)
 from omnibase_core.models.version_drift.model_sibling_dev_tags import (
     ModelSiblingDevTags,
+)
+from omnibase_core.nodes.node_internal_sibling_pins_check_effect import (
+    runtime_internal_sibling_pins_check as cli,
+)
+from omnibase_core.nodes.node_internal_sibling_pins_check_effect.handler_internal_sibling_pins import (
+    HandlerInternalSiblingPins,
+    classify_ref,
+    declared_sibling_repos,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler import (
+    NodeValidationReportWriteEffect,
+)
+from omnibase_core.validation.validator_checker_rule_data import (
+    ValidatorCheckerRuleData,
 )
 
 pytestmark = pytest.mark.unit
@@ -66,11 +85,13 @@ def _judge(
     source: str,
     dev_tags: tuple[ModelSiblingDevTags, ...] | None = None,
     contract: ModelInternalSiblingPinsContract | None = None,
+    rules: ModelInternalSiblingPinsRules | None = None,
 ) -> ModelValidationReport:
     return HandlerInternalSiblingPins().handle(
         ModelInternalSiblingPinsInput(
             files=(ModelSourceFile(path="pyproject.toml", source=source),),
             contract=contract if contract is not None else cli.load_contract(),
+            rules=rules if rules is not None else cli.load_rules(),
             dev_tags=dev_tags,
         )
     )
@@ -229,7 +250,12 @@ def test_dev_tag_source_passes() -> None:
     ],
 )
 def test_release_ref_classification(ref: str, rule: str | None) -> None:
-    assert classify_ref(ref, re.compile(cli.load_contract().dev_tag_pattern)) == rule
+    assert (
+        classify_ref(
+            ref, re.compile(cli.load_contract().dev_tag_pattern), cli.load_rules()
+        )
+        == rule
+    )
 
 
 @pytest.mark.timeout(5)
@@ -473,7 +499,11 @@ constraint-dependencies = ["omninode-intelligence"]
 [tool.uv.sources]
 omnibase-infra = {git = "https://github.com/OmniNode-ai/omnibase_infra.git"}
 """
-    assert set(declared_sibling_repos(tomllib.loads(source), cli.load_contract())) == {
+    assert set(
+        declared_sibling_repos(
+            tomllib.loads(source), cli.load_contract(), cli.load_rules()
+        )
+    ) == {
         sibling.repo
         for sibling in cli.load_contract().siblings
         if sibling.repo != "omnibase_core"
@@ -495,7 +525,10 @@ def test_reusable_workflow_is_called_only_hosted_and_runs_the_handler() -> None:
     assert job["name"] == "Internal Sibling Pins"
     assert job["runs-on"] == "ubuntu-latest"
     run = job["steps"][-1]["run"]
-    assert "python -m omnibase_core.handlers.handler_internal_sibling_pins_cli" in run
+    assert (
+        "python -m omnibase_core.nodes.node_internal_sibling_pins_check_effect.runtime_internal_sibling_pins_check"
+        in run
+    )
     assert '--root "$GITHUB_WORKSPACE/target"' in run
     assert "--no-staleness" not in run
 
@@ -505,7 +538,217 @@ def test_precommit_hook_runs_the_handler_module() -> None:
     hook = next(h for h in hooks if h["id"] == "check-internal-sibling-pins")
     assert (
         hook["entry"]
-        == "python -m omnibase_core.handlers.handler_internal_sibling_pins_cli"
+        == "python -m omnibase_core.nodes.node_internal_sibling_pins_check_effect.runtime_internal_sibling_pins_check"
     )
     assert hook["files"] == r"(^|/)pyproject\.toml$"
     assert "--no-staleness" in hook["args"]
+
+
+NODE_DIR = (
+    REPO_ROOT
+    / "src"
+    / "omnibase_core"
+    / "nodes"
+    / "node_internal_sibling_pins_check_effect"
+)
+_NEVER = "^zzz-never-matches$"
+_CORE_URL = (
+    f"omnibase-core @ git+https://github.com/OmniNode-ai/omnibase_core.git@{DEV_TAG}"
+)
+
+
+def _mutated_rules(rule_id: str, key: str, value: str) -> ModelInternalSiblingPinsRules:
+    contract = cli.load_rule_contract()
+    rows = [
+        row.model_copy(update={"parameters": {**(row.parameters or {}), key: value}})
+        if row.rule_id == rule_id
+        else row
+        for row in contract.rules
+    ]
+    return cli.rules_from_contract(contract.model_copy(update={"rules": rows}))
+
+
+# (rule row, parameter, pyproject, rules before the change, rules after the change)
+PARAMETER_CONTROLS = [
+    (
+        "missing_source",
+        "name_pattern",
+        _pyproject(""),
+        ["missing_source"],
+        "^\\s*(zzz-never-[a-z]+)",
+        [],
+    ),
+    (
+        "bare_sha",
+        "sha_pattern",
+        _pyproject(f'omnibase-core = {{ git = "{CORE_GIT}", tag = "{SHA}" }}'),
+        ["bare_sha"],
+        _NEVER,
+        ["not_dev_tag"],
+    ),
+    (
+        "release_tag",
+        "release_tag_pattern",
+        _pyproject(f'omnibase-core = {{ git = "{CORE_GIT}", tag = "v0.47.48" }}'),
+        ["release_tag"],
+        _NEVER,
+        ["not_dev_tag"],
+    ),
+    (
+        "release_pin",
+        "exact_pattern",
+        _pyproject(
+            f'omnibase-core = {{ git = "{CORE_GIT}", tag = "{DEV_TAG}" }}',
+            deps='"omnibase-core==0.47.0"',
+        ),
+        ["release_pin"],
+        _NEVER,
+        [],
+    ),
+    (
+        "not_dev_tag",
+        "git_url_pattern",
+        _pyproject("", deps=f'"{_CORE_URL}"'),
+        [],
+        _NEVER,
+        ["not_dev_tag"],
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    ("rule_id", "key", "source", "before", "value", "after"), PARAMETER_CONTROLS
+)
+def test_each_rule_parameter_drives_the_verdict(
+    rule_id: str,
+    key: str,
+    source: str,
+    before: list[str],
+    value: str,
+    after: list[str],
+) -> None:
+    assert _rules(_judge(source)) == before
+    assert _rules(_judge(source, rules=_mutated_rules(rule_id, key, value))) == after
+
+
+def test_every_rule_parameter_is_covered_by_a_control() -> None:
+    declared = {
+        (row.rule_id, key)
+        for row in cli.load_rule_contract().rules
+        for key in (row.parameters or {})
+    }
+    covered = {(c[0], c[1]) for c in PARAMETER_CONTROLS} | {
+        ("finding_remediation", "remediation")
+    }
+    assert declared == covered
+
+
+def test_remediation_parameter_is_the_finding_remediation() -> None:
+    source = _pyproject("")
+    default = _judge(source).findings[0].remediation
+    assert default.startswith("Pin the sibling in [tool.uv.sources]")
+    assert default.endswith("(OMN-19998).")
+    changed = _mutated_rules("finding_remediation", "remediation", "Repin it.")
+    assert {f.remediation for f in _judge(source, rules=changed).findings} == {
+        "Repin it."
+    }
+
+
+def test_every_rule_the_handler_names_has_a_contract_row() -> None:
+    emitted = set()
+    for path in NODE_DIR.glob("handler_internal_sibling_pins.py"):
+        emitted |= set(re.findall(r"\(rule (\w+)\)", path.read_text()))
+        emitted |= {"branch", "bare_sha", "release_tag", "not_dev_tag", "stale_pin"}
+    rows = {row.rule_id for row in cli.load_rule_contract().rules}
+    assert emitted <= rows
+    assert {"missing_source", "wrong_repo", "release_pin", "unverifiable_pin"} <= rows
+
+
+def test_a_contract_without_a_rule_row_or_parameter_is_invalid() -> None:
+    contract = cli.load_rule_contract()
+    without_row = contract.model_copy(
+        update={"rules": [r for r in contract.rules if r.rule_id != "bare_sha"]}
+    )
+    with pytest.raises(ModelOnexError):
+        cli.rules_from_contract(without_row)
+    without_key = contract.model_copy(
+        update={
+            "rules": [
+                r.model_copy(update={"parameters": {}})
+                if r.rule_id == "release_pin"
+                else r
+                for r in contract.rules
+            ]
+        }
+    )
+    with pytest.raises(ModelOnexError):
+        cli.rules_from_contract(without_key)
+
+
+def test_an_uncompilable_pattern_is_rejected() -> None:
+    with pytest.raises(ValidationError):
+        _mutated_rules("bare_sha", "sha_pattern", "(")
+
+
+def test_rules_model_is_frozen_and_closed() -> None:
+    rules = cli.load_rules()
+    with pytest.raises(ValidationError):
+        rules.remediation = "x"
+    with pytest.raises(ValidationError):
+        ModelInternalSiblingPinsRules.model_validate(
+            {**rules.model_dump(), "extra_field": "x"}
+        )
+
+
+def test_node_contract_binds_the_handler() -> None:
+    document = yaml.safe_load((NODE_DIR / "contract.yaml").read_text())
+    assert document["name"] == "node_internal_sibling_pins_check_effect"
+    assert document["node_type"] == "compute"
+    routing = document["handler_routing"]
+    assert routing["default_handler"] == (
+        "handler_internal_sibling_pins:HandlerInternalSiblingPins"
+    )
+    module, _, name = routing["default_handler"].partition(":")
+    bound = importlib.import_module(
+        f"omnibase_core.nodes.node_internal_sibling_pins_check_effect.{module}"
+    )
+    assert getattr(bound, name) is HandlerInternalSiblingPins
+    assert document["input_model"] == (
+        f"{ModelInternalSiblingPinsInput.__module__}.ModelInternalSiblingPinsInput"
+    )
+    assert document["output_model"] == (
+        f"{ModelValidationReport.__module__}.ModelValidationReport"
+    )
+
+
+def test_node_modules_hold_no_rule_table() -> None:
+    files = sorted(NODE_DIR.glob("*.py"))
+    assert {f.name for f in files} >= {
+        "handler_internal_sibling_pins.py",
+        "runtime_internal_sibling_pins_check.py",
+    }
+    issues = ValidatorCheckerRuleData().validate(files).issues
+    assert [i for i in issues if i.rule_name == "rule_table_in_checker"] == []
+
+
+def test_cli_resolves_the_report_writer_from_the_container(tmp_path: Path) -> None:
+    written: list[str] = []
+
+    class _Writer(NodeValidationReportWriteEffect):
+        def handle(
+            self, request: ModelValidationReportWriteInput
+        ) -> ModelValidationReportWriteOutput:
+            written.append(request.report_path)
+            return super().handle(request)
+
+    container = cli.build_container(_Writer())
+    (tmp_path / "pyproject.toml").write_text(_pyproject(""))
+    report_path = str(tmp_path / "report.json")
+    assert (
+        cli.main(
+            ["--root", str(tmp_path), "--no-staleness", "--report-json", report_path],
+            container,
+        )
+        == 1
+    )
+    assert written == [report_path]

@@ -12,9 +12,9 @@ from __future__ import annotations
 import re
 import tomllib
 
+import omnibase_core.nodes.node_internal_sibling_pins_check_effect.runtime_internal_sibling_pins_check as pins
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_internal_sibling_pins_cli import load_contract
 from omnibase_core.models.version_drift.model_dependency_pin_bump_request import (
     ModelDependencyPinBumpRequest,
 )
@@ -52,7 +52,7 @@ class HandlerDependencyPinBump:
                 message=(f"repository {repo!r} has no declared dependency_pin"),
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
             )
-        if re.fullmatch(load_contract().dev_tag_pattern, dependency_tag) is None:
+        if re.fullmatch(pins.load_contract().dev_tag_pattern, dependency_tag) is None:
             raise ModelOnexError(
                 message=(f"dependency tag {dependency_tag!r} is not a dev merge tag"),
                 error_code=EnumCoreErrorCode.INVALID_INPUT,

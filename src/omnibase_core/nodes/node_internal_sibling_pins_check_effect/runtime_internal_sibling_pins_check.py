@@ -1,15 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""CLI runtime for the internal sibling pin check (OMN-19998).
+"""CLI runtime for the internal sibling pin check (OMN-19998, OMN-21518).
 
 Backs the ``check-internal-sibling-pins`` pre-commit hook, the reusable
 ``internal-sibling-pins.yml`` workflow every consumer inherits, and manual runs.
 All I/O happens here: the pyproject reads (``node_source_file_gather_effect``),
-the contract read, sibling tag reads via git, and the report write
-(``node_validation_report_write_effect``). ``--no-staleness`` skips remote
-tag reads for offline pre-commit use.
-The verdict is the pure ``HandlerInternalSiblingPins``.
+the contract and rule-row reads, sibling tag reads via git, and the report write
+(``node_validation_report_write_effect``); both effects are resolved from the
+container. ``--no-staleness`` skips remote tag reads for offline pre-commit use.
+The verdict is the pure ``HandlerInternalSiblingPins``; its patterns and
+remediation text are rows of ``internal_sibling_pins.validation.yaml``.
 
 The contract is the one omnibase_core ships in the package, so a consumer reads
 it from the validator's pinned checkout and cannot edit it.
@@ -28,13 +29,15 @@ import argparse
 import subprocess
 import sys
 import tomllib
+from importlib import resources
 from pathlib import Path
 from typing import Final
 
-from omnibase_core.handlers.handler_internal_sibling_pins import (
-    VALIDATOR_ID,
-    HandlerInternalSiblingPins,
-    declared_sibling_repos,
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
+    ModelValidatorSubcontract,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
@@ -54,8 +57,16 @@ from omnibase_core.models.version_drift.model_internal_sibling_pins_contract imp
 from omnibase_core.models.version_drift.model_internal_sibling_pins_input import (
     ModelInternalSiblingPinsInput,
 )
+from omnibase_core.models.version_drift.model_internal_sibling_pins_rules import (
+    ModelInternalSiblingPinsRules,
+)
 from omnibase_core.models.version_drift.model_sibling_dev_tags import (
     ModelSiblingDevTags,
+)
+from omnibase_core.nodes.node_internal_sibling_pins_check_effect.handler_internal_sibling_pins import (
+    VALIDATOR_ID,
+    HandlerInternalSiblingPins,
+    declared_sibling_repos,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
@@ -63,12 +74,25 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
-from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+from omnibase_core.utils.util_safe_yaml_loader import (
+    load_yaml_content_as_model,
+    load_yaml_mapping_no_duplicates,
+)
+from omnibase_core.validation.checker_rule_parameters import rule_string
 
-__all__ = ["DEFAULT_CONTRACT", "load_contract", "main", "read_dev_tags"]
+__all__ = [
+    "DEFAULT_CONTRACT",
+    "build_container",
+    "load_contract",
+    "load_rules",
+    "main",
+    "read_dev_tags",
+    "rules_from_contract",
+]
 
 DEFAULT_CONTRACT: Final[Path] = (
-    Path(__file__).parent.parent / "contracts" / "internal_sibling_pins.yaml"
+    Path(__file__).resolve().parents[2] / "contracts" / "internal_sibling_pins.yaml"
 )
 
 
@@ -77,6 +101,63 @@ def load_contract(path: Path = DEFAULT_CONTRACT) -> ModelInternalSiblingPinsCont
     return load_yaml_content_as_model(
         path.read_text("utf-8"), ModelInternalSiblingPinsContract
     )
+
+
+def load_rule_contract() -> ModelValidatorSubcontract:
+    """The ``internal_sibling_pins.validation.yaml`` contract shipped in the package."""
+    raw = resources.files("omnibase_core.validation.contracts").joinpath(
+        "internal_sibling_pins.validation.yaml"
+    )
+    document = load_yaml_mapping_no_duplicates(
+        raw.read_text("utf-8"), source="internal_sibling_pins.validation.yaml"
+    )
+    return ModelValidatorSubcontract.model_validate(document["validation"])
+
+
+def rules_from_contract(
+    contract: ModelValidatorSubcontract,
+) -> ModelInternalSiblingPinsRules:
+    """The typed rule data of the contract rows; a missing row or key raises."""
+    rows = {row.rule_id: row for row in contract.rules}
+    try:
+        return ModelInternalSiblingPinsRules(
+            name_pattern=rule_string(rows["missing_source"], "name_pattern"),
+            sha_pattern=rule_string(rows["bare_sha"], "sha_pattern"),
+            release_tag_pattern=rule_string(rows["release_tag"], "release_tag_pattern"),
+            exact_pattern=rule_string(rows["release_pin"], "exact_pattern"),
+            git_url_pattern=rule_string(rows["not_dev_tag"], "git_url_pattern"),
+            remediation=rule_string(rows["finding_remediation"], "remediation"),
+        )
+    except KeyError as exc:
+        raise ModelOnexError(
+            message=f"{VALIDATOR_ID} contract has no rule row {exc}",
+            error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+        ) from exc
+
+
+def load_rules() -> ModelInternalSiblingPinsRules:
+    """The patterns and remediation text from the packaged validation contract."""
+    return rules_from_contract(load_rule_contract())
+
+
+def build_container(
+    report_writer: NodeValidationReportWriteEffect | None = None,
+) -> ModelONEXContainer:
+    """The composition root: a container with the gather and report-write effects."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry()
+    run_coro_sync(
+        registry.register_instance(
+            NodeSourceFileGatherEffect, NodeSourceFileGatherEffect()
+        )
+    )
+    run_coro_sync(
+        registry.register_instance(
+            NodeValidationReportWriteEffect,
+            report_writer or NodeValidationReportWriteEffect(),
+        )
+    )
+    return container
 
 
 def _relative(root: Path, path: str) -> str:
@@ -119,14 +200,18 @@ def _out(line: str) -> None:
     sys.stdout.write(line + "\n")
 
 
-def _write_report(path: str | None, report: ModelValidationReport) -> None:
+def _write_report(
+    container: ModelONEXContainer, path: str | None, report: ModelValidationReport
+) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        container.get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None, container: ModelONEXContainer | None = None
+) -> int:
     """CLI entry. Returns 0 on PASS, 1 on FAIL/ERROR."""
     parser = argparse.ArgumentParser(
         prog="check-internal-sibling-pins",
@@ -154,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parsed = parser.parse_args(argv)
 
+    container = container or build_container()
     root = Path(parsed.root).resolve()
     names = (
         [n for n in parsed.filenames if Path(n).name == "pyproject.toml"]
@@ -163,7 +249,7 @@ def main(argv: list[str] | None = None) -> int:
     if not names:
         _out("OK: no pyproject.toml among the staged files")
         return 0
-    gathered = NodeSourceFileGatherEffect().handle(
+    gathered = container.get_service(NodeSourceFileGatherEffect).handle(
         ModelSourceFileGatherInput(
             root=str(root),
             include_patterns=["pyproject.toml"],
@@ -179,6 +265,7 @@ def main(argv: list[str] | None = None) -> int:
     ]
     if runtime_errors:
         _write_report(
+            container,
             parsed.report_json,
             ModelValidationReport.from_runtime_errors(
                 VALIDATOR_ID, tuple(runtime_errors)
@@ -189,13 +276,16 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     contract = load_contract(Path(parsed.contract))
+    rules = load_rules()
     dev_tags = None
     if not parsed.no_staleness:
         try:
             repos = {
                 repo
                 for file in files
-                for repo in declared_sibling_repos(tomllib.loads(file.source), contract)
+                for repo in declared_sibling_repos(
+                    tomllib.loads(file.source), contract, rules
+                )
             }
             dev_tags = tuple(
                 read_dev_tags(contract.github_org, repo) for repo in sorted(repos)
@@ -203,6 +293,7 @@ def main(argv: list[str] | None = None) -> int:
         except (OSError, subprocess.SubprocessError, tomllib.TOMLDecodeError) as exc:
             message = f"cannot read sibling dev tags: {exc}"
             _write_report(
+                container,
                 parsed.report_json,
                 ModelValidationReport.from_runtime_errors(VALIDATOR_ID, (message,)),
             )
@@ -212,10 +303,11 @@ def main(argv: list[str] | None = None) -> int:
         ModelInternalSiblingPinsInput(
             files=tuple(files),
             contract=contract,
+            rules=rules,
             dev_tags=dev_tags,
         )
     )
-    _write_report(parsed.report_json, report)
+    _write_report(container, parsed.report_json, report)
     for finding in report.findings:
         _out(f"{finding.severity}: {finding.message}")
     if report.overall_status == "PASS":

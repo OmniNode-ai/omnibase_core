@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: internal_sibling_pins
+  validator_name: Internal Sibling Pins
+  validator_description: |
+    Internal siblings resolve from the dev merge tag dev-<UTC YYYYMMDDHHMMSS>-<sha12>, never from a
+    release, a sha or a branch (RULINGs 2026-10-16T07:34:18Z and 2026-10-16T09:35:49Z, OMN-19998,
+    OMN-21518). The check judges a consumer's pyproject.toml against the packaged
+    contracts/internal_sibling_pins.yaml. Every pattern and the remediation text below is a rule-row
+    parameter; the node holds none.
+
+  target_patterns:
+    - "pyproject.toml"
+    - "**/pyproject.toml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: missing_source
+      description: A declared sibling has no [tool.uv.sources] entry and no direct URL, so uv sync resolves
+        a release.
+      severity: error
+      enabled: true
+      parameters:
+        name_pattern: '^\s*([A-Za-z0-9][A-Za-z0-9._-]*)'
+    - rule_id: bare_sha
+      description: A rev, or a direct URL ref, that is a commit sha.
+      severity: error
+      enabled: true
+      parameters:
+        sha_pattern: '^[0-9a-f]{7,40}$'
+    - rule_id: release_tag
+      description: A tag, or a ref, that is a release tag such as v0.47.48.
+      severity: error
+      enabled: true
+      parameters:
+        release_tag_pattern: '^v?\d++(?:\.\d++)++(?:[.-]?[A-Za-z0-9]++)*+$'
+    - rule_id: branch
+      description: A branch, or a git source or URL with no ref, which moves.
+      severity: error
+      enabled: true
+    - rule_id: not_dev_tag
+      description: Any other ref, a rev naming a dev tag, or a non-git source (index, path, url, workspace).
+      severity: error
+      enabled: true
+      parameters:
+        git_url_pattern: '^git\+(?P<url>[^@#\s]+?)(?:@(?P<ref>[^#\s]+))?(?:#.*)?$'
+    - rule_id: wrong_repo
+      description: A git source that is not the sibling's own repository.
+      severity: error
+      enabled: true
+    - rule_id: release_pin
+      description: An exact == version of a sibling pins a release and refuses the dev tag's version.
+      severity: error
+      enabled: true
+      parameters:
+        exact_pattern: '(?:^|[,\s(])===?\s*[^,;\s*]+(?=\s*(?:[,;)]|$))'
+    - rule_id: stale_pin
+      description: A dev tag trails the newest dev tag by more than the contract's merge or timestamp
+        bound.
+      severity: error
+      enabled: true
+    - rule_id: unverifiable_pin
+      description: The sibling's tag inventory or pinned tag is absent, or a tag timestamp cannot be read.
+      severity: error
+      enabled: true
+    - rule_id: finding_remediation
+      description: The remediation text every finding of this validator carries.
+      severity: error
+      enabled: true
+      parameters:
+        remediation: >-
+          Pin the sibling in [tool.uv.sources] to its newest green dev merge tag: <dist> = { git = "https://github.com/OmniNode-ai/<repo>.git",
+          tag = "dev-<YYYYMMDDHHMMSS>-<sha12>" }, and keep a version range (never ==) in [project] dependencies
+          for external installs. Repin stale pins to the newest dev tag. RULINGs 2026-10-16T07:34:18Z
+          and 2026-10-16T09:35:49Z (OMN-19998). #magic___^_^___line
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

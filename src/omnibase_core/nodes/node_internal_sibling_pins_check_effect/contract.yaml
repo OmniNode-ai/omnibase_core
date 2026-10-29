@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_internal_sibling_pins_check_effect
+node_id: node_internal_sibling_pins_check_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Judges a consumer's pyproject.toml sources against the internal sibling pin contract: every internal
+  sibling resolves from a dev merge tag within the staleness bounds, never a release, sha or branch (OMN-19998,
+  OMN-21518). Patterns and the remediation text are rows of internal_sibling_pins.validation.yaml.
+input_model: omnibase_core.models.version_drift.model_internal_sibling_pins_input.ModelInternalSiblingPinsInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_internal_sibling_pins:HandlerInternalSiblingPins
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 60000

@@ -36,6 +36,9 @@ from omnibase_core.models.version_drift.model_internal_sibling_pins_contract imp
 from omnibase_core.models.version_drift.model_internal_sibling_pins_input import (
     ModelInternalSiblingPinsInput,
 )
+from omnibase_core.models.version_drift.model_internal_sibling_pins_rules import (
+    ModelInternalSiblingPinsRules,
+)
 from omnibase_core.models.version_drift.model_merge_queue_parity_baseline import (
     ModelMergeQueueParityBaseline,
 )
@@ -67,6 +70,7 @@ __all__ = [
     "ModelInternalSibling",
     "ModelInternalSiblingPinsContract",
     "ModelInternalSiblingPinsInput",
+    "ModelInternalSiblingPinsRules",
     "ModelMergeQueueParityBaseline",
     "ModelMergeQueueParityBaselineEntry",
     "ModelMergeQueueParityInput",

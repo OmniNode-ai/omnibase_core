@@ -13,6 +13,9 @@ from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
 from omnibase_core.models.version_drift.model_internal_sibling_pins_contract import (
     ModelInternalSiblingPinsContract,
 )
+from omnibase_core.models.version_drift.model_internal_sibling_pins_rules import (
+    ModelInternalSiblingPinsRules,
+)
 from omnibase_core.models.version_drift.model_sibling_dev_tags import (
     ModelSiblingDevTags,
 )
@@ -26,6 +29,7 @@ class ModelInternalSiblingPinsInput(BaseModel):
     Attributes:
         files: Repository-relative (path, source) pairs of pyproject.toml files.
         contract: The internal siblings and the dev merge tag form.
+        rules: The patterns and remediation text from the validation contract rows.
         dev_tags: Sibling tag inventories; None skips staleness for offline use.
     """
 
@@ -33,4 +37,5 @@ class ModelInternalSiblingPinsInput(BaseModel):
 
     files: tuple[ModelSourceFile, ...] = Field(default=())
     contract: ModelInternalSiblingPinsContract
+    rules: ModelInternalSiblingPinsRules
     dev_tags: tuple[ModelSiblingDevTags, ...] | None = None
