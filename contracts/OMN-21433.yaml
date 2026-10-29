@@ -1,0 +1,57 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21433
+title: "omnibase_core: keep the tree free of deployment-artifact names so the deploy gate's package-only
+  exemption holds"
+summary: The deploy gate exempts a declared library-package repository only while its checked-out tree
+  holds no file named like a container build file or compose file. A SPDX parity fixture named Dockerfile.in
+  ended the exemption on 2026-10-05, so every pull request touching src/omnibase_core/nodes or handlers
+  failed deploy-gate unless its contract carried a live-surface probe. The template is stored as fixture_Dockerfile.in,
+  the materializer drops the prefix, and a scan of the tree fails on any artifact shape.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21433-package-only-tree
+    statement: The tree holds no file or top-level directory the deploy gate reads as a deployment artifact.
+    acceptance:
+      - id: AC1
+        statement: "AC1: no tracked path outside dot-directories is shaped like a deployment artifact
+          -- falsifier: `uv run pytest tests/ci/test_package_only_tree_omn21433.py -n 0 -q` passes, and
+          at the merge base it fails naming tests/fixtures/validator_parity/spdx_headers/Dockerfile.in"
+      - id: AC2
+        statement: "AC2: the SPDX parity corpus still materializes a file named Dockerfile and its golden
+          rows still match -- falsifier: `uv run pytest tests/unit/nodes/node_spdx_headers_check_compute
+          -n 0 -q` passes"
+evidence_requirements:
+  - kind: tests
+    description: The tree scan with its planted artifact shapes and the SPDX parity corpus.
+    command: uv run pytest tests/ci/test_package_only_tree_omn21433.py tests/unit/nodes/node_spdx_headers_check_compute
+      -n 0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21433-ac1-no-artifact-shape
+    description: The tree scan finds nothing in the checkout and finds each planted artifact shape in
+      a scratch tree.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_package_only_tree_omn21433.py -q --no-cov -o
+          addopts=''
+        cwd: .
+  - id: dod-omn21433-ac2-spdx-parity
+    description: The SPDX parity corpus materializes the renamed template as Dockerfile and its golden
+      rows match.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_spdx_headers_check_compute/test_parity_spdx_headers_golden.py
+          -q --no-cov -o addopts=''
+        cwd: .
