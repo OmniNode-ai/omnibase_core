@@ -105,3 +105,34 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
+  - id: dod-omn21494-deploy-readback-on-dev
+    description: Deploy readback for the library after merge. Read the composition root from dev through
+      the source-control node and require its container builder, resolver and gather-effect binding. This
+      fails until dev carries the vocabulary resolution implementation; it does not claim that the downstream
+      hygiene consumer or its canary has shipped.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: >-
+          "${OMNI_HOME}/omnibase_infra/scripts/onex" scm file-read OmniNode-ai/omnibase_core --path src/omnibase_core/handlers/handler_private_vocabulary_resolution.py
+          --ref dev | python3 -c 'import json, sys; r = json.load(sys.stdin); assert r["outcome"] == "completed";
+          f = r["result"]; assert f["type"] == "blob" and not f["truncated"]; assert all(s in f["content"]
+          for s in ("def build_container(", "def resolve_private_vocabulary(", "container.get_service(HandlerPrivateVocabulary)",
+          "container.get_service(NodeSourceFileGatherEffect)"))'
+  - id: dod-omn21494-deploy-hosted-readback
+    description: Hosted library runtime smoke. Exercise the packaged contract, container bindings and
+      gather effect, the CLI success and single-line refusal paths with the hygiene variable unset, and
+      the model-config consumer's denylist read through the same container.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py
+          tests/unit/handlers/test_handler_private_vocabulary_resolution.py tests/unit/nodes/node_source_file_gather_effect/test_runtime_private_vocabulary.py
+          tests/unit/validation/hardcoded_model_config/test_private_vocabulary_read.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+      - AC2
+      - AC3
