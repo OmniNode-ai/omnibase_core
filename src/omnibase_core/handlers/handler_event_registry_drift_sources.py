@@ -23,8 +23,8 @@ Sources:
   producer whose registrations are exported rather than declared in contracts.
 * **Emit registry** — an emit daemon's ``topics.yaml`` (``events:`` mapping of
   event type to ``partition_key_field``, ``required_fields`` and ``fan_out``).
-  Every fan-out rule must name a topic and every required field must be a
-  name; as in the registry's own drift check, only fan-out topics named in full
+  Every fan-out rule must name a topic, and topics and required fields must
+  be distinct names; as in the registry's own drift check, only fan-out topics named in full
   (``onex.`` prefix) are compared.
 * **Baseline** — ``<kind> <value>`` lines declaring intentional divergence.
 
@@ -252,6 +252,10 @@ def parse_emit_registry(path: str, source: str) -> _Parsed:
         if not all(isinstance(r.get("topic"), str) and r["topic"] for r in fan_out):
             errors.append(f"{where}.fan_out has a rule without a topic name")
             continue
+        named = [rule["topic"] for rule in fan_out]
+        if len(set(named)) != len(named):
+            errors.append(f"{where}.fan_out repeats a topic")
+            continue
         topics = sorted(
             {
                 rule["topic"]
@@ -268,6 +272,9 @@ def parse_emit_registry(path: str, source: str) -> _Parsed:
             isinstance(item, str) and item for item in required_raw
         ):
             errors.append(f"{where}.required_fields must be a list of field names")
+            continue
+        if len(set(required_raw)) != len(required_raw):
+            errors.append(f"{where}.required_fields repeats a field")
             continue
         registrations.append(
             ModelEventRegistration(
