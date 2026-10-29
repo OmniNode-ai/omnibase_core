@@ -77,11 +77,16 @@ dod_evidence:
       - AC2
       - AC4
   - id: dod-omn21532-ac3-kept-kinds
-    description: The existing node rejection tests pass unchanged.
+    description: The existing node rejection tests pass unchanged, and the new checker rejects each kept
+      kind in non-EFFECT packages and permits it in EFFECT packages.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/nodes/node_no_io_outside_effects_check_compute -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py::test_each_kind_is_refused_in_a_non_effect_package_and_passes_in_effect
+          -n 0 -q
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
@@ -92,6 +97,12 @@ dod_evidence:
       - check_type: command
         check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_no_io_outside_effects.py
           src/omnibase_core/validation/validator_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/checker_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/validator_no_io_outside_effects.py
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC4
@@ -107,11 +118,30 @@ dod_evidence:
     binds_ac:
       - AC5
   - id: dod-omn21532-ac6-no-literal
-    description: The topic and url authority validators report zero on the changed source.
+    description: The changed source files exist and the hardcoded topic, model config, URL authority and
+      contract config validators report zero on them.
     source: manual
     checks:
       - check_type: command
         check_value: uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_no_io_outside_effects.py
+          src/omnibase_core/validation/validator_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/checker_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/validator_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_hardcoded_topics src/omnibase_core/validation/checker_no_io_outside_effects.py
+          src/omnibase_core/validation/validator_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          src/omnibase_core/validation/checker_no_io_outside_effects.py src/omnibase_core/validation/validator_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/validation/checker_no_io_outside_effects.py
           src/omnibase_core/validation/validator_no_io_outside_effects.py
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
