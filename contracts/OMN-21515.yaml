@@ -151,7 +151,7 @@ dod_evidence:
           -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21515-checkout-passes-ratchet
-    description: The checkout passes the canonical-file-shape ratchet, so no handler sits outside a node contract.
+    description: The checkout passes the canonical-file-shape ratchet with no stray handler.
     source: manual
     binds_ac: [AC6]
     checks:
