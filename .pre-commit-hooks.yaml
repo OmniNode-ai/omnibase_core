@@ -662,6 +662,7 @@
   entry: python -m omnibase_core.handlers.handler_dict_any_cli
   types: [python]
   pass_filenames: true
+  require_serial: true
   stages: [pre-commit]
 
 - id: check-no-lane-literal-branching
