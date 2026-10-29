@@ -63,7 +63,7 @@ jobs:
 
       - name: Set up uv
         if: ${{ github.event_name == 'pull_request' }}
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
 
       - name: Forbid first-party git-source overrides on dev/main
         if: ${{ github.event_name == 'pull_request' }}

@@ -14,14 +14,19 @@ import re
 import sys
 import tomllib
 from pathlib import Path
+from typing import cast
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_internal_sibling_pins_cli import load_contract
+from omnibase_core.models.validation.model_first_party_ref_parameters import (
+    ModelFirstPartyRefParameters,
+)
 from omnibase_core.models.version_drift.model_dependency_pin_manifest import (
     ModelDependencyPinManifest,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.validation.checker_first_party_ref import load_rule_parameters
+from omnibase_core.validation.validator_first_party_ref import ValidatorFirstPartyRef
 
 __all__ = ["HandlerDependencyPinBump", "main"]
 
@@ -47,7 +52,18 @@ class HandlerDependencyPinBump:
                 message=(f"repository {repo!r} has no declared dependency_pin"),
                 error_code=EnumCoreErrorCode.INVALID_INPUT,
             )
-        if re.fullmatch(load_contract().dev_tag_pattern, dependency_tag) is None:
+        if (
+            re.fullmatch(
+                cast(
+                    ModelFirstPartyRefParameters,
+                    load_rule_parameters(ValidatorFirstPartyRef().contract)[
+                        "first_party_source_not_dev_tag"
+                    ],
+                ).tag_pattern,
+                dependency_tag,
+            )
+            is None
+        ):
             raise ModelOnexError(
                 message=(f"dependency tag {dependency_tag!r} is not a dev merge tag"),
                 error_code=EnumCoreErrorCode.INVALID_INPUT,

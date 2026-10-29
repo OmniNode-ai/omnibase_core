@@ -110,6 +110,26 @@ def test_reject_tag_override(mod, tmp_path: Path) -> None:
     assert mod.main(["--pyproject", str(path)]) == 1
 
 
+def test_allow_dev_merge_tag_source(mod, tmp_path: Path) -> None:
+    block = (
+        "[tool.uv.sources]\n"
+        'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", '
+        'tag = "dev-20261028203020-ce27d197198f" }\n'
+    )
+    path = _write_pyproject(tmp_path, block)
+    assert mod.main(["--pyproject", str(path)]) == 0
+
+
+def test_reject_dev_merge_tag_with_rev(mod, tmp_path: Path) -> None:
+    block = (
+        "[tool.uv.sources]\n"
+        'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", '
+        'tag = "dev-20261028203020-ce27d197198f", rev = "ce27d19" }\n'
+    )
+    path = _write_pyproject(tmp_path, block)
+    assert mod.main(["--pyproject", str(path)]) == 1
+
+
 # ---------------------------------------------------------------------------
 # ALLOW: occ-only override (the current legitimate state)
 # ---------------------------------------------------------------------------

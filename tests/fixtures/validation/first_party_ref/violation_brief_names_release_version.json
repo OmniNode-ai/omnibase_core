@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "briefs/deploy-brief.md",
+      "source": "Deploy omnibase_core v1.2.3.\n"
+    }
+  ],
+  "dev_tags": []
+}

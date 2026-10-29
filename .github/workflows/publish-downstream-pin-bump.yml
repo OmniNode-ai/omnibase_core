@@ -55,7 +55,7 @@ jobs:
       new_sha: ${{ steps.sha.outputs.sha }}
       dependency_tag: ${{ steps.tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Resolve new SHA
         id: sha
@@ -74,7 +74,7 @@ jobs:
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: "3.12"
 
@@ -150,7 +150,7 @@ jobs:
       DEPENDENCY_TAG: ${{ needs.enumerate-repos.outputs.dependency_tag }}
     steps:
       - name: Checkout omnibase_core (manifest + script)
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           path: omnibase_core
 
@@ -176,7 +176,7 @@ jobs:
           permission-workflows: write
 
       - name: Checkout downstream (${{ matrix.repo }})
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: OmniNode-ai/${{ matrix.repo }}
           token: ${{ steps.app-token.outputs.token }}
@@ -184,7 +184,7 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: "3.12"
 
@@ -193,7 +193,7 @@ jobs:
 
       - name: Install uv
         if: matrix.mode == 'dependency'
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
 
       - name: Install omnibase_core handler
         if: matrix.mode == 'dependency'

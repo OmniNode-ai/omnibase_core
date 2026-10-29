@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+[project]
+name = "consumer"
+dependencies = ["omnibase-core>=0.1"]
+[tool.uv.sources]

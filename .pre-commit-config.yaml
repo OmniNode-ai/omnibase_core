@@ -593,6 +593,15 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-21495: first-party references use dev-merge tags and have one home.
+      - id: check-action-pins
+        name: First-party reference invariants (OMN-21495)
+        entry: uv run python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
+        language: system
+        files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
+        pass_filenames: false
+        require_serial: true
+
       # OMN-20304: canonical-file-shape ratchet. No new code file outside the
       # canonical contract/node/handler/models/protocols/tests/docs locations,
       # no new imperative lines in a SKILL.md, no new baseline, allowlist or
@@ -2452,17 +2461,17 @@ repos:
   # file is present, the repo looks protected, and nothing is checking. This
   # refuses that state — the baseline owes a pre-commit reader AND a CI reader,
   # and it is the local half of the same gate .github/workflows/
-  # secrets-baseline-wiring.yml runs in CI, pinned to the same omniclaude SHA so
-  # the two verdicts cannot diverge. Advancing it is those two lines, together.
+  # secrets-baseline-wiring.yml runs in CI. Local and CI references each own a
+  # distinct canonical dev-merge tag under the single-home invariant (OMN-21495).
   # --------------------------------------------------------------------------
   - repo: https://github.com/OmniNode-ai/omniclaude
-    rev: 0c9f9146d8dd0446fc5c10952aa57247b3a880ae  # pragma: allowlist secret
+    rev: dev-20261024082804-f0536e2c2e55  # pragma: allowlist secret
     hooks:
       - id: secrets-baseline-wired
         require_serial: true
       # OMN-20940: the local twin of the required CI context
       # `public-repo-hygiene / deployment-config` (the public-repo-hygiene job in
-      # .github/workflows/ci.yml), run at the same omniclaude commit as that job.
+      # .github/workflows/ci.yml), with its own canonical dev-merge tag.
       # It refuses deployment and lab configuration a commit adds, by shape, with
       # no vocabulary and no token. It shares this block, and so its one existing
       # allowlist comment, because the canonical-file-shape ratchet admits no new
@@ -2470,10 +2479,10 @@ repos:
       - id: deployment-config
         require_serial: true
 
-  # OMN-19677: the debt baseline itself is a shrink-only contract. The same
-  # immutable omniclaude commit supplies this hook and the required CI job.
+  # OMN-19677: the debt baseline itself is a shrink-only contract. This hook
+  # and the required CI job each own a canonical omniclaude dev-merge tag.
   - repo: https://github.com/OmniNode-ai/omniclaude
-    rev: cc59bc1087f96c268e797995e17bf5d9bdc0c2db  # pragma: allowlist secret
+    rev: dev-20261024082804-f0536e2c2e55  # pragma: allowlist secret
     hooks:
       - id: anti-growth-baseline
         require_serial: true
