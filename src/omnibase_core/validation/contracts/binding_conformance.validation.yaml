@@ -1,0 +1,116 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: binding_conformance
+  validator_name: Binding Conformance Validator
+  validator_description: >-
+    Checks supplied contracts and Python sources against protocol tables, concrete bindings, private names
+    and handler literal rules (OMN-21514).
+  target_patterns:
+    - "**/handlers/*.py"
+    - "**/handler_*.py"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/dod_receipts/**"
+    - "**/evidence/**"
+
+  rules:
+    - rule_id: no_table_row
+      description: Rejects a checked node with no protocol table row.
+      severity: error
+      enabled: true
+
+    - rule_id: no_contract
+      description: Rejects a checked node with no supplied contract source.
+      severity: error
+      enabled: true
+
+    - rule_id: no_source
+      description: Rejects a checked node with no supplied handler source.
+      severity: error
+      enabled: true
+
+    - rule_id: contract_unreadable
+      description: Rejects a contract without readable protocol dependency mappings.
+      severity: error
+      enabled: true
+
+    - rule_id: source_unparseable
+      description: Rejects supplied Python source that does not parse.
+      severity: error
+      enabled: true
+
+    - rule_id: contract_missing_protocol
+      description: Rejects a contract missing a protocol required by its table row.
+      severity: error
+      enabled: true
+
+    - rule_id: contract_extra_protocol
+      description: Rejects a contract declaring a protocol absent from its table row.
+      severity: error
+      enabled: true
+
+    - rule_id: contract_unknown_protocol
+      description: Rejects a contract declaring a protocol unknown to the table.
+      severity: error
+      enabled: true
+
+    - rule_id: concrete_binding
+      description: Rejects concrete adapter imports or construction outside allowed paths.
+      severity: error
+      enabled: true
+
+    - rule_id: env_read
+      description: Rejects handler access to configured process environment interfaces.
+      severity: error
+      enabled: true
+      parameters:
+        environment_names: [environ, getenv, getenvb, putenv]
+
+    - rule_id: path_literal
+      description: Rejects absolute path literals in handler Python source.
+      severity: error
+      enabled: true
+      parameters:
+        pattern: '^(~/|/)[^\s/][^\s]*$'
+
+    - rule_id: url_literal
+      description: Rejects URL scheme literals in handler Python source.
+      severity: error
+      enabled: true
+      parameters:
+        pattern: '[A-Za-z][A-Za-z0-9+.\-]*://\S'
+
+    - rule_id: private_name
+      description: Rejects request-supplied private names in shipped text.
+      severity: error
+      enabled: true
+
+    - rule_id: pure_loads_configuration
+      description: Rejects forbidden configuration loader imports in pure nodes.
+      severity: error
+      enabled: true
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
