@@ -134,13 +134,23 @@ def gather_tree(
     )
 
 
+MERGE_HEAD = "MERGE_HEAD"
+
+
 def resolve_revisions(
     repo: GitRepo, base: str | None, head: str | None
 ) -> tuple[str, str | None]:
-    """``(head, base)``: the flags as given, else the index against ``HEAD``."""
+    """``(head, base)``: the flags as given, else the index against ``HEAD``.
+
+    A merge commit in progress (``MERGE_HEAD`` exists) is checked against the branch being
+    merged in, the way the CI run checks a head against its merge base: against the first
+    parent every file the merged-in branch brings would read as a new file of the change.
+    """
     resolved_head = head or INDEX
     if base is not None:
         return resolved_head, base
+    if resolved_head == INDEX and repo.has_revision(MERGE_HEAD):
+        return resolved_head, MERGE_HEAD
     if resolved_head == INDEX and repo.has_revision("HEAD"):
         return resolved_head, "HEAD"
     return resolved_head, None

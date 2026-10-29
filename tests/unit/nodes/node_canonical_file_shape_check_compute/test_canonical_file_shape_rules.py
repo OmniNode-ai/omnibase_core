@@ -312,6 +312,24 @@ def test_rename_keeping_old_entry_and_adding_new_refused(repo: Path) -> None:
     assert "baseline-growth" in _rules(repo)
 
 
+def test_merge_in_progress_is_checked_against_the_merged_in_branch(repo: Path) -> None:
+    _git(repo, "checkout", "-q", "-b", "merged-in")
+    _write(repo, "scripts/merged_in.py", "x = 1\n")
+    _write(
+        repo,
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", "scripts/merged_in.py"]),
+    )
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "merged in")
+    _git(repo, "checkout", "-q", "dev")
+    _git(repo, "merge", "-q", "--no-commit", "--no-ff", "merged-in")
+
+    assert _rules(repo) == []
+    # positive control: against the first parent the merged-in branch's entry reads as growth
+    assert _rules(repo, base="HEAD") == ["baseline-growth"]
+
+
 def test_skill_imperative_growth_refused(repo: Path) -> None:
     _write(
         repo,
