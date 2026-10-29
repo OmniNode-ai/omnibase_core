@@ -1,0 +1,1121 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+"""Tests for the canonical-file-shape ratchet (OMN-20304).
+
+Marker strings are assembled at runtime, so this file carries no suppression
+comment of its own.
+"""
+
+from __future__ import annotations
+
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+from omnibase_core.models.validation.model_canonical_file_shape_facts import (
+    ModelCanonicalFileShapeFacts,
+)
+from omnibase_core.models.validation.model_canonical_file_shape_text import (
+    ModelCanonicalFileShapeText,
+)
+from omnibase_core.models.validation.model_canonical_file_shape_tree import (
+    ModelCanonicalFileShapeTree,
+)
+from omnibase_core.nodes.node_canonical_file_shape_check_compute import (
+    runtime_canonical_file_shape_check as runtime,
+)
+from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import (
+    GitRepo,
+    main,
+)
+from omnibase_core.validation import checker_canonical_file_shape as checker
+from omnibase_core.validation import validator_git_repo as git_reader
+from omnibase_core.validation.checker_canonical_file_shape import (
+    declared_paths,
+    file_rule_refusals,
+)
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    BASELINE,
+    INDEX,
+    NODE_HOME_BASELINE,
+    RULES,
+    baseline_text,
+    issues,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    git as _git,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    rules_hit as _rules,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    stage as _stage,
+)
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    write as _write,
+)
+
+pytestmark = pytest.mark.unit
+
+NOQA = "# " + "no" + "qa"
+FALLBACK_MARK = "# fallback" + "-ok: reason"
+IMPERATIVE_MARK = "# imperative" + "-ok"
+
+
+def _env() -> dict[str, str]:
+    return scrub_git_location_env()
+
+
+def _count_suppressions(text: str) -> int:
+    return sum(
+        len(re.findall(pattern, text))
+        for pattern in RULES.parameters.suppression_patterns
+    )
+
+
+def _declared_baselines(text: str | None) -> frozenset[str]:
+    facts = ModelCanonicalFileShapeFacts(
+        head_tree=ModelCanonicalFileShapeTree(),
+        declared_texts=()
+        if text is None
+        else (
+            ModelCanonicalFileShapeText(
+                path=RULES.parameters.pre_commit_config_path, text=text
+            ),
+        ),
+    )
+    return declared_paths(facts, RULES.parameters)
+
+
+@pytest.fixture
+def repo(tmp_path: Path) -> Path:
+    _git(tmp_path, "init", "-q", "-b", "dev")
+    _write(tmp_path, "scripts/old_tool.py", "print('old')\n")
+    _write(tmp_path, "src/pkg/nodes/node_x/handler.py", "X = 1\n")
+    _write(tmp_path, BASELINE, baseline_text(["scripts/old_tool.py"]))
+    _write(tmp_path, "config/topic_allowlist.yaml", "- a\n- b\n")
+    _write(tmp_path, "plugins/p/skills/s/SKILL.md", "Dispatch via onex run-node.\n")
+    _write(tmp_path, "src/pkg/nodes/node_x/legacy.py", f"y = 1  {NOQA}\n")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "base")
+    return tmp_path
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/pkg/nodes/node_a/handler.py",
+        "src/pkg/handlers/handler_a.py",
+        "src/pkg/models/model_a.py",
+        "src/pkg/protocols/protocol_a.py",
+        "src/pkg/contracts/c.py",
+        "src/pkg/enums/enum_a.py",
+        "src/pkg/validation/checker_a.py",
+        "src/pkg/validation/validator_a.py",
+        "tests/unit/test_a.py",
+        "src/pkg/tests/test_a.py",
+        "docs/examples/a.py",
+        "conftest.py",
+    ],
+)
+def test_canonical_locations(path: str) -> None:
+    # Supply a binding so this location test also satisfies the handler rule.
+    tree = ModelCanonicalFileShapeTree(
+        files=(path,),
+        contract_texts=(
+            ModelCanonicalFileShapeText(
+                path="src/pkg/nodes/node_a/contract.yaml",
+                text="handler:\n  module: pkg.handlers.handler_a\n",
+            ),
+        ),
+    )
+    assert path not in file_rule_refusals(tree, RULES)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "scripts/a.py",
+        "plugins/onex/skills/s/run.py",
+        "tools/a.sh",
+        "bin/a",
+        "src/pkg/runtime/a.py",
+        "src/pkg/validation/a.py",
+        "src/pkg/validation/util_a.py",
+        "src/pkg/validation/sub/checker_a.py",
+        "src/pkg/a.py",
+        "src/pkg/validation/helper_checker_a.py",
+        ".github/scripts/a.py",
+        "src/pkg/validation/handler_a.py",
+        "src/pkg/validation/checker_a.sh",
+        "src/pkg/validation/Checker_a.py",
+    ],
+)
+def test_noncanonical_locations(path: str) -> None:
+    tree = ModelCanonicalFileShapeTree(
+        files=(path,),
+        shebang_lines=(
+            ModelCanonicalFileShapeText(path=path, text="#!/usr/bin/env python3"),
+        ),
+    )
+    assert file_rule_refusals(tree, RULES)[path][0] == "noncanonical-file"
+
+
+def test_code_file_detection() -> None:
+    tree = ModelCanonicalFileShapeTree(
+        files=("a.py", "bin/run", "Makefile", "README.md"),
+        shebang_lines=(ModelCanonicalFileShapeText(path="bin/run", text="#!/bin/sh"),),
+    )
+    assert {
+        path: refusal[0] for path, refusal in file_rule_refusals(tree, RULES).items()
+    } == {
+        "a.py": "noncanonical-file",
+        "bin/run": "noncanonical-file",
+    }
+
+
+def test_clean_tree_passes(repo: Path) -> None:
+    _write(repo, "src/pkg/nodes/node_y/handler.py", "Y = 2\n")
+    _write(repo, "tests/test_y.py", "def test_y() -> None: ...\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "scripts/new_tool.py",
+        "plugins/p/skills/s/helper.py",
+        "tools/run.sh",
+        "src/pkg/runtime/thing.py",
+    ],
+)
+def test_new_noncanonical_file_refused(repo: Path, path: str) -> None:
+    _write(repo, path, "x = 1\n")
+    _stage(repo)
+    assert _rules(repo) == ["noncanonical-file"]
+
+
+def test_new_shebang_script_without_extension_refused(repo: Path) -> None:
+    _write(repo, "bin/tool", "#!/usr/bin/env bash\necho hi\n")
+    _stage(repo)
+    assert _rules(repo) == ["noncanonical-file"]
+
+
+def test_baseline_growth_refused(repo: Path) -> None:
+    _write(repo, "scripts/new_tool.py", "x = 1\n")
+    _write(
+        repo,
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", "scripts/new_tool.py"]),
+    )
+    _stage(repo)
+    assert _rules(repo) == ["baseline-growth"]
+
+
+def test_baseline_stale_entry_refused(repo: Path) -> None:
+    (repo / "scripts/old_tool.py").unlink()
+    _stage(repo)
+    assert _rules(repo) == ["baseline-stale"]
+
+
+def test_baseline_shrink_accepted(repo: Path) -> None:
+    (repo / "scripts/old_tool.py").unlink()
+    _write(repo, BASELINE, baseline_text([]))
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+BODY = "".join(f"line_{i} = {i}\n" for i in range(20))
+
+
+def _baselined_tool(repo: Path) -> None:
+    """Commit a larger baselined file so a rename survives an edit."""
+    _write(repo, "plugins/p/_bin/tool.sh", "#!/bin/sh\n" + BODY)
+    _write(
+        repo,
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", "plugins/p/_bin/tool.sh"]),
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "tool")
+
+
+def _rename(repo: Path, new: str, extra: str = "") -> None:
+    (repo / new).parent.mkdir(parents=True, exist_ok=True)
+    _git(repo, "mv", "plugins/p/_bin/tool.sh", new)
+    if extra:
+        with (repo / new).open("a", encoding="utf-8") as fh:
+            fh.write(extra)
+
+
+NEW_TOOL = "plugins/p/_bin/renamed.sh"
+SWAPPED = ["scripts/old_tool.py", NEW_TOOL]
+
+
+def test_rename_swap_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(repo, BASELINE, baseline_text(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_baseline_untouched_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_with_edit_accepted(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL, "# added by the rename edit\n")
+    _write(repo, BASELINE, baseline_text(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_rename_of_unbaselined_file_refused(repo: Path) -> None:
+    _write(repo, "plugins/p/_bin/free.sh", "#!/bin/sh\n" + BODY)
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "unbaselined")
+    _git(repo, "mv", "plugins/p/_bin/free.sh", NEW_TOOL)
+    _stage(repo)
+    assert "noncanonical-file" in _rules(repo)
+
+
+def test_rename_plus_extra_script_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(repo, "scripts/extra.py", "x = 1\n")
+    _write(repo, BASELINE, baseline_text(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == ["noncanonical-file"]
+
+
+def test_swap_without_detected_rename_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    (repo / "plugins/p/_bin/tool.sh").unlink()
+    _write(repo, NEW_TOOL, "#!/bin/sh\necho unrelated\n")
+    _write(repo, BASELINE, baseline_text(SWAPPED))
+    _stage(repo)
+    assert _rules(repo) == ["baseline-growth"]
+
+
+def test_rename_keeping_old_entry_and_adding_new_refused(repo: Path) -> None:
+    _baselined_tool(repo)
+    _rename(repo, NEW_TOOL)
+    _write(
+        repo,
+        BASELINE,
+        baseline_text([*SWAPPED, "plugins/p/_bin/tool.sh"]),
+    )
+    _stage(repo)
+    assert "baseline-growth" in _rules(repo)
+
+
+def test_merge_in_progress_is_checked_against_the_merged_in_branch(repo: Path) -> None:
+    _git(repo, "checkout", "-q", "-b", "merged-in")
+    _write(repo, "scripts/merged_in.py", "x = 1\n")
+    _write(
+        repo,
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", "scripts/merged_in.py"]),
+    )
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "merged in")
+    _git(repo, "checkout", "-q", "dev")
+    _git(repo, "merge", "-q", "--no-commit", "--no-ff", "merged-in")
+
+    assert _rules(repo) == []
+    # positive control: against the first parent the merged-in branch's entry reads as growth
+    assert _rules(repo, base="HEAD") == ["baseline-growth"]
+
+
+def test_skill_imperative_growth_refused(repo: Path) -> None:
+    _write(
+        repo,
+        "plugins/p/skills/s/SKILL.md",
+        f"Dispatch via onex run-node.\nThen run gh api repos/x  {IMPERATIVE_MARK}\n",
+    )
+    _stage(repo)
+    assert _rules(repo) == ["skill-imperative"]
+
+
+def test_new_skill_with_imperative_line_refused(repo: Path) -> None:
+    _write(repo, "plugins/p/skills/t/SKILL.md", "Run: curl http://example.com/x\n")
+    _stage(repo)
+    assert _rules(repo) == ["skill-imperative"]
+
+
+def test_new_exception_file_refused(repo: Path) -> None:
+    _write(repo, ".onex_ratchets/foo_waivers.yaml", "- x\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+GATE_BASELINE = ".onex_ratchets/direct_model_call_baseline.yaml"
+CORE_URL = "https://github.com/OmniNode-ai/omnibase_core"
+
+
+def _gate_config(
+    baseline: str, url: str = "https://github.com/OmniNode-ai/omnibase_core"
+) -> str:
+    return (
+        "repos:\n"
+        f"  - repo: {url}\n"
+        "    rev: abc\n"
+        "    hooks:\n"
+        "      - id: check-direct-model-call\n"
+        f"        args: [--repo, r, --baseline, {baseline}, --base, HEAD]\n"
+    )
+
+
+def test_node_home_fixed_baseline_accepted(repo: Path) -> None:
+    _write(repo, NODE_HOME_BASELINE, "src/pkg/nodes/node_x\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_node_home_other_new_baseline_refused(repo: Path) -> None:
+    _write(
+        repo, ".onex_ratchets/other_node_home_baseline.txt", "src/pkg/nodes/node_x\n"
+    )
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_node_home_baseline_growth_is_owned_by_node_home_gate(repo: Path) -> None:
+    _write(repo, NODE_HOME_BASELINE, "src/pkg/nodes/node_x\n")
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "node baseline")
+    _write(repo, NODE_HOME_BASELINE, "src/pkg/nodes/node_x\nsrc/pkg/nodes/node_y\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_gate_declared_baseline_accepted(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_gate_declared_baseline_only_shrinks_by_gate(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gate")
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_undeclared_baseline_still_refused(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _gate_config(GATE_BASELINE))
+    _write(repo, ".onex_ratchets/other_baseline.yaml", "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_baseline_without_any_declaration_refused(repo: Path) -> None:
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_declaration_by_a_local_hook_does_not_count(repo: Path) -> None:
+    _write(
+        repo,
+        ".pre-commit-config.yaml",
+        _gate_config(GATE_BASELINE, url="local"),
+    )
+    _write(repo, GATE_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_declared_gate_baselines_forms() -> None:
+    assert _declared_baselines(None) == frozenset()
+    assert _declared_baselines("not: [valid") == frozenset()
+    text = (
+        "repos:\n"
+        "  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
+        "    hooks:\n"
+        "      - id: check-direct-model-call\n"
+        "        args: ['--baseline=x/y.yaml']\n"
+        "      - id: canonical-file-shape\n"
+        "        args: [--baseline, z.txt]\n"
+    )
+    assert _declared_baselines(text) == frozenset({"x/y.yaml"})
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ("", ".onex_ratchets/node_boundary_import_baseline.yaml"),
+        ("        args: [--baseline, custom/edges.yaml]\n", "custom/edges.yaml"),
+        ("        args: ['--baseline=custom/edges.yaml']\n", "custom/edges.yaml"),
+    ],
+)
+def test_node_boundary_baseline_declarations(
+    repo: Path, args: str, expected: str
+) -> None:
+    config = (
+        "repos:\n"
+        "  - repo: https://github.com/OmniNode-ai/omnibase_core.git\n"
+        "    hooks:\n"
+        "      - id: check-node-boundary-imports\n" + args
+    )
+    assert _declared_baselines(config) == frozenset({expected})
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, expected, "schema_version: 1\ngate: OMN-17427\nedges: []\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_local_node_boundary_declaration_refused(repo: Path) -> None:
+    config = (
+        "repos:\n  - repo: local\n    hooks:\n      - id: check-node-boundary-imports\n"
+    )
+    assert _declared_baselines(config) == frozenset()
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, ".onex_ratchets/node_boundary_import_baseline.yaml", "edges: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_both_gate_declarations_and_no_direct_model_default() -> None:
+    config = (
+        "repos:\n"
+        "  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
+        "    hooks:\n"
+        "      - id: check-node-boundary-imports\n"
+        "      - id: check-direct-model-call\n"
+        "        args: [--baseline, direct.yaml]\n"
+        "      - id: check-direct-model-call\n"
+    )
+    assert _declared_baselines(config) == frozenset(
+        {
+            ".onex_ratchets/node_boundary_import_baseline.yaml",
+            "direct.yaml",
+        }
+    )
+
+
+def test_incomplete_boundary_baseline_argument_does_not_declare_default() -> None:
+    config = (
+        "repos:\n  - repo: https://github.com/OmniNode-ai/omnibase_core\n"
+        "    hooks:\n      - id: check-node-boundary-imports\n        args: [--baseline]\n"
+    )
+    assert _declared_baselines(config) == frozenset()
+
+
+MODEL_CONFIG_BASELINE = "config/hardcoded_model_config_baseline.yaml"
+MODEL_CONFIG_MODULE = (
+    "omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config"
+)
+
+
+def _model_config_config(args: str = "", url: str = CORE_URL) -> str:
+    return (
+        "repos:\n"
+        f"  - repo: {url}\n"
+        "    hooks:\n"
+        "      - id: check-hardcoded-model-config-compute\n" + args
+    )
+
+
+@pytest.mark.parametrize(
+    ("args", "expected"),
+    [
+        ("", MODEL_CONFIG_BASELINE),
+        ("        args: [--baseline, cfg/model.yaml]\n", "cfg/model.yaml"),
+        ("        args: ['--baseline=cfg/model.yaml']\n", "cfg/model.yaml"),
+    ],
+)
+def test_hardcoded_model_config_gate_declares_its_baseline(
+    args: str, expected: str
+) -> None:
+    """OMN-21147: the model-config guard is a declared shrink-only gate."""
+    assert _declared_baselines(_model_config_config(args)) == frozenset({expected})
+
+
+def test_hardcoded_model_config_gate_baseline_may_shrink(repo: Path) -> None:
+    _write(repo, ".pre-commit-config.yaml", _model_config_config())
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n  - b\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gate")
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_hardcoded_model_config_gate_owns_its_growth(repo: Path) -> None:
+    """Growth is judged by the gate itself (``--base``), never admitted here.
+
+    The ratchet stops counting the file's entries; the guard's own ``--base``
+    comparison refuses an entry for a line the change adds.
+    """
+    _write(repo, ".pre-commit-config.yaml", _model_config_config())
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "gate")
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n  - b\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_hardcoded_model_config_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_hardcoded_model_config_local_hook_in_consumer_refused(repo: Path) -> None:
+    config = _model_config_config(
+        f"        entry: python -m {MODEL_CONFIG_MODULE}\n", url="local"
+    )
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def _provider_hooks(entry: str) -> str:
+    return (
+        "- id: check-hardcoded-model-config-compute\n"
+        "  name: guard\n"
+        "  language: python\n"
+        f"  entry: {entry}\n"
+    )
+
+
+def test_provider_local_hook_declares_its_baseline(repo: Path) -> None:
+    """In the repository that provides the hook, its local copy is that hook."""
+    config = _model_config_config(
+        f"        entry: uv run python -m {MODEL_CONFIG_MODULE}\n"
+        f"          --baseline {MODEL_CONFIG_BASELINE}\n",
+        url="local",
+    )
+    _write(
+        repo,
+        ".pre-commit-hooks.yaml",
+        _provider_hooks(f"python -m {MODEL_CONFIG_MODULE}"),
+    )
+    _write(repo, ".pre-commit-config.yaml", config)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "provider")
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_provider_local_hook_running_another_module_refused(repo: Path) -> None:
+    config = _model_config_config(
+        "        entry: python -m some.other.module\n"
+        f"          --baseline {MODEL_CONFIG_BASELINE}\n",
+        url="local",
+    )
+    _write(
+        repo,
+        ".pre-commit-hooks.yaml",
+        _provider_hooks(f"python -m {MODEL_CONFIG_MODULE}"),
+    )
+    _write(repo, ".pre-commit-config.yaml", config)
+    _write(repo, MODEL_CONFIG_BASELINE, "entries:\n  - a\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+def test_exception_entry_growth_refused(repo: Path) -> None:
+    _write(repo, "config/topic_allowlist.yaml", "- a\n- b\n- c\n")
+    _stage(repo)
+    assert _rules(repo) == ["exception-entry-growth"]
+
+
+def test_exception_entry_shrink_accepted(repo: Path) -> None:
+    _write(repo, "config/topic_allowlist.yaml", "- a\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_suppression_growth_refused(repo: Path) -> None:
+    _write(repo, "src/pkg/nodes/node_x/handler.py", f"X = 1\nZ = 2  {FALLBACK_MARK}\n")
+    _stage(repo)
+    assert _rules(repo) == ["suppression-growth"]
+
+
+def test_suppression_kept_count_accepted(repo: Path) -> None:
+    _write(repo, "src/pkg/nodes/node_x/legacy.py", f"y = 2  {NOQA}\n")
+    _stage(repo)
+    assert _rules(repo) == []
+
+
+def test_suppression_counter() -> None:
+    assert _count_suppressions(f"a = 1  {NOQA}\nb = 2  {FALLBACK_MARK}\n") == 2
+    assert _count_suppressions("plain = 'noqa as a word'\n") == 0
+
+
+def test_validator_source_carries_no_suppression() -> None:
+    for module in (runtime, checker, git_reader):
+        assert (
+            _count_suppressions(Path(module.__file__).read_text(encoding="utf-8")) == 0
+        )
+    assert _count_suppressions(Path(__file__).read_text(encoding="utf-8")) == 0
+
+
+def test_main_exit_codes_and_explicit_revisions(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    base = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        env=scrub_git_location_env(),
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert main(["--repo-root", str(repo)], env=_env()) == 0
+    _write(repo, "src/pkg/nodes/node_x/legacy.py", f"y = 1  {NOQA}\nz = 2  {NOQA}\n")
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "bad")
+
+    assert main(["--repo-root", str(repo)], env=_env()) == 0
+    assert (
+        main(["--repo-root", str(repo), "--base", base, "--head", "HEAD"], env=_env())
+        == 1
+    )
+    assert "suppression-growth" in capsys.readouterr().err
+
+
+def test_write_baseline_refused_when_present(repo: Path) -> None:
+    assert main(["--repo-root", str(repo), "--write-baseline"], env=_env()) == 1
+
+
+def test_pruned_baseline_carries_the_header_of_the_contract(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``baseline_header`` is a contract parameter: the runtime writes it, not a constant."""
+    marker = "# zz-mutated header\n"
+    assert marker != RULES.parameters.baseline_header
+    mutated = RULES.model_copy(
+        update={
+            "parameters": RULES.parameters.model_copy(
+                update={"baseline_header": marker}
+            )
+        }
+    )
+    monkeypatch.setattr(runtime, "load_rule_set", lambda _contract: mutated)
+    assert main(["--repo-root", str(repo), "--prune-baseline"], env=_env()) == 0
+    assert (repo / BASELINE).read_text(encoding="utf-8").startswith(marker)
+
+
+# The launching Mac's failure mode (OMN-17427): a pipe to the child's stdin is
+# writable once and never reports writable to poll() again, so a parent that
+# feeds ``git cat-file --batch`` over that pipe sleeps forever. This selector
+# drops every write-ready event; the child process installs it as the one
+# ``subprocess`` uses, then reads more than 64 KB of requests.
+_STALLED_PIPE_CHILD = """
+import importlib.util, os, selectors, subprocess, sys, time
+from pathlib import Path
+
+from omnibase_core.validators.no_unguarded_git_subprocess import (
+    scrub_git_location_env,
+)
+
+module_file = os.environ.get("CFS_MODULE_UNDER_TEST")
+if module_file:
+    module_spec = importlib.util.spec_from_file_location(
+        "canonical_file_shape_under_test", module_file
+    )
+    module = importlib.util.module_from_spec(module_spec)
+    sys.modules[module_spec.name] = module
+    module_spec.loader.exec_module(module)
+    GitRepo = module.GitRepo
+else:
+    from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import GitRepo
+
+
+class StalledPipeSelector(selectors.PollSelector):
+    def select(self, timeout=None):
+        ready = [
+            (key, events & ~selectors.EVENT_WRITE)
+            for key, events in super().select(timeout)
+        ]
+        ready = [(key, events) for key, events in ready if events]
+        if not ready:
+            time.sleep(0.05)
+        return ready
+
+
+subprocess._PopenSelector = StalledPipeSelector
+rev = sys.argv[2]
+paths = sys.argv[3:]
+blobs = GitRepo(
+    root=Path(sys.argv[1]), env=scrub_git_location_env(), cat_file_timeout_s=60
+).read_blobs(rev, paths)
+print(sum(1 for path in paths if blobs[path] == f"{path}\\n".encode()))
+"""
+
+
+def _stage_batch(repo: Path, rev: str, count: int) -> tuple[list[str], int]:
+    """Stage (and for ``HEAD`` commit) ``count`` files; return paths and spec size."""
+    paths = [f"docs/stall/file_{i:04d}.md" for i in range(count)]
+    for path in paths:
+        _write(repo, path, f"{path}\n")
+    _stage(repo)
+    if rev == "HEAD":
+        _git(repo, "commit", "-q", "-m", "large batch")
+    prefix = ":" if rev == INDEX else f"{rev}:"
+    spec = "".join(f"{prefix}{path}\n" for path in paths).encode()
+    return paths, len(spec)
+
+
+def _assert_read_blobs_completes(
+    repo: Path,
+    rev: str,
+    paths: list[str],
+    *,
+    module: Path | None = None,
+    timeout: int = 20,
+) -> None:
+    """The regression's check: read ``paths`` under the stalled-pipe selector.
+
+    ``module`` names a copy of ``canonical_file_shape`` to read through instead
+    of the installed one; the mutation control below uses it.
+    """
+    env = _env()
+    if module is not None:
+        env["CFS_MODULE_UNDER_TEST"] = str(module)
+    try:
+        proc = subprocess.run(
+            [sys.executable, "-c", _STALLED_PIPE_CHILD, str(repo), rev, *paths],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=timeout,
+            env=env,
+        )
+    except subprocess.TimeoutExpired:
+        pytest.fail("read_blobs stalled on the cat-file stdin pipe")
+    else:
+        assert proc.returncode == 0, proc.stderr
+        assert proc.stdout.strip() == str(len(paths))
+
+
+@pytest.mark.parametrize("rev", [INDEX, "HEAD"])
+def test_read_blobs_does_not_wait_on_stdin_pipe(repo: Path, rev: str) -> None:
+    paths, spec_size = _stage_batch(repo, rev, 3000)
+    assert spec_size > 64 * 1024
+
+    _assert_read_blobs_completes(repo, rev, paths)
+
+
+# Mutation control (OMN-20467). The fix under test is a route: requests and
+# responses go through temporary files. The mutant keeps that route for a request
+# of up to 64 KiB and sends a larger one over the stdin pipe. The earlier form
+# of the regression read about 2.5 KB and could not tell the mutant from the
+# fix; the form above reads more than 64 KiB and can. The mutant is applied to a
+# copy of the module source, and the stalled-pipe check above runs against that
+# copy, so the evidence that the check catches the regression is a test that
+# runs in CI and not a one-off run.
+_REAL_CAT_FILE_RUN = """\
+            subprocess.run(
+                ["git", "cat-file", "--batch"],
+                cwd=self.root,
+                env=self._env(),
+                stdin=requests,
+                stdout=responses,
+                check=True,
+                timeout=self.cat_file_timeout_s,
+            )
+            responses.seek(0)
+            out = responses.read()
+"""
+
+_MUTANT_CAT_FILE_RUN = """\
+            if len(spec) > 64 * 1024:
+                out = subprocess.run(
+                    ["git", "cat-file", "--batch"],
+                    cwd=self.root,
+                    env=self._env(),
+                    input=spec,
+                    capture_output=True,
+                    check=True,
+                    timeout=self.cat_file_timeout_s,
+                ).stdout
+            else:
+                subprocess.run(
+                    ["git", "cat-file", "--batch"],
+                    cwd=self.root,
+                    env=self._env(),
+                    stdin=requests,
+                    stdout=responses,
+                    check=True,
+                    timeout=self.cat_file_timeout_s,
+                )
+                responses.seek(0)
+                out = responses.read()
+"""
+
+# The control's ceiling is shorter than the check's 20 s: the fixed route reads
+# the 3000-path batch in well under a second, and a stall never recovers.
+_CONTROL_TIMEOUT_S = 8
+
+
+def _module_copy(tmp_path: Path, *, mutate: bool) -> Path:
+    source = Path(git_reader.__file__).read_text(encoding="utf-8")
+    assert source.count(_REAL_CAT_FILE_RUN) == 1, (
+        "read_blobs no longer has the call shape the mutation control rewrites; "
+        "update the control with the change"
+    )
+    if mutate:
+        source = source.replace(_REAL_CAT_FILE_RUN, _MUTANT_CAT_FILE_RUN)
+    target = tmp_path / ("cfs_mutant.py" if mutate else "cfs_copy.py")
+    target.write_text(source, encoding="utf-8")
+    return target
+
+
+@pytest.mark.parametrize("rev", [INDEX, "HEAD"])
+def test_stalled_pipe_check_fails_on_the_pipe_above_64kib_mutant(
+    repo: Path, tmp_path: Path, rev: str
+) -> None:
+    paths, spec_size = _stage_batch(repo, rev, 3000)
+    assert spec_size > 64 * 1024
+    mutant = _module_copy(tmp_path, mutate=True)
+
+    with pytest.raises(pytest.fail.Exception, match="stalled on the cat-file stdin"):
+        _assert_read_blobs_completes(
+            repo, rev, paths, module=mutant, timeout=_CONTROL_TIMEOUT_S
+        )
+
+
+@pytest.mark.parametrize("rev", [INDEX, "HEAD"])
+def test_stalled_pipe_check_passes_on_an_unmutated_copy(
+    repo: Path, tmp_path: Path, rev: str
+) -> None:
+    # Positive control: the copy-and-load path adds no failure of its own, so the
+    # failure on the mutant is the mutation's.
+    paths, _ = _stage_batch(repo, rev, 3000)
+    copy = _module_copy(tmp_path, mutate=False)
+
+    _assert_read_blobs_completes(
+        repo, rev, paths, module=copy, timeout=_CONTROL_TIMEOUT_S
+    )
+
+
+def test_the_earlier_small_batch_check_cannot_see_the_mutant(
+    repo: Path, tmp_path: Path
+) -> None:
+    # The earlier regression read 60 paths. That is under 64 KiB, so the mutant
+    # takes the temporary-file route for it and passes.
+    paths, spec_size = _stage_batch(repo, INDEX, 60)
+    assert spec_size < 64 * 1024
+    mutant = _module_copy(tmp_path, mutate=True)
+
+    _assert_read_blobs_completes(
+        repo, INDEX, paths, module=mutant, timeout=_CONTROL_TIMEOUT_S
+    )
+
+
+def test_large_staged_delta_completes(repo: Path) -> None:
+    # A merge commit carrying a whole dev delta: the requests and the responses
+    # are each far larger than a pipe buffer.
+    body = "x" * 2048 + "\n"
+    paths = [f"docs/delta/part_{i // 100:02d}/file_{i:04d}.md" for i in range(3000)]
+    for path in paths:
+        _write(repo, path, body)
+    _stage(repo)
+
+    git = GitRepo(
+        root=repo, env=_env(), cat_file_timeout_s=RULES.parameters.cat_file_timeout_s
+    )
+    assert issues(repo) == ()
+    blobs = git.read_blobs(INDEX, [*paths, "docs/delta/absent.md"])
+    assert all(blobs[path] == body.encode() for path in paths)
+    assert blobs["docs/delta/absent.md"] is None
+
+
+def test_read_blobs_fails_loud_when_cat_file_hangs(
+    repo: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+) -> None:
+    bin_dir = tmp_path_factory.mktemp("bin")
+    fake_git = bin_dir / "git"
+    fake_git.write_text("#!/bin/sh\nexec sleep 30\n", encoding="utf-8")
+    fake_git.chmod(0o755)
+    env = _env()
+    env["PATH"] = f"{bin_dir}:{env.get('PATH', '')}"
+
+    with pytest.raises(subprocess.TimeoutExpired):
+        GitRepo(root=repo, env=env, cat_file_timeout_s=1).read_blobs(
+            INDEX, ["docs/any.md"]
+        )
+
+
+# --- baselined-file-growth (OMN-21331; every surface) -----------------------
+
+LEGACY_HOOK = "plugins/p/hooks/lib/legacy_hook.py"
+LEGACY_HOOK_TEXT = "# legacy hook\nA = 1\nB = 2\n\nC = 3\n"
+
+
+@pytest.fixture
+def mod_repo(repo: Path) -> Path:
+    """The base repo plus a baselined hook script, committed."""
+    _write(repo, LEGACY_HOOK, LEGACY_HOOK_TEXT)
+    _write(
+        repo,
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", LEGACY_HOOK]),
+    )
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "baselined hook")
+    return repo
+
+
+def test_mod_file_growth_refused(mod_repo: Path) -> None:
+    """Negative control: new logic in a baselined hook script is refused."""
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "D = 4\n")
+    _stage(mod_repo)
+    assert _rules(mod_repo) == ["baselined-file-growth"]
+
+
+def test_mod_file_growth_names_the_node_route(mod_repo: Path) -> None:
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "D = 4\n")
+    _stage(mod_repo)
+    finding = issues(mod_repo)[0]
+    assert finding.file_path == Path(LEGACY_HOOK)
+    assert "3 -> 4" in finding.message
+    assert "node" in finding.message
+
+
+def test_mod_file_shrink_accepted(mod_repo: Path) -> None:
+    """Positive control: removing code from the baselined hook script passes."""
+    _write(mod_repo, LEGACY_HOOK, "# legacy hook\nA = 1\n")
+    _stage(mod_repo)
+    assert _rules(mod_repo) == []
+
+
+def test_mod_file_comment_and_blank_growth_accepted(mod_repo: Path) -> None:
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT + "\n\n# more prose\n")
+    _stage(mod_repo)
+    assert _rules(mod_repo) == []
+
+
+def test_mod_file_equal_size_edit_accepted(mod_repo: Path) -> None:
+    _write(mod_repo, LEGACY_HOOK, LEGACY_HOOK_TEXT.replace("B = 2", "B = 20"))
+    _stage(mod_repo)
+    assert _rules(mod_repo) == []
+
+
+def test_mod_file_growth_in_renamed_file_refused(mod_repo: Path) -> None:
+    """A rename that also adds code carries the old file's size as its base."""
+    new_path = "plugins/p/hooks/lib/renamed_hook.py"
+    _git(mod_repo, "mv", LEGACY_HOOK, new_path)
+    _write(mod_repo, new_path, LEGACY_HOOK_TEXT + "D = 4\n")
+    _write(
+        mod_repo,
+        BASELINE,
+        baseline_text(["scripts/old_tool.py", new_path]),
+    )
+    _stage(mod_repo)
+    assert _rules(mod_repo) == ["baselined-file-growth"]
+
+
+DEPENDENCY_DIRECTION_BASELINE = ".onex_ratchets/dependency_direction_baseline.yaml"
+
+
+def _dependency_direction_config(args: str) -> str:
+    return (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-dependency-direction\n" + args
+    )
+
+
+def test_dependency_direction_gate_declares_its_baseline() -> None:
+    """OMN-19998: the dependency-direction gate is a declared shrink-only gate."""
+    config = _dependency_direction_config(
+        f"        args: [--baseline, {DEPENDENCY_DIRECTION_BASELINE}]\n"
+    )
+    assert _declared_baselines(config) == frozenset({DEPENDENCY_DIRECTION_BASELINE})
+
+
+def test_dependency_direction_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, DEPENDENCY_DIRECTION_BASELINE, "violations: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+MERGE_QUEUE_PARITY_BASELINE = ".onex_ratchets/merge_queue_parity_baseline.yaml"
+
+
+def test_merge_queue_parity_gate_declares_its_baseline() -> None:
+    """OMN-19998: the merge-queue parity gate is a declared shrink-only gate."""
+    config = (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-merge-queue-parity\n"
+        f"        args: [--baseline, {MERGE_QUEUE_PARITY_BASELINE}]\n"
+    )
+    assert _declared_baselines(config) == frozenset({MERGE_QUEUE_PARITY_BASELINE})
+
+
+def test_merge_queue_parity_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, MERGE_QUEUE_PARITY_BASELINE, "violations: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+PUBLIC_RUNNER_BASELINE = (
+    "src/omnibase_core/contracts/public_runner_placement_baseline.yaml"
+)
+
+
+def test_public_runner_placement_gate_declares_its_baseline() -> None:
+    """OMN-19998: the public-runner placement gate is a declared shrink-only gate."""
+    config = (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-public-runner-placement\n"
+        f"        args: [--baseline, {PUBLIC_RUNNER_BASELINE}]\n"
+    )
+    assert _declared_baselines(config) == frozenset({PUBLIC_RUNNER_BASELINE})
+
+
+def test_public_runner_placement_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, PUBLIC_RUNNER_BASELINE, "repos: {}\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]
+
+
+CI_INHERITANCE_BASELINE = ".onex_ratchets/ci_inheritance_baseline.yaml"
+
+
+def test_ci_inheritance_gate_declares_its_baseline() -> None:
+    """OMN-21277: the CI inheritance gate is a declared shrink-only gate."""
+    config = (
+        "repos:\n"
+        f"  - repo: {CORE_URL}\n"
+        "    hooks:\n"
+        "      - id: check-ci-inheritance\n"
+        f"        args: [--baseline, {CI_INHERITANCE_BASELINE}]\n"
+    )
+    assert _declared_baselines(config) == frozenset({CI_INHERITANCE_BASELINE})
+
+
+def test_ci_inheritance_baseline_undeclared_still_refused(repo: Path) -> None:
+    _write(repo, CI_INHERITANCE_BASELINE, "entries: []\n")
+    _stage(repo)
+    assert _rules(repo) == ["new-exception-file"]

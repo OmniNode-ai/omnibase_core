@@ -1,0 +1,28 @@
+{
+  "base_lifecycle_text": "state: fix-only\n",
+  "changes": [
+    {
+      "new_text": "a = 1\nb = 2\nc = 3\nd = 4\ne = 5\nf = 6\ng = 7\n",
+      "old_path": null,
+      "old_text": "a = 1\nb = 2\nc = 3\nd = 4\ne = 5\n",
+      "path": "src/pkg/models/model_a.py",
+      "status": "M"
+    }
+  ],
+  "commit_messages": [
+    "fix a bug\n\nrelease=2026-10-29T01:00:00Z\n"
+  ],
+  "has_base": true,
+  "head_lifecycle_text": "state: fix-only\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "src/pkg/models/model_a.py",
+      "docs/ledger.md"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

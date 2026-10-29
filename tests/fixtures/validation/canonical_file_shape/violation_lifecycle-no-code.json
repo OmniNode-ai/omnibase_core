@@ -1,0 +1,27 @@
+{
+  "base_lifecycle_text": "state: no-code\n",
+  "changes": [
+    {
+      "new_text": "x = 1\n",
+      "old_path": null,
+      "old_text": null,
+      "path": "src/pkg/models/model_x.py",
+      "status": "A"
+    }
+  ],
+  "commit_messages": null,
+  "has_base": true,
+  "head_lifecycle_text": "state: no-code\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "src/pkg/models/model_a.py",
+      "docs/ledger.md",
+      "src/pkg/models/model_x.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

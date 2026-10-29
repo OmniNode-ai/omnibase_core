@@ -37,8 +37,8 @@ evidence_requirements:
   - kind: tests
     description: The baselined_file_growth_any_surface tests fail at the merge base, where growth off
       a mod surface is not judged, and pass at the head.
-    command: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov -n
-      0
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+      -q --no-cov -n 0
 emergency_bypass:
   enabled: false
   justification: ''
@@ -50,8 +50,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov
-          -n 0 -k baselined_file_growth_any_surface
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov -n 0 -k baselined_file_growth_any_surface
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn21331-ac2-planted-sample-refused
@@ -60,7 +60,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: command
-        check_value: grep -q 'tests/unit/validation/test_validator_canonical_file_shape.py' .github/workflows/ci.yml
+        check_value: grep -q 'tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py'
+          .github/workflows/ci.yml
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn21331-ac3-required-context
@@ -71,7 +72,8 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: grep -q 'name. Canonical File Shape (OMN-20304)' .github/workflows/ci.yml && grep
-          -q 'run. uv run pytest tests/unit/validators/test_canonical_file_shape.py tests/unit/validation/test_validator_canonical_file_shape.py'
+          -q 'run. uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py'
           .github/workflows/ci.yml
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
@@ -81,8 +83,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: command
-        check_value: "! grep -E 'omnibase_core@[0-9a-f]{40}' .github/workflows/ci.yml && grep -q 'rule=.baselined-file-growth.'
-          src/omnibase_core/validators/canonical_file_shape.py"
+        check_value: "! grep -E 'omnibase_core@[0-9a-f]{40}' .github/workflows/ci.yml && grep -q 'RULE_BASELINED_GROWTH
+          = .baselined-file-growth.' src/omnibase_core/validation/checker_canonical_file_shape.py"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC4]
   - id: dod-omn21331-deploy-hosted-ratchet
@@ -92,6 +94,6 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: command
-        check_value: uv run pytest tests/unit/validation/test_validator_canonical_file_shape.py -q --no-cov
-          -n 0 -k baselined_file_growth_any_surface
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov -n 0 -k baselined_file_growth_any_surface
         cwd: ${OMNI_HOME}/omnibase_core

@@ -1,0 +1,24 @@
+{
+  "base_baseline_text": "scripts/old.py\n",
+  "changes": [
+    {
+      "new_text": "a = 1\nb = 2\nc = 3\nd = 4\ne = 5\n",
+      "old_path": null,
+      "old_text": "a = 1\nb = 2\nc = 3\nd = 4\ne = 5\nf = 6\ng = 7\n",
+      "path": "scripts/old.py",
+      "status": "M"
+    }
+  ],
+  "has_base": true,
+  "head_baseline_text": "scripts/old.py\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "scripts/old.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

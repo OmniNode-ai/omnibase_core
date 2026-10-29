@@ -1,0 +1,22 @@
+{
+  "changes": [
+    {
+      "new_text": "- a\n",
+      "old_path": null,
+      "old_text": null,
+      "path": "config/foo.yaml",
+      "status": "A"
+    }
+  ],
+  "has_base": true,
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "config/foo.yaml"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

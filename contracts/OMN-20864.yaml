@@ -29,7 +29,8 @@ evidence_requirements:
   - kind: tests
     description: The mod-file-growth tests fail at the merge base, where the rule does not exist, and
       pass at the head.
-    command: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+      -q --no-cov -n 0
 emergency_bypass:
   enabled: false
   justification: ''
@@ -40,8 +41,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
-          -k mod_file_growth
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -n 0 -k mod_file_growth
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn20864-ac2-controls-accepted
@@ -50,8 +51,9 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
-          -k "mod_file_shrink or mod_file_comment or mod_file_equal or not_in_scope or mod_surface_paths"
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -n 0 -k "mod_file_shrink or mod_file_comment or mod_file_equal or not_in_scope or
+          mod_surface_paths"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn20864-deploy-hosted-ratchet
@@ -61,6 +63,6 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: command
-        check_value: uv run pytest tests/unit/validators/test_canonical_file_shape.py -q --no-cov -n 0
-          -k "mod_file or mod_surface"
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -n 0 -k "mod_file or mod_surface"
         cwd: ${OMNI_HOME}/omnibase_core

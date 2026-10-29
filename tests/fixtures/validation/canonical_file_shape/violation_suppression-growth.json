@@ -1,0 +1,22 @@
+{
+  "changes": [
+    {
+      "new_text": "x = 1  # noqa\n",
+      "old_path": null,
+      "old_text": "x = 1\n",
+      "path": "src/pkg/models/model_a.py",
+      "status": "M"
+    }
+  ],
+  "has_base": true,
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "src/pkg/models/model_a.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

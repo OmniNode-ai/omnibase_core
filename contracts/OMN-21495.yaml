@@ -55,10 +55,10 @@ requirements:
 evidence_requirements:
   - kind: tests
     description: Node-home ratchet tests pass at the checkout; no live service is required.
-    command: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
   - kind: ci
     description: Hosted-runner run of the same test directory at the checkout.
-    command: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
 emergency_bypass:
   enabled: false
   justification: ''
@@ -70,8 +70,9 @@ dod_evidence:
     binds_ac: [AC1]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -q --no-cov -k "admits_declared or undeclared_effect or only_the_declaring or malformed_declaration"
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "ordinary_new_node or validator_support_node or does_not_list_a_category
+          or sibling_without_a_declaration"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac2-baseline
     description: Admission leaves the baseline file unchanged.
@@ -79,8 +80,8 @@ dod_evidence:
     binds_ac: [AC2]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -q --no-cov -k "baseline"
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "does_not_loosen_the_baseline"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac3-rule-data
     description: Every rule-data key changes the verdict and invalid rule data fails to load.
@@ -88,8 +89,8 @@ dod_evidence:
     binds_ac: [AC3]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute/test_node_home_check.py
-          -n 0 -q --no-cov -k "rule_data or remediation_text"
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -n 0 -q --no-cov -k "parameter_key or mutating_a_parameter or outside_market_row"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac4-bindings
     description: The whole node-home test directory passes with the handler called on facts only.
@@ -97,7 +98,8 @@ dod_evidence:
     binds_ac: [AC4]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
+          0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-deploy-checkout-test
     description: Hosted-runner run of the node-home tests at the checkout; needs no container daemon or
@@ -106,7 +108,8 @@ dod_evidence:
     binds_ac: [AC1, AC2, AC3, AC4]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
+          0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac5-canary-converged
     description: The canary config is refused and the converged config is admitted.

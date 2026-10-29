@@ -51,7 +51,6 @@ if TYPE_CHECKING:
     from .model_node_home_ratchet_finding import ModelNodeHomeRatchetFinding
     from .model_node_home_ratchet_request import ModelNodeHomeRatchetRequest
     from .model_node_home_ratchet_result import ModelNodeHomeRatchetResult
-    from .model_node_home_rules import ModelNodeHomeRules
     from .model_rule_configs import (
         ModelRuleAsyncPolicyConfig,
         ModelRuleConfigBase,
@@ -125,7 +124,6 @@ __all__ = [
     "ModelNodeHomeRatchetFinding",
     "ModelNodeHomeRatchetRequest",
     "ModelNodeHomeRatchetResult",
-    "ModelNodeHomeRules",
     # Pydantic models (safe to import)
     "ModelLintStatistics",
     "ModelMigrationConflictUnion",
@@ -259,10 +257,6 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelNodeHomeRatchetResult": (
         "omnibase_core.models.validation.model_node_home_ratchet_result",
         "ModelNodeHomeRatchetResult",
-    ),
-    "ModelNodeHomeRules": (
-        "omnibase_core.models.validation.model_node_home_rules",
-        "ModelNodeHomeRules",
     ),
     "ModelRuleAsyncPolicyConfig": (
         "omnibase_core.models.validation.model_rule_configs",

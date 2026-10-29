@@ -73,7 +73,6 @@ src/omnibase_core/validation/validator_workflow_step.py 3
 src/omnibase_core/validators/backend_secret_discipline.py 8
 src/omnibase_core/validators/breaking_schema_change.py 1
 src/omnibase_core/validators/bypass_token_blocklist.py 4
-src/omnibase_core/validators/canonical_file_shape.py 9
 src/omnibase_core/validators/contract_config_compliance.py 3
 src/omnibase_core/validators/dispatch_surface_test_required.py 3
 src/omnibase_core/validators/environment_reader_inventory.py 1

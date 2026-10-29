@@ -124,8 +124,8 @@ dod_evidence:
         check_value: uv run pytest tests/unit/models/skill/test_agent_skill_file_shape.py -n 0 -q
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: uv run python -m omnibase_core.validators.canonical_file_shape --base origin/dev
-          --head HEAD
+        check_value: uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+          --rules file-shape --base origin/dev --head HEAD
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5

@@ -1,0 +1,21 @@
+{
+  "has_base": false,
+  "head_tree": {
+    "argparse_main_paths": [
+      "src/pkg/handlers/handler_y.py"
+    ],
+    "contract_texts": [
+      {
+        "path": "src/pkg/nodes/node_y/contract.yaml",
+        "text": "name: node_y\nhandler_routing:\n  handlers:\n    - handler:\n        name: HandlerY\n        module: pkg.handlers.handler_y\n"
+      }
+    ],
+    "files": [
+      "src/pkg/handlers/handler_y.py",
+      "src/pkg/nodes/node_y/contract.yaml"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": "[project.scripts]\ny = \"pkg.handlers.handler_y:main\"\n",
+    "shebang_lines": []
+  }
+}

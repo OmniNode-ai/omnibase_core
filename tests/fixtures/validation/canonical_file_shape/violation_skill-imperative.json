@@ -1,0 +1,22 @@
+{
+  "changes": [
+    {
+      "new_text": "Run curl https://example.test now\n",
+      "old_path": null,
+      "old_text": "Dispatch it.\n",
+      "path": "plugins/s/SKILL.md",
+      "status": "M"
+    }
+  ],
+  "has_base": true,
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "plugins/s/SKILL.md"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

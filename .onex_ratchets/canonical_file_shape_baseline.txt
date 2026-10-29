@@ -1,8 +1,8 @@
 # canonical-file-shape baseline. Shrink-only.
-# Every line is a code file outside a canonical location that existed
-# when the ratchet was installed. Delete a line when its file is removed,
-# moved into a canonical location or rewritten as contract + node +
-# handler. A new line is refused.
+# Every line is a file a file-shape rule refuses that existed when the
+# rule was installed. Delete a line when its file is removed, moved into
+# a canonical location or rewritten as contract + node + handler. A new
+# line is refused.
 .github/actions/required-check-skip-guard/_workflow_model.py
 .github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors.py
 .pre-commit-hooks/check-evidence-shape.sh
@@ -374,6 +374,56 @@ src/omnibase_core/gate/__init__.py
 src/omnibase_core/gate/config_loader.py
 src/omnibase_core/gate/diff_hash.py
 src/omnibase_core/gate/receipt_canonical.py
+src/omnibase_core/handlers/handler_action_pin.py
+src/omnibase_core/handlers/handler_action_pin_cli.py
+src/omnibase_core/handlers/handler_action_pin_rules.py
+src/omnibase_core/handlers/handler_agent_skill_codec.py
+src/omnibase_core/handlers/handler_arch_handler_contract_compliance.py
+src/omnibase_core/handlers/handler_backward_compat.py
+src/omnibase_core/handlers/handler_backward_compat_cli.py
+src/omnibase_core/handlers/handler_boundary_parity.py
+src/omnibase_core/handlers/handler_canonical_location_rules.py
+src/omnibase_core/handlers/handler_ci_inheritance.py
+src/omnibase_core/handlers/handler_ci_inheritance_cli.py
+src/omnibase_core/handlers/handler_ci_repository_jobs.py
+src/omnibase_core/handlers/handler_contract_check_values_lint.py
+src/omnibase_core/handlers/handler_contract_compliance_check.py
+src/omnibase_core/handlers/handler_contract_substance_floor.py
+src/omnibase_core/handlers/handler_contract_substance_floor_finding.py
+src/omnibase_core/handlers/handler_cosmetic_lint.py
+src/omnibase_core/handlers/handler_dependency_direction.py
+src/omnibase_core/handlers/handler_dependency_direction_cli.py
+src/omnibase_core/handlers/handler_dependency_direction_rules.py
+src/omnibase_core/handlers/handler_dependency_pin_bump.py
+src/omnibase_core/handlers/handler_dict_any.py
+src/omnibase_core/handlers/handler_dict_any_cli.py
+src/omnibase_core/handlers/handler_done_write_receipt_gate.py
+src/omnibase_core/handlers/handler_evidence_admissibility.py
+src/omnibase_core/handlers/handler_finding_baseline.py
+src/omnibase_core/handlers/handler_finding_baseline_cli.py
+src/omnibase_core/handlers/handler_freestanding_imperative_io.py
+src/omnibase_core/handlers/handler_hardcoded_model_tier_engine.py
+src/omnibase_core/handlers/handler_imperative_allowlist_ratchet.py
+src/omnibase_core/handlers/handler_imperative_contract_guard.py
+src/omnibase_core/handlers/handler_imperative_contract_guard_cli.py
+src/omnibase_core/handlers/handler_internal_sibling_pins.py
+src/omnibase_core/handlers/handler_internal_sibling_pins_cli.py
+src/omnibase_core/handlers/handler_ledger_write_guard.py
+src/omnibase_core/handlers/handler_merge_queue_parity.py
+src/omnibase_core/handlers/handler_merge_queue_parity_cli.py
+src/omnibase_core/handlers/handler_migration_conflicts.py
+src/omnibase_core/handlers/handler_no_bare_feature_flags.py
+src/omnibase_core/handlers/handler_no_hardcoded_topics.py
+src/omnibase_core/handlers/handler_occ_contract_view.py
+src/omnibase_core/handlers/handler_private_vocabulary.py
+src/omnibase_core/handlers/handler_private_vocabulary_resolution.py
+src/omnibase_core/handlers/handler_shape_gate_independence.py
+src/omnibase_core/handlers/handler_todo_format.py
+src/omnibase_core/handlers/handler_validator_run.py
+src/omnibase_core/handlers/handler_validator_run_events.py
+src/omnibase_core/handlers/handler_validator_triggered_emit.py
+src/omnibase_core/handlers/handler_version_floor_consumers.py
+src/omnibase_core/handlers/handler_version_floor_consumers_cli.py
 src/omnibase_core/infrastructure/__init__.py
 src/omnibase_core/infrastructure/cache_backends/__init__.py
 src/omnibase_core/infrastructure/execution/__init__.py
@@ -444,6 +494,7 @@ src/omnibase_core/navigation/model_backward_chaining.py
 src/omnibase_core/navigation/model_contract_graph.py
 src/omnibase_core/navigation/model_contract_graph_builder.py
 src/omnibase_core/navigation/model_graph_boundary.py
+src/omnibase_core/nodes/node_git_file_listing_effect/handler_readme_only_docs.py
 src/omnibase_core/normalization/__init__.py
 src/omnibase_core/normalization/batch_validator.py
 src/omnibase_core/normalization/contract_normalizer.py
@@ -874,6 +925,10 @@ src/omnibase_core/validation/antipattern_registry_loader.py
 src/omnibase_core/validation/api_key_ref_discipline/__init__.py
 src/omnibase_core/validation/api_key_ref_discipline/handler.py
 src/omnibase_core/validation/api_key_ref_discipline/models.py
+src/omnibase_core/validation/checker_enum_member_casing.py
+src/omnibase_core/validation/checker_literal_duplication.py
+src/omnibase_core/validation/checker_naming_convention.py
+src/omnibase_core/validation/checker_normalization_symmetry.py
 src/omnibase_core/validation/completion_verify.py
 src/omnibase_core/validation/contracts/__init__.py
 src/omnibase_core/validation/cross_repo/__init__.py
@@ -961,6 +1016,29 @@ src/omnibase_core/validation/todo_marker/__init__.py
 src/omnibase_core/validation/todo_marker/handler.py
 src/omnibase_core/validation/todo_marker/models.py
 src/omnibase_core/validation/todo_marker/runtime_todo_marker.py
+src/omnibase_core/validation/validator_backend_secret_discipline.py
+src/omnibase_core/validation/validator_banned_compose_vars.py
+src/omnibase_core/validation/validator_canonical_inference.py
+src/omnibase_core/validation/validator_contract_walker.py
+src/omnibase_core/validation/validator_demo_path_topic_coherence.py
+src/omnibase_core/validation/validator_duplicate_config_ids.py
+src/omnibase_core/validation/validator_evidence_shape_cli.py
+src/omnibase_core/validation/validator_github_token_env_reads.py
+src/omnibase_core/validation/validator_local_paths.py
+src/omnibase_core/validation/validator_no_lane_literal_branching.py
+src/omnibase_core/validation/validator_node_purity.py
+src/omnibase_core/validation/validator_occ_append_only.py
+src/omnibase_core/validation/validator_occ_merge_eligibility.py
+src/omnibase_core/validation/validator_pull_request_workflow_ratchet.py
+src/omnibase_core/validation/validator_receipt_diff_consistency.py
+src/omnibase_core/validation/validator_receipt_honesty.py
+src/omnibase_core/validation/validator_receipt_reprobe.py
+src/omnibase_core/validation/validator_receipt_runtime_identity.py
+src/omnibase_core/validation/validator_requirements_consumer.py
+src/omnibase_core/validation/validator_rollup_coverage.py
+src/omnibase_core/validation/validator_routing_authority.py
+src/omnibase_core/validation/validator_transport_import.py
+src/omnibase_core/validation/validator_url_authority.py
 src/omnibase_core/validation/validators/__init__.py
 src/omnibase_core/validation/validators/validator_common.py
 src/omnibase_core/validation/zone_classifier.py
@@ -968,7 +1046,6 @@ src/omnibase_core/validators/__init__.py
 src/omnibase_core/validators/backend_secret_discipline.py
 src/omnibase_core/validators/breaking_schema_change.py
 src/omnibase_core/validators/bypass_token_blocklist.py
-src/omnibase_core/validators/canonical_file_shape.py
 src/omnibase_core/validators/command_category_requires_event_model.py
 src/omnibase_core/validators/contract_config_compliance.py
 src/omnibase_core/validators/contracts/__init__.py
