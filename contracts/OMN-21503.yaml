@@ -47,8 +47,8 @@ requirements:
         statement: "Bindings: the checkers are pure (facts in, issues out) -- falsifier: the checker tests
           call the checker with open and Path reads patched to raise"
       - id: AC7
-        statement: "AC7: The checked-in checker_rule_data baseline equals what the tree holds; an entry above
-          the file's count fails the ratchet -- falsifier: uv run pytest tests/ci/test_checker_rule_data_baseline_current.py
+        statement: "AC7: The checked-in checker_rule_data baseline equals what the tree holds; an entry
+          above the file's count fails the ratchet -- falsifier: uv run pytest tests/ci/test_checker_rule_data_baseline_current.py
           -n 0 -q"
 evidence_requirements:
   - kind: tests
@@ -136,7 +136,8 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]
   - id: dod-omn21503-ac7-baseline-current
-    description: The baseline lists no entry above the count the file holds, so the shrink-only ratchet passes on the tree.
+    description: The baseline lists no entry above the count the file holds, so the shrink-only ratchet
+      passes on the tree.
     source: manual
     checks:
       - check_type: test_passes
