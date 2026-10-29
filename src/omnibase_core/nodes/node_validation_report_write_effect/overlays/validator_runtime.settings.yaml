@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Validator-runtime settings (OMN-21529): the default overlay, the default report path, the
+# repository named on triggered events and the topic of the run event. The node contract
+# declares the same topics under event_bus.publish_topics.
+default_overlay: overlays/validator_runtime.inmemory.overlay.yaml
+default_report_path: .onex_state/validation/{validator_id}.report.json
+default_repository: omnibase_core
+run_topic: onex.evt.platform.validator-run.v1

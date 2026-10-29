@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Validator-runtime overlay, in-memory default (OMN-21529). One of a named pair with
+# validator_runtime.redpanda.overlay.yaml: the two differ only in the `bus` binding.
+name: validator-runtime
+profile: default
+bus:
+  implementation: omnibase_core.event_bus.event_bus_inmemory:EventBusInmemory

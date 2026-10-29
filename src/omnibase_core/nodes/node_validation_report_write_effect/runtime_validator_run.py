@@ -17,9 +17,11 @@ Usage (a validator is named by ``module:Class``; the validators live in
     python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run \\
         omnibase_core.validation.validator_hook_writes:ValidatorHookWrites <targets...>
 
-Publishing the run events to the bus waits on the report-writer publish task (the
-writer only derives them to ``<report>.events.jsonl`` today), so no bus is
-resolved here.
+The writer also publishes (OMN-21529): the container's ``ModelValidatorRuntimeBus`` is bound
+from a validator-runtime overlay, ``--overlay`` names the file (the contract names the
+default, the in-memory overlay) and the Redpanda overlay differs from it in the bus
+binding alone. ``--report-json`` defaults to the contract's report path, so a hook run
+always leaves a report.
 """
 
 from __future__ import annotations
@@ -39,6 +41,13 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
     ModelValidationReportWriteInput,
 )
+from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_bus import (
+    ModelValidatorRuntimeBus,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_overlay import (
+    ModelValidatorRuntimeOverlay,
+    ValidationProfile,
+)
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationFindingEmbed,
     ModelValidationReport,
@@ -46,6 +55,12 @@ from omnibase_core.models.validation.model_validation_report import (
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validation_report_publish import (
+    NodeValidationReportPublishEffect,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
+    HandlerValidatorRuntimeOverlay,
 )
 from omnibase_core.validation.validator_base import EXIT_ERRORS, ValidatorBase
 
@@ -70,7 +85,10 @@ def _location(path: Path | None, line: int | None, root: Path) -> str | None:
 
 
 def build_report(
-    validator_id: str, result: ModelValidationResult[None], root: Path
+    validator_id: str,
+    result: ModelValidationResult[None],
+    root: Path,
+    profile: ValidationProfile,
 ) -> ModelValidationReport:
     """The canonical report of one validator result: one finding per issue.
 
@@ -89,20 +107,35 @@ def build_report(
     )
     return ModelValidationReport.from_findings(
         findings=findings,
-        request=ModelValidationRequestRef(profile="default"),
+        request=ModelValidationRequestRef(profile=profile),
         validators_run=(validator_id,),
     )
 
 
-def build_validator_container() -> ModelONEXContainer:
-    """Compose the default container with the report-write EFFECT injected."""
+def build_validator_container(
+    overlay: ModelValidatorRuntimeOverlay | None = None,
+) -> ModelONEXContainer:
+    """Compose the container: the overlay's bus and the report writer, bound to it.
+
+    With no overlay the contract's default (in-memory) overlay is used.
+    """
+    handler = HandlerValidatorRuntimeOverlay()
+    bound = overlay or handler.load(handler.default_overlay_path())
     container = ModelONEXContainer(enable_service_registry=True)
-    asyncio.run(
-        container.service_registry.register_instance(
-            interface=NodeValidationReportWriteEffect,
-            instance=NodeValidationReportWriteEffect(),
+    registry = container.service_registry
+
+    async def _compose() -> None:
+        await registry.register_instance(
+            ModelValidatorRuntimeBus, handler.bind_bus(bound)
         )
-    )
+        await registry.register_instance(
+            interface=NodeValidationReportWriteEffect,
+            instance=NodeValidationReportPublishEffect(
+                container, handler.settings().run_topic
+            ),
+        )
+
+    asyncio.run(_compose())
     return container
 
 
@@ -111,6 +144,8 @@ def run_validator(
     validator: ValidatorBase,
     targets: Sequence[Path],
     report_path: str | None,
+    profile: ValidationProfile,
+    repository: str,
 ) -> ModelValidationResult[None]:
     """Validate ``targets``; write the report through the container's writer."""
     result = validator.validate(list(targets))
@@ -124,7 +159,10 @@ def run_validator(
         writer.handle(
             ModelValidationReportWriteInput(
                 report_path=report_path,
-                report=build_report(validator.validator_id, result, Path.cwd()),
+                report=build_report(
+                    validator.validator_id, result, Path.cwd(), profile
+                ),
+                repository=repository,
             )
         )
     return result
@@ -133,9 +171,10 @@ def run_validator(
 def main(
     validator_cls: type[ValidatorBase],
     argv: Sequence[str] | None = None,
-    container_factory: Callable[[], ModelONEXContainer] | None = None,
+    container_factory: Callable[[ModelValidatorRuntimeOverlay], ModelONEXContainer]
+    | None = None,
 ) -> int:
-    """CLI runtime: targets, ``--report-json``; exit 0 when valid, else the base code."""
+    """CLI runtime: targets, ``--report-json``, ``--overlay``; exit 0 when valid, else the base code."""
     parser = argparse.ArgumentParser(
         description=f"Run {validator_cls.validator_id} validator"
     )
@@ -145,7 +184,19 @@ def main(
         "--report-json",
         default=None,
         metavar="PATH",
-        help="Write the canonical validation report through the report-write EFFECT",
+        help="Report path; the node contract's default when omitted",
+    )
+    parser.add_argument(
+        "--overlay",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Validator-runtime overlay; the node contract's default when omitted",
+    )
+    parser.add_argument(
+        "--repository",
+        default=None,
+        help="Repository named on triggered events; the node contract's default when omitted",
     )
     args = parser.parse_args(argv)
 
@@ -157,12 +208,18 @@ def main(
         targets.append(validated)
 
     validator = validator_cls()
+    handler = HandlerValidatorRuntimeOverlay()
     try:
+        settings = handler.settings()
+        overlay = handler.load(args.overlay or handler.default_overlay_path())
         result = run_validator(
-            container_factory() if container_factory and args.report_json else None,
+            container_factory(overlay) if container_factory else None,
             validator,
             targets,
-            args.report_json,
+            args.report_json
+            or settings.default_report_path.format(validator_id=validator.validator_id),
+            overlay.profile,
+            args.repository or settings.default_repository,
         )
     except ModelOnexError as exc:
         sys.stderr.write(f"Validation error: {exc.message}\n")
