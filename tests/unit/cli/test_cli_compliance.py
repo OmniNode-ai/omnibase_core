@@ -82,3 +82,18 @@ class TestComplianceCheckRuns:
         )
         assert result.exit_code == 0
         assert "No contract.yaml files found" in result.output
+
+    def test_planted_validator_fixture_contracts_are_not_nodes(
+        self, tmp_path: Path
+    ) -> None:
+        """A contract.yaml under tests/fixtures is a validator test input, not a node."""
+        fixture = tmp_path / "tests" / "fixtures" / "validation" / "node_x_compute"
+        fixture.mkdir(parents=True)
+        (fixture / "contract.yaml").write_text("output_model: ModelValidationReport\n")
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            ["compliance", "check", "--repo-root", str(tmp_path)],
+        )
+        assert result.exit_code == 0
+        assert "No contract.yaml files found" in result.output

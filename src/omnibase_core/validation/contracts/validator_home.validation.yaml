@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: validator_home
+  validator_name: Validator Home (K7)
+  validator_description: |
+    Validator logic lives in omnibase_core only (OMN-21503, plan task T-Q6 K7).
+    Run it in every repository but omnibase_core: a validator node, a repo-local
+    check hook, a hook that runs a repository script or pytest, and a test that
+    pins hook or workflow text each hold validator logic outside its home.
+
+    Every pattern, name list and marker below is a rule-row parameter; the checker
+    holds none. A behavioural canary that runs the hook is admitted by the
+    config_pinning_test row's canary_patterns.
+
+  target_patterns:
+    - "**/*pre-commit-config.yaml"
+    - "**/contract.yaml"
+    - "**/test_*.py"
+    - "**/*.test_*.py"
+
+  exclude_patterns:
+    - "**/tests/fixtures/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+  rules:
+    - rule_id: validator_node_outside_core
+      description: >-
+        A node whose contract output_model is ModelValidationReport, or whose name matches a validator
+        pattern, holds validator logic outside omnibase_core. Move the predicate to a core checker and
+        keep the node a thin caller that imports it and defines no predicate.
+      severity: error
+      enabled: true
+      parameters:
+        contract_name_patterns:
+          - '(^|/)contract\.yaml$'
+        validator_output_models:
+          - 'ModelValidationReport'
+        validator_node_patterns:
+          - '(^|_)(validator|validate|check|checker|lint|audit|conformance)(_|$)'
+        core_checker_import_patterns:
+          - 'omnibase_core\.validation\.(checker|validator)_\w+'
+        predicate_patterns:
+          - '\bre\.(compile|search|match|fullmatch|findall|finditer)\('
+          - '\b(frozenset|set)\('
+          - '(?m)^_?[A-Z][A-Z0-9_]+\s*(:[^=\n]+)?=\s*[\(\[\{]'
+
+    - rule_id: local_hook_definition
+      description: >-
+        A repo local pre-commit hook (pygrep, fail, system, script, an inline shell command) defines a
+        check in the consuming repository. Declare the check as a generic-format validator in omnibase_core
+        and reference its hook from the core manifest.
+      severity: error
+      enabled: true
+      parameters:
+        config_name_patterns:
+          - 'pre-commit-config\.yaml$'
+        local_repo_value: 'local'
+        local_languages:
+          - 'pygrep'
+          - 'fail'
+          - 'system'
+          - 'script'
+        inline_shell_patterns:
+          - '(^|\s)(ba|z)?sh\s+-c\b'
+
+    - rule_id: repo_script_hook
+      description: >-
+        A hook entry runs a script that lives in the consuming repository. Move the check to omnibase_core
+        and reference the core hook instead.
+      severity: error
+      enabled: true
+      parameters:
+        config_name_patterns:
+          - 'pre-commit-config\.yaml$'
+        script_entry_patterns:
+          - '(^|[\s''"])\.?/?scripts/[^\s''"]+'
+          - '(^|\s)\.?/?[\w./-]+\.(sh|bash)\b'
+          - '(^|\s)python3?\s+[\w./-]+\.py\b'
+
+    - rule_id: pytest_hook
+      description: >-
+        A hook runs pytest. A test is not a hook: express the property as a generic-format validator in
+        omnibase_core.
+      severity: error
+      enabled: true
+      parameters:
+        config_name_patterns:
+          - 'pre-commit-config\.yaml$'
+        pytest_entry_patterns:
+          - '(^|\s|-m\s)pytest\b'
+
+    - rule_id: config_pinning_test
+      description: >-
+        A test loads .pre-commit-config.yaml or .github/workflows and asserts on hook or step text. Pinning
+        configuration text is a validator in omnibase_core; a behavioural canary that runs the hook is
+        admitted by carrying the canary marker.
+      severity: error
+      enabled: true
+      parameters:
+        test_name_patterns:
+          - '(^|/|\.)test_[^/]*\.py$'
+        config_path_patterns:
+          - '\.pre-commit-config\.yaml'
+          - '\.github/workflows'
+        text_assertion_patterns:
+          - '\bre\.(compile|search|match|fullmatch|findall)\('
+          - '\bassert\b[^\n]*\bin\b[^\n]*\b(text|content|config|workflow|entry)\b'
+        canary_patterns:
+          - 'validator-home-canary'
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

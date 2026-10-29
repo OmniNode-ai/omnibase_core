@@ -1,0 +1,133 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21503
+title: "T-Q6: K7 validator_home, K10 checker_rule_data, generic-format refusal, one-off migration"
+summary: Validator logic lives in omnibase_core in the generic validator format and nowhere else. K7 validator_home
+  (run in every repository but omnibase_core) refuses a validator node, a repo local check hook, a hook
+  that runs a repository script or pytest, and a test that pins hook or workflow text. K10 checker_rule_data
+  refuses a rule table held in a checker and a new validator outside the generic format. Each is a pure
+  checker_<id>.py, a ValidatorBase validator_<id>.py and a validation/contracts/<id>.validation.yaml whose
+  rule rows hold every pattern, name list and remediation text. The merged handlers/handler_*_cli.py one-offs
+  move into the same format, each deleted with its console script, pre-commit entry and tests.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21503-generic-format
+    statement: Validator logic is a pure checker, a ValidatorBase entry and a .validation.yaml contract;
+      K7 and K10 refuse the shapes that put it elsewhere.
+    acceptance:
+      - id: AC1
+        statement: "AC1: K7 validator_home reports exactly one issue with its rule_id on each planted
+          violation (a repo local pygrep hook, a hook that runs a repository script, a hook that runs
+          pytest, a validator node outside core, a test with WRITING_ENTRY = re.compile over the hook
+          config) and none on the clean twins -- falsifier: uv run pytest tests/unit/validation/test_validator_home.py
+          -n 0 -q"
+      - id: AC2
+        statement: "AC2: K10 checker_rule_data reports _REMEDIATION in a handler_x_cli.py that writes
+          a report and INFRA_ALLOWLIST in a ValidatorBase module, and lists the constants of validators/contract_config_compliance.py
+          and validators/handler_di_gate.py -- falsifier: uv run pytest tests/unit/validation/test_validator_checker_rule_data.py
+          -n 0 -q"
+      - id: AC3
+        statement: "AC3: A new handler_*_cli.py with its own argparse main over a report or its own report
+          writer, and a module that returns ModelValidationReport without the checker_, validator_ and
+          .validation.yaml triple, are refused by the validator_outside_generic_format row of K10 -- falsifier:
+          uv run pytest tests/unit/validation/test_validator_checker_rule_data.py -n 0 -q -k generic_format"
+      - id: AC4
+        statement: "AC4: Each migrated one-off is checker_<id>.py + validator_<id>.py + <id>.validation.yaml
+          with the one-off copy, its console script, its pre-commit entry and its tests deleted, and the
+          hook id unchanged -- falsifier: the test module of each migrated validator and tests/ci/test_one_off_validators_migrated_omn21503.py"
+      - id: AC5
+        statement: "Configuration: every pattern, name list, threshold and remediation text is a parameters
+          entry of the checker's .validation.yaml -- falsifier: K10 rule_table_in_checker reports zero
+          on the new checker and validator modules, and the table-driven tests mutate every parameters
+          key of every rule row and assert the verdict change"
+      - id: AC6
+        statement: "Bindings: the checkers are pure (facts in, issues out) -- falsifier: the checker tests
+          call the checker with open and Path reads patched to raise"
+evidence_requirements:
+  - kind: tests
+    description: K7, K10 and the canonical-file-shape location rule.
+    command: uv run pytest tests/unit/validation/test_validator_home.py tests/unit/validation/test_validator_checker_rule_data.py
+      tests/unit/validation/test_validator_public_runner_placement.py tests/ci/test_one_off_validators_migrated_omn21503.py
+      tests/unit/validators/test_canonical_file_shape.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21503-ac1-validator-home
+    description: Each K7 rule has a planted violation that yields exactly one issue with its rule_id and
+      a clean twin that yields none; disabling a rule row clears its fixtures.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_home.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21503-ac2-checker-rule-data
+    description: The planted _REMEDIATION and INFRA_ALLOWLIST fixtures are reported by name, and K10 over
+      the two gate modules lists their constants.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_checker_rule_data.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21503-ac3-refusal
+    description: A one-off CLI and a report-returning module outside the triple are refused by the K10
+      row validator_outside_generic_format, with the pattern data in the contract.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_checker_rule_data.py -n 0 -q -k
+          generic_format
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21503-ac4-migration
+    description: The migrated one-offs are absent from handlers/ and pyproject console scripts and the
+      hook ids stay; the remaining one-offs are named in the lane report for a continuation.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_one_off_validators_migrated_omn21503.py -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21503-configuration
+    description: K7 and K10 hold no pattern, name or remediation literal; each parameters key of each
+      rule row changes the verdict on the fixture it controls, and an invalid contract raises.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_home.py tests/unit/validation/test_validator_checker_rule_data.py
+          -n 0 -q -k "parameter or invalid or constants_still_held or hold_no_rule_table"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21503-bindings
+    description: The checkers read no file and no path while open, read_text and iterdir are patched to
+      raise.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_home.py tests/unit/validation/test_validator_checker_rule_data.py
+          -n 0 -q -k pure
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21503-deploy-checkout-validators
+    description: Hosted-runner execution of the K7, K10 and migrated public-runner-placement validators
+      at the checkout. The focused verdict and purity tests require no private runtime or container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_home.py tests/unit/validation/test_validator_checker_rule_data.py
+          tests/unit/validation/test_validator_public_runner_placement.py -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]

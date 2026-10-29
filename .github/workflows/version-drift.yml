@@ -167,9 +167,8 @@ jobs:
           TARGET_REPO: ${{ inputs.repo || github.event.repository.name }}
           VISIBILITY: ${{ github.event.repository.private && 'private' || 'public' }}
         run: |
-          args=(--root "$GITHUB_WORKSPACE/target" --repo "$TARGET_REPO" --visibility "$VISIBILITY"
-                --report-json "$GITHUB_WORKSPACE/public-runner-placement-report.json")
-          uv run --no-sync check-public-runner-placement "${args[@]}"
+          args=(--root "$GITHUB_WORKSPACE/target" --repo "$TARGET_REPO" --visibility "$VISIBILITY")
+          uv run --no-sync python -m omnibase_core.validation.validator_public_runner_placement "${args[@]}"
 
       - name: Version floor consumers
         working-directory: omnibase_core

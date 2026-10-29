@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+repos:
+  - repo: local
+    hooks:
+      - id: inline-check
+        name: inline check
+        language: python
+        entry: bash -c 'exit 1'

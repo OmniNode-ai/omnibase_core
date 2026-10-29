@@ -118,6 +118,7 @@ def test_canonical_locations(path: str) -> None:
         "src/pkg/validation/util_a.py",
         "src/pkg/validation/sub/checker_a.py",
         "src/pkg/a.py",
+        "src/pkg/validation/helper_checker_a.py",
         ".github/scripts/a.py",
         "src/pkg/validation/handler_a.py",
         "src/pkg/validation/checker_a.sh",
@@ -125,6 +126,29 @@ def test_canonical_locations(path: str) -> None:
     ],
 )
 def test_noncanonical_locations(path: str) -> None:
+    assert not is_canonical_location(path)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/omnibase_core/validation/checker_binding_conformance.py",
+        "src/omnibase_core/validation/validator_binding_conformance.py",
+    ],
+)
+def test_the_generic_validator_format_is_canonical(path: str) -> None:
+    assert is_canonical_location(path)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/omnibase_core/validation/helper_binding_conformance.py",
+        "src/omnibase_core/validation/sub/checker_binding_conformance.py",
+        "src/omnibase_core/runtime/checker_binding_conformance.py",
+    ],
+)
+def test_the_generic_validator_format_admits_nothing_else(path: str) -> None:
     assert not is_canonical_location(path)
 
 

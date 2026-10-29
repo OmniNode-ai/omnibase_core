@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: public_runner_placement
+  validator_name: Public Runner Placement
+  validator_description: |
+    No public-repository job runs on the fleet (OMN-19998, OMN-21280; RULING
+    2026-10-16T07:07:09Z: "Ci runners should be for private repos only."). In a public
+    repository every job whose runs-on is, or can resolve to, anything but a
+    GitHub-hosted label is refused, with no baseline. A private repository passes.
+
+    The repository name and its visibility are arguments of the validator entry
+    (--repo, --visibility); every pattern and the remediation text are parameters of
+    the self_hosted_in_public rule row.
+
+  target_patterns:
+    - ".github/workflows/*.yml"
+    - ".github/workflows/*.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: self_hosted_in_public
+      description: >-
+        A job of a public repository whose runs-on is, or can resolve to, a label that is not GitHub-hosted.
+      severity: error
+      enabled: true
+      parameters:
+        hosted_label_pattern: '(?i)^(ubuntu|windows|macos)-[\w.\-]+$'
+        unprovable_context_pattern: '(?i)\b(?:vars|needs|matrix|inputs|env|secrets|steps)\.'
+        self_hosted_marker: 'self-hosted'
+        returned_literal_pattern: '(?:&&|\|\||\?|:)\s*[''"]([^''"]+)[''"]'
+        json_array_literal_pattern: '\[\s*+(?:"[^"]*+"\s*+,?+\s*+)++\]'
+        private_guard_pattern: '^github\.event\.repository\.private\s*&&\s*\('
+        hosted_fallback_pattern: '^\|\|\s*(?:''([^'']+)''|fromJSON\(\s*''(\[[^'']*\])''\s*\))$'
+        remediation: >-
+          Run the job on a GitHub-hosted label (ubuntu-latest), or move it to a bus node the private lab
+          runs (plan: knowledge_base_internal#1340). CI runners are for private repositories only (RULING
+          2026-10-16T07:07:09Z, OMN-19998); there is no baseline to record the job in (OMN-21280). #magic___^_^___line
+    - rule_id: workflow_does_not_parse
+      description: A workflow file that is not valid YAML cannot be judged, so the check fails.
+      severity: error
+      enabled: true
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

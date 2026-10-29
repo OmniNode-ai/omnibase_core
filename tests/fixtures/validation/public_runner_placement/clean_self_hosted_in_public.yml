@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: ci
+on: [pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps: [{run: echo ok}]
+  routed:
+    runs-on: ${{ github.event.repository.private && (fromJSON(vars.RUNS_ON_JSON)) || 'ubuntu-latest' }}
+    steps: [{run: echo ok}]
+  call:
+    uses: example/repo/.github/workflows/x.yml@abc
