@@ -34,6 +34,24 @@ requirements:
         statement: 'AC4: Bindings: the handler stays a pure COMPUTE node; the runtime gathers the git
           index and contract blobs and loads the rule data -- falsifier: the handler tests run with facts
           only'
+  - id: req-omn21495-pin-parity
+    statement: The shared core hook repo is pinned at one rev per pre-commit config, checked by a validator
+      in the generic format whose commit-time lookup is an effect node resolved from the container.
+    acceptance:
+      - id: AC5
+        statement: 'AC5: The check refuses a hook of the shared core hook repo whose pinned rev is older
+          than the newest rev that hook repo is pinned at in the same .pre-commit-config.yaml, and admits
+          the converged config -- falsifier: pytest cases over a canary fixture and a converged fixture'
+      - id: AC6
+        statement: 'AC6: A config shaped like omniclaude-internal .pre-commit-config.yaml line 13 pinned
+          at d7ed23f1 fails the check; at the current core pin it passes -- falsifier: the check run against
+          both consumer-shaped fixtures'
+      - id: AC7
+        statement: 'AC7: Configuration: the git timeout, the cache directory default, the cache index
+          names, the hook repositories and the remediation text are parameters of the validation contract;
+          the rev-time lookup is an effect node and the runtime resolves it and the report writer from
+          the container -- falsifier: a table-driven test mutates every parameter, an invalid contract
+          fails to load, and a container spy records both resolutions'
 evidence_requirements:
   - kind: tests
     description: Node-home ratchet tests pass at the checkout; no live service is required.
@@ -89,4 +107,32 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/nodes/node_node_home_check_compute -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac5-canary-converged
+    description: The canary config is refused and the converged config is admitted.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
+          -n 0 -q --no-cov -k "older_than or clean or violation"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac6-consumer-fixtures
+    description: The consumer-shaped config fails at the stale rev and passes at the current pin.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
+          -n 0 -q --no-cov -k "consumer"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac7-parameters-di
+    description: Every parameter changes a verdict, an invalid contract fails to load, and the runtime
+      resolves its effects from the container.
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
+          tests/unit/nodes/node_precommit_rev_time_effect -n 0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
