@@ -8,19 +8,21 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+NodeHomeFindingCode = Literal[
+    "node-outside-market",
+    "baseline-stale",
+    "baseline-growth",
+    "baseline-removed",
+    "entry-point-outside-market",
+]
+
 
 class ModelNodeHomeRatchetFinding(BaseModel):
     """A forbidden node or a baseline entry that must be removed."""
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    code: Literal[
-        "node-outside-market",
-        "baseline-stale",
-        "baseline-growth",
-        "baseline-removed",
-        "entry-point-outside-market",
-    ]
+    code: NodeHomeFindingCode
     path: str
     message: str
 
@@ -29,4 +31,4 @@ class ModelNodeHomeRatchetFinding(BaseModel):
         return f"{self.code} {self.path}: {self.message}"
 
 
-__all__ = ["ModelNodeHomeRatchetFinding"]
+__all__ = ["ModelNodeHomeRatchetFinding", "NodeHomeFindingCode"]

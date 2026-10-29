@@ -24,6 +24,7 @@ from omnibase_core.models.validation.model_canonical_file_shape_text import (
 )
 from omnibase_core.models.validation.model_node_home_ratchet_finding import (
     ModelNodeHomeRatchetFinding,
+    NodeHomeFindingCode,
 )
 from omnibase_core.models.validation.model_node_home_ratchet_request import (
     ModelNodeHomeRatchetRequest,
@@ -36,11 +37,11 @@ from omnibase_core.validation.checker_canonical_file_shape import (
     parse_baseline,
 )
 
-CODE_OUTSIDE_MARKET = "node-outside-market"
-CODE_BASELINE_STALE = "baseline-stale"
-CODE_BASELINE_GROWTH = "baseline-growth"
-CODE_BASELINE_REMOVED = "baseline-removed"
-CODE_ENTRY_POINT = "entry-point-outside-market"
+CODE_OUTSIDE_MARKET: NodeHomeFindingCode = "node-outside-market"
+CODE_BASELINE_STALE: NodeHomeFindingCode = "baseline-stale"
+CODE_BASELINE_GROWTH: NodeHomeFindingCode = "baseline-growth"
+CODE_BASELINE_REMOVED: NodeHomeFindingCode = "baseline-removed"
+CODE_ENTRY_POINT: NodeHomeFindingCode = "entry-point-outside-market"
 RULE_PREFIX = "node-home:"
 
 
@@ -161,7 +162,7 @@ class NodeHomeRule:
         self._rules = rules
 
     def _finding(
-        self, code: str, path: str, message: str
+        self, code: NodeHomeFindingCode, path: str, message: str
     ) -> list[ModelNodeHomeRatchetFinding]:
         if f"{RULE_PREFIX}{code}" not in self._rules.enabled:
             return []
