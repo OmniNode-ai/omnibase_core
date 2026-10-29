@@ -33,3 +33,24 @@ fixtures:
   clean_evidence.fixture: {path: evidence/OMN-1/run.yaml, family: null}
   clean_public_ip.fixture: {path: src/pkg/constants.py, family: null}
   clean_doc.fixture: {path: docs/guide.md, family: null}
+  # OMN-21463 (K6): family T, a model tier alias; family N, an engine name.
+  violation_t_key.fixture: {path: src/pkg/nodes/node_example/contract.yaml, family: T}
+  violation_t_literal.fixture: {path: src/pkg/models/model_tier.py, family: T}
+  violation_t_tuple.fixture: {path: src/pkg/models/model_rungs.py, family: T}
+  violation_t_set.fixture: {path: src/pkg/models/model_rungs.py, family: T}
+  violation_t_yaml_list.fixture: {path: src/pkg/configs/lanes.yaml, family: T}
+  violation_t_yaml_flow.fixture: {path: src/pkg/configs/lanes.yaml, family: T}
+  violation_t_assign.fixture: {path: src/pkg/handlers/handler_lane.py, family: T}
+  violation_n_enum.fixture: {path: src/pkg/models/model_engine.py, family: N}
+  violation_n_alias_key.fixture: {path: src/pkg/handlers/handler_parse.py, family: N}
+  violation_n_alias_tier_key.fixture: {path: src/pkg/handlers/handler_parse.py, family: N}
+  violation_n_literal.fixture: {path: src/pkg/models/model_engine.py, family: N}
+  violation_n_yaml_value.fixture: {path: src/pkg/configs/lanes.yaml, family: N}
+  violation_n_yaml_list.fixture: {path: src/pkg/configs/lanes.yaml, family: N}
+  violation_n_keyword.fixture: {path: src/pkg/handlers/handler_lane.py, family: N}
+  clean_tn_comment_py.fixture: {path: src/pkg/handlers/handler_lane.py, family: null}
+  clean_tn_comment_yaml.fixture: {path: src/pkg/nodes/node_example/contract.yaml, family: null}
+  clean_tn_docstring.fixture: {path: src/pkg/handlers/handler_lane.py, family: null}
+  clean_tn_mixed_vocabulary.fixture: {path: src/pkg/validation/validator_x.py, family: null}
+  clean_tn_yaml_other_key.fixture: {path: src/pkg/validation/policy.yaml, family: null}
+  clean_tn_test_path.fixture: {path: tests/unit/test_lane.yaml, family: null}

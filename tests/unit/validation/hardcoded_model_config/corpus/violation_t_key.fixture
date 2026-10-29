@@ -1,0 +1,4 @@
+name: node_example
+node_type: COMPUTE
+config:
+  ceiling: opus
