@@ -361,3 +361,57 @@ def test_registration_in_both_contract_and_document_is_error(tmp_path: Path) -> 
     )
     assert exit_code == 1
     assert report["overall_status"] == "ERROR"
+
+
+_RUN_STEP_DOCUMENT = (
+    "event_registrations:\n"
+    "  - event_type: delegation.run_step\n"
+    "    topics: [" + _RUN_STEP_TOPIC + "]\n"
+    "    partition_key_field: correlation_id\n"
+    "    required_fields: [tenant_id, correlation_id, step_sequence]\n"
+)
+
+
+def test_missing_source_document_is_error(tmp_path: Path) -> None:
+    contract_dir, registry = _layout(
+        tmp_path, contracts={"usage.yaml": _USAGE_CONTRACT}
+    )
+    exit_code, report = _check(
+        tmp_path,
+        contract_dir,
+        registry,
+        "--source-document",
+        str(tmp_path / "absent_registrations.yaml"),
+    )
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
+
+
+def test_contract_directory_declaring_nothing_beside_a_document_is_error(
+    tmp_path: Path,
+) -> None:
+    plain = _USAGE_CONTRACT.split("event_registration:")[0]
+    contract_dir, registry = _layout(tmp_path, contracts={"usage.yaml": plain})
+    document = _write(
+        tmp_path / "hook_registrations.yaml",
+        _RUN_STEP_DOCUMENT
+        + "  - event_type: delegation.usage_call\n"
+        + "    topics: ["
+        + _USAGE_TOPIC
+        + "]\n"
+        + "    partition_key_field: tenant_id\n"
+        + "    required_fields: [call_id, model_name, tenant_id, timestamp]\n",
+    )
+    exit_code, report = _check(
+        tmp_path, contract_dir, registry, "--source-document", str(document)
+    )
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
+
+
+def test_unreadable_contract_file_is_error(tmp_path: Path) -> None:
+    contract_dir, registry = _layout(tmp_path)
+    (contract_dir / "undecodable.yaml").write_bytes(b"topic: \xff\xfe\xfd\n")
+    exit_code, report = _check(tmp_path, contract_dir, registry)
+    assert exit_code == 1
+    assert report["overall_status"] == "ERROR"
