@@ -52,7 +52,17 @@ from omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_r
 from omnibase_core.validation import checker_task_criteria as checker_module
 from omnibase_core.validation import validator_base
 from omnibase_core.validation.checker_task_criteria import check_task_criteria
+from omnibase_core.validation.hardcoded_model_config import handler as model_config
+from omnibase_core.validation.hardcoded_model_config.models import (
+    ModelHardcodedModelConfigPolicy,
+)
+from omnibase_core.validation.validator_checker_rule_data import (
+    ValidatorCheckerRuleData,
+)
+from omnibase_core.validation.validator_hardcoded_topics import ValidatorHardcodedTopics
 from omnibase_core.validation.validator_task_criteria import ValidatorTaskCriteria
+from omnibase_core.validation.validator_url_authority import scan_source
+from omnibase_core.validators import contract_config_compliance
 
 pytestmark = pytest.mark.unit
 
@@ -308,6 +318,36 @@ def test_checker_module_is_pure_and_holds_no_rule_table() -> None:
         )
     ]
     assert assigned == []
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    [
+        "validation/checker_task_criteria.py",
+        "validation/validator_task_criteria.py",
+        "models/task_criteria/__init__.py",
+        "models/task_criteria/model_task_criteria_check_input.py",
+        "models/task_criteria/model_task_criteria_check_result.py",
+        "models/task_criteria/model_task_criteria_rule_row.py",
+        "models/task_criteria/model_task_criteria_rules.py",
+    ],
+)
+def test_production_source_has_no_runtime_literals(relative_path: str) -> None:
+    """Scan the actual source; absent source must not count as a clean scan."""
+    package_root = Path(validator_base.__file__).parent.parent
+    path = package_root / relative_path
+    source = path.read_text(encoding="utf-8")
+    repo_path = f"src/omnibase_core/{relative_path}"
+    policy_path = Path(model_config.__file__).with_name("policy.yaml")
+    policy = ModelHardcodedModelConfigPolicy.model_validate(
+        yaml.safe_load(policy_path.read_text(encoding="utf-8"))
+    )
+
+    assert scan_source("omnibase_core", repo_path, source) == []
+    assert model_config.scan(repo_path, source, policy) == []
+    assert not ValidatorHardcodedTopics().validate_file(path).issues
+    assert not ValidatorCheckerRuleData().validate_file(path).issues
+    assert contract_config_compliance.validate_file(path) == []
 
 
 class _SpyContainer:

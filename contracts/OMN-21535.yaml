@@ -7,7 +7,8 @@ summary: The K12 task_criteria checker (validation/checker_task_criteria.py, ent
   judges plan task blocks, ticket text, contract criteria, briefs and rules text with ten rules whose
   patterns, lists, block digest and remedy texts are the parameters of task_criteria.validation.yaml.
   This contract binds the omnibase_core half that is buildable before OMN-21529 merges; the omnimarket
-  caller (AC3) and the two-overlay run (AC8) follow.
+  caller (AC3) follows. AC8 binds the two-overlay golden-report tests, with a recording bus for the Redpanda
+  overlay in hosted tests.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -40,6 +41,10 @@ requirements:
         statement: "AC7: Replay: disabling a rule's row in the `.validation.yaml` fails that rule's fixture
           -- falsifier: `uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -k disabled`
           passes"
+      - id: AC8
+        statement: "AC8: the in-memory and Redpanda overlays run the same fixtures on one commit -- falsifier:
+          both normalised reports equal the committed golden report and each run publishes exactly one
+          run event; hosted tests use a recording bus for the Redpanda overlay"
 evidence_requirements:
   - kind: tests
     description: Every violation fixture yields exactly one issue with its rule id, every clean fixture
@@ -90,12 +95,13 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC5]
   - id: dod-omn21535-ac6-no-literal
-    description: The URL authority validator reports zero on the changed production source.
+    description: The URL authority, shipped model configuration policy, hardcoded topics, checker rule
+      data and contract-config validators report zero on every new production module; absent source fails.
     source: manual
     checks:
-      - check_type: command
-        check_value: uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_task_criteria.py
-          src/omnibase_core/validation/validator_task_criteria.py
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+          -k production_source_has_no_runtime_literals
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC6]
   - id: dod-omn21535-ac7-disabled-row
@@ -107,6 +113,16 @@ dod_evidence:
           -k disabled
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC7]
+  - id: dod-omn21535-ac8-overlay-reports
+    description: Both overlay reports equal the committed golden report and each run emits one run event;
+      the hosted Redpanda overlay uses a recording bus.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_task_criteria_runtime_overlays.py -q -o
+          addopts='' -k "in_memory_run or redpanda_run"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC8]
   - id: dod-omn21535-deploy-checker
     description: Hosted source readback at the checkout commit requires the checker to hold no file read
       and the validator to read the file and call the checker.
