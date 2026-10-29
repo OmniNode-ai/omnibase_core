@@ -715,13 +715,15 @@ MUTATIONS: dict[str, tuple[str, object]] = {
 }
 # Read from the repository by the node runtime (git facts), not by the checker; the
 # runtime test mutates these through a fixture repository. The node-home keys and
-# the git-reader ceiling are mutated in test_node_home_admission.py.
+# the git-reader ceiling are mutated in test_node_home_admission.py; the landing ref
+# in test_commit_time_merge_base.py.
 READER_KEYS = frozenset(
     {
         "handler_class_pattern",
         "argparse_pattern",
         "main_pattern",
         "cat_file_timeout_s",
+        "landing_ref",
         "baseline_header",
         "burndown_baseline_header",
     }
