@@ -1469,3 +1469,18 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-inline-logic
+  name: No program written inline in a workflow or a contract check value (OMN-21534, K9)
+  description: >
+    A workflow run block that runs python as its shell, with -c or from a heredoc, that is longer than
+    the line limit or that holds a for, while or until loop, and a ticket-contract check_value that runs
+    python -c or a shell -c body over the character limit or holding a newline, are refused. The signals,
+    the limits, the remedy text and the scan set are the rule rows of inline_logic.validation.yaml. The
+    remedy is onex run-node <node> or a core hook id.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_inline_logic:ValidatorInlineLogic
+  files: ^(\.github/workflows/[^/]+\.ya?ml|contracts/OMN-[^/]+\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

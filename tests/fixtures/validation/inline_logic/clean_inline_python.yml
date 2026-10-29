@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Clean fixture for the inline_python rule (OMN-21534): the step names a node.
+name: clean
+on: push
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    steps:
+      - name: build matrix
+        run: uv run onex run-node node_build_matrix

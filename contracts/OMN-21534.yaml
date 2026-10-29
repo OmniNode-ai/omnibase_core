@@ -1,0 +1,116 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21534
+title: "inline_logic checker for workflows and the inline_program rule of lint-contract-check-values"
+summary: Checker K9 of the validators-to-core plan, task T0.6, in the generic contract-driven validator
+  format. Workflows get inline_python, run_block_length and inline_loop; a ticket contract's check_value
+  gets inline_program. The checker is pure, every pattern, limit and remedy text is a parameters entry
+  of inline_logic.validation.yaml, and the runtime resolves the report writer and the bus from the container.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21534-inline-logic
+    statement: A program written inline in a workflow run block or in a contract check_value is refused
+      by a pure checker whose rule data is a validation contract, with a planted and a clean fixture per
+      rule.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a `run:` step with `shell: python` building a matrix is refused, and a `check_value`
+          with a 25-line `python3 -c` is refused -- falsifier: the two D.2 K9 fixtures in `uv run pytest
+          tests/unit/validation/test_checker_inline_logic.py -q`"
+      - id: AC2
+        statement: "AC2: `contracts/OMN-21502.yaml` on the knowledge_base_internal#1547 branch is refused
+          by the wired hook -- falsifier: `pre-commit run --files contracts/OMN-21502.yaml` at that branch
+          exits non-zero"
+      - id: AC3
+        statement: "AC3: the thresholds and remedy text are rule data -- falsifier: the KC-config mutation
+          test of AC4"
+      - id: AC4
+        statement: "AC4: KC-config: every pattern, name list, threshold and remediation text is a `parameters`
+          entry of the checker's `.validation.yaml` -- falsifier: K10 `rule_table_in_checker` reports
+          zero on the checker module, and a table-driven test mutates every `parameters` key of every
+          rule row in turn, asserting the verdict change on the fixture that key controls and asserting
+          separately that an invalid contract fails to load rather than passing"
+      - id: AC5
+        statement: "AC5: KC-a (Declared and injected): the checker is pure (facts in, issues out); its
+          runtime resolves the report writer and the bus from the container -- falsifier: a container
+          spy in the runtime test records the resolution of the writer and the bus; the checker test calls
+          the checker with facts only while `open` and `Path` reads are patched to raise"
+      - id: AC6
+        statement: "AC6: KC-b (No literal): the changed source holds no host, port, topic, model name,
+          timeout or URL -- falsifier: hardcoded_topic, hardcoded_model_config, url_authority and contract_config_compliance
+          report zero on the changed production source"
+      - id: AC7
+        statement: "AC7: KC-replay: every rule is reported with its `rule_id` -- falsifier: disabling
+          a rule's row in the `.validation.yaml` fails that rule's fixture"
+      - id: AC8
+        statement: "AC8: KC-c (Two overlays, one commit): the runtime runs on the in-memory default and
+          with the CI bus overlay with no code change -- falsifier: on one commit, the fixture set run
+          twice, once on the in-memory default and once with the broker overlay; both reports equal the
+          committed golden report after normalising run id and timestamps, and each run puts exactly one
+          `ModelValidatorRunEvent` carrying the report's run id"
+evidence_requirements:
+  - kind: tests
+    description: The inline-logic checker tests and the runtime tests pass at the head
+    command: uv run pytest tests/unit/validation/test_checker_inline_logic.py tests/unit/validation/test_runtime_inline_logic.py
+      -n 0 -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21534-ac1-planted-fixtures
+    description: The shell-python matrix step and the 25-line python3 -c check value are each refused
+      with exactly one issue carrying the rule id, and each clean fixture passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_inline_logic.py -n 0 -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21534-ac4-rule-data
+    description: Every parameters key of every rule row is mutated in turn and the verdict follows; an
+      invalid contract fails to load. The thresholds and the remedy text are among those keys.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_inline_logic.py -n 0 -q -o addopts=''
+          -k "every_parameter_key or fails_to_load"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+      - AC4
+  - id: dod-omn21534-ac5-container-resolution
+    description: A container spy records the resolution of the report writer and the bus, and the checker
+      runs with facts only while open and Path reads raise.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_runtime_inline_logic.py tests/unit/validation/test_checker_inline_logic.py
+          -n 0 -q -o addopts='' -k "resolves_the_report_writer or checker_is_pure"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21534-ac7-replay
+    description: Disabling a rule row fails that rule's planted fixture and the report names each rule
+      id.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_inline_logic.py -n 0 -q -o addopts=''
+          -k "disabling_a_rule_row or its_rule_id"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn21534-deploy-checker-source
+    description: Hosted source readback at the checkout commit requires the inline-logic checker and its
+      validation contract to be present in the checkout. The probe needs no private broker.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC4]
+    checks:
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/checker_inline_logic.py && test -f src/omnibase_core/validation/contracts/inline_logic.validation.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
