@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+[project]
+name = "consumer"
+dependencies = ["omnibase-core>=0.1"]
+[tool.uv.sources]
+omnibase-core = {git = "https://github.com/other/omnibase_core.git", tag = "dev-20261018024445-b6ee996befa1"}

@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": ".github/required-checks.yaml",
+      "source": "cross_repo_ref: OmniNode-ai/tools/workflow.yml@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+    }
+  ],
+  "dev_tags": []
+}

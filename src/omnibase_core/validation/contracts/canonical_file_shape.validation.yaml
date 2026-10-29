@@ -273,11 +273,14 @@ validation:
           beside a contract.yaml"
 
     - rule_id: git-reader
-      description: Names the wall-clock ceiling of one git cat-file run of the fact gatherer.
+      description: Names the wall-clock ceiling of one git cat-file run of the fact gatherer, and the
+        landing ref whose merge base with HEAD is the base of a run that names none (the commit-time hook);
+        CI names its own base. A ref that does not resolve leaves the base at HEAD.
       severity: error
       enabled: true
       parameters:
         cat_file_timeout_s: 300
+        landing_ref: "refs/remotes/origin/HEAD"
 
     - rule_id: "node-home:node-outside-market"
       description: A new or renamed node directory outside omnimarket, unless its contract.yaml declares

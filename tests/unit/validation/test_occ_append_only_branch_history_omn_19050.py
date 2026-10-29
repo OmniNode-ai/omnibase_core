@@ -38,10 +38,12 @@ import yaml
 from omnibase_core.enums.enum_append_only_violation_kind import (
     EnumAppendOnlyViolationKind,
 )
+from omnibase_core.nodes.node_occ_append_only_check_compute.runtime_occ_append_only_check import (
+    main,
+)
 from omnibase_core.validation.validator_occ_append_only import (
     BranchHistoryChange,
     evaluate_append_only,
-    main,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,

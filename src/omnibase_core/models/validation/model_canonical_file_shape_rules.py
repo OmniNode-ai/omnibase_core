@@ -108,6 +108,7 @@ class ModelCanonicalFileShapeRules(BaseModel):
     cli_entry_outside_node_text: str
     # git-reader
     cat_file_timeout_s: float
+    landing_ref: str
     # node-home: new nodes belong in omnimarket unless the contract declares a category
     node_home_ignored_components: tuple[str, ...]
     node_home_hidden_prefix: str

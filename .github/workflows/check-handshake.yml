@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       # omnibase_core IS the source-of-truth for architecture handshakes.
       # No separate checkout needed -- check-handshake.sh auto-detects
@@ -38,12 +38,12 @@ jobs:
       # omnibase_core itself; downstream repos copy this workflow and change
       # --repo accordingly (OMN-9049 universal rollout).
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
 
       - name: Enforce validator-requirements.yaml
         run: |
           uv sync --all-extras
-          uv run python -m omnibase_core.validation.validator_requirements_consumer \
+          uv run python -m omnibase_core.nodes.node_requirements_consumer_check_compute.runtime_requirements_consumer_check \
             --repo omnibase_core \
             --repo-root . \
             --baseline architecture-handshakes/validator-requirements-baseline.yaml
@@ -56,6 +56,6 @@ jobs:
       # consumer above only proves presence, not that the rollup gates).
       - name: Verify Model-B rollup coverage (OMN-13574)
         run: |
-          uv run python -m omnibase_core.validation.validator_rollup_coverage \
+          uv run python -m omnibase_core.nodes.node_rollup_coverage_check_compute.runtime_rollup_coverage_check \
             --repo omnibase_core \
             --repo-root .

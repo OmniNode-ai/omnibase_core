@@ -1,0 +1,296 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: first_party_ref
+  validator_name: First Party References
+  validator_description: Blocking dev-merge tag and single-home invariants for every first-party reference.
+  target_patterns:
+    - .github/workflows/*.yml
+    - .github/workflows/*.yaml
+    - .pre-commit-config.yaml
+    - '**/.pre-commit-config.yaml'
+    - pyproject.toml
+    - '**/pyproject.toml'
+    - '**/lab/**/*.yaml'
+    - '**/lab/**/*.yml'
+    - '**/deploy*.yaml'
+    - '**/deploy*.yml'
+    - lab/*.yaml
+    - lab/*.yml
+    - briefs/**/*.md
+    - briefs/**/*.yaml
+    - briefs/**/*.yml
+    - '**/*brief*.md'
+    - '**/*brief*.yaml'
+    - '**/*brief*.yml'
+    - .github/required-checks.yaml
+  exclude_patterns:
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/tests/**'
+  rules:
+    - rule_id: first_party_not_dev_tag
+      description: first party not dev tag
+      severity: error
+      enabled: true
+      parameters:
+        github_org: OmniNode-ai
+        tag_pattern: ^dev-[0-9]{14}-[0-9a-f]{12}$
+        sha_pattern: '[0-9a-fA-F]{40}'
+        forbidden_refs:
+          - main
+          - dev
+          - master
+        file_globs:
+          - .github/workflows/*.yml
+          - .github/workflows/*.yaml
+          - .pre-commit-config.yaml
+          - '**/.pre-commit-config.yaml'
+        patterns: &id001
+          - ^\s*(?:-\s*)?["']?uses["']?\s*:\s*(?:"(?P<double>[^"]*)"|'(?P<single>[^']*)'|(?P<plain>\S+))
+          - '[{,]\s*["'']?uses["'']?\s*:\s*(?:"(?P<double>[^"]*)"|''(?P<single>[^'']*)''|(?P<plain>[^\s,}]+))'
+        remediation: Use a dev-merge tag from the canonical repository tag inventory; never a SHA, branch,
+          or release version.
+        structured_globs:
+          - .pre-commit-config.yaml
+          - '**/.pre-commit-config.yaml'
+    - rule_id: third_party_not_sha
+      description: third party not sha
+      severity: error
+      enabled: true
+      parameters:
+        github_org: OmniNode-ai
+        sha_pattern: '[0-9a-fA-F]{40}'
+        file_globs:
+          - .github/workflows/*.yml
+          - .github/workflows/*.yaml
+        patterns: *id001
+        remediation: Pin third-party actions to a full 40-hex commit SHA.
+    - rule_id: cross_repo_ref_not_dev_tag
+      description: cross repo ref not dev tag
+      severity: error
+      enabled: true
+      parameters:
+        github_org: OmniNode-ai
+        tag_pattern: ^dev-[0-9]{14}-[0-9a-f]{12}$
+        sha_pattern: '[0-9a-fA-F]{40}'
+        forbidden_refs:
+          - main
+          - dev
+          - master
+        file_globs:
+          - .github/workflows/*.yml
+          - .github/workflows/*.yaml
+          - .github/required-checks.yaml
+          - '**/lab/**/*.yaml'
+          - '**/lab/**/*.yml'
+          - '**/deploy*.yaml'
+          - '**/deploy*.yml'
+          - lab/*.yaml
+          - lab/*.yml
+          - briefs/**/*.md
+          - briefs/**/*.yaml
+          - briefs/**/*.yml
+          - '**/*brief*.md'
+          - '**/*brief*.yaml'
+          - '**/*brief*.yml'
+        patterns:
+          - (?:git\+https://[^\s"'<>\]\[),;]+|https://github\.com/[^\s@"'<>\]\[),;]+@[^\s"'<>\]\[),;]+)
+          - ^\s*cross_repo_ref:\s*["']?(?P<plain>[^\s"']+)
+          - ^\s*(?:deploy_ref|lab_deploy_ref|git_ref|image):\s*["']?(?P<plain>[^\s"']+)
+        remediation: Use a dev-merge tag from the canonical repository tag inventory; never a SHA, branch,
+          or release version.
+        structured_globs:
+          - '**/lab/**/*.yaml'
+          - '**/lab/**/*.yml'
+          - '**/deploy*.yaml'
+          - '**/deploy*.yml'
+          - lab/*.yaml
+          - lab/*.yml
+          - .github/required-checks.yaml
+        repository_keys:
+          - repo
+          - repository
+          - git
+        ref_keys:
+          - ref
+          - rev
+          - tag
+          - branch
+          - deploy_ref
+          - git_ref
+        brief_globs: &id002
+          - briefs/**/*.md
+          - briefs/**/*.yaml
+          - briefs/**/*.yml
+          - '**/*brief*.md'
+          - '**/*brief*.yaml'
+          - '**/*brief*.yml'
+        brief_patterns:
+          - (?P<plain>{org}/[A-Za-z0-9_.-]+(?:/[^\s@"'<>]+)?@[^\s"'<>\]),;} ]+)
+        literal_ref_keys:
+          - cross_repo_ref
+          - deploy_ref
+          - lab_deploy_ref
+    - rule_id: first_party_source_not_dev_tag
+      description: first party source not dev tag
+      severity: error
+      enabled: true
+      parameters:
+        github_org: OmniNode-ai
+        tag_pattern: ^dev-[0-9]{14}-[0-9a-f]{12}$
+        sha_pattern: '[0-9a-fA-F]{40}'
+        forbidden_refs:
+          - main
+          - dev
+          - master
+        file_globs: &id003
+          - pyproject.toml
+          - '**/pyproject.toml'
+        patterns:
+          - git\+https://[^\s"'<>\]\[),;]+
+        remediation: Use a dev-merge tag from the canonical repository tag inventory; never a SHA, branch,
+          or release version.
+        structured_globs:
+          - pyproject.toml
+          - '**/pyproject.toml'
+    - rule_id: first_party_ref_two_homes
+      description: first party ref two homes
+      severity: error
+      enabled: true
+      parameters:
+        github_org: OmniNode-ai
+        repository_pattern: (?i)(?:https?://(?:[^/@\s]+@)?github\.com/|git@github\.com:|^)(?P<org>[^/\s]+)/(?P<repo>[^/@\s]+?)(?:\.git)?(?:/.*)?$
+        file_globs:
+          - .github/workflows/*.yml
+          - .github/workflows/*.yaml
+          - .pre-commit-config.yaml
+          - '**/.pre-commit-config.yaml'
+          - pyproject.toml
+          - '**/pyproject.toml'
+          - '**/lab/**/*.yaml'
+          - '**/lab/**/*.yml'
+          - '**/deploy*.yaml'
+          - '**/deploy*.yml'
+          - lab/*.yaml
+          - lab/*.yml
+          - .github/required-checks.yaml
+          - briefs/**/*.md
+          - briefs/**/*.yaml
+          - briefs/**/*.yml
+          - '**/*brief*.md'
+          - '**/*brief*.yaml'
+          - '**/*brief*.yml'
+        max_files: 1
+        remediation: Keep each repository@ref literal in one file; derive other uses from that home or
+          choose a distinct dev-merge tag.
+    - rule_id: brief_names_release_version
+      description: brief names release version
+      severity: error
+      enabled: true
+      parameters:
+        file_globs: *id002
+        release_pattern: v?\d++(?:\.\d++)++(?:[.-]?[A-Za-z0-9]++)*+
+        tag_pattern: ^dev-[0-9]{14}-[0-9a-f]{12}$
+        patterns:
+          - (?<![\w.-])(?:dev-[0-9]{14}-[0-9a-f]{12}|v?\d+\.\d+(?:[A-Za-z0-9.+-]*[A-Za-z0-9])?)(?![\w-])
+        remediation: Name the dev-merge tag in the brief instead of a release version.
+    - rule_id: missing_source
+      description: missing source
+      severity: error
+      enabled: true
+      parameters:
+        file_globs: *id003
+        siblings:
+          - omnibase-core=omnibase_core
+          - omnibase-spi=omnibase_spi
+          - omnibase-infra=omnibase_infra
+          - omninode-memory=omnimemory
+          - omnimarket=omnimarket
+          - omninode-intelligence=omniintelligence
+        name_pattern: ^\s*([A-Za-z0-9][A-Za-z0-9._-]*)
+        normalize_pattern: '[-_.]+'
+        remediation: Pin the sibling with git and tag in tool.uv.sources, keep a dependency version range,
+          and use its newest dev-merge tag.
+    - rule_id: wrong_repo
+      description: wrong repo
+      severity: error
+      enabled: true
+      parameters:
+        file_globs: *id003
+        siblings:
+          - omnibase-core=omnibase_core
+          - omnibase-spi=omnibase_spi
+          - omnibase-infra=omnibase_infra
+          - omninode-memory=omnimemory
+          - omnimarket=omnimarket
+          - omninode-intelligence=omniintelligence
+        name_pattern: ^\s*([A-Za-z0-9][A-Za-z0-9._-]*)
+        normalize_pattern: '[-_.]+'
+        remediation: Pin the sibling with git and tag in tool.uv.sources, keep a dependency version range,
+          and use its newest dev-merge tag.
+        github_org: OmniNode-ai
+        url_template: https://github.com/{org}/{repo}.git
+    - rule_id: release_pin
+      description: release pin
+      severity: error
+      enabled: true
+      parameters:
+        file_globs: *id003
+        siblings:
+          - omnibase-core=omnibase_core
+          - omnibase-spi=omnibase_spi
+          - omnibase-infra=omnibase_infra
+          - omninode-memory=omnimemory
+          - omnimarket=omnimarket
+          - omninode-intelligence=omniintelligence
+        name_pattern: ^\s*([A-Za-z0-9][A-Za-z0-9._-]*)
+        normalize_pattern: '[-_.]+'
+        remediation: Pin the sibling with git and tag in tool.uv.sources, keep a dependency version range,
+          and use its newest dev-merge tag.
+        exact_pattern: (?:^|[,\s(])===?\s*[^,;\s*]+(?=\s*(?:[,;)]|$))
+    - rule_id: stale_pin
+      description: stale pin
+      severity: error
+      enabled: true
+      parameters:
+        file_globs: *id003
+        siblings:
+          - omnibase-core=omnibase_core
+          - omnibase-spi=omnibase_spi
+          - omnibase-infra=omnibase_infra
+          - omninode-memory=omnimemory
+          - omnimarket=omnimarket
+          - omninode-intelligence=omniintelligence
+        name_pattern: ^\s*([A-Za-z0-9][A-Za-z0-9._-]*)
+        normalize_pattern: '[-_.]+'
+        remediation: Pin the sibling with git and tag in tool.uv.sources, keep a dependency version range,
+          and use its newest dev-merge tag.
+        tag_pattern: ^dev-[0-9]{14}-[0-9a-f]{12}$
+        max_trailing_merges: 50
+        max_trailing_hours: 72
+        timestamp_pattern: ^dev-([0-9]{14})-
+        timestamp_format: '%Y%m%d%H%M%S'
+        url_template: https://github.com/{org}/{repo}.git
+        github_org: OmniNode-ai
+        git_binary: git
+        timeout_seconds: 30
+        tag_arguments:
+          - ls-remote
+          - --tags
+          - '{url}'
+          - refs/tags/dev-*
+        tag_prefix: refs/tags/
+        peeled_suffix: ^{}
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: true
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

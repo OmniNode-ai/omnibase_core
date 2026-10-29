@@ -16,11 +16,16 @@ import pytest
 from omnibase_core.nodes.node_no_io_outside_effects_check_compute.runtime_no_io_outside_effects_check import (
     main as no_io_main,
 )
-from omnibase_core.validation.validator_transport_import import main as transport_main
+from omnibase_core.nodes.node_transport_import_check_compute.runtime_transport_import_check import (
+    main as transport_main,
+)
 
 type Validator = Literal["transport", "no-io"]
 
-_TRANSPORT_MODULE = "omnibase_core.validation.validator_transport_import"
+_TRANSPORT_MODULE = (
+    "omnibase_core.nodes.node_transport_import_check_compute."
+    "runtime_transport_import_check"
+)
 _NO_IO_MODULE = (
     "omnibase_core.nodes.node_no_io_outside_effects_check_compute."
     "runtime_no_io_outside_effects_check"

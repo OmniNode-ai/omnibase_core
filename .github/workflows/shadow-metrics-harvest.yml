@@ -53,7 +53,7 @@ jobs:
           permission-contents: write
 
       - name: Checkout product branch (for the append script)
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 1
           # The metrics branch is cloned below through an explicit credentialed
@@ -64,7 +64,7 @@ jobs:
       - name: Download shadow record(s) from the triggering run
         if: github.event_name == 'workflow_run'
         continue-on-error: true # a run with no shadow record (docs-only PR) is normal
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}

@@ -434,14 +434,18 @@ class TestScanTree:
 @pytest.mark.unit
 class TestCLI:
     def test_no_files_exit_0(self, capsys: pytest.CaptureFixture[str]) -> None:
-        from omnibase_core.validation.validator_canonical_inference import main
+        from omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check import (
+            main,
+        )
 
         rc = main([])
         assert rc == 0
         assert "no files" in capsys.readouterr().out.lower()
 
     def test_new_violation_exit_1(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_canonical_inference import main
+        from omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check import (
+            main,
+        )
 
         f = _write(tmp_path, 'subprocess.run(["codex", "exec"])\n', "mod.py")
         rc = main(
@@ -458,7 +462,9 @@ class TestCLI:
         assert rc == 1
 
     def test_grandfathered_violation_exit_0(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_canonical_inference import main
+        from omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check import (
+            main,
+        )
 
         snippet = 'subprocess.run(["codex", "exec"])'
         f = _write(tmp_path, snippet + "\n", "mod.py")
@@ -477,7 +483,9 @@ class TestCLI:
         assert rc == 0
 
     def test_seed_creates_baseline(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_canonical_inference import main
+        from omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check import (
+            main,
+        )
 
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "m.py").write_text(
@@ -500,7 +508,9 @@ class TestCLI:
         assert json.loads(baseline.read_text())["count"] >= 1
 
     def test_update_baseline_rejects_growth(self, tmp_path: Path) -> None:
-        from omnibase_core.validation.validator_canonical_inference import main
+        from omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check import (
+            main,
+        )
 
         (tmp_path / "src").mkdir()
         (tmp_path / "src" / "m.py").write_text(
@@ -770,7 +780,9 @@ class TestAgentInvocationCarveOutIntegration:
 
     def test_cli_staged_shellout_in_agent_node_exit_0(self, tmp_path: Path) -> None:
         """CLI staged-files mode: an agent-node shell-out passes (exit 0)."""
-        from omnibase_core.validation.validator_canonical_inference import main
+        from omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check import (
+            main,
+        )
 
         handler = _node_with_contract(
             tmp_path,
@@ -794,7 +806,9 @@ class TestAgentInvocationCarveOutIntegration:
         self, tmp_path: Path
     ) -> None:
         """CLI staged-files mode: a non-agent shell-out still fails (exit 1)."""
-        from omnibase_core.validation.validator_canonical_inference import main
+        from omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check import (
+            main,
+        )
 
         handler = _node_with_contract(
             tmp_path,

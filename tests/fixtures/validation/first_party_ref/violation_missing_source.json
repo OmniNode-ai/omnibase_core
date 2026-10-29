@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "source": "[project]\nname = \"consumer\"\ndependencies = [\"omnibase-core>=0.1\"]\n[tool.uv.sources]\n\n"
+    }
+  ],
+  "dev_tags": []
+}

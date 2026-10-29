@@ -26,6 +26,10 @@ Families (the policy decides which apply to a path):
   ``safe_load``, ``json.load``) in Python source.
 * ``T`` and ``N``: a model tier alias and an engine name of the engine ladder
   (OMN-21463); judged by ``validation.checker_hardcoded_model_tier``.
+* ``O``, ``G``, ``F``, ``P``, ``S``, ``H`` and ``B``: operational numbers, first-party
+  URLs, filesystem locations, repository lists, ruling stamps, host lists and budgets
+  (OMN-21537); judged by ``validation.checker_hardcoded_model_literals`` over the rule
+  rows of its ``.validation.yaml``, handed in as a rule set.
 
 No inline suppression marker is honoured; the policy file is the whole
 allowlist. Several matches of one family on one line are one finding, because
@@ -35,15 +39,23 @@ the baseline is keyed by line content.
 from __future__ import annotations
 
 import hashlib
-import io
 import re
-import tokenize
 from collections import Counter
 from collections.abc import Iterable, Sequence
 from functools import lru_cache
 from typing import Final, get_args
 
+from omnibase_core.models.validation.model_hardcoded_literal_rule_set import (
+    ModelHardcodedLiteralRuleSet,
+)
+from omnibase_core.validation.checker_hardcoded_model_literals import scan_literals
 from omnibase_core.validation.checker_hardcoded_model_tier import scan_tier_engine
+from omnibase_core.validation.checker_hardcoded_model_views import (
+    file_suffix,
+    generic_views,
+    glob_regex,
+    python_views,
+)
 from omnibase_core.validation.hardcoded_model_config.models import (
     LiteralFamily,
     ModelHardcodedModelConfigBaselineEntry,
@@ -68,11 +80,6 @@ _FAMILY_ORDER: Final[dict[str, int]] = {
     f: i for i, f in enumerate(get_args(LiteralFamily))
 }
 
-_PYTHON_SUFFIXES: Final[frozenset[str]] = frozenset({".py", ".pyi"})
-_SLASH_COMMENT_SUFFIXES: Final[frozenset[str]] = frozenset(
-    {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}
-)
-_NO_COMMENT_SUFFIXES: Final[frozenset[str]] = frozenset({".json"})
 
 _URL: Final[str] = r"[A-Za-z][A-Za-z0-9+.\-]*://[^\s\"'<>`]+"
 _URL_HOST_IPV4: Final[re.Pattern[str]] = re.compile(
@@ -89,39 +96,10 @@ _LOADER_CALL: Final[re.Pattern[str]] = re.compile(
     r"(?:\bopen|\.read_text|\bsafe_load|\bjson\.load)\s*\("
 )
 _EXAMPLE_MARK: Final[str] = ".example."
-_STATEMENT_START: Final[frozenset[int]] = frozenset(
-    {tokenize.NEWLINE, tokenize.INDENT, tokenize.DEDENT}
-)
-
 
 # ---------------------------------------------------------------------------
 # Path classification
 # ---------------------------------------------------------------------------
-
-
-@lru_cache(maxsize=512)
-def _glob_regex(glob: str) -> re.Pattern[str]:
-    """Translate a repository glob: ``**/`` spans zero or more directories,
-    ``**`` spans anything, ``*`` and ``?`` stay within one path segment."""
-    out: list[str] = []
-    i = 0
-    while i < len(glob):
-        if glob.startswith("**/", i):
-            out.append("(?:.*/)?")
-            i += 3
-        elif glob.startswith("**", i):
-            out.append(".*")
-            i += 2
-        elif glob[i] == "*":
-            out.append("[^/]*")
-            i += 1
-        elif glob[i] == "?":
-            out.append("[^/]")
-            i += 1
-        else:
-            out.append(re.escape(glob[i]))
-            i += 1
-    return re.compile("^" + "".join(out) + "$")
 
 
 def _normalise(path: str) -> str:
@@ -139,7 +117,7 @@ def classify_path(
     for path_class in policy.path_classes:
         if norm in path_class.files:
             return path_class
-        if any(_glob_regex(glob).match(norm) for glob in path_class.globs):
+        if any(glob_regex(glob).match(norm) for glob in path_class.globs):
             return path_class
     # The policy loader guarantees a final catch-all SOURCE class; reaching
     # here means the policy was built without one.
@@ -151,98 +129,6 @@ def classify_path(
 # ---------------------------------------------------------------------------
 # Per-line views: code with comments and docstrings removed, and literals
 # ---------------------------------------------------------------------------
-
-
-def _suffix(path: str) -> str:
-    name = path.rsplit("/", 1)[-1]
-    dot = name.rfind(".")
-    return name[dot:].lower() if dot > 0 else ""
-
-
-def _strip_hash_comment(line: str) -> str:
-    quote = ""
-    for i, ch in enumerate(line):
-        if quote:
-            if ch == quote:
-                quote = ""
-        elif ch in ("'", '"'):
-            quote = ch
-        elif ch == "#" and (i == 0 or line[i - 1].isspace()):
-            return line[:i]
-    return line
-
-
-def _strip_slash_comment(line: str) -> str:
-    stripped = line.lstrip()
-    if stripped.startswith(("/*", "*")):
-        return ""
-    quote = ""
-    for i, ch in enumerate(line):
-        if quote:
-            if ch == quote:
-                quote = ""
-        elif ch in ("'", '"', "`"):
-            quote = ch
-        elif line.startswith("//", i) and (i == 0 or line[i - 1] != ":"):
-            return line[:i]
-    return line
-
-
-def _blank(code: dict[int, str], start: tuple[int, int], end: tuple[int, int]) -> None:
-    (srow, scol), (erow, ecol) = start, end
-    for row in range(srow, erow + 1):
-        line = code.get(row, "")
-        lo = scol if row == srow else 0
-        hi = ecol if row == erow else len(line)
-        code[row] = line[:lo] + " " * max(hi - lo, 0) + line[hi:]
-
-
-def _python_views(
-    text: str, lines: Sequence[str]
-) -> tuple[dict[int, str], dict[int, list[str]]] | None:
-    try:
-        tokens = list(tokenize.generate_tokens(io.StringIO(text).readline))
-    except (tokenize.TokenError, SyntaxError):
-        return None
-    code = dict(enumerate(lines, start=1))
-    literals: dict[int, list[str]] = {}
-    prev_type: int | None = None
-    for tok in tokens:
-        if tok.type == tokenize.COMMENT:
-            _blank(code, tok.start, tok.end)
-            continue
-        if tok.type in (tokenize.NL, tokenize.ENCODING):
-            continue
-        if tok.type == tokenize.STRING:
-            if prev_type is None or prev_type in _STATEMENT_START:
-                # A string that opens a statement is a docstring or a bare
-                # expression: prose, not configuration.
-                _blank(code, tok.start, tok.end)
-            else:
-                for offset, part in enumerate(tok.string.split("\n")):
-                    literals.setdefault(tok.start[0] + offset, []).append(part)
-        elif tok.type == getattr(tokenize, "FSTRING_MIDDLE", -1):
-            for offset, part in enumerate(tok.string.split("\n")):
-                literals.setdefault(tok.start[0] + offset, []).append(part)
-        prev_type = tok.type
-    return code, literals
-
-
-def _generic_views(
-    path: str, lines: Sequence[str]
-) -> tuple[dict[int, str], dict[int, list[str]]]:
-    suffix = _suffix(path)
-    code: dict[int, str] = {}
-    for n, line in enumerate(lines, start=1):
-        if suffix in _NO_COMMENT_SUFFIXES:
-            code[n] = line
-        elif suffix in _SLASH_COMMENT_SUFFIXES:
-            code[n] = _strip_slash_comment(line)
-        else:
-            code[n] = _strip_hash_comment(line)
-    # Outside Python every value on a line is a candidate literal.
-    literals = {n: [text] for n, text in code.items() if text.strip()}
-    return code, literals
 
 
 # ---------------------------------------------------------------------------
@@ -304,9 +190,16 @@ def content_sha1(line: str) -> str:
 
 
 def scan(
-    path: str, text: str, policy: ModelHardcodedModelConfigPolicy
+    path: str,
+    text: str,
+    policy: ModelHardcodedModelConfigPolicy,
+    literal_rules: ModelHardcodedLiteralRuleSet | None = None,
 ) -> list[ModelHardcodedModelConfigFinding]:
-    """Return every finding in ``text`` for the families ``path``'s class allows."""
+    """Return every finding in ``text`` for the families ``path``'s class allows.
+
+    ``literal_rules`` carries the rule rows of families O, G, F, P, S, H and B; without it
+    those families are not judged.
+    """
     path_class = classify_path(path, policy)
     families = set(path_class.families)
     if not families:
@@ -327,10 +220,12 @@ def scan(
     if families & {"M", "E", "E-LAN", "D", "L", "T", "N"}:
         model_id, endpoint_url, endpoint_key, lab_subnet = _compiled(policy)
         fact = _deployment_fact(policy)
-        is_python = _suffix(path) in _PYTHON_SUFFIXES
-        views = _python_views(text, lines) if is_python else None
+        is_python = file_suffix(path) in policy.python_suffixes
+        views = python_views(text, lines) if is_python else None
         if views is None:
-            views = _generic_views(path, lines)
+            views = generic_views(
+                path, lines, policy.slash_comment_suffixes, policy.no_comment_suffixes
+            )
         code, literals = views
         for hit in scan_tier_engine(text, code, is_python, policy, families):
             record(*hit)
@@ -372,6 +267,11 @@ def scan(
                     _EXAMPLE_MARK in literal for literal in line_literals
                 ):
                     record(n, "L", _EXAMPLE_MARK)
+
+    if literal_rules is not None:
+        for line_no, family, matched in scan_literals(path, text, literal_rules):
+            if family in families:
+                record(line_no, family, matched)
 
     ordered = sorted(hits.items(), key=lambda kv: (kv[0][0], _FAMILY_ORDER[kv[0][1]]))
     return [
@@ -452,8 +352,13 @@ class HandlerHardcodedModelConfigCompute:
     typed out, no envelope, no I/O. Stateless apart from the injected policy.
     """
 
-    def __init__(self, policy: ModelHardcodedModelConfigPolicy) -> None:
+    def __init__(
+        self,
+        policy: ModelHardcodedModelConfigPolicy,
+        literals: ModelHardcodedLiteralRuleSet | None = None,
+    ) -> None:
         self._policy = policy
+        self._literals = literals
 
     @property
     def handler_id(self) -> str:
@@ -463,7 +368,7 @@ class HandlerHardcodedModelConfigCompute:
         self, request: ModelHardcodedModelConfigScanInput
     ) -> ModelHardcodedModelConfigScanResult:
         path_class = classify_path(request.path, self._policy)
-        findings = scan(request.path, request.content, self._policy)
+        findings = scan(request.path, request.content, self._policy, self._literals)
         return ModelHardcodedModelConfigScanResult(
             path=_normalise(request.path),
             path_class=path_class.name,

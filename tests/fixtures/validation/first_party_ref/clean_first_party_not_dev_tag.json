@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "source": "uses: OmniNode-ai/tools@dev-20261018024445-b6ee996befa1\n"
+    }
+  ],
+  "dev_tags": []
+}

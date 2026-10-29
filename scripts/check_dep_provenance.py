@@ -17,7 +17,10 @@ Forbidden first-party deps (both hyphen and underscore spellings):
     omnibase-core   omnibase-spi   omnibase-compat
 
 A ``[tool.uv.sources]`` entry for any of the above with a ``git`` / ``rev`` /
-``branch`` / ``tag`` key is a forbidden override and fails the gate.
+``branch`` / ``tag`` key is a forbidden override and fails the gate, except a
+git source whose only ref is a ``tag`` of the dev-merge tag shape
+(``dev-<UTC YYYYMMDDHHMMSS>-<sha12>``, OMN-21495: first-party dependencies
+iterate on dev-merge tags, RULING 2026-10-29T01:50:26Z).
 
 ``onex-change-control`` is deliberately NOT checked — it follows an
 immutable-main pin release model (different from the three PyPI-released deps),
@@ -65,6 +68,9 @@ _FORBIDDEN_PACKAGES: frozenset[str] = frozenset(
 # Source-override keys that indicate a git provenance (any one is forbidden for
 # a first-party dep). A PyPI source has none of these.
 _GIT_SOURCE_KEYS: frozenset[str] = frozenset({"git", "rev", "branch", "tag"})
+
+# A dev-merge tag; the first_party_ref validator contract owns the same pattern.
+_DEV_MERGE_TAG = re.compile(r"dev-[0-9]{14}-[0-9a-f]{12}")
 
 # Inline escape token: `# raw-override-ok: <ticket>` with a non-empty token.
 _ESCAPE_TOKEN_RE = re.compile(r"#\s*raw-override-ok:\s*(\S+)")
@@ -152,6 +158,8 @@ def find_violations(text: str) -> list[str]:
         if not git_keys:
             # A non-git source (unusual, but not a provenance violation).
             continue
+        if set(git_keys) == {"git", "tag"} and _DEV_MERGE_TAG.fullmatch(attrs["tag"]):
+            continue
 
         raw_line = _line_for_package(block, pkg)
         if raw_line is not None:
@@ -189,10 +197,7 @@ def main(argv: list[str] | None = None) -> int:
 
     pyproject_path = Path(args.pyproject)
     if not pyproject_path.exists():
-        print(
-            f"ERROR: pyproject.toml not found: {pyproject_path}",
-            file=sys.stderr,
-        )
+        print(f"ERROR: pyproject.toml not found: {pyproject_path}", file=sys.stderr)
         return 1
 
     violations = find_violations(pyproject_path.read_text())
@@ -216,10 +221,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    print(
-        f"OK: no forbidden first-party git-source override in "
-        f"{pyproject_path} [tool.uv.sources]."
-    )
+    print(f"OK: no forbidden first-party git-source override in {pyproject_path}.")
     return 0
 
 

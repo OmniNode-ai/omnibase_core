@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_receipt_reprobe_check_compute
+node_id: node_receipt_reprobe_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Re-runs each DoD receipt's recorded probe_command and reports whether its exit code still matches. (OMN-21520).
+input_model: omnibase_core.models.nodes.receipt_reprobe_check.model_receipt_reprobe_check_input.ModelReceiptReprobeCheckInput
+output_model: omnibase_core.models.contracts.ticket.model_receipt_reprobe_report.ModelReceiptReprobeReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeReceiptReprobeCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

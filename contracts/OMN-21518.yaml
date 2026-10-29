@@ -2,12 +2,13 @@
 schema_version: "1.0.0"
 ticket_id: OMN-21518
 title: "omnibase_core: bind the rule-table handler families into nodes and remove their baseline lines"
-summary: Eight handler families (action_pin, ci_inheritance, cosmetic_lint, dependency_direction, internal_sibling_pins,
-  merge_queue_parity, no_bare_feature_flags, no_hardcoded_topics) move from src/omnibase_core/handlers/
-  into a node each, with the handler bound in the node's contract.yaml, the handler_*_cli main as the
-  node's runtime, and every rule table as a parameters entry of the family's .validation.yaml. Their lines
-  leave the canonical-file-shape baseline and the checker-rule-data baseline; no line is added to either.
-  The ninth family, version_floor_consumers, was already migrated by omnibase_core#2127.
+summary: Six handler families (ci_inheritance, cosmetic_lint, dependency_direction, merge_queue_parity,
+  no_bare_feature_flags, no_hardcoded_topics) move from src/omnibase_core/handlers/ into a node each,
+  with the handler bound in the node's contract.yaml, the handler_*_cli main as the node's runtime, and
+  every rule table as a parameters entry of the family's .validation.yaml. Their lines leave the canonical-file-shape
+  baseline and the checker-rule-data baseline; no line is added to either. The action_pin and internal_sibling_pins
+  families were deleted on dev by omnibase_core#2128 (OMN-21495, first_party_ref), and version_floor_consumers
+  was already migrated by omnibase_core#2127.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -98,9 +99,8 @@ dod_evidence:
           -n 0
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/handlers/test_handler_action_pin.py tests/unit/handlers/test_handler_ci_inheritance_rules.py
-          tests/unit/handlers/test_handler_cosmetic_lint.py tests/unit/handlers/test_handler_dependency_direction_rules.py
-          tests/unit/handlers/test_handler_internal_sibling_pins.py tests/unit/handlers/test_handler_merge_queue_parity.py
+        check_value: uv run pytest tests/unit/handlers/test_handler_ci_inheritance_rules.py tests/unit/handlers/test_handler_cosmetic_lint.py
+          tests/unit/handlers/test_handler_dependency_direction_rules.py tests/unit/handlers/test_handler_merge_queue_parity.py
           tests/unit/handlers/test_handler_no_bare_feature_flags.py tests/unit/handlers/test_handler_no_hardcoded_topics.py
           -q --no-cov -n 0
         cwd: ${OMNI_HOME}/omnibase_core
@@ -135,14 +135,13 @@ dod_evidence:
     binds_ac:
       - AC3
   - id: dod-omn21518-deploy-checkout-nodes
-    description: Hosted-runner execution of the eight relocated families at the checkout. The focused
-      handler, runtime and rule-mutation tests need no private runtime, service or container daemon.
+    description: Hosted-runner execution of the six relocated families at the checkout. The focused handler,
+      runtime and rule-mutation tests need no private runtime, service or container daemon.
     source: manual
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_action_pin.py tests/unit/handlers/test_handler_action_pin_cli.py
-          tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
           tests/unit/handlers/test_handler_dependency_direction.py tests/unit/handlers/test_handler_merge_queue_parity.py
           -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
@@ -158,11 +157,6 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: |
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_action_pin_check_effect/runtime_action_pin_check.py" |
-            grep -F "HandlerActionPin().handle(" > /dev/null'
-        cwd: ${OMNI_HOME}/omnibase_core
-      - check_type: command
-        check_value: |
           bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py" |
             grep -F "HandlerCiInheritance().handle(" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
@@ -175,11 +169,6 @@ dod_evidence:
         check_value: |
           bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_dependency_direction_check_effect/runtime_dependency_direction_check.py" |
             grep -F "HandlerDependencyDirection().handle(" > /dev/null'
-        cwd: ${OMNI_HOME}/omnibase_core
-      - check_type: command
-        check_value: |
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_internal_sibling_pins_check_effect/runtime_internal_sibling_pins_check.py" |
-            grep -F "HandlerInternalSiblingPins().handle(" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: |

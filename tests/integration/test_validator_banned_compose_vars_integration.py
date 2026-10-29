@@ -32,7 +32,7 @@ def test_cli_module_is_importable() -> None:
         [
             sys.executable,
             "-m",
-            "omnibase_core.validation.validator_banned_compose_vars",
+            "omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check",
             "--help",
         ],
         capture_output=True,
@@ -96,4 +96,7 @@ def test_pre_commit_hook_declaration_matches_cli_entry() -> None:
         "hook id 'validator-banned-compose-vars' missing from .pre-commit-hooks.yaml"
     )
     hook = next(h for h in hooks if h["id"] == "validator-banned-compose-vars")
-    assert "omnibase_core.validation.validator_banned_compose_vars" in hook["entry"]
+    assert (
+        "omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check"
+        in hook["entry"]
+    )

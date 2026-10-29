@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": ".pre-commit-config.yaml",
+      "source": "repos:\n  - repo: https://github.com/OmniNode-ai/omnibase_core\n    rev: dev-20261018024445-b6ee996befa1\n"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "source": "run: pip install git+https://github.com/OmniNode-ai/omnibase_core.git@dev-20261018024445-b6ee996befa1\n"
+    }
+  ],
+  "dev_tags": []
+}

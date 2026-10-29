@@ -33,10 +33,12 @@ from omnibase_core.errors import OnexError
 from omnibase_core.models.validation.model_duplicate_id_manifest import (
     ModelDuplicateIdManifest,
 )
+from omnibase_core.nodes.node_duplicate_config_ids_check_compute.runtime_duplicate_config_ids_check import (
+    main,
+)
 from omnibase_core.validation.validator_duplicate_config_ids import (
     ModelDuplicateIdCheckSpec,
     ValidatorDuplicateConfigIds,
-    main,
 )
 
 

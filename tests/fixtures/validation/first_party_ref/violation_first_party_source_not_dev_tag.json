@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": "pyproject.toml",
+      "source": "[tool.uv.sources]\ntools = {git = \"https://github.com/OmniNode-ai/tools.git\", rev = \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}\n"
+    }
+  ],
+  "dev_tags": []
+}

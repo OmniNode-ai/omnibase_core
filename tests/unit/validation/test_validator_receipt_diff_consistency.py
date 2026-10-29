@@ -24,10 +24,12 @@ import pytest
 from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
+from omnibase_core.nodes.node_receipt_diff_consistency_check_compute.runtime_receipt_diff_consistency_check import (
+    main,
+)
 from omnibase_core.validation.validator_receipt_diff_consistency import (
     _load_receipt,
     check_diff_consistency,
-    main,
     parse_name_status,
     scan_receipt_files_with_diff,
 )

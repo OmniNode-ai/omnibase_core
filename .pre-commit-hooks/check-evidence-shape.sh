@@ -34,7 +34,7 @@ run_shape_check() {
   # (reference_pythonpath_shadows_worktree_source; matches the substrate-gate
   # hooks in .pre-commit-config.yaml).
   local body="$1"
-  printf '%s' "$body" | env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_evidence_shape_cli --pr-body-file -
+  printf '%s' "$body" | env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_evidence_shape_check_compute.runtime_evidence_shape_check --pr-body-file -
 }
 
 self_test() {

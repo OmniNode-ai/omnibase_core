@@ -36,9 +36,9 @@ expires on its own as old receipts age out, with no file to prune.
 
 CLI::
 
-    python -m omnibase_core.validation.validator_receipt_runtime_identity \\
+    python -m omnibase_core.nodes.node_receipt_runtime_identity_check_compute.runtime_receipt_runtime_identity_check \\
         --receipts-dir docs/evidence/receipts
-    python -m omnibase_core.validation.validator_receipt_runtime_identity a.json b.json
+    python -m omnibase_core.nodes.node_receipt_runtime_identity_check_compute.runtime_receipt_runtime_identity_check a.json b.json
 
 Exit 0 clean, exit 1 on any violation. Wired as a pre-commit hook
 (``check-receipt-runtime-identity``) and as the ``receipt-runtime-identity``
@@ -48,9 +48,7 @@ nobody adopts (operating rule 5).
 
 from __future__ import annotations
 
-import argparse
 import json
-import sys
 from collections.abc import Iterable, Sequence
 from pathlib import Path
 
@@ -69,7 +67,6 @@ from omnibase_core.types.type_json import JsonType
 __all__ = [
     "DEFAULT_REQUIRED_PACKAGES",
     "count_receipts",
-    "main",
     "scan_receipt_file",
     "scan_receipt_files",
     "scan_receipts_directory",
@@ -317,100 +314,3 @@ def scan_receipts_directory(
     """
     candidates = sorted(p for p in root.rglob("*.json") if _is_scannable(p))
     return scan_receipt_files(candidates, required_packages=required_packages)
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI: exit non-zero on any runtime-identity violation.
-
-    Exit codes:
-        0 -- clean (including "every receipt found was grandfathered")
-        1 -- one or more violations, each printed with rule + detail
-    """
-    parser = argparse.ArgumentParser(
-        description=(
-            "Runtime-identity gate (OMN-17308): fail receipts at schema "
-            f">= {RUNTIME_IDENTITY_REQUIRED_FROM} that do not identify the "
-            "process that produced them."
-        )
-    )
-    parser.add_argument(
-        "--receipts-dir",
-        default=None,
-        help="Directory tree to scan for *.json receipts.",
-    )
-    parser.add_argument(
-        "--require-package",
-        action="append",
-        default=None,
-        metavar="DIST",
-        help=(
-            "Distribution a stamp must speak about. Repeatable. Default: "
-            f"{', '.join(DEFAULT_REQUIRED_PACKAGES)}."
-        ),
-    )
-    parser.add_argument(
-        "receipt_paths",
-        nargs="*",
-        help="Explicit receipt files to scan (pre-commit passes these).",
-    )
-    args = parser.parse_args(argv)
-
-    required: Sequence[str] = args.require_package or DEFAULT_REQUIRED_PACKAGES
-
-    explicit = [Path(p) for p in args.receipt_paths]
-    if explicit:
-        candidates = explicit
-        target = f"{len(explicit)} explicit file(s)"
-    elif args.receipts_dir is not None:
-        root = Path(args.receipts_dir)
-        if not root.exists():
-            print(
-                f"ERROR: --receipts-dir does not exist: {root}",
-                file=sys.stderr,
-            )
-            return 1
-        candidates = [p for p in sorted(root.rglob("*.json")) if _is_scannable(p)]
-        target = str(root)
-    else:
-        # The only "no target" path, so a mis-wired hook fails loudly instead
-        # of scanning nothing and reporting success — a gate that passes
-        # because it was handed nothing is the vacuous-PASS failure class this
-        # validator exists to close (OMN-14531).
-        #
-        # Spelled as an explicit usage-print + return rather than argparse's
-        # parser.error(): error() terminates only by convention, which left
-        # `candidates` and `target` provably-unbound to static analysis (CodeQL
-        # py/uninitialized-local-variable, 3 alerts on PR #1634). A validator
-        # whose own no-target path can raise UnboundLocalError fails in the
-        # least legible way available to it — the operator sees a traceback
-        # instead of the refusal the gate meant to give.
-        parser.print_usage(sys.stderr)
-        print(
-            "ERROR: pass receipt files, or --receipts-dir",
-            file=sys.stderr,
-        )
-        return 2
-
-    violations = scan_receipt_files(candidates, required_packages=required)
-    receipts = count_receipts(candidates)
-
-    if not violations:
-        print(
-            f"RUNTIME IDENTITY GATE PASSED: 0 violations across "
-            f"{receipts} receipt(s) in {len(candidates)} JSON file(s) "
-            f"under {target}"
-        )
-        return 0
-
-    print(
-        f"RUNTIME IDENTITY GATE FAILED: {len(violations)} violation(s) in {target}:\n"
-    )
-    for violation in violations:
-        print(f"  [{violation.rule.value}] {violation.path}")
-        print(f"    {violation.detail}")
-        print()
-    return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())

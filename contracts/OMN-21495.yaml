@@ -52,13 +52,47 @@ requirements:
           the rev-time lookup is an effect node and the runtime resolves it and the report writer from
           the container -- falsifier: a table-driven test mutates every parameter, an invalid contract
           fails to load, and a container spy records both resolutions'
+  - id: req-omn21495-first-party-ref
+    statement: Every first-party reference is a dev-merge tag with one home, checked by one blocking validator
+      in the generic format that replaces the action-pin and internal-sibling-pin one-off handlers.
+    acceptance:
+      - id: AC8
+        statement: 'AC8: A cross_repo_ref carrying a 40-hex sha, a git+https URL on a sha in a workflow,
+          a pyproject uv git source on a sha and a pre-commit rev that is not a dev-merge tag each yield
+          exactly one issue with the rule id first_party_not_dev_tag, cross_repo_ref_not_dev_tag or first_party_source_not_dev_tag
+          -- falsifier: pytest over tests/fixtures/validation/first_party_ref violation_* and clean_*
+          rows'
+      - id: AC9
+        statement: 'AC9: The same first-party tag in .pre-commit-config.yaml and in a workflow yields
+          one first_party_ref_two_homes issue, and a brief that names a release version instead of a dev-merge
+          tag yields one brief_names_release_version issue -- falsifier: pytest over the two-homes and
+          brief fixtures'
+      - id: AC10
+        statement: 'AC10: The validator reports zero issues on this repository and the same run over the
+          tree at the previous head reports its violations -- falsifier: test_repository_tracked_files_have_zero_issues
+          and the positive-control run recorded in the PR'
+      - id: AC11
+        statement: 'AC11: Configuration: every pattern, tag format, forbidden ref, sibling list and remediation
+          text is a parameter of the rule rows of first_party_ref.validation.yaml, an invalid contract
+          fails to load, and the tag lookup is an effect node resolved with the report writer from the
+          container -- falsifier: a table-driven test mutates every parameter key of every rule row, and
+          the runtime test records both resolutions and equals the committed golden run event'
+      - id: AC12
+        statement: 'AC12: handler_action_pin*, handler_internal_sibling_pins*, their console scripts,
+          models and tests are deleted and the hook ids check-action-pins and check-internal-sibling-pins
+          run the validator -- falsifier: test_hook_ids_still_name_new_module and the deleted paths in
+          the diff'
 evidence_requirements:
   - kind: tests
     description: Node-home ratchet tests pass at the checkout; no live service is required.
-    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_activation.py
+      tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_rule.py
+      -n 0 -q --no-cov
   - kind: ci
     description: Hosted-runner run of the same test directory at the checkout.
-    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n 0 -q --no-cov
+    command: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_activation.py
+      tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_rule.py
+      -n 0 -q --no-cov
 emergency_bypass:
   enabled: false
   justification: ''
@@ -98,8 +132,9 @@ dod_evidence:
     binds_ac: [AC4]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
-          0 -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_activation.py
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py
+          -n 0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-deploy-checkout-test
     description: Hosted-runner run of the node-home tests at the checkout; needs no container daemon or
@@ -108,8 +143,9 @@ dod_evidence:
     binds_ac: [AC1, AC2, AC3, AC4]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute -n
-          0 -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_activation.py
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py
+          -n 0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-ac5-canary-converged
     description: The canary config is refused and the converged config is admitted.
@@ -139,6 +175,52 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py
           tests/unit/nodes/node_precommit_rev_time_effect -n 0 -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac8-planted-violations
+    description: Each planted violation yields exactly one issue with its rule id; each clean row yields
+      none.
+    source: manual
+    binds_ac: [AC8]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+          -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac9-two-homes-brief
+    description: The two-homes and release-version briefs are refused.
+    source: manual
+    binds_ac: [AC9]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+          -n 0 -q --no-cov -k "homes or brief"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac10-zero-target
+    description: The repository's tracked files report zero issues.
+    source: manual
+    binds_ac: [AC10]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py
+          -n 0 -q --no-cov -k "zero_issues"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac11-parameters-di
+    description: Every parameter changes a verdict, an invalid contract fails to load, and the runtime
+      resolves its effects from the container and equals the golden run event.
+    source: manual
+    binds_ac: [AC11]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-ac12-one-offs-deleted
+    description: The hook ids name the validator module and the one-off handlers are gone.
+    source: manual
+    binds_ac: [AC12]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py
+          -n 0 -q --no-cov -k "hook_ids"
+        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21495-deploy-pin-parity-checkout
     description: Exercise the pin-parity validator and its commit-time effect at the checkout on a hosted
       runner. The stale and converged pins, rule parameters, container resolution and report checks need
@@ -164,4 +246,17 @@ dod_evidence:
         check_value: |
           bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 60 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_precommit_rev_time_effect/runtime_precommit_pin_parity.py" |
             grep -F "resolver = container.get_service(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-deploy-explicit-target-canary
+    description: Run the hook on the named off-pattern canary and an unrelated file. Both must return
+      an ERROR report instead of passing without checking a file. These checkout tests need no private
+      runtime or container daemon and fail before the explicit-target refusal.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5, AC7]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py::test_canary_fixture_named_off_pattern_is_not_a_silent_pass
+          tests/unit/validation/test_validator_precommit_pin_parity.py::test_runtime_converged_and_unrelated_files
+          -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core

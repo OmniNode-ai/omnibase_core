@@ -109,6 +109,16 @@ requirements:
           and burndown-ticket-uncited keys are rows of the mutation table with a violation and a clean
           fixture -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
           -k planted, and tests/unit/validation/test_checker_canonical_file_shape.py -k burndown"
+  - id: req-omn21515-commit-time-base
+    statement: The commit-time run, which names no base, compares the index with the merge base of HEAD
+      and the landing ref the validator contract names, the way CI compares a pull request.
+    acceptance:
+      - id: AC16
+        statement: "AC16 (Commit-time base): with no --base, a base finding added to the burn-down file
+          a branch already installed is admitted; an entry for a file the branch added is burndown-extra-entry,
+          an added entry when the file exists at the merge base is baseline-growth, and with no resolvable
+          landing ref, an explicit --base, or unrelated history the base is HEAD or the flag -- falsifier:
+          uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_commit_time_merge_base.py"
 evidence_requirements:
   - kind: tests
     description: The checker, runtime and ported rule tests pass at the pushed head.
@@ -367,4 +377,15 @@ dod_evidence:
       - check_type: test_passes
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
           -q --no-cov -n 0 -o addopts='' -k "burndown or every_parameter_key or every_contract_rule"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-commit-time-merge-base
+    description: The commit-time run judges the index against the merge base of HEAD and the landing ref,
+      so a base finding added to a burn-down file the branch installed is admitted, while an entry for
+      an added file and growth over a merge base that has the file stay refused.
+    source: manual
+    binds_ac: [AC16]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_commit_time_merge_base.py
+          -q --no-cov -n 0 -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core

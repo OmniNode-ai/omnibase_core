@@ -396,7 +396,7 @@ def _run(
             sys.stdout.write(f"  {finding.message}\n")
         sys.stdout.write(
             f"\nShared CI lives in {parsed.organization}/{parsed.host_repository} and every "
-            "repository inherits it from there (RULING 2026-10-14T20:01:09Z, OMN-17427).\n"
+            "repository inherits it from there (OMN-17427).\n"
         )
 
     job_fails = [f for f in jobs if f.severity in ("FAIL", "ERROR")]

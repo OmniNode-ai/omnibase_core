@@ -33,7 +33,7 @@ HOOK_ID = "call-repo-evidence-gate-verifier-floor"
 VERIFIER_FLOOR = (0, 4, 303)
 
 _RECEIPT_GATE_USES = re.compile(
-    r"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@[0-9a-f]{40}"
+    r"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@dev-[0-9]{14}-[0-9a-f]{12}"
 )
 
 
@@ -76,7 +76,7 @@ def test_caller_repo_evidence_job_calls_the_receipt_gate_reusable() -> None:
     uses = _job()["uses"]
     assert isinstance(uses, str)
     assert _RECEIPT_GATE_USES.fullmatch(uses), (
-        "the repo-evidence job must call omnibase_core's receipt-gate reusable by full SHA"
+        "the repo-evidence job must call omnibase_core's receipt-gate reusable by dev-merge tag"
     )
 
 

@@ -26,6 +26,7 @@ OMNICLAUDE_REPO = "https://github.com/OmniNode-ai/omniclaude"
 REUSABLE_PREFIX = (
     "OmniNode-ai/omniclaude/.github/workflows/anti-growth-baseline-reusable.yml@"
 )
+DEV_MERGE_TAG = r"dev-[0-9]{14}-[0-9a-f]{12}"
 GATE_JOB_NAME = (
     'Pydantic extra="forbid" Baseline One-way (OMN-19677) / anti-growth-baseline'
 )
@@ -94,24 +95,27 @@ def _arg_value(flag: str) -> str:
     return args[index + 1]
 
 
-def _workflow_sha() -> str:
+def _workflow_ref() -> str:
     uses = _workflow_job(JOB_ID).get("uses")
     assert isinstance(uses, str), f"{JOB_ID}.uses must be a string"
-    match = re.fullmatch(rf"{re.escape(REUSABLE_PREFIX)}([0-9a-f]{{40}})", uses)
+    match = re.fullmatch(rf"{re.escape(REUSABLE_PREFIX)}({DEV_MERGE_TAG})", uses)
     assert match is not None, (
-        f"{JOB_ID}.uses must call the anti-growth reusable at an immutable SHA"
+        f"{JOB_ID}.uses must call the anti-growth reusable at a dev-merge tag"
     )
     return match.group(1)
 
 
-def test_reusable_workflow_is_pinned_to_an_immutable_sha() -> None:
-    assert re.fullmatch(r"[0-9a-f]{40}", _workflow_sha()) is not None
+def test_reusable_workflow_is_pinned_to_a_dev_merge_tag() -> None:
+    assert re.fullmatch(DEV_MERGE_TAG, _workflow_ref()) is not None
 
 
-def test_hook_and_reusable_workflow_share_one_pin() -> None:
+def test_hook_and_reusable_workflow_each_own_a_dev_merge_tag() -> None:
+    # OMN-21495: the single-home invariant gives the hook and the reusable
+    # workflow a distinct tag each, so they are no longer one shared pin.
     revision = _hook_repo().get("rev")
     assert isinstance(revision, str), "omniclaude hook rev must be a string"
-    assert _workflow_sha() == revision
+    assert re.fullmatch(DEV_MERGE_TAG, revision.split()[0]) is not None
+    assert revision.split()[0] != _workflow_ref()
 
 
 def test_reusable_inputs_match_hook_baseline_and_parser_args() -> None:
@@ -140,7 +144,7 @@ def test_precommit_suite_runs_hook_with_origin_dev_available() -> None:
     ]
     assert len(checkouts) == 1, "precommit-suite must have one Checkout code step"
     checkout = checkouts[0]
-    assert checkout.get("uses") in {"actions/checkout@v7", "actions/checkout@v7.0.1"}
+    assert re.fullmatch(r"actions/checkout@[0-9a-f]{40}", str(checkout.get("uses")))
     checkout_inputs = _mapping(checkout.get("with"), "precommit-suite checkout inputs")
     assert checkout_inputs.get("fetch-depth") == 0
 
@@ -156,9 +160,3 @@ def test_reusable_job_is_required_and_strict_success() -> None:
 
     assert GATE_JOB_NAME in gate_jobs
     assert GATE_JOB_NAME in strict_success_jobs
-
-
-def test_audited_anti_growth_pin_rotates_hook_and_reusable_together() -> None:
-    expected = f"{REUSABLE_PREFIX}cc59bc1087f96c268e797995e17bf5d9bdc0c2db"
-    assert _workflow_job(JOB_ID)["uses"] == expected
-    assert _hook_repo()["rev"] == expected.rsplit("@", 1)[1]

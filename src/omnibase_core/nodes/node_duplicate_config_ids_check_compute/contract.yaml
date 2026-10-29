@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_duplicate_config_ids_check_compute
+node_id: node_duplicate_config_ids_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Reject config/registry YAML files that declare duplicate ids over a key that is not guaranteed unique,
+  for the registries declared in the duplicate-id manifest (OMN-14401).
+input_model: omnibase_core.models.nodes.duplicate_config_ids_check.model_duplicate_config_ids_check_input.ModelDuplicateConfigIdsCheckInput
+output_model: omnibase_core.models.nodes.duplicate_config_ids_check.model_duplicate_config_ids_check_output.ModelDuplicateConfigIdsCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeDuplicateConfigIdsCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

@@ -44,7 +44,7 @@
 #   3. If the URL varies per deployment, add endpoint_url_env naming the env
 #      var whose value replaces the catalog default at resolution time.
 #   4. Run the url-authority gate to confirm no literal sneaks into source:
-#         python -m omnibase_core.validation.validator_url_authority --all
+#         python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check --all
 #   5. Cite this catalog entry in the PR body.
 #
 # Migration debt:

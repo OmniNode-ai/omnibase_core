@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -116,7 +117,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
             step.get("with", {}).get("repository") != "OmniNode-ai/onex_change_control"
         )
     checkout = _step("Check out the pull request head")
-    assert checkout["uses"] in {"actions/checkout@v7", "actions/checkout@v7.0.1"}
+    assert re.fullmatch(r"actions/checkout@[0-9a-f]{40}", checkout["uses"])
     assert checkout["with"] == {
         "repository": "${{ github.repository }}",
         "ref": "${{ github.event.pull_request.head.sha }}",
@@ -125,10 +126,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "path": ".dod-verify/head_home/${{ github.event.repository.name }}",
     }
     assert _step("Set up Python 3.13")["with"]["python-version"] == "3.13"
-    assert _step("Install uv")["uses"] in {
-        "astral-sh/setup-uv@v7",
-        "astral-sh/setup-uv@v10.3.0",
-    }
+    assert re.fullmatch(r"astral-sh/setup-uv@[0-9a-f]{40}", _step("Install uv")["uses"])
 
 
 def test_caller_scripts_use_env_for_expression_values() -> None:
@@ -635,6 +633,25 @@ def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
         "POSTGRES_PORT": "${{ job.services.postgres.ports['5432'] }}"
     }
     assert '>> "$GITHUB_ENV"' in export["run"]
+
+
+def test_rootless_pg16_apt_state_keeps_the_host_deb822_sources() -> None:
+    # OMN-20413: Ubuntu 24.04 (noble) lists its archive only in deb822
+    # /etc/apt/sources.list.d/ubuntu.sources. A private apt state that reads
+    # /etc/apt/sources.list alone and turns source parts off sees PGDG and
+    # nothing else, so postgresql-common's libjson-perl is not installable and
+    # every pull request routed to an h203-light runner is refused
+    # (omninode_infra job 123513710017, 2026-10-29).
+    tools = _step(PG_TOOLS_STEP)["run"]
+    assert "Dir::Etc::sourceparts=-" not in tools
+    assert '-o Dir::Etc::sourceparts="${apt_dir}/sources.list.d"' in tools
+    assert (
+        "find /etc/apt/sources.list.d -maxdepth 1 -type f "
+        "\\( -name '*.list' -o -name '*.sources' \\) "
+        '-exec cp {} "${apt_dir}/sources.list.d/" \\;'
+    ) in tools
+    # A host with no /etc/apt/sources.list at all still reaches PGDG.
+    assert "{ cat /etc/apt/sources.list 2>/dev/null || true; }" in tools
 
 
 def _service_password() -> str:
