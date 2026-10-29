@@ -98,8 +98,8 @@ check-action-pins = "omnibase_core.handlers.handler_action_pin_cli:main"
 resolve-private-vocabulary = "omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary:main"
 # OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator
 # format, each with an optional shrink-only baseline (--baseline FILE, --write-baseline).
-check-no-dict-any = "omnibase_core.handlers.handler_dict_any_cli:main"
-check-no-backward-compat = "omnibase_core.handlers.handler_backward_compat_cli:main"
+check-no-dict-any = "omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check:main"
+check-no-backward-compat = "omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check:main"
 # OMN-19998: version drift at source. Refuse a floor raise on a sibling registry
 # package ahead of the registry consumers that install it, and a job the merge
 # queue runs that pull request CI skips; every repository runs both via

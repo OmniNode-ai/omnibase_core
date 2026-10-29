@@ -32,7 +32,6 @@ from typing import Final
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_finding_baseline import HandlerFindingBaseline
 from omnibase_core.models.finding_baseline.model_finding_baseline import (
     ModelFindingBaseline,
 )
@@ -50,6 +49,9 @@ from omnibase_core.models.finding_baseline.model_source_finding import (
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
+)
+from omnibase_core.nodes.node_finding_baseline_check_effect.handler_finding_baseline import (
+    HandlerFindingBaseline,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 

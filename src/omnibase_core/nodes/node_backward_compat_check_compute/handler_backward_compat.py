@@ -13,7 +13,6 @@ import ast
 import re
 from collections.abc import Callable, Iterator
 
-from omnibase_core.handlers.handler_finding_baseline import normalize_text
 from omnibase_core.models.backward_compat.model_backward_compat_check_input import (
     ModelBackwardCompatCheckInput,
 )
@@ -25,6 +24,9 @@ from omnibase_core.models.finding_baseline.model_finding_detect_result import (
 )
 from omnibase_core.models.finding_baseline.model_source_finding import (
     ModelSourceFinding,
+)
+from omnibase_core.nodes.node_finding_baseline_check_effect.handler_finding_baseline import (
+    normalize_text,
 )
 
 __all__ = ["HandlerBackwardCompat"]

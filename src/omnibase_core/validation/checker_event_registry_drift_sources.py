@@ -48,7 +48,6 @@ from omnibase_core.utils.util_safe_yaml_loader import (
 )
 
 __all__ = [
-    "BASELINE_KINDS",
     "parse_baseline",
     "parse_emit_registry",
     "parse_registration_contract",
@@ -56,13 +55,6 @@ __all__ = [
 ]
 
 _TOPIC_PREFIX: Final[str] = "onex."
-
-BASELINE_KINDS: Final[tuple[str, ...]] = (
-    "event_source_only",
-    "event_registry_only",
-    "source_only",
-    "registry_only",
-)
 
 _Parsed = tuple[tuple[ModelEventRegistration, ...], tuple[str, ...]]
 
@@ -294,7 +286,13 @@ def parse_baseline(
     path: str, source: str
 ) -> tuple[ModelEventRegistryDriftBaseline | None, tuple[str, ...]]:
     """Parse ``<kind> <value>`` baseline lines; ``#`` starts a comment."""
-    entries: dict[str, set[str]] = {kind: set() for kind in BASELINE_KINDS}
+    # The four kinds are the four fields of the baseline model, not a rule table.
+    entries: dict[str, set[str]] = {
+        "event_source_only": set(),
+        "event_registry_only": set(),
+        "source_only": set(),
+        "registry_only": set(),
+    }
     errors: list[str] = []
     for line_number, raw in enumerate(source.splitlines(), start=1):
         line = raw.split("#", 1)[0].strip()
@@ -304,7 +302,7 @@ def parse_baseline(
         if len(parts) != 2 or parts[0] not in entries:
             errors.append(
                 f"{path}:{line_number}: expected '<kind> <value>' with kind one of "
-                f"{', '.join(BASELINE_KINDS)}"
+                f"{', '.join(entries)}"
             )
             continue
         entries[parts[0]].add(parts[1])

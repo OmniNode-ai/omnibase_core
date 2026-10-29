@@ -642,7 +642,7 @@
     in it fails, an entry whose finding is gone fails as stale, and --write-baseline creates the file
     or shrinks it and refuses to add an entry. Without --baseline every finding fails.
   language: python
-  entry: python -m omnibase_core.handlers.handler_backward_compat_cli
+  entry: python -m omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check
   args: [--dir, src/]
   types: [python]
   pass_filenames: false
@@ -659,7 +659,7 @@
     and --write-baseline creates the file or shrinks it and refuses to add an entry. Without --baseline
     every finding fails.
   language: python
-  entry: python -m omnibase_core.handlers.handler_dict_any_cli
+  entry: python -m omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check
   types: [python]
   pass_filenames: true
   require_serial: true

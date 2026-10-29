@@ -18,9 +18,6 @@ from uuid import UUID
 import pytest
 
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-from omnibase_core.handlers.handler_validator_triggered_emit import (
-    HandlerValidatorTriggeredEmit,
-)
 from omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_input import (
     ModelValidatorTriggeredEmitInput,
 )
@@ -31,6 +28,9 @@ from omnibase_core.models.validation.model_validation_report import (
 )
 from omnibase_core.models.validation.model_validator_triggered_event import (
     ModelValidatorTriggeredEvent,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_triggered_emit import (
+    HandlerValidatorTriggeredEmit,
 )
 from omnibase_core.topics import TopicBase
 

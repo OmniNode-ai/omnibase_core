@@ -40,7 +40,7 @@ class Hook:
 HOOKS = (
     Hook(
         hook_id="check-no-dict-any",
-        module="omnibase_core.handlers.handler_dict_any_cli",
+        module="omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check",
         header="from typing import Any\n",
         finding="values: dict[str, Any] = {}",
         other_finding="other: dict[str, Any] = {}",
@@ -48,7 +48,7 @@ HOOKS = (
     ),
     Hook(
         hook_id="check-no-backward-compat",
-        module="omnibase_core.handlers.handler_backward_compat_cli",
+        module="omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check",
         header="",
         finding="# kept for backward compatibility with old callers",
         other_finding="# legacy support for the previous release",
@@ -245,7 +245,9 @@ def test_dict_any_decorator_and_comment_exemptions_still_pass(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from omnibase_core.handlers.handler_dict_any_cli import main
+    from omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check import (
+        main,
+    )
 
     monkeypatch.chdir(tmp_path)
     source = tmp_path / "src" / "exempt.py"
@@ -281,7 +283,9 @@ def test_dict_any_skips_the_path_classes_the_rule_data_names(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    from omnibase_core.handlers.handler_dict_any_cli import main
+    from omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check import (
+        main,
+    )
 
     monkeypatch.chdir(tmp_path)
     skipped = tmp_path / "src" / "pkg" / "types" / "aliases.py"

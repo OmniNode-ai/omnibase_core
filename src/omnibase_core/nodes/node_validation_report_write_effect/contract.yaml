@@ -23,6 +23,22 @@ output_model: omnibase_core.models.nodes.validation_report_write.model_validatio
 
 handler_routing:
   version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: validator_run_events
+      handler:
+        name: HandlerValidatorRunEvents
+        module: omnibase_core.nodes.node_validation_report_write_effect.handler_validator_run_events
+      event_model:
+        name: ModelValidationReport
+        module: omnibase_core.models.validation.model_validation_report
+    - operation: validator_triggered_emit
+      handler:
+        name: HandlerValidatorTriggeredEmit
+        module: omnibase_core.nodes.node_validation_report_write_effect.handler_validator_triggered_emit
+      event_model:
+        name: ModelValidatorTriggeredEmitInput
+        module: omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_input
   default_handler: handler:NodeValidationReportWriteEffect
 
 descriptor:

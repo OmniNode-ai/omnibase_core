@@ -11,14 +11,19 @@ from unittest.mock import patch
 import pytest
 from pydantic import ValidationError
 
-from omnibase_core.handlers.handler_backward_compat import HandlerBackwardCompat
-from omnibase_core.handlers.handler_backward_compat_cli import load_rules, main
 from omnibase_core.models.backward_compat import (
     ModelBackwardCompatCheckInput,
     ModelBackwardCompatRules,
 )
 from omnibase_core.models.finding_baseline import ModelFindingDetectResult
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
+from omnibase_core.nodes.node_backward_compat_check_compute.handler_backward_compat import (
+    HandlerBackwardCompat,
+)
+from omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check import (
+    load_rules,
+    main,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -342,7 +347,7 @@ def test_empty_request() -> None:
 @pytest.mark.parametrize("exception", [ValueError("invalid source"), MemoryError()])
 def test_parse_failures_are_unbaselinable(exception: Exception) -> None:
     with patch(
-        "omnibase_core.handlers.handler_backward_compat.ast.parse",
+        "omnibase_core.nodes.node_backward_compat_check_compute.handler_backward_compat.ast.parse",
         side_effect=exception,
     ):
         result = detect("# legacy support\n")

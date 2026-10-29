@@ -20,12 +20,6 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-from omnibase_core.handlers.handler_event_registry_drift_sources import (
-    parse_baseline,
-    parse_emit_registry,
-    parse_registration_contract,
-    parse_registration_document,
-)
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -43,6 +37,12 @@ from omnibase_core.validation.checker_event_registry_drift import (
     RULE_SOURCE_UNREADABLE,
     check_event_registry_drift,
     issue,
+)
+from omnibase_core.validation.checker_event_registry_drift_sources import (
+    parse_baseline,
+    parse_emit_registry,
+    parse_registration_contract,
+    parse_registration_document,
 )
 from omnibase_core.validation.checker_rule_parameters import rule_int, rule_strings
 from omnibase_core.validation.validator_base import ValidatorBase

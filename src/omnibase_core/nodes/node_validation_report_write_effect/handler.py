@@ -21,14 +21,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from omnibase_core.handlers.handler_validator_run_events import (
-    HandlerValidatorRunEvents,
-)
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
     ModelValidationReportWriteInput,
 )
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output import (
     ModelValidationReportWriteOutput,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_run_events import (
+    HandlerValidatorRunEvents,
 )
 
 __all__ = ["NodeValidationReportWriteEffect"]

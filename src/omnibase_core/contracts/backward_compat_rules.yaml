@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 #
 # Rule data of the check-no-backward-compat hook (OMN-21501). The detector is
-# omnibase_core.handlers.handler_backward_compat; nothing here is code.
+# omnibase_core.nodes.node_backward_compat_check_compute.handler_backward_compat; nothing here is code.
 ---
 compatibility_comment_patterns:
   - 'backward\s+compatibility'

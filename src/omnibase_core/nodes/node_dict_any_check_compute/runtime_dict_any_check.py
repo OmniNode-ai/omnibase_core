@@ -5,8 +5,8 @@
 
 Usage::
 
-    python -m omnibase_core.handlers.handler_dict_any_cli src/pkg/a.py
-    python -m omnibase_core.handlers.handler_dict_any_cli --dir src \\
+    python -m omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check src/pkg/a.py
+    python -m omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check --dir src \\
         --baseline .onex/baselines/check-no-dict-any.yaml [--write-baseline]
 
 The detection is ``HandlerDictAny``; the baseline is the shared
@@ -21,8 +21,6 @@ from functools import cache
 from importlib import resources
 from typing import Final
 
-from omnibase_core.handlers.handler_dict_any import HandlerDictAny
-from omnibase_core.handlers.handler_finding_baseline_cli import run_baselined_hook
 from omnibase_core.models.dict_any.model_dict_any_check_input import (
     ModelDictAnyCheckInput,
 )
@@ -32,6 +30,12 @@ from omnibase_core.models.finding_baseline.model_finding_detect_result import (
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
+)
+from omnibase_core.nodes.node_dict_any_check_compute.handler_dict_any import (
+    HandlerDictAny,
+)
+from omnibase_core.nodes.node_finding_baseline_check_effect.runtime_finding_baseline_check import (
+    run_baselined_hook,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
