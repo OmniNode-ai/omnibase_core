@@ -16,11 +16,17 @@ base.
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 import yaml
 
+from omnibase_core.handlers.handler_private_vocabulary_resolution import (
+    build_container,
+    capture_environment,
+    resolve_private_vocabulary,
+)
 from omnibase_core.validation.hardcoded_model_config import (
     runtime_hardcoded_model_config as runtime,
 )
@@ -45,7 +51,15 @@ LAB_HOST = ".".join(["192", "168", "86", "201"])
 
 @pytest.fixture(scope="module")
 def policy() -> ModelHardcodedModelConfigPolicy:
-    return runtime.load_policy()
+    container = build_container()
+    return runtime.load_policy(
+        resolve_private_vocabulary(
+            container,
+            "hardcoded_model_config_lab_denylist",
+            environment=capture_environment(container),
+            now=datetime.now(UTC),
+        )
+    )
 
 
 def _sha1(line: str) -> str:

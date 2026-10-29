@@ -1,19 +1,18 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Resolve operator-private vocabularies by contract name (OMN-21494).
+"""Pure resolution of operator-private vocabularies by contract name (OMN-21494).
 
-The handler reads files using the environment and time supplied in its request.
-The CLI bootstrap captures those inputs from the process.
+The handler performs no I/O. It takes its vocabulary contract from the container,
+chooses the path to read in the contract's precedence order (``plan``), and judges
+what the source-file gather effect observed there (``handle``). The environment,
+the clock and the file facts arrive on the request.
 """
 
 from __future__ import annotations
 
-import argparse
-import sys
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Final
 
 import yaml
 
@@ -22,54 +21,22 @@ from omnibase_core.enums.enum_private_vocabulary_source import (
     EnumPrivateVocabularySource,
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.bootstrap.model_environment_bootstrap import (
-    ModelEnvironmentBootstrap,
-)
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.private_vocabulary import (
+    ModelPrivateVocabularyCandidate,
     ModelPrivateVocabularyContract,
     ModelPrivateVocabularyEntry,
     ModelPrivateVocabularyRequest,
     ModelPrivateVocabularyResolution,
 )
-from omnibase_core.utils.util_safe_yaml_loader import (
-    load_yaml_content_as_model,
-    load_yaml_mapping_no_duplicates,
-)
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_duplicates
 
-__all__ = [
-    "DEFAULT_CONTRACT",
-    "HandlerPrivateVocabulary",
-    "load_contract",
-    "main",
-    "request_from_process",
-]
-
-DEFAULT_CONTRACT: Final[Path] = (
-    Path(__file__).parent.parent / "contracts" / "private_vocabularies.yaml"
-)
+__all__ = ["HandlerPrivateVocabulary"]
 
 
 def _refusal(message: str, error_code: EnumCoreErrorCode) -> ModelOnexError:
     """Keep every refusal on one line, including file and parser diagnostics."""
     return ModelOnexError(message=" ".join(message.splitlines()), error_code=error_code)
-
-
-def load_contract(path: Path = DEFAULT_CONTRACT) -> ModelPrivateVocabularyContract:
-    """Read the vocabulary resolution contract at ``path``."""
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError) as exc:
-        raise _refusal(
-            f"{path}: cannot read private vocabulary contract: {exc}",
-            EnumCoreErrorCode.FILE_READ_ERROR,
-        ) from exc
-    try:
-        return load_yaml_content_as_model(text, ModelPrivateVocabularyContract)
-    except ModelOnexError as exc:
-        raise _refusal(
-            f"{path}: private vocabulary contract is invalid: {exc.message}",
-            EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-        ) from exc
 
 
 def _age_days(text: str, path: Path, key: str, now: datetime) -> int | None:
@@ -105,82 +72,55 @@ def _age_days(text: str, path: Path, key: str, now: datetime) -> int | None:
 
 
 class HandlerPrivateVocabulary:
-    """Resolve and read a vocabulary using only explicit request inputs."""
+    """Resolve a vocabulary from explicit request inputs and the container's contract."""
 
-    def __init__(self, contract: ModelPrivateVocabularyContract | None = None) -> None:
-        self._contract = contract if contract is not None else load_contract()
+    def __init__(self, container: ModelONEXContainer) -> None:
+        self._contract = container.get_service(ModelPrivateVocabularyContract)
+
+    def declared_environment_keys(self) -> frozenset[str]:
+        """Environment keys the contract reads; a bootstrap captures only these."""
+        root = self._contract.workspace_config_root
+        return frozenset(
+            {root.env_var, root.home_env_var}
+            | {e.env_var for e in self._contract.vocabularies if e.env_var is not None}
+        )
+
+    def plan(
+        self, request: ModelPrivateVocabularyRequest
+    ) -> ModelPrivateVocabularyCandidate | None:
+        """Choose the one path to read in the contract's precedence order."""
+        return self._candidate(request, self._entry(request.vocabulary_name))
 
     def handle(
         self, request: ModelPrivateVocabularyRequest
     ) -> ModelPrivateVocabularyResolution:
         """Return content and provenance, refusing invalid or required missing input."""
-        entry = next(
-            (
-                e
-                for e in self._contract.vocabularies
-                if e.name == request.vocabulary_name
-            ),
-            None,
-        )
-        if entry is None:
-            known = ", ".join(e.name for e in self._contract.vocabularies)
+        entry = self._entry(request.vocabulary_name)
+        candidate = self._candidate(request, entry)
+        if candidate is None:
+            return self._absent(entry)
+        fact = request.file_fact
+        if fact is None or fact.path != candidate.path:
             raise _refusal(
-                f"unknown private vocabulary {request.vocabulary_name!r}; known names: {known}",
+                f"{candidate.path}: the read effect has not observed this private vocabulary path",
                 EnumCoreErrorCode.INVALID_INPUT,
             )
-        path, source = self._candidate(request, entry)
-        if path is not None:
-            try:
-                is_file = path.is_file()
-            except OSError as exc:
-                raise _refusal(
-                    f"{path}: cannot inspect private vocabulary: {exc}",
-                    EnumCoreErrorCode.FILE_READ_ERROR,
-                ) from exc
-            if not is_file:
-                if source is not EnumPrivateVocabularySource.WORKSPACE_CONFIG_ROOT:
-                    setting = (
-                        f" from {entry.env_var}"
-                        if source is EnumPrivateVocabularySource.ENVIRONMENT
-                        else ""
-                    )
-                    raise _refusal(
-                        f"{path}: private vocabulary{setting} is not a readable file",
-                        EnumCoreErrorCode.FILE_NOT_FOUND,
-                    )
-                path = None
-        if path is None:
-            if entry.required:
-                root_setting = self._contract.workspace_config_root.env_var
-                override = (
-                    f"set {entry.env_var} (or pass an explicit path), or "
-                    if entry.env_var is not None
-                    else ""
-                )
-                raise _refusal(
-                    f"private vocabulary {entry.name!r} is not set: {override}"
-                    f"place {entry.relative_path} under {root_setting}",
-                    EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,
-                )
-            return ModelPrivateVocabularyResolution(
-                vocabulary_name=entry.name,
-                found=False,
-                path=None,
-                source=None,
-                text=None,
-                age_days=None,
-                max_age_days=None,
-                age_exceeded=False,
+        if fact.error is not None:
+            raise _refusal(fact.error, EnumCoreErrorCode.FILE_READ_ERROR)
+        if not fact.is_file or fact.text is None:
+            if candidate.source is EnumPrivateVocabularySource.WORKSPACE_CONFIG_ROOT:
+                return self._absent(entry)
+            setting = (
+                f" from {entry.env_var}"
+                if candidate.source is EnumPrivateVocabularySource.ENVIRONMENT
+                else ""
             )
-        try:
-            text = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeError) as exc:
             raise _refusal(
-                f"{path}: cannot read private vocabulary: {exc}",
-                EnumCoreErrorCode.FILE_READ_ERROR,
-            ) from exc
+                f"{candidate.path}: private vocabulary{setting} is not a readable file",
+                EnumCoreErrorCode.FILE_NOT_FOUND,
+            )
         age = (
-            _age_days(text, path, entry.resolved_at_key, request.now)
+            _age_days(fact.text, candidate.path, entry.resolved_at_key, request.now)
             if entry.resolved_at_key is not None
             else None
         )
@@ -188,24 +128,65 @@ class HandlerPrivateVocabulary:
         return ModelPrivateVocabularyResolution(
             vocabulary_name=entry.name,
             found=True,
-            path=path,
-            source=source,
-            text=text,
+            path=candidate.path,
+            source=candidate.source,
+            text=fact.text,
             age_days=age,
             max_age_days=maximum,
             age_exceeded=age is not None and maximum is not None and age > maximum,
         )
 
+    def _entry(self, name: str) -> ModelPrivateVocabularyEntry:
+        entry = next((e for e in self._contract.vocabularies if e.name == name), None)
+        if entry is None:
+            known = ", ".join(e.name for e in self._contract.vocabularies)
+            raise _refusal(
+                f"unknown private vocabulary {name!r}; known names: {known}",
+                EnumCoreErrorCode.INVALID_INPUT,
+            )
+        return entry
+
+    def _absent(
+        self, entry: ModelPrivateVocabularyEntry
+    ) -> ModelPrivateVocabularyResolution:
+        """A vocabulary no setting supplied: refused when required, else not found."""
+        if entry.required:
+            root_setting = self._contract.workspace_config_root.env_var
+            override = (
+                f"set {entry.env_var} (or pass an explicit path), or "
+                if entry.env_var is not None
+                else ""
+            )
+            raise _refusal(
+                f"private vocabulary {entry.name!r} is not set: {override}"
+                f"place {entry.relative_path} under {root_setting}",
+                EnumCoreErrorCode.CONFIGURATION_NOT_FOUND,
+            )
+        return ModelPrivateVocabularyResolution(
+            vocabulary_name=entry.name,
+            found=False,
+            path=None,
+            source=None,
+            text=None,
+            age_days=None,
+            max_age_days=None,
+            age_exceeded=False,
+        )
+
     def _candidate(
         self, request: ModelPrivateVocabularyRequest, entry: ModelPrivateVocabularyEntry
-    ) -> tuple[Path | None, EnumPrivateVocabularySource | None]:
-        """Choose one path in the contract's precedence order."""
+    ) -> ModelPrivateVocabularyCandidate | None:
         if request.explicit_path is not None:
-            return request.explicit_path, EnumPrivateVocabularySource.EXPLICIT
+            return ModelPrivateVocabularyCandidate(
+                path=request.explicit_path, source=EnumPrivateVocabularySource.EXPLICIT
+            )
         if entry.env_var is not None:
             configured = request.environment.get(entry.env_var, "").strip()
             if configured:
-                return Path(configured), EnumPrivateVocabularySource.ENVIRONMENT
+                return ModelPrivateVocabularyCandidate(
+                    path=Path(configured),
+                    source=EnumPrivateVocabularySource.ENVIRONMENT,
+                )
         settings = self._contract.workspace_config_root
         configured_root = request.environment.get(settings.env_var, "").strip()
         home = request.environment.get(settings.home_env_var, "").strip()
@@ -214,51 +195,8 @@ class HandlerPrivateVocabulary:
         elif home:
             root = Path(home) / ".." / settings.home_sibling
         else:
-            return None, None
-        return (
-            root / entry.relative_path,
-            EnumPrivateVocabularySource.WORKSPACE_CONFIG_ROOT,
+            return None
+        return ModelPrivateVocabularyCandidate(
+            path=root / entry.relative_path,
+            source=EnumPrivateVocabularySource.WORKSPACE_CONFIG_ROOT,
         )
-
-
-def request_from_process(
-    name: str, explicit_path: Path | None = None
-) -> ModelPrivateVocabularyRequest:
-    """Capture only contract-declared environment keys and the current UTC time."""
-    contract = load_contract()
-    root = contract.workspace_config_root
-    declared_keys = {root.env_var, root.home_env_var}
-    declared_keys.update(
-        entry.env_var for entry in contract.vocabularies if entry.env_var is not None
-    )
-    captured = ModelEnvironmentBootstrap.capture_process_environment(
-        declared_keys=declared_keys
-    )
-    return ModelPrivateVocabularyRequest(
-        vocabulary_name=name,
-        explicit_path=explicit_path,
-        environment=dict(captured.environment.values),
-        now=datetime.now(UTC),
-    )
-
-
-def main(argv: list[str] | None = None) -> int:
-    """Print the resolved path, or one refusal line on stderr."""
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--name", required=True, help="Contract vocabulary name.")
-    parser.add_argument("--path", type=Path, help="Explicit vocabulary path.")
-    args = parser.parse_args(argv)
-    try:
-        resolution = HandlerPrivateVocabulary().handle(
-            request_from_process(args.name, args.path)
-        )
-    except ModelOnexError as exc:
-        sys.stderr.write(f"{exc.message}\n")
-        return 1
-    if resolution.found:
-        sys.stdout.write(f"{resolution.path}\n")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

@@ -3,11 +3,17 @@
 
 """Private vocabulary resolution models (OMN-21494)."""
 
+from omnibase_core.models.private_vocabulary.model_private_vocabulary_candidate import (
+    ModelPrivateVocabularyCandidate,
+)
 from omnibase_core.models.private_vocabulary.model_private_vocabulary_contract import (
     ModelPrivateVocabularyContract,
 )
 from omnibase_core.models.private_vocabulary.model_private_vocabulary_entry import (
     ModelPrivateVocabularyEntry,
+)
+from omnibase_core.models.private_vocabulary.model_private_vocabulary_file_fact import (
+    ModelPrivateVocabularyFileFact,
 )
 from omnibase_core.models.private_vocabulary.model_private_vocabulary_request import (
     ModelPrivateVocabularyRequest,
@@ -20,8 +26,10 @@ from omnibase_core.models.private_vocabulary.model_private_vocabulary_root impor
 )
 
 __all__ = [
+    "ModelPrivateVocabularyCandidate",
     "ModelPrivateVocabularyContract",
     "ModelPrivateVocabularyEntry",
+    "ModelPrivateVocabularyFileFact",
     "ModelPrivateVocabularyRequest",
     "ModelPrivateVocabularyResolution",
     "ModelPrivateVocabularyRoot",

@@ -45,8 +45,8 @@ emergency_bypass:
   follow_up_ticket_id: ''
 dod_evidence:
   - id: dod-omn21494-t01-model-config-read
-    description: The model-config gate asks the private-vocabulary handler for its lab denylist by name
-      and keeps no loader of its own.
+    description: The model-config gate asks the private-vocabulary handler for its lab denylist by name,
+      resolving the handler and the read effect from the container, and keeps no loader of its own.
     source: manual
     execution_scope: hosted_and_local
     checks:
@@ -67,14 +67,41 @@ dod_evidence:
     binds_ac:
       - AC2
   - id: dod-omn21494-t01-root-resolves
-    description: With the hygiene variable unset and the vocabulary at the config root, the handler's
-      CLI prints the resolved path.
+    description: With the hygiene variable unset and the vocabulary at the config root, the resolution
+      and the console caller of the node give the resolved path.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py tests/unit/nodes/node_source_file_gather_effect/test_runtime_private_vocabulary.py
+          -q -o addopts='' -k "unset_variable_resolves or cli_prints_the_resolved_path"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21494-configuration
+    description: Configuration - the age bound, the setting names, the relative paths and the required
+      flags are values of the packaged vocabulary contract; the handler holds none of them.
     source: manual
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py -q -o addopts=''
-          -k "cli_prints_the_resolved_path or unset_variable_resolves"
+          -k "age_bound or packaged_contract"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
-      - AC3
+      - AC1
+      - AC2
+  - id: dod-omn21494-bindings
+    description: Bindings - the handler is pure and takes its contract by injection (no default, no environment,
+      clock or file access), the read is a node under contract.yaml, and callers resolve the handler and
+      the effect from the container.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_private_vocabulary.py tests/unit/handlers/test_handler_private_vocabulary_resolution.py
+          tests/unit/validation/hardcoded_model_config/test_private_vocabulary_read.py -q -o addopts=''
+          -k "every_read_patched or reads_no_clock or no_default_contract or container or gather_effect"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
