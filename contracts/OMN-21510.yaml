@@ -1,0 +1,125 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21510
+title: The diagram-drift check moves to omnibase_core in the generic validator format
+summary: The predicate of the omnimarket node_contract_diagram_compute check_document_diagrams handler,
+  with its marker patterns, block syntax, view rules and issue kinds, becomes a pure core handler driven
+  by the diagram_drift validation contract, with a ValidatorBase entry; the renderer stays in omnimarket
+  and is injected by protocol. The omnimarket caller is the child ticket T-G1b-call.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21510-diagram-drift-core
+    statement: The core checker gives the merged check's verdicts on the merged task's fixtures from a
+      rule table that is the diagram_drift validation contract, and is pure.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: The core checker reproduces the merged check''s verdicts on the merged task''s
+          fixtures, and the omnimarket node returns the checker''s issues unchanged -- falsifier: the
+          merged task''s tests, run against the caller after the move'
+      - id: AC2
+        statement: 'AC2: The omnimarket node holds no predicate and no rule table -- falsifier: T-Q6''s
+          validator over the node''s package counts zero'
+      - id: AC3
+        statement: 'AC3: Configuration: every rule table that was a module constant is the checker''s
+          `.validation.yaml` contract -- falsifier: a fixture contract that removes one entry changes
+          the verdict on the fixture that entry catches'
+      - id: AC4
+        statement: 'AC4: Bindings: pure -- falsifier: byte-identical results in process and through the
+          local in-process entry of the parity harness (T-B2)'
+evidence_requirements:
+  - kind: tests
+    description: The merged check's cases on the copied plan fixture, the contract-entry removal cases,
+      the determinism and no-I/O cases, and the validator entry.
+    command: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift.py tests/unit/handlers/test_handler_diagram_drift_validator.py
+      -q --no-cov
+  - kind: ci
+    description: Hosted-runner check that runs the same test files against the checkout; no live service
+      is required.
+    command: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift.py tests/unit/handlers/test_handler_diagram_drift_validator.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21510-ac1-verdicts
+    description: The core checker gives the merged check's verdicts, counts and issue kinds on the copied
+      plan fixture and on each kind of drift the merged task's tests cover. The caller half of AC1, that
+      the omnimarket node returns these issues unchanged, is bound by the child ticket T-G1b-call.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift.py -q --no-cov
+          -k "fixture_copy or one_edge_changed or removed_transition or no_fragment or no_diagram or core_model_refuses
+          or no_line_naming or one_id or collapsed_view_of_a_state_machine or no_block_after or no_markers
+          or blank_lines or document_line_and_rule_name"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21510-ac2-no-rule-table-in-checker
+    description: The core handler and rules model hold no marker pattern or fence literal, so the predicate
+      and its rule table sit in core and the contract and none is left for the omnimarket node to keep.
+      The node-package count of T-Q6 is bound by the child ticket T-G1b-call.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift.py -q --no-cov
+          -k "no_rule_table_is_a_module_constant"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21510-ac3-configuration
+    description: Removing one issue-kind entry from the diagram_drift contract silences exactly that kind
+      on the fixture that catches it, a changed marker pattern or full-view-only kinds list changes the
+      verdict, and a contract missing a table or with a wrong group count is refused.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift.py -q --no-cov
+          -k "removing_ or marker_pattern_is_the_contracts or full_view_only_kinds_are or missing_a_required_table
+          or wrong_group_count"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21510-ac4-bindings-pure
+    description: The same document and rules give byte-identical report JSON across calls and fresh rules,
+      and the checker runs with file opening refused. The parity harness entry of T-B2 is not built; this
+      binds the in-process half only.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift.py -q --no-cov
+          -k "deterministic_byte_for_byte or does_no_io"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21510-validator-entry
+    description: The ValidatorBase entry loads the shipped diagram_drift contract and reports a drifted
+      file with its path.
+    source: manual
+    binds_ac: [AC1, AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift_validator.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21510-deploy-checkout-test
+    description: Hosted-runner run of both test files at the checkout; needs no container daemon or private
+      runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_diagram_drift.py tests/unit/handlers/test_handler_diagram_drift_validator.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21510-delegation-join
+    description: The delegation runs whose output is in the head join to it through the commit trailers
+      of the branch, which name the codex thread of the code draft and the run ids of the text drafts.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: command
+        check_value: |
+          git log --format=%B origin/dev..HEAD | grep -F "Delegation-Codex-Thread: 01a1851d-f1c0-7c90-87c6-d9a7062942e2"
+        cwd: ${OMNI_HOME}/omnibase_core

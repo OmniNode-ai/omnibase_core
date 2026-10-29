@@ -1,0 +1,118 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: diagram_drift
+  validator_name: Contract Diagram Drift Validator
+  validator_description: |
+    Every Mermaid diagram of a document equals the one its contract fragment generates (OMN-21510,
+    T-G1b; moved from the omnimarket check_document_diagrams predicate of OMN-21476).
+
+    A diagram marker precedes a mermaid block and pairs by id with the fragment marker that precedes
+    a yaml block. The first non-blank line under a diagram must name the node of its contract. The
+    marker patterns, the block syntax, the view names, the kinds that have only the full view and
+    which issue kinds are reported are the rule table below; nothing of it is a module constant.
+    The renderer that draws a fragment is not a validator and is injected by the caller.
+
+  target_patterns:
+    - "**/*.md"
+
+  exclude_patterns:
+    - "**/.git/**"
+    - "**/.venv/**"
+    - "**/node_modules/**"
+
+  rules:
+    - rule_id: diagram_marker
+      description: >-
+        The marker line that precedes a mermaid block. Group 1 is the node, group 2 the block name and
+        group 3, when present, selects the collapsed view.
+      severity: error
+      enabled: true
+      parameters:
+        pattern: '^<!-- diagram-contract: ([^:\s]+):(\S+?)(?: (collapsed))? -->$'
+
+    - rule_id: fragment_marker
+      description: >-
+        The marker line that precedes a yaml block holding a contract fragment. Group 1 is the node and
+        group 2 the block name.
+      severity: error
+      enabled: true
+      parameters:
+        pattern: '^<!-- contract-fragment: ([^:\s]+):(\S+?) -->$'
+
+    - rule_id: block_syntax
+      description: >-
+        The fence that opens and closes a block, the language of a fragment block and the language of
+        a diagram block.
+      severity: error
+      enabled: true
+      parameters:
+        fence: "```"
+        fragment_language: yaml
+        diagram_language: mermaid
+
+    - rule_id: view_support
+      description: >-
+        The two view names and the fragment kinds that have only the full view.
+      severity: error
+      enabled: true
+      parameters:
+        full_view: full
+        collapsed_view: collapsed
+        full_view_only_kinds:
+          - state_machine
+
+    - rule_id: diagram_differs
+      description: A diagram differs from the one generated from its fragment; the first differing line
+        is named.
+      severity: error
+      enabled: true
+
+    - rule_id: diagram_without_fragment
+      description: A diagram marker names a contract id that no fragment marker names.
+      severity: error
+      enabled: true
+
+    - rule_id: fragment_without_diagram
+      description: A fragment marker names a contract id that no diagram marker names.
+      severity: error
+      enabled: true
+
+    - rule_id: fragment_refused
+      description: The core model refused the fragment, or the marker's block name differs from the fragment's
+        kind.
+      severity: error
+      enabled: true
+
+    - rule_id: duplicate_fragment
+      description: Two fragment markers name one contract id.
+      severity: error
+      enabled: true
+
+    - rule_id: missing_contract_line
+      description: The first non-blank line under a diagram does not name the node of its contract.
+      severity: error
+      enabled: true
+
+    - rule_id: malformed_marker
+      description: A marker is followed by no block of the language it needs.
+      severity: error
+      enabled: true
+
+    - rule_id: view_not_supported
+      description: A diagram asks for the collapsed view of a kind that has only the full view.
+      severity: error
+      enabled: true
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false
