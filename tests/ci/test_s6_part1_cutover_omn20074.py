@@ -46,9 +46,12 @@ CALLER = WORKFLOWS_DIR / "call-reject-skip.yml"
 EVIDENCE_CALLER = WORKFLOWS_DIR / "call-repo-evidence-gate.yml"
 REQUIRED_CHECKS = REPO_ROOT / ".github" / "required-checks.yaml"
 REUSABLE = "OmniNode-ai/omniclaude/.github/workflows/reject-deploy-gate-skip.yml"
-# The squash commit of omniclaude#2540 on omniclaude dev, by its abbreviated
-# sha; the pin itself must be the full 40-character sha.
-PREFLIGHT_FREE_SHA_PREFIX = "4358450cc"
+# The squash commit of omniclaude#2540 on omniclaude dev was committed at
+# 2026-10-04T12:21:05Z. The caller names a dev-merge tag (OMN-21495, K11) whose
+# 14-digit stamp is the tagged commit's commit time, so a stamp at or after that
+# time is a commit on dev that carries the preflight-free reusable.
+DEV_MERGE_TAG = re.compile(r"dev-(?P<stamp>[0-9]{14})-[0-9a-f]{12}")
+PREFLIGHT_FREE_STAMP = "20261004122105"
 NESTED_PREFLIGHT = "call-reject-skip-token / occ-preflight / eligibility"
 SCAN = "call-reject-skip-token / scan / reject-skip-gate-token"
 STANDALONE_PREFLIGHT = "occ-preflight / eligibility"
@@ -80,8 +83,9 @@ def _check_run(name: str, conclusion: str | None, *, event: str) -> dict[str, ob
 def test_caller_pins_the_reusable_without_the_change_control_preflight() -> None:
     refs = _caller_refs()
     assert len(refs) == 1, refs
-    assert re.fullmatch(r"[0-9a-f]{40}", refs[0]), refs
-    assert refs[0].startswith(PREFLIGHT_FREE_SHA_PREFIX), refs
+    tag = DEV_MERGE_TAG.fullmatch(refs[0])
+    assert tag is not None, refs
+    assert tag["stamp"] >= PREFLIGHT_FREE_STAMP, refs
 
 
 def test_required_checks_manifest_retires_the_nested_preflight_row() -> None:

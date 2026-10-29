@@ -77,8 +77,10 @@ NO_DEV_WORKFLOW_EXECUTION_CONTRACT = "cc8d80029ade3512b57b1d5f28a86923defe1570e5
 # of the contract. Updating a digest requires auditing the readable workflow
 # diff first; this deliberately avoids another partial execution-surface list.
 AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
+    # OMN-21495: the job itself is unchanged; its checkout sha is now an audited
+    # rotation of actions/checkout@v7, so the digest is taken after that rotation.
     "exports-validation": (
-        "648e0a1dd5d0fa9fe26dbe78b7f6983c4340edd8d8d052fd70fffaec62d2331f"  # pragma: allowlist secret
+        "9584ebba03a5bf10f65e9c54b6ad588bc6f9d995ad85603e4240a6e4e7d54d02"  # pragma: allowlist secret
     ),
     "mypy-validation-scripts": (
         "a8a30228ed2b06149242a67caeb9c49c63140e14bd2d86f80fd489392cb4a078"  # pragma: allowlist secret
@@ -236,9 +238,24 @@ def _contains_literal(value: object, literal: str) -> bool:
 # OMN-20768: audited dependency-only rotations in omnibase_core#1977.
 # Canonicalize only these exact step pins; every other job field and unknown
 # ref stays in the digest, including action identity and all execution options.
+#
+# OMN-21495 (K11 third_party_not_sha): the audited guard jobs moved their
+# third-party actions from a major tag to the full commit sha. The sha is the
+# same reviewed action, so each sha canonicalizes to the major tag the digests
+# were taken at; no other field of a job changed (verified job by job).
 AUDITED_ACTION_PIN_ROTATIONS = {
     "actions/checkout@v7.0.1": "actions/checkout@v7",
     "astral-sh/setup-uv@v10.3.0": "astral-sh/setup-uv@v7",
+    "actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1": "actions/checkout@v7",
+    "actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0": (
+        "actions/setup-python@v7"
+    ),
+    "astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78": (
+        "astral-sh/setup-uv@v7"
+    ),
+    "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9": (
+        "actions/upload-artifact@v7"
+    ),
 }
 
 
@@ -856,15 +873,16 @@ _BOUNDARY_REPOS = {
     "omnimemory",
     "omnimarket",
 }
-# #1942 still packages the change-control boundary; #1972 removes it.
-# Audit the action pin and its exact clone list together, so neither an unknown
-# action nor a missing peer is admitted by the retirement of that boundary.
+# The audited action is a dev-merge tag (OMN-21495, K11) of a commit that
+# descends from #1972, which removed the change-control boundary. Audit the
+# action pin and its exact clone list together, so neither an unknown action
+# nor a missing peer is admitted.
 _AUDITED_BOUNDARY_ACTION_REPOS = {
-    f"{_BOUNDARY_ACTION}@de3398d1fcf7a6f48451f680b74b1a6c6c383b8a": (
-        _BOUNDARY_REPOS | {"onex_change_control"}
-    ),
-    f"{_BOUNDARY_ACTION}@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1": _BOUNDARY_REPOS,
+    f"{_BOUNDARY_ACTION}@dev-20261018063522-d6ebe6afe7b5": _BOUNDARY_REPOS,
 }
+# A clone list that differs from the audited one: it still names the retired
+# change-control repository.
+_MISMATCHED_BOUNDARY_REPOS = _BOUNDARY_REPOS | {"onex_change_control"}
 
 
 def _assert_boundary_repo_contract(step: dict[str, object]) -> None:
@@ -918,8 +936,7 @@ def test_boundary_repo_contract_refuses_every_missing_peer(
 def test_boundary_repo_contract_refuses_mismatched_clone_list(uses: str) -> None:
     step = copy.deepcopy(_boundary_validation_step())
     step["uses"] = uses
-    other = next(pin for pin in _AUDITED_BOUNDARY_ACTION_REPOS if pin != uses)
-    step["with"]["repos"] = ",".join(sorted(_AUDITED_BOUNDARY_ACTION_REPOS[other]))
+    step["with"]["repos"] = ",".join(sorted(_MISMATCHED_BOUNDARY_REPOS))
 
     with pytest.raises(AssertionError):
         _assert_boundary_repo_contract(step)

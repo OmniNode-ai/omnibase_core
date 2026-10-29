@@ -28,10 +28,11 @@ REQUIRED_CHECKS = REPO_ROOT / ".github" / "required-checks.yaml"
 JOB_ID = "boundary-validation"
 CONTEXT = "Cross-repo boundary validation"
 ACTION = "OmniNode-ai/omnibase_core/.github/actions/validate-boundaries"
-# Exact reviewed action revisions from the original migration and #1977.
+# Exact reviewed action revision, as the dev-merge tag K11 requires (OMN-21495).
+# The tagged commit d6ebe6afe7b5 descends from omnibase_core#1972 (c1f8e8fe), whose
+# manifest has no change-control boundary, so the job needs no change-control clone.
 AUDITED_ACTION_USES = {
-    f"{ACTION}@de3398d1fcf7a6f48451f680b74b1a6c6c383b8a",
-    f"{ACTION}@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1",
+    f"{ACTION}@dev-20261018063522-d6ebe6afe7b5",
 }
 _PINNED_USES = re.compile(
     rf"^(?:{'|'.join(re.escape(uses) for uses in sorted(AUDITED_ACTION_USES))})$"
@@ -50,7 +51,7 @@ def _retired_references(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if _RETIRED_ACTION.search(line)]
 
 
-def test_boundary_validation_job_calls_the_core_action_at_the_merge_sha() -> None:
+def test_boundary_validation_job_calls_the_core_action_at_the_dev_merge_tag() -> None:
     uses = [s["uses"].split(" ")[0] for s in _job()["steps"] if "uses" in s]
 
     assert [u for u in uses if _PINNED_USES.fullmatch(u)] != []
@@ -72,21 +73,6 @@ def test_retired_action_reference_is_detected() -> None:
     )
 
     assert _retired_references(old) == [old.strip()]
-
-
-def test_the_job_pins_the_action_whose_manifest_has_no_change_control_boundary() -> (
-    None
-):
-    """OMN-20074: with onex_change_control out of ``repos``, the pin must be #1972.
-
-    omnibase_core#1972 dropped the only boundary whose producer lived in the
-    change-control repository. The #1942 pin still lists it, so the parity
-    handler at that pin exits 1 on the missing producer once the repository is
-    no longer cloned: the pin and the ``repos`` input move together.
-    """
-    uses = [s["uses"].split(" ")[0] for s in _job()["steps"] if "uses" in s]
-
-    assert f"{ACTION}@c1f8e8fe0c513c0ac70ad666433a3ce1cec136c1" in uses
 
 
 def _core_action_file() -> Path:
