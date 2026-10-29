@@ -66,6 +66,27 @@ requirements:
         statement: "AC9 (Baseline growth): planting one or five baseline additions for files already present
           at the base revision reports baseline-growth for each addition. The head tests pass and the
           overlaid merge-base tests fail -- falsifier: the two planted_baseline_growth tests in test_canonical_file_shape_rules.py."
+  - id: req-omn21515-burndown-baseline
+    statement: A second, ticketed burn-down baseline admits the file-rule findings a new rule adds in
+      a repository that already has baseline_path, without extending baseline_path and without weakening
+      the shrink-only guarantee.
+    acceptance:
+      - id: AC10
+        statement: "AC10 (Burn-down install): when the base revision has no burn-down file, the head file
+          may list any path the head tree is refused for and baseline_path is not extended; an entry that
+          is not currently refused is baseline-stale; a first comment line without the ticket pattern
+          is burndown-ticket-missing; and a path either file lists is admitted -- falsifier: uv run pytest
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py"
+      - id: AC11
+        statement: "AC11 (Burn-down shrink): against a base that has the burn-down file an added line
+          is baseline-growth with only a one-for-one rename admitted, deleting the file is burndown-baseline-removed
+          even when it is empty, and every other new baseline file is still new-exception-file -- falsifier:
+          uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py"
+      - id: AC12
+        statement: "AC12 (Burn-down configuration): burndown_baseline_path, burndown_baseline_header,
+          burndown_ticket_pattern and the burndown_*_text keys are parameters entries of the validator
+          contract, each changes a verdict in the table-driven mutation test, and the two new rules have
+          a violation and a clean fixture -- falsifier: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py"
 evidence_requirements:
   - kind: tests
     description: The checker, runtime and ported rule tests pass at the pushed head.
@@ -210,4 +231,37 @@ dod_evidence:
       - check_type: test_passes
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
           -q --no-cov -o addopts='' -k planted_baseline_growth
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-install
+    description: First install of the burn-down baseline in a repository that has baseline_path is admitted,
+      baseline_path is not extended, a stale entry and a missing ticket header are refused, and the runtime
+      writes the file from the refused paths the baseline lacks.
+    source: manual
+    binds_ac: [AC10]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -q --no-cov -n 0 -o addopts='' -k "first_install or either_file or never_extended or without_the_burndown
+          or ticket or write_burndown"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-shrink
+    description: After install an added line is baseline-growth, a one-for-one rename is admitted, the
+      file cannot be deleted even when empty, and every other new baseline file is still new-exception-file.
+    source: manual
+    binds_ac: [AC11]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -q --no-cov -n 0 -o addopts='' -k "after_install or planted_growth or rename or deleting or
+          empty or exception_file or shrinks or grows or prune"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-configuration
+    description: Every burn-down parameters key changes a verdict, each new rule has a planted and a clean
+      fixture, and the table of keys covers the contract.
+    source: manual
+    binds_ac: [AC12]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
+          -q --no-cov -n 0 -o addopts='' -k "burndown or every_parameter_key or every_contract_rule"
         cwd: ${OMNI_HOME}/omnibase_core
