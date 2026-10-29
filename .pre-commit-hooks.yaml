@@ -1388,6 +1388,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-protocol-binding
+  name: No protocol bound to its implementation in code (OMN-21533, K5)
+  description: >
+    A default implementation constructed, a branch on an implementation class, a module-level table of
+    protocol bindings or a broker client built outside a binding site, and one setting holding a literal
+    value in two node contracts, are refused. The binding sites, the class lists, the key pattern, the
+    contract sections and the baseline path are the rule rows of protocol_binding.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_protocol_binding:ValidatorProtocolBinding
+  files: ^src/.*(\.py|/contract\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-checker-rule-data
   name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
   description: >

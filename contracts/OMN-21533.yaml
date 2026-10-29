@@ -1,0 +1,199 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21533
+title: 'protocol_binding checker: default implementations, implementation isinstance branches, code-side
+  binding tables, client construction outside a binding site, and one setting with two homes'
+summary: 'The K5 protocol_binding checker in the generic validator format: five rules whose class lists,
+  binding sites, patterns and remediation texts are rule data, a pure checker, a ValidatorBase entry run
+  through the generic runtime, a per-file shrink-only baseline for the existing EventBusInmemory constructions,
+  and a pre-commit hook.'
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21533-protocol-binding
+    statement: A protocol is bound to its implementation in a binding site only; the checker refuses code
+      that binds it elsewhere.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the three D.2 K5 fixtures are refused (`_LOCAL_BACKENDS = {"ProtocolEventBus":
+          "inmemory"}`; `def build_local_bus(): return EventBusInmemory(...)`; `if isinstance(event_bus,
+          EventBusKafka):`) and the other two rules have a violation and a clean fixture each -- falsifier:
+          `uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q`'
+      - id: AC2
+        statement: 'AC2: on omnibase_core origin/dev the 11 non-test modules that call `EventBusInmemory(`
+          (counted with `grep -rl`) are reported and go to a per-file shrink-only baseline with target
+          zero, except the container''s own registration, and no file D.3 names is in the baseline --
+          falsifier: the baseline file read against D.3 plus `uv run pytest tests/unit/validation -q -k
+          baseline_shrinks`'
+      - id: AC3
+        statement: 'AC3: KC-config: every pattern, name list, threshold and remediation text is a `parameters`
+          entry of the checker''s `.validation.yaml` -- falsifier: K10 `rule_table_in_checker` reports
+          zero on the checker module, and a table-driven test mutates every `parameters` key of every
+          rule row in turn, asserting the verdict change on the fixture that key controls and asserting
+          separately that an invalid contract fails to load rather than passing'
+      - id: AC4
+        statement: 'AC4: KC-a (Declared and injected): the checker is pure (facts in, issues out); its
+          runtime resolves `node_validation_report_write_effect` and the bus from the container (`models/container/model_onex_container.py`
+          `get_service`) -- falsifier: a container spy in the runtime test records the resolution of the
+          writer and the bus; the checker test calls the checker with facts only while `open` and `Path`
+          reads are patched to raise; and K1 `call_site_construction` reports zero on the runtime module'
+      - id: AC5
+        statement: 'AC5: KC-b (No literal): the changed source holds no host, port, topic, model name,
+          timeout or URL -- falsifier: hardcoded_topic, hardcoded_model_config with K6, url_authority
+          and contract_config_compliance report zero on the changed production source and workflow files
+          in the checker''s declared scope; the `.validation.yaml` rule data and the planted fixtures
+          are excluded by `exclude_patterns`'
+      - id: AC6
+        statement: 'AC6: KC-replay: every T0.8 assertion naming K5 rules is reported with its `rule_id`
+          -- falsifier: disabling a rule''s row in the `.validation.yaml` fails that rule''s fixture,
+          and fails exactly the corpus assertions that name it'
+      - id: AC7
+        statement: 'AC7: KC-c (Two overlays, one commit): the runtime runs on the in-memory default and
+          with the CI bus overlay with no code change, once [OMN-21529](https://linear.app/omninode/issue/OMN-21529)
+          lands the overlay pair -- falsifier: on one commit, the ticket''s own fixture set run twice,
+          once on the in-memory default and once with the broker overlay; both reports equal the committed
+          golden report after normalising run id and timestamps, and each run puts exactly one `ModelValidatorRunEvent`
+          carrying the report''s run id, observed by an in-memory listener in the first run and by a run-event
+          topic consumer filtered by that run id on a lab host in the second; the overlay file is the
+          only difference'
+evidence_requirements:
+  - kind: tests
+    description: The protocol-binding checker and overlay tests pass.
+    command: uv run pytest tests/unit/validation/test_checker_protocol_binding.py tests/unit/validation/test_protocol_binding_overlays.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21533-ac1-fixtures
+    description: The three D.2 K5 fixtures are refused and each rule has a violation fixture with exactly
+      one issue and a clean fixture with none.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q -o addopts=''
+          -k 'planted or clean_fixture or d2'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-ac2-baseline
+    description: The baseline holds the 10 modules that construct EventBusInmemory outside the container's
+      registration, each at its measured count, and the source tree is clean against it.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q -o addopts=''
+          -k 'baseline or repositorys_source'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-ac3-configuration
+    description: Every parameters key of every rule row changes the verdict it controls, an invalid row
+      fails to load, and K10 reports zero on the checker and validator modules.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q -o addopts=''
+          -k 'parameter or fails_to_load or compile or disabling'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-ac4-bindings
+    description: A container spy records the report writer and the bus resolved by the runtime, and the
+      checker runs with open and Path reads patched to raise.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q -o addopts=''
+          -k 'checker_is_pure or runtime_resolves'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-ac5-no-literal
+    description: The changed source files exist and the hardcoded topic, model config, URL authority and
+      contract config validators report zero on them.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/checker_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          --baseline config/hardcoded_model_config_baseline.yaml src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_hardcoded_topics src/omnibase_core/validation/checker_protocol_binding.py
+          src/omnibase_core/validation/validator_protocol_binding.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_checker_protocol_binding.py
+          -q --no-cov -o addopts='' -k changed_source_has_no_operational_literals
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-ac6-replay
+    description: Disabling a rule's row fails that rule's fixture; no T0.8 corpus exists on this base,
+      so no corpus assertion names the K5 rules yet.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q -o addopts=''
+          -k disabling
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-ac7-two-overlays
+    description: The fixture set run on the in-memory default and on the Redpanda overlay (bound to a
+      recording bus in the unit test) equals the committed golden report and puts one run event per run;
+      the live broker run is the lab receipt on the pull request.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_protocol_binding_overlays.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-deploy-validator-source
+    description: Hosted source readback at the checkout commit requires the published validator to hand
+      parsed facts to the pure checker. The probe needs no private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+      - AC4
+    checks:
+      - check_type: command
+        check_value: curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git
+          rev-parse HEAD)/src/omnibase_core/validation/validator_protocol_binding.py" | grep -F "check_protocol_binding("
+          > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_checker_protocol_binding.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

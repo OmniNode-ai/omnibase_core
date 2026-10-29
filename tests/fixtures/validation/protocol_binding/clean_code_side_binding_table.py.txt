@@ -1,0 +1,4 @@
+_LAZY_IMPORTS = {
+    "ProtocolEventBus": ("pkg.protocols.protocol_event_bus", "ProtocolEventBus"),
+}
+_RETRY_LABELS = {"fast": "inmemory"}

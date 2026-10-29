@@ -1,0 +1,42 @@
+{
+  "findings": [
+    {
+      "evidence": {},
+      "location": "src/pkg/violation_code_side_binding_table.py:1",
+      "message": "module-level table binds 'ProtocolEventBus' in code -- Declare the binding in the node contract's protocol_dependencies or an overlay; code holds no table of bindings.",
+      "remediation": null,
+      "rule_id": "code_side_binding_table",
+      "severity": "FAIL",
+      "validator_id": "protocol_binding"
+    },
+    {
+      "evidence": {},
+      "location": "src/pkg/violation_default_implementation_construction.py:2",
+      "message": "EventBusInmemory is constructed outside a binding site -- Resolve the protocol from the container (get_service); the default implementation is bound in the container's registration or an overlay, never constructed in the caller.",
+      "remediation": null,
+      "rule_id": "default_implementation_construction",
+      "severity": "FAIL",
+      "validator_id": "protocol_binding"
+    }
+  ],
+  "metrics": {
+    "error_count": 0,
+    "fail_count": 2,
+    "not_applicable_count": 0,
+    "pass_count": 0,
+    "skip_count": 0,
+    "total": 2,
+    "warn_count": 0
+  },
+  "overall_status": "FAIL",
+  "profile": "default",
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "protocol_binding"
+    ]
+  },
+  "report_id": "<normalised>"
+}

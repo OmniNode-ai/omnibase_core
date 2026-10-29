@@ -168,6 +168,22 @@ def run_validator(
     return result
 
 
+def _validator(
+    validator_cls: type[ValidatorBase], baseline: Path | None
+) -> ValidatorBase:
+    """The validator, held to ``baseline`` when it names one and the validator takes one."""
+    if baseline is None:
+        return validator_cls()
+    with_baseline = getattr(validator_cls, "with_baseline_file", None)
+    if with_baseline is None:
+        raise ModelOnexError(
+            message=f"{validator_cls.validator_id} takes no baseline",
+            error_code=EnumCoreErrorCode.INVALID_INPUT,
+        )
+    held: ValidatorBase = with_baseline(baseline)
+    return held
+
+
 def main(
     validator_cls: type[ValidatorBase],
     argv: Sequence[str] | None = None,
@@ -194,6 +210,13 @@ def main(
         help="Validator-runtime overlay; the node contract's default when omitted",
     )
     parser.add_argument(
+        "--baseline",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Per-file shrink-only baseline, for a validator that holds one",
+    )
+    parser.add_argument(
         "--repository",
         default=None,
         help="Repository named on triggered events; the node contract's default when omitted",
@@ -207,9 +230,9 @@ def main(
             return EXIT_ERRORS
         targets.append(validated)
 
-    validator = validator_cls()
     handler = HandlerValidatorRuntimeOverlay()
     try:
+        validator = _validator(validator_cls, args.baseline)
         settings = handler.settings()
         overlay = handler.load(args.overlay or handler.default_overlay_path())
         result = run_validator(
