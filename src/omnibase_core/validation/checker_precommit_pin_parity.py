@@ -5,18 +5,28 @@
 
 from __future__ import annotations
 
-from typing import Final
+from pathlib import Path
 
 import yaml
 from yaml.nodes import MappingNode, Node, ScalarNode, SequenceNode
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.precommit_pins.model_precommit_pin import ModelPrecommitPin
+from omnibase_core.models.precommit_pins.model_precommit_pin_parity_input import (
+    ModelPrecommitPinParityInput,
+)
+from omnibase_core.models.precommit_pins.model_precommit_pin_rules import (
+    ModelPrecommitPinRules,
+)
 
-__all__ = ["VALIDATOR_ID", "extract_pins", "normalize_repo_url"]
-
-VALIDATOR_ID: Final[str] = "precommit-pin-parity"
+__all__ = [
+    "check_precommit_pin_parity",
+    "extract_pins",
+    "normalize_repo_url",
+    "candidate_pins",
+]
 
 
 def _refusal(message: str) -> ModelOnexError:
@@ -87,3 +97,68 @@ def extract_pins(source: str) -> tuple[ModelPrecommitPin, ...]:
             )
         )
     return tuple(pins)
+
+
+def candidate_pins(
+    pins: tuple[ModelPrecommitPin, ...], rules: ModelPrecommitPinRules
+) -> tuple[ModelPrecommitPin, ...]:
+    """Select named repositories with at least two distinct revision scalars."""
+    named = {normalize_repo_url(repo) for repo in rules.older.hook_repos}
+    groups: dict[str, set[str]] = {}
+    for pin in pins:
+        repo = normalize_repo_url(pin.repo)
+        if repo in named:
+            groups.setdefault(repo, set()).add(pin.rev)
+    return tuple(
+        pin for pin in pins if len(groups.get(normalize_repo_url(pin.repo), ())) > 1
+    )
+
+
+def check_precommit_pin_parity(
+    request: ModelPrecommitPinParityInput,
+) -> tuple[ModelValidationIssue, ...]:
+    """Evaluate facts only; all policy and rendered text come from typed rules."""
+    rules = request.rules
+    groups: dict[str, list[ModelPrecommitPin]] = {}
+    for pin in candidate_pins(extract_pins(request.source), rules):
+        groups.setdefault(normalize_repo_url(pin.repo), []).append(pin)
+    times = {
+        (normalize_repo_url(t.repo), t.rev): t.committed_at for t in request.rev_times
+    }
+    issues: list[ModelValidationIssue] = []
+    for repo, pins in groups.items():
+        resolved = sorted({pin.rev for pin in pins if (repo, pin.rev) in times})
+        newest = max(resolved, key=lambda rev: times[repo, rev]) if resolved else None
+        for pin in pins:
+            if (repo, pin.rev) not in times:
+                rule = rules.unresolved_rule
+                template = rules.older.unresolved_message
+                remediation = rules.unresolved.remediation
+            elif newest is not None and times[repo, pin.rev] < times[repo, newest]:
+                rule = rules.older_rule
+                template = rules.older.older_message
+                remediation = rules.older.remediation
+            else:
+                continue
+            if not rule.enabled:
+                continue
+            values = {
+                "path": request.path,
+                "line": pin.line,
+                "repo": pin.repo,
+                "rev": pin.rev,
+                "hooks": ", ".join(pin.hook_ids),
+                "newest": newest or "",
+            }
+            issues.append(
+                ModelValidationIssue(
+                    severity=rule.severity,
+                    code=rule.rule_id,
+                    rule_name=rule.rule_id,
+                    file_path=Path(request.path),
+                    line_number=pin.line,
+                    message=template.format(**values),
+                    suggestion=remediation.format(**values),
+                )
+            )
+    return tuple(issues)

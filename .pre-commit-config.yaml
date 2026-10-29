@@ -1828,7 +1828,7 @@ repos:
       # repositories are removed by a later task.
       - id: check-precommit-pin-parity
         name: Pre-commit pin parity for the shared core hook repo (OMN-21495)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.handlers.handler_precommit_pin_parity_cli
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_precommit_rev_time_effect.runtime_precommit_pin_parity
         language: system
         files: ^\.pre-commit-config\.yaml$
         pass_filenames: true

@@ -1066,3 +1066,46 @@ def test_validator_stays_within_its_code_lines_at_the_previous_main_head() -> No
     # live in the handler so the whole range passes baselined-file-growth.
     source = Path(canonical_file_shape.__file__).read_text(encoding="utf-8")
     assert canonical_file_shape.count_code_lines(source) <= 731
+
+
+@pytest.mark.parametrize(
+    "path", ["src/pkg/validation/checker_x.py", "src/pkg/validation/validator_x.py"]
+)
+def test_generic_validator_canonical_locations(path: str) -> None:
+    assert is_canonical_location(path)
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/pkg/utils/new_helper.py",
+        "src/pkg/validation/helper.py",
+        "src/pkg/validation/sub/validator_x.py",
+    ],
+)
+def test_generic_validator_admission_stays_narrow(path: str) -> None:
+    assert not is_canonical_location(path)
+
+
+@pytest.mark.parametrize(
+    ("change", "expected"),
+    [
+        ("unchanged", []),
+        ("grow", ["baselined-file-growth"]),
+        ("delete", ["baseline-stale"]),
+    ],
+)
+def test_existing_baselined_validators_remain_shrink_only(
+    repo: Path, change: str, expected: list[str]
+) -> None:
+    path = "src/pkg/validation/validator_legacy.py"
+    _write(repo, path, "X = 1\n")
+    _write(repo, DEFAULT_BASELINE, render_baseline(["scripts/old_tool.py", path]))
+    _stage(repo)
+    _git(repo, "commit", "-q", "-m", "existing validator baseline")
+    if change == "grow":
+        _write(repo, path, "X = 1\nY = 2\n")
+    elif change == "delete":
+        (repo / path).unlink()
+    _stage(repo)
+    assert _rules(repo) == expected
