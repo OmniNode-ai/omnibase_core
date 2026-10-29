@@ -1,0 +1,10 @@
+Notes before the block.
+
+# Standing rules for every dispatched lane (read fully before the first tool call)
+Dependencies and DI: every dependency is declared in the contract and injected.
+No literal: no host, port, topic, model name, timeout or URL in changed source.
+Two overlays: a falsifier runs the in-memory default and the broker overlay with no code change.
+No Plugin class: no class named Plugin* in a node package.
+No envelope in compute: a compute handler returns its typed result, never an envelope.
+Zero literal: the literal validators report zero on the changed files.
+A check met at commit time costs a rewrite instead of at design time.

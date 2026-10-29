@@ -8,6 +8,7 @@ No Redpanda overlay pair exists for this validator runtime yet.
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
@@ -37,6 +38,7 @@ from omnibase_core.validation.checker_precommit_pin_parity import (
 from omnibase_core.validation.validator_precommit_pin_parity import (
     ValidatorPrecommitPinParity,
 )
+from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 pytestmark = pytest.mark.unit
 FIXTURES = Path(__file__).parents[2] / "fixtures/validation/precommit_pin_parity"
@@ -356,12 +358,18 @@ def test_runtime_converged_and_unrelated_files(tmp_path):
         run([str(config)], container=build_container(rev_time_source=MemoryRevTimes()))
         == 0
     )
+    # A file no target pattern covers is refused, never reported as a PASS.
     config = tmp_path / "other.yaml"
     config.write_text("not a config")
+    output = tmp_path / "other.json"
     assert (
-        run([str(config)], container=build_container(rev_time_source=MemoryRevTimes()))
-        == 0
+        run(
+            [str(config), "--report-json", str(output)],
+            container=build_container(rev_time_source=MemoryRevTimes()),
+        )
+        == 1
     )
+    assert json.loads(output.read_text())["overall_status"] == "ERROR"
 
 
 def test_revision_times_are_scoped_to_each_repository():
@@ -412,3 +420,79 @@ def test_custom_nested_contract_and_invalid_contract_cli(tmp_path):
         == 1
     )
     assert json.loads(out.read_text())["overall_status"] == "ERROR"
+
+
+CANARY_DIR = ROOT / "tests/fixtures/precommit_pin_parity"
+FIXTURE_OLD = "1" * 40
+FIXTURE_NEW = "2" * 40
+
+
+def _git(repo: Path, *args: str, stream: str | None = None) -> str:
+    return subprocess.run(
+        ["git", "-C", str(repo), *args],
+        input=stream,
+        capture_output=True,
+        text=True,
+        check=True,
+        env=scrub_git_location_env(),
+    ).stdout.strip()
+
+
+@pytest.fixture
+def history(tmp_path: Path) -> tuple[Path, str, str]:
+    """A real history checkout with an older and a newer commit."""
+    repo = tmp_path / "history"
+    repo.mkdir()
+    _git(repo, "init", "-q", "-b", "dev")
+    stream = "".join(
+        f"commit refs/heads/dev\ncommitter t <t@example.invalid> {stamp} +0000\n"
+        f"data 1\nm\nM 100644 inline f.txt\ndata {len(str(stamp))}\n{stamp}\n"
+        for stamp in (1_000_000_000, 2_000_000_000)
+    )
+    _git(repo, "fast-import", "--quiet", stream=stream)
+    return repo, _git(repo, "rev-parse", "dev~1"), _git(repo, "rev-parse", "dev")
+
+
+def _hook_run(args: list[str]) -> int:
+    """Run the hook entry exactly as pre-commit does: real effects, no overrides."""
+    return run(args)
+
+
+def test_canary_fixture_named_off_pattern_is_not_a_silent_pass(tmp_path, capsys):
+    """The canary run on its own file name printed PASS having checked nothing."""
+    out = tmp_path / "report.json"
+    canary = CANARY_DIR / "canary_lowered_pin.yaml"
+    assert _hook_run([str(canary), "--report-json", str(out)]) == 1
+    assert "PASS" not in capsys.readouterr().out
+    report = json.loads(out.read_text())
+    assert report["overall_status"] == "ERROR"
+    assert "not covered by target_patterns" in report["findings"][0]["message"]
+
+
+@pytest.mark.parametrize("relative", [False, True])
+def test_canary_lowered_pin_refused_with_rule_id_converged_admitted(
+    tmp_path, monkeypatch, history, relative
+):
+    """AC3 through the real effect: the lowered pin is refused, the converged config passes."""
+    repo, old, new = history
+    monkeypatch.chdir(tmp_path)
+    config = tmp_path / ".pre-commit-config.yaml"
+    target = config.name if relative else str(config)
+    base = ["--history-repo", str(repo)]
+
+    config.write_text(
+        (CANARY_DIR / "canary_lowered_pin.yaml")
+        .read_text()
+        .replace(FIXTURE_OLD, old)
+        .replace(FIXTURE_NEW, new)
+    )
+    out = tmp_path / "canary.json"
+    assert _hook_run([target, *base, "--report-json", str(out)]) == 1
+    [finding] = json.loads(out.read_text())["findings"]
+    assert finding["rule_id"] == "older_than_newest_pin"
+    assert finding["location"].endswith(".pre-commit-config.yaml:7")
+
+    config.write_text(
+        (CANARY_DIR / "converged_pins.yaml").read_text().replace(FIXTURE_NEW, new)
+    )
+    assert _hook_run([target, *base]) == 0

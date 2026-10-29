@@ -247,3 +247,16 @@ dod_evidence:
           bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 60 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_precommit_rev_time_effect/runtime_precommit_pin_parity.py" |
             grep -F "resolver = container.get_service(" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21495-deploy-explicit-target-canary
+    description: Run the hook on the named off-pattern canary and an unrelated file. Both must return
+      an ERROR report instead of passing without checking a file. These checkout tests need no private
+      runtime or container daemon and fail before the explicit-target refusal.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5, AC7]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_validator_precommit_pin_parity.py::test_canary_fixture_named_off_pattern_is_not_a_silent_pass
+          tests/unit/validation/test_validator_precommit_pin_parity.py::test_runtime_converged_and_unrelated_files
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

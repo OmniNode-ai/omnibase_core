@@ -1,0 +1,173 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: hardcoded_model_literals
+  validator_name: Hardcoded Model Literals (K6 families O, G, F, P, S, H, B)
+  validator_description: |
+    K6 families O, G, F, P, S, H and B of hardcoded_model_config (OMN-21537, plan task T4.1b).
+    Every pattern, name list, threshold and remediation text is a parameters entry of a rule
+    row; the checker spells none of them. Three facts come from the repository, not from here:
+    the first-party organisation (github_org of the contract named by the G row), the registry
+    repository names (the contract named by the P row) and the lab host names (the private
+    vocabulary).
+
+    O an operational number: a timeout, a millisecond or chunk size, an attempt or retry count,
+    a sleep. G a first-party repository URL, f-strings included. F a filesystem location in code.
+    P a literal list of registry repository names. S a ruling stamp bound as a value. H a literal
+    list of lab host names. B a numeric budget, cap, window or bound on a module-level constant.
+    A comment and a docstring are prose and pass.
+
+  target_patterns:
+    - "**/*.py"
+    - "**/*.yaml"
+    - "**/*.yml"
+    - "**/*.sh"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/validation/contracts/hardcoded_model_literals.validation.yaml"
+    - "**/*.validation.yaml"
+    - "src/omnibase_core/contracts/**"
+    - "**/contract.yaml"
+    - "**/pyproject.toml"
+    - "**/.pre-commit-config.yaml"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+  rules:
+    - rule_id: literal_operational_number
+      description: >-
+        An operational number (timeout, millisecond or chunk size, attempt or retry count, sleep) is a
+        literal in code or a workflow.
+      severity: error
+      enabled: true
+      parameters:
+        family: 'O'
+        remediation: >-
+          Declare the number in the contract or its overlay and read it through the injected configuration;
+          do not write it in code or a workflow.
+        name_patterns:
+          - '(?i)timeout'
+          - '(?i)_ms$'
+          - '(?i)(^|_)chunk'
+          - '(?i)(^|_)(attempts|retries)$'
+        call_names:
+          - sleep
+        min_value: 1
+        text_patterns:
+          - '\bsleep\s+[0-9]+'
+          - 'attempt\s*<=?\s*[0-9]+'
+          - '(?i)_TIMEOUT[A-Z_]*\s*[:=]\s*["'']?[0-9]+'
+
+    - rule_id: literal_first_party_url
+      description: A first-party repository URL (host plus the organisation of the repository layer map)
+        is a literal.
+      severity: error
+      enabled: true
+      parameters:
+        family: 'G'
+        remediation: >-
+          Build the URL from the repository layer map (github_org and repo) through the injected configuration;
+          do not write the host and organisation in code or a workflow.
+        hosts:
+          - github.com
+        scheme_patterns:
+          - 'https?://'
+          - 'git@'
+          - 'ssh://git@'
+          - 'git\+https://'
+        placeholder_pattern: '[{$]'
+
+    - rule_id: literal_filesystem_location
+      description: A filesystem location is a literal in code (home-relative, dot-directory default, module
+        constant).
+      severity: error
+      enabled: true
+      parameters:
+        family: 'F'
+        remediation: >-
+          Take the location from the contract or its overlay through the injected configuration; do not
+          derive it from the home directory, a dot-directory default or this file.
+        home_calls:
+          - Path.home
+          - os.path.expanduser
+        parameter_name_patterns:
+          - '(?i)(^|_)(root|dir|path)$'
+        dot_directory_pattern: '^\.[A-Za-z_][\w.\-]*(/[\w.\-/]*)?$'
+        constant_name_patterns:
+          - '^[A-Z][A-Z0-9_]*_(PATH|ROOT|DIR)$'
+          - '^(PATH|ROOT|DIR)$'
+        anchor_names:
+          - __file__
+        path_constructors:
+          - Path
+          - PurePath
+          - PurePosixPath
+          - pathlib.Path
+
+    - rule_id: literal_repository_list
+      description: A literal list of two or more registry repository names is code.
+      severity: error
+      enabled: true
+      parameters:
+        family: 'P'
+        remediation: >-
+          Read the repository set from the registry contract through the injected configuration; do not
+          list repositories in code.
+        registry_contract: contracts/repo_layers.yaml
+        extra_names: []
+        min_members: 2
+
+    - rule_id: literal_ruling_stamp
+      description: A ruling stamp is bound as a value.
+      severity: error
+      enabled: true
+      parameters:
+        family: 'S'
+        remediation: >-
+          Cite the ruling in a comment or the ticket; a ruling stamp bound as a value is a rule written
+          into code.
+        stamp_pattern: 'RULING\s+[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z'
+        text_pattern: '(?:[:=]|^\s*-)\s*[rbuRBU]?["'']?RULING\s+[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z'
+
+    - rule_id: literal_host_list
+      description: A literal list of lab host names is code.
+      severity: error
+      enabled: true
+      parameters:
+        family: 'H'
+        remediation: >-
+          Declare the hosts in a contract overlay and resolve them through the injected configuration;
+          do not list lab hosts in code.
+        min_members: 2
+
+    - rule_id: literal_budget_constant
+      description: A numeric budget, cap, window or bound is a module-level constant.
+      severity: error
+      enabled: true
+      parameters:
+        family: 'B'
+        remediation: >-
+          Declare the budget in the contract or its overlay (a policy model field default is the one admitted
+          home); do not write it as a module constant.
+        name_patterns:
+          - '^[A-Z][A-Z0-9_]*_(BUDGET|LIMIT|MAX|CAP|WINDOW|BOUND)$'
+        min_value: 1
+        text_pattern: '^\s*(?:export\s+)?[A-Z][A-Z0-9_]*_(BUDGET|LIMIT|MAX|CAP|WINDOW|BOUND)\s*[:=]\s*["'']?[0-9]+'
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
