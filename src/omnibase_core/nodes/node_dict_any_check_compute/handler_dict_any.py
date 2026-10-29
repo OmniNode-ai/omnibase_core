@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import ast
 
-from omnibase_core.handlers.handler_finding_baseline import normalize_text
 from omnibase_core.models.dict_any.model_dict_any_check_input import (
     ModelDictAnyCheckInput,
 )
@@ -25,6 +24,9 @@ from omnibase_core.models.finding_baseline.model_finding_detect_result import (
 )
 from omnibase_core.models.finding_baseline.model_source_finding import (
     ModelSourceFinding,
+)
+from omnibase_core.nodes.node_finding_baseline_check_effect.handler_finding_baseline import (
+    normalize_text,
 )
 
 __all__ = ["RULE_DICT_ANY", "RULE_FILE_ERROR", "HandlerDictAny"]

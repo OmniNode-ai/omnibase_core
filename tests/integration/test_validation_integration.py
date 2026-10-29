@@ -27,7 +27,7 @@ from omnibase_core.validators.no_unguarded_git_subprocess import (
 
 # Get the path to validation scripts
 VALIDATION_SCRIPTS_DIR = Path(__file__).parent.parent.parent / "scripts" / "validation"
-BACKWARD_COMPAT_CLI = "omnibase_core.handlers.handler_backward_compat_cli"
+BACKWARD_COMPAT_CLI = "omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check"
 
 
 def _git(

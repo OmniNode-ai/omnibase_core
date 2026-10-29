@@ -30,13 +30,6 @@ from omnibase_core.enums.governance.enum_compliance_verdict import EnumComplianc
 from omnibase_core.enums.governance.enum_compliance_violation import (
     EnumComplianceViolation,
 )
-from omnibase_core.handlers.handler_arch_handler_contract_compliance import (
-    _BARE_TOPIC_NAMES,
-    _ONEX_TOPIC_RE,
-    _determine_verdict,
-    _get_call_string,
-    _get_docstring_nodes,
-)
 from omnibase_core.models.governance.model_freestanding_imperative_finding import (
     ModelFreestandingImperativeFinding,
 )
@@ -45,6 +38,13 @@ from omnibase_core.models.governance.model_freestanding_imperative_result import
 )
 from omnibase_core.models.nodes.imperative_contract_guard.model_freestanding_scan_input import (
     ModelFreestandingScanInput,
+)
+from omnibase_core.nodes.node_imperative_contract_guard_check_effect.handler_arch_handler_contract_compliance import (
+    _BARE_TOPIC_NAMES,
+    _ONEX_TOPIC_RE,
+    _determine_verdict,
+    _get_call_string,
+    _get_docstring_nodes,
 )
 
 _RawFinding = tuple[int, EnumComplianceViolation, str]

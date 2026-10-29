@@ -14,13 +14,13 @@ from typing import Literal
 
 import pytest
 
-from omnibase_core.handlers.handler_validator_run_events import (
-    HandlerValidatorRunEvents,
-)
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationFindingEmbed,
     ModelValidationReport,
     ModelValidationRequestRef,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_run_events import (
+    HandlerValidatorRunEvents,
 )
 
 pytestmark = pytest.mark.unit

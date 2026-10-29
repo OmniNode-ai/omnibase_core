@@ -18,7 +18,7 @@ entry-point target. A violation that is not allowlisted blocks only when LIVE.
 
 The handler is pure over the supplied sources (:class:`ModelImperativeContractGuardInput`);
 the tree read, the allowlist and the report rendering live in
-``handler_imperative_contract_guard_cli``.
+``runtime_imperative_contract_guard_check``.
 """
 
 from __future__ import annotations
@@ -31,13 +31,6 @@ from typing import Final
 import yaml
 
 from omnibase_core.enums.governance.enum_reachability import EnumReachability
-from omnibase_core.handlers.handler_arch_handler_contract_compliance import (
-    HandlerArchHandlerContractCompliance,
-    _load_yaml_text,
-)
-from omnibase_core.handlers.handler_freestanding_imperative_io import (
-    HandlerFreestandingImperativeIo,
-)
 from omnibase_core.models.governance.model_freestanding_imperative_result import (
     ModelFreestandingImperativeResult,
 )
@@ -55,6 +48,13 @@ from omnibase_core.models.nodes.imperative_contract_guard.model_imperative_contr
 )
 from omnibase_core.models.nodes.imperative_contract_guard.model_imperative_contract_guard_report import (
     ModelImperativeContractGuardReport,
+)
+from omnibase_core.nodes.node_imperative_contract_guard_check_effect.handler_arch_handler_contract_compliance import (
+    HandlerArchHandlerContractCompliance,
+    _load_yaml_text,
+)
+from omnibase_core.nodes.node_imperative_contract_guard_check_effect.handler_freestanding_imperative_io import (
+    HandlerFreestandingImperativeIo,
 )
 
 # Directory names that are never freestanding source (vendored, cached, tests).

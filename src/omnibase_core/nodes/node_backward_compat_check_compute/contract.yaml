@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_backward_compat_check_compute
+node_id: node_backward_compat_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Detects backward-compatibility anti-patterns in supplied source files from the backward_compat rule
+  data and returns the findings (OMN-21501).
+input_model: omnibase_core.models.backward_compat.model_backward_compat_check_input.ModelBackwardCompatCheckInput
+output_model: omnibase_core.models.finding_baseline.model_finding_detect_result.ModelFindingDetectResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_backward_compat:HandlerBackwardCompat
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

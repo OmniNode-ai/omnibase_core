@@ -5,8 +5,8 @@
 
 Usage::
 
-    python -m omnibase_core.handlers.handler_backward_compat_cli src/pkg/a.py
-    python -m omnibase_core.handlers.handler_backward_compat_cli --dir src \\
+    python -m omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check src/pkg/a.py
+    python -m omnibase_core.nodes.node_backward_compat_check_compute.runtime_backward_compat_check --dir src \\
         --baseline .onex/baselines/check-no-backward-compat.yaml [--write-baseline]
 
 The detection is ``HandlerBackwardCompat``; the baseline is the shared
@@ -21,8 +21,6 @@ from functools import cache
 from importlib import resources
 from typing import Final
 
-from omnibase_core.handlers.handler_backward_compat import HandlerBackwardCompat
-from omnibase_core.handlers.handler_finding_baseline_cli import run_baselined_hook
 from omnibase_core.models.backward_compat.model_backward_compat_check_input import (
     ModelBackwardCompatCheckInput,
 )
@@ -34,6 +32,12 @@ from omnibase_core.models.finding_baseline.model_finding_detect_result import (
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
+)
+from omnibase_core.nodes.node_backward_compat_check_compute.handler_backward_compat import (
+    HandlerBackwardCompat,
+)
+from omnibase_core.nodes.node_finding_baseline_check_effect.runtime_finding_baseline_check import (
+    run_baselined_hook,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 

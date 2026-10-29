@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_dict_any_check_compute
+node_id: node_dict_any_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Detects dict[str, Any] annotations in supplied source files from the dict_any rule data and returns
+  the findings (OMN-21501).
+input_model: omnibase_core.models.dict_any.model_dict_any_check_input.ModelDictAnyCheckInput
+output_model: omnibase_core.models.finding_baseline.model_finding_detect_result.ModelFindingDetectResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler_dict_any:HandlerDictAny
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

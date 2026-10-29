@@ -32,10 +32,6 @@ from omnibase_core.enums.governance.enum_compliance_violation import (
 )
 from omnibase_core.enums.governance.enum_reachability import EnumReachability
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_arch_handler_contract_compliance import (
-    HandlerArchHandlerContractCompliance,
-    main,
-)
 from omnibase_core.models.nodes.handler_contract_compliance.model_compliance_node_source import (
     ModelComplianceNodeSource,
 )
@@ -46,6 +42,12 @@ from omnibase_core.models.nodes.handler_contract_compliance.model_handler_contra
     ModelHandlerContractComplianceReport,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
+from omnibase_core.nodes.node_imperative_contract_guard_check_effect.handler_arch_handler_contract_compliance import (
+    HandlerArchHandlerContractCompliance,
+)
+from omnibase_core.nodes.node_imperative_contract_guard_check_effect.runtime_arch_handler_contract_compliance import (
+    main,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -204,7 +206,7 @@ def test_invoked_as_module_with_the_consumer_flags(tmp_path: Path) -> None:
             [
                 sys.executable,
                 "-m",
-                "omnibase_core.handlers.handler_arch_handler_contract_compliance",
+                "omnibase_core.nodes.node_imperative_contract_guard_check_effect.runtime_arch_handler_contract_compliance",
                 *args,
             ],
             cwd=root,
