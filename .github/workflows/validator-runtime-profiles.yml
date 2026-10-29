@@ -92,7 +92,7 @@ jobs:
       # burn-down baseline. The same hook runs in the Pre-commit Suite job.
       - name: Self-scan omnibase_core src for lane-literal branching
         run: |
-          uv run python -m omnibase_core.validation.validator_no_lane_literal_branching \
+          uv run python -m omnibase_core.nodes.node_no_lane_literal_branching_check_compute.runtime_no_lane_literal_branching_check \
             --repo-root . \
             --baseline src/omnibase_core/validation/baselines/no_lane_literal_branching_baseline.json \
             src/

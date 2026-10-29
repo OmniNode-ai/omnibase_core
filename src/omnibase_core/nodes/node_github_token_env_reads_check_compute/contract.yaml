@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_github_token_env_reads_check_compute
+node_id: node_github_token_env_reads_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Scan supplied Python source texts for raw GitHub-token environment reads (the os.environ / os.getenv
+  forms for the three GitHub token names) outside the test tree, and return the violations with scanned
+  and skipped counts (OMN-21520).
+input_model: omnibase_core.models.validation.model_github_token_scan_request.ModelGithubTokenScanRequest
+output_model: omnibase_core.models.validation.model_github_token_scan_result.ModelGithubTokenScanResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeGithubTokenEnvReadsCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

@@ -16,11 +16,11 @@ covered, including dotted submodules and aliasing of ``typing``/``TYPE_CHECKING`
 Usage Examples:
     CLI — check staged files (pre-commit mode)::
 
-        python -m omnibase_core.validation.validator_transport_import file1.py file2.py
+        python -m omnibase_core.nodes.node_transport_import_check_compute.runtime_transport_import_check file1.py file2.py
 
     CLI — check a directory recursively::
 
-        python -m omnibase_core.validation.validator_transport_import src/
+        python -m omnibase_core.nodes.node_transport_import_check_compute.runtime_transport_import_check src/
 
 Suppression:
     Add ``# transport-import-ok: <reason>`` anywhere on the import line to suppress
@@ -258,71 +258,8 @@ class ValidatorTransportImport(BaseModel):
                     if child.is_file():
                         all_violations.extend(self.check_file(child))
             else:
-                print(
+                sys.stderr.write(
                     f"Warning: validate-no-transport-imports: skipping "
-                    f"non-existent path: {p}",
-                    file=sys.stderr,
+                    f"non-existent path: {p}\n"
                 )
         return all_violations
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entrypoint. Accepts files (pre-commit staged mode) or directories.
-
-    Exit codes:
-        0 — no violations
-        1 — violations found
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        prog="validate-no-transport-imports",
-        description=(
-            "Ban transport/I/O library imports in ONEX node code (ARCH-002). "
-            "TYPE_CHECKING-guarded imports are allowed."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        type=Path,
-        default=[Path()],
-        help="Files or directories to check (default: current directory)",
-    )
-    parser.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Suppress per-violation context lines and summary",
-    )
-    parsed = parser.parse_args(argv)
-
-    validator = ValidatorTransportImport()
-    violations = validator.check_paths(parsed.paths)
-
-    for v in violations:
-        print(str(v))
-        if not parsed.quiet:
-            print(f"  {v.context}")
-
-    if not parsed.quiet:
-        if violations:
-            print(
-                f"\n{len(violations)} transport-import violation(s). "
-                f"Nodes must not import transport/I/O libraries at runtime "
-                f"(ARCH-002). Use a protocol + DI, a TYPE_CHECKING guard, or add "
-                f"`# {_SUPPRESSION_MARKER}: <reason>` to suppress a boundary file."
-            )
-        else:
-            print("No transport-import violations found.")
-
-    return 1 if violations else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

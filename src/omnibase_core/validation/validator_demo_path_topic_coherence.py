@@ -21,7 +21,7 @@ Asserts (fail on any):
 
 Usage:
     # As a standalone script / pre-commit entry point:
-    python -m omnibase_core.validation.validator_demo_path_topic_coherence \\
+    python -m omnibase_core.nodes.node_demo_path_topic_coherence_check_compute.runtime_demo_path_topic_coherence_check \\
         /path/to/omnibase_infra /path/to/omnimarket /path/to/omnidash
 
     # Programmatic:
@@ -49,7 +49,6 @@ demo plan (``docs/plans/2026-06-07-bus-native-sea-demo-full-plan.md``).
 from __future__ import annotations
 
 import re
-import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -341,51 +340,3 @@ class ValidatorDemoPathTopicCoherence:
     def get_exit_code(result: ModelValidationResult[None]) -> int:
         """Map result to CLI exit code (0 = pass, 1 = fail)."""
         return 0 if result.is_valid else 1
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main() -> None:
-    """CLI entry point.
-
-    Usage:
-        onex-demo-path-topic-gate <repo_root> [<repo_root> ...]
-        python -m omnibase_core.validation.validator_demo_path_topic_coherence <roots...>
-    """
-    args = sys.argv[1:]
-    if not args:
-        print(
-            "Usage: onex-demo-path-topic-gate <repo_root> [<repo_root> ...]",
-            file=sys.stderr,
-        )
-        sys.exit(2)
-
-    repo_roots = [Path(a).resolve() for a in args]
-    missing = [str(r) for r in repo_roots if not r.is_dir()]
-    if missing:
-        print(f"Error: directories not found: {missing}", file=sys.stderr)
-        sys.exit(2)
-
-    validator = ValidatorDemoPathTopicCoherence(repo_roots=repo_roots)
-    result = validator.run()
-
-    print(result.summary)
-    if result.issues:
-        print()
-        for issue in result.issues:
-            location = ""
-            if issue.file_path:
-                location = str(issue.file_path)
-                if issue.line_number:
-                    location += f":{issue.line_number}"
-                location += ": "
-            print(f"  [ERROR] {location}{issue.message}")
-
-    sys.exit(validator.get_exit_code(result))
-
-
-if __name__ == "__main__":
-    main()

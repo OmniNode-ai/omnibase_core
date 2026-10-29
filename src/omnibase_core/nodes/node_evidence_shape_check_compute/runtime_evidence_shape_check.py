@@ -3,7 +3,7 @@
 
 """Evidence-shape CLI — local pre-push fail-fast check (OMN-14682).
 
-`uv run python -m omnibase_core.validation.validator_evidence_shape_cli ...`
+`uv run python -m omnibase_core.nodes.node_evidence_shape_check_compute.runtime_evidence_shape_check ...`
 
 Validates only the SHAPE of a PR body's Evidence-Source block — that a real
 stamp is a single, canonical, top-level line (not an example quoted inside a
@@ -31,7 +31,12 @@ import argparse
 import sys
 from pathlib import Path
 
-from omnibase_core.validation.validator_receipt_gate import check_evidence_source_shape
+from omnibase_core.models.nodes.evidence_shape_check.model_evidence_shape_check_input import (
+    ModelEvidenceShapeCheckInput,
+)
+from omnibase_core.nodes.node_evidence_shape_check_compute.handler import (
+    NodeEvidenceShapeCheckCompute,
+)
 
 
 def _optional_string_argument(args: argparse.Namespace, name: str) -> str | None:
@@ -80,11 +85,13 @@ def main(argv: list[str] | None = None) -> int:
     if body is None:
         parser.error("provide --pr-body, --pr-body-file <path>, or --pr-body-file -")
 
-    result = check_evidence_source_shape(body)
+    result = NodeEvidenceShapeCheckCompute().handle(
+        ModelEvidenceShapeCheckInput(pr_body=body)
+    )
     if result.passed:
-        print(f"::notice::{result.message}")
+        sys.stdout.write(f"::notice::{result.message}\n")
         return 0
-    print(f"::error::{result.message}")
+    sys.stdout.write(f"::error::{result.message}\n")
     return 1
 
 

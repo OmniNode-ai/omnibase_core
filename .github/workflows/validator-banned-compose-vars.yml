@@ -83,6 +83,6 @@ jobs:
               "ONEX_OUTPUT_TOPIC",
           )
           EOF
-          uv run python -m omnibase_core.validation.validator_banned_compose_vars \
+          uv run python -m omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check \
             --kernel-source /tmp/synthetic_kernel.py \
             .

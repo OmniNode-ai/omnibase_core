@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_no_lane_literal_branching_check_compute
+node_id: node_no_lane_literal_branching_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Scan explicit (path, source) pairs for branching on a runtime lane name (lane-literal compare, match
+  and collection findings, each with a content fingerprint) and return the findings (OMN-21520).
+input_model: omnibase_core.models.nodes.no_lane_literal_branching_check.model_no_lane_literal_branching_check_input.ModelNoLaneLiteralBranchingCheckInput
+output_model: omnibase_core.models.nodes.no_lane_literal_branching_check.model_no_lane_literal_branching_check_output.ModelNoLaneLiteralBranchingCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNoLaneLiteralBranchingCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000

@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_rollup_coverage_check_compute
+node_id: node_rollup_coverage_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Prove the required CI rollup job transitively depends on a failure-propagating job for every opted-in,
+  spec-required validator (Model B) and return the coverage gaps (OMN-21520).
+input_model: omnibase_core.models.nodes.rollup_coverage_check.model_rollup_coverage_check_input.ModelRollupCoverageCheckInput
+output_model: omnibase_core.models.nodes.rollup_coverage_check.model_rollup_coverage_check_output.ModelRollupCoverageCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeRollupCoverageCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

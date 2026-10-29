@@ -31,7 +31,8 @@ Classes are split per the single-class-per-file rule:
 - ``models/validation/model_github_token_scan_request.py`` — ModelGithubTokenScanRequest
 - ``models/validation/model_github_token_scan_result.py`` — ModelGithubTokenScanResult
 - ``validators/handler_github_token_env_reads.py`` — HandlerGithubTokenEnvReads (COMPUTE)
-- this file — pure scanner functions ``scan_source`` / ``scan_paths`` + CLI
+- this file — pure scanner functions ``scan_source`` / ``scan_paths``
+- ``nodes/node_github_token_env_reads_check_compute/`` — the COMPUTE node and its CLI runtime
 
 ## Scope / exclusions
 
@@ -54,12 +55,9 @@ from __future__ import annotations
 __all__ = [
     "scan_source",
     "scan_paths",
-    "main",
 ]
 
-import argparse
 import ast
-import sys
 from pathlib import Path
 
 from omnibase_core.models.validation.model_github_token_scan_result import (
@@ -249,87 +247,3 @@ def scan_paths(paths: list[Path]) -> ModelGithubTokenScanResult:
         files_scanned=files_scanned,
         files_skipped=files_skipped,
     )
-
-
-# ---------------------------------------------------------------------------
-# CLI / pre-commit entry point
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entry point for pre-commit and standalone invocation.
-
-    When invoked by pre-commit (``pass_filenames: true``) the filenames are
-    passed as positional arguments.  Reads file bytes at the boundary, then
-    delegates to the pure scanner.
-
-    Args:
-        argv: Argument list (defaults to ``sys.argv[1:]``).
-
-    Returns:
-        0 — no violations (or ``--report`` mode).
-        1 — violations found (enforce mode, default).
-    """
-    parser = argparse.ArgumentParser(
-        description=(
-            "Enforce: no raw GitHub-token env reads in source (OMN-13310). "
-            "Bans os.environ[GH_PAT/GH_TOKEN/GITHUB_TOKEN] and equivalents."  # env-var-ok: CLI help text names the banned patterns
-        )
-    )
-    parser.add_argument(
-        "files",
-        nargs="*",
-        type=Path,
-        help="Files to scan (passed by pre-commit)",
-    )
-    parser.add_argument(
-        "--report",
-        action="store_true",
-        help="Report violations but always exit 0 (warn-only / shadow mode).",
-    )
-    parser.add_argument("--verbose", "-v", action="store_true")
-    args = parser.parse_args(argv)
-
-    if not args.files:
-        # No files passed — nothing to scan (pre-commit passes an empty list
-        # when no relevant files are staged; treat as clean).
-        return 0
-
-    scan_result = scan_paths(args.files)
-
-    if scan_result.violations:
-        mode = "WARN" if args.report else "FAIL"
-        print(  # T201 — CLI output for pre-commit gate
-            f"[github-token-env-gate] [{mode}] "
-            f"{len(scan_result.violations)} raw GitHub-token env read(s) found:"
-        )
-        for v in scan_result.violations:
-            print(  # T201 — CLI output for pre-commit gate
-                f"  {v.file_path}:{v.line_number}: "
-                f"raw GitHub-token env read {v.detail!r} — "
-                f"use contract_secret_ref + resolve_api_key instead. "
-                f"({v.line_text!r})"
-            )
-        if not args.report:
-            print(  # T201 — CLI output for pre-commit gate
-                "\nFix: replace os.environ/os.getenv with:\n"
-                "    ref = contract_secret_ref(CONTRACT_PATH, 'GITHUB_TOKEN')\n"  # env-var-ok: fix guidance text
-                "    secret = resolve_api_key(ref)\n"
-                "Use the repo-local contract_secret_ref and resolve_api_key APIs; "
-                "see OMN-13310 / OMN-12856 for the contract-secret pattern.\n"
-                "(OMN-13310 / OMN-12856)"
-            )
-            return 1
-    elif args.verbose:
-        print(  # T201 — CLI output for pre-commit gate
-            f"[github-token-env-gate] OK — "
-            f"scanned {scan_result.files_scanned} file(s), "
-            f"skipped {scan_result.files_skipped}, "
-            f"no violations."
-        )
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

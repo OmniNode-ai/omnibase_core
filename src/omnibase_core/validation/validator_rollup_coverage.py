@@ -24,7 +24,7 @@ unaffected (pilot scope; fleet rollout is OMN-13576).
 
 Usage::
 
-    uv run python -m omnibase_core.validation.validator_rollup_coverage \\
+    uv run python -m omnibase_core.nodes.node_rollup_coverage_check_compute.runtime_rollup_coverage_check \\
         --repo omnibase_core --repo-root .
 
 Exit codes:
@@ -34,8 +34,6 @@ Exit codes:
 
 from __future__ import annotations
 
-import argparse
-import sys
 from collections import deque
 from pathlib import Path
 from typing import Any, Final
@@ -308,54 +306,3 @@ class RollupCoverageVerifier:
             if job in jobs:
                 queue.extend(_as_list(jobs[job].get("needs")))
         return seen
-
-
-def _format_gaps(gaps: list[ModelRollupCoverageGap]) -> str:
-    lines = [f"{len(gaps)} rollup-coverage gap(s):"]
-    for gap in gaps:
-        lines.append(f"  [{gap.repo}] {gap.validator} — {gap.detail}")
-    return "\n".join(lines)
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Verify Model-B rollup coverage (OMN-13574)."
-    )
-    parser.add_argument("--repo", required=True, help="Target repo name.")
-    parser.add_argument(
-        "--repo-root",
-        type=Path,
-        default=Path.cwd(),
-        help="Path to target repo's working tree (default: cwd).",
-    )
-    parser.add_argument(
-        "--spec",
-        type=Path,
-        default=None,
-        help="Path to validator-requirements.yaml (default: canonical).",
-    )
-    args = parser.parse_args(argv)
-
-    spec_path = args.spec or _CANONICAL_SPEC_PATH
-    verifier = RollupCoverageVerifier.from_spec_path(spec_path)
-
-    if not verifier.is_opted_in(args.repo):
-        print(
-            f"rollup-coverage: {args.repo} not opted into Model B (pilot scope) — skip",
-            file=sys.stderr,
-        )
-        return 0
-
-    gaps = verifier.verify_repo(repo_name=args.repo, repo_root=args.repo_root)
-    if not gaps:
-        print(
-            f"rollup-coverage: AIRTIGHT ({args.repo} @ {args.repo_root})",
-            file=sys.stderr,
-        )
-        return 0
-    print(_format_gaps(gaps), file=sys.stderr)
-    return 2
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())  # error-ok: standard CLI entry-point idiom

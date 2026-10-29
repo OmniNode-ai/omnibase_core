@@ -35,16 +35,14 @@ Public API: :func:`verify_receipt_by_reexecuting_probe` (single-receipt)
 and :func:`verify_receipts_by_reexecuting_probes` (batch, producing a
 :class:`ModelReceiptReprobeReport`).
 
-CLI: ``python -m omnibase_core.validation.validator_receipt_reprobe``
+CLI: ``python -m omnibase_core.nodes.node_receipt_reprobe_check_compute.runtime_receipt_reprobe_check``
 exposes a ``--receipts-dir`` driver.
 """
 
 from __future__ import annotations
 
-import argparse
 import shlex
 import subprocess
-import sys
 from pathlib import Path
 
 import yaml
@@ -282,61 +280,6 @@ def verify_receipts_by_reexecuting_probes(
     )
 
 
-# ---------------------------------------------------------------------------
-# CLI driver
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entry: re-probe every receipt under ``--receipts-dir``.
-
-    Exit codes:
-        0 — every receipt re-verifies (PASS)
-        1 — at least one receipt failed re-verification
-    """
-    parser = argparse.ArgumentParser(
-        description=(
-            "Re-probe verification — re-run every recorded probe_command "
-            "and verify the current exit_code matches the recorded one. "
-            "Defense against fabricated receipts (active-drive lesson F92)."
-        )
-    )
-    parser.add_argument(
-        "--receipts-dir",
-        default="drift/dod_receipts",
-        help="Directory tree containing ModelDodReceipt YAML files.",
-    )
-    args = parser.parse_args(argv)
-
-    report = verify_receipts_by_reexecuting_probes(Path(args.receipts_dir))
-
-    if not report.results:
-        print(f"::notice::no receipts found under {args.receipts_dir}")
-        return 0
-
-    failures = [r for r in report.results if r.status != ReprobeStatus.PASS]
-    for r in report.results:
-        line = (
-            f"{r.status.value}: {r.ticket_id}/{r.evidence_item_id}/{r.check_type} "
-            f"({r.receipt_path}): {r.detail}"
-        )
-        if r.status == ReprobeStatus.PASS:
-            print(f"::notice::{line}")
-        else:
-            print(f"::error::{line}")
-
-    if failures:
-        print(
-            f"::error::RE-PROBE FAILED: {len(failures)} of {len(report.results)} "
-            "receipt(s) did not re-verify. Receipts may be drifted or fabricated."
-        )
-        return 1
-    print(
-        f"::notice::RE-PROBE PASSED: all {len(report.results)} receipt(s) re-verified."
-    )
-    return 0
-
-
 __all__ = [
     "PROBE_COMMAND_ALLOWLIST",
     "PROBE_REEXEC_TIMEOUT_SECONDS",
@@ -344,7 +287,3 @@ __all__ = [
     "verify_receipt_by_reexecuting_probe",
     "verify_receipts_by_reexecuting_probes",
 ]
-
-
-if __name__ == "__main__":
-    sys.exit(main())

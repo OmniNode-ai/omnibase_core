@@ -40,16 +40,14 @@ Placement rationale: pure logic over ``ModelDodReceipt`` with no I/O
 dependencies → omnibase_core.validation, same layer as
 ``validator_receipt_gate``.
 
-CLI entry point: ``python -m omnibase_core.validation.validator_receipt_honesty``
+CLI entry point: ``python -m omnibase_core.nodes.node_receipt_honesty_check_compute.runtime_receipt_honesty_check``
   Scans a receipts directory and prints all violations.  Exit 0 when clean,
   exit 1 when any violation found.  Intended for pre-commit and CI wiring.
 """
 
 from __future__ import annotations
 
-import argparse
 import re
-import sys
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
@@ -510,84 +508,6 @@ def scan_receipt_files(receipt_paths: list[Path]) -> list[ReceiptFinding]:
         if finding is not None:
             findings.append(finding)
     return findings
-
-
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI: scan a receipts directory and exit non-zero on any violation.
-
-    Usage::
-
-        python -m omnibase_core.validation.validator_receipt_honesty \\
-            --receipts-dir drift/dod_receipts
-
-    Exit codes:
-        0 — no honesty violations found
-        1 — one or more violations found (output lists each with rule + detail)
-    """
-    parser = argparse.ArgumentParser(
-        description=(
-            "Receipt-honesty validator (OMN-12791): scan DoD receipts for "
-            "gamed probes, deferred evidence, self-attestation, fake human "
-            "verifiers, and deploy-keyword echo receipts."
-        )
-    )
-    parser.add_argument(
-        "--receipts-dir",
-        default="drift/dod_receipts",
-        help="Root of the dod_receipts/ tree to scan.",
-    )
-    parser.add_argument(
-        "--fail-fast",
-        action="store_true",
-        help="Stop scanning after the first violation.",
-    )
-    parser.add_argument(
-        "receipt_paths",
-        nargs="*",
-        help=(
-            "Optional explicit receipt YAML files to scan. When provided, "
-            "--receipts-dir is used only for display context."
-        ),
-    )
-    args = parser.parse_args(argv)
-
-    receipts_dir = Path(args.receipts_dir)
-    explicit_paths = [Path(p) for p in args.receipt_paths]
-    if explicit_paths:
-        findings = scan_receipt_files(explicit_paths)
-        target_description = f"{len(explicit_paths)} explicit receipt file(s)"
-    elif not receipts_dir.exists():
-        print(f"ERROR: receipts-dir does not exist: {receipts_dir}", file=sys.stderr)
-        return 1
-    else:
-        findings = scan_receipts_directory(receipts_dir)
-        target_description = str(receipts_dir)
-    if not findings:
-        print(f"RECEIPT HONESTY GATE PASSED: 0 violations in {target_description}")
-        return 0
-
-    total_violations = sum(len(f.violations) for f in findings)
-    print(
-        f"RECEIPT HONESTY GATE FAILED: {total_violations} violation(s) "
-        f"across {len(findings)} receipt(s):\n"
-    )
-    for finding in findings:
-        for v in finding.violations:
-            print(f"  [{v.rule}] {finding.receipt_path}")
-            print(f"    {v.detail}")
-            print()
-        if args.fail_fast:
-            break
-    return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
 
 
 __all__ = [

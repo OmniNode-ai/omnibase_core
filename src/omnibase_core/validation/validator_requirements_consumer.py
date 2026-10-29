@@ -31,7 +31,7 @@ Usage::
     gaps = consumer.scan_repo(repo_name="omnibase_core", repo_root=Path("."))
 
     # CLI
-    uv run python -m omnibase_core.validation.validator_requirements_consumer \\
+    uv run python -m omnibase_core.nodes.node_requirements_consumer_check_compute.runtime_requirements_consumer_check \\
         --repo omnibase_core --repo-root .
 
 Exit codes:
@@ -41,9 +41,7 @@ Exit codes:
 
 from __future__ import annotations
 
-import argparse
 import re
-import sys
 from collections.abc import Iterable
 from pathlib import Path
 from typing import Final
@@ -296,20 +294,6 @@ def _any_substring(haystack: str, needles: list[str]) -> bool:
     return any(needle and needle in haystack for needle in needles)
 
 
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
-def _format_gaps(gaps: list[ModelValidatorRequirementGap]) -> str:
-    lines = [f"{len(gaps)} validator-requirement gap(s):"]
-    for gap in gaps:
-        lines.append(
-            f"  [{gap.kind.value}] {gap.repo} :: {gap.validator} — {gap.detail}"
-        )
-    return "\n".join(lines)
-
-
 def _load_baseline(path: Path) -> set[tuple[str, str, str]]:
     """Load an accepted-gap baseline as a set of ``(repo, validator, kind)`` tuples.
 
@@ -382,82 +366,3 @@ def _load_baseline(path: Path) -> set[tuple[str, str, str]]:
             )
         accepted.add((repo, validator, kind))
     return accepted
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="Enforce validator-requirements.yaml (OMN-9115)."
-    )
-    parser.add_argument(
-        "--repo",
-        required=True,
-        help="Target repo name (must match a key in validator-requirements.yaml applies_to_repos)",
-    )
-    parser.add_argument(
-        "--repo-root",
-        type=Path,
-        default=Path.cwd(),
-        help="Path to target repo's working tree (default: cwd)",
-    )
-    parser.add_argument(
-        "--spec",
-        type=Path,
-        default=None,
-        help="Path to validator-requirements.yaml (default: canonical path under omnibase_core)",
-    )
-    parser.add_argument(
-        "--baseline",
-        type=Path,
-        default=None,
-        help=(
-            "Optional baseline YAML listing accepted gaps as "
-            "[{repo, validator, kind}, ...]. Any gap NOT in the baseline fails "
-            "the check. Baseline entries NOT reproduced by the scan also fail "
-            "(stale baseline). Mirrors the check-no-dict-any baseline ratchet."
-        ),
-    )
-    args = parser.parse_args(argv)
-
-    spec_path = args.spec or _CANONICAL_SPEC_PATH
-    consumer = ValidatorRequirementsConsumer.from_spec_path(spec_path)
-    gaps = consumer.scan_repo(repo_name=args.repo, repo_root=args.repo_root)
-
-    if args.baseline is None:
-        if not gaps:
-            print(
-                f"validator-requirements: OK ({args.repo} @ {args.repo_root})",
-                file=sys.stderr,
-            )
-            return 0
-        print(_format_gaps(gaps), file=sys.stderr)
-        return 2
-
-    accepted = _load_baseline(args.baseline)
-    observed = {(g.repo, g.validator, g.kind.value) for g in gaps}
-    new_gaps = observed - accepted
-    stale_entries = accepted - observed
-
-    if not new_gaps and not stale_entries:
-        print(
-            f"validator-requirements: baseline-clean ({args.repo} — "
-            f"{len(observed)} accepted gap(s))",
-            file=sys.stderr,
-        )
-        return 0
-
-    if new_gaps:
-        print("New validator-requirement gaps not in baseline:", file=sys.stderr)
-        for repo, validator, kind in sorted(new_gaps):
-            print(f"  + [{kind}] {repo} :: {validator}", file=sys.stderr)
-    if stale_entries:
-        print(
-            "Baseline entries no longer reproduced (remove from baseline):",
-            file=sys.stderr,
-        )
-        for repo, validator, kind in sorted(stale_entries):
-            print(f"  - [{kind}] {repo} :: {validator}", file=sys.stderr)
-    return 2
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())  # error-ok: standard CLI entry-point idiom

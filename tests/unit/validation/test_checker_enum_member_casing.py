@@ -23,11 +23,13 @@ from unittest.mock import patch
 
 import pytest
 
+from omnibase_core.nodes.node_enum_member_casing_check_compute.runtime_enum_member_casing_check import (
+    main,
+)
 from omnibase_core.validation.checker_enum_member_casing import (
     ENUM_BASE_NAMES,
     UPPER_SNAKE_CASE_PATTERN,
     CheckerMemberCasing,
-    main,
     suggest_upper_snake_case,
     validate_directory,
     validate_file,

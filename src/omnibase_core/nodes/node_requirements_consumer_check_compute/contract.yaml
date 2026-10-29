@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_requirements_consumer_check_compute
+node_id: node_requirements_consumer_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Cross-reference validator-requirements.yaml against a repo's pre-commit config and CI workflows and
+  return every missing or silently skipped validator registration (OMN-21520).
+input_model: omnibase_core.models.nodes.requirements_consumer_check.model_requirements_consumer_check_input.ModelRequirementsConsumerCheckInput
+output_model: omnibase_core.models.nodes.requirements_consumer_check.model_requirements_consumer_check_output.ModelRequirementsConsumerCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeRequirementsConsumerCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

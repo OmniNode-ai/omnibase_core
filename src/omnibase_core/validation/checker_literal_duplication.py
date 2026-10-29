@@ -14,7 +14,7 @@ Using Literal aliases creates synchronization problems when enum values change
 and violates the DRY (Don't Repeat Yourself) principle.
 
 Usage:
-    python -m omnibase_core.validation.checker_literal_duplication [paths...]
+    python -m omnibase_core.nodes.node_literal_duplication_check_compute.runtime_literal_duplication_check [paths...]
 
 Exit codes:
     0: No duplications found
@@ -32,12 +32,10 @@ Note:
     it can be used in pre-commit hooks without additional dependencies.
 """
 
-import argparse
 import ast
 import fnmatch
 import logging
 import re
-import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -150,10 +148,34 @@ def extract_literal_aliases(file_path: Path) -> list[tuple[str, int]]:
     """
     try:
         source = file_path.read_text(encoding="utf-8")
-        tree = ast.parse(source, filename=str(file_path))
-    except (OSError, SyntaxError, UnicodeDecodeError) as e:
-        # fallback-ok: skip files that cannot be parsed
+    except (OSError, UnicodeDecodeError) as e:
+        # fallback-ok: skip files that cannot be read
         logger.debug("Skipping %s: %s", file_path, e)
+        return []
+
+    return extract_literal_aliases_from_source(source, str(file_path))
+
+
+def extract_literal_aliases_from_source(
+    source: str, file_name: str
+) -> list[tuple[str, int]]:
+    """Extract Literal type alias names and line numbers from source text.
+
+    Pure counterpart of :func:`extract_literal_aliases`: no filesystem access.
+
+    Args:
+        source: Python source text to analyze.
+        file_name: Label used for parsing diagnostics.
+
+    Returns:
+        List of tuples (alias_name, line_number) for each Literal alias found.
+        Returns empty list if the source cannot be parsed.
+    """
+    try:
+        tree = ast.parse(source, filename=file_name)
+    except SyntaxError as e:
+        # skip sources that cannot be parsed
+        logger.debug("Skipping %s: %s", file_name, e)
         return []
 
     aliases: list[tuple[str, int]] = []
@@ -403,6 +425,28 @@ def validate_file(file_path: Path, known_enums: frozenset[str]) -> list[str]:
     return check_for_duplications(aliases, file_path, known_enums)
 
 
+def validate_source(
+    source: str, file_path: Path, known_enums: frozenset[str]
+) -> list[str]:
+    """Validate already-loaded source text for Literal duplication.
+
+    Pure counterpart of :func:`validate_file`: no filesystem access.
+
+    Args:
+        source: Python source text to validate.
+        file_path: Path label used in error messages.
+        known_enums: Set of known enum names (lowercase).
+
+    Returns:
+        List of error messages for duplications found in this source.
+    """
+    aliases = extract_literal_aliases_from_source(source, str(file_path))
+    if not aliases:
+        return []
+
+    return check_for_duplications(aliases, file_path, known_enums)
+
+
 def validate_paths(
     paths: list[Path],
     known_enums: frozenset[str],
@@ -554,136 +598,3 @@ def find_enums_directory() -> Path | None:
             return enums_dir
 
     return None
-
-
-def main() -> int:
-    """Main entry point for command-line validation.
-
-    Parses command-line arguments and validates Python files for Literal
-    type alias duplications that could be replaced with existing enums.
-
-    CLI Usage:
-        Default (validates src/omnibase_core)::
-
-            python -m omnibase_core.validation.checker_literal_duplication
-
-        Validate specific paths::
-
-            python -m omnibase_core.validation.checker_literal_duplication src/
-
-        With verbose output::
-
-            python -m omnibase_core.validation.checker_literal_duplication -v
-
-    Returns:
-        int: Exit code for shell integration.
-
-            - 0: No duplications found (success)
-            - 1: Duplications detected or error (failure)
-
-    Note:
-        This function is designed for CI/CD integration. A non-zero exit code
-        will cause pre-commit hooks and CI pipelines to fail, preventing
-        merges of code that introduces Literal duplication.
-    """
-    parser = argparse.ArgumentParser(
-        description="Check for Literal type alias duplication with existing enums",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-  %(prog)s                    Check src/omnibase_core (default)
-  %(prog)s src/               Check the src directory
-  %(prog)s file1.py file2.py  Check specific files
-  %(prog)s -v                 Check with verbose output
-
-This checker prevents creating Literal type aliases that duplicate
-existing enums in omnibase_core.enums/. Using Literal aliases creates
-synchronization problems when enum values change.
-
-Instead of:
-    LiteralValidationLevel = Literal["BASIC", "STANDARD", "COMPREHENSIVE"]
-
-Use:
-    from omnibase_core.enums import EnumValidationLevel
-""",
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        type=Path,
-        default=None,
-        help="Files or directories to check (default: src/omnibase_core)",
-    )
-    parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="Print progress for each file checked",
-    )
-    parser.add_argument(
-        "--exclude",
-        nargs="*",
-        default=[],
-        help="Additional path patterns to exclude",
-    )
-
-    args = parser.parse_args()
-
-    # Configure logging for CLI usage
-    log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s", force=True)
-
-    # Determine target paths
-    if args.paths:
-        target_paths = args.paths
-    else:
-        # Find src/omnibase_core relative to this file
-        this_file = Path(__file__)
-        # Go up from validation/ to omnibase_core/
-        target_dir = this_file.parent.parent
-        target_paths = [target_dir]
-
-    # Validate paths exist
-    for path in target_paths:
-        if not path.exists():
-            logger.error("Path not found: %s", path)
-            return 1
-
-    # Find enum names from the enums directory
-    enums_dir = find_enums_directory()
-    if enums_dir:
-        known_enums = get_enum_names_from_directory(enums_dir)
-        logger.debug("Loaded %d enum names from %s", len(known_enums), enums_dir)
-    else:
-        known_enums = KNOWN_ENUM_NAMES
-        logger.debug("Using built-in enum names (%d)", len(known_enums))
-
-    logger.info("Checking for Literal type alias duplication...")
-    if args.verbose:
-        logger.info("Paths: %s", [str(p) for p in target_paths])
-    logger.info("-" * 60)
-
-    errors = validate_paths(
-        target_paths,
-        known_enums,
-        exclude_patterns=args.exclude,
-        verbose=args.verbose,
-    )
-
-    if errors:
-        logger.warning("Found %d Literal duplication(s):", len(errors))
-        for error in sorted(errors):
-            logger.warning("  %s", error)
-        logger.info("")
-        logger.info("Action: Replace Literal aliases with enum imports.")
-        logger.info("Example:")
-        logger.info("  - LiteralValidationLevel = Literal[...]")
-        logger.info("  + from omnibase_core.enums import EnumValidationLevel")
-        return 1
-
-    logger.info("No Literal duplications found!")
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

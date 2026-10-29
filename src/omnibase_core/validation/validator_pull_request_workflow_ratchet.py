@@ -50,8 +50,6 @@ JOB INSIDE ``ci.yml`` and as a pre-commit hook — never as its own new
 
 from __future__ import annotations
 
-import argparse
-import sys
 from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -98,7 +96,6 @@ __all__ = [
     "verify_pull_request_workflow_ratchet",
     "triggers_on_pull_request",
     "live_pull_request_workflows",
-    "main",
 ]
 
 DEFAULT_REGISTRY_PATH = Path(
@@ -365,67 +362,3 @@ def verify_pull_request_workflow_ratchet(
             )
 
     return gaps
-
-
-def _parse_args(argv: list[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description=(
-            "Count-locked ratchet over pull_request-triggered workflow files "
-            "(C7 / OMN-14907). A NEW PR-triggered workflow must retire an existing "
-            "one or carry an expiring waiver; the budget count only moves DOWN."
-        )
-    )
-    parser.add_argument(
-        "--repo-root",
-        type=Path,
-        default=Path.cwd(),
-        help="Repository root (default: cwd).",
-    )
-    parser.add_argument(
-        "--registry",
-        type=Path,
-        default=None,
-        help=(
-            "Path to the budget registry YAML "
-            "(default: <repo-root>/architecture-handshakes/pull-request-workflow-budget.yaml)."
-        ),
-    )
-    return parser.parse_args(argv)
-
-
-def main(argv: list[str] | None = None) -> int:
-    args = _parse_args(sys.argv[1:] if argv is None else argv)
-    repo_root: Path = args.repo_root
-    registry_path: Path = args.registry or (repo_root / DEFAULT_REGISTRY_PATH)
-
-    try:
-        gaps = verify_pull_request_workflow_ratchet(
-            repo_root=repo_root,
-            registry_path=registry_path,
-            horizon_days=expiry_horizon_days(current_event_name()),
-        )
-    except (ValueError, FileNotFoundError) as exc:
-        sys.stderr.write(f"pull-request-workflow-ratchet: registry error: {exc}\n")
-        return 1
-
-    if gaps:
-        sys.stderr.write(
-            "pull-request-workflow-ratchet: the count-locked ratchet over "
-            "pull_request-triggered workflows is broken:\n"
-        )
-        for gap in gaps:
-            sys.stderr.write(f"{gap.format()}\n")
-        sys.stderr.write(
-            "\n  This is CLAUDE.md's net-negative-surface rule as a mechanism. A "
-            "NEW\n  PR-triggered workflow file must retire an existing one, or be "
-            "added to\n  the waivers bucket (ticket + expires + justification + "
-            "retires) in\n  architecture-handshakes/pull-request-workflow-budget.yaml. "
-            "See C7 /\n  OMN-14907.\n\n"
-        )
-        return 1
-
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())  # error-ok: validator CLI process exit

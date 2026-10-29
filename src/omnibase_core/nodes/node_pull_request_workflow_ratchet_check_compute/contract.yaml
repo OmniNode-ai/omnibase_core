@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_pull_request_workflow_ratchet_check_compute
+node_id: node_pull_request_workflow_ratchet_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Count-locked ratchet over pull_request-triggered workflow files; a new PR-triggered workflow must retire
+  an existing one or carry an expiring waiver. (OMN-21520).
+input_model: omnibase_core.models.nodes.pull_request_workflow_ratchet_check.model_pull_request_workflow_ratchet_check_input.ModelPullRequestWorkflowRatchetCheckInput
+output_model: omnibase_core.models.nodes.pull_request_workflow_ratchet_check.model_pull_request_workflow_ratchet_check_output.ModelPullRequestWorkflowRatchetCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodePullRequestWorkflowRatchetCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000
