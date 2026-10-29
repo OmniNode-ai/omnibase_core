@@ -1,0 +1,13 @@
+{
+  "base_burndown_text": "# Burn-down ticket: OMN-21521 compat file-shape findings\n",
+  "has_base": true,
+  "head_burndown_text": "# Burn-down ticket: OMN-21521 compat file-shape findings\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

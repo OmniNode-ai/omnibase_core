@@ -112,7 +112,12 @@ def test_every_contract_rule_has_a_planted_fixture_pair() -> None:
         for rule in CONTRACT.rules
         if rule.rule_id in RULES.enabled and rule.rule_id in FIXTURE_RULES
     }
-    config_only = {"declared-gate-lists", "repository-lifecycle", "git-reader"}
+    config_only = {
+        "declared-gate-lists",
+        "repository-lifecycle",
+        "git-reader",
+        "burndown-baseline",
+    }
     # The node-home rows read a node inventory, not file-shape facts; their planted
     # pairs live in fixtures/.../node_home and run in test_node_home_admission.py.
     node_home = {
@@ -480,7 +485,36 @@ def _declared(
     )
 
 
+BURNDOWN_HEADER = "# Burn-down ticket: OMN-21521 compat file-shape findings\n"
+BURNDOWN_FILE = ".onex_ratchets/canonical_file_shape_burndown_baseline.txt"
+
 SCENARIOS: dict[str, Callable[[], ModelCanonicalFileShapeFacts]] = {
+    "burndown_installed": lambda: _facts("clean_burndown-ticket-missing.json"),
+    "burndown_ticket_missing": lambda: _facts("violation_burndown-ticket-missing.json"),
+    "burndown_removed": lambda: _facts("violation_burndown-baseline-removed.json"),
+    "burndown_file_added": lambda: _inline(
+        head_tree=_tree(["scripts/new.py", BURNDOWN_FILE]),
+        has_base=True,
+        head_burndown_text=BURNDOWN_HEADER + "scripts/new.py\n",
+        changes=[
+            {
+                "status": "A",
+                "path": BURNDOWN_FILE,
+                "new_text": BURNDOWN_HEADER + "scripts/new.py\n",
+            }
+        ],
+    ),
+    "burndown_stale": lambda: _inline(
+        head_tree=_tree([]),
+        has_base=True,
+        head_burndown_text=BURNDOWN_HEADER + "scripts/gone.py\n",
+    ),
+    "burndown_growth": lambda: _inline(
+        head_tree=_tree(["scripts/new.py"]),
+        has_base=True,
+        base_burndown_text=BURNDOWN_HEADER,
+        head_burndown_text=BURNDOWN_HEADER + "scripts/new.py\n",
+    ),
     "noncanonical": lambda: _facts("violation_noncanonical-file.json"),
     "canonical_nodes": lambda: _facts("clean_noncanonical-file.json"),
     "canonical_validation": lambda: _inline(
@@ -613,6 +647,12 @@ MUTATIONS: dict[str, tuple[str, object]] = {
     "node_home_baseline_path": ("node_home_baseline", INERT_STR),
     "baseline_stale_text": ("baseline_stale", INERT_STR),
     "baseline_growth_text": ("baseline_growth", INERT_STR),
+    "burndown_baseline_path": ("burndown_file_added", INERT_STR),
+    "burndown_ticket_pattern": ("burndown_installed", INERT_STR),
+    "burndown_ticket_missing_text": ("burndown_ticket_missing", INERT_STR),
+    "burndown_stale_text": ("burndown_stale", INERT_STR),
+    "burndown_growth_text": ("burndown_growth", INERT_STR),
+    "burndown_removed_text": ("burndown_removed", INERT_STR),
     "comment_prefixes": ("baselined_comment_growth", ()),
     "baselined_growth_text": ("baselined_growth", INERT_STR),
     "skill_file_name": ("skill", INERT_STR),
@@ -667,6 +707,7 @@ READER_KEYS = frozenset(
         "main_pattern",
         "cat_file_timeout_s",
         "baseline_header",
+        "burndown_baseline_header",
     }
 ) | {
     key

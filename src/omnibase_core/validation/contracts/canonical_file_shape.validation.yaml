@@ -60,6 +60,8 @@ validation:
       enabled: true
       parameters:
         baseline_stale_text: "entry '{path}' is no longer refused by any file-shape rule; delete the line"
+        burndown_stale_text: "burn-down entry '{path}' is no longer refused by any file-shape rule; delete
+          the line"
 
     - rule_id: baseline-growth
       description: A baseline entry the base revision did not carry that is not a one-for-one move of
@@ -69,6 +71,8 @@ validation:
       enabled: true
       parameters:
         baseline_growth_text: "entry '{path}' is new; the baseline only shrinks"
+        burndown_growth_text: "burn-down entry '{path}' is new; once installed the burn-down baseline
+          only shrinks"
 
     - rule_id: baselined-file-growth
       description: A baselined code file with more code lines than at base.
@@ -78,6 +82,40 @@ validation:
         comment_prefixes: ["#", "//"]
         baselined_growth_text: "code lines {old} -> {new}; a baselined file only shrinks. Put the new
           behaviour in a contract + node + handler (rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z)"
+
+    - rule_id: burndown-baseline
+      description: Names the ticketed burn-down baseline, a second shrink-only file that carries the file-rule
+        findings the repository's own baseline_path file does not list. When the base revision has no
+        such file, the head file may list any path the head tree is refused for (first install); after
+        that it only shrinks, like baseline_path. Its header names the burn-down ticket.
+      severity: error
+      enabled: true
+      parameters:
+        burndown_baseline_path: ".onex_ratchets/canonical_file_shape_burndown_baseline.txt"
+        burndown_baseline_header: |
+          # Burn-down ticket: {ticket}
+          # canonical-file-shape burn-down baseline. Shrink-only once installed.
+          # Every line is a file a file-shape rule refuses that the ticket above burns
+          # down. Delete a line when its file is removed, moved into a canonical
+          # location or rewritten as contract + node + handler. A new line is refused
+          # and the file is never deleted, even when empty.
+
+    - rule_id: burndown-ticket-missing
+      description: A burn-down baseline whose first comment line does not name a burn-down ticket.
+      severity: error
+      enabled: true
+      parameters:
+        burndown_ticket_pattern: '^\s*#\s*Burn-down ticket:\s*OMN-\d+\b'
+        burndown_ticket_missing_text: "the burn-down baseline's first comment line must read '# Burn-down
+          ticket: OMN-<n> ...'; every entry is covered by a named burn-down ticket"
+
+    - rule_id: burndown-baseline-removed
+      description: The burn-down baseline was deleted after the base revision installed it.
+      severity: error
+      enabled: true
+      parameters:
+        burndown_removed_text: "the burn-down baseline stays, even when empty; deleting it would let a
+          later change install a new one"
 
     - rule_id: skill-imperative
       description: More imperative-pattern lines in a SKILL.md than at base.

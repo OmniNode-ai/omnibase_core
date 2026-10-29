@@ -10,10 +10,12 @@ the ``parameters`` of the rule rows in
 
 Rules: noncanonical-file, handler_outside_node, cli_entry_outside_node (file
 rules, refused paths that the shrink-only baseline may carry), baseline-stale,
-baseline-growth, baselined-file-growth, skill-imperative, suppression-growth,
+baseline-growth, baselined-file-growth, burndown-ticket-missing,
+burndown-baseline-removed, skill-imperative, suppression-growth,
 new-exception-file, exception-entry-growth, and the repository-lifecycle rules
 (lifecycle-no-code, lifecycle-fix-only-new-file, lifecycle-fix-only-growth,
-lifecycle-retired). The only state is the baseline file.
+lifecycle-retired). The only state is the baseline file and the ticketed
+burn-down baseline file.
 """
 
 from __future__ import annotations
@@ -58,6 +60,8 @@ RULE_NONCANONICAL = "noncanonical-file"
 RULE_BASELINE_STALE = "baseline-stale"
 RULE_BASELINE_GROWTH = "baseline-growth"
 RULE_BASELINED_GROWTH = "baselined-file-growth"
+RULE_BURNDOWN_TICKET = "burndown-ticket-missing"
+RULE_BURNDOWN_REMOVED = "burndown-baseline-removed"
 RULE_SKILL_IMPERATIVE = "skill-imperative"
 RULE_SUPPRESSION_GROWTH = "suppression-growth"
 RULE_NEW_EXCEPTION = "new-exception-file"
@@ -455,7 +459,10 @@ def _issue(
 def _is_exception_file(
     path: str, declared: frozenset[str], p: ModelCanonicalFileShapeRules
 ) -> bool:
-    if path in {p.baseline_path, p.node_home_baseline_path} or path in declared:
+    if (
+        path in {p.baseline_path, p.burndown_baseline_path, p.node_home_baseline_path}
+        or path in declared
+    ):
         return False
     if any(part in p.test_dirs for part in PurePosixPath(path).parts[:-1]):
         return False
@@ -628,23 +635,61 @@ def _lifecycle_issues(
     return issues
 
 
+def _burndown_ticket_named(text: str, p: ModelCanonicalFileShapeRules) -> bool:
+    """Whether the first comment line of the burn-down file names a ticket."""
+    first = next(
+        (
+            line
+            for line in text.splitlines()
+            if line.strip().startswith(p.comment_prefixes)
+        ),
+        None,
+    )
+    return (
+        first is not None
+        and _regex(p.burndown_ticket_pattern).search(first) is not None
+    )
+
+
 def check(
     facts: ModelCanonicalFileShapeFacts, rules: ModelCanonicalFileShapeRuleSet
 ) -> tuple[ModelValidationIssue, ...]:
-    """Every issue for the head revision against the baseline and the base revision."""
+    """Every issue for the head revision against the baselines and the base revision."""
     p = rules.parameters
     issues: list[ModelValidationIssue] = []
     refused = file_rule_refusals(facts.head_tree, rules)
-    baselined = set(parse_baseline(facts.head_baseline_text))
-    base_entries = set(parse_baseline(facts.base_baseline_text))
-    renames = {
-        change.path: change.old_path
-        for change in facts.changes
-        if change.status == "R"
-        and change.old_path is not None
-        and change.old_path in base_entries
-        and change.path in refused
-    }
+    # (path, head entries, base entries, stale text, growth text, base file present)
+    lists = (
+        (
+            p.baseline_path,
+            set(parse_baseline(facts.head_baseline_text)),
+            set(parse_baseline(facts.base_baseline_text)),
+            p.baseline_stale_text,
+            p.baseline_growth_text,
+            facts.base_baseline_text is not None,
+        ),
+        (
+            p.burndown_baseline_path,
+            set(parse_baseline(facts.head_burndown_text)),
+            set(parse_baseline(facts.base_burndown_text)),
+            p.burndown_stale_text,
+            p.burndown_growth_text,
+            facts.base_burndown_text is not None,
+        ),
+    )
+    baselined = set().union(*(entry[1] for entry in lists))
+    renames_by_list = [
+        {
+            change.path: change.old_path
+            for change in facts.changes
+            if change.status == "R"
+            and change.old_path is not None
+            and change.old_path in base_entries
+            and change.path in refused
+        }
+        for _, _, base_entries, _, _, _ in lists
+    ]
+    renames = {path: old for found in renames_by_list for path, old in found.items()}
     renamed_from = set(renames.values())
     declared = declared_paths(facts, p)
 
@@ -652,31 +697,68 @@ def check(
         if path not in baselined and path not in renames:
             issues.append(_issue(rules, path, rule, reason))
     if RULE_BASELINE_STALE in rules.enabled:
-        for path in sorted(baselined - set(refused) - renamed_from):
-            issues.append(
-                _issue(
-                    rules,
-                    p.baseline_path,
-                    RULE_BASELINE_STALE,
-                    p.baseline_stale_text.format(path=path),
+        for location, head_entries, _, stale_text, _, _ in lists:
+            for path in sorted(head_entries - set(refused) - renamed_from):
+                issues.append(
+                    _issue(
+                        rules,
+                        location,
+                        RULE_BASELINE_STALE,
+                        stale_text.format(path=path),
+                    )
                 )
+    if (
+        RULE_BURNDOWN_TICKET in rules.enabled
+        and facts.head_burndown_text is not None
+        and not _burndown_ticket_named(facts.head_burndown_text, p)
+    ):
+        issues.append(
+            _issue(
+                rules,
+                p.burndown_baseline_path,
+                RULE_BURNDOWN_TICKET,
+                p.burndown_ticket_missing_text,
             )
+        )
 
     if not facts.has_base:
         return tuple(issues)
 
-    if facts.base_baseline_text is not None and RULE_BASELINE_GROWTH in rules.enabled:
-        for path in sorted(baselined - base_entries):
-            if path in renames and renames[path] not in baselined:
+    if RULE_BASELINE_GROWTH in rules.enabled:
+        for (
+            location,
+            head_entries,
+            base_entries,
+            _,
+            growth_text,
+            installed,
+        ), found in zip(lists, renames_by_list, strict=True):
+            if not installed:
                 continue
-            issues.append(
-                _issue(
-                    rules,
-                    p.baseline_path,
-                    RULE_BASELINE_GROWTH,
-                    p.baseline_growth_text.format(path=path),
+            for path in sorted(head_entries - base_entries):
+                if path in found and found[path] not in head_entries:
+                    continue
+                issues.append(
+                    _issue(
+                        rules,
+                        location,
+                        RULE_BASELINE_GROWTH,
+                        growth_text.format(path=path),
+                    )
                 )
+    if (
+        RULE_BURNDOWN_REMOVED in rules.enabled
+        and facts.base_burndown_text is not None
+        and facts.head_burndown_text is None
+    ):
+        issues.append(
+            _issue(
+                rules,
+                p.burndown_baseline_path,
+                RULE_BURNDOWN_REMOVED,
+                p.burndown_removed_text,
             )
+        )
 
     grown_set = baselined | set(renames)
     for change in facts.changes:

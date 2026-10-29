@@ -1,0 +1,14 @@
+{
+  "has_base": true,
+  "head_burndown_text": "# canonical-file-shape burn-down baseline\nscripts/new.py\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "scripts/new.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}
