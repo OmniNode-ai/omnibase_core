@@ -6,6 +6,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.validation.model_node_home_rules import ModelNodeHomeRules
+
 
 class ModelNodeHomeRatchetRequest(BaseModel):
     """Indexed node inputs, base inventory, baselines and entry-point names."""
@@ -30,6 +32,12 @@ class ModelNodeHomeRatchetRequest(BaseModel):
     )
     base_entry_points: frozenset[str] = Field(
         description='Base-revision [project.entry-points."onex.nodes"] names'
+    )
+    contract_declarations: dict[str, frozenset[str]] = Field(
+        description="Node directory -> categories its contract.yaml declares under rules.declaration_field"
+    )
+    rules: ModelNodeHomeRules = Field(
+        description="Declaration and remediation rule data"
     )
 
 

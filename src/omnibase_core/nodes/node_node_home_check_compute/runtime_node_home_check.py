@@ -17,16 +17,23 @@ import tomllib
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path, PurePosixPath
 
+import yaml
+
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation.model_node_home_ratchet_request import (
     ModelNodeHomeRatchetRequest,
 )
+from omnibase_core.models.validation.model_node_home_rules import ModelNodeHomeRules
 from omnibase_core.nodes.node_node_home_check_compute.handler import (
     NODE_HOME_BASELINE,
     NodeNodeHomeCheckCompute,
     _eligible,
     _node_directories,
+)
+from omnibase_core.utils.util_safe_yaml_loader import (
+    load_and_validate_yaml_model,
+    load_yaml_mapping_no_duplicates,
 )
 from omnibase_core.validators.canonical_file_shape import (
     INDEX,
@@ -35,6 +42,28 @@ from omnibase_core.validators.canonical_file_shape import (
 )
 
 _NODE_CLASS = re.compile(r"^Node[A-Z]\w*$")
+RULES_PATH = Path(__file__).with_name("node_home_rules.yaml")
+
+
+def load_rules(path: Path = RULES_PATH) -> ModelNodeHomeRules:
+    """Load the rule data; an invalid file raises instead of passing."""
+    return load_and_validate_yaml_model(path, ModelNodeHomeRules)
+
+
+def _declarations(blob: bytes | None, field: str) -> frozenset[str]:
+    """The strings a contract lists under ``field``; anything malformed declares nothing."""
+    if blob is None:
+        return frozenset()
+    try:
+        document = load_yaml_mapping_no_duplicates(
+            blob.decode("utf-8"), source="contract.yaml"
+        )
+    except (UnicodeDecodeError, yaml.YAMLError, ValueError):
+        return frozenset()
+    value = document.get(field)
+    if not isinstance(value, list):
+        return frozenset()
+    return frozenset(item for item in value if isinstance(item, str))
 
 
 def render_baseline(paths: Iterable[str]) -> str:
@@ -95,7 +124,9 @@ def _entry_points(blob: bytes | None) -> frozenset[str]:
 
 
 def read_request(
-    repo_root: Path, base: str | None = "HEAD"
+    repo_root: Path,
+    base: str | None = "HEAD",
+    rules: ModelNodeHomeRules | None = None,
 ) -> ModelNodeHomeRatchetRequest:
     """Gather indexed and base-revision node inventories and registrations."""
     repo = GitRepo(root=repo_root)
@@ -105,9 +136,16 @@ def read_request(
             message="resolve unmerged index entries before checking node homes",
             error_code=EnumCoreErrorCode.VALIDATION_ERROR,
         )
+    rules = load_rules() if rules is None else rules
     paths = frozenset(repo.list_files(INDEX))
+    contract_paths = sorted(
+        path
+        for path in paths
+        if path.endswith("/contract.yaml") and _eligible(PurePosixPath(path))
+    )
     blobs = repo.read_blobs(
-        INDEX, [*_python_paths(paths), NODE_HOME_BASELINE, "pyproject.toml"]
+        INDEX,
+        [*_python_paths(paths), *contract_paths, NODE_HOME_BASELINE, "pyproject.toml"],
     )
     base_blob: bytes | None = None
     base_nodes: frozenset[str] = frozenset()
@@ -136,6 +174,12 @@ def read_request(
         base_node_directories=base_nodes,
         head_entry_points=_entry_points(blobs["pyproject.toml"]),
         base_entry_points=base_entry_points,
+        contract_declarations={
+            PurePosixPath(path).parent.as_posix(): declared
+            for path in contract_paths
+            if (declared := _declarations(blobs[path], rules.declaration_field))
+        },
+        rules=rules,
     )
 
 

@@ -89,12 +89,18 @@ class NodeNodeHomeCheckCompute:
         findings: list[ModelNodeHomeRatchetFinding] = []
         nodes = set(directories)
         baseline = _entries(request.head_baseline_text)
-        for path in sorted(nodes - baseline):
+        admitted = {
+            path
+            for path in nodes
+            if request.rules.admitted_declarations
+            & request.contract_declarations.get(path, frozenset())
+        }
+        for path in sorted(nodes - baseline - admitted):
             findings.append(
                 ModelNodeHomeRatchetFinding(
                     code="node-outside-market",
                     path=path,
-                    message="new or renamed node directory; the node moves to omnimarket instead",
+                    message=f"new or renamed node directory; {request.rules.remediation}",
                 )
             )
         for path in sorted(baseline - nodes):

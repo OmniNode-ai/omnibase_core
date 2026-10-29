@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+---
+# Rule data of the node-home ratchet (OMN-21495). Loaded as ModelNodeHomeRules.
+# A new node directory outside omnimarket is admitted only when its
+# contract.yaml lists one of these categories under the declaration field.
+# Admission adds no baseline entry and no per-entry exemption.
+declaration_field: tags
+admitted_declarations:
+  - validator_node
+  - validator_support_node
+remediation: the node moves to omnimarket instead, unless its contract.yaml declares it a validator or
+  validator-support node

@@ -11,10 +11,12 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.validation import (
     ModelNodeHomeRatchetFinding,
     ModelNodeHomeRatchetRequest,
     ModelNodeHomeRatchetResult,
+    ModelNodeHomeRules,
 )
 from omnibase_core.nodes.node_node_home_check_compute import handler as ratchet
 from omnibase_core.nodes.node_node_home_check_compute.handler import (
@@ -22,6 +24,7 @@ from omnibase_core.nodes.node_node_home_check_compute.handler import (
     NodeNodeHomeCheckCompute,
 )
 from omnibase_core.nodes.node_node_home_check_compute.runtime_node_home_check import (
+    load_rules,
     main,
     read_request,
     render_baseline,
@@ -348,6 +351,8 @@ def test_request_and_result_models_are_frozen_and_forbid_extra() -> None:
         base_node_directories=frozenset(),
         head_entry_points=frozenset(),
         base_entry_points=frozenset(),
+        contract_declarations={},
+        rules=load_rules(),
     )
     finding = ModelNodeHomeRatchetFinding(
         code="node-outside-market", path=NODE, message="move"
@@ -500,3 +505,111 @@ def test_refuses_new_node_ignored_python_is_not_parsed(repo: Path, path: str) ->
 def test_refuses_new_node_hidden_python_file_is_not_parsed(repo: Path) -> None:
     _write(repo, "plugins/node_y/.hidden.py", "invalid python!")
     assert _check(repo).node_directories == ()
+
+
+# OMN-21495: a node directory is admitted when its contract.yaml declares it a
+# validator or validator-support node. The field, the categories and the
+# remediation text are rule data in node_home_rules.yaml.
+VALIDATOR_NODE = "src/pkg/nodes/node_validator_zz"
+
+
+def _plant_declared(repo: Path, directory: str, contract_text: str) -> None:
+    _write(repo, f"{directory}/contract.yaml", contract_text)
+    _write(repo, f"{directory}/handlers/__init__.py")
+
+
+@pytest.mark.parametrize("category", ["validator_node", "validator_support_node"])
+def test_admits_declared_validator_node(repo: Path, category: str) -> None:
+    _plant_declared(repo, VALIDATOR_NODE, f"name: planted\ntags: [{category}]\n")
+    result = _check(repo)
+    assert result.node_directories == (VALIDATOR_NODE,)
+    assert result.findings == ()
+    assert main(["--repo-root", str(repo)]) == 0
+
+
+def test_refuses_undeclared_effect_node(repo: Path) -> None:
+    _plant_declared(
+        repo, NODE, "name: planted\nnode_type: effect\ntags: [effect, io]\n"
+    )
+    result = _check(repo)
+    assert [(finding.code, finding.path) for finding in result.findings] == [
+        ("node-outside-market", NODE)
+    ]
+
+
+def test_declaration_admits_only_the_declaring_directory(repo: Path) -> None:
+    _plant_declared(repo, VALIDATOR_NODE, "name: planted\ntags: [validator_node]\n")
+    _plant_declared(repo, NODE, "name: planted\ntags: [effect]\n")
+    result = _check(repo)
+    assert [(finding.code, finding.path) for finding in result.findings] == [
+        ("node-outside-market", NODE)
+    ]
+
+
+@pytest.mark.parametrize("text", ["", "- a\n- b\n", "tags: validator_node\n"])
+def test_malformed_declaration_does_not_admit(repo: Path, text: str) -> None:
+    _plant_declared(repo, NODE, text)
+    assert [finding.code for finding in _check(repo).findings] == [
+        "node-outside-market"
+    ]
+
+
+def test_admission_never_touches_the_baseline_file(repo: Path) -> None:
+    _commit_baseline(repo)
+    before = (repo / NODE_HOME_BASELINE).read_text(encoding="utf-8")
+    _plant_declared(repo, VALIDATOR_NODE, "name: planted\ntags: [validator_node]\n")
+    assert _check(repo).findings == ()
+    assert (repo / NODE_HOME_BASELINE).read_text(encoding="utf-8") == before
+
+
+def test_baselined_node_that_declares_validator_is_not_stale(repo: Path) -> None:
+    _write(repo, f"{OLD_NODE}/contract.yaml", "name: old\ntags: [validator_node]\n")
+    _write(repo, f"{OLD_NODE}/handlers/__init__.py")
+    _write(repo, NODE_HOME_BASELINE, render_baseline([OLD_NODE]))
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "existing node baseline")
+    assert _check(repo).findings == ()
+
+
+def _rules_mutations(rules: ModelNodeHomeRules) -> dict[str, ModelNodeHomeRules]:
+    return {
+        "admitted_declarations": rules.model_copy(
+            update={"admitted_declarations": frozenset({"other_category"})}
+        ),
+        "declaration_field": rules.model_copy(update={"declaration_field": "labels"}),
+    }
+
+
+@pytest.mark.parametrize("key", ["admitted_declarations", "declaration_field"])
+def test_every_rule_data_key_changes_the_verdict(repo: Path, key: str) -> None:
+    _plant_declared(repo, VALIDATOR_NODE, "name: planted\ntags: [validator_node]\n")
+    _git(repo, "add", "-A")
+    request = read_request(repo)
+    assert handle(request).findings == ()
+    mutated = read_request(repo, rules=_rules_mutations(request.rules)[key])
+    assert [finding.code for finding in handle(mutated).findings] == [
+        "node-outside-market"
+    ]
+
+
+def test_remediation_text_is_rule_data(repo: Path) -> None:
+    _plant(repo)
+    _git(repo, "add", "-A")
+    request = read_request(repo)
+    mutated = request.model_copy(
+        update={
+            "rules": request.rules.model_copy(update={"remediation": "relocate it"})
+        }
+    )
+    assert handle(mutated).findings[0].message.endswith("relocate it")
+    assert handle(request).findings[0].message.endswith(request.rules.remediation)
+
+
+def test_invalid_rule_data_fails_to_load(tmp_path: Path) -> None:
+    bad = tmp_path / "rules.yaml"
+    bad.write_text("declaration_field: tags\nunexpected: true\n", encoding="utf-8")
+    with pytest.raises(ModelOnexError):
+        load_rules(bad)
+    bad.write_text("declaration_field: tags\n", encoding="utf-8")
+    with pytest.raises(ModelOnexError):
+        load_rules(bad)
