@@ -14,12 +14,11 @@ path pattern and every remediation text live in
 
 Usage (pre-commit hooks ``commit-hygiene`` and ``commit-hygiene-message``)::
 
-    python -m omnibase_core.validation.validator_commit_hygiene <paths...>
+    python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene <paths...>
 """
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
 from typing import ClassVar
 
@@ -48,12 +47,3 @@ class ValidatorCommitHygiene(ValidatorBase):
         except ValueError:
             relative = path.as_posix()
         return check_commit_hygiene(path, relative, path.read_bytes(), contract.rules)
-
-
-if __name__ == "__main__":
-    from omnibase_core.handlers.handler_validator_run import (
-        build_validator_container,
-        main,
-    )
-
-    sys.exit(main(ValidatorCommitHygiene, container_factory=build_validator_container))

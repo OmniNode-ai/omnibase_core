@@ -28,8 +28,6 @@ from omnibase_core.enums.enum_private_vocabulary_source import (
     EnumPrivateVocabularySource,
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers import handler_private_vocabulary as handler_module
-from omnibase_core.handlers.handler_private_vocabulary import HandlerPrivateVocabulary
 from omnibase_core.handlers.handler_private_vocabulary_resolution import (
     PACKAGED_CONTRACT,
     build_container,
@@ -41,6 +39,12 @@ from omnibase_core.models.private_vocabulary import (
     ModelPrivateVocabularyFileFact,
     ModelPrivateVocabularyRequest,
     ModelPrivateVocabularyResolution,
+)
+from omnibase_core.nodes.node_source_file_gather_effect import (
+    handler_private_vocabulary as handler_module,
+)
+from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
+    HandlerPrivateVocabulary,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 

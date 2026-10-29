@@ -51,13 +51,6 @@ from omnibase_core.handlers.handler_ci_inheritance import (
     VALIDATOR_ID,
     HandlerCiInheritance,
 )
-from omnibase_core.handlers.handler_ci_repository_jobs import (
-    VALIDATOR_ID as JOBS_VALIDATOR_ID,
-)
-from omnibase_core.handlers.handler_ci_repository_jobs import (
-    HandlerCiRepositoryJobs,
-    repository_specific_jobs,
-)
 from omnibase_core.models.nodes.ci_inheritance_check.model_ci_inheritance_baseline import (
     ModelCiInheritanceBaseline,
 )
@@ -79,6 +72,13 @@ from omnibase_core.models.nodes.validator_triggered_emit.model_validator_trigger
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
     ModelValidationRequestRef,
+)
+from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
+    VALIDATOR_ID as JOBS_VALIDATOR_ID,
+)
+from omnibase_core.nodes.node_ci_repository_jobs_check_compute.handler_ci_repository_jobs import (
+    HandlerCiRepositoryJobs,
+    repository_specific_jobs,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,

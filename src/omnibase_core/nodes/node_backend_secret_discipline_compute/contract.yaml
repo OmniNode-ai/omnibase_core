@@ -26,6 +26,13 @@ handler_routing:
   version: {major: 1, minor: 0, patch: 0}
   routing_strategy: payload_type_match
   handlers:
+    - operation: backend_secret_discipline
+      handler:
+        name: HandlerBackendSecretDisciplineCompute
+        module: omnibase_core.nodes.node_backend_secret_discipline_compute.handler_backend_secret_discipline
+      event_model:
+        name: ModelBackendSecretDisciplineInput
+        module: omnibase_core.models.validation.model_backend_secret_discipline_input
     - operation: shared_token_policy
       handler:
         name: HandlerSharedTokenPolicyCompute
@@ -35,8 +42,8 @@ handler_routing:
         module: omnibase_core.models.validation.model_shared_token_policy_request
   default_handler: handler:NodeBackendSecretDisciplineCompute
 
-input_model: omnibase_core.validation.validator_backend_secret_discipline.ModelBackendSecretDisciplineInput
-output_model: omnibase_core.validation.validator_backend_secret_discipline.ModelBackendSecretDisciplineOutput
+input_model: omnibase_core.models.validation.model_backend_secret_discipline_input.ModelBackendSecretDisciplineInput
+output_model: omnibase_core.models.validation.model_backend_secret_discipline_output.ModelBackendSecretDisciplineOutput
 
 descriptor:
   node_archetype: compute

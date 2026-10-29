@@ -498,7 +498,7 @@
     is NOT a logical reference (OMN-17931): only-api_key_env fails; api_key_env beside a real reference
     is migration debt. ADC and API-key auth are mutually exclusive per backend.
   language: python
-  entry: python -m omnibase_core.validation.validator_backend_secret_discipline
+  entry: python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline
   files: \.(ya?ml|json)$
   pass_filenames: true
   require_serial: true
@@ -1381,7 +1381,7 @@
     known ids and the scan set are the rule rows of hook_writes.validation.yaml; a hook file that yields
     no hooks is an issue, never a pass.
   language: python
-  entry: python -m omnibase_core.validation.validator_hook_writes
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_hook_writes:ValidatorHookWrites
   files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml)$
   pass_filenames: true
   require_serial: true
@@ -1411,7 +1411,7 @@
     and a staged tmp/ file (staged_tmp_file). Each rule is a refusal; nothing is written or deleted. The
     patterns are the rule rows of commit_hygiene.validation.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
   types: [file]
   pass_filenames: true
   require_serial: true
@@ -1423,7 +1423,7 @@
     Refuse a commit message carrying an AI co-author trailer (ai_coauthor_trailer) and leave the message
     as written. The trailer pattern is a rule row of commit_hygiene.validation.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
   pass_filenames: true
   require_serial: true
   stages: [commit-msg]

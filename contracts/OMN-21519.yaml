@@ -1,0 +1,79 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21519
+title: "omnibase_core: move ten handler files across the import boundary and remove their baseline lines"
+summary: Seven of the ten BD-2 files leave the canonical-file-shape baseline. Pure logic that validation/
+  imports moves to validation/ checker modules, the validator runtime moves into the validation report
+  write node, the repository-jobs handler becomes a new node, the backend secret discipline handler and
+  command line move into their node, and the private vocabulary handler is bound in the source file gather
+  node. Three files stay baselined. handler_canonical_location_rules.py and handler_evidence_admissibility.py
+  hold rule tables, which the checker rule data hook refuses in a validation/ checker module, so each
+  needs its tables moved into a validator contract first. handler_private_vocabulary_resolution.py is
+  a composition root that imports a node, and validation/hardcoded_model_config/runtime_hardcoded_model_config.py
+  imports it, so it moves with that command line.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21519-bd2-import-boundary
+    statement: The BD-2 handler files leave the canonical-file-shape baseline without validation/ or enums/
+      importing a node.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the 10 BD-2 paths are gone from the canonical-file-shape baseline and the diff
+          against the merge base holds only removed lines -- falsifier: `uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute
+          -q` passes and `grep -c -E 'handler_(agent_skill_codec|canonical_location_rules|ci_repository_jobs|evidence_admissibility|hardcoded_model_tier_engine|occ_contract_view|private_vocabulary|validator_run)|validator_backend_secret_discipline'
+          .onex_ratchets/canonical_file_shape_baseline.txt` prints 0"
+      - id: AC2
+        statement: "AC2: import layering holds after the moves -- falsifier: `uv run lint-imports` exits
+          0 and `git grep -n -E 'omnibase_core.handlers.handler_(agent_skill_codec|canonical_location_rules|evidence_admissibility|hardcoded_model_tier_engine|occ_contract_view|private_vocabulary|validator_run)'
+          -- src/omnibase_core/validation src/omnibase_core/enums` prints nothing"
+evidence_requirements:
+  - kind: tests
+    description: The file-shape rule tests and the moved modules' tests pass at the pushed head.
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21519-ac1-baseline-lines-removed
+    description: Seven of the ten BD-2 paths are absent from the baseline and the file-shape rule tests
+      pass. handler_canonical_location_rules.py, handler_evidence_admissibility.py and handler_private_vocabulary_resolution.py
+      are still baselined, so the literal AC1 count prints 3 until they move.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: bash -c "! grep -E 'handler_(agent_skill_codec|ci_repository_jobs|hardcoded_model_tier_engine|occ_contract_view|validator_run)|handler_private_vocabulary.py|validator_backend_secret_discipline'
+          .onex_ratchets/canonical_file_shape_baseline.txt"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21519-ac2-import-layering
+    description: lint-imports keeps every contract and validation/ and enums/ import none of the moved
+      handler modules under their old paths.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: command
+        check_value: uv run lint-imports
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: bash -c "! git grep -n -E 'omnibase_core.handlers.handler_(agent_skill_codec|hardcoded_model_tier_engine|occ_contract_view|private_vocabulary([^_]|$)|validator_run)'
+          -- src/omnibase_core/validation src/omnibase_core/enums"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21519-moved-modules-behavior
+    description: The moved modules keep their behavior through their new module paths.
+    source: manual
+    binds_ac: [AC1, AC2]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/models/skill tests/unit/validation/test_checker_agent_skill_codec.py
+          tests/unit/validation/hardcoded_model_config tests/unit/validation/test_occ_contract_view_layouts.py
+          tests/unit/validation/test_handler_validator_run.py tests/unit/handlers/test_handler_ci_repository_jobs.py
+          tests/unit/validation/test_validator_backend_secret_discipline.py tests/unit/handlers/test_handler_private_vocabulary.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

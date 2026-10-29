@@ -33,9 +33,6 @@ from omnibase_core.errors.error_goal_admission_provider import (
     GoalAdmissionProviderError,
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_occ_contract_view import (
-    load_occ_contract_view,
-)
 from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
     ModelDodEvidenceCheck,
 )
@@ -94,6 +91,9 @@ from omnibase_core.models.validation.model_occ_eligibility_result import (
 )
 from omnibase_core.utils.util_goal_verification import (
     compute_goal_execution_request_sha256,
+)
+from omnibase_core.validation.checker_occ_contract_view import (
+    load_occ_contract_view,
 )
 from omnibase_core.validation.protocol_goal_admission_provider import (
     ProtocolGoalAdmissionProvider,

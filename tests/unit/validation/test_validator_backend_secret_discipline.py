@@ -27,8 +27,10 @@ from pathlib import Path
 import pytest
 
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.validation.validator_backend_secret_discipline import (
+from omnibase_core.nodes.node_backend_secret_discipline_compute.handler_backend_secret_discipline import (
     HandlerBackendSecretDisciplineCompute,
+)
+from omnibase_core.validation.validator_backend_secret_discipline import (
     ModelBackendSecretDisciplineInput,
     ModelBackendSecretDisciplineOutput,
     build_report_from_files,
@@ -408,7 +410,7 @@ def test_cli_passes_on_clean_tree(tmp_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "omnibase_core.validation.validator_backend_secret_discipline",
+            "omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline",
             str(config),
         ],
         capture_output=True,
@@ -435,7 +437,7 @@ def test_cli_fails_on_leaked_credential(tmp_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "omnibase_core.validation.validator_backend_secret_discipline",
+            "omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline",
             str(config),
         ],
         capture_output=True,
@@ -459,7 +461,7 @@ def test_cli_json_flag_clean(tmp_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "omnibase_core.validation.validator_backend_secret_discipline",
+            "omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline",
             "--json",
             str(config),
         ],
@@ -486,7 +488,7 @@ def test_cli_json_flag_violation(tmp_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "omnibase_core.validation.validator_backend_secret_discipline",
+            "omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline",
             "--json",
             str(config),
         ],
@@ -512,7 +514,7 @@ def test_cli_no_yaml_files_passes(tmp_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "omnibase_core.validation.validator_backend_secret_discipline",
+            "omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline",
             str(py_file),
         ],
         capture_output=True,

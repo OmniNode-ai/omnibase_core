@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import ast
 import re
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from collections.abc import Set as AbstractSet
 from functools import lru_cache
 from typing import Final
@@ -38,9 +38,24 @@ __all__ = ["scan_tier_engine"]
 
 Hit = tuple[int, LiteralFamily, str]
 
-_FLOW_SEQUENCE: Final[re.Pattern[str]] = re.compile(r"\[([^\[\]]*)\]")
 _PYTHON_QUOTE: Final[str] = r"[rbuRBU]?[\"']"
 _TEXT_QUOTE: Final[str] = r"[\"']?"
+
+
+def _flow_sequences(line: str) -> Iterator[str]:
+    """The text inside each innermost ``[...]`` of ``line``, left to right."""
+    start = 0
+    while (opening := line.find("[", start)) != -1:
+        closing = next(
+            (i for i in range(opening + 1, len(line)) if line[i] in "[]"), None
+        )
+        if closing is None:
+            return
+        if line[closing] == "]":
+            yield line[opening + 1 : closing]
+            start = closing + 1
+        else:
+            start = closing
 
 
 def _alternation(names: Iterable[str]) -> str:
@@ -251,10 +266,8 @@ def _line_hits(
         return hits
     tiers = frozenset(policy.tier_aliases)
     engines = frozenset(policy.engine_names)
-    for flow in _FLOW_SEQUENCE.finditer(line):
-        members = [
-            m.strip().strip("\"'") for m in flow.group(1).split(",") if m.strip()
-        ]
+    for flow in _flow_sequences(line):
+        members = [m.strip().strip("\"'") for m in flow.split(",") if m.strip()]
         for family in _classify_members(members, tiers, engines):
             if family in families:
                 hits.append((n, family, members[0]))

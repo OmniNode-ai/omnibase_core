@@ -14,7 +14,7 @@ import pytest
 import yaml
 
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
-from omnibase_core.handlers.handler_occ_contract_view import (
+from omnibase_core.validation.checker_occ_contract_view import (
     legacy_contract_path,
     load_occ_contract_view,
     per_pr_contract_path,

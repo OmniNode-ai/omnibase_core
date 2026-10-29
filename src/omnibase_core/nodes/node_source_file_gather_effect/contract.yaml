@@ -25,6 +25,15 @@ output_model: omnibase_core.models.nodes.source_file_gather.model_source_file_ga
 
 handler_routing:
   version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: private_vocabulary
+      handler:
+        name: HandlerPrivateVocabulary
+        module: omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary
+      event_model:
+        name: ModelPrivateVocabularyRequest
+        module: omnibase_core.models.private_vocabulary
   default_handler: handler:NodeSourceFileGatherEffect
 
 descriptor:
