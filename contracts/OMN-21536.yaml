@@ -102,9 +102,28 @@ dod_evidence:
     binds_ac:
       - AC4
   - id: dod-omn21536-ac5
-    description: "Falsifier of AC5 as the ticket states it."
+    description: "Falsifier of AC5 as the ticket states it: the changed source files exist, and the hardcoded
+      topic, model config, URL authority and contract config validators report zero on them."
     source: manual
     checks:
+      - check_type: command
+        check_value: "test -f src/omnibase_core/validation/checker_handler_shape.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "test -f src/omnibase_core/validation/validator_handler_shape.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "uv run python -m omnibase_core.validation.validator_hardcoded_topics src/omnibase_core/validation/checker_handler_shape.py
+          src/omnibase_core/validation/validator_handler_shape.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          src/omnibase_core/validation/checker_handler_shape.py src/omnibase_core/validation/validator_handler_shape.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_handler_shape.py
+          src/omnibase_core/validation/validator_handler_shape.py"
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: "uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/validation/checker_handler_shape.py
           src/omnibase_core/validation/validator_handler_shape.py"
