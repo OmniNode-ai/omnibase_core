@@ -23,6 +23,9 @@ import tomllib
 from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
 
+from omnibase_core.enums.enum_canonical_file_shape_rule_group import (
+    EnumCanonicalFileShapeRuleGroup,
+)
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -74,14 +77,6 @@ from omnibase_core.validation.validator_canonical_file_shape import (
     write_text_file,
 )
 from omnibase_core.validation.validator_git_repo import INDEX, GitCommandError, GitRepo
-
-BASELINE_HEADER = (
-    "# canonical-file-shape baseline. Shrink-only.\n"
-    "# Every line is a file a file-shape rule refuses that existed when the\n"
-    "# rule was installed. Delete a line when its file is removed, moved into\n"
-    "# a canonical location or rewritten as contract + node + handler. A new\n"
-    "# line is refused.\n"
-)
 
 
 def _decode(blob: bytes | None) -> str | None:
@@ -238,11 +233,6 @@ def gather_facts(
     )
 
 
-RULE_GROUP_FILE_SHAPE = "file-shape"
-RULE_GROUP_NODE_HOME = "node-home"
-RULE_GROUPS = (RULE_GROUP_FILE_SHAPE, RULE_GROUP_NODE_HOME)
-
-
 def _has_node_class(blob: bytes, p: ModelCanonicalFileShapeRules) -> bool:
     node_class = re.compile(p.node_home_node_class_pattern)
     tree = ast.parse(blob)
@@ -380,7 +370,7 @@ def run_check(
     head: str | None,
     commit_message: str | None,
     report_json: str | None,
-    rule_groups: Sequence[str] = RULE_GROUPS,
+    rule_groups: Sequence[str] = tuple(EnumCanonicalFileShapeRuleGroup),
 ) -> ModelValidationReport:
     """Gather facts, run the pure node, write the report through the container's writer."""
     validator = ValidatorCanonicalFileShape()
@@ -389,12 +379,12 @@ def run_check(
     resolved_head, resolved_base = resolve_revisions(repo, base, head)
     facts = (
         gather_facts(repo, p, resolved_head, resolved_base, commit_message)
-        if RULE_GROUP_FILE_SHAPE in rule_groups
+        if EnumCanonicalFileShapeRuleGroup.FILE_SHAPE in rule_groups
         else None
     )
     node_home = (
         gather_node_home_request(repo, resolved_head, resolved_base, p)
-        if RULE_GROUP_NODE_HOME in rule_groups
+        if EnumCanonicalFileShapeRuleGroup.NODE_HOME in rule_groups
         else None
     )
     report = NodeCanonicalFileShapeCheckCompute().handle(
@@ -432,7 +422,7 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument(
         "--rules",
         action="append",
-        choices=RULE_GROUPS,
+        choices=[group.value for group in EnumCanonicalFileShapeRuleGroup],
         default=None,
         help="rule group to run (repeatable); default: all",
     )
@@ -481,7 +471,7 @@ def main(
                 return 1
             write_text_file(
                 baseline_file,
-                BASELINE_HEADER + "".join(f"{path}\n" for path in refused),
+                p.baseline_header + "".join(f"{path}\n" for path in refused),
             )
             sys.stdout.write(f"wrote {len(refused)} entries to {p.baseline_path}\n")
             return 0
@@ -493,7 +483,7 @@ def main(
         kept = [path for path in current if path in set(refused)]
         write_text_file(
             baseline_file,
-            BASELINE_HEADER + "".join(f"{path}\n" for path in sorted(set(kept))),
+            p.baseline_header + "".join(f"{path}\n" for path in sorted(set(kept))),
         )
         sys.stdout.write(
             f"pruned {len(current) - len(kept)} entries from {p.baseline_path}\n"
@@ -513,7 +503,7 @@ def main(
             args.head,
             message,
             args.report_json,
-            args.rules or RULE_GROUPS,
+            args.rules or tuple(EnumCanonicalFileShapeRuleGroup),
         )
     except (OSError, ValueError, SyntaxError, ModelOnexError, GitCommandError) as exc:
         sys.stderr.write(f"canonical-file-shape: {exc}\n")

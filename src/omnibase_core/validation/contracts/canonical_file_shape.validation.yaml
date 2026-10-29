@@ -42,10 +42,17 @@ validation:
         shebang_prefix: "#!"
         canonical_src_min_parts: 4
         noncanonical_text: "new code file outside a canonical location (src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/,
-          tests/, docs/). Build it as a contract + node + handler."
+          src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). Build it as a contract + node
+          + handler."
         shell_text: "shell scripts have no canonical location in any repository (OMN-21332)."
         baseline_path: ".onex_ratchets/canonical_file_shape_baseline.txt"
         node_home_baseline_path: ".onex_ratchets/node_home_baseline.txt"
+        baseline_header: |
+          # canonical-file-shape baseline. Shrink-only.
+          # Every line is a file a file-shape rule refuses that existed when the
+          # rule was installed. Delete a line when its file is removed, moved into
+          # a canonical location or rewritten as contract + node + handler. A new
+          # line is refused.
 
     - rule_id: baseline-stale
       description: A baseline entry whose file was removed, moved or made canonical.
@@ -209,7 +216,7 @@ validation:
 
     - rule_id: "node-home:node-outside-market"
       description: A new or renamed node directory outside omnimarket, unless its contract.yaml declares
-        a validator or validator-support node.
+        a validator_node or validator_support_node.
       severity: error
       enabled: true
       parameters:
@@ -223,9 +230,9 @@ validation:
         node_home_node_dir_prefix: "node_"
         node_home_node_class_pattern: '^Node[A-Z]\w*$'
         node_home_admitted_field: "tags"
-        node_home_admitted_categories: ["validator", "validator-support"]
+        node_home_admitted_categories: ["validator_node", "validator_support_node"]
         node_home_outside_market_text: "new or renamed node directory; the node moves to omnimarket instead,
-          unless its contract.yaml lists 'validator' or 'validator-support' under tags"
+          unless its contract.yaml lists 'validator_node' or 'validator_support_node' under tags"
 
     - rule_id: "node-home:baseline-stale"
       description: A node-home baseline entry that is no longer a node directory.

@@ -647,7 +647,13 @@ MUTATIONS: dict[str, tuple[str, object]] = {
 # runtime test mutates these through a fixture repository. The node-home keys and
 # the git-reader ceiling are mutated in test_node_home_admission.py.
 READER_KEYS = frozenset(
-    {"handler_class_pattern", "argparse_pattern", "main_pattern", "cat_file_timeout_s"}
+    {
+        "handler_class_pattern",
+        "argparse_pattern",
+        "main_pattern",
+        "cat_file_timeout_s",
+        "baseline_header",
+    }
 ) | {
     key
     for key in ModelCanonicalFileShapeRules.model_fields

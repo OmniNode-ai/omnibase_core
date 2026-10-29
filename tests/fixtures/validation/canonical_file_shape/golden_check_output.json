@@ -3,7 +3,7 @@
     {
       "evidence": {},
       "location": "scripts/x.py:1",
-      "message": "new code file outside a canonical location (src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/, docs/). Build it as a contract + node + handler.",
+      "message": "new code file outside a canonical location (src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). Build it as a contract + node + handler.",
       "remediation": null,
       "rule_id": "noncanonical-file",
       "severity": "FAIL",

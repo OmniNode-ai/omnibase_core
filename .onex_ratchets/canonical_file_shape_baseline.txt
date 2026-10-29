@@ -1,8 +1,8 @@
 # canonical-file-shape baseline. Shrink-only.
-# Every line is a code file outside a canonical location that existed
-# when the ratchet was installed. Delete a line when its file is removed,
-# moved into a canonical location or rewritten as contract + node +
-# handler. A new line is refused.
+# Every line is a file a file-shape rule refuses that existed when the
+# rule was installed. Delete a line when its file is removed, moved into
+# a canonical location or rewritten as contract + node + handler. A new
+# line is refused.
 .github/actions/required-check-skip-guard/_workflow_model.py
 .github/actions/required-check-skip-guard/validate_no_required_check_skip_vectors.py
 .pre-commit-hooks/check-evidence-shape.sh
@@ -415,10 +415,6 @@ src/omnibase_core/handlers/handler_migration_conflicts.py
 src/omnibase_core/handlers/handler_no_bare_feature_flags.py
 src/omnibase_core/handlers/handler_no_hardcoded_topics.py
 src/omnibase_core/handlers/handler_occ_contract_view.py
-src/omnibase_core/handlers/handler_precommit_cache_adapter.py
-src/omnibase_core/handlers/handler_precommit_pin_parity.py
-src/omnibase_core/handlers/handler_precommit_pin_parity_cli.py
-src/omnibase_core/handlers/handler_precommit_pin_parity_rules.py
 src/omnibase_core/handlers/handler_private_vocabulary.py
 src/omnibase_core/handlers/handler_private_vocabulary_resolution.py
 src/omnibase_core/handlers/handler_shape_gate_independence.py

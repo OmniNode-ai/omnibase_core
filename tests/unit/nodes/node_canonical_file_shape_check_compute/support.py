@@ -14,7 +14,6 @@ from omnibase_core.models.validation.model_canonical_file_shape_rule_set import 
     ModelCanonicalFileShapeRuleSet,
 )
 from omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check import (
-    BASELINE_HEADER,
     INDEX,
     GitRepo,
     gather_facts,
@@ -51,7 +50,9 @@ def write(repo: Path, rel: str, text: str) -> None:
 
 
 def baseline_text(paths: Iterable[str]) -> str:
-    return BASELINE_HEADER + "".join(f"{path}\n" for path in sorted(set(paths)))
+    return RULES.parameters.baseline_header + "".join(
+        f"{path}\n" for path in sorted(set(paths))
+    )
 
 
 def init_repo(root: Path, baselined: Iterable[str] = ()) -> Path:

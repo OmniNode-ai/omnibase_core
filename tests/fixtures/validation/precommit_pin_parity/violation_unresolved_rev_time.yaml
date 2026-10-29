@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+---
+repos:
+  - repo: https://github.com/OmniNode-ai/omnibase_core
+    rev: old
+    hooks: [{id: hook-0}]
+  - repo: https://github.com/OmniNode-ai/omnibase_core
+    rev: new
+    hooks: [{id: hook-1}]

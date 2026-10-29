@@ -86,21 +86,21 @@ def test_an_ordinary_new_node_is_refused_and_a_declared_validator_node_admitted(
     repo: Path,
 ) -> None:
     _plant(repo, ORDINARY, "name: ordinary\n")
-    _plant(repo, DECLARED, "name: declared\ntags: [validator]\n")
+    _plant(repo, DECLARED, "name: declared\ntags: [validator_node]\n")
     assert _codes(repo) == [("node-outside-market", ORDINARY)]
 
 
 def test_a_validator_support_node_is_admitted(repo: Path) -> None:
-    _plant(repo, DECLARED, "name: declared\ntags: [other, validator-support]\n")
+    _plant(repo, DECLARED, "name: declared\ntags: [other, validator_support_node]\n")
     assert _codes(repo) == []
 
 
 @pytest.mark.parametrize(
     "contract",
     [
-        "name: n\ntags: validator\n",
+        "name: n\ntags: validator_node\n",
         "name: n\ntags: [compute]\n",
-        "name: n\nmetadata:\n  tags: [validator]\n",
+        "name: n\nmetadata:\n  tags: [validator_node]\n",
         "name: n\ntags: [unclosed\n",
         "- a\n- b\n",
     ],
@@ -115,7 +115,7 @@ def test_a_contract_that_does_not_list_a_category_does_not_admit_its_node(
 def test_an_admitted_node_does_not_admit_a_sibling_without_a_declaration(
     repo: Path,
 ) -> None:
-    _plant(repo, DECLARED, "name: declared\ntags: [validator]\n")
+    _plant(repo, DECLARED, "name: declared\ntags: [validator_node]\n")
     _plant(repo, ORDINARY, "name: ordinary\ntags: []\n")
     assert _codes(repo) == [("node-outside-market", ORDINARY)]
 
@@ -123,7 +123,7 @@ def test_an_admitted_node_does_not_admit_a_sibling_without_a_declaration(
 def test_admission_does_not_loosen_the_baseline_or_the_registration_rules(
     repo: Path,
 ) -> None:
-    _plant(repo, DECLARED, "name: declared\ntags: [validator]\n")
+    _plant(repo, DECLARED, "name: declared\ntags: [validator_node]\n")
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "admitted node")
     write(repo, NODE_HOME_BASELINE, f"{DECLARED}\nsrc/pkg/nodes/node_gone\n")
@@ -153,7 +153,7 @@ def test_this_repository_validator_node_declares_its_category() -> None:
         Path(__file__).resolve().parents[4]
         / "src/omnibase_core/nodes/node_canonical_file_shape_check_compute/contract.yaml"
     )
-    assert "validator" in contract.read_text(encoding="utf-8")
+    assert "validator_node" in contract.read_text(encoding="utf-8")
 
 
 # --- planted violation / clean pair of every node-home row -------------------
@@ -247,7 +247,9 @@ SCENARIOS: dict[str, Callable[[], ModelNodeHomeRatchetRequest]] = {
     "nodes_dir": lambda: _scenario_request(tracked=["src/pkg/nodes/a/contract.yaml"]),
     "declared": lambda: _scenario_request(
         tracked=["src/pkg/nodes/a/contract.yaml"],
-        contracts={"src/pkg/nodes/a/contract.yaml": "name: a\ntags: [validator]\n"},
+        contracts={
+            "src/pkg/nodes/a/contract.yaml": "name: a\ntags: [validator_node]\n"
+        },
     ),
     "ordinary": lambda: _scenario_request(tracked=["src/pkg/nodes/a/contract.yaml"]),
     "stale": lambda: _scenario_request(

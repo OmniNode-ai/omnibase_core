@@ -430,7 +430,8 @@ def test_shell_script_refused_python_unchanged(repo: Path) -> None:
     assert findings[0].message == (
         "new code file outside a canonical location "
         "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
-        "tests/, docs/). Build it as a contract + node + handler."
+        "src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). "
+        "Build it as a contract + node + handler."
     )
 
 

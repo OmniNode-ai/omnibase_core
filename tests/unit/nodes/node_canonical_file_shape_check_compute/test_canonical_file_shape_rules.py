@@ -700,6 +700,24 @@ def test_write_baseline_refused_when_present(repo: Path) -> None:
     assert main(["--repo-root", str(repo), "--write-baseline"], env=_env()) == 1
 
 
+def test_pruned_baseline_carries_the_header_of_the_contract(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``baseline_header`` is a contract parameter: the runtime writes it, not a constant."""
+    marker = "# zz-mutated header\n"
+    assert marker != RULES.parameters.baseline_header
+    mutated = RULES.model_copy(
+        update={
+            "parameters": RULES.parameters.model_copy(
+                update={"baseline_header": marker}
+            )
+        }
+    )
+    monkeypatch.setattr(runtime, "load_rule_set", lambda _contract: mutated)
+    assert main(["--repo-root", str(repo), "--prune-baseline"], env=_env()) == 0
+    assert (repo / BASELINE).read_text(encoding="utf-8").startswith(marker)
+
+
 # The launching Mac's failure mode (OMN-17427): a pipe to the child's stdin is
 # writable once and never reports writable to poll() again, so a parent that
 # feeds ``git cat-file --batch`` over that pipe sleeps forever. This selector

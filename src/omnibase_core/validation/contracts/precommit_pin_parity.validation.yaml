@@ -1,0 +1,42 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+---
+contract_kind: validation_subcontract
+validation:
+  version: {major: 1, minor: 0, patch: 0}
+  validator_id: precommit_pin_parity
+  validator_name: Pre-commit pin parity
+  validator_description: Refuse older or unresolved pins in shared hook repository groups.
+  target_patterns: ["**/.pre-commit-config.yaml"]
+  exclude_patterns: ["**/.git/**", "**/.venv/**"]
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  rules:
+    - rule_id: older_than_newest_pin
+      description: Each named hook repository must converge on its newest commit.
+      severity: error
+      parameters:
+        hook_repos: ["https://github.com/OmniNode-ai/omnibase_core"]
+        remediation: "Bump the hook rev to newest pin {newest} (or lower the newest pin if it is wrong)."
+        older_message: "{path}:{line}: {repo} rev {rev} for hooks {hooks} is older than newest rev {newest}"
+        unresolved_message: "{path}:{line}: {repo} rev {rev} for hooks {hooks} has no committed_at; cannot
+          establish parity with newest pin {newest}"
+    - rule_id: unresolved_rev_time
+      description: Missing commit times in a multi-revision group fail closed.
+      severity: error
+      parameters:
+        remediation: "Resolve the missing commit time for {rev}, then converge pins."
+    - rule_id: rev_time_lookup
+      description: Configuration for the contracted revision-time effect.
+      severity: error
+      parameters:
+        git_timeout_seconds: 30
+        cache_home_default: "~/.cache/pre-commit"
+        cache_index_file: db.db
+        cache_index_table: repos
+        cache_repo_column: repo
+        cache_ref_column: ref
+        cache_path_column: path
+        history_repo: ""

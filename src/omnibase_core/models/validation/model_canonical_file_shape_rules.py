@@ -34,6 +34,7 @@ class ModelCanonicalFileShapeRules(BaseModel):
     shell_text: str
     baseline_path: str
     node_home_baseline_path: str
+    baseline_header: str
     # baseline-stale, baseline-growth, baselined-file-growth
     baseline_stale_text: str
     baseline_growth_text: str

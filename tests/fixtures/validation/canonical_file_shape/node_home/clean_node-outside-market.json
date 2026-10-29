@@ -8,7 +8,7 @@
   "node_contract_texts": [
     {
       "path": "src/pkg/nodes/node_a/contract.yaml",
-      "text": "name: a\ntags: [validator]\n"
+      "text": "name: a\ntags: [validator_node]\n"
     }
   ],
   "renamed_paths": [],

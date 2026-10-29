@@ -7,7 +7,7 @@ node_id: node_canonical_file_shape_check_compute
 node_type: compute
 node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
-tags: [validator]
+tags: [validator_node]
 description: >
   Checks a repository revision against the canonical-file-shape rules (canonical locations, shrink-only
   baseline, suppression growth, handlers and command line entries outside a node, repository lifecycle)
