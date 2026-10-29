@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Declared settings for the private workspace config root (OMN-21433)."""
+"""Declared settings for the private workspace config root (OMN-21494)."""
 
 from pydantic import BaseModel, ConfigDict, Field
 

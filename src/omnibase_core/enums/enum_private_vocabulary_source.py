@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Sources of operator-private vocabulary paths (OMN-21433)."""
+"""Sources of operator-private vocabulary paths (OMN-21494)."""
 
 from enum import Enum, unique
 

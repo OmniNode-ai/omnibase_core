@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
-# Private vocabulary resolution policy (OMN-21433). Settings, paths and cache
+# Private vocabulary resolution policy (OMN-21494). Settings, paths and cache
 # age bounds live here so consumers share one resolution policy.
 schema_version: 1
 workspace_config_root:

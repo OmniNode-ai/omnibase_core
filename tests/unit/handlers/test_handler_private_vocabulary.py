@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Tests for the private-vocabulary resolution handler (OMN-21433, plan task T0.1).
+"""Tests for the private-vocabulary resolution handler (OMN-21494, plan task T0.1).
 
 Every validator that reads an operator-private vocabulary resolves it by name
 through ``HandlerPrivateVocabulary``: an explicit path first, then the
@@ -17,9 +17,11 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
+
 from omnibase_core.enums.enum_private_vocabulary_source import (
     EnumPrivateVocabularySource,
 )
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.handlers.handler_private_vocabulary import (
     DEFAULT_CONTRACT,
     HandlerPrivateVocabulary,
@@ -30,8 +32,6 @@ from omnibase_core.models.private_vocabulary import (
     ModelPrivateVocabularyContract,
     ModelPrivateVocabularyRequest,
 )
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
 
 pytestmark = pytest.mark.unit
 

@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Private vocabulary resolution models (OMN-21433)."""
+"""Private vocabulary resolution models (OMN-21494)."""
 
 from omnibase_core.models.private_vocabulary.model_private_vocabulary_contract import (
     ModelPrivateVocabularyContract,

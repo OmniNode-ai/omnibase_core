@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Contract for operator-private vocabulary resolution (OMN-21433)."""
+"""Contract for operator-private vocabulary resolution (OMN-21494)."""
 
 from __future__ import annotations
 

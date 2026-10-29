@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 """The model-config gate reads its private denylist through the core handler
-(OMN-21433, plan task T0.1), not through a loader of its own."""
+(OMN-21494, plan task T0.1), not through a loader of its own."""
 
 from __future__ import annotations
 
@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
+
 from omnibase_core.handlers.handler_private_vocabulary import (
     HandlerPrivateVocabulary,
 )
-
 from omnibase_core.validation.hardcoded_model_config import (
     runtime_hardcoded_model_config as runtime,
 )

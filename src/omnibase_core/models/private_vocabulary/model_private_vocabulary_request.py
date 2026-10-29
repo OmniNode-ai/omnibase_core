@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Explicit inputs to private vocabulary resolution (OMN-21433)."""
+"""Explicit inputs to private vocabulary resolution (OMN-21494)."""
 
 from datetime import datetime
 from pathlib import Path

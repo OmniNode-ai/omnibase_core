@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Resolve operator-private vocabularies by contract name (OMN-21433).
+"""Resolve operator-private vocabularies by contract name (OMN-21494).
 
 The handler reads files using the environment and time supplied in its request.
 The CLI bootstrap captures those inputs from the process.

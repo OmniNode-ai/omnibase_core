@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Resolved private vocabulary content and provenance (OMN-21433)."""
+"""Resolved private vocabulary content and provenance (OMN-21494)."""
 
 from pathlib import Path
 

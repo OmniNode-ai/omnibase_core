@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""One named private vocabulary's resolution policy (OMN-21433)."""
+"""One named private vocabulary's resolution policy (OMN-21494)."""
 
 from __future__ import annotations
 
