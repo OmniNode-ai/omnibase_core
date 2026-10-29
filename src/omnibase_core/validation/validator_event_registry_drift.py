@@ -20,7 +20,7 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-from omnibase_core.handlers.handler_event_registry_drift_sources import (
+from omnibase_core.validation.checker_event_registry_drift_sources import (
     parse_baseline,
     parse_emit_registry,
     parse_registration_contract,
