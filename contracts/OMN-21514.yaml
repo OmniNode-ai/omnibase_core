@@ -105,11 +105,23 @@ dod_evidence:
       by the orchestrator's delegation receipt check, and the run ids are named in the PR body and the
       lane TERMINAL."
     source: "manual"
-    execution_scope: "local"
+    execution_scope: "local_done_gate"
     checks:
       - check_type: "command"
         check_value: "test -s \"${OMNI_HOME}/.claude_scratch/delegation-receipts/t-b1b-0035/2026-10-29T005651Z-codex-port-checker.json\"
           && test -d \"${OMNI_HOME}/.onex_state/harness-delegate/646c143f-ad74-4b1c-a8de-efcfbacfcd65\"
           && test -d \"${OMNI_HOME}/.onex_state/harness-delegate/05de3f23-b166-4f46-961e-f7a4158b7dce\""
-    binds_ac:
-      - AC1
+  - id: dod-omn21514-deploy-validator-source
+    description: read the handler source from raw.githubusercontent.com at the checkout HEAD; require
+      the core validator-format package constant and the is_validator_format_file function; the hosted
+      runner needs no private runtime. This is the source readback probe for the pure library change of
+      OMN-21514.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git
+          rev-parse HEAD)/src/omnibase_core/handlers/handler_canonical_location_rules.py" | python3 -c
+          'import sys; source = sys.stdin.read(); assert "VALIDATOR_FORMAT_PACKAGE = \"omnibase_core\""
+          in source; assert "def is_validator_format_file(" in source'
+        cwd: ${OMNI_HOME}/omnibase_core
