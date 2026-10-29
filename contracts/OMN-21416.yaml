@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21416
+title: A delegation's usage calls reach a bus-fed lane on their own topic -- omnibase_core's event-registry
+  drift check
+summary: omnibase_core gains the event-registry drift check in its generic validator format, so a producer's
+  contract-declared event registrations can be compared with a consumer's emit registry without one repository
+  reading another's registry literal (OMN-21416 amendment 1, PR A).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21416-core-registration-drift
+    statement: The core event-registry drift check reports every drift between a producer's declared registrations
+      and an emit registry, and never reports PASS on input it could not read or judge.
+    acceptance:
+      - id: AC4
+        statement: 'AC4: the core CLI returns an ERROR report and a nonzero exit for a read, empty, malformed
+          or missing source, and a drift finding for each of a source-only or registry-only event, a topic
+          or fan-out, partition key and required-fields mismatch, with zero findings for agreeing sources
+          and an ERROR for a duplicate or ambiguous declaration -- falsifier: uv run pytest tests/unit/handlers/test_handler_event_registry_drift_cli.py
+          -q -o addopts='''''
+evidence_requirements:
+  - kind: tests
+    description: The drift check's end-to-end CLI tests over real contract, registry and baseline files.
+    command: uv run pytest tests/unit/handlers/test_handler_event_registry_drift_cli.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21416-core-registration-drift-cli
+    description: The CLI passes agreeing sources, fails each drift kind, and reports ERROR for a duplicate,
+      an empty discovery and a malformed, missing or unreadable source.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_event_registry_drift_cli.py -q -o
+          addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
