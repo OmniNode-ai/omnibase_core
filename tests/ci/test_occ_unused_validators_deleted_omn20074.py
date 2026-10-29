@@ -32,6 +32,9 @@ _KEPT = (
     "src/omnibase_core/validation/validator_occ_merge_eligibility.py",
 )
 
+# Still baselined after the generic-format validation/ files became canonical (OMN-21503).
+_BASELINED_VALIDATOR = "src/omnibase_core/validators/canonical_file_shape.py"
+
 _REGISTRIES = (
     ".onex_ratchets/canonical_file_shape_baseline.txt",
     "tests/fixtures/validator_parity/ai_slop/ci_scope.json",

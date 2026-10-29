@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+layer_map:
+  github_org: OmniNode-ai
+  repos:
+    - repo: omnibase_core
+      layer: 0
+      distributions: [omnibase-core]
+    - repo: omnibase_infra
+      layer: 1
+      distributions: [omnibase-infra]
+    - repo: omnimarket
+      layer: 2
+      distributions: [omnimarket]
+repo: omnimarket
+head_pyproject: "[project"

@@ -104,7 +104,6 @@ check-no-backward-compat = "omnibase_core.nodes.node_backward_compat_check_compu
 # package ahead of the registry consumers that install it, and a job the merge
 # queue runs that pull request CI skips; every repository runs both via
 # .github/workflows/version-drift.yml and the pre-commit hooks.
-check-version-floor-consumers = "omnibase_core.handlers.handler_version_floor_consumers_cli:main"
 check-merge-queue-parity = "omnibase_core.handlers.handler_merge_queue_parity_cli:main"
 # OMN-19998: CI runners are for private repositories only (RULING 2026-10-16T07:07:09Z).
 # Refuse a public repository adding a job whose runs-on is, or can resolve to, a
