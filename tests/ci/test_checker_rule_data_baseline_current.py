@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 """The checked-in checker_rule_data baseline matches the tree (OMN-21503 AC7).
 
 The baseline only shrinks: a file that holds fewer rule tables than its entry
