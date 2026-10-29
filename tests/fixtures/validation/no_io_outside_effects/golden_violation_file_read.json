@@ -1,0 +1,33 @@
+{
+  "report_id": "<normalised>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "no_io_outside_effects",
+      "severity": "FAIL",
+      "location": "tests/fixtures/validation/no_io_outside_effects/violation_file_read/handlers/handler_x.py:7",
+      "message": "tests/fixtures/validation/no_io_outside_effects/violation_file_read/handlers/handler_x.py:7: read_text(...) in a non-EFFECT node package (rule file_read): A file is read in a non-EFFECT node package.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "file_read"
+    }
+  ],
+  "metrics": {
+    "total": 1,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 1,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "no_io_outside_effects"
+    ]
+  }
+}

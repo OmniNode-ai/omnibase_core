@@ -1,0 +1,123 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21532
+title: "no_io_outside_effects judges every module under a compute node's directory, handlers included,
+  and adds file-read, clock and env-read kinds"
+summary: Checker K4 in the generic validator format. Every Python module under a node directory whose
+  contract does not declare an effect archetype is judged against its nearest contract; the eight kept
+  kinds stay, and file-read, clock and env-read kinds are added. Every list, pattern and remediation text
+  is a parameters entry of a rule row of no_io_outside_effects.validation.yaml. AC8 (two overlays on one
+  commit) waits for OMN-21529 to merge and is not bound here.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21532-no-io-checker
+    statement: The checker judges every module under a non-EFFECT node directory with rule rows that hold
+      all of its data.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a file read and an in-memory bus constructor in a handler of a compute node are
+          refused -- falsifier: the planted fixtures in tests/unit/validation/test_checker_no_io_outside_effects.py"
+      - id: AC2
+        statement: "AC2: the file-read, clock and env-read lists and the bus class patterns are parameters
+          of the contract rows -- falsifier: the parameter mutation test"
+      - id: AC3
+        statement: "AC3: the existing rejection tests of the eight kept kinds still pass unchanged --
+          falsifier: tests/unit/nodes/node_no_io_outside_effects_check_compute"
+      - id: AC4
+        statement: "AC4: every pattern, name list and remediation text is a parameters entry -- falsifier:
+          K10 rule_table_in_checker reports zero and the table-driven mutation test"
+      - id: AC5
+        statement: "AC5: the checker is pure and its runtime resolves the writer and the bus from the
+          container -- falsifier: the purity test and the container spy test"
+      - id: AC6
+        statement: "AC6: the changed source holds no host, port, topic, model name, timeout or URL --
+          falsifier: hardcoded_topic, hardcoded_model_config, url_authority and contract_config_compliance
+          report zero"
+      - id: AC7
+        statement: "AC7: disabling a rule row fails that rule's fixture and only that rule's -- falsifier:
+          the disable test"
+evidence_requirements:
+  - kind: tests
+    description: Checker, validator and runtime tests, and the existing node tests.
+    command: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py tests/unit/nodes/node_no_io_outside_effects_check_compute
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21532-ac1-planted-fixtures
+    description: The planted violation fixtures yield exactly one issue with their rule id, the clean
+      twins none, and the file read and the in-memory bus in a handler are refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py -n 0 -q
+          -k "planted or clean or ac1"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21532-ac2-ac4-parameters
+    description: Every parameters key of every rule row is mutated in turn and the verdict it controls
+      changes; an invalid row fails to load.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py -n 0 -q
+          -k "mutating or fails_to_load or mutation_case or scope_keys"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+      - AC4
+  - id: dod-omn21532-ac3-kept-kinds
+    description: The existing node rejection tests pass unchanged.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_no_io_outside_effects_check_compute -n 0 -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21532-ac4-k10
+    description: K10 rule_table_in_checker reports zero on the checker and validator modules.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_no_io_outside_effects.py
+          src/omnibase_core/validation/validator_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21532-ac5-pure-and-injected
+    description: The checker runs with open and Path reads patched to raise, and a container spy records
+      the resolution of the report writer and the bus.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py -n 0 -q
+          -k "pure or runtime"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21532-ac6-no-literal
+    description: The topic and url authority validators report zero on the changed source.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_no_io_outside_effects.py
+          src/omnibase_core/validation/validator_no_io_outside_effects.py
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21532-ac7-disable-row
+    description: Disabling a rule row fails that rule's fixture and no other rule's fixture.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_no_io_outside_effects.py -n 0 -q
+          -k disabling
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7

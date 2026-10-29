@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_x
+contract_version: {major: 1, minor: 0, patch: 0}
+node_type: UNKNOWN
