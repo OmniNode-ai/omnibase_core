@@ -1,0 +1,42 @@
+{
+  "findings": [
+    {
+      "evidence": {},
+      "location": "scripts/x.py:1",
+      "message": "new code file outside a canonical location (src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, tests/, docs/). Build it as a contract + node + handler.",
+      "remediation": null,
+      "rule_id": "noncanonical-file",
+      "severity": "FAIL",
+      "validator_id": "canonical_file_shape"
+    },
+    {
+      "evidence": {},
+      "location": "src/pkg/handlers/handler_y.py:1",
+      "message": "handler no contract.yaml binds (handler.module, handler_routing or default_handler); bind it from a node contract or move it into a node",
+      "remediation": null,
+      "rule_id": "handler_outside_node",
+      "severity": "FAIL",
+      "validator_id": "canonical_file_shape"
+    }
+  ],
+  "metrics": {
+    "error_count": 0,
+    "fail_count": 2,
+    "not_applicable_count": 0,
+    "pass_count": 0,
+    "skip_count": 0,
+    "total": 2,
+    "warn_count": 0
+  },
+  "overall_status": "FAIL",
+  "profile": "default",
+  "provenance": {
+    "generated_at": "<timestamp>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "canonical_file_shape"
+    ]
+  },
+  "report_id": "<run-id>"
+}

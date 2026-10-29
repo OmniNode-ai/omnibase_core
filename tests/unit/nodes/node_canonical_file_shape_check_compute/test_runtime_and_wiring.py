@@ -367,5 +367,7 @@ def test_the_report_equals_the_committed_golden_report() -> None:
             facts=facts, contract=ValidatorCanonicalFileShape().contract
         )
     )
-    golden = json.loads((FIXTURES / "golden_report.json").read_text(encoding="utf-8"))
+    golden = json.loads(
+        (FIXTURES / "golden_check_output.json").read_text(encoding="utf-8")
+    )
     assert _normalised(report.model_dump_json()) == golden
