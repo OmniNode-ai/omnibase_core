@@ -1,0 +1,100 @@
+{
+  "clean_tag_absent": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_tag_absent": {
+    "tag_exists": false,
+    "commit": null,
+    "version": null,
+    "on_branch": null,
+    "detail": "fixture"
+  },
+  "clean_tag_suffix_mismatch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_tag_suffix_mismatch": {
+    "tag_exists": true,
+    "commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "clean_tag_off_branch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_tag_off_branch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": false,
+    "detail": "fixture"
+  },
+  "clean_declared_version_mismatch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_declared_version_mismatch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "clean_lock_mismatch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_lock_mismatch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "clean_lineage_unresolved": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_lineage_unresolved": {
+    "tag_exists": null,
+    "commit": null,
+    "version": null,
+    "on_branch": null,
+    "detail": "fixture"
+  },
+  "clean_declared_version_range": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_declared_version_missing": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  }
+}

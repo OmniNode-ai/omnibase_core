@@ -1999,6 +1999,15 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      - id: check-dev-tag-lineage
+        name: Verify dev-merge tag lineage (OMN-17427)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_dev_tag_lineage_effect.runtime_dev_tag_lineage
+        language: system
+        files: '(^|/)(pyproject\.toml|uv\.lock)$'
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # Protocol binding (OMN-21533, K5): no default implementation constructed, no branch on an
       # implementation class, no module-level binding table and no broker client built outside a
       # binding site, and no setting with a literal value in two node contracts. Binding sites, class

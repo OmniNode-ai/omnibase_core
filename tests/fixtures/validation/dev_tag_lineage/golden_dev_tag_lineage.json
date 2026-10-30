@@ -1,0 +1,87 @@
+{
+  "report_id": "<normalised>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "dev_tag_lineage",
+      "severity": "FAIL",
+      "location": "violation_declared_version_mismatch/pyproject.toml",
+      "message": "demo-package: tag='dev-20261029143607-aaaaaaaaaaaa': all declarations ['>=3.0,<4.0'] must be parseable and admit tag version '2.3.4'; at least one declaration is required",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "declared_version_mismatch"
+    },
+    {
+      "validator_id": "dev_tag_lineage",
+      "severity": "FAIL",
+      "location": "violation_declared_version_missing/pyproject.toml",
+      "message": "demo-package: tag='dev-20261029143607-aaaaaaaaaaaa': all declarations [] must be parseable and admit tag version '2.3.4'; at least one declaration is required",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "declared_version_mismatch"
+    },
+    {
+      "validator_id": "dev_tag_lineage",
+      "severity": "FAIL",
+      "location": "violation_lineage_unresolved/pyproject.toml",
+      "message": "demo-package: tag='dev-20261029143607-aaaaaaaaaaaa': lineage unresolved (fixture)",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "lineage_unresolved"
+    },
+    {
+      "validator_id": "dev_tag_lineage",
+      "severity": "FAIL",
+      "location": "violation_lock_mismatch/pyproject.toml",
+      "message": "demo-package: tag='dev-20261029143607-aaaaaaaaaaaa': adjacent lock must uniquely match version '2.3.4', tag and commit 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "lock_mismatch"
+    },
+    {
+      "validator_id": "dev_tag_lineage",
+      "severity": "FAIL",
+      "location": "violation_tag_absent/pyproject.toml",
+      "message": "demo-package: tag='dev-20261029143607-aaaaaaaaaaaa': tag is absent from its remote (fixture)",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "tag_absent"
+    },
+    {
+      "validator_id": "dev_tag_lineage",
+      "severity": "FAIL",
+      "location": "violation_tag_off_branch/pyproject.toml",
+      "message": "demo-package: tag='dev-20261029143607-aaaaaaaaaaaa': commit is not reachable from dev",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "tag_off_branch"
+    },
+    {
+      "validator_id": "dev_tag_lineage",
+      "severity": "FAIL",
+      "location": "violation_tag_suffix_mismatch/pyproject.toml",
+      "message": "demo-package: tag='dev-20261029143607-aaaaaaaaaaaa': suffix differs from peeled commit 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "tag_suffix_mismatch"
+    }
+  ],
+  "metrics": {
+    "total": 7,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 7,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "dev_tag_lineage"
+    ]
+  }
+}

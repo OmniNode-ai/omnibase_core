@@ -1,0 +1,5 @@
+version = 1
+[[package]]
+name = "demo-package"
+version = "2.3.4"
+source = { git = "file:///fixture/origin.git?tag=dev-20261029143607-aaaaaaaaaaaa#aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }

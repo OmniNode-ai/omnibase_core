@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version: {major: 1, minor: 0, patch: 0}
+  validator_id: dev_tag_lineage
+  validator_name: Dev Tag Lineage
+  validator_description: Verify dev-merge tag identity, ancestry, declared version and adjacent lock identity.
+  target_patterns: [pyproject.toml, '**/pyproject.toml']
+  exclude_patterns: ['**/.git/**', '**/.venv/**', '**/__pycache__/**']
+  rules:
+    - rule_id: tag_absent
+      description: Successful remote contact proves that the tag is absent.
+      severity: error
+      parameters:
+        message: '{package}: tag={tag!r}: tag is absent from its remote ({detail})'
+        remediation: Use an existing dev-merge tag from the source repository.
+    - rule_id: tag_suffix_mismatch
+      description: The peeled commit does not match the tag suffix.
+      severity: error
+      parameters:
+        message: '{package}: tag={tag!r}: suffix differs from peeled commit {commit!r}'
+        remediation: Use the dev-merge tag whose suffix identifies its peeled commit.
+    - rule_id: tag_off_branch
+      description: The peeled commit is not reachable from the configured branch.
+      severity: error
+      parameters:
+        message: '{package}: tag={tag!r}: commit is not reachable from {branch}'
+        remediation: Use a dev-merge tag whose commit is reachable from the configured branch.
+    - rule_id: declared_version_mismatch
+      description: A declaration is missing, unparseable or does not admit the tag project version.
+      severity: error
+      parameters:
+        message: '{package}: tag={tag!r}: all declarations {declared_specs!r} must be parseable and admit
+          tag version {version!r}; at least one declaration is required'
+        remediation: Declare the package in the configured tables and ensure every PEP 440 specifier set
+          admits project.version at the tag commit.
+    - rule_id: lock_mismatch
+      description: The adjacent lock does not uniquely record the tag version and identity.
+      severity: error
+      parameters:
+        message: '{package}: tag={tag!r}: adjacent lock must uniquely match version {version!r}, tag and
+          commit {commit!r}'
+        remediation: Regenerate the adjacent lock with exactly one package entry matching the verified
+          tag.
+    - rule_id: lineage_unresolved
+      description: A required remote fact could not be established.
+      severity: error
+      parameters:
+        message: '{package}: tag={tag!r}: lineage unresolved ({detail})'
+        remediation: Restore remote access and resolve the tag commit, project version and complete branch
+          ancestry.
+        tag_pattern: '^dev-[0-9]{14}-[0-9a-f]{12}$'
+        suffix_pattern: '-([0-9a-f]{12})$'
+        commit_pattern: '[0-9a-f]{40}'
+        normalize_pattern: '[-_.]+'
+        declaration_pattern: '^\s*(?P<name>[A-Za-z0-9][A-Za-z0-9._-]*)(?:\[[^]]+\])?\s*(?P<spec>[^;]*)(?:;.*)?$'
+        declaration_tables: [tool.uv.override-dependencies, project.dependencies, project.optional-dependencies]
+        project_name: pyproject.toml
+        lock_name: uv.lock
+        branch: dev
+        git_binary: git
+        timeout_seconds: 60
+        tag_ref: 'refs/tags/{tag}'
+        branch_ref: 'refs/heads/{branch}'
+        peeled_suffix: '^{}'
+        complete_history_value: 'false'
+        init_arguments: [init, --quiet, --bare]
+        remote_arguments: [ls-remote, --tags, '{url}', '{tag_ref}', '{peeled_ref}']
+        fetch_arguments: [fetch, --quiet, '--filter=blob:none', --no-tags, '{url}', '{branch_ref}:{branch_ref}',
+          '{tag_ref}:{tag_ref}']
+        peel_arguments: [rev-parse, --verify, '{tag_ref}^{{commit}}']
+        shallow_arguments: [rev-parse, --is-shallow-repository]
+        ancestor_arguments: [merge-base, --is-ancestor, '{commit}', '{branch_ref}']
+        show_arguments: [show, '{commit}:{project_name}']
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: true
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false
