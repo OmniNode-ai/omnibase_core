@@ -96,7 +96,7 @@ jobs:
 
 
 DEV_MERGE_TAG_USES_TAIL = (
-    "@dev-20261018024445-b6ee996befa1 # Dev-merge tag (OMN-21495)."
+    "@dev-20261030012703-2f56afeb6dbf # Dev-merge tag (OMN-21495)."
 )
 
 
@@ -141,3 +141,17 @@ def test_scope_control_rejects_another_input_pin_or_line() -> None:
             _assert_preserved(text.replace(old, old + "drift"))
     with pytest.raises(AssertionError):
         _assert_preserved(text + "# unrelated edit\n")
+
+
+# The dev-merge tag of omnibase_core#2158's squash commit: the first receipt-gate
+# whose Binds-Merged-Fix control falls back to the fix's parent when the revert
+# conflicts. A caller pinned before it fails every such binding before its tests run.
+MERGED_FIX_PARENT_FALLBACK_TAG = "dev-20261030012703-2f56afeb6dbf"
+
+
+def test_caller_pins_a_gate_with_the_merged_fix_parent_fallback() -> None:
+    caller = yaml.safe_load(CALLER_PATH.read_text(encoding="utf-8"))
+    ref = caller["jobs"]["repo-evidence"]["uses"].split("@", 1)[1]
+    assert re.fullmatch(r"dev-\d{14}-[0-9a-f]{12}", ref), ref
+    stamp = MERGED_FIX_PARENT_FALLBACK_TAG.split("-")[1]
+    assert ref.split("-")[1] >= stamp, ref
