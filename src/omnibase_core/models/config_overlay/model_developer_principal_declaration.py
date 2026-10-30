@@ -5,6 +5,10 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.enums.enum_developer_principal_role import (
+    EnumDeveloperPrincipalRole,
+)
+
 
 class ModelDeveloperPrincipalDeclaration(BaseModel):
     """The identity of one developer machine's principal.
@@ -30,6 +34,13 @@ class ModelDeveloperPrincipalDeclaration(BaseModel):
         ...,
         pattern=r"^[a-z0-9][a-z0-9-]*$",
         description="Device the principal is issued to: lower-case letters, digits and hyphens.",
+    )
+    role: EnumDeveloperPrincipalRole = Field(
+        default=EnumDeveloperPrincipalRole.DEVELOPER,
+        description=(
+            "Whether the principal is a person's development machine or a machine the "
+            "deployment runs itself. Never a grant."
+        ),
     )
 
 

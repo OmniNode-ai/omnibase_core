@@ -21,6 +21,9 @@ import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_config_overlay_key import EnumConfigOverlayKey
+from omnibase_core.enums.enum_developer_principal_role import (
+    EnumDeveloperPrincipalRole,
+)
 from omnibase_core.models.config_overlay import (
     ModelDeveloperPrincipalDeclaration,
     ModelDeveloperPrincipalOverlay,
@@ -157,6 +160,28 @@ def test_the_same_device_name_under_two_logins_is_two_principals() -> None:
     doc = ModelDeveloperPrincipalOverlay.model_validate(_VALID)
     assert {p.device for p in doc.principals} == {"laptop", "desktop"}
     assert len(doc.principals) == 3
+
+
+def test_a_row_without_a_role_is_a_developer_machine() -> None:
+    # rows written before roles existed keep exactly the shared grant set
+    doc = ModelDeveloperPrincipalOverlay.model_validate(_VALID)
+    assert {p.role for p in doc.principals} == {EnumDeveloperPrincipalRole.DEVELOPER}
+
+
+def test_a_row_may_select_the_machine_role() -> None:
+    body = _body()
+    body["principals"][0]["role"] = "machine"
+    doc = ModelDeveloperPrincipalOverlay.model_validate(body)
+    assert doc.principals[0].role is EnumDeveloperPrincipalRole.MACHINE
+    assert doc.principals[1].role is EnumDeveloperPrincipalRole.DEVELOPER
+
+
+@pytest.mark.parametrize("value", ["admin", "Machine", "", "grants"])
+def test_a_role_outside_the_vocabulary_is_refused(value: str) -> None:
+    body = _body()
+    body["principals"][0]["role"] = value
+    with pytest.raises(ValidationError, match="role"):
+        ModelDeveloperPrincipalOverlay.model_validate(body)
 
 
 def _schema_script() -> ModuleType:

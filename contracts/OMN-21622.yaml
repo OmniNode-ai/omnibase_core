@@ -1,0 +1,46 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21622
+title: "Machine login profile: one declared grant set every machine principal receives at issuance, with
+  a drift check"
+summary: >-
+  Core side: a developer.principal overlay row gains an optional role from the closed vocabulary EnumDeveloperPrincipalRole
+  (developer, machine). It says whether the principal is a person's development machine or a machine the
+  deployment runs itself, and is never a grant. The lab issuer's machine grant audit reads it to audit
+  the deployment's own machines and only those.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21622-principal-role
+    statement: >-
+      A developer.principal row can declare that its principal is one of the deployment's own machines,
+      without carrying a grant.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: a resolved, wired mechanism enforces RULING 2026-10-30T21:35:44Z lane=orchestrator-31d9,
+          linked to it by a CORRECTION row carrying mechanism=<repo path> -- falsifier: `python3 plugins/omni/skills/queue-status/scripts/ruling_mechanisms.py`
+          no longer lists 2026-10-30T21:35:44Z as unmechanized
+evidence_requirements:
+  - kind: tests
+    description: >-
+      A row without a role reads as developer, a row may select machine, a role outside the vocabulary
+      is refused, and the schema export round-trips.
+    command: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21622-ac1-principal-role
+    description: >-
+      The role field's tests. At the merge base the row refuses a role field as an extra key, so the machine-role
+      cases fail.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          -q -p no:cacheprovider -k role
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
