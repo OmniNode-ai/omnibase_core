@@ -1,0 +1,5 @@
+Lane brief: read the estimator upload back through the API
+Owner: cloud owner
+Run lane: stability-test
+
+Prove the readback with the command onex delegate --lane dev --locus deployed-lane against the dev lane.

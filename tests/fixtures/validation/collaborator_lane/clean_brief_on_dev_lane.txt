@@ -1,0 +1,11 @@
+Lane brief: read the estimator upload back through the API
+Owner: cloud owner
+Run lane: stability-test
+
+Prove the readback against the stability-test projection API on its pinned release.
+
+# Standing rules for every dispatched lane (read fully before the first tool call)
+Delegation: the command is onex delegate --task-type text --lane dev --locus deployed-lane (the lab dev lane).
+Hotpatch the dev lane only when no slot can carry the proof, and restore it after. Use a dev-merge tag for pins.
+Ticket ids: cite only a ticket id you have read in this lane. Do the work at implementation time
+instead of at design time.

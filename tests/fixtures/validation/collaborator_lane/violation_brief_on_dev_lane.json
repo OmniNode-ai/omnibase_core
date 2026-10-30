@@ -1,0 +1,1 @@
+{"prompt": "Lane brief: wire the readback\nOwner: dashboard owner\nRun lane: stability-test\nProve it with --lane dev against the dev lane.\n# Standing rules for every dispatched lane (read fully before the first tool call)\nDelegation: onex delegate --lane dev --locus deployed-lane.\nHotpatch the dev lane only when no slot can carry the proof.\ninstead of at design time."}

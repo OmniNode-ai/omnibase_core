@@ -1512,6 +1512,19 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-collaborator-lane
+  name: Collaborator lane check (OMN-21599)
+  description: >
+    Refuse a lane brief, a proof rule or a lab placement that sends collaborator-owned work to the dev
+    lane (operator ruling 2026-10-30T12:43:03Z). Every role word, lane token and remedy text is data of
+    collaborator_lane.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_collaborator_lane:ValidatorCollaboratorLane
+  files: ((^|/)job\.json|[^/]*brief[^/]*\.(md|txt)|(^|/)(rules|lane-rules-block|proof-rules)\.md|/runbooks/[^/]*\.md|(^|/)config/(lab|onex/overlays)/.*\.ya?ml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-plan-invariant
   name: Plan invariant check (OMN-21559)
   description: >

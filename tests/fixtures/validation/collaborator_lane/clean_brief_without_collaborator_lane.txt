@@ -1,0 +1,5 @@
+Lane brief: add a usage chart to the projection page
+Owner: dashboard owner
+Run lane: stability-test
+
+Read the usage tables through the projection API and add the chart.
