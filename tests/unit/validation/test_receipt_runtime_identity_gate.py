@@ -12,9 +12,11 @@ from typing import Any
 import pytest
 
 from omnibase_core.enums.enum_runtime_identity_rule import EnumRuntimeIdentityRule
+from omnibase_core.nodes.node_receipt_runtime_identity_check_compute.runtime_receipt_runtime_identity_check import (
+    main,
+)
 from omnibase_core.validation.validator_receipt_runtime_identity import (
     DEFAULT_REQUIRED_PACKAGES,
-    main,
     scan_receipt_file,
     scan_receipts_directory,
 )

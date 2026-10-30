@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_dependency_direction_cli import (
+from omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check import (
     main,
 )
 

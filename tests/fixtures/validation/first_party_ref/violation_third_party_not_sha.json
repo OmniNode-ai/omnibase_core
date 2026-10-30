@@ -1,0 +1,9 @@
+{
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "source": "uses: actions/checkout@v7\n"
+    }
+  ],
+  "dev_tags": []
+}

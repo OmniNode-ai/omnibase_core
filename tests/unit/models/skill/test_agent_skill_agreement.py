@@ -13,13 +13,13 @@ from skills_ref.validator import validate
 from omnibase_core.enums.enum_agent_skill_render_profile import (
     EnumAgentSkillRenderProfile,
 )
-from omnibase_core.handlers.handler_agent_skill_codec import (
-    check_skill_md,
-    render_skill_md,
-)
 from omnibase_core.models.skill.model_agent_skill_frontmatter import SPEC_FIELD_KEYS
 from omnibase_core.models.skill.model_claude_code_skill_extensions import (
     CLAUDE_CODE_EXTENSION_KEYS,
+)
+from omnibase_core.validation.checker_agent_skill_codec import (
+    check_skill_md,
+    render_skill_md,
 )
 from tests.fixtures.agent_skill_tree import agent_skill_fixture_root
 

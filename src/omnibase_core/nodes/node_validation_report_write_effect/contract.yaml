@@ -32,6 +32,20 @@ handler_routing:
       event_model:
         name: ModelValidationReport
         module: omnibase_core.models.validation.model_validation_report
+    - operation: validator_report_publish
+      handler:
+        name: NodeValidationReportPublishEffect
+        module: omnibase_core.nodes.node_validation_report_write_effect.handler_validation_report_publish
+      event_model:
+        name: ModelValidationReportWriteInput
+        module: omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input
+    - operation: validator_runtime_overlay
+      handler:
+        name: HandlerValidatorRuntimeOverlay
+        module: omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay
+      event_model:
+        name: ModelValidatorRuntimeOverlay
+        module: omnibase_core.models.nodes.validation_report_write.model_validator_runtime_overlay
     - operation: validator_triggered_emit
       handler:
         name: HandlerValidatorTriggeredEmit
@@ -40,6 +54,20 @@ handler_routing:
         name: ModelValidatorTriggeredEmitInput
         module: omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_input
   default_handler: handler:NodeValidationReportWriteEffect
+
+# OMN-21529: the writer publishes one run event per run and one validator-triggered event
+# per failing validator through the bus it resolves from the container. The run topic is
+# also named in overlays/validator_runtime.settings.yaml, which the runtime reads.
+event_bus:
+  version: {major: 1, minor: 0, patch: 0}
+  publish_topics:
+    - onex.evt.platform.validator-run.v1
+    - onex.evt.platform.validator-triggered.v1
+# OMN-21558: no node of this repository consumes the run event or the validator-triggered event; they are
+# read outside the corpus (the lab live-overlay tests consume the run topic and filter it by run id).
+externally_consumed_topics:
+  - onex.evt.platform.validator-run.v1
+  - onex.evt.platform.validator-triggered.v1
 
 descriptor:
   node_archetype: effect

@@ -17,6 +17,10 @@ requirements:
         statement: The Provide the PostgreSQL 16 server tools step keeps the sudo apt-get path, adds a
           rootless PGDG download and dpkg-deb extraction under RUNNER_TEMP, exports its library directory
           through GITHUB_ENV, and still refuses by name when both paths fail.
+      - id: AC2
+        statement: On an Ubuntu 24.04 runner whose archive is listed only in deb822 source parts, the
+          rootless path copies the host's source parts into its private apt state instead of turning source
+          parts off, so postgresql-16's Ubuntu dependencies (libjson-perl) resolve.
 evidence_requirements:
   - kind: tests
     description: Hosted CI test that pins the step's sudo path, rootless extraction path and named refusal.
@@ -41,4 +45,14 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q
           --no-cov -k "postgres_steps_are_gated_and_fail_closed"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn20413-noble-deb822-sources
+    description: The rootless PG16 apt state keeps the host's deb822 source parts; the test fails at the
+      merge base, whose step sets source parts to none and so cannot resolve libjson-perl on noble.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q
+          --no-cov -k "deb822_sources"
         cwd: ${OMNI_HOME}/omnibase_core

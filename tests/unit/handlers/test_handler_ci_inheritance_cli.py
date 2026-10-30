@@ -9,7 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_ci_inheritance_cli import (
+from omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check import (
     main,
 )
 
@@ -229,9 +229,11 @@ async def test_main_emitting_publishes_one_event_per_triggered_validator(
 ) -> None:
     """OMN-21277 AC3: both CI validators fail, so two events reach the bus."""
     from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-    from omnibase_core.handlers.handler_ci_inheritance_cli import main_emitting
     from omnibase_core.models.validation.model_validator_triggered_event import (
         ModelValidatorTriggeredEvent,
+    )
+    from omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check import (
+        main_emitting,
     )
     from omnibase_core.topics import TopicBase
 
@@ -262,7 +264,9 @@ async def test_main_emitting_publishes_one_event_per_triggered_validator(
 @pytest.mark.asyncio
 async def test_main_emitting_publishes_nothing_on_pass(tmp_path: Path) -> None:
     from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-    from omnibase_core.handlers.handler_ci_inheritance_cli import main_emitting
+    from omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check import (
+        main_emitting,
+    )
 
     base, head = _dirs(tmp_path)
     (base / "ci.yml").write_text(_CORE)

@@ -39,9 +39,7 @@ triggers it synchronised on.
 
 from __future__ import annotations
 
-import argparse
 import re
-import sys
 from collections import deque
 from collections.abc import Iterable, Mapping, Sequence
 from itertools import product as cartesian_product
@@ -111,7 +109,7 @@ from omnibase_core.validation.validator_fsm_analysis import analyze_fsm
 __all__ = [
     "DEFAULT_MAX_PRODUCT_STATES",
     "find_unknown_fsm_keys",
-    "main",
+    "load_machines",
     "walk_contracts",
 ]
 
@@ -308,6 +306,14 @@ def _load(
             )
         )
     return scanned, machines, not_armed_list
+
+
+def load_machines(
+    roots: Sequence[Path],
+) -> tuple[list[ModelContractWalkMachine], list[ModelContractWalkNotArmed]]:
+    """Load armed machines and NOT_ARMED records through the walker's strict loader."""
+    _scanned, machines, not_armed = _load(roots)
+    return machines, not_armed
 
 
 def _relative(root: Path, path: Path) -> str:
@@ -712,85 +718,3 @@ def walk_contracts(
         not_armed=tuple(sorted(not_armed, key=lambda n: n.contract_path)),
         workflows=tuple(workflows),
     )
-
-
-# ---------------------------------------------------------------------------
-# CLI (report-only)
-# ---------------------------------------------------------------------------
-
-
-def _summary_lines(report: ModelContractWalkReport) -> list[str]:
-    s = report.summary
-    lines = [
-        "contract walker (report-only; findings never fail this command)",
-        f"  contracts scanned {s.contracts_scanned}; declaring a machine "
-        f"{s.machine_contracts}; walked {s.walked_contracts}; NOT_ARMED "
-        f"{s.not_armed_contracts}",
-        f"  workflows {s.workflows}; selected paths {s.selected_paths} "
-        f"(golden {s.golden_paths}, error {s.error_paths}, open {s.open_paths}); "
-        f"cover all-edges, loop bound 1",
-        f"  error edges {s.error_edges}; illegal (state, trigger) pairs "
-        f"{s.illegal_pairs}",
-        f"  defects: unreachable states {s.unreachable_states}; dead states "
-        f"{s.dead_states}; no golden exit {s.no_golden_exit_states}; uncovered "
-        f"transitions {s.uncovered_transitions}; "
-        f"truncated workflows {s.truncated_workflows}",
-    ]
-    for workflow in report.workflows:
-        nodes = "+".join(c.node for c in workflow.components)
-        lines.append(
-            f"  {workflow.workflow_owner}: [{nodes}] states {workflow.product_state_count}, "
-            f"edges {workflow.product_edge_count}, paths {workflow.selected_path_count}, "
-            f"error edges {len(workflow.error_edges)}, unreachable "
-            f"{len(workflow.unreachable_states)}, dead {len(workflow.dead_states)}, "
-            f"no golden exit {len(workflow.no_golden_exit_states)}, "
-            f"uncovered {len(workflow.uncovered_transitions)}"
-        )
-    for item in report.not_armed:
-        lines.append(f"  NOT_ARMED {item.node}: {item.reason}")
-    return lines
-
-
-def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        prog="python -m omnibase_core.validation.validator_contract_walker",
-        description=(
-            "Walk contract state machines and report golden paths, error edges, "
-            "illegal state/trigger pairs and defects. Report-only: exits 0 "
-            "whatever it finds."
-        ),
-    )
-    parser.add_argument(
-        "roots",
-        nargs="*",
-        default=["src"],
-        help="Directories (or contract.yaml files) to scan; default src",
-    )
-    parser.add_argument("--json-out", help="Write the JSON report to this path")
-    parser.add_argument(
-        "--max-product-states",
-        type=int,
-        default=DEFAULT_MAX_PRODUCT_STATES,
-        help="Product-graph state cap per workflow; hitting it is reported",
-    )
-    return parser.parse_args(argv)
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    args = _parse_args(sys.argv[1:] if argv is None else argv)
-    report = walk_contracts(
-        [Path(root) for root in args.roots],
-        max_product_states=args.max_product_states,
-    )
-    if args.json_out:
-        text = report.model_dump_json(indent=2) + "\n"
-        if args.json_out == "-":
-            sys.stdout.write(text)
-        else:
-            Path(args.json_out).write_text(text, encoding="utf-8")
-    sys.stdout.write("\n".join(_summary_lines(report)) + "\n")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())  # error-ok: CLI entry point requires SystemExit

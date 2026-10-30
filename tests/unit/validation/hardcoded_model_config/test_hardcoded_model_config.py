@@ -667,17 +667,13 @@ def test_tn_disabled_path_does_no_tier_engine_scanning(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Ineligible paths must not spend the whole-tree scan budget on T/N work."""
-    from omnibase_core.handlers import handler_hardcoded_model_tier_engine
+    from omnibase_core.validation import checker_hardcoded_model_tier
 
     def unexpected_scan(*args: object) -> None:
         raise AssertionError("T/N detection ran for a path with neither family")
 
-    monkeypatch.setattr(
-        handler_hardcoded_model_tier_engine, "_python_hits", unexpected_scan
-    )
-    monkeypatch.setattr(
-        handler_hardcoded_model_tier_engine, "_line_hits", unexpected_scan
-    )
+    monkeypatch.setattr(checker_hardcoded_model_tier, "_python_hits", unexpected_scan)
+    monkeypatch.setattr(checker_hardcoded_model_tier, "_line_hits", unexpected_scan)
     assert scan(path, 'ceiling = "opus"\n', policy) == []
 
 

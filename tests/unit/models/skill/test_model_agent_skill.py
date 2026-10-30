@@ -17,10 +17,6 @@ from omnibase_core.enums.enum_agent_skill_render_profile import (
     EnumAgentSkillRenderProfile,
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_agent_skill_codec import (
-    parse_skill_md,
-    render_skill_md,
-)
 from omnibase_core.models.skill.model_agent_skill import ModelAgentSkill
 from omnibase_core.models.skill.model_agent_skill_frontmatter import (
     ModelAgentSkillFrontmatter,
@@ -30,6 +26,10 @@ from omnibase_core.models.skill.model_claude_code_skill_extensions import (
     ModelClaudeCodeSkillExtensions,
     decode_extension_value,
     encode_extension_value,
+)
+from omnibase_core.validation.checker_agent_skill_codec import (
+    parse_skill_md,
+    render_skill_md,
 )
 
 if TYPE_CHECKING:

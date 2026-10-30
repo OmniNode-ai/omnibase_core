@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: event_chain_walker
+  validator_name: Event Chain Walker Validator
+  validator_description: Refuses unconsumed and unproduced topics, states with no exit and transitions
+    on undeclared events across the contract corpus (OMN-21558).
+  target_patterns: ['**/contract.yaml', '**/*.contract.yaml']
+  exclude_patterns:
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/validation/contracts/**'
+  rules:
+    - rule_id: event_without_consumer
+      description: A published topic has no consumer in the corpus or external declaration.
+      severity: error
+      enabled: true
+      parameters:
+        kind: unconsumed_topic
+        producer_paths: [event_bus.publish_topics, 'published_events[].topic', 'published_events[].event_pattern']
+        consumer_paths: [event_bus.subscribe_topics, 'consumed_events[].topic', 'consumed_events[].event_pattern',
+          'handler_routing.handlers[].topic']
+        external_consumer_paths: [externally_consumed_topics, 'terminal_events.*', 'runtime_dispatch.terminal_events.*']
+        remediation: Add a subscribing contract or declare the topic as externally consumed or terminal.
+    - rule_id: consumer_without_producer
+      description: A consumed topic has no producer in the corpus or external declaration.
+      severity: error
+      enabled: true
+      parameters:
+        kind: unproduced_topic
+        consumer_paths: [event_bus.subscribe_topics, 'consumed_events[].topic', 'consumed_events[].event_pattern',
+          'handler_routing.handlers[].topic']
+        producer_paths: [event_bus.publish_topics, 'published_events[].topic', 'published_events[].event_pattern']
+        external_producer_paths: [externally_produced_topics, runtime_dispatch.command_topic]
+        remediation: Add a publishing contract or declare the topic as externally produced or a runtime
+          command.
+    - rule_id: state_without_exit
+      description: An armed state machine has a state with no outgoing transition.
+      severity: error
+      enabled: true
+      parameters:
+        kind: fsm_exit
+        analysis_fields: [missing_transitions]
+        remediation: Add an outgoing transition or declare the state terminal when it completes the workflow.
+    - rule_id: transition_on_undeclared_event
+      description: An armed state machine uses an event absent from its contract alphabet.
+      severity: error
+      enabled: true
+      parameters:
+        kind: undeclared_trigger
+        alphabet_paths: ['consumed_events[].event_type', 'published_events[].event_type', 'state_machine.operations[].operation_name']
+        remediation: Declare the trigger as a consumed or published event type or as a state machine operation.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

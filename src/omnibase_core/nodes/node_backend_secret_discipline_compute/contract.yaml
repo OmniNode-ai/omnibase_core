@@ -33,10 +33,17 @@ handler_routing:
       event_model:
         name: ModelSharedTokenPolicyRequest
         module: omnibase_core.models.validation.model_shared_token_policy_request
+    - operation: backend_secret_discipline
+      handler:
+        name: HandlerBackendSecretDisciplineCompute
+        module: omnibase_core.nodes.node_backend_secret_discipline_compute.handler_backend_secret_discipline
+      event_model:
+        name: ModelBackendSecretDisciplineInput
+        module: omnibase_core.models.validation.model_backend_secret_discipline_input
   default_handler: handler:NodeBackendSecretDisciplineCompute
 
-input_model: omnibase_core.validation.validator_backend_secret_discipline.ModelBackendSecretDisciplineInput
-output_model: omnibase_core.validation.validator_backend_secret_discipline.ModelBackendSecretDisciplineOutput
+input_model: omnibase_core.models.validation.model_backend_secret_discipline_input.ModelBackendSecretDisciplineInput
+output_model: omnibase_core.models.validation.model_backend_secret_discipline_output.ModelBackendSecretDisciplineOutput
 
 descriptor:
   node_archetype: compute
@@ -50,6 +57,10 @@ event_bus:
   version: {major: 1, minor: 0, patch: 0}
   subscribe_topics: [onex.cmd.omnibase-core.shared-token-policy-requested.v1]
   publish_topics: [onex.evt.omnibase-core.shared-token-policy-completed.v1]
+# OMN-21558: the caller of the shared workflow credential policy check requests it and reads the
+# completion; neither end is a node of this repository, so event_chain_walker reads both as external.
+externally_produced_topics: [onex.cmd.omnibase-core.shared-token-policy-requested.v1]
+externally_consumed_topics: [onex.evt.omnibase-core.shared-token-policy-completed.v1]
 shared_token_policy:
   entries:
     - workflow: .github/workflows/auto-merge.yml

@@ -13,7 +13,6 @@ Covers:
 - Non-.py extensions (e.g., .md) are scanned
 - Unsupported extensions (e.g., .lock) are skipped
 - check_paths with a directory scans recursively
-- CLI main() returns 0 on clean, 1 on violations
 """
 
 from __future__ import annotations
@@ -25,7 +24,6 @@ import pytest
 from omnibase_core.validation.validator_local_paths import (
     ModelLocalPathViolation,
     ValidatorLocalPaths,
-    main,
 )
 
 
@@ -414,45 +412,3 @@ class TestModelLocalPathViolation:
                 context="x",
                 unexpected_field="oops",  # type: ignore[call-arg]
             )
-
-
-@pytest.mark.unit
-class TestCLIMain:
-    """CLI main() exit code behaviour."""
-
-    def test_main_returns_0_on_clean_directory(self, tmp_path: Path) -> None:
-        """main() returns 0 when no violations are found."""
-        f = tmp_path / "clean.py"
-        f.write_text("x = 42\n", encoding="utf-8")
-        result = main([str(f)])
-        assert result == 0
-
-    def test_main_returns_1_on_violations(self, tmp_path: Path) -> None:
-        """main() returns 1 when violations are found."""
-        f = tmp_path / "bad.py"
-        f.write_text('ROOT = "/Volumes/PRO-G40/Code"\n', encoding="utf-8")
-        result = main([str(f)])
-        assert result == 1
-
-    def test_main_quiet_flag_suppresses_context(
-        self, tmp_path: Path, capsys: pytest.CaptureFixture[str]
-    ) -> None:
-        """--quiet suppresses per-violation context lines and summary."""
-        f = tmp_path / "bad.py"
-        f.write_text('ROOT = "/Volumes/PRO-G40/Code"\n', encoding="utf-8")
-        result = main(["--quiet", str(f)])
-        assert result == 1
-        captured = capsys.readouterr()
-        # The context line (indented) and summary must not appear
-        assert "  ROOT" not in captured.out
-        assert "violation(s)" not in captured.out
-
-    def test_main_no_args_uses_cwd(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
-        """main() with no paths argument defaults to current directory."""
-        monkeypatch.chdir(tmp_path)
-        f = tmp_path / "clean.py"
-        f.write_text("x = 1\n", encoding="utf-8")
-        result = main([])
-        assert result == 0

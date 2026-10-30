@@ -117,6 +117,31 @@ validation:
         burndown_removed_text: "the burn-down baseline stays, even when empty; deleting it would let a
           later change install a new one"
 
+    - rule_id: burndown-extra-entry
+      description: On first install (the base revision has the repository but no burn-down file), a burn-down
+        entry that is not a finding that existed at base because its path is a file the change adds, copies
+        or renames in, or is also listed in the repository's own baseline_path file.
+      severity: error
+      enabled: true
+      parameters:
+        burndown_base_statuses: ["M", "T"]
+        burndown_extra_added_text: "burn-down entry '{path}' is a file this change adds (git status {status}),
+          not a finding that existed at the base revision; the first install lists only base findings"
+        burndown_extra_duplicate_text: "burn-down entry '{path}' is already listed in {baseline}, an existing
+          admitted entry; the first install lists only the findings that file does not"
+
+    - rule_id: burndown-ticket-uncited
+      description: On first install, when the commit messages of the change are known, the burn-down ticket
+        on the header's first comment line must appear in one of them; the pre-commit stage on the index
+        does not know the message and defers the rule to the commit-msg stage and the revision run.
+      severity: error
+      enabled: true
+      parameters:
+        burndown_ticket_id_pattern: 'OMN-\d+'
+        burndown_ticket_citation_pattern: '(?<![A-Za-z0-9-]){ticket}(?!\d)'
+        burndown_ticket_uncited_text: "the burn-down baseline names {ticket}, but no commit message of
+          this change cites {ticket}; the file is first installed only in the change of its own ticket"
+
     - rule_id: skill-imperative
       description: More imperative-pattern lines in a SKILL.md than at base.
       severity: error
@@ -168,7 +193,7 @@ validation:
         workflows_dir: ".github/workflows"
         gate_hook_ids: ["check-direct-model-call", "check-node-boundary-imports", "check-hardcoded-model-config-compute",
           "check-dependency-direction", "check-merge-queue-parity", "check-public-runner-placement", "check-ci-inheritance",
-          "check-checker-rule-data"]
+          "check-checker-rule-data", "check-protocol-binding", "check-event-chain-walker"]
         node_boundary_hook_name: "check-node-boundary-imports"
         node_boundary_baseline: ".onex_ratchets/node_boundary_import_baseline.yaml"
         model_config_hook_name: "check-hardcoded-model-config-compute"
@@ -248,11 +273,14 @@ validation:
           beside a contract.yaml"
 
     - rule_id: git-reader
-      description: Names the wall-clock ceiling of one git cat-file run of the fact gatherer.
+      description: Names the wall-clock ceiling of one git cat-file run of the fact gatherer, and the
+        landing ref whose merge base with HEAD is the base of a run that names none (the commit-time hook);
+        CI names its own base. A ref that does not resolve leaves the base at HEAD.
       severity: error
       enabled: true
       parameters:
         cat_file_timeout_s: 300
+        landing_ref: "refs/remotes/origin/HEAD"
 
     - rule_id: "node-home:node-outside-market"
       description: A new or renamed node directory outside omnimarket, unless its contract.yaml declares

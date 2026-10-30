@@ -3,12 +3,10 @@
 
 """Composition root for private-vocabulary resolution (OMN-21494).
 
-The only file reads are the source-file gather EFFECT node's. ``build_container``
-loads the packaged vocabulary contract through it, builds the pure handler with
-that contract and registers both in a container. ``resolve_private_vocabulary``
-resolves them from the container, asks the handler which path to read, has the
-effect read it and lets the handler judge the result. The environment and the clock arrive as arguments; the process
-boundary that captures them is the caller's.
+The only file reads are the source-file gather EFFECT node's. ``build_container`` loads the
+packaged vocabulary contract through it and registers both with the pure handler.
+``resolve_private_vocabulary`` plans with the handler, reads with the effect and judges with
+the handler; the caller captures the environment and the clock at the process boundary.
 """
 
 from __future__ import annotations
@@ -20,7 +18,6 @@ from typing import Final
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_private_vocabulary import HandlerPrivateVocabulary
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
@@ -36,6 +33,9 @@ from omnibase_core.models.private_vocabulary import (
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
+)
+from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
+    HandlerPrivateVocabulary,
 )
 from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model

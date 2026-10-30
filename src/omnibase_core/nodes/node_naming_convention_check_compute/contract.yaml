@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_naming_convention_check_compute
+node_id: node_naming_convention_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Checks the directory-specific file-name prefix convention for supplied file paths and returns the violation
+  messages (OMN-21520).
+input_model: omnibase_core.models.nodes.naming_convention_check.model_naming_convention_check_input.ModelNamingConventionCheckInput
+output_model: omnibase_core.models.nodes.naming_convention_check.model_naming_convention_check_output.ModelNamingConventionCheckOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeNamingConventionCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000

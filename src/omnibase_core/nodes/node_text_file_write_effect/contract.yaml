@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_text_file_write_effect
+node_id: node_text_file_write_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_support_node]
+description: >
+  Writes UTF-8 text to a caller-named file, creating missing parent directories, and returns the path
+  and byte count. Invoked directly by the converted check runtimes for evidence packets and baselines,
+  not via an event-bus subscription (OMN-21520).
+input_model: omnibase_core.models.nodes.text_file_write.model_text_file_write_input.ModelTextFileWriteInput
+output_model: omnibase_core.models.nodes.text_file_write.model_text_file_write_output.ModelTextFileWriteOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeTextFileWriteEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000

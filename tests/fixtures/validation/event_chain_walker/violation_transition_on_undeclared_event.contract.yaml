@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_violation_transition_on_undeclared_event
+node_type: REDUCER_GENERIC
+description: Track order events and reconcile their lifecycle.
+state_machine:
+  version: &id001
+    major: 1
+    minor: 0
+    patch: 0
+  state_machine_name: order_lifecycle
+  state_machine_version: *id001
+  description: Track an order until completion.
+  initial_state: pending
+  terminal_states:
+    - done
+  states:
+    - version: *id001
+      state_name: pending
+      state_type: operational
+      description: Await completion.
+    - version: *id001
+      state_name: done
+      state_type: terminal
+      description: Order completed.
+      is_terminal: true
+      is_recoverable: false
+  transitions:
+    - version: *id001
+      transition_name: complete_order
+      from_state: pending
+      to_state: done
+      trigger: complete

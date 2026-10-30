@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Clean fixture for the inline_program rule (OMN-21534): a named test run.
+schema_version: "1.0.0"
+ticket_id: OMN-00000
+title: fixture
+dod_evidence:
+  - id: dod-fixture-ac1
+    description: fixture
+    source: manual
+    checks:
+      - check_type: command
+        check_value: |
+          uv run pytest tests/unit/validation/test_checker_inline_logic.py -q

@@ -191,7 +191,7 @@ requirements:
         statement: "AC20: A no-legacy receipt whose flip landed with no handler before it passes after
           merge and drops from the baseline as a proven flip, while a handler on the base before the receipt
           landed, a node changed after it landed and a receipt that never landed are refused. -- falsifier:
-          uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -k landed"
+          uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -k landed"
   - id: req-omn17427-ledger-row-required-cells
     statement: The typed work-ledger renderer writes the cells the ledger row grammar requires, so a rendered
       CLAIM carries worktree= and a rendered RULING carries question=.
@@ -491,7 +491,7 @@ evidence_requirements:
   - kind: tests
     description: "A landed no-legacy flip passes after merge; a pre-existing base handler, a later node
       change and an unlanded receipt are refused."
-    command: "uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -k landed"
+    command: "uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -k landed"
   - kind: tests
     description: "A rendered CLAIM carries worktree=, a rendered RULING carries question=, and a ruling
       with no question is refused."
@@ -551,7 +551,7 @@ evidence_requirements:
   - kind: tests
     description: The action-pin rule fails and passes each ref class from the overlay's values, and the
       CLI refuses a missing overlay, a zero-use scan and overlay exception growth.
-    command: uv run pytest tests/unit/handlers/test_handler_action_pin.py tests/unit/handlers/test_handler_action_pin_cli.py
+    command: uv run pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py
       -q -o addopts=''
 emergency_bypass:
   enabled: false
@@ -650,13 +650,13 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/a8b2509915d6fee19d3a5a26bcae016aaddfcf29/src/omnibase_core/handlers/handler_ci_inheritance.py
-          | cmp - src/omnibase_core/handlers/handler_ci_inheritance.py'
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/04fca965946ab651513af256b8f84cdecec4a2ab/src/omnibase_core/nodes/node_ci_inheritance_check_compute/handler_ci_inheritance.py
+          | cmp - src/omnibase_core/nodes/node_ci_inheritance_check_compute/handler_ci_inheritance.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
-          | cmp - src/omnibase_core/handlers/handler_ci_inheritance_cli.py'
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/04fca965946ab651513af256b8f84cdecec4a2ab/src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py
+          | cmp - src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
@@ -674,12 +674,12 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/24c78505307f676a61a29b47656c8b58289c5309/src/omnibase_core/handlers/handler_validator_run_events.py
-          | cmp - src/omnibase_core/handlers/handler_validator_run_events.py'
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/13b8a6ffc2a69e3175c8cf152a1b69b61747c8e3/src/omnibase_core/nodes/node_validation_report_write_effect/handler_validator_run_events.py
+          | cmp - src/omnibase_core/nodes/node_validation_report_write_effect/handler_validator_run_events.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/24c78505307f676a61a29b47656c8b58289c5309/src/omnibase_core/nodes/node_validation_report_write_effect/handler.py
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/a225c70e2a696f5ffa0ff384c3cd34474c9da19c/src/omnibase_core/nodes/node_validation_report_write_effect/handler.py
           | cmp - src/omnibase_core/nodes/node_validation_report_write_effect/handler.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
@@ -722,13 +722,13 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_repository_jobs.py
-          | cmp - src/omnibase_core/handlers/handler_ci_repository_jobs.py'
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/095ea7558cf0584f84ef4ba71319ef66ec0369e1/src/omnibase_core/nodes/node_ci_repository_jobs_check_compute/handler_ci_repository_jobs.py
+          | cmp - src/omnibase_core/nodes/node_ci_repository_jobs_check_compute/handler_ci_repository_jobs.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/1c9566e2c249fe54257a4b3ef3ff2e71de027b89/src/omnibase_core/handlers/handler_ci_inheritance_cli.py
-          | cmp - src/omnibase_core/handlers/handler_ci_inheritance_cli.py'
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/04fca965946ab651513af256b8f84cdecec4a2ab/src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py
+          | cmp - src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run pytest tests/unit/handlers/test_handler_ci_repository_jobs.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
@@ -861,8 +861,8 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
-          -k landed -o addopts=''
+        check_value: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -k landed
+          -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC20
@@ -1165,8 +1165,8 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/handlers/test_handler_action_pin.py tests/unit/handlers/test_handler_action_pin_cli.py
-          -q -o addopts=''
+        check_value: uv run pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+          tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC53

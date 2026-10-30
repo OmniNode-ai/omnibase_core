@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: no_bare_feature_flags
+  validator_name: No Bare Feature Flags
+  validator_description: |
+    Reject bare feature-flag environment reads (OMN-20074, OMN-21518): an os.getenv,
+    os.environ.get or os.environ[ read of an ENABLE_* or *_ENABLED name, or a process.env.
+    read of one, on a line that does not start with a comment marker, in a file that is
+    neither an approved basename nor under an approved path segment. A line carrying the
+    exemption marker with a reason is exempted and listed in the summary; the marker without
+    a reason is itself a violation. Patterns, approved names and segments, comment prefixes and
+    message templates are rule parameters.
+
+  target_patterns:
+    - "**/*.py"
+    - "**/*.ts"
+    - "**/*.js"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: bare_feature_flag_read
+      description: A feature-flag variable is read from the environment instead of the contract feature_flags
+        block.
+      severity: error
+      enabled: true
+      parameters:
+        python_pattern: >-
+          (?:os\.getenv|os\.environ\.get|os\.environ\[)\s*\(?\s*["'](ENABLE_\w+|[A-Z_]*_ENABLED)["']
+        ts_pattern: >-
+          process\.env\.(ENABLE_\w+|[A-Z_]*_ENABLED)
+        comment_prefixes: ["#", "//"]
+        approved_basenames:
+          - feature_flag_resolver.py
+          - contract.yaml
+          - check_bare_feature_flags.py
+          - model_contract_feature_flag.py
+        approved_path_segments:
+          - /tests/
+          - /capabilities/
+          - /config_discovery/
+          - /contracts/
+        message_template: >-
+          {location}: bare feature flag env var "{flag_name}" -- declare in contract.yaml feature_flags:
+          block and resolve via flag system
+    - rule_id: exemption_without_reason
+      description: The exemption marker needs a reason after the colon.
+      severity: error
+      enabled: true
+      parameters:
+        exempt_with_reason_pattern: >-
+          (?:#|//)\s*ONEX_FLAG_EXEMPT:\s*(\S.*)
+        exempt_bare_pattern: >-
+          (?:#|//)\s*ONEX_FLAG_EXEMPT:
+        message_template: >-
+          {location}: ONEX_FLAG_EXEMPT without reason token -- add a reason after the colon
+    - rule_id: exemption_listed
+      description: A reasoned exemption is skipped and listed in the summary.
+      severity: info
+      enabled: true
+      parameters:
+        message_template: "{location} [{reason}]"
+    - rule_id: hook_summary
+      description: The closing lines the hook prints after its violations.
+      severity: info
+      enabled: true
+      parameters:
+        summary_template: "\n{count} violation(s){exemptions}. Declare flags in contract.yaml feature_flags:
+          block and resolve via the flag system.\n"
+        exemptions_template: ", {count} exemption(s) ({listing})"
+        listing_separator: ", "
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

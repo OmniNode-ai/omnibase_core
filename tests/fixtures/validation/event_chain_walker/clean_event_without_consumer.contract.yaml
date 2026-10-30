@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_clean_event_without_consumer
+node_type: REDUCER_GENERIC
+description: Track order events and reconcile their lifecycle.
+event_bus:
+  publish_topics:
+    - onex.evt.orders.loop.v1
+    - onex.evt.orders.terminal.v1
+  subscribe_topics:
+    - onex.evt.orders.loop.v1
+externally_consumed_topics:
+  - onex.evt.orders.terminal.v1

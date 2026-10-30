@@ -64,5 +64,6 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: command
-        check_value: uv run check-public-runner-placement --repo omnibase_core
+        check_value: bash -c 'uv run python -m omnibase_core.validation.validator_public_runner_placement
+          --repo omnibase_core .github/workflows/*.yml'
         cwd: ${OMNI_HOME}/omnibase_core

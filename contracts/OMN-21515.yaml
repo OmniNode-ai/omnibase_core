@@ -87,6 +87,38 @@ requirements:
           burndown_ticket_pattern and the burndown_*_text keys are parameters entries of the validator
           contract, each changes a verdict in the table-driven mutation test, and the two new rules have
           a violation and a clean fixture -- falsifier: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py"
+      - id: AC13
+        statement: "AC13 (Burn-down first install binds to base findings): when the base revision has
+          the repository but no burn-down file, an entry whose path is a file the change adds, copies
+          or renames in (git status other than the burndown_base_statuses), or that the head baseline_path
+          file also lists, is burndown-extra-entry, one issue per entry naming the path and which of the
+          two it is -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -k extra_line"
+      - id: AC14
+        statement: "AC14 (Burn-down first install binds to its ticket): on first install, when the commit
+          messages of the change are known, the ticket on the header's first comment line must appear
+          in one of them or the install is burndown-ticket-uncited; with no message known the rule is
+          deferred to the commit-msg stage and the revision run, as the release-trailer rule is -- falsifier:
+          uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -k uncited"
+      - id: AC15
+        statement: "AC15 (Burn-down refusals each planted): an extra line at install as an added file
+          and as a duplicate of baseline_path, a ticket uncited at install, growth after install, a second
+          install (rewritten file, other entries, a second file at another path), an entry without a ticket,
+          and deletion with entries and when empty each have a named planted test, and the new burndown-extra-entry
+          and burndown-ticket-uncited keys are rows of the mutation table with a violation and a clean
+          fixture -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -k planted, and tests/unit/validation/test_checker_canonical_file_shape.py -k burndown"
+  - id: req-omn21515-commit-time-base
+    statement: The commit-time run, which names no base, compares the index with the merge base of HEAD
+      and the landing ref the validator contract names, the way CI compares a pull request.
+    acceptance:
+      - id: AC16
+        statement: "AC16 (Commit-time base): with no --base, a base finding added to the burn-down file
+          a branch already installed is admitted; an entry for a file the branch added is burndown-extra-entry,
+          an added entry when the file exists at the merge base is baseline-growth, and with no resolvable
+          landing ref, an explicit --base, or unrelated history the base is HEAD or the flag -- falsifier:
+          uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_commit_time_merge_base.py"
 evidence_requirements:
   - kind: tests
     description: The checker, runtime and ported rule tests pass at the pushed head.
@@ -310,4 +342,50 @@ dod_evidence:
       - check_type: test_passes
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/test_node_ledger_write_guard_effect.py
           -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-extra-entry
+    description: A first install that lists an added, renamed-in or baseline-duplicated path is refused
+      as burndown-extra-entry, one issue per extra entry, and a modified base finding is admitted.
+    source: manual
+    binds_ac: [AC13]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -q --no-cov -n 0 -o addopts='' -k "extra_line or extra_entry or modified_base_finding"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-ticket-uncited
+    description: A first install whose ticket no commit message cites is burndown-ticket-uncited, a cited
+      ticket admits it, a prefix-sharing id does not count, and with no message known the rule is deferred;
+      the revision run reads the commit range.
+    source: manual
+    binds_ac: [AC14]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -q --no-cov -n 0 -o addopts='' -k "uncited or ticket_cited or shares_a_prefix or commit_range"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-burndown-planted
+    description: Every burn-down refusal has a named planted test, and the two new rules have fixture
+      pairs and mutation-table rows.
+    source: manual
+    binds_ac: [AC15]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_burndown_baseline.py
+          -q --no-cov -n 0 -o addopts='' -k planted
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
+          -q --no-cov -n 0 -o addopts='' -k "burndown or every_parameter_key or every_contract_rule"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21515-commit-time-merge-base
+    description: The commit-time run judges the index against the merge base of HEAD and the landing ref,
+      so a base finding added to a burn-down file the branch installed is admitted, while an entry for
+      an added file and growth over a merge base that has the file stay refused.
+    source: manual
+    binds_ac: [AC16]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_commit_time_merge_base.py
+          -q --no-cov -n 0 -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core

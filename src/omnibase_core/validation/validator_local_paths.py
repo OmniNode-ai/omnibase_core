@@ -20,12 +20,11 @@ Usage Examples:
 
     CLI — check staged files (pre-commit mode)::
 
-        python -m omnibase_core.validation.validator_local_paths file1.py file2.md
+        python -m omnibase_core.nodes.node_local_paths_check_compute.runtime_local_paths_check file1.py file2.md
 
     CLI — check entire repository::
 
-        python -m omnibase_core.validation.validator_local_paths .
-        python -m omnibase_core.validation.validator_local_paths src/ plugins/
+        python -m omnibase_core.nodes.node_local_paths_check_compute.runtime_local_paths_check .
 
 Suppression:
     Add ``# local-path-ok`` anywhere on a line to suppress that line::
@@ -202,68 +201,7 @@ class ValidatorLocalPaths(BaseModel):
                     if child.is_file():
                         all_violations.extend(self.check_file(child))
             else:
-                print(
-                    f"Warning: check-local-paths: skipping non-existent path: {p}",
-                    file=sys.stderr,
+                sys.stderr.write(
+                    f"Warning: check-local-paths: skipping non-existent path: {p}\n"
                 )
         return all_violations
-
-
-# ---------------------------------------------------------------------------
-# CLI
-# ---------------------------------------------------------------------------
-
-
-def main(argv: list[str] | None = None) -> int:
-    """CLI entrypoint. Accepts files (pre-commit staged mode) or directories (full scan).
-
-    Exit codes:
-        0 — no violations
-        1 — violations found
-    """
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        prog="check-local-paths",
-        description=(
-            "Detect machine-specific absolute paths that break portability. "
-            "Checks /Volumes/..., /Users/..., /home/..., C:\\Users\\..."
-        ),
-    )
-    parser.add_argument(
-        "paths",
-        nargs="*",
-        type=Path,
-        default=[Path()],
-        help="Files or directories to check (default: current directory)",
-    )
-    parser.add_argument(
-        "--quiet",
-        "-q",
-        action="store_true",
-        help="Suppress per-violation context lines and summary",
-    )
-    parsed = parser.parse_args(argv)
-
-    validator = ValidatorLocalPaths()
-    violations = validator.check_paths(parsed.paths)
-
-    for v in violations:
-        print(f"{v.file}:{v.line}:{v.column}: [{v.pattern_name}] {v.matched_text!r}")
-        if not parsed.quiet:
-            print(f"  {v.context}")
-
-    if not parsed.quiet:
-        if violations:
-            print(
-                f"\n{len(violations)} local path violation(s). "
-                f"Remove hardcoded paths or add `# {_SUPPRESSION_MARKER}` to suppress."
-            )
-        else:
-            print("No local path violations found.")
-
-    return 1 if violations else 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())

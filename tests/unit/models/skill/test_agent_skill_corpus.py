@@ -19,7 +19,7 @@ from omnibase_core.enums.enum_agent_skill_render_profile import (
     EnumAgentSkillRenderProfile,
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_agent_skill_codec import (
+from omnibase_core.validation.checker_agent_skill_codec import (
     parse_skill_md,
     read_skill_md,
 )

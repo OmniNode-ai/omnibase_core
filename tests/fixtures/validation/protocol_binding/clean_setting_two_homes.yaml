@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Each setting key has a literal value in one contract only.
+contracts:
+  node_a/contract.yaml:
+    name: node_a
+    settings:
+      retry_window: 30
+  node_b/contract.yaml:
+    name: node_b
+    settings:
+      batch_size: 45

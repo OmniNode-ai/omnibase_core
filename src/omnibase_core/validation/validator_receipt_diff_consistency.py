@@ -39,10 +39,8 @@ OMN-13888 supersession model, never edited.
 
 from __future__ import annotations
 
-import argparse
 import re
-import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from pathlib import Path
 
 from omnibase_core.enums.ticket.enum_diff_attestation import EnumDiffAttestation
@@ -299,87 +297,9 @@ def scan_receipt_files_with_diff(
     return findings
 
 
-# ---------------------------------------------------------------------------
-# CLI entry point
-# ---------------------------------------------------------------------------
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    """CLI: check changed receipts' attestations against a name-status diff.
-
-    Usage::
-
-        git diff --name-status "origin/dev"...HEAD > /tmp/diff_name_status.txt
-        python -m omnibase_core.validation.validator_receipt_diff_consistency \\
-            --diff-file /tmp/diff_name_status.txt \\
-        drift/dod_receipts/OMN-1234/item/command.yaml ...
-
-    Exit codes:
-        0 — no contradicted attestations
-        1 — one or more contradicted attestations, or a missing/unreadable diff file
-    """
-    parser = argparse.ArgumentParser(
-        description=(
-            "Receipt-attestation diff-consistency gate (OMN-13927): fail when a "
-            "receipt attests a diff-falsifiable claim (NET_NEW_ONLY, "
-            "RECEIPTS_UNMODIFIED, CONTRACT_UNMODIFIED) that its own PR diff "
-            "contradicts."
-        )
-    )
-    parser.add_argument(
-        "--diff-file",
-        required=True,
-        help="Path to a file containing `git diff --name-status <base>...<head>` output.",
-    )
-    parser.add_argument(
-        "receipt_paths",
-        nargs="*",
-        help="Receipt YAML files changed on this PR (the receipts to check).",
-    )
-    args = parser.parse_args(argv)
-
-    diff_path = Path(args.diff_file)
-    try:
-        diff_text = diff_path.read_text(encoding="utf-8")
-    except OSError as exc:
-        print(f"ERROR: cannot read --diff-file {diff_path}: {exc}", file=sys.stderr)
-        return 1
-    name_status = parse_name_status(diff_text)
-
-    explicit_paths = [Path(p) for p in args.receipt_paths]
-    if not explicit_paths:
-        print("RECEIPT DIFF-CONSISTENCY GATE PASSED: no changed receipt files to check")
-        return 0
-
-    findings = scan_receipt_files_with_diff(explicit_paths, name_status)
-    if not findings:
-        print(
-            "RECEIPT DIFF-CONSISTENCY GATE PASSED: "
-            f"0 contradicted attestations across {len(explicit_paths)} receipt(s)"
-        )
-        return 0
-
-    total = sum(len(f.violations) for f in findings)
-    print(
-        f"RECEIPT DIFF-CONSISTENCY GATE FAILED: {total} contradicted attestation(s) "
-        f"across {len(findings)} receipt(s):\n"
-    )
-    for finding in findings:
-        for v in finding.violations:
-            print(f"  [{v.attestation}] {finding.receipt_path}")
-            print(f"    {v.detail}")
-            print()
-    return 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
-
-
 __all__ = [
     "EnumDiffAttestation",
     "check_diff_consistency",
-    "main",
     "parse_name_status",
     "scan_receipt_files_with_diff",
 ]

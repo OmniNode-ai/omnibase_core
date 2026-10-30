@@ -4,14 +4,6 @@
 # and the entry is lowered (deleted at zero) in the same change. A file may not hold more than
 # its entry, an entry must equal what the file holds, and an entry the base branch lacks fails.
 # Do not add a line; do not raise a count.
-src/omnibase_core/handlers/handler_action_pin.py 2
-src/omnibase_core/handlers/handler_ci_inheritance.py 1
-src/omnibase_core/handlers/handler_cosmetic_lint.py 1
-src/omnibase_core/handlers/handler_dependency_direction.py 1
-src/omnibase_core/handlers/handler_internal_sibling_pins.py 6
-src/omnibase_core/handlers/handler_merge_queue_parity.py 6
-src/omnibase_core/handlers/handler_no_bare_feature_flags.py 7
-src/omnibase_core/handlers/handler_no_hardcoded_topics.py 5
 src/omnibase_core/models/validation/model_validation_report.py 2
 src/omnibase_core/nodes/node_git_file_listing_effect/handler_readme_only_docs.py 2
 src/omnibase_core/nodes/node_integration_skips_check_compute/runtime_integration_skips_check.py 2
@@ -35,7 +27,7 @@ src/omnibase_core/validation/db/validator_db_table_access.py 2
 src/omnibase_core/validation/delegation/validator_delegation_profile.py 2
 src/omnibase_core/validation/phases/validator_expanded_contract.py 4
 src/omnibase_core/validation/phases/validator_merge.py 3
-src/omnibase_core/validation/validator_backend_secret_discipline.py 7
+src/omnibase_core/validation/validator_backend_secret_discipline.py 6
 src/omnibase_core/validation/validator_banned_compose_vars.py 3
 src/omnibase_core/validation/validator_base.py 3
 src/omnibase_core/validation/validator_canonical_inference.py 6
@@ -62,7 +54,6 @@ src/omnibase_core/validation/validator_receipt_runtime_identity.py 3
 src/omnibase_core/validation/validator_receipt_supersession.py 2
 src/omnibase_core/validation/validator_requirements_consumer.py 1
 src/omnibase_core/validation/validator_reserved_enum.py 1
-src/omnibase_core/validation/validator_routing_authority.py 4
 src/omnibase_core/validation/validator_runtime_lane_roles.py 1
 src/omnibase_core/validation/validator_runtime_profiles.py 2
 src/omnibase_core/validation/validators/validator_common.py 4

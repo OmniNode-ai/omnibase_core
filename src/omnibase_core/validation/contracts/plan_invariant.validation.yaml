@@ -1,0 +1,69 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21559: every plan format, literal expression and diagnostic is rule data.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: plan_invariant
+  validator_name: Plan Invariant Validator
+  validator_description: >-
+    Refuse tasks without a falsifiable criterion, tasks naming literal runtime values, and declared invariants
+    without an enforcing task. Task and criterion syntax and the falsifier predicate belong to the committed
+    K12 task_criteria contract.
+  target_patterns: ["**/beta/plans/*.md"]
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: task_without_falsifiable_criterion
+      description: Require at least one criterion carrying a K12 falsifier in every task.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} has no falsifiable criterion; add an action and an observable result"
+        source_pattern: 'beta/plans/[^/]*\.md$'
+    - rule_id: task_names_literal_value
+      description: Require runtime values to be supplied by configuration rather than named in a task.
+      severity: error
+      enabled: true
+      parameters:
+        message: "task {subject} names a literal {kind}: {literal}; declare it in contract configuration"
+        source_pattern: 'beta/plans/[^/]*\.md$'
+        literal_kinds:
+          - 'host::(?i)\b(?:(?:\d{1,3}\.){3}\d{1,3}|localhost|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.(?:local|lan|internal))\b'
+          - 'port::(?i)\bport\s*[:=]?\s*\d{2,5}\b|\b(?:(?:\d{1,3}\.){3}\d{1,3}|localhost|[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?\.(?:local|lan|internal)):\d{2,5}\b'
+          - 'topic::\bonex\.(?:evt|cmd|dlq|snapshot)\.[^\s`"\x27,;]+'
+          - 'model::(?i)\b(?:claude|gpt|gemini|qwen|glm|llama|mistral|deepseek)[-_]?(?:[a-z]+[-_])*[a-z]?\d[\w.-]*\b'
+          - 'timeout::(?i)\btimeout\s*[:=]?\s*\d+(?:\.\d+)?\s*(?:ms|s|sec(?:onds?)?|m|min(?:utes?)?)?\b'
+          - 'url::https?://\S+'
+          - 'path::/(?:Users|Volumes|home|opt|etc|var|tmp)/[^\s`"\x27]+'
+    - rule_id: invariant_without_enforcing_task
+      description: Require every invariant declaration to be named by an enforcing task.
+      severity: error
+      enabled: true
+      parameters:
+        message: "invariant {subject} has no enforcing task; add it to a task's Enforces bullet"
+        source_pattern: 'beta/plans/[^/]*\.md$'
+        invariants_heading_pattern: '^#{2,3}\s+Invariants\s*$'
+        section_end_pattern: '^#{1,3}\s'
+        invariant_pattern: '^\s*-\s+(INV-\d+):\s+.+$'
+        enforces_pattern: '^\s*-\s+Enforces:\s*(.*)$'
+        id_pattern: '\bINV-\d+\b'
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

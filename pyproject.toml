@@ -82,18 +82,15 @@ omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
 # OMN-19405 (typed work ledger T5): the read CLI; folds the JSON-lines ledger at
 # ONEX_WORK_LEDGER_PATH and answers one query. Exit 0 CLEAR, 3 HELD/FOUND, 2 UNDECIDED.
 onex-work-ledger = "omnibase_core.nodes.node_work_ledger_state_compute.runtime_work_ledger:main"
-check-local-paths = "omnibase_core.validation.validator_local_paths:main"
-check-github-token-env-reads = "omnibase_core.validation.validator_github_token_env_reads:main"
+check-local-paths = "omnibase_core.nodes.node_local_paths_check_compute.runtime_local_paths_check:main"
+check-github-token-env-reads = "omnibase_core.nodes.node_github_token_env_reads_check_compute.runtime_github_token_env_reads_check:main"
 # OMN-20918 (OCC retirement S8): the imperative contract guard moved from onex_change_control;
 # reads the caller's own allowlist and refuses one that gains a path against the merge base.
 check-imperative-contracts = "omnibase_core.nodes.node_imperative_contract_guard_check_effect.runtime_imperative_contract_guard_check:main"
 # OMN-19998: refuse a dependency on a repository at the same or a higher layer of
 # the declared order, through any channel; every repository runs it via
 # .github/workflows/dependency-direction.yml and the pre-commit hook.
-check-dependency-direction = "omnibase_core.handlers.handler_dependency_direction_cli:main"
-# OMN-17427: how a workflow `uses:` ref must be pinned. Third-party actions take a full
-# 40-hex sha; first-party refs take the dev-merge tag the repository's overlay names.
-check-action-pins = "omnibase_core.handlers.handler_action_pin_cli:main"
+check-dependency-direction = "omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check:main"
 # OMN-21494: resolve operator-private vocabularies through the shared core node.
 resolve-private-vocabulary = "omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary:main"
 # OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator
@@ -104,16 +101,15 @@ check-no-backward-compat = "omnibase_core.nodes.node_backward_compat_check_compu
 # package ahead of the registry consumers that install it, and a job the merge
 # queue runs that pull request CI skips; every repository runs both via
 # .github/workflows/version-drift.yml and the pre-commit hooks.
-check-merge-queue-parity = "omnibase_core.handlers.handler_merge_queue_parity_cli:main"
+check-merge-queue-parity = "omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check:main"
 # OMN-19998: CI runners are for private repositories only (RULING 2026-10-16T07:07:09Z).
 # Refuse a public repository adding a job whose runs-on is, or can resolve to, a
 # self-hosted label, against the shrink-only baseline shipped in the package; every
 # repository runs it via .github/workflows/version-drift.yml and the pre-commit hook.
 # OMN-19998: internal siblings resolve from dev merge tags, never a release, sha or branch.
-check-internal-sibling-pins = "omnibase_core.handlers.handler_internal_sibling_pins_cli:main"
 # OMN-14401: reject config/registry YAML files declaring duplicate ids over a
 # non-unique key (checked registries are config-as-data via a manifest file).
-check-duplicate-registry-ids = "omnibase_core.validation.validator_duplicate_config_ids:main"
+check-duplicate-registry-ids = "omnibase_core.nodes.node_duplicate_config_ids_check_compute.runtime_duplicate_config_ids_check:main"
 # OMN-13293 (G1): the same local-paths check executed as a COMPUTE node over the
 # in-memory event bus (two-transport seam; Kafka backend in CI). Proven
 # equivalent to check-local-paths on the G1 corpus + 6999-file shadow-bake.
@@ -154,7 +150,7 @@ check-doc-content-scan-compute = "omnibase_core.validation.doc_content_scan.runt
 onex-validate-topics = "omnibase_core.nodes.node_topic_names_check_compute.runtime_topic_names_check:main"
 validate-string-versions = "omnibase_core.validation.scripts.validate_string_versions:main"
 onex-validate-links = "omnibase_core.nodes.node_markdown_links_check_compute.runtime_markdown_links_check:main"
-onex-demo-path-topic-gate = "omnibase_core.validation.validator_demo_path_topic_coherence:main"
+onex-demo-path-topic-gate = "omnibase_core.nodes.node_demo_path_topic_coherence_check_compute.runtime_demo_path_topic_coherence_check:main"
 # OMN-13663: projection exposure⇄column drift validator. Reconciles every
 # projection node contract.yaml's projection_api.exposures against the
 # materialized columns of the table/view each reads from (extracted from the
@@ -418,17 +414,10 @@ ignore = [
 "src/omnibase_core/models/metadata/model_example_string_reduction_improvements.py" = ["T201"]
 "src/omnibase_core/services/service_validation_suite.py" = ["T201"]
 "src/omnibase_core/validation/validator_architecture.py" = ["T201"]
-"src/omnibase_core/validation/validator_banned_compose_vars.py" = ["T201"]
-"src/omnibase_core/validation/validator_requirements_consumer.py" = ["T201"]
 # OMN-13574: CLI runner for the Model-B rollup-coverage verifier prints findings.
-"src/omnibase_core/validation/validator_rollup_coverage.py" = ["T201"]
 "src/omnibase_core/validation/validator_base.py" = ["T201"]
 "src/omnibase_core/validation/validator_circular_import.py" = ["T201"]
 "src/omnibase_core/validation/validator_cli.py" = ["T201"]
-"src/omnibase_core/validation/validator_evidence_shape_cli.py" = ["T201"]  # CLI output for the pre-push Evidence-Source shape check (OMN-14682)
-"src/omnibase_core/validation/validator_receipt_reprobe.py" = ["T201"]  # CLI output for re-probe verification (OMN-9789)
-"src/omnibase_core/validation/validator_receipt_diff_consistency.py" = ["T201"]  # CLI output for the attestation diff-consistency gate (OMN-13927)
-"src/omnibase_core/validation/validator_duplicate_config_ids.py" = ["T201"]  # CLI output for the duplicate-registry-id guard (OMN-14401)
 "scripts/analysis/co_change_dark_matter.py" = ["T201"]
 "scripts/validation/validate_pr_deploy_required.py" = ["T201"]
 "scripts/validation/validate_no_except_swallow.py" = ["T201"]
@@ -439,7 +428,6 @@ ignore = [
 "scripts/check_dep_provenance.py" = ["T201"]  # CLI output for dep-provenance gate (OMN-13873/OMN-13877)
 "scripts/ci/check_import_ratchet.py" = ["T201"]  # CLI output for import-layering growth-ratchet gate (OMN-14340)
 "scripts/ci/check_occ_companion_merged.py" = ["T201"]  # CLI verdict/annotation output for the OCC companion-merged gate (OMN-15222)
-"scripts/ci/canonical_handler_shape.py" = ["T201", "BLE001"]  # CLI output + fail-closed catches for canonical handler-shape ratchet gate (OMN-14355)
 "scripts/ci/rsd_provenance_stamp.py" = ["T201"]  # CLI output for RSD provenance-stamp gate (OMN-15011)
 "scripts/hooks/prepush_override_grant.py" = ["T201"]  # CLI output for the single-use pre-push override grant (OMN-16480, ported by OMN-17159)
 "scripts/ci/verify_flip_bundle.py" = ["T201", "BLE001"]  # CLI output + fail-closed ValidationError catch for the flip-bundle seam gate (OMN-14809)
@@ -449,10 +437,7 @@ ignore = [
 "scripts/validation/validate_precommit_fail_loud.py" = ["T201"]  # CLI output for WS7 pre-commit fail-loud meta-gate (OMN-14671)
 "scripts/validation/validate_precommit_pin_parity.py" = ["T201"]  # CLI output for WS7 pre-commit pin-parity gate (OMN-14671)
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
-"src/omnibase_core/validation/validator_routing_authority.py" = ["T201"]  # CLI output for routing-authority gate (OMN-13306)
 "src/omnibase_core/validation/delegation/validator_delegation_profile.py" = ["T201"]  # CLI output for delegation-profile hook (OMN-13306)
-"src/omnibase_core/validation/validator_local_paths.py" = ["T201"]
-"src/omnibase_core/validation/validator_github_token_env_reads.py" = ["T201"]  # CLI output for github-token env-read gate (OMN-13310)
 "src/omnibase_core/validation/hardcoded_model_config/runtime_hardcoded_model_config.py" = ["T201"]  # OMN-19252: CLI verdict to stdout
 # OMN-13497: CLI runner for the no-faked-boundary COMPUTE validator prints findings.
 "src/omnibase_core/validation/no_faked_boundary/runtime_no_faked_boundary.py" = ["T201"]
@@ -476,20 +461,14 @@ ignore = [
 "src/omnibase_core/nodes/node_test_selector_compute/runtime_test_selector.py" = ["T201"]
 # OMN-14694/OMN-14662: CLI runner for the no-io-outside-effects COMPUTE node prints findings.
 "src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/runtime_no_io_outside_effects_check.py" = ["T201"]
-"src/omnibase_core/validation/validator_transport_import.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-13283)
-"src/omnibase_core/validation/validator_node_purity.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-13283)
 "src/omnibase_core/validation/antipattern_checker.py" = ["T201"]  # CLI output for pre-commit hook violations (OMN-11923)
 "src/omnibase_core/validation/validator_skill_backing_node.py" = ["T201"]
 "src/omnibase_core/validation/validator_patterns.py" = ["T201"]
 "src/omnibase_core/validation/validator_types.py" = ["T201"]
-"src/omnibase_core/validation/validator_receipt_honesty.py" = ["T201"]  # CLI output for honesty gate scan results (OMN-12791)
-"src/omnibase_core/validation/validator_receipt_runtime_identity.py" = ["T201"]  # CLI output for the runtime-identity gate scan results (OMN-17308)
 "src/omnibase_core/validation/cross_repo/cli.py" = ["T201"]
 "src/omnibase_core/validation/scripts/cross_platform_timeout.py" = ["T201"]
 "src/omnibase_core/validation/scripts/timeout_utils.py" = ["T201"]
 "src/omnibase_core/validation/scripts/validate_string_versions.py" = ["T201"]
-"src/omnibase_core/validation/validator_demo_path_topic_coherence.py" = ["T201"]  # CLI output for demo-path topic coherence gate (OMN-12777)
-"src/omnibase_core/validation/validator_backend_secret_discipline.py" = ["T201"]  # CLI output for backend secret-ref discipline gate (OMN-13305)
 "scripts/pin_bump.py" = ["T201"]  # CLI output for publish-downstream-pin-bump workflow [OMN-9050]
 "scripts/emit_ts_types.py" = ["T201"]  # CLI output for omnidash-v2 TS type generation
 "scripts/validate_deterministic_skill_routing.py" = ["T201"]  # CLI output for CI gate report
@@ -624,3 +603,6 @@ exclude_lines = [
     "@abstractmethod",
     "@abc.abstractmethod"
 ]
+
+[tool.uv.sources]
+omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "dev-20261028203020-ce27d197198f" }

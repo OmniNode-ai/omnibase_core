@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Validator-runtime overlay, Redpanda (OMN-21529). One of a named pair with
+# validator_runtime.inmemory.overlay.yaml: the two differ only in the `bus` binding.
+# The broker address comes from the launch environment; an unset value fails the bind.
+name: validator-runtime
+profile: default
+bus:
+  implementation: omnibase_infra.event_bus.event_bus_kafka:EventBusKafka
+  constructor: from_bootstrap
+  argument: ${env.KAFKA_BOOTSTRAP_SERVERS}

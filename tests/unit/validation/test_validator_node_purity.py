@@ -9,10 +9,12 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.nodes.node_node_purity_check_compute.runtime_node_purity_check import (
+    main,
+)
 from omnibase_core.validation.validator_node_purity import (
     EnumNodePurityRule,
     ValidatorNodePurity,
-    main,
 )
 
 pytestmark = pytest.mark.unit

@@ -1,0 +1,4 @@
+def publish(event_bus, event):
+    if isinstance(event_bus, EventBusKafka):
+        return event_bus.flush()
+    return None

@@ -23,13 +23,15 @@ from unittest.mock import patch
 
 import pytest
 
+from omnibase_core.nodes.node_naming_convention_check_compute.runtime_naming_convention_check import (
+    main,
+)
 from omnibase_core.validation.checker_naming_convention import (
     ALLOWED_FILE_PREFIXES,
     ALLOWED_FILES,
     DIRECTORY_PREFIX_RULES,
     NamingConventionChecker,
     check_file_name,
-    main,
     validate_directory,
 )
 

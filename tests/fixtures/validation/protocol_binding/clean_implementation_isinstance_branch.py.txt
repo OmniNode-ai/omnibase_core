@@ -1,0 +1,4 @@
+def publish(event_bus, event):
+    if isinstance(event, dict):
+        return event_bus.publish(event)
+    return None

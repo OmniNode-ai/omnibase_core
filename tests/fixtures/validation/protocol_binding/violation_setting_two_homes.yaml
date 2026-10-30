@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Two node contracts that both hold a literal value for the same setting key.
+contracts:
+  node_a/contract.yaml:
+    name: node_a
+    settings:
+      retry_window: 30
+  node_b/contract.yaml:
+    name: node_b
+    settings:
+      retry_window: 45

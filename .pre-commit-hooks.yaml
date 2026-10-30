@@ -27,7 +27,7 @@
     basenames. Ported from onex_change_control (OMN-20074, S8) under the same hook id, so a consumer changes
     only repo: and rev:.
   language: python
-  entry: python -m omnibase_core.handlers.handler_no_hardcoded_topics
+  entry: python -m omnibase_core.nodes.node_no_hardcoded_topics_check_compute.runtime_no_hardcoded_topics_check
   types_or: [python, yaml, ts, javascript]
   pass_filenames: true
   require_serial: true
@@ -42,7 +42,7 @@
     Ported from onex_change_control (OMN-20074, S8) under the same hook id, so a consumer changes only
     repo: and rev:.
   language: python
-  entry: python -m omnibase_core.handlers.handler_no_bare_feature_flags
+  entry: python -m omnibase_core.nodes.node_no_bare_feature_flags_check_compute.runtime_no_bare_feature_flags_check
   types_or: [python, ts, javascript]
   pass_filenames: true
   require_serial: true
@@ -66,7 +66,7 @@
     Cross-repo cosmetic linter enforcing OmniNode platform standards. Ported from onex_change_control
     (OMN-20074, S8) under the same hook id, so a consumer changes only repo: and rev:.
   language: python
-  entry: python -m omnibase_core.handlers.handler_cosmetic_lint check
+  entry: python -m omnibase_core.nodes.node_cosmetic_lint_check_compute.runtime_cosmetic_lint_check check
   types: [file]
   pass_filenames: false
   always_run: true
@@ -79,7 +79,7 @@
     Covers /Volumes/, /Users/, /home/, and Windows user paths. Add `# local-path-ok` to suppress a specific
     line.
   language: python
-  entry: python -m omnibase_core.validation.validator_local_paths
+  entry: python -m omnibase_core.nodes.node_local_paths_check_compute.runtime_local_paths_check
   types: [text]
   pass_filenames: true
   require_serial: true
@@ -94,7 +94,7 @@
     .duplicate-id-registries.yaml at repo root); a repo with no manifest is a no-op. Consumers pass --manifest
     / --repo-root via args: and scope triggering via files: on the manifest + declared registry paths.
   language: python
-  entry: python -m omnibase_core.validation.validator_duplicate_config_ids
+  entry: python -m omnibase_core.nodes.node_duplicate_config_ids_check_compute.runtime_duplicate_config_ids_check
   pass_filenames: false
   stages: [pre-commit]
 
@@ -238,7 +238,7 @@
     ONEX_INPUT_TOPIC persisted in compose after code removal. Consumer repos MUST override `args:` to
     pass `--kernel-source` pointing at their vendored/checked-out service_kernel.py path.
   language: python
-  entry: python -m omnibase_core.validation.validator_banned_compose_vars
+  entry: python -m omnibase_core.nodes.node_banned_compose_vars_check_compute.runtime_banned_compose_vars_check
   files: (docker-compose.*\.ya?ml|k8s/.*\.ya?ml|kubernetes/.*\.ya?ml)$
   pass_filenames: true
   require_serial: true
@@ -317,7 +317,8 @@
   description: >
     Compare normalization chains at producer and consumer call sites and reject divergent topic handling.
   language: system
-  entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.checker_normalization_symmetry src
+  entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_normalization_symmetry_check_compute.runtime_normalization_symmetry_check
+    src
   pass_filenames: false
   always_run: true
   stages: [pre-commit]
@@ -331,7 +332,7 @@
     on any violation in supplied receipt files. Operates over a drift/dod_receipts/ when no filenames
     are supplied; pass --receipts-dir to override.
   language: python
-  entry: python -m omnibase_core.validation.validator_receipt_honesty
+  entry: python -m omnibase_core.nodes.node_receipt_honesty_check_compute.runtime_receipt_honesty_check
   types: [yaml]
   files: drift/dod_receipts/.*\.yaml$
   pass_filenames: true
@@ -375,7 +376,7 @@
     (OMN-12856 / OMN-13310). Excludes tests/, conftest.py, __pycache__, .pyc files. Suppression: # omn-allow-env-read
     or # ONEX_EXCLUDE on the offending line. Implemented as a canonical COMPUTE handler on ProtocolMessageHandler.
   language: python
-  entry: uv run python -m omnibase_core.validation.validator_github_token_env_reads
+  entry: uv run python -m omnibase_core.nodes.node_github_token_env_reads_check_compute.runtime_github_token_env_reads_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -408,7 +409,7 @@
     handler. Suppression: # contract-config-ok for bootstrap-config-loader bootstrap env reads. See: OMN-13306
     (W6b).
   language: python
-  entry: python -m omnibase_core.validation.validator_routing_authority
+  entry: python -m omnibase_core.nodes.node_routing_authority_check_compute.runtime_routing_authority_check
   pass_filenames: false
   stages: [pre-commit]
 
@@ -422,7 +423,7 @@
     never grow. Migration debt: OMN-12806 (omnibase_core), OMN-12807 (omnibase_infra), OMN-12808 (others).
     Suppression: # url-authority-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_url_authority
+  entry: python -m omnibase_core.nodes.node_url_authority_check_compute.runtime_url_authority_check
   args: [--repo, omnibase_core, --repo-root, .]
   types: [python]
   pass_filenames: true
@@ -440,7 +441,7 @@
     Usage: add to your repo's .pre-commit-config.yaml referencing omnibase_core and pass --repo <your-repo-name>
     --baseline architecture-handshakes/validator-requirements-baseline.yaml. See OMN-13291 and architecture-handshakes/validator-requirements-baseline.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_requirements_consumer
+  entry: python -m omnibase_core.nodes.node_requirements_consumer_check_compute.runtime_requirements_consumer_check
   pass_filenames: false
   always_run: true
   stages: [pre-commit]
@@ -498,7 +499,7 @@
     is NOT a logical reference (OMN-17931): only-api_key_env fails; api_key_env beside a real reference
     is migration debt. ADC and API-key auth are mutually exclusive per backend.
   language: python
-  entry: python -m omnibase_core.validation.validator_backend_secret_discipline
+  entry: python -m omnibase_core.nodes.node_backend_secret_discipline_compute.runtime_backend_secret_discipline
   files: \.(ya?ml|json)$
   pass_filenames: true
   require_serial: true
@@ -676,7 +677,7 @@
     to grandfather today's findings by fingerprint; only new ones fail and --update-baseline refuses growth.
     No inline suppression. Pass --repo-root so finding paths are repo-relative.
   language: python
-  entry: python -m omnibase_core.validation.validator_no_lane_literal_branching
+  entry: python -m omnibase_core.nodes.node_no_lane_literal_branching_check_compute.runtime_no_lane_literal_branching_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -693,7 +694,7 @@
     the enclosing node contract.yaml declares descriptor.agent_invocation: true (OMN-13249 — a contract
     fact, never a free-text comment). Suppression: # canonical-inference-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_canonical_inference
+  entry: python -m omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check
   args: [--repo, omnibase_core, --repo-root, .]
   types: [python]
   pass_filenames: true
@@ -764,7 +765,7 @@
     all transport plumbing. TYPE_CHECKING-guarded imports are allowed. Canonical fleet-wide replacement
     for the per-repo validate_no_transport_imports.py scripts. Suppression: # transport-import-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_transport_import
+  entry: python -m omnibase_core.nodes.node_transport_import_check_compute.runtime_transport_import_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -795,7 +796,7 @@
     inside files under a 'nodes' directory. Canonical fleet-wide replacement for the per-repo io_audit
     packages. Suppression: # node-purity-ok: <reason>
   language: python
-  entry: python -m omnibase_core.validation.validator_node_purity
+  entry: python -m omnibase_core.nodes.node_node_purity_check_compute.runtime_node_purity_check
   types: [python]
   pass_filenames: true
   require_serial: true
@@ -862,7 +863,7 @@
     blocks a commit; the failing gate on typed machines is analyze_fsm in the consumer's own test. Contracts
     it cannot load strictly are listed NOT_ARMED. Consumers pass the roots to scan via args (default src).
   language: python
-  entry: python -m omnibase_core.validation.validator_contract_walker
+  entry: python -m omnibase_core.nodes.node_contract_walker_check_compute.runtime_contract_walker_check
   files: (^|/)contract\.yaml$
   pass_filenames: false
   verbose: true
@@ -923,9 +924,16 @@
     file is not edited, and a path either file lists is admitted. The base revision having no burn-down
     file is what admits the install; after that an added line is refused as baseline-growth (a one-for-one
     rename is admitted), --prune-baseline shrinks it, and it stays even when empty (burndown-baseline-removed).
-    There is no allowlist and no suppression comment. Checks the whole index against HEAD. CI runs the
-    same hook after `git reset --soft <merge-base>`, so the index holds the pull request's change. Includes
-    the node-home rule group (also available alone as check-node-home).
+    The install is bound to what existed at base and to its ticket: an entry for a file the change adds,
+    copies or renames in, or one the baseline file already lists, is refused (burndown-extra-entry), and
+    the ticket on the header's first comment line must appear in a commit message of the change (burndown-ticket-uncited).
+    A pre-commit run on the index knows no message and defers that check to the canonical-file-shape-release-trailer
+    commit-msg hook and to a revision run (--base and --head), so install the commit-msg hook type and
+    name the burn-down ticket id in the commit message of the switch change. There is no allowlist and
+    no suppression comment. Checks the whole index against the merge base of HEAD and the landing ref
+    (HEAD when none resolves), so a branch that already committed the burn-down file is judged as CI judges
+    it. CI runs the same hook after `git reset --soft <merge-base>`, so the index holds the pull request's
+    change. Includes the node-home rule group (also available alone as check-node-home).
   language: python
   entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
   pass_filenames: false
@@ -1209,7 +1217,7 @@
     pre-existing violations recorded there warn, new ones fail. The full tree and the shrink-only baseline
     ratchet run in CI through .github/workflows/dependency-direction.yml.
   language: python
-  entry: python -m omnibase_core.handlers.handler_dependency_direction_cli
+  entry: python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check
   files: (\.py|(^|/)pyproject\.toml|(^|/)(requirements|constraints)[^/]*\.(txt|in)|(^|/)(Dockerfile|Containerfile)[^/]*|\.dockerfile|\.(sh|bash|zsh|mk)|(^|/)(GNU)?Makefile|^\.github/.*\.ya?ml)$
   pass_filenames: true
   require_serial: true
@@ -1240,7 +1248,7 @@
     Pre-existing violations recorded in the repository's .onex_ratchets/merge_queue_parity_baseline.yaml
     warn; the baseline only shrinks against the base in CI through .github/workflows/version-drift.yml.
   language: python
-  entry: python -m omnibase_core.handlers.handler_merge_queue_parity_cli
+  entry: python -m omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: true
   require_serial: true
@@ -1271,7 +1279,7 @@
     <path>; --base-dir and --base-baseline add the base comparison that refuses a new or re-added baseline
     entry.
   language: python
-  entry: python -m omnibase_core.handlers.handler_ci_inheritance_cli
+  entry: python -m omnibase_core.nodes.node_ci_inheritance_check_compute.runtime_ci_inheritance_check
   files: ^\.github/workflows/[^/]+\.ya?ml$
   pass_filenames: false
   require_serial: true
@@ -1280,16 +1288,12 @@
 - id: check-internal-sibling-pins
   name: Internal siblings resolve from dev merge tags (OMN-19998)
   description: >
-    Internal siblings are consumed from the dev merge tag dev-<UTC YYYYMMDDHHMMSS>-<sha12>, not a release
-    (RULINGs 2026-10-16T07:34:18Z and 2026-10-16T09:35:49Z). For every internal sibling in omnibase_core's
-    packaged contracts/internal_sibling_pins.yaml that pyproject.toml declares, refuse a missing [tool.uv.sources]
-    entry, a rev or direct URL sha, a release tag, a branch, any other ref or non-git source, a git source
-    naming another repository, and an exact == version. CI runs the same node through .github/workflows/internal-sibling-pins.yml.
+    Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
+    Third-party workflow actions require full commit SHAs.
   language: python
-  entry: python -m omnibase_core.handlers.handler_internal_sibling_pins_cli
-  args: [--no-staleness]
-  files: (^|/)pyproject\.toml$
-  pass_filenames: true
+  entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
+  files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
+  pass_filenames: false
   require_serial: true
   stages: [pre-commit]
 
@@ -1334,15 +1338,12 @@
 - id: check-action-pins
   name: Workflow action pins (OMN-17427)
   description: >
-    Third-party `uses:` refs in .github/workflows must be a full 40-hex commit sha. First-party refs (the
-    organisations the repository's .action-pin-overlay.yaml names) must be a dev-merge tag matching the
-    overlay's tag pattern; a first-party sha is refused unless the overlay lists that exact value as a
-    known exception with a reason, and a first-party @main is a finding when the overlay keeps it. The
-    overlay is the only source of the organisation, the tag pattern and the exceptions.
+    Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
+    Third-party workflow actions require full commit SHAs.
   language: python
-  entry: python -m omnibase_core.handlers.handler_action_pin_cli
-  files: ^\.github/workflows/[^/]+\.ya?ml$
-  pass_filenames: true
+  entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
+  files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
+  pass_filenames: false
   require_serial: true
   stages: [pre-commit]
 
@@ -1373,6 +1374,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: canonical-handler-shape-ratchet
+  name: Canonical handler-shape check (OMN-21536, K3)
+  description: >
+    Judges every handler class, bound by a contract or not, for a handle the shared runtime cannot adapt,
+    a handler module of bare functions, the event envelope type in a handler core, and a public method
+    that mutates handler state. The patterns, name lists, thresholds and remediation text are the rule
+    rows of handler_shape.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_handler_shape:ValidatorHandlerShape
+  types: [python]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-hook-writes
   name: Pre-commit hooks check, never rewrite (OMN-21498)
   description: >
@@ -1381,8 +1396,32 @@
     known ids and the scan set are the rule rows of hook_writes.validation.yaml; a hook file that yields
     no hooks is an issue, never a pass.
   language: python
-  entry: python -m omnibase_core.validation.validator_hook_writes
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_hook_writes:ValidatorHookWrites
   files: ^(\.pre-commit-config\.yaml|\.pre-commit-hooks\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-event-chain-walker
+  name: Refuse broken contract event chains (OMN-21558)
+  description: Refuses unconsumed topics, unproduced topics, states with no exit and undeclared triggers.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_event_chain_walker:ValidatorEventChainWalker
+  files: (^|/)[^/]*contract\.yaml$
+  pass_filenames: false
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-protocol-binding
+  name: No protocol bound to its implementation in code (OMN-21533, K5)
+  description: >
+    A default implementation constructed, a branch on an implementation class, a module-level table of
+    protocol bindings or a broker client built outside a binding site, and one setting holding a literal
+    value in two node contracts, are refused. The binding sites, the class lists, the key pattern, the
+    contract sections and the baseline path are the rule rows of protocol_binding.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_protocol_binding:ValidatorProtocolBinding
+  files: ^src/.*(\.py|/contract\.yaml)$
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
@@ -1404,6 +1443,22 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-no-io-outside-effects
+  name: No I/O outside EFFECT nodes, in every module of the package (OMN-21532, K4)
+  description: >
+    Every Python module under a node directory whose contract.yaml does not declare an effect archetype,
+    handlers and nested packages included, is refused when it imports a database, network, subprocess,
+    git or Linear client, writes a file, constructs a bus or adapter, reads a file, reads a clock or reads
+    the environment. A module is judged against the nearest contract above it, and a contract that names
+    no recognised archetype is refused. Every list and pattern is a parameters entry of a rule row of
+    no_io_outside_effects.validation.yaml; there is no suppression comment.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_no_io_outside_effects:ValidatorNoIoOutsideEffects
+  files: ^(.*/)?(contract\.yaml|[^/]+\.py)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: commit-hygiene
   name: Commit hygiene (final newline, staged tmp/ files; check-only)
   description: >
@@ -1411,7 +1466,7 @@
     and a staged tmp/ file (staged_tmp_file). Each rule is a refusal; nothing is written or deleted. The
     patterns are the rule rows of commit_hygiene.validation.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
   types: [file]
   pass_filenames: true
   require_serial: true
@@ -1423,7 +1478,7 @@
     Refuse a commit message carrying an AI co-author trailer (ai_coauthor_trailer) and leave the message
     as written. The trailer pattern is a rule row of commit_hygiene.validation.yaml.
   language: python
-  entry: python -m omnibase_core.validation.validator_commit_hygiene
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_commit_hygiene:ValidatorCommitHygiene
   pass_filenames: true
   require_serial: true
   stages: [commit-msg]
@@ -1437,6 +1492,31 @@
   language: python
   entry: python -m omnibase_core.validation.validator_design_record
   files: (design[-_]record)[^/]*\.md$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-task-criteria
+  name: Task criteria check (OMN-21535)
+  description: >
+    Every plan task and contract criterion carries a Configuration and a Bindings criterion and a falsifier
+    that names an action and an observable result; runtime tasks carry the two-overlay, zero-literal and
+    container-resolution criteria. Every pattern, list, digest and remedy text is data of task_criteria.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_task_criteria:ValidatorTaskCriteria
+  files: (beta/plans/[^/]*\.md|contracts/OMN-[^/]*\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-plan-invariant
+  name: Plan invariant check (OMN-21559)
+  description: >
+    Refuse tasks without a falsifiable criterion, tasks naming literal runtime values, and invariants
+    without enforcing tasks. Every pattern and remedy is contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_plan_invariant:ValidatorPlanInvariant
+  files: beta/plans/[^/]*\.md$
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
@@ -1465,6 +1545,21 @@
   language: python
   entry: python -m omnibase_core.validation.validator_binding_conformance
   files: ^.*(/handlers/[^/]+|/handler_[^/]+)\.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-inline-logic
+  name: No program written inline in a workflow or a contract check value (OMN-21534, K9)
+  description: >
+    A workflow run block that runs python as its shell, with -c or from a heredoc, that is longer than
+    the line limit or that holds a for, while or until loop, and a ticket-contract check_value that runs
+    python -c or a shell -c body over the character limit or holding a newline, are refused. The signals,
+    the limits, the remedy text and the scan set are the rule rows of inline_logic.validation.yaml. The
+    remedy is onex run-node <node> or a core hook id.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_inline_logic:ValidatorInlineLogic
+  files: ^(\.github/workflows/[^/]+\.ya?ml|contracts/OMN-[^/]+\.yaml)$
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]

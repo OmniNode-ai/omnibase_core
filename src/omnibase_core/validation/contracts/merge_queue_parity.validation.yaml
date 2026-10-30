@@ -1,15 +1,16 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
-# Workflow selection for the existing merge-queue parity CLI. The remaining
-# parity rules stay in the legacy handler until its generic-format migration.
+# Merge-queue parity rules: workflow selection and every pattern, trigger name,
+# threshold and message the parity handler reads (OMN-21503, OMN-21518).
 version:
   major: 1
   minor: 0
   patch: 0
 validator_id: merge_queue_parity
 validator_name: Merge Queue Parity
-validator_description: Select top-level workflow YAML files for merge-queue parity validation.
+validator_description: Select top-level workflow YAML files and refuse jobs the merge queue runs and pull
+  request CI skips.
 target_patterns:
   - ".github/workflows/*.yml"
   - ".github/workflows/*.yaml"
@@ -20,3 +21,64 @@ rules:
     enabled: true
     parameters:
       path_pattern: '^\.github/workflows/[^/]+\.ya?ml$'
+  - rule_id: trigger_events
+    description: Workflow trigger names and the pull request trigger keys that filter on paths.
+    severity: error
+    enabled: true
+    parameters:
+      queue_event: merge_group
+      pull_request_event: pull_request
+      pull_request_events: [pull_request, pull_request_target]
+      path_filter_keys: [paths, paths-ignore]
+  - rule_id: condition_expression
+    description: Patterns and bounds for reading a job condition per event.
+    severity: error
+    enabled: true
+    parameters:
+      event_atom_pattern: |-
+        ^\s*(?:github\.event_name\s*(==|!=)\s*['"]([^'"]*)['"]|['"]([^'"]*)['"]\s*(==|!=)\s*github\.event_name)\s*$
+      draft_atom_pattern: '^\s*github\.event\.pull_request\.draft\s*$'
+      needs_output_pattern: 'needs\.([A-Za-z0-9_-]+)\.outputs\.'
+      event_name_pattern: 'github\.event_name'
+      max_unknowns: 10
+  - rule_id: finding_report
+    description: Wording of the findings and the fix every finding carries.
+    severity: error
+    enabled: true
+    parameters:
+      remediation: >-
+        Run the job on pull_request whenever it runs on merge_group: drop the merge_group-only condition,
+        the pull_request path filter, or the event-name branch in the gate job. Never add it to the baseline.
+      finding_template: '{path}:{line}: {rule}: {detail}'
+      baselined_template: 'baselined ({ticket}): {message}'
+      stale_template: >-
+        stale baseline entry ({ticket}): {path} job {job} no longer violates {rule}; remove it from the
+        baseline
+  - rule_id: no_pull_request_trigger
+    description: The workflow does not also trigger on pull_request.
+    severity: error
+    enabled: true
+    parameters:
+      message_template: >-
+        the workflow triggers on merge_group and not on pull_request
+  - rule_id: pull_request_path_filter
+    description: The pull_request trigger carries paths or paths-ignore.
+    severity: error
+    enabled: true
+    parameters:
+      message_template: >-
+        the {event} trigger filters on paths; merge_group runs unfiltered
+  - rule_id: merge_queue_only_if
+    description: A job condition can hold on merge_group while false on pull_request.
+    severity: error
+    enabled: true
+    parameters:
+      message_template: >-
+        job {job} can run on merge_group and be skipped on pull_request: if: {condition}
+  - rule_id: event_dependent_gate
+    description: A job is gated on an output of a job whose steps read the event name.
+    severity: error
+    enabled: true
+    parameters:
+      message_template: >-
+        job {job} is gated on needs.{gate}.outputs and job {gate}'s steps branch on github.event_name

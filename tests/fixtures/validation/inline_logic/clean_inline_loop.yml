@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Clean fixture for the inline_loop rule (OMN-21534): a plain command.
+name: clean
+on: push
+jobs:
+  work:
+    runs-on: ubuntu-latest
+    steps:
+      - name: work
+        run: |
+          echo "for the record"

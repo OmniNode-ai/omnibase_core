@@ -1,0 +1,187 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21518
+title: "omnibase_core: bind the rule-table handler families into nodes and remove their baseline lines"
+summary: Six handler families (ci_inheritance, cosmetic_lint, dependency_direction, merge_queue_parity,
+  no_bare_feature_flags, no_hardcoded_topics) move from src/omnibase_core/handlers/ into a node each,
+  with the handler bound in the node's contract.yaml, the handler_*_cli main as the node's runtime, and
+  every rule table as a parameters entry of the family's .validation.yaml. Their lines leave the canonical-file-shape
+  baseline and the checker-rule-data baseline; no line is added to either. The action_pin and internal_sibling_pins
+  families were deleted on dev by omnibase_core#2128 (OMN-21495, first_party_ref), and version_floor_consumers
+  was already migrated by omnibase_core#2127.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21518-bd1-burn-down
+    statement: The BD-1 handler families run as nodes with their rule tables in validation contracts,
+      and the baselines only shrink.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the BD-1 paths are gone from the canonical-file-shape baseline and the diff against
+          the merge base holds only removed lines -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute
+          -q passes and grep -c on the nine family names in .onex_ratchets/canonical_file_shape_baseline.txt
+          prints 0"
+      - id: AC2
+        statement: "AC2: the matching entries of the families are gone from .onex_ratchets/checker_rule_data_baseline.txt
+          and each family's rule tables sit in a .validation.yaml parameters row -- falsifier: uv run
+          pytest tests/unit/validation -q -k 'rule_data or mutat' passes and grep -c on the nine family
+          names in .onex_ratchets/checker_rule_data_baseline.txt prints 0"
+      - id: AC3
+        statement: "AC3: every moved hook id still runs and passes on the tree -- falsifier: uv run pre-commit
+          run --all-files lists the canonical-file-shape, check-ci-inheritance, check-dependency-direction
+          and check-merge-queue-parity hook ids as Passed"
+evidence_requirements:
+  - kind: tests
+    description: The family tests, the ratchet tests and the rule-data tests pass at the pushed head.
+    command: uv run pytest tests/unit/handlers tests/unit/nodes/node_canonical_file_shape_check_compute
+      tests/unit/validation/test_validator_checker_rule_data.py tests/ci -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21518-ac1-file-shape-baseline
+    description: The canonical-file-shape ratchet passes on the checkout and the baseline holds no line
+      of the BD-1 families. Each test file runs separately within the verifier budget; the pipe mutation
+      cases run separately from the remaining file-shape rules. All ratchet cases are retained.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -k 'not stalled_pipe_check'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -q --no-cov -k stalled_pipe_check
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_checkout_has_no_handler_outside_node.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_declared_gate_lists.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_activation.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_admission.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_rule.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_runtime_and_wiring.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "! grep -E 'handler_(action_pin|ci_inheritance|cosmetic_lint|dependency_direction|internal_sibling_pins|merge_queue_parity|no_bare_feature_flags|no_hardcoded_topics|version_floor_consumers)'
+          .onex_ratchets/canonical_file_shape_baseline.txt"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21518-ac2-rule-data
+    description: The checker-rule-data tests pass, the baseline holds no line of the BD-1 families, and
+      every moved rule table has a mutation test over its parameters key.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_checker_rule_data.py -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_ci_inheritance_rules.py tests/unit/handlers/test_handler_cosmetic_lint.py
+          tests/unit/handlers/test_handler_dependency_direction_rules.py tests/unit/handlers/test_handler_merge_queue_parity.py
+          tests/unit/handlers/test_handler_no_bare_feature_flags.py tests/unit/handlers/test_handler_no_hardcoded_topics.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "! grep -E 'handler_(action_pin|ci_inheritance|cosmetic_lint|dependency_direction|internal_sibling_pins|merge_queue_parity|no_bare_feature_flags|no_hardcoded_topics|version_floor_consumers)'
+          .onex_ratchets/checker_rule_data_baseline.txt"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21518-ac3-hook-ids
+    description: The canonical-file-shape, check-ci-inheritance, check-dependency-direction and check-merge-queue-parity
+      hooks still run and pass on the tree through the node runtimes.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "! grep -qE 'handler_(action_pin|ci_inheritance|cosmetic_lint|dependency_direction|internal_sibling_pins|merge_queue_parity|no_bare_feature_flags|no_hardcoded_topics)'
+          .onex_ratchets/canonical_file_shape_baseline.txt && uv run pre-commit run canonical-file-shape
+          --all-files"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "grep -qF 'HandlerCiInheritance().handle(' src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py
+          && uv run pre-commit run check-ci-inheritance --all-files"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "grep -qF 'HandlerDependencyDirection().handle(' src/omnibase_core/nodes/node_dependency_direction_check_effect/runtime_dependency_direction_check.py
+          && uv run pre-commit run check-dependency-direction --all-files"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "grep -qF 'HandlerMergeQueueParity().handle(' src/omnibase_core/nodes/node_merge_queue_parity_check_effect/runtime_merge_queue_parity_check.py
+          && uv run pre-commit run check-merge-queue-parity --all-files"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21518-deploy-checkout-nodes
+    description: Hosted-runner execution of the six relocated families at the checkout. The focused handler,
+      runtime and rule-mutation tests need no private runtime, service or container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_ci_inheritance.py tests/unit/handlers/test_handler_ci_inheritance_cli.py
+          tests/unit/handlers/test_handler_dependency_direction.py tests/unit/handlers/test_handler_merge_queue_parity.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2, AC3]
+  - id: dod-omn21518-deploy-published-node-runtimes
+    description: Read each relocated runtime from the public product repository at the checkout commit.
+      A missing published runtime or a runtime without its relocated handler call fails. The existing
+      checkout tests exercise admission, refusal and rule mutations; these readbacks require only public
+      HTTPS access on hosted runners.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2, AC3]
+    checks:
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py" |
+            grep -F "HandlerCiInheritance().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_cosmetic_lint_check_compute/runtime_cosmetic_lint_check.py" |
+            grep -F "HandlerCosmeticLint().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_dependency_direction_check_effect/runtime_dependency_direction_check.py" |
+            grep -F "HandlerDependencyDirection().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_merge_queue_parity_check_effect/runtime_merge_queue_parity_check.py" |
+            grep -F "HandlerMergeQueueParity().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_no_bare_feature_flags_check_compute/runtime_no_bare_feature_flags_check.py" |
+            grep -F "HandlerNoBareFeatureFlags().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 15 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_no_hardcoded_topics_check_compute/runtime_no_hardcoded_topics_check.py" |
+            grep -F "HandlerNoHardcodedTopics().handle(" > /dev/null'
+        cwd: ${OMNI_HOME}/omnibase_core

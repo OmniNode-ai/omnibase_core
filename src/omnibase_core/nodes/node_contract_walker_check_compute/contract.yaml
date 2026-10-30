@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_contract_walker_check_compute
+node_id: node_contract_walker_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Walk contract state machines and report golden paths, error edges, illegal state and trigger pairs and
+  defects. Report-only: the runtime exits 0 whatever it finds (OMN-19553).
+input_model: omnibase_core.models.nodes.contract_walker_check.model_contract_walker_check_input.ModelContractWalkerCheckInput
+output_model: omnibase_core.models.validation.model_contract_walk_report.ModelContractWalkReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeContractWalkerCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 120000

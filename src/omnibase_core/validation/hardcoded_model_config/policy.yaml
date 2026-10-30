@@ -100,7 +100,7 @@ path_classes:
   - name: SOURCE
     globs:
       - "**"
-    families: [M, E, E-LAN, D, R, L, T, N]
+    families: [M, E, E-LAN, D, R, L, T, N, O, G, F, P, S, H, B]
 
 # Family M: the plan's P1 model-family regex, applied case-insensitively.
 model_id_pattern: >-
@@ -147,6 +147,13 @@ retired_values:
   - "qwen38-serve"
   - "BIFROST_LOCAL_DS_V4_FLASH"
 
+# Families O, G, F, P, S, H and B (OMN-21537, K6) apply to SOURCE only. Their
+# vocabularies are the rule rows of validation/contracts/hardcoded_model_literals.validation.yaml
+# (patterns, name lists, thresholds, remediation) and three facts the runtime reads: the
+# first-party organisation and the registry repository names, both from
+# contracts/repo_layers.yaml, and, for H, lab_host_names above.
+# This policy names no organisation.
+
 # Family T (OMN-21463, K6): a model tier alias is a model choice. It is refused as
 # the value of one of tier_keys, inside a Literal[...] and inside a tuple, list or
 # set. The aliases are the Claude rungs of the engine ladder and the host-engine
@@ -181,3 +188,66 @@ engine_names:
   - codex
   - antigravity
   - local-agent
+
+# Files that implement the audited findings of plan D.3 for families O and G
+# (omnibase_core#2105: URL and timeout in handlers, URL, retries and sleeps in the
+# workflow; OMN-21537). They are fixed, so no baseline may name them: a baseline
+# entry for one is an unreadable baseline, and a new finding in one fails.
+unbaselinable_files:
+  - .github/workflows/internal-sibling-pins.yml
+  - .github/workflows/publish-downstream-pin-bump.yml
+  - src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py
+
+# Text forms (OMN-21537): which files are read as Python syntax, which comment style a
+# suffix has, and which files the gate scans at all. Data of the scanner, not code.
+python_suffixes: [.py, .pyi]
+slash_comment_suffixes: [.ts, .tsx, .js, .jsx, .mjs, .cjs]
+no_comment_suffixes: [.json]
+scanned_names: [Dockerfile, Containerfile]
+scanned_suffixes:
+  - .py
+  - .pyi
+  - .yaml
+  - .yml
+  - .json
+  - .toml
+  - .sh
+  - .bash
+  - .cfg
+  - .ini
+  - .conf
+  - .service
+  - .env
+  - .tsv
+  - .txt
+  - .ts
+  - .tsx
+  - .js
+  - .jsx
+  - .mjs
+  - .cjs
+  - .md
+  - .mdx
+  - .rst
+
+# The comment header of a written baseline file.
+baseline_header: |-
+  # Baseline for check-hardcoded-model-config-compute (OMN-19252).
+  # Plan: knowledge-base-internal beta/plans/2026-09-23-remove-hardcoded-model-config.md
+  # (task A1 and the per-repository ratchet of tasks A3.x).
+  #
+  # RULE: entries only leave. A finding not listed here fails. An entry that no
+  # longer matches its file fails until it is removed. CI refuses a pull request
+  # whose copy of this file carries an entry its base branch did not. Retired lab
+  # values (family R) are never admitted. Entries are keyed by line content
+  # (sha1 of the stripped line), not by line number.
+  #
+  # Burn-down (OMN-21537): the entries of families O, G, F, P, S, H and B are the
+  # measured findings of this install. Target zero: 2026-11-12. Burn-down ticket:
+  # to be minted at 00:00Z on the next intake window; this line names it by id then.
+  # No file the plan names as an audited finding (policy.yaml unbaselinable_files) is
+  # admitted.
+  #
+  # Regenerate only to SHRINK it:
+  #   python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config \
+  #     --all --baseline <this file> --write-baseline

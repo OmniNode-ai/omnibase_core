@@ -1,0 +1,77 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: inline_logic
+  validator_name: Inline Logic Validator
+  validator_description: Refuses a program written inline in a workflow run block or in a contract check
+    value. The scan set, the signals, the thresholds and the remediation text are the rule rows of this
+    file (OMN-21534, plan task T0.6, checker K9).
+  target_patterns:
+    - .github/workflows/*.yml
+    - .github/workflows/*.yaml
+    - contracts/OMN-*.yaml
+  exclude_patterns:
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+    - tests/fixtures/validation/inline_logic/**
+  rules:
+    - rule_id: inline_python
+      description: A run step whose shell is python, or whose script runs python with -c or a heredoc,
+        holds a program inline.
+      severity: error
+      enabled: true
+      parameters:
+        kind: run_step_signal
+        shell_pattern: ^\s*python[0-9.]*\b
+        run_pattern: \bpython[0-9.]*\b[^\n]*(?:\s-c\b|<<)
+        reason: a run step with shell python, python -c or a python heredoc is a program inline
+        remediation: Move the program into a node or a core hook and call it with onex run-node <node>
+          or a core hook id; a workflow step only names it.
+    - rule_id: run_block_length
+      description: A run block over the line limit is a script inline.
+      severity: error
+      enabled: true
+      parameters:
+        kind: run_block_length
+        max_run_lines: 15
+        reason: a long run block is a script inline
+        remediation: Move the script into a node or a core hook and call it with onex run-node <node>
+          or a core hook id; a workflow step only names it.
+    - rule_id: inline_loop
+      description: A for, while or until loop in a run block is program logic inline.
+      severity: error
+      enabled: true
+      parameters:
+        kind: run_step_signal
+        run_pattern: (?m)^\s*(?:for\s+\w+\s+in\b|for\s*\(\(|while\b|until\b)
+        reason: a for, while or until loop in a run block is program logic
+        remediation: Move the loop into a node or a core hook and call it with onex run-node <node> or
+          a core hook id; a workflow step only names it.
+    - rule_id: inline_program
+      description: A check value that runs python -c or a shell -c body over the character limit, or holding
+        a newline, is a program inline.
+      severity: error
+      enabled: true
+      parameters:
+        kind: check_value_program
+        program_pattern: \b(?:python[0-9.]*|bash|sh|zsh)\s+-[A-Za-z]*c\b
+        max_inline_chars: 200
+        refuse_newline: true
+        reason: a long or multi-line python -c or shell -c body is a program inline
+        remediation: Replace the body with onex run-node <node> or a core hook id; a check value only
+          names the check that runs.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

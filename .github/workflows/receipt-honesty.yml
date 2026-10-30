@@ -52,15 +52,15 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Set up Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
         with:
           version: ${{ env.UV_VERSION }}
 
@@ -74,7 +74,7 @@ jobs:
       - name: Scan in-repo DoD receipts (passes cleanly when none present)
         run: |
           if [ -d drift/dod_receipts ]; then
-            uv run python -m omnibase_core.validation.validator_receipt_honesty \
+            uv run python -m omnibase_core.nodes.node_receipt_honesty_check_compute.runtime_receipt_honesty_check \
               --receipts-dir drift/dod_receipts
           else
             echo "RECEIPT HONESTY GATE: no in-repo drift/dod_receipts/ tree — nothing to scan, passing."

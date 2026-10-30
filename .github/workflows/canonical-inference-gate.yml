@@ -50,19 +50,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           fetch-depth: 0
 
       - name: Set up uv
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
 
       - name: Install dependencies
         run: uv sync --all-extras
 
       - name: Run canonical-inference gate (full-repo, against frozen baseline)
         run: |
-          uv run python -m omnibase_core.validation.validator_canonical_inference \
+          uv run python -m omnibase_core.nodes.node_canonical_inference_check_compute.runtime_canonical_inference_check \
             --all --repo omnibase_core --repo-root .
 
       - name: Assert baseline did not grow (anti-gaming)

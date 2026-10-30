@@ -23,3 +23,25 @@ class ModelHardcodedModelConfigTierEngineVocabulary(BaseModel):
     engine_names: tuple[str, ...] = Field(
         default=(), description="Engine names of the engine ladder (N)"
     )
+    unbaselinable_files: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Files the plan names as audited findings (D.3): fixed, never "
+            "admitted to a baseline (OMN-21537)"
+        ),
+    )
+    python_suffixes: tuple[str, ...] = Field(
+        default=(), description="File suffixes judged on their syntax tree"
+    )
+    slash_comment_suffixes: tuple[str, ...] = Field(
+        default=(), description="File suffixes whose comments start with a double slash"
+    )
+    no_comment_suffixes: tuple[str, ...] = Field(
+        default=(), description="File suffixes that have no comments"
+    )
+    scanned_suffixes: tuple[str, ...] = Field(
+        default=(), description="File suffixes the gate scans"
+    )
+    scanned_names: tuple[str, ...] = Field(
+        default=(), description="Extensionless file names the gate scans"
+    )

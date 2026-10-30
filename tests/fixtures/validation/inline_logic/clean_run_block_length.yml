@@ -1,0 +1,27 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Clean fixture for the run_block_length rule (OMN-21534): 15 lines.
+name: clean
+on: push
+jobs:
+  work:
+    runs-on: ubuntu-latest
+    steps:
+      - name: work
+        run: |
+          echo step-0
+          echo step-1
+          echo step-2
+          echo step-3
+          echo step-4
+          echo step-5
+          echo step-6
+          echo step-7
+          echo step-8
+          echo step-9
+          echo step-10
+          echo step-11
+          echo step-12
+          echo step-13
+          echo step-14

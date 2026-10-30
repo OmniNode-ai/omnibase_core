@@ -1,0 +1,8 @@
+**T1 Example checker (NEW).**
+- Repo and paths: omnibase_core `src/omnibase_core/validation/checker_example.py`
+- Configuration: every pattern and threshold is a `parameters` entry of the contract
+- Bindings: the report writer and the bus bind from the overlay
+- Declared: the handler is resolved from the container with get_service
+- Two overlays: the runtime runs on the in-memory default and on the broker overlay with no code change
+- Zero literal: hardcoded_topic, url_authority and contract_config_compliance report zero on the changed source
+- Replay: disabling a rule row fails its fixture

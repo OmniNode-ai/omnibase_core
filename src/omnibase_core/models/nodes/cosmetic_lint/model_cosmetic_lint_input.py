@@ -10,6 +10,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.nodes.cosmetic_lint.model_cosmetic_github_snapshot import (
     ModelCosmeticGithubSnapshot,
 )
+from omnibase_core.models.nodes.cosmetic_lint.model_cosmetic_lint_rules import (
+    ModelCosmeticLintRules,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
 
 __all__ = ["ModelCosmeticLintInput"]
@@ -21,12 +24,14 @@ class ModelCosmeticLintInput(BaseModel):
     ``None`` for ``pyproject_toml``, ``precommit_config``, ``readme`` or
     ``github`` means the repository has no such file or directory, and the
     matching check reports nothing. ``python_files`` holds the candidate Python
-    sources with repository-relative POSIX paths.
+    sources with repository-relative POSIX paths. ``rules`` is the rule data the
+    checks read their files and markers from.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     spec_yaml: str
+    rules: ModelCosmeticLintRules
     python_files: list[ModelSourceFile] = Field(default_factory=list)
     pyproject_toml: str | None = None
     precommit_config: str | None = None

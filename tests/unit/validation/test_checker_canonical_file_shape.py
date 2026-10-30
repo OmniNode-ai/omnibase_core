@@ -509,6 +509,16 @@ SCENARIOS: dict[str, Callable[[], ModelCanonicalFileShapeFacts]] = {
         has_base=True,
         head_burndown_text=BURNDOWN_HEADER + "scripts/gone.py\n",
     ),
+    "burndown_extra_added": lambda: _facts("violation_burndown-extra-entry.json"),
+    "burndown_modified": lambda: _facts("clean_burndown-extra-entry.json"),
+    "burndown_extra_duplicate": lambda: _inline(
+        head_tree=_tree(["scripts/new.py"]),
+        has_base=True,
+        head_baseline_text="scripts/new.py\n",
+        head_burndown_text=BURNDOWN_HEADER + "scripts/new.py\n",
+    ),
+    "burndown_ticket_uncited": lambda: _facts("violation_burndown-ticket-uncited.json"),
+    "burndown_ticket_cited": lambda: _facts("clean_burndown-ticket-uncited.json"),
     "burndown_growth": lambda: _inline(
         head_tree=_tree(["scripts/new.py"]),
         has_base=True,
@@ -653,6 +663,12 @@ MUTATIONS: dict[str, tuple[str, object]] = {
     "burndown_stale_text": ("burndown_stale", INERT_STR),
     "burndown_growth_text": ("burndown_growth", INERT_STR),
     "burndown_removed_text": ("burndown_removed", INERT_STR),
+    "burndown_base_statuses": ("burndown_modified", ()),
+    "burndown_extra_added_text": ("burndown_extra_added", INERT_STR),
+    "burndown_extra_duplicate_text": ("burndown_extra_duplicate", INERT_STR),
+    "burndown_ticket_id_pattern": ("burndown_ticket_uncited", INERT_STR),
+    "burndown_ticket_citation_pattern": ("burndown_ticket_cited", INERT_STR),
+    "burndown_ticket_uncited_text": ("burndown_ticket_uncited", INERT_STR),
     "comment_prefixes": ("baselined_comment_growth", ()),
     "baselined_growth_text": ("baselined_growth", INERT_STR),
     "skill_file_name": ("skill", INERT_STR),
@@ -699,13 +715,15 @@ MUTATIONS: dict[str, tuple[str, object]] = {
 }
 # Read from the repository by the node runtime (git facts), not by the checker; the
 # runtime test mutates these through a fixture repository. The node-home keys and
-# the git-reader ceiling are mutated in test_node_home_admission.py.
+# the git-reader ceiling are mutated in test_node_home_admission.py; the landing ref
+# in test_commit_time_merge_base.py.
 READER_KEYS = frozenset(
     {
         "handler_class_pattern",
         "argparse_pattern",
         "main_pattern",
         "cat_file_timeout_s",
+        "landing_ref",
         "baseline_header",
         "burndown_baseline_header",
     }

@@ -1,0 +1,192 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21558
+title: 'event_chain_walker: refusing contract-driven event-chain check'
+summary: Refuse unconsumed and unproduced topics, states with no exit and transitions on undeclared events
+  through a pure checker and the existing strict contract walker loader.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21558-event-chain
+    statement: Every topic has a corpus or declared external counterpart, each armed state has an exit
+      and each transition uses a declared event.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a planted fixture contract set with one event no node consumes, one consumer
+          with no producer, one reducer state with no exit and one transition on an undeclared event is
+          refused naming all four by `rule_id` (exactly one finding per rule), and the repaired set yields
+          zero findings -- falsifier: `uv run pytest tests/unit/validation/test_checker_event_chain_walker.py
+          -q`'
+      - id: AC2
+        statement: 'AC2: every rule ships at `severity: error` with a zero-finding target and no warning-only
+          mode, and the hook exits non-zero on the planted set -- falsifier: `uv run pytest tests/unit/validation/test_checker_event_chain_walker.py
+          -q -k severity` asserting each rule row of the `.validation.yaml` is `error` and the CLI exit
+          code on `tests/fixtures/validation/event_chain_walker/` is non-zero'
+      - id: AC3
+        statement: 'AC3: the checker reads the corpus through `walk_contracts` and `analyze_fsm` and holds
+          no second contract loader -- falsifier: `git grep -n "safe_load" -- src/omnibase_core/validation/checker_event_chain_walker.py`
+          prints nothing'
+      - id: AC4
+        statement: 'AC4: KC-config: every pattern, name list, threshold and remediation text is a `parameters`
+          entry of the checker''s `.validation.yaml` -- falsifier: K10 `rule_table_in_checker` reports
+          zero on the checker module, and a table-driven test mutates every `parameters` key of every
+          rule row in turn, asserting the verdict change on the fixture that key controls and asserting
+          separately that an invalid contract fails to load rather than passing'
+      - id: AC5
+        statement: 'AC5: KC-a (Declared and injected): the checker is pure (facts in, issues out); its
+          runtime resolves `node_validation_report_write_effect` and the bus from the container (`models/container/model_onex_container.py`
+          `get_service`) -- falsifier: a container spy in the runtime test records the resolution of the
+          writer and the bus; the checker test calls the checker with facts only while `open` and `Path`
+          reads are patched to raise; and K1 `call_site_construction` reports zero on the runtime module'
+      - id: AC6
+        statement: 'AC6: KC-b (No literal): the changed source holds no host, port, topic, model name,
+          timeout or URL -- falsifier: hardcoded_topic, hardcoded_model_config with K6, url_authority
+          and contract_config_compliance report zero on the changed production source and workflow files
+          in the checker''s declared scope; the `.validation.yaml` rule data and the planted fixtures
+          are excluded by `exclude_patterns`'
+      - id: AC7
+        statement: 'AC7: KC-c (Two overlays, one commit): the runtime runs on the in-memory default and
+          with the CI bus overlay with no code change, once [OMN-21529](https://linear.app/omninode/issue/OMN-21529)
+          lands the overlay pair -- falsifier: on one commit, the ticket''s own fixture set run twice,
+          once on the in-memory default and once with the broker overlay; both reports equal the committed
+          golden report after normalising run id and timestamps, and each run puts exactly one `ModelValidatorRunEvent`
+          carrying the report''s run id, observed by an in-memory listener in the first run and by a run-event
+          topic consumer filtered by that run id on a lab host in the second; the overlay file is the
+          only difference'
+evidence_requirements:
+  - kind: tests
+    description: Event-chain checker and overlay tests pass.
+    command: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py tests/unit/validation/test_event_chain_walker_overlays.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21558-ac1-fixtures
+    description: Each planted contract yields exactly its own rule, the planted corpus yields four findings
+      and the repaired corpus yields none.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k 'planted or clean_fixture or disabling'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-ac2-severity
+    description: Every rule is enabled at error severity with a zero-finding target; the generic CLI refuses
+      the fixture directory and accepts the clean files.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k severity
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-ac3-loader
+    description: The pure checker has no YAML loader and the validator calls the existing contract walker
+      load_machines once per file; armed FSM facts come from that strict loader.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k checker_has_no_yaml_loader
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-ac4-configuration
+    description: Every parameter changes its controlled verdict, missing or mistyped keys and invalid
+      paths, kinds and analysis fields raise, and K10 finds no rule table in the new modules.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k 'parameter or invalid_path or analysis_fields'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -s src/omnibase_core/validation/checker_event_chain_walker.py && test -s src/omnibase_core/validation/validator_event_chain_walker.py
+          && uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_event_chain_walker.py
+          src/omnibase_core/validation/validator_event_chain_walker.py
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-ac5-bindings
+    description: The checker runs with file I/O patched to raise and a container spy observes the report
+      writer followed by the runtime bus. The named K1 call_site_construction scanner is absent on this
+      base and is not claimed.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k 'checker_is_pure or runtime_resolves'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-ac6-no-literal
+    description: Both sources must exist before each scanner runs; URL authority, contract config compliance,
+      hardcoded model config and hardcoded topics find no operational literals. The focused test also
+      requires each file scanner to process one file.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: command
+        check_value: test -s src/omnibase_core/validation/checker_event_chain_walker.py && test -s src/omnibase_core/validation/validator_event_chain_walker.py
+          && uv run python -m omnibase_core.validation.validator_url_authority src/omnibase_core/validation/checker_event_chain_walker.py
+          src/omnibase_core/validation/validator_event_chain_walker.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -s src/omnibase_core/validation/checker_event_chain_walker.py && test -s src/omnibase_core/validation/validator_event_chain_walker.py
+          && uv run python -m omnibase_core.validators.contract_config_compliance src/omnibase_core/validation/checker_event_chain_walker.py
+          src/omnibase_core/validation/validator_event_chain_walker.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -s src/omnibase_core/validation/checker_event_chain_walker.py && test -s src/omnibase_core/validation/validator_event_chain_walker.py
+          && uv run python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
+          --baseline config/hardcoded_model_config_baseline.yaml src/omnibase_core/validation/checker_event_chain_walker.py
+          src/omnibase_core/validation/validator_event_chain_walker.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -s src/omnibase_core/validation/checker_event_chain_walker.py && test -s src/omnibase_core/validation/validator_event_chain_walker.py
+          && uv run python -m omnibase_core.validation.validator_hardcoded_topics src/omnibase_core/validation/checker_event_chain_walker.py
+          src/omnibase_core/validation/validator_event_chain_walker.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k changed_source_has_no_operational_literals
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-ac7-two-overlays
+    description: The planted fixture set runs on the in-memory bus and the Redpanda overlay bound to a
+      recording bus; both reports equal the golden report and each run emits exactly one event carrying
+      its report id. The live-broker run is pending OMN-21529 and is not claimed.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_event_chain_walker_overlays.py -q --no-cov
+          -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-deploy-validator-runtime
+    description: Hosted checkout deployment probe exercises the shipped generic CLI, its canonical report
+      writer and both refusing and clean exits using only local fixtures; no private runtime is required.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k severity_cli
+        cwd: ${OMNI_HOME}/omnibase_core

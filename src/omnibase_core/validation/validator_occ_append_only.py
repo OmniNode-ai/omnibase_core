@@ -36,15 +36,14 @@ force-push that replaces the branch removes the rewritten commits from
 
 The pure core (:func:`evaluate_append_only`) takes the two parsed contracts and
 a list of ``(git_status, path)`` diff tuples, so it is fully unit-testable. The
-:func:`main` CLI performs the git I/O.
+:mod:`omnibase_core.nodes.node_occ_append_only_check_compute.runtime_occ_append_only_check`
+CLI performs the git I/O.
 """
 
 from __future__ import annotations
 
-import argparse
 import subprocess
-import sys
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable
 from pathlib import Path
 
 import yaml
@@ -68,7 +67,6 @@ from omnibase_core.validation.validator_receipt_gate import (
 )
 
 _APPEND_ONLY_VIOLATION = "APPEND_ONLY_VIOLATION"
-_RECEIPT_DIR_PREFIX = "drift/dod_receipts"
 
 # The identity the product-repo receipt runner records as ``runner`` on every
 # receipt it executes and as ``superseder`` on every record it files
@@ -299,9 +297,10 @@ def evaluate_append_only(
     )
 
 
-def _load_yaml_from_git(
-    repo: Path, ref: str, rel_path: str
-) -> dict[str, object] | None:
+RECEIPT_DIR_PREFIX = "drift/dod_receipts"
+
+
+def load_yaml_from_git(repo: Path, ref: str, rel_path: str) -> dict[str, object] | None:
     proc = subprocess.run(
         ["git", "-C", str(repo), "show", f"{ref}:{rel_path}"],
         capture_output=True,
@@ -314,17 +313,17 @@ def _load_yaml_from_git(
     return parsed.model_dump(mode="python")
 
 
-def _load_yaml_file(path: Path) -> dict[str, object] | None:
+def load_yaml_file(path: Path) -> dict[str, object] | None:
     if not path.is_file():
         return None
     parsed = ModelOccAppendOnlyContract.from_yaml(path.read_text(encoding="utf-8"))
     return parsed.model_dump(mode="python")
 
 
-def _receipt_diff_from_git(
+def receipt_diff_from_git(
     repo: Path, base_ref: str, ticket_id: str
 ) -> list[tuple[str, str]]:
-    scope = f"{_RECEIPT_DIR_PREFIX}/{ticket_id}"
+    scope = f"{RECEIPT_DIR_PREFIX}/{ticket_id}"
     proc = subprocess.run(
         ["git", "-C", str(repo), "diff", "--name-status", base_ref, "--", scope],
         capture_output=True,
@@ -345,7 +344,7 @@ def _receipt_diff_from_git(
     return diff
 
 
-def _git_text(repo: Path, *args: str) -> str | None:
+def git_text(repo: Path, *args: str) -> str | None:
     proc = subprocess.run(
         ["git", "-C", str(repo), *args],
         capture_output=True,
@@ -357,7 +356,7 @@ def _git_text(repo: Path, *args: str) -> str | None:
     return proc.stdout
 
 
-def _branch_history_from_git(
+def branch_history_from_git(
     repo: Path, base_ref: str, ticket_id: str
 ) -> tuple[list[BranchHistoryChange], str | None]:
     """Every receipt change each branch commit made, read commit by commit.
@@ -370,8 +369,8 @@ def _branch_history_from_git(
     could not be read. An unreadable history must fail the gate, because an
     empty one would read as a clean branch.
     """
-    scope = f"{_RECEIPT_DIR_PREFIX}/{ticket_id}"
-    commits = _git_text(repo, "rev-list", "--reverse", f"{base_ref}..HEAD")
+    scope = f"{RECEIPT_DIR_PREFIX}/{ticket_id}"
+    commits = git_text(repo, "rev-list", "--reverse", f"{base_ref}..HEAD")
     if commits is None:
         return [], (
             f"cannot list the commits in {base_ref}..HEAD; the branch history "
@@ -379,11 +378,11 @@ def _branch_history_from_git(
         )
     changes: list[BranchHistoryChange] = []
     for commit in commits.split():
-        parents = _git_text(repo, "rev-list", "--parents", "-n", "1", commit)
+        parents = git_text(repo, "rev-list", "--parents", "-n", "1", commit)
         if parents is None or len(parents.split()) < 2:
             continue
         parent = parents.split()[1]
-        diff = _git_text(
+        diff = git_text(
             repo, "diff", "--name-status", "-M", parent, commit, "--", scope
         )
         if diff is None:
@@ -397,56 +396,21 @@ def _branch_history_from_git(
             path = parts[1]
             prior = None
             if status[:1] in ("M", "D", "R"):
-                prior = _git_text(repo, "show", f"{parent}:{path}")
+                prior = git_text(repo, "show", f"{parent}:{path}")
             new = None
             if status[:1] == "M":
-                new = _git_text(repo, "show", f"{commit}:{path}")
+                new = git_text(repo, "show", f"{commit}:{path}")
             changes.append((commit, status, path, prior, new))
     return changes, None
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="OCC append-only enforcement gate (OMN-13888)"
-    )
-    parser.add_argument("--repo", required=True, help="Path to the OCC repo root.")
-    parser.add_argument("--ticket-id", required=True)
-    parser.add_argument(
-        "--base-ref",
-        default="origin/dev",
-        help="Merge-base ref to compare against (default origin/dev).",
-    )
-    args = parser.parse_args(argv)
-
-    repo = Path(args.repo)
-    contract_rel = f"contracts/{args.ticket_id}.yaml"
-    base_contract = _load_yaml_from_git(repo, args.base_ref, contract_rel)
-    head_contract = _load_yaml_file(repo / contract_rel)
-    receipt_diff = _receipt_diff_from_git(repo, args.base_ref, args.ticket_id)
-    branch_history, history_error = _branch_history_from_git(
-        repo, args.base_ref, args.ticket_id
-    )
-    if history_error is not None:
-        sys.stderr.write(
-            f"append-only gate cannot read the branch history: {history_error}\n"
-        )
-        return 1
-
-    result = evaluate_append_only(
-        base_contract, head_contract, receipt_diff, branch_history
-    )
-    sys.stdout.write(f"{result.to_json()}\n")
-    return 0 if result.ok else 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
 
 
 __all__ = [
     "RECEIPT_RUNNER_IDENTITIES",
     "BranchHistoryChange",
     "ModelOccAppendOnlyResult",
+    "branch_history_from_git",
     "evaluate_append_only",
-    "main",
+    "load_yaml_file",
+    "load_yaml_from_git",
+    "receipt_diff_from_git",
 ]

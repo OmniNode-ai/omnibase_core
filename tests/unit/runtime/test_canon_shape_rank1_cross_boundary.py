@@ -44,6 +44,9 @@ from omnibase_core.models.validation.model_routing_authority_check_output import
 from omnibase_core.models.validation.model_routing_contract_entry import (
     ModelRoutingContractEntry,
 )
+from omnibase_core.nodes.node_backend_secret_discipline_compute.handler_backend_secret_discipline import (
+    HandlerBackendSecretDisciplineCompute,
+)
 from omnibase_core.nodes.node_contract_resolve_compute import NodeContractResolveCompute
 from omnibase_core.nodes.node_routing_authority_check_compute.handler import (
     NodeRoutingAuthorityCheckCompute,
@@ -55,9 +58,6 @@ from omnibase_core.protocols.runtime.protocol_local_runtime_callable_target impo
     ProtocolLocalRuntimeCallableTarget,
 )
 from omnibase_core.runtime.runtime_local_adapter import LocalRuntimeBusAdapter
-from omnibase_core.validation.validator_backend_secret_discipline import (
-    HandlerBackendSecretDisciplineCompute,
-)
 
 pytestmark = pytest.mark.unit
 

@@ -1,0 +1,137 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21535
+title: "task_criteria checker over plan tasks, ticket descriptions, lane briefs and job.json, the standing
+  block, rules.md and contracts criteria"
+summary: The K12 task_criteria checker (validation/checker_task_criteria.py, entry validator_task_criteria.py)
+  judges plan task blocks, ticket text, contract criteria, briefs and rules text with ten rules whose
+  patterns, lists, block digest and remedy texts are the parameters of task_criteria.validation.yaml.
+  This contract binds the omnibase_core half that is buildable before OMN-21529 merges; the omnimarket
+  caller (AC3) follows. AC8 binds the two-overlay golden-report tests, with a recording bus for the Redpanda
+  overlay in hosted tests.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21535-task-criteria-checker
+    statement: The task_criteria checker is core validator logic in the generic validator format, pure,
+      with every rule table held as contract data.
+    acceptance:
+      - id: AC1
+        statement: "AC1: each rule has a planted fixture and a clean fixture -- falsifier: `uv run pytest
+          tests/unit/validation/test_checker_task_criteria.py -q` reports exactly one issue with the rule
+          id per violation fixture and none per clean fixture"
+      - id: AC2
+        statement: "AC2: this plan's own section C tasks are reported until the D.5 criteria are carried
+          into them -- falsifier: the checker run over the plan's Phase 0 tasks lists them by `rule_id`"
+      - id: AC4
+        statement: "AC4: Configuration: every pattern, name list, threshold and remediation text is a
+          `parameters` entry of the checker's `.validation.yaml` -- falsifier: a table-driven test mutates
+          every `parameters` key of every rule row and asserts the verdict change, and an invalid contract
+          fails to load"
+      - id: AC5
+        statement: "AC5: Declared and injected: the checker is pure and its runtime resolves the writer
+          and the bus from the container -- falsifier: a container spy records the resolution of the writer
+          and the bus, and the checker runs with `open` and `Path` reads patched to raise"
+      - id: AC6
+        statement: "AC6: No literal: the changed source holds no host, port, topic, model name, timeout
+          or URL -- falsifier: the hardcoded topic, model config, url authority and contract config validators
+          report zero on the changed production source"
+      - id: AC7
+        statement: "AC7: Replay: disabling a rule's row in the `.validation.yaml` fails that rule's fixture
+          -- falsifier: `uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -k disabled`
+          passes"
+      - id: AC8
+        statement: "AC8: the in-memory and Redpanda overlays run the same fixtures on one commit -- falsifier:
+          both normalised reports equal the committed golden report and each run publishes exactly one
+          run event; hosted tests use a recording bus for the Redpanda overlay"
+evidence_requirements:
+  - kind: tests
+    description: Every violation fixture yields exactly one issue with its rule id, every clean fixture
+      none, every parameters key changes a verdict, an invalid contract fails to load, and the checker
+      reads no file.
+    command: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21535-ac1-fixtures
+    description: Each rule has a planted violation fixture with exactly one issue and a clean fixture
+      with none.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+          -k "violation_fixture or clean_fixture"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21535-ac2-section-c
+    description: The plan's Phase 0 tasks are listed by rule id.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+          -k section_c
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21535-ac4-configuration
+    description: Every parameters key of every rule row changes a verdict and an invalid contract fails
+      to load.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+          -k "every_parameter or invalid_contracts"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn21535-ac5-declared-injected
+    description: A container spy records the writer and the bus resolution and the checker reads no file.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+          -k "runtime_resolves or reads_no_file or pure"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
+  - id: dod-omn21535-ac6-no-literal
+    description: The URL authority, shipped model configuration policy, hardcoded topics, checker rule
+      data and contract-config validators report zero on every new production module; absent source fails.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+          -k production_source_has_no_runtime_literals
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC6]
+  - id: dod-omn21535-ac7-disabled-row
+    description: Disabling a rule's row fails that rule's fixture.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_task_criteria.py -q -o addopts=''
+          -k disabled
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC7]
+  - id: dod-omn21535-ac8-overlay-reports
+    description: Both overlay reports equal the committed golden report and each run emits one run event;
+      the hosted Redpanda overlay uses a recording bus.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_task_criteria_runtime_overlays.py -q -o
+          addopts='' -k "in_memory_run or redpanda_run"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC8]
+  - id: dod-omn21535-deploy-checker
+    description: Hosted source readback at the checkout commit requires the checker to hold no file read
+      and the validator to read the file and call the checker.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5]
+    checks:
+      - check_type: command
+        check_value: |
+          curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/validation/validator_task_criteria.py" |
+            uv run python -c 'import sys; source = sys.stdin.read(); assert "check_task_criteria(" in source; assert "read_text(" in source'
+        cwd: ${OMNI_HOME}/omnibase_core

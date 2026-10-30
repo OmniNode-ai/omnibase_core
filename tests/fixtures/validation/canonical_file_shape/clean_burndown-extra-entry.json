@@ -1,0 +1,22 @@
+{
+  "changes": [
+    {
+      "new_text": "x = 1\n",
+      "old_text": "x = 1\n",
+      "path": "scripts/new.py",
+      "status": "M"
+    }
+  ],
+  "has_base": true,
+  "head_burndown_text": "# Burn-down ticket: OMN-21521 compat file-shape findings\nscripts/new.py\n",
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "scripts/new.py"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

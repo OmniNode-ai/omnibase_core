@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: cosmetic_lint
+  validator_name: Cosmetic Lint
+  validator_description: |
+    Cosmetic lint of OmniNode repository standards (OMN-20074, OMN-21518): SPDX headers on Python
+    files, pyproject.toml fields, pre-commit revisions, README badges and .github templates and workflow
+    extensions, each judged against the spec carried in contracts/cosmetic_lint_spec.yaml. The order of the
+    rule rows is the order the checks run in and report in. The files each check reads, the SPDX skip
+    marker, the README header window and the usage text of the hook are rule parameters.
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: spdx
+      description: Python files carry the SPDX copyright and license header the spec names.
+      severity: error
+      enabled: true
+      parameters:
+        skip_marker: spdx-skip
+    - rule_id: pyproject
+      description: pyproject.toml carries the author, license, requires-python, classifiers, URLs and
+        ruff target the spec names.
+      severity: error
+      enabled: true
+      parameters:
+        path: pyproject.toml
+    - rule_id: precommit
+      description: The pre-commit config pins the revisions the spec names.
+      severity: error
+      enabled: true
+      parameters:
+        path: .pre-commit-config.yaml
+    - rule_id: readme
+      description: The README header region carries the badges the spec names.
+      severity: error
+      enabled: true
+      parameters:
+        path: README.md
+        header_lines: 30
+    - rule_id: github
+      description: The .github directory holds the templates the spec names and workflows use its extension.
+      severity: error
+      enabled: true
+      parameters:
+        directory: .github
+    - rule_id: cli_usage
+      description: What the hook prints when it is given arguments it does not support.
+      severity: error
+      enabled: true
+      parameters:
+        usage_message: "usage: handler_cosmetic_lint [check]\n"
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

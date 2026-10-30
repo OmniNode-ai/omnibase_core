@@ -13,6 +13,7 @@ changes only ``repo:`` and ``rev:`` sees no difference in what is reported.
 
 from __future__ import annotations
 
+import ast
 import hashlib
 from pathlib import Path, PurePosixPath
 
@@ -20,13 +21,8 @@ import pytest
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
-from omnibase_core.handlers.handler_cosmetic_lint import (
-    ALL_CHECKS,
-    SPEC_RESOURCE,
-    HandlerCosmeticLint,
-    load_spec_yaml,
-    main,
-    select_python_paths,
+from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
+    ModelValidatorRule,
 )
 from omnibase_core.models.nodes.cosmetic_lint.model_cosmetic_github_snapshot import (
     ModelCosmeticGithubSnapshot,
@@ -34,7 +30,25 @@ from omnibase_core.models.nodes.cosmetic_lint.model_cosmetic_github_snapshot imp
 from omnibase_core.models.nodes.cosmetic_lint.model_cosmetic_lint_input import (
     ModelCosmeticLintInput,
 )
+from omnibase_core.models.nodes.cosmetic_lint.model_cosmetic_lint_rules import (
+    ModelCosmeticLintRules,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
+from omnibase_core.nodes.node_cosmetic_lint_check_compute import (
+    runtime_cosmetic_lint_check as runtime,
+)
+from omnibase_core.nodes.node_cosmetic_lint_check_compute.handler_cosmetic_lint import (
+    HandlerCosmeticLint,
+    select_python_paths,
+)
+from omnibase_core.nodes.node_cosmetic_lint_check_compute.runtime_cosmetic_lint_check import (
+    SPEC_RESOURCE,
+    build_rules,
+    load_rule_rows,
+    load_rules,
+    load_spec_yaml,
+    main,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -116,6 +130,7 @@ def _request(case: _Case, contents: dict[str, str]) -> ModelCosmeticLintInput:
             entries.add("/".join(parts[:depth]))
     return ModelCosmeticLintInput(
         spec_yaml=load_spec_yaml(),
+        rules=load_rules(),
         python_files=[
             ModelSourceFile(path=path, source=source)
             for path, source in contents.items()
@@ -172,7 +187,7 @@ def test_spec_is_carried_byte_for_byte() -> None:
 
 def test_every_check_class_has_a_pass_a_fail_and_a_positive_control() -> None:
     cases = _cases()
-    assert tuple(ALL_CHECKS) == CHECK_PREFIXES
+    assert load_rules().checks == CHECK_PREFIXES
     for prefix in CHECK_PREFIXES:
         own = [c for c in cases if c.id.startswith(prefix)]
         assert any(c.expected_exit == 0 for c in own), f"no pass case for {prefix}"
@@ -201,6 +216,7 @@ def test_spec_is_data_not_code() -> None:
     spec["github"]["required_templates"] = ["CODEOWNERS"]
     request = ModelCosmeticLintInput(
         spec_yaml=yaml.safe_dump(spec),
+        rules=load_rules(),
         github=ModelCosmeticGithubSnapshot(entries=["PULL_REQUEST_TEMPLATE.md"]),
     )
     report = HandlerCosmeticLint().handle(request)
@@ -216,7 +232,152 @@ def test_select_python_paths_applies_the_spec_exclusions() -> None:
 
 def test_request_models_are_frozen_and_forbid_extra() -> None:
     with pytest.raises(ValueError):
-        ModelCosmeticLintInput.model_validate({"spec_yaml": "x", "surprise": 1})
-    for model in (ModelCosmeticLintInput, ModelCosmeticGithubSnapshot):
+        ModelCosmeticLintInput.model_validate(
+            {"spec_yaml": "x", "rules": load_rules(), "surprise": 1}
+        )
+    for model in (
+        ModelCosmeticLintInput,
+        ModelCosmeticGithubSnapshot,
+        ModelCosmeticLintRules,
+    ):
         assert model.model_config["frozen"] is True
         assert model.model_config["extra"] == "forbid"
+
+
+NODE_DIR = (
+    Path(__file__).resolve().parents[3]
+    / "src"
+    / "omnibase_core"
+    / "nodes"
+    / "node_cosmetic_lint_check_compute"
+)
+RULES_FILE = (
+    Path(__file__).resolve().parents[3]
+    / "src"
+    / "omnibase_core"
+    / "validation"
+    / "contracts"
+    / "cosmetic_lint.validation.yaml"
+)
+
+
+def test_the_node_contract_binds_the_handler() -> None:
+    contract = yaml.safe_load((NODE_DIR / "contract.yaml").read_text(encoding="utf-8"))
+    assert contract["node_type"] == "compute"
+    module_name, _, class_name = contract["handler_routing"][
+        "default_handler"
+    ].partition(":")
+    assert (NODE_DIR / f"{module_name}.py").is_file()
+    assert (NODE_DIR / "runtime_cosmetic_lint_check.py").is_file()
+    assert class_name == HandlerCosmeticLint.__name__
+    assert HandlerCosmeticLint.__module__.endswith(
+        f"node_cosmetic_lint_check_compute.{module_name}"
+    )
+    assert contract["input_model"].endswith(ModelCosmeticLintInput.__name__)
+
+
+def test_the_handler_and_runtime_modules_hold_no_table() -> None:
+    for module in ("handler_cosmetic_lint.py", "runtime_cosmetic_lint_check.py"):
+        tree = ast.parse((NODE_DIR / module).read_text(encoding="utf-8"))
+        for node in tree.body:
+            if (
+                isinstance(node, ast.Assign | ast.AnnAssign)
+                and node.value is not None
+                and "__all__" not in ast.unparse(node)
+            ):
+                assert not isinstance(
+                    node.value, ast.Tuple | ast.Set | ast.Dict | ast.List
+                ), f"{module}:{node.lineno} holds a table"
+
+
+def _mutated_rows(
+    rule_id: str, key: str, value: object
+) -> dict[str, ModelValidatorRule]:
+    document = yaml.safe_load(RULES_FILE.read_text(encoding="utf-8"))
+    for row in document["validation"]["rules"]:
+        if row["rule_id"] == rule_id:
+            assert key in row["parameters"]
+            row["parameters"][key] = value
+    return load_rule_rows(yaml.safe_dump(document))
+
+
+def _messages(rules: ModelCosmeticLintRules, **snapshot: object) -> list[str]:
+    request = ModelCosmeticLintInput.model_validate(
+        {"spec_yaml": load_spec_yaml(), "rules": rules, **snapshot}
+    )
+    return [f.message for f in HandlerCosmeticLint().handle(request).findings]
+
+
+def _badge_readme() -> str:
+    spec = yaml.safe_load(load_spec_yaml())
+    first = spec["readme"]["required_badges"][0]["pattern"]
+    return "\n" * 40 + first + "\n"
+
+
+def _differs(key: tuple[str, str], value: object, **snapshot: object) -> bool:
+    base = _messages(load_rules(), **snapshot)
+    mutated = _messages(build_rules(_mutated_rows(*key, value)), **snapshot)
+    return base != mutated
+
+
+# every parameters key of the rule rows -> the snapshot on which changing it changes the verdict
+_MUTATIONS: dict[tuple[str, str], tuple[object, dict[str, object]]] = {
+    ("spdx", "skip_marker"): (
+        "no-such-marker",
+        {"python_files": [ModelSourceFile(path="a.py", source="# spdx-skip\n")]},
+    ),
+    ("pyproject", "path"): ("other.toml", {"pyproject_toml": "[project]\n"}),
+    ("precommit", "path"): (
+        "other.yaml",
+        {
+            "precommit_config": "repos:\n- repo: https://github.com/astral-sh/ruff-pre-commit\n  rev: v0.0.1\n"
+        },
+    ),
+    ("readme", "path"): ("OTHER.md", {"readme": "no badges\n"}),
+    ("readme", "header_lines"): (60, {"readme": _badge_readme()}),
+    ("github", "directory"): (
+        ".other",
+        {"github": ModelCosmeticGithubSnapshot(entries=["workflows"])},
+    ),
+}
+
+
+@pytest.mark.parametrize("key", sorted(_MUTATIONS), ids=lambda k: ".".join(k))
+def test_mutating_a_rule_parameter_changes_the_verdict(key: tuple[str, str]) -> None:
+    value, snapshot = _MUTATIONS[key]
+    assert _differs(key, value, **snapshot)
+
+
+def test_every_rule_parameter_has_a_mutation_test() -> None:
+    document = yaml.safe_load(RULES_FILE.read_text(encoding="utf-8"))
+    declared = {
+        (row["rule_id"], name)
+        for row in document["validation"]["rules"]
+        for name in row["parameters"]
+    }
+    assert declared - {("cli_usage", "usage_message")} == set(_MUTATIONS)
+
+
+def test_mutating_the_usage_message_changes_what_the_hook_prints(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    assert main(["fix"]) == 2
+    base = capsys.readouterr().err
+    assert base == "usage: handler_cosmetic_lint [check]\n"
+    monkeypatch.setattr(
+        runtime,
+        "load_rule_rows",
+        lambda: _mutated_rows("cli_usage", "usage_message", "use it differently\n"),
+    )
+    assert main(["fix"]) == 2
+    assert capsys.readouterr().err == "use it differently\n"
+
+
+def test_disabling_a_rule_row_drops_its_check() -> None:
+    document = yaml.safe_load(RULES_FILE.read_text(encoding="utf-8"))
+    for row in document["validation"]["rules"]:
+        if row["rule_id"] == "readme":
+            row["enabled"] = False
+    rules = build_rules(load_rule_rows(yaml.safe_dump(document)))
+    assert rules.checks == ("spdx", "pyproject", "precommit", "github")
+    assert _messages(rules, readme="no badges\n") == []

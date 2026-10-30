@@ -1,0 +1,57 @@
+### D.3 Every finding, its class and the checker that catches it
+
+Classes: C1 hand-constructed handlers and effects; C2 handlers with no node or contract; C3 non-canonical `handle()`; C4 I/O inside a compute handler; C5 literal host, URL, port, timeout, path, model, engine name or topic in code; C6 in-memory bus or default built in code; C7 a node loading its own contract by file path; C8 per-repository validators and repository-local hooks; C9 inline scripts in `dod_evidence` or workflows; C10 first-party refs pinned to a sha or held twice; C11 plan, ticket or brief tasks with no Configuration or Bindings criterion and no in-memory plus Redpanda falsifier. "None" means no artifact check can catch it, with the reason.
+
+| F | Finding (audit heading) | Class | Caught by |
+|---|---|---|---|
+| F01 | plan-dispatch-0035, 25 lanes' `job.json` lack the DI block | C11 | K12 `brief_missing_rule_block` over `job.json` |
+| F02 | t-w1b-0035 not placed | none | Status note, not a violation; placement receipts are decision data |
+| F03 | patched DI paragraph incomplete, `rules.md` lacks it | C11 | K12 `rule_block_incomplete` over the source and `rules.md`; `brief_missing_rule_block` over the briefs |
+| F04 | 15 earlier-wave briefs | C11 | K12 over briefs; their PRs by K1 to K11 in stage 3 |
+| F05 | tickets OMN-21488 to OMN-21516 lack the criterion | C11 | K12 over ticket text and `contracts/OMN-*.yaml` |
+| F06 | factory plan 0d.4, no live broker overlay falsifier | C11 | K12 `missing_two_overlay_falsifier`, `replay_only_bindings_falsifier` |
+| F07 | this plan, sections A to C with no Configuration or Bindings | C11 | K12; stays open until the D.5 criteria are carried into, or explicitly inherited by, every affected section C task |
+| F08 | factory plan section 9 protocol tasks, 20 transcript-only Bindings | C11 | K12 `replay_only_bindings_falsifier` |
+| F09 | factory plan tasks, no zero-literal criterion; T-Q6 ends at a baseline | C11 | K12 `missing_zero_literal_falsifier` |
+| F10 | merged omnimarket validator predicates (T-B1, T-P1, T-G1, T-G2) | C8 | K7 `validator_node_outside_core`; K10 on their rule tables |
+| F11 | T-A1 `run_tlc.sh`, hook and CI step | C8, C9 | K7 `repo_script_hook`; canonical_file_shape `noncanonical-file`; K9 for the CI step |
+| F12 | T-V0c extends a script; T-C6 one bus only | C8, C11 | canonical_file_shape `baselined-file-growth` (exists); K12 `missing_two_overlay_falsifier` |
+| F13 | this plan's line 14 and T2.5(b) | none | Prose contradicting a ruling is not an artifact rule; struck by this amendment |
+| F14 | this plan T4.2 to T4.6, controllers on `node_overlay_reader` | C11, C6 | K12 `missing_container_resolution_criterion`; K5 on the controller code; K12 `task_in_frozen_repository` for plugin scripts |
+| F15 | OMN-21515 and OMN-21516 criteria | C11 | K12 over ticket text |
+| F16 | knowledge_base_internal#1547 `dod_evidence` inline `python3 -c` | C9 | K9 `inline_program` |
+| F17 | knowledge_base_internal#1538 T-M1 to T-M5 | C11 | K12 `missing_configuration_criterion`, `missing_bindings_criterion`, `task_in_frozen_repository` |
+| F18 | 2215 and 2230 briefs lack the block | C11 | K12 `brief_missing_rule_block` |
+| F19 | omnibase_core#2107 `_LOCAL_BACKENDS`, `state_root` default | C6, C5 | K5 `code_side_binding_table`, `default_implementation_construction`; K6 F |
+| F20 | omnibase_core#2107 positional `handle`, `backend_cls()`, registry mutation, no node | C3, C2, C1 | K3 `noncanonical_handle`, `mutating_public_method`; K2 `handler_outside_node`; K1 `reflective_construction` |
+| F21 | omnibase_core#2105 URL and timeout in handlers, URL, retries, sleeps in the workflow | C5 | K6 G, O (code and workflow) |
+| F22 | omnibase_core#2105 inline matrix and bash loop; 4-argument `handle`; `load_contract()` in `handle`; argparse CLI | C9, C3, C7, C2 | K9 `inline_python`, `inline_loop`; K3; K1 `contract_self_load`; K2 `cli_entry_outside_node` |
+| F23 | omnibase_core#2105 `HandlerDependencyPinBump().handle(` | C1 | K1 `call_site_construction` |
+| F24 | omnibase_core#2106 handler plus argparse plus subprocess git, no node | C2 | K2 both rules (K4 then judges the git reads once it is a node) |
+| F25 | omnibase_core#2106 `HandlerActionPin().handle(`, `NodeValidationReportWriteEffect().handle(` | C1 | K1 `call_site_construction` |
+| F26 | omnibase_core#2108 module functions, no `handle`, no node | C3, C2 | K3 `module_function_handler`; K2 |
+| F27 | omnibase_core#2110 hand-built handler, `contract=None` default | C1, C7 | K1 `call_site_construction`, `constructor_signature`, `contract_self_load` |
+| F28 | omnibase_core#2110 file reads in a handler, console script, no node | C4, C2 | K2 `cli_entry_outside_node`, `handler_outside_node`; K4 reads once it is a node |
+| F29 | omnibase_core#2111 `timeout=30`, `Path.home()` cache default | C5 | K6 O, F |
+| F30 | omnibase_core#2111 `sqlite3`, `subprocess` in `handlers/`, hand-built handlers | C2, C1 | K2; K1; no_raw_sqlite3 (exists, D.1, matched by its `validator_id`) |
+| F31 | omnibase_core#2112 hand-built handler and effect, CLI reads hook files | C1, C2 | K1; K2 |
+| F32 | omnibase_core#2113 `default_dirs`, `_REMEDIATION` in code, hand-built handlers, baseline write in the CLI | C5, C1, C2 | K10 `rule_table_in_checker` (the CLI gate writes a report); K1; K2 |
+| F33 | omnimarket#4546 `None` ports, classifier fallback, `gate_not_wired` branch | C1 | K1 `optional_port_default`, `fallback_construction`, `constructor_signature` |
+| F34 | omnimarket#4529 `build_local_bus()`, `getattr(...)()`, `BUS_FACTORIES` | C6, C1 | K5 `default_implementation_construction`, `code_side_binding_table`; K1 `reflective_construction` |
+| F35 | omnimarket#4551 baseline of 4,572 admitted findings, no zero target | C5 | hardcoded_model_config (exists); the gap is the target, fixed by D.4 stage 2 |
+| F36 | omnimarket#4551 core tag in `ci.yml` and `.pre-commit-config.yaml` drifted | C10 | K11 `first_party_ref_two_homes` |
+| F37 | omnimarket#4547 engine sets as module constants, self-loaded policy fallback, sibling handler import | C5, C7, C1 | K6 N, T; K1 `contract_self_load`, `fallback_construction`, `sibling_handler_import` |
+| F38 | omnimarket#4518 engine enum and aliases, edge constants, `getattr(...)()` | C5, C1 | K6 N; K1 `reflective_construction`, `contract_value_literal`, `contract_self_load` |
+| F39 | omnimarket#4519 and #4523 `REGISTRY_PATH`, read in compute, `_STEPS`, module globals, `timeout=240` | C5, C4, C1 | K6 F, O; K4 reads; K1 `contract_value_literal`, `module_singleton` |
+| F40 | omnimarket#4517, #4521, #4515, #4520, #4548 `CONTRACT_PATH` defaults; `trailing_days` twice | C7, C4 | K1 `contract_self_load`; K4 reads; K5 `setting_two_homes` |
+| F41 | omnimarket#4549 test judging the hook config | C8 | K7 `config_pinning_test` |
+| F42 | omnimarket#4512 TLA+ runner with URL, image and limits | C8, C5 | canonical_file_shape `noncanonical-file`; K6 O for the heap and worker limits. The third-party jar URL and the container image name are uncovered (no rule judges a third-party tool location); keeping the runner as an accepted formal-tooling exception is an orchestrator call |
+| F43 | omnimarket#4541 first-party sha in `uses:` and `cross_repo_ref:`; PR cites another ticket's id | C10, partial | `action-pins` (exists; the PR is red on it); K11 `cross_repo_ref_not_dev_tag`. The ticket-fit half needs Linear facts: none |
+| F44 | omnibase_infra#5426 `isinstance(event_bus, EventBusKafka)`, handler built in the kernel | C6, C1 | K5 `implementation_isinstance_branch`; K1 `call_site_construction` |
+| F45 | omnibase_infra#5426 handler with no node and no `handle()`, admin client built by hand | C2, C3, C6 | K2; K3 `noncanonical_handle`; K5 `client_construction_outside_binding` |
+| F46 | omnibase_infra#5426 `_POLL_TIMEOUT_MS`, `_OFFSET_CHUNK` | C5 | K6 O |
+| F47 | omnibase_infra#5425 script growth, `BUILD_ONLY_SERVICES`, git host and org | C8, C5 | canonical_file_shape `baselined-file-growth` with a base (the three scripts are in infra's baseline, verified: 3 matches); K6 P, G |
+| F48 | omnibase_infra#5428 three repository-local hooks | C8 | K7 `local_hook_definition`; K8 replaces them |
+| F49 | omniclaude#3019 inline-bash hooks | C8, C9 | K7 `local_hook_definition`; K8 replaces them |
+
+Mechanical coverage: 46 findings fully, F43 partly (its pin half), F02 and F13 not at all (they are not violations of an artifact rule). T0.8 carries assertions for 47 findings, F43's pin half included.

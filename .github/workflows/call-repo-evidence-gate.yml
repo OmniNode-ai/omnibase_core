@@ -72,7 +72,7 @@ permissions:
 
 jobs:
   repo-evidence:
-    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@fb0c6c2117d5868a398b0920cd0048d0824415b1 # OMN-20074: immutable full-SHA pin, the squash commit of omnibase_core#1914 on dev (carries #1912's contract-home marker and caller-mode verify no-op, #1911's in-job pin-only verdict, and adds the OCC writer app's release-cut exemption)
+    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261018024445-b6ee996befa1 # Dev-merge tag (OMN-21495).
     with:
       evidence-source: caller
       verifier-version: 0.4.305
