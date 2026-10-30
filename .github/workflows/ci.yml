@@ -2295,8 +2295,8 @@ jobs:
             base="$(git merge-base "$base" HEAD)"
             uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --base "$base" --head HEAD
           else
-            echo "no base revision on this event; checking the tree against the baseline only"
-            uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --head HEAD
+            echo "no base revision on this event; checking the tree against the file-shape baseline only (node-home runs in the next step)"
+            uv run python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check --rules file-shape --head HEAD
           fi
 
       - name: Node-home positive control (planted node refused, clean tree accepted)
