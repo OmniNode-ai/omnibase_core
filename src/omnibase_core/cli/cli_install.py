@@ -296,13 +296,14 @@ def cli_install(
 ) -> None:
     """Install an ONEX contract package with validation.
 
+    Packages, not the machine: a new developer starts with onex setup.
+
     Supports two modes:
     1. .oncp archives — unpack to ~/.omnibase/registry/<name>/
     2. pip packages — install via pip with contract validation
 
     \b
     Examples:
-        onex install node_aislop_sweep-1.0.0.oncp
         onex install ./my-package.oncp --upgrade
         onex install omnimarket --dry-run
     """
