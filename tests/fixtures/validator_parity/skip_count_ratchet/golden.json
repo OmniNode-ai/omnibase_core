@@ -1256,7 +1256,7 @@
     "suite": "omnibase_core/test-parallel",
     "decision": true,
     "exit_code": 0,
-    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — omnibase_core/test-parallel\n  repo          : omnibase_core\n  job           : Tests (Split n/m)\n  mode          : nodeids\n  observed      : 0 unique skipped / 7 collected, across 1 JUnit report(s)\n  baseline      : 60 unique skipped / 45557 collected\n================================================================\n  PASS — narrowed selection: the impacted-test selector collected 7 of the baseline's 45557, so 0 of 60 baseline skips were observed. Not a ratchet candidate; the lower number is the selector, not progress.\n",
+    "stdout": "================================================================\nSkip Count Ratchet (OMN-18776) — omnibase_core/test-parallel\n  repo          : omnibase_core\n  job           : Tests (Split n/m)\n  mode          : nodeids\n  observed      : 0 unique skipped / 7 collected, across 1 JUnit report(s)\n  baseline      : 58 unique skipped / 45557 collected\n================================================================\n  PASS — narrowed selection: the impacted-test selector collected 7 of the baseline's 45557, so 0 of 58 baseline skips were observed. Not a ratchet candidate; the lower number is the selector, not progress.\n",
     "findings": []
   }
 ]
