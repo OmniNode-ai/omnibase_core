@@ -27,6 +27,9 @@ validation:
     - "**/runbooks/*.md"
     - "**/config/lab/*.yaml"
     - "**/config/onex/overlays/**/*.yaml"
+    - "runbooks/*.md"
+    - "config/lab/*.yaml"
+    - "config/onex/overlays/**/*.yaml"
 
   exclude_patterns:
     - "**/__pycache__/**"
