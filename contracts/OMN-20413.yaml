@@ -21,6 +21,9 @@ requirements:
         statement: On an Ubuntu 24.04 runner whose archive is listed only in deb822 source parts, the
           rootless path copies the host's source parts into its private apt state instead of turning source
           parts off, so postgresql-16's Ubuntu dependencies (libjson-perl) resolve.
+      - id: AC3
+        statement: The repo-evidence caller pins receipt-gate.yml by a dev-merge tag at or after omnibase_core#2158,
+          so a Binds-Merged-Fix control whose revert conflicts at the merge base runs at the fix's parent.
 evidence_requirements:
   - kind: tests
     description: Hosted CI test that pins the step's sudo path, rootless extraction path and named refusal.
@@ -55,4 +58,14 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q
           --no-cov -k "deb822_sources"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn20413-caller-pin-parent-control
+    description: The caller pin test reads the receipt-gate tag and refuses one from before omnibase_core#2158;
+      it fails at the merge base, whose caller pins dev-20261018024445-b6ee996befa1.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_repo_evidence_caller_pin_parent_control_omn20413.py
+          tests/ci/test_s6_caller_occ_disabled_omn20969.py -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core

@@ -96,7 +96,7 @@ jobs:
 
 
 DEV_MERGE_TAG_USES_TAIL = (
-    "@dev-20261018024445-b6ee996befa1 # Dev-merge tag (OMN-21495)."
+    "@dev-20261030104005-e72840439bef # Dev-merge tag (OMN-21495)."
 )
 
 
