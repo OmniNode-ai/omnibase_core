@@ -18,36 +18,34 @@ requirements:
     acceptance:
       - id: AC1
         statement: 'AC1: a no-legacy-handler flip with a valid receipt passes the ratchet. -- falsifier:
-          uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -n 0 -k test_no_legacy_flip_with_valid_receipt_passes'
+          uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k test_no_legacy_flip_with_valid_receipt_passes'
       - id: AC2
         statement: 'AC2: the same flip without the receipt fails and the failure names the no-legacy receipt
-          shape. -- falsifier: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py
-          -q -n 0 -k test_no_legacy_flip_without_receipt_fails'
+          shape. -- falsifier: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q
+          -n 0 -k test_no_legacy_flip_without_receipt_fails'
       - id: AC3
         statement: 'AC3: a node that had a handler at the merge base cannot use the no-legacy path, and
           an older handler-less commit cannot be cited past a live handler. -- falsifier: uv run pytest
-          tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -n 0 -k "test_node_that_had_a_handler_cannot_use_no_legacy_path
+          tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k "test_node_that_had_a_handler_cannot_use_no_legacy_path
           or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler"'
       - id: AC4
         statement: 'AC4: the existing ratchet and flip-bundle tests pass. -- falsifier: uv run pytest
-          tests/unit/scripts/ci/test_canonical_handler_shape.py tests/unit/scripts/ci/test_verify_flip_bundle.py
+          tests/unit/validation/test_checker_handler_shape.py tests/unit/scripts/ci/test_verify_flip_bundle.py
           -q -n 0'
 evidence_requirements:
   - kind: tests
     description: A no-legacy flip with a valid receipt is a proven flip.
-    command: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -n 0 -k
-      test_no_legacy_flip_with_valid_receipt_passes
+    command: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k test_no_legacy_flip_with_valid_receipt_passes
   - kind: tests
     description: The same flip without a receipt is an unproven flip.
-    command: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -n 0 -k
-      test_no_legacy_flip_without_receipt_fails
+    command: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k test_no_legacy_flip_without_receipt_fails
   - kind: tests
     description: A node that had a handler is refused the no-legacy path.
-    command: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q -n 0 -k
-      "test_node_that_had_a_handler_cannot_use_no_legacy_path or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler"
+    command: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k "test_node_that_had_a_handler_cannot_use_no_legacy_path
+      or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler"
   - kind: tests
     description: The existing ratchet and flip-bundle tests pass.
-    command: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py tests/unit/scripts/ci/test_verify_flip_bundle.py
+    command: uv run pytest tests/unit/validation/test_checker_handler_shape.py tests/unit/scripts/ci/test_verify_flip_bundle.py
       -q -n 0
 emergency_bypass:
   enabled: false
@@ -59,8 +57,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
-          -n 0 -k test_no_legacy_flip_with_valid_receipt_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k test_no_legacy_flip_with_valid_receipt_passes
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
@@ -69,8 +66,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
-          -n 0 -k test_no_legacy_flip_without_receipt_fails
+        check_value: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k test_no_legacy_flip_without_receipt_fails
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
@@ -79,8 +75,8 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape_no_legacy.py -q
-          -n 0 -k "test_node_that_had_a_handler_cannot_use_no_legacy_path or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler"
+        check_value: uv run pytest tests/unit/validation/test_validator_flip_no_legacy.py -q -n 0 -k "test_node_that_had_a_handler_cannot_use_no_legacy_path
+          or test_old_handlerless_commit_cannot_be_cited_past_a_live_handler"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
@@ -89,7 +85,7 @@ dod_evidence:
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/scripts/ci/test_canonical_handler_shape.py tests/unit/scripts/ci/test_verify_flip_bundle.py
+        check_value: uv run pytest tests/unit/validation/test_checker_handler_shape.py tests/unit/scripts/ci/test_verify_flip_bundle.py
           -q -n 0
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:

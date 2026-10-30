@@ -660,7 +660,7 @@ def _assert_parity_red_on_base(
         return False, "hand-flip proof missing parity block"
     test_ids_raw = parity.get("test_ids")
     if not isinstance(test_ids_raw, list) or not test_ids_raw:
-        return False, "hand-flip parity block names no test_ids to execute"
+        return False, "hand-flip parity block names no pytest test_ids to execute"
     base_ref = raw.get("base_ref")
     if not isinstance(base_ref, str) or not base_ref:
         return False, "hand-flip proof missing base_ref"
