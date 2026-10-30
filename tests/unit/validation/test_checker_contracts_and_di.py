@@ -231,3 +231,9 @@ def test_the_contract_holds_no_suppression_comment() -> None:
     contract = _contract()
     assert list(contract.suppression_comments) == []
     assert contract.max_violations == 0
+
+
+def test_a_clone_under_a_worktree_root_is_still_judged(tmp_path: Path) -> None:
+    caller = _workspace(tmp_path / "omni_worktrees" / "OMN-1", listed=False)
+    result = ValidatorContractsAndDi().validate([caller])
+    assert [issue.rule_name for issue in result.issues] == ["first_party_workflow_pin"]

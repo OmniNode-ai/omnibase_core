@@ -42,7 +42,6 @@ validation:
     - '**/.uv-cache/**'
     - '**/.tox/**'
     - '**/site-packages/**'
-    - '**/omni_worktrees/**'
     - '**/archive/**'
     - '**/archived/**'
     - '**/validation/contracts/**'
