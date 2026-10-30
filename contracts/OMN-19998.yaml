@@ -152,6 +152,17 @@ requirements:
           it with --head HEAD alone -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_node_home_activation.py
           -q -n 0 -k no_base fails at the merge base, where the step runs --head HEAD with every rule
           group"
+  - id: "req-omn19998-auto-merge-transient-retry"
+    statement: "A check_suite run of Auto-Merge executes at dev's sha, so its failure reads as a red on
+      dev. The Enable auto-merge step retries the arming sequence on GitHub's transient server-side errors
+      alone, at most three attempts, and fails loudly on any other error or on the last attempt."
+    acceptance:
+      - id: "AC17"
+        statement: "AC17: The live Enable auto-merge Bash, run against a stub gh, recovers after one or
+          two transient 'Something went wrong while executing your query' answers to the squash arm, fails
+          after three, and does not retry a permanent error -- falsifier: uv run pytest tests/unit/validation/test_auto_merge_workflow_shape.py
+          -q -n 0 -o addopts= -k Transient fails at the merge base, where one transient answer fails the
+          step"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -442,3 +453,15 @@ dod_evidence:
           -q -n 0 -o addopts="
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC16"]
+  - id: "dod-omn19998-auto-merge-transient-retry"
+    description: "The Enable auto-merge step, extracted from the workflow and run against a stub gh, retries
+      a transient GraphQL error up to three attempts and does not retry a permanent one. At the merge
+      base three of the four tests fail. The tests require no network or lab services."
+    source: "manual"
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/validation/test_auto_merge_workflow_shape.py -q -n 0 -o
+          addopts= -k Transient"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC17"]

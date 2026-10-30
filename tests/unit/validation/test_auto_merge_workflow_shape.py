@@ -337,6 +337,15 @@ def gh_merge_stub_dir(tmp_path: Path) -> Path:
             args="$*"
             case "$args" in
               *"--auto --squash"*)
+                count=0
+                if [ -f "$STUB_COUNTER_FILE" ]; then
+                  count=$(cat "$STUB_COUNTER_FILE")
+                fi
+                if [ "${STUB_SQUASH_TRANSIENT_FAILURES:-0}" -gt "$count" ]; then
+                  echo "$((count + 1))" > "$STUB_COUNTER_FILE"
+                  echo 'GraphQL: Something went wrong while executing your query on 2026-10-30T14:22:57Z. Please include `9C04:1066A9:12CFC9:3D76E6:6AE4A83E` when reporting this issue.' >&2
+                  exit 1
+                fi
                 if [ "${STUB_SQUASH_RESULT:-success}" = "success" ]; then
                   echo "${STUB_SQUASH_OUTPUT:-auto-merge enabled}"
                   exit 0
@@ -373,6 +382,7 @@ def _run_enable_auto_merge(
     bare_output: str = "",
     squash_result: str = "success",
     squash_output: str = "",
+    squash_transient_failures: int = 0,
 ) -> subprocess.CompletedProcess[str]:
     """Run the live ``Enable auto-merge`` Bash (extracted straight from the
     YAML via ``_step``, so the tests are bound to the deployed logic, not a
@@ -389,6 +399,9 @@ def _run_enable_auto_merge(
         "STUB_BARE_OUTPUT": bare_output,
         "STUB_SQUASH_RESULT": squash_result,
         "STUB_SQUASH_OUTPUT": squash_output,
+        "STUB_SQUASH_TRANSIENT_FAILURES": str(squash_transient_failures),
+        "STUB_COUNTER_FILE": str(gh_merge_stub_dir / "squash_transient_count"),
+        "AUTO_MERGE_RETRY_DELAY_SECONDS": "0",
     }
     return subprocess.run(
         ["bash", "-c", script],
@@ -483,6 +496,87 @@ class TestAutoMergeEnableStepBehavior:
         assert result.returncode == 1
         assert "auto-merge failed:" in result.stdout
         assert "(squash)" not in result.stdout
+
+
+class TestAutoMergeEnableStepTransientRetry:
+    """OMN-19998: transient GraphQL retry coverage for run 41071188280, PR #2171.
+
+    Execute the live arming script against transient squash failures to verify
+    recovery, retry exhaustion, and immediate failure for permanent errors.
+    """
+
+    def test_one_transient_squash_failure_then_success(
+        self, gh_merge_stub_dir: Path
+    ) -> None:
+        """A transient squash failure retries the arming sequence and recovers."""
+        result = _run_enable_auto_merge(
+            gh_merge_stub_dir=gh_merge_stub_dir,
+            bare_result="failure",
+            bare_output=(
+                "--merge, --rebase, or --squash required when not running interactively"
+            ),
+            squash_transient_failures=1,
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "transient GitHub error on attempt 1 of 3" in result.stdout
+        assert "auto-merge enabled (squash):" in result.stdout
+        assert (gh_merge_stub_dir / "squash_transient_count").read_text().strip() == "1"
+
+    def test_two_transient_squash_failures_then_success(
+        self, gh_merge_stub_dir: Path
+    ) -> None:
+        """Two transient failures leave a third arming attempt to recover."""
+        result = _run_enable_auto_merge(
+            gh_merge_stub_dir=gh_merge_stub_dir,
+            bare_result="failure",
+            bare_output=(
+                "--merge, --rebase, or --squash required when not running interactively"
+            ),
+            squash_transient_failures=2,
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "attempt 2 of 3" in result.stdout
+        assert "auto-merge enabled (squash):" in result.stdout
+        assert (gh_merge_stub_dir / "squash_transient_count").read_text().strip() == "2"
+
+    def test_three_transient_squash_failures_exhaust_retries(
+        self, gh_merge_stub_dir: Path
+    ) -> None:
+        """A third transient failure fails loudly without announcing another retry."""
+        result = _run_enable_auto_merge(
+            gh_merge_stub_dir=gh_merge_stub_dir,
+            bare_result="failure",
+            bare_output=(
+                "--merge, --rebase, or --squash required when not running interactively"
+            ),
+            squash_transient_failures=3,
+        )
+
+        assert result.returncode == 1
+        assert "auto-merge failed:" in result.stdout
+        assert "Something went wrong" in result.stdout
+        assert "attempt 3 of 3" not in result.stdout
+        assert (gh_merge_stub_dir / "squash_transient_count").read_text().strip() == "3"
+
+    def test_non_transient_squash_failure_does_not_retry(
+        self, gh_merge_stub_dir: Path
+    ) -> None:
+        """A permanent squash failure exits immediately without a transient retry."""
+        result = _run_enable_auto_merge(
+            gh_merge_stub_dir=gh_merge_stub_dir,
+            bare_result="failure",
+            bare_output=(
+                "--merge, --rebase, or --squash required when not running interactively"
+            ),
+            squash_result="failure",
+            squash_output="some unrelated permanent error",
+        )
+
+        assert result.returncode == 1
+        assert "auto-merge failed: some unrelated permanent error" in result.stdout
+        assert "transient GitHub error" not in result.stdout
 
 
 # ---------------------------------------------------------------------------
