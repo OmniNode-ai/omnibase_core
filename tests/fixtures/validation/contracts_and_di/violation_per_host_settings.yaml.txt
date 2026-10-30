@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Planted: per-host copies of the same settings under a host-keyed mapping.
+hosts:
+  host-a:
+    runtime_image_tag: dev
+    max_lanes: 4
+    log_level: info
+    probe_period: 60
+  host-b:
+    runtime_image_tag: dev
+    max_lanes: 4
+    log_level: info
+    probe_period: 60

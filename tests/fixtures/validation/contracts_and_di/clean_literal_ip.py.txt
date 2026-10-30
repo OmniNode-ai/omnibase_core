@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+def broker_address(settings):
+    """Docstrings may name 203.0.113.7 as an example."""
+    return settings.broker_address

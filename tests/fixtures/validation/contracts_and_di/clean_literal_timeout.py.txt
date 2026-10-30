@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+import asyncio
+
+
+async def poll(client, settings):
+    await asyncio.sleep(0)
+    return await client.read(settings.topic, timeout_seconds=settings.read_timeout_seconds)

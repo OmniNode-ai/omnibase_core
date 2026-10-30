@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Planted: an exact pin of a first-party package that no advancer moves.
+[project]
+name = "consumer"
+dependencies = [
+    "omnibase-spi==0.23.7",
+]

@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+def publish(bus, contract, payload):
+    return bus.publish(contract.event_bus.publish_topics[0], payload)

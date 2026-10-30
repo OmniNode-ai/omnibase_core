@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Clean: a version floor, which the dev-merge tag source satisfies as it advances.
+[project]
+name = "consumer"
+dependencies = [
+    "omnibase-spi>=0.23.7,<0.24.0",
+]

@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Planted: the second principal hand-copies the first one's grant set.
+principals:
+  - principal: User:lane-host-a
+    role: lane host a
+    grants:
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.hook-event.v1, operation: WRITE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.hook-event.v1, operation: DESCRIBE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.agent-status.v1, operation: WRITE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.agent-status.v1, operation: DESCRIBE}
+      - {resource_type: CLUSTER, pattern: LITERAL, name: kafka-cluster, operation: IDEMPOTENT_WRITE}
+  - principal: User:lane-host-b
+    role: lane host b
+    grants:
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.hook-event.v1, operation: WRITE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.hook-event.v1, operation: DESCRIBE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.agent-status.v1, operation: WRITE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.agent-status.v1, operation: DESCRIBE}
+      - {resource_type: CLUSTER, pattern: LITERAL, name: kafka-cluster, operation: IDEMPOTENT_WRITE}

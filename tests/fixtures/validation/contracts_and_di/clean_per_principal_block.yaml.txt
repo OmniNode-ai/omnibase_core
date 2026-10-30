@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Clean: the grant set is declared once as a role and each principal binds to it.
+roles:
+  hook_emitter:
+    grants:
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.hook-event.v1, operation: WRITE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.hook-event.v1, operation: DESCRIBE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.agent-status.v1, operation: WRITE}
+      - {resource_type: TOPIC, pattern: LITERAL, name: onex.evt.sample.agent-status.v1, operation: DESCRIBE}
+      - {resource_type: CLUSTER, pattern: LITERAL, name: kafka-cluster, operation: IDEMPOTENT_WRITE}
+principals:
+  - principal: User:lane-host-a
+    roles: [hook_emitter]
+  - principal: User:lane-host-b
+    roles: [hook_emitter]

@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+def publish(bus, payload):
+    return bus.publish("onex.evt.platform.sample-finished.v1", payload)
