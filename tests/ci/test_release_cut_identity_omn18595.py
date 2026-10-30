@@ -141,3 +141,15 @@ def test_release_changelog_retains_version_0_47_58_in_root_readme() -> None:
         "- T4.1a: hardcoded_model_config families T (tier aliases) and N (engine names) (#2121)"
         in readme
     )
+
+
+def test_release_changelog_retains_version_0_47_59_in_root_readme() -> None:
+    """Keep the 0.47.59 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.59 (2026-10-30)" in readme
+    assert "### Included Since v0.47.58" in readme
+    assert (
+        "- fix: shipped contracts name the producer of each externally produced topic (#2166)"
+        in readme
+    )
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()
