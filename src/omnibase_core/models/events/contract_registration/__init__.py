@@ -9,6 +9,7 @@ and provide liveness heartbeats.
 
 Models:
     ModelContractRegisteredEvent: Contract registration with full YAML for replay.
+    ModelNodeAnnouncement: One contract of one installed package, announced or withdrawn.
     ModelContractDeregisteredEvent: Graceful contract deregistration.
     ModelNodeHeartbeatEvent: Node liveness heartbeat.
 
@@ -24,6 +25,9 @@ import importlib.util
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from omnibase_core.models.events.contract_registration.model_announced_package import (
+        ModelAnnouncedPackage,
+    )
     from omnibase_core.models.events.contract_registration.model_contract_deregistered_event import (
         CONTRACT_DEREGISTERED_EVENT,
         ModelContractDeregisteredEvent,
@@ -31,6 +35,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.events.contract_registration.model_contract_registered_event import (
         CONTRACT_REGISTERED_EVENT,
         ModelContractRegisteredEvent,
+    )
+    from omnibase_core.models.events.contract_registration.model_node_announcement import (
+        ModelNodeAnnouncement,
     )
     from omnibase_core.models.events.contract_registration.model_node_heartbeat_event import (
         NODE_HEARTBEAT_EVENT,
@@ -43,8 +50,10 @@ __all__ = [
     "CONTRACT_REGISTERED_EVENT",
     "NODE_HEARTBEAT_EVENT",
     # Event models
+    "ModelAnnouncedPackage",
     "ModelContractDeregisteredEvent",
     "ModelContractRegisteredEvent",
+    "ModelNodeAnnouncement",
     "ModelNodeHeartbeatEvent",
 ]
 
@@ -70,6 +79,14 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelContractRegisteredEvent": (
         "omnibase_core.models.events.contract_registration.model_contract_registered_event",
         "ModelContractRegisteredEvent",
+    ),
+    "ModelAnnouncedPackage": (
+        "omnibase_core.models.events.contract_registration.model_announced_package",
+        "ModelAnnouncedPackage",
+    ),
+    "ModelNodeAnnouncement": (
+        "omnibase_core.models.events.contract_registration.model_node_announcement",
+        "ModelNodeAnnouncement",
     ),
     "NODE_HEARTBEAT_EVENT": (
         "omnibase_core.models.events.contract_registration.model_node_heartbeat_event",

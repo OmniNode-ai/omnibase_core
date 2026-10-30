@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Announce lifecycle of one contract of one installed node package (OMN-21589, plan task A1,
+# section 3.11.9 of the contract hot-loading plan): from the package's own metadata to the
+# catalog's acknowledgement. This block is the canonical text. The announcer's node contract
+# carries a copy as its state_transitions block, and the Mermaid diagram in the plan is
+# generated from it by ModelFsmMermaidDiagram, never drawn by hand.
+
+name: node_announce_lifecycle
+description: Announce lifecycle of one contract of one installed node package
+
+state_transitions:
+  version: &v {major: 1, minor: 0, patch: 0}
+  state_machine_name: node_announce_fsm
+  state_machine_version: *v
+  description: One contract of one installed node package, from the package's own metadata to the catalog's
+    acknowledgement
+  initial_state: package_found
+  terminal_states: [withdrawn]
+  error_states: [announce_refused]
+  states:
+    - {version: *v, state_name: package_found, state_type: operational, description: "an installed package
+        names a contract path in its own metadata"}
+    - {version: *v, state_name: contract_read, state_type: operational, description: "the contract file
+        is read and parsed, nothing is imported"}
+    - {version: *v, state_name: hashed, state_type: operational, description: "the canonical content hash
+        is computed over the file bytes"}
+    - {version: *v, state_name: announced, state_type: operational, description: "the announcement is
+        on the in-memory bus, before any container exists"}
+    - {version: *v, state_name: acknowledged, state_type: operational, description: "the catalog has recorded
+        this name at this hash"}
+    - {version: *v, state_name: announce_refused, state_type: error, description: "the contract did not
+        parse, or the catalog refused it, with a typed reason"}
+    - {version: *v, state_name: withdrawn, state_type: terminal, is_terminal: true, is_recoverable: false,
+      description: "the package is gone; the catalog is told and the name stops being startable"}
+  transitions:
+    - {version: *v, transition_name: read_contract, from_state: package_found, to_state: contract_read,
+      trigger: contract_file_read}
+    - {version: *v, transition_name: reject_unreadable, from_state: contract_read, to_state: announce_refused,
+      trigger: contract_invalid}
+    - {version: *v, transition_name: hash_contract, from_state: contract_read, to_state: hashed, trigger: content_hash_computed}
+    - {version: *v, transition_name: publish_announcement, from_state: hashed, to_state: announced, trigger: announcement_published}
+    - {version: *v, transition_name: acknowledge, from_state: announced, to_state: acknowledged, trigger: catalog_acknowledged}
+    - {version: *v, transition_name: retry_announce, from_state: announced, to_state: hashed, trigger: acknowledgement_timeout,
+      retry_enabled: true, max_retries: 3}
+    - {version: *v, transition_name: reject_announcement, from_state: announced, to_state: announce_refused,
+      trigger: catalog_refused}
+    - {version: *v, transition_name: re_announce, from_state: acknowledged, to_state: hashed, trigger: package_version_changed}
+    - {version: *v, transition_name: withdraw, from_state: acknowledged, to_state: withdrawn, trigger: package_removed}
