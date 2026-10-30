@@ -1,0 +1,6 @@
+[project]
+name = "consumer"
+version = "1.0.0"
+dependencies = ["Demo_Package==2.3.4"]
+[tool.uv.sources]
+Demo_Package = { git = "file:///fixture/origin.git", tag = "dev-20261029143607-aaaaaaaaaaaa" }

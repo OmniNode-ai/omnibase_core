@@ -1,0 +1,4 @@
+[project]
+name="consumer"
+version="1.0.0"
+dependencies=["omnibase-core @ git+https://example.test/first-party.git@aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]

@@ -1,0 +1,6 @@
+[project]
+name = "consumer"
+version = "1.0.0"
+dependencies = ["omnibase-core>=2.3.0,<3.0"]
+[tool.uv.sources]
+omnibase-core = {url = "https://example.test/core.whl"}

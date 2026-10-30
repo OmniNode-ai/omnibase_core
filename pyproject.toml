@@ -41,6 +41,8 @@ dependencies = [
     "dependency-injector>=4.49.1,<5.0.0",
     "deepdiff>=8.0.0,<10.0.0",
     "click>=8.3.1,<9.0.0",
+    # OMN-17427: packaging is imported by checker_dev_tag_lineage and node_release_identity_check_compute.handler.
+    "packaging>=26.0,<27.0",
     # OMN-15688 (2026-08-04): floor raised to 50.0.0 to clear two HIGH CVEs that
     # Trivy flags on the omninode-runtime image at cryptography 48.0.1 --
     # CVE-2026-69247 (PKCS#7 EnvelopedData decryption exposes a Bleichenbacher
