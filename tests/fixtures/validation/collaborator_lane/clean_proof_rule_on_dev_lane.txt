@@ -1,0 +1,5 @@
+# Proof rules
+
+Collaborators prove every change on the stability-test lane at its pinned release before they open a pull request.
+
+Orchestrator lanes prove their own work on the dev lane.

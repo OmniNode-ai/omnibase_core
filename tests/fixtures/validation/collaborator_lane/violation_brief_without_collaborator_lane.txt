@@ -1,0 +1,8 @@
+Lane brief: add a usage chart to the projection page
+Owner: dashboard owner
+
+Read the usage tables through the projection API and add the chart.
+
+# Standing rules for every dispatched lane (read fully before the first tool call)
+Run lane: stability-test is the example a brief copies for its own run lane line.
+instead of at design time.

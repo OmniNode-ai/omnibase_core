@@ -1,0 +1,114 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21599: collaborator_lane. Operator ruling 2026-10-30T12:43:03Z: "jake and lakshman need their own lanes and
+# should not be dependent on dev which I am working in and breaking. test/stability is their lane." The role
+# words, lane tokens, block markers and every diagnostic are rule data; the checker module holds none of them.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: collaborator_lane
+  validator_name: Collaborator Lane Validator
+  validator_description: >-
+    Refuse a lane brief, a proof rule or a lab placement that sends collaborator-owned work to the dev
+    lane: a brief whose owner is a collaborator role and that names a dev-lane target or no stability
+    lane, a proof rule that tells collaborators to prove on the dev lane, and a placement that gives a
+    collaborator role a dev lane value. #magic___^_^___line
+  target_patterns:
+    - "**/job.json"
+    - "**/*brief*.md"
+    - "**/*brief*.txt"
+    - "**/rules.md"
+    - "**/lane-rules-block.md"
+    - "**/proof-rules.md"
+    - "**/runbooks/*.md"
+    - "**/config/lab/*.yaml"
+    - "**/config/onex/overlays/**/*.yaml"
+    - "runbooks/*.md"
+    - "config/lab/*.yaml"
+    - "config/onex/overlays/**/*.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: brief_on_dev_lane
+      description: Refuse a brief owned by a collaborator that names a dev-lane target outside the pasted
+        standing block.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{subject} is owned by a collaborator and names the dev lane ({target}); collaborator
+          work runs, is tested and is proven on the test/stability lane (RULING 2026-10-30T12:43:03Z)"
+        source_pattern: '(?:^|/)job\.json$|(?:^|/)[^/]*brief[^/]*\.(?:md|txt)$'
+        block_start: "# Standing rules for every dispatched lane (read fully before the first tool call)"
+        block_end: "instead of at design time."
+        escaped_newline: '\n'
+        collaborator_pattern: '(?im)^\s*(?:ticket owner|owner|assignee|pillar)\s*:\s*(?:the\s+)?(?:cloud
+          owner|dashboard owner|collaborator)\b'
+        dev_lane_pattern: '(?i)--(?:bus-)?lane[ =]dev\b|\bdev lane\b|\bdev-merge tags?\b|\bcompose project
+          omnibase-infra\b(?!-)|\b(?:proof |run |lab )?lane\s*:\s*dev\b'
+    - rule_id: brief_without_collaborator_lane
+      description: Require a brief owned by a collaborator to name the test/stability lane it runs on.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{subject} is owned by a collaborator and names no test/stability run lane (a line 'Run
+          lane: stability-test')"
+        source_pattern: '(?:^|/)job\.json$|(?:^|/)[^/]*brief[^/]*\.(?:md|txt)$'
+        block_start: "# Standing rules for every dispatched lane (read fully before the first tool call)"
+        block_end: "instead of at design time."
+        escaped_newline: '\n'
+        collaborator_pattern: '(?im)^\s*(?:ticket owner|owner|assignee|pillar)\s*:\s*(?:the\s+)?(?:cloud
+          owner|dashboard owner|collaborator)\b'
+        assigned_lane_pattern: '(?im)^\s*(?:run|proof|lab) lane\s*:\s*(?:test/)?stability(?:-test)?\b'
+    - rule_id: proof_rule_on_dev_lane
+      description: Refuse a proof rule or runbook paragraph that tells collaborators to prove or verify
+        on the dev lane.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{subject}: a proof rule sends collaborators to the dev lane ({target}): {excerpt}"
+        source_pattern: '(?:^|/)(?:rules|lane-rules-block|proof-rules)\.md$|/runbooks/[^/]*\.md$'
+        paragraph_break_pattern: '\n\s*\n'
+        collaborator_pattern: '(?i)\b(?:cloud owner|dashboard owner|collaborators?|team members?|teammates?)\b'
+        proof_pattern: '(?i)\b(?:prove|proof|verif(?:y|ied)|exercise[sd]?|lab-first|lab pass)\b'
+        dev_lane_pattern: '(?i)--(?:bus-)?lane[ =]dev\b|\bdev lane\b|\bdev-merge tags?\b|\bcompose project
+          omnibase-infra\b(?!-)'
+        assigned_lane_pattern: '(?i)\bstability(?:-test)? lane\b|\btest/stability\b|\bstability-test\b'
+    - rule_id: placement_on_dev_lane
+      description: Refuse a placement or lane declaration that gives a collaborator role a dev lane value.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{subject}: a placement gives the collaborator role '{role}' the dev lane value '{lane}'"
+        source_pattern: '(?:^|/)config/(?:lab|onex/overlays)/.*\.ya?ml$'
+        collaborator_role_pattern: '(?i)\b(?:cloud owner|dashboard owner|collaborator)\b'
+        dev_lane_value_pattern: '(?i)dev(?:-[0-9]+)?|omnibase-infra'
+        lane_keys: [lane, lanes, bus_lane, compose_project, run_lane, proof_lane]
+        role_keys: [owner_role, owner, role, owner_roles]
+    - rule_id: placement_unreadable
+      description: Refuse a placement declaration that cannot be parsed, which no placement rule can then
+        judge.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{subject}: the placement cannot be parsed, so it cannot be judged ({reason})"
+        source_pattern: '(?:^|/)config/(?:lab|onex/overlays)/.*\.ya?ml$'
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

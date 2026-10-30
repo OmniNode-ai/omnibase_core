@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+lanes:
+  - lane: dev
+    owner_role: dashboard owner
+    host: lab-a

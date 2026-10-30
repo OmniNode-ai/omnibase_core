@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+lanes:
+  - lane: stability-test
+    owner_role: cloud owner
+    compose_project: omnibase-infra-stability-test
+  - lane: dev
+    owner_role: orchestrator
+  - lane: dashboard-owner
+    owner_role: dashboard owner
+    compose_project: omnibase-infra-dashboard-owner

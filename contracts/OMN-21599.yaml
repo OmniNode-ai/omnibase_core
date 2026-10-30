@@ -1,0 +1,68 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21599
+title: "collaborator_lane validator: a lane brief, proof rule or lab placement that sends collaborator-owned
+  work to the dev lane is refused"
+summary: The collaborator_lane checker (validation/checker_collaborator_lane.py, entry validator_collaborator_lane.py)
+  judges lane briefs, proof rules and placement declarations with four rules whose role words, lane tokens,
+  block markers and remedy texts are the parameters of collaborator_lane.validation.yaml. Operator ruling
+  2026-10-30T12:43:03Z names the test/stability lane as the collaborators' lane.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21599-collaborator-lane-checker
+    statement: The collaborator_lane checker is core validator logic in the generic validator format,
+      pure, with every rule table held as contract data.
+    acceptance:
+      - id: AC1
+        statement: "AC1: each rule has a planted fixture and a clean fixture -- falsifier: `uv run pytest
+          tests/unit/validation/test_checker_collaborator_lane.py -q` reports exactly one issue with the
+          rule id per violation fixture and none per clean fixture"
+      - id: AC2
+        statement: "AC2: a proof rule and a placement that send a collaborator-owned lane to dev are refused
+          -- falsifier: `uv run pytest tests/unit/validation/test_checker_collaborator_lane.py -q -k 'proof_rule
+          or placement'` passes"
+      - id: AC3
+        statement: "AC3: Configuration: every role word, lane token and diagnostic is a `parameters` entry
+          of the checker's `.validation.yaml` -- falsifier: `uv run pytest tests/unit/validation/test_checker_collaborator_lane.py
+          -q -k parameters` mutates every parameters key and reports the verdict changes, and an invalid
+          contract fails to load"
+evidence_requirements:
+  - kind: tests
+    description: Every violation fixture yields exactly one issue with its rule id, every clean fixture
+      none, every parameters key changes a verdict and an invalid contract fails to load.
+    command: uv run pytest tests/unit/validation/test_checker_collaborator_lane.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21599-ac1-fixtures
+    description: Each rule has a planted violation fixture with exactly one issue and a clean fixture
+      with none.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_collaborator_lane.py -q -o addopts=''
+          -k "violation_fixture or clean_fixture"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21599-ac2-proof-placement
+    description: The proof rule and placement rules refuse a dev lane for a collaborator role.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_collaborator_lane.py -q -o addopts=''
+          -k "proof_rule or placement"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21599-ac3-parameters
+    description: Every parameters entry is load-bearing and an invalid contract fails to load.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_collaborator_lane.py -q -o addopts=''
+          -k "parameters or invalid_contract"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
