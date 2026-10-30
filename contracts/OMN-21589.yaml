@@ -1,0 +1,107 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21589
+title: 'Node announcement record, canonical content hash, pure catalog and admission'
+summary: The announcement record a node package publishes before any container exists, the canonical content
+  hash it carries, the pure catalog and admission policy built from announcements, the announce lifecycle
+  as a contract block with a generated diagram, and the bus, inventory and distribution seams as protocols.
+  The announcer and the bus step that run them are an effect and move to omnimarket under a sibling ticket.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21589-announcement
+    statement: A frozen announcement record with a canonical content hash feeds a pure catalog whose admission
+      refuses with typed reasons and whose lifecycle is a contract block.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the canonical content hash of a contract file is the declared form, so the same
+          contract with Windows or Unix line endings hashes alike -- falsifier: `uv run pytest tests/unit/models/nodes/package_announce/test_canonical_content_hash.py
+          -q` fails on a hash that differs from the canonical form''s'
+      - id: AC2
+        statement: 'AC2: the catalog holds each name at its hash, and re-announcing one with changed bytes
+          replaces its hash while the others are untouched -- falsifier: `uv run pytest tests/unit/models/nodes/package_announce/test_node_catalog.py
+          -q -k "three_names or changed_bytes"` fails on a stale hash or a changed neighbour'
+      - id: AC6
+        statement: 'AC6: an announcement with an older or equal generation is rejected and counted, and
+          a withdrawal from a non-authoritative announcer is refused -- falsifier: `uv run pytest tests/unit/models/nodes/package_announce/test_node_catalog.py
+          -q -k "stale or non_authoritative or authoritative"` fails on a catalog change after either'
+      - id: AC7
+        statement: 'AC7: a contract outside the trusted prefixes, or for a profile the lane does not own,
+          is refused by admission with a typed reason that depends on nothing but its arguments -- falsifier:
+          `uv run pytest tests/unit/models/nodes/package_announce/test_node_announce_policy.py -q` fails
+          on a different reason or an admitted planted violation'
+      - id: AC9
+        statement: 'AC9: the announce lifecycle loads through `ModelFSMSubcontract`, every transition
+          fires through the real executor and a declared state that is not reachable from the initial
+          state fails -- falsifier: `uv run pytest tests/unit/models/nodes/package_announce/test_announce_lifecycle.py
+          -q` fails on an unreachable state passing'
+evidence_requirements:
+  - kind: tests
+    description: Announcement model, hash, catalog, admission, lifecycle and protocol tests pass.
+    command: uv run pytest tests/unit/models/nodes/package_announce tests/unit/models/events/contract_registration/test_model_node_announcement.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21589-ac1-hash
+    description: The hash matches an independent restatement of the declared form; CRLF, LF and lone CR
+      hash alike; a whitespace-only edit moves the hash.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/nodes/package_announce/test_canonical_content_hash.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21589-ac2-catalog
+    description: Three names are held at their hashes; changed bytes replace one hash and leave its neighbours.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/nodes/package_announce/test_node_catalog.py -q --no-cov
+          -o addopts='' -k 'three_names or changed_bytes'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21589-ac6-generation
+    description: Older and equal generations are rejected and counted; a non-authoritative withdrawal
+      is refused; neither changes the entries.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/nodes/package_announce/test_node_catalog.py -q --no-cov
+          -o addopts='' -k 'stale or older or non_authoritative or authoritative or resurrection'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21589-ac7-admission
+    description: Each planted violation is refused with its typed reason and the control is admitted.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/nodes/package_announce/test_node_announce_policy.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21589-ac9-lifecycle
+    description: The lifecycle loads, every state is reachable, each planted violation is caught, every
+      transition fires and the generated diagram equals the plan's.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC9
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/nodes/package_announce/test_announce_lifecycle.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
