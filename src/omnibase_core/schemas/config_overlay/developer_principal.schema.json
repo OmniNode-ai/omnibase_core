@@ -1,5 +1,14 @@
 {
   "$defs": {
+    "EnumDeveloperPrincipalRole": {
+      "description": "The role a ``developer.principal`` overlay row gives its principal.",
+      "enum": [
+        "developer",
+        "machine"
+      ],
+      "title": "EnumDeveloperPrincipalRole",
+      "type": "string"
+    },
     "ModelDeveloperPrincipalDeclaration": {
       "additionalProperties": false,
       "description": "The identity of one developer machine's principal.\n\nThe row names who holds the principal and holds no grant: the grants come\nfrom the document's ``grants_source``.",
@@ -22,6 +31,11 @@
           "pattern": "^[a-z0-9][a-z0-9-]*$",
           "title": "Principal",
           "type": "string"
+        },
+        "role": {
+          "$ref": "#/$defs/EnumDeveloperPrincipalRole",
+          "default": "developer",
+          "description": "Whether the principal is a person's development machine or a machine the deployment runs itself. Never a grant."
         }
       },
       "required": [
