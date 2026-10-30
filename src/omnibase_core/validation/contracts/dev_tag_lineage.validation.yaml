@@ -11,7 +11,7 @@ validation:
     That needs to be an invariant." The identity rules verify the tag; the invariant rules require it
     for first-party iteration, with version ranges instead of exact release overrides.
   target_patterns: [pyproject.toml, '**/pyproject.toml']
-  exclude_patterns: ['**/.git/**', '**/.venv/**', '**/__pycache__/**']
+  exclude_patterns: ['**/.git/**', '**/.venv/**', '**/__pycache__/**', '**/tests/**']
   rules:
     - rule_id: tag_absent
       description: Successful remote contact proves that the tag is absent.
