@@ -85,6 +85,7 @@ JSON_BRIEF = (
     "violation_brief_on_dev_lane.json",
     "clean_brief_on_dev_lane.json",
 )
+JSON_BRIEF_NO_LANE = "violation_brief_without_collaborator_lane.json"
 
 
 def _contract_data() -> dict[str, Any]:
@@ -138,6 +139,14 @@ def test_json_brief_is_judged_outside_its_pasted_standing_block() -> None:
     assert _codes(_run(name, clean, _contract())) == []
 
 
+def test_json_brief_without_a_run_lane_is_refused_even_when_the_block_names_one() -> (
+    None
+):
+    assert _codes(_run(JSON_BRIEF[0], JSON_BRIEF_NO_LANE, _contract())) == [
+        "brief_without_collaborator_lane"
+    ]
+
+
 def test_message_cites_the_ruling_and_the_dev_lane_target() -> None:
     name, violation, _ = CASES["brief_on_dev_lane"]
     (issue,) = _run(name, violation, _contract()).issues
@@ -177,7 +186,11 @@ def test_every_parameters_key_changes_a_verdict_parameters() -> None:
         name, violation, cleans = CASES[rule_id]
         fixtures = [(name, violation), *[(name, clean) for clean in cleans]]
         if rule_id.startswith("brief_"):
-            fixtures += [(JSON_BRIEF[0], JSON_BRIEF[1]), (JSON_BRIEF[0], JSON_BRIEF[2])]
+            fixtures += [
+                (JSON_BRIEF[0], JSON_BRIEF[1]),
+                (JSON_BRIEF[0], JSON_BRIEF[2]),
+                (JSON_BRIEF[0], JSON_BRIEF_NO_LANE),
+            ]
         baseline = [_codes(_run(n, f, _contract(base))) for n, f in fixtures]
         for key, value in rule["parameters"].items():
             if key in {"message", "source_pattern"}:
