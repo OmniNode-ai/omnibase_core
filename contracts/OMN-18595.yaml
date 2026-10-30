@@ -194,3 +194,18 @@ dod_evidence:
           assert not Path("CHANGELOG.md").exists(); assert "## v0.47.58 (2026-10-29)" in notes; assert
           "### Included Since v0.47.57" in notes; assert "(#2121)" in notes and "(#2103)" in notes'
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18595-ac1-release-0-47-59-notes
+    description: The release tree passes the documentation policy and retains this release's notes in
+      root README.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k changelog
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
+          assert not Path("CHANGELOG.md").exists(); assert "## v0.47.59 (2026-10-30)" in notes; assert
+          "### Included Since v0.47.58" in notes; assert "(#2166)" in notes and "(#2164)" in notes'
+        cwd: ${OMNI_HOME}/omnibase_core
