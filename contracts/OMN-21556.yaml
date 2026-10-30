@@ -1,0 +1,65 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21556
+title: "The Binds-Merged-Fix control in the receipt gate runs at the fix's parent when its reverse apply
+  conflicts at the merge base"
+summary: The receipt gate control for a Binds-Merged-Fix binding checks out the fix's own parent when
+  the reverse apply of the fix conflicts at the merge base, and the bound tests must still fail there.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21556-merged-fix-parent-control
+    statement: A fix already on dev can be bound. When its reverse apply conflicts at the merge base,
+      the control runs at the fix's own parent, and a bound test that passes there is refused.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: When the reverse apply of a Binds-Merged-Fix fix conflicts at the merge base,
+          the control checks out the fix''s own parent and the bound tests must still fail there -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -k "parent_control"'
+      - id: AC2
+        statement: 'AC2: A conflicting-revert fixture whose bound test also passes at the fix''s parent
+          is refused -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -k "whose_check_passes_at_parent_is_refused"'
+      - id: AC3
+        statement: 'AC3: The clean-revert path and every other refusal of the control are unchanged --
+          falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q'
+evidence_requirements:
+  - kind: "tests"
+    description: "The merged-fix control tests pass at the head"
+    command: "uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21556-ac1-parent-control
+    description: A conflicting merged fix runs its control at the fix's parent, and a fix whose product
+      file was removed later proceeds there.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -k "parent_control"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21556-ac2-independent-test-refused
+    description: A conflicting-revert fixture whose bound test passes at the fix's parent is refused.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -k "whose_check_passes_at_parent_is_refused"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21556-ac3-other-paths-unchanged
+    description: The whole control suite passes, so the clean-revert path and every other refusal hold.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
