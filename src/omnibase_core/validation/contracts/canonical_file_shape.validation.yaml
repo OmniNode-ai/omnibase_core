@@ -193,7 +193,7 @@ validation:
         workflows_dir: ".github/workflows"
         gate_hook_ids: ["check-direct-model-call", "check-node-boundary-imports", "check-hardcoded-model-config-compute",
           "check-dependency-direction", "check-merge-queue-parity", "check-public-runner-placement", "check-ci-inheritance",
-          "check-checker-rule-data", "check-protocol-binding", "check-event-chain-walker"]
+          "check-checker-rule-data", "check-protocol-binding", "check-event-chain-walker", "handler-di-gate"]
         node_boundary_hook_name: "check-node-boundary-imports"
         node_boundary_baseline: ".onex_ratchets/node_boundary_import_baseline.yaml"
         model_config_hook_name: "check-hardcoded-model-config-compute"

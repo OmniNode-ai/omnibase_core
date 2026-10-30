@@ -1868,6 +1868,20 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # K1 handler_di (OMN-21531): handlers, nodes and command line modules acquire every
+      # dependency from the container. The findings that sat in the tree before K1 are the
+      # shrink-only .onex_ratchets/handler_di_baseline.txt; handing the baseline file to the
+      # hook checks it did not grow against HEAD (the rule row baseline_ratchet names both).
+      - id: handler-di-gate
+        name: Handler DI (OMN-21531)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_handler_di_check_effect.runtime_handler_di_check
+        language: system
+        args: [--baseline, .onex_ratchets/handler_di_baseline.txt]
+        files: ^(src/.*(handlers|nodes)/.*\.py|.*_cli\.py|\.onex_ratchets/handler_di_baseline\.txt)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # K10 checker_rule_data (OMN-21503): no rule table in a checker and no validator
       # outside the generic format. The rule tables that sat in checkers before K10 are
       # burn-down children of OMN-21503 and the only ones admitted: the baseline holds

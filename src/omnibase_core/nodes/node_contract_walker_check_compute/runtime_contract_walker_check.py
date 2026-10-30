@@ -13,7 +13,14 @@ import argparse
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.contract_walker_check.model_contract_walker_check_input import (
     ModelContractWalkerCheckInput,
 )
@@ -29,8 +36,16 @@ from omnibase_core.nodes.node_contract_walker_check_compute.handler import (
 from omnibase_core.nodes.node_text_file_write_effect.handler import (
     NodeTextFileWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.validation.validator_contract_walker import (
     DEFAULT_MAX_PRODUCT_STATES,
+)
+
+_NODE_CONTRACT_WALKER_CHECK_COMPUTE_TOKEN = cast(
+    "type[NodeContractWalkerCheckCompute]", NodeContractWalkerCheckCompute
+)
+_NODE_TEXT_FILE_WRITE_EFFECT_TOKEN = cast(
+    "type[NodeTextFileWriteEffect]", NodeTextFileWriteEffect
 )
 
 
@@ -94,9 +109,46 @@ def _parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def build_container() -> ModelONEXContainer:
+    """Register the runtime's handlers and effects under their service tokens."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for token, implementation in (
+        (_NODE_CONTRACT_WALKER_CHECK_COMPUTE_TOKEN, NodeContractWalkerCheckCompute),
+        (_NODE_TEXT_FILE_WRITE_EFFECT_TOKEN, NodeTextFileWriteEffect),
+    ):
+        run_coro_sync(
+            registry.register_service(
+                token,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
+
+
+def main(
+    argv: Sequence[str] | None = None, *, container: ModelONEXContainer | None = None
+) -> int:
+    """Run the CLI with container-resolved services."""
+    owned = container is None
+    if container is None:
+        container = build_container()
+    try:
+        return _run(argv, container)
+    finally:
+        if owned:
+            container.close()
+
+
+def _run(argv: Sequence[str] | None, container: ModelONEXContainer) -> int:
     args = _parse_args(sys.argv[1:] if argv is None else argv)
-    report = NodeContractWalkerCheckCompute().handle(
+    report = container.get_service(_NODE_CONTRACT_WALKER_CHECK_COMPUTE_TOKEN).handle(
         ModelContractWalkerCheckInput(
             roots=tuple(Path(root) for root in args.roots),
             max_product_states=args.max_product_states,
@@ -107,7 +159,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.json_out == "-":
             sys.stdout.write(text)
         else:
-            NodeTextFileWriteEffect().handle(
+            container.get_service(_NODE_TEXT_FILE_WRITE_EFFECT_TOKEN).handle(
                 ModelTextFileWriteInput(path=args.json_out, text=text)
             )
     sys.stdout.write("\n".join(_summary_lines(report)) + "\n")

@@ -15,7 +15,14 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import cast
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.text_file_write.model_text_file_write_input import (
     ModelTextFileWriteInput,
 )
@@ -25,6 +32,7 @@ from omnibase_core.models.validation.model_lane_literal_branching_violation impo
 from omnibase_core.nodes.node_text_file_write_effect.handler import (
     NodeTextFileWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.validation.validator_no_lane_literal_branching import (
     _serialize_baseline,
     load_baseline,
@@ -33,6 +41,11 @@ from omnibase_core.validation.validator_no_lane_literal_branching import (
 )
 
 __all__ = ["main"]
+
+
+_NODE_TEXT_FILE_WRITE_EFFECT_TOKEN = cast(
+    "type[NodeTextFileWriteEffect]", NodeTextFileWriteEffect
+)
 
 
 def _out(message: str) -> None:
@@ -44,6 +57,7 @@ def _err(message: str) -> None:
 
 
 def _update_baseline(
+    container: ModelONEXContainer,
     violations: list[ModelLaneLiteralBranchingViolation],
     scanned: list[str],
     baseline_path: Path,
@@ -68,7 +82,7 @@ def _update_baseline(
             return 2
         kept = [e for e in prior if e["path"] not in scanned_set]
         fresh = kept + fresh
-    NodeTextFileWriteEffect().handle(
+    container.get_service(_NODE_TEXT_FILE_WRITE_EFFECT_TOKEN).handle(
         ModelTextFileWriteInput(
             path=str(baseline_path), text=_serialize_baseline(fresh)
         )
@@ -79,7 +93,43 @@ def _update_baseline(
     return 0
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_container() -> ModelONEXContainer:
+    """Register the runtime's handlers and effects under their service tokens."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for token, implementation in (
+        (_NODE_TEXT_FILE_WRITE_EFFECT_TOKEN, NodeTextFileWriteEffect),
+    ):
+        run_coro_sync(
+            registry.register_service(
+                token,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
+
+
+def main(
+    argv: list[str] | None = None, *, container: ModelONEXContainer | None = None
+) -> int:
+    """Run the CLI with container-resolved services."""
+    owned = container is None
+    if container is None:
+        container = build_container()
+    try:
+        return _run(argv, container)
+    finally:
+        if owned:
+            container.close()
+
+
+def _run(argv: list[str] | None, container: ModelONEXContainer) -> int:
     """CLI entry point for pre-commit and standalone use."""
     parser = argparse.ArgumentParser(
         description=(
@@ -116,7 +166,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.baseline is None:
             _err("[lane-literal-gate] --update-baseline needs --baseline")
             return 2
-        return _update_baseline(violations, scanned, args.baseline)
+        return _update_baseline(container, violations, scanned, args.baseline)
 
     baseline_fps: set[str] = set()
     if args.baseline is not None:

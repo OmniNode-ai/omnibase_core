@@ -32,6 +32,7 @@ import importlib
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
+from typing import cast
 
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -41,6 +42,9 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
     ModelValidationReportWriteInput,
 )
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output import (
+    ModelValidationReportWriteOutput,
+)
 from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_bus import (
     ModelValidatorRuntimeBus,
 )
@@ -48,10 +52,31 @@ from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_
     ModelValidatorRuntimeOverlay,
     ValidationProfile,
 )
+from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_settings import (
+    ModelValidatorRuntimeSettings,
+)
+from omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_input import (
+    ModelValidatorTriggeredEmitInput,
+)
+from omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_output import (
+    ModelValidatorTriggeredEmitOutput,
+)
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationFindingEmbed,
     ModelValidationReport,
     ModelValidationRequestRef,
+)
+from omnibase_core.models.validation.model_validator_run_events import (
+    ModelValidatorRunEvents,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._report_writer_interface import (
+    ValidationReportWriterInterface,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._run_events_interface import (
+    ValidatorRunEventsInterface,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._triggered_emitter_interface import (
+    ValidatorTriggeredEmitterInterface,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
@@ -59,8 +84,14 @@ from omnibase_core.nodes.node_validation_report_write_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validation_report_publish import (
     NodeValidationReportPublishEffect,
 )
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_run_events import (
+    HandlerValidatorRunEvents,
+)
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
     HandlerValidatorRuntimeOverlay,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_triggered_emit import (
+    HandlerValidatorTriggeredEmit,
 )
 from omnibase_core.validation.validator_base import EXIT_ERRORS, ValidatorBase
 
@@ -129,10 +160,34 @@ def build_validator_container(
             ModelValidatorRuntimeBus, handler.bind_bus(bound)
         )
         await registry.register_instance(
-            interface=NodeValidationReportWriteEffect,
-            instance=NodeValidationReportPublishEffect(
-                container, handler.settings().run_topic
+            ModelValidatorRuntimeSettings, handler.settings()
+        )
+        await registry.register_instance(
+            cast(
+                "type[ValidationReportWriterInterface[ModelValidationReportWriteInput, ModelValidationReportWriteOutput]]",
+                ValidationReportWriterInterface,
             ),
+            NodeValidationReportWriteEffect(),
+        )
+        await registry.register_instance(
+            cast(
+                "type[ValidatorRunEventsInterface[ModelValidationReport, ModelValidatorRunEvents]]",
+                ValidatorRunEventsInterface,
+            ),
+            HandlerValidatorRunEvents(),
+        )
+        await registry.register_instance(
+            cast(
+                "type[ValidatorTriggeredEmitterInterface[ModelValidatorTriggeredEmitInput, ModelValidatorTriggeredEmitOutput]]",
+                ValidatorTriggeredEmitterInterface,
+            ),
+            HandlerValidatorTriggeredEmit(
+                container.get_service(ModelValidatorRuntimeBus).publish
+            ),
+        )
+        await registry.register_instance(
+            interface=NodeValidationReportWriteEffect,
+            instance=NodeValidationReportPublishEffect(container),
         )
 
     asyncio.run(_compose())

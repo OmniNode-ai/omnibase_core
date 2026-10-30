@@ -1,0 +1,249 @@
+{
+  "report_id": "<run_id>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_call_site_construction/handlers/handler_x_cli.py:4",
+      "message": "HandlerX(...).handle(...) builds the handler at the call site: Do not build a handler or node where it is called: resolve it from the container with get_service and call the resolved instance.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "call_site_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_constructor_signature/handlers/handler_x.py:4",
+      "message": "class 'HandlerX' __init__ params (container, event_bus): Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency from it with container.get_service.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "constructor_signature"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_contract_self_load/handlers/handler_x.py:5",
+      "message": "the module locates its own contract file: Do not locate the module's own contract.yaml from __file__: the contract reaches the handler through the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "contract_self_load"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_contract_value_literal_name/handlers/handler_x.py:3",
+      "message": "DEFAULT_TIMEOUT_S holds a literal the contract or overlay owns: Do not hold a topic, URL, host, port, timeout or model name in code: declare it in the contract or an overlay and read it through the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "contract_value_literal"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_contract_value_literal_value/handlers/handler_x.py:4",
+      "message": "literal 'https://api.example.com/v1/things' is a topic, URL or address the contract or overlay owns: Do not hold a topic, URL, host, port, timeout or model name in code: declare it in the contract or an overlay and read it through the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "contract_value_literal"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_direct_construction/handlers/handler_x.py:5",
+      "message": "class 'HandlerX' directly constructs 'EventBusInmemory' in __init__: Do not construct infrastructure in __init__: acquire it with container.get_service(...) or container.resolve(...).",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "direct_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_guard/handlers/handler_x.py:4",
+      "message": "class 'HandlerX' __init__ params (contract): Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency from it with container.get_service.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "constructor_signature"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_guard/handlers/handler_x.py:4",
+      "message": "HandlerX.__init__ defaults port 'contract' to None: Do not default a port to None: a handler method takes its port as a required parameter, or resolves it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "optional_port_default"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_guard/handlers/handler_x.py:6",
+      "message": "load_contract() builds the dependency a caller left as None: Do not build the dependency a caller left as None: make the parameter required, or resolve it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "fallback_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_or/handlers/handler_x.py:4",
+      "message": "class 'HandlerX' __init__ params (contract): Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency from it with container.get_service.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "constructor_signature"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_or/handlers/handler_x.py:4",
+      "message": "HandlerX.__init__ defaults port 'contract' to None: Do not default a port to None: a handler method takes its port as a required parameter, or resolves it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "optional_port_default"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_or/handlers/handler_x.py:5",
+      "message": "load_contract() builds the dependency a caller left as None: Do not build the dependency a caller left as None: make the parameter required, or resolve it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "fallback_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_ternary/handlers/handler_x.py:4",
+      "message": "class 'HandlerX' __init__ params (contract): Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency from it with container.get_service.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "constructor_signature"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_ternary/handlers/handler_x.py:4",
+      "message": "HandlerX.__init__ defaults port 'contract' to None: Do not default a port to None: a handler method takes its port as a required parameter, or resolves it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "optional_port_default"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_ternary/handlers/handler_x.py:5",
+      "message": "load_contract() builds the dependency a caller left as None: Do not build the dependency a caller left as None: make the parameter required, or resolve it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "fallback_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_module_singleton/handlers/handler_x.py:7",
+      "message": "global _config rebinds module state: Do not keep module state with global: register the instance in the container with a singleton lifecycle.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "module_singleton"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_optional_port_default_annotation/handlers/handler_x.py:4",
+      "message": "HandlerX.handle defaults port 'thing' to None: Do not default a port to None: a handler method takes its port as a required parameter, or resolves it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "optional_port_default"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_optional_port_default_name/handlers/handler_x.py:4",
+      "message": "class 'HandlerX' __init__ params (container, bus): Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency from it with container.get_service.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "constructor_signature"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_optional_port_default_name/handlers/handler_x.py:4",
+      "message": "HandlerX.__init__ defaults port 'bus' to None: Do not default a port to None: a handler method takes its port as a required parameter, or resolves it from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "optional_port_default"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_reflective_construction_class_variable/handlers/handler_x.py:4",
+      "message": "backend_cls() constructs a class held in a variable: Do not construct a class chosen at run time with getattr, a globals() lookup or a class held in a variable: resolve the implementation from the container by its protocol.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "reflective_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_reflective_construction_getattr/handlers/handler_x.py:4",
+      "message": "getattr(...)() constructs a class chosen at run time: Do not construct a class chosen at run time with getattr, a globals() lookup or a class held in a variable: resolve the implementation from the container by its protocol.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "reflective_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_reflective_construction_table/handlers/handler_x.py:4",
+      "message": "globals()[...]() constructs a class chosen at run time: Do not construct a class chosen at run time with getattr, a globals() lookup or a class held in a variable: resolve the implementation from the container by its protocol.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "reflective_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_scope_cli_outside_handlers/tools/tool_cli.py:4",
+      "message": "HandlerX(...).handle(...) builds the handler at the call site: Do not build a handler or node where it is called: resolve it from the container with get_service and call the resolved instance.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "call_site_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_scope_handler_without_node/handlers/helper.py:4",
+      "message": "class 'HandlerHelper' __init__ params (container, extra): Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency from it with container.get_service.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "constructor_signature"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_sibling_handler_import/handlers/handler_x.py:3",
+      "message": "imports handler module 'omnibase_core.handlers.handler_y': Do not import another handler module: depend on its protocol and resolve the implementation from the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "sibling_handler_import"
+    }
+  ],
+  "metrics": {
+    "total": 25,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 25,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<timestamp>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "handler_di"
+    ]
+  }
+}

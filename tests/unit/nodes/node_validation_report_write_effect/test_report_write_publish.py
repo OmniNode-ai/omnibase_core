@@ -27,8 +27,20 @@ from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
     ModelValidationReportWriteInput,
 )
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output import (
+    ModelValidationReportWriteOutput,
+)
 from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_bus import (
     ModelValidatorRuntimeBus,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_settings import (
+    ModelValidatorRuntimeSettings,
+)
+from omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_input import (
+    ModelValidatorTriggeredEmitInput,
+)
+from omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_output import (
+    ModelValidatorTriggeredEmitOutput,
 )
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationFindingEmbed,
@@ -38,8 +50,20 @@ from omnibase_core.models.validation.model_validation_report import (
 from omnibase_core.models.validation.model_validator_run_event import (
     ModelValidatorRunEvent,
 )
+from omnibase_core.models.validation.model_validator_run_events import (
+    ModelValidatorRunEvents,
+)
 from omnibase_core.models.validation.model_validator_triggered_event import (
     ModelValidatorTriggeredEvent,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._report_writer_interface import (
+    ValidationReportWriterInterface,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._run_events_interface import (
+    ValidatorRunEventsInterface,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._triggered_emitter_interface import (
+    ValidatorTriggeredEmitterInterface,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
@@ -47,8 +71,14 @@ from omnibase_core.nodes.node_validation_report_write_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validation_report_publish import (
     NodeValidationReportPublishEffect,
 )
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_run_events import (
+    HandlerValidatorRunEvents,
+)
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
     HandlerValidatorRuntimeOverlay,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_triggered_emit import (
+    HandlerValidatorTriggeredEmit,
 )
 from omnibase_core.topics import TopicBase
 
@@ -104,6 +134,30 @@ def _container_with_bus(
                 start=bus.start, publish=bus.publish, close=bus.close
             ),
         )
+        await container.service_registry.register_instance(
+            ModelValidatorRuntimeSettings, HandlerValidatorRuntimeOverlay().settings()
+        )
+        await container.service_registry.register_instance(
+            cast(
+                "type[ValidationReportWriterInterface[ModelValidationReportWriteInput, ModelValidationReportWriteOutput]]",
+                ValidationReportWriterInterface,
+            ),
+            NodeValidationReportWriteEffect(),
+        )
+        await container.service_registry.register_instance(
+            cast(
+                "type[ValidatorRunEventsInterface[ModelValidationReport, ModelValidatorRunEvents]]",
+                ValidatorRunEventsInterface,
+            ),
+            HandlerValidatorRunEvents(),
+        )
+        await container.service_registry.register_instance(
+            cast(
+                "type[ValidatorTriggeredEmitterInterface[ModelValidatorTriggeredEmitInput, ModelValidatorTriggeredEmitOutput]]",
+                ValidatorTriggeredEmitterInterface,
+            ),
+            HandlerValidatorTriggeredEmit(bus.publish),
+        )
         await listener.subscribe_to(bus)
 
     asyncio.run(_compose())
@@ -130,9 +184,7 @@ def _report(failing: tuple[str, ...]) -> ModelValidationReport:
 def _write(
     container: object, report: ModelValidationReport, target: Path
 ) -> NodeValidationReportPublishEffect:
-    writer = NodeValidationReportPublishEffect(
-        cast(ModelONEXContainer, container), _RUN_TOPIC
-    )
+    writer = NodeValidationReportPublishEffect(cast(ModelONEXContainer, container))
     writer.handle(
         ModelValidationReportWriteInput(
             report_path=str(target), report=report, repository=_REPOSITORY
@@ -150,7 +202,13 @@ def test_three_failing_validators_put_three_triggered_and_one_run_event_on_the_b
 
     _write(spy, report, tmp_path / "report.json")
 
-    assert spy.resolved == [ModelValidatorRuntimeBus]
+    assert spy.resolved == [
+        ValidationReportWriterInterface,
+        ValidatorRunEventsInterface,
+        ValidatorTriggeredEmitterInterface,
+        ModelValidatorRuntimeSettings,
+        ModelValidatorRuntimeBus,
+    ]
     assert listener.count(TopicBase.VALIDATOR_TRIGGERED) == 3
     assert listener.count(_RUN_TOPIC) == 1
     run = ModelValidatorRunEvent.model_validate_json(
@@ -172,7 +230,13 @@ def test_a_run_with_no_failing_validator_puts_the_run_event_alone_on_the_bus(
 
     _write(spy, _report(()), tmp_path / "report.json")
 
-    assert spy.resolved == [ModelValidatorRuntimeBus]
+    assert spy.resolved == [
+        ValidationReportWriterInterface,
+        ValidatorRunEventsInterface,
+        ValidatorTriggeredEmitterInterface,
+        ModelValidatorRuntimeSettings,
+        ModelValidatorRuntimeBus,
+    ]
     assert listener.count(TopicBase.VALIDATOR_TRIGGERED) == 0
     assert listener.count(_RUN_TOPIC) == 1
 
@@ -228,7 +292,7 @@ def test_failing_validators_without_a_repository_refuse_to_publish(
     container, _bus, listener = _container_with_bus()
 
     with pytest.raises(ModelOnexError, match="repository"):
-        NodeValidationReportPublishEffect(container, _RUN_TOPIC).handle(
+        NodeValidationReportPublishEffect(container).handle(
             ModelValidationReportWriteInput(
                 report_path=str(tmp_path / "report.json"), report=_report(_FAILING)
             )

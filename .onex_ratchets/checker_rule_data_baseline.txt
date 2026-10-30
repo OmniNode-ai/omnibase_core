@@ -67,7 +67,6 @@ src/omnibase_core/validators/contract_config_compliance.py 3
 src/omnibase_core/validators/dispatch_surface_test_required.py 3
 src/omnibase_core/validators/environment_reader_inventory.py 1
 src/omnibase_core/validators/gitignore_baseline.py 1
-src/omnibase_core/validators/handler_di_gate.py 3
 src/omnibase_core/validators/no_new_os_environ.py 3
 src/omnibase_core/validators/no_noncanonical_lifecycle_classes.py 6
 src/omnibase_core/validators/no_plugin_daemon_classes.py 1

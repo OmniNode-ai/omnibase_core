@@ -29,11 +29,16 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
-from typing import Final
+from typing import Final, cast
 
 import yaml
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.dependency_direction.model_dependency_direction_baseline import (
     ModelDependencyDirectionBaseline,
 )
@@ -96,6 +101,20 @@ __all__ = ["main"]
 DEFAULT_BASELINE: Final[str] = ".onex_ratchets/dependency_direction_baseline.yaml"
 
 
+_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN = cast(
+    "type[NodeSourceFileGatherEffect]", NodeSourceFileGatherEffect
+)
+_HANDLER_DEPENDENCY_DIRECTION_TOKEN = cast(
+    "type[HandlerDependencyDirection]", HandlerDependencyDirection
+)
+_NODE_GIT_FILE_LISTING_EFFECT_TOKEN = cast(
+    "type[NodeGitFileListingEffect]", NodeGitFileListingEffect
+)
+_NODE_VALIDATION_REPORT_WRITE_EFFECT_TOKEN = cast(
+    "type[NodeValidationReportWriteEffect]", NodeValidationReportWriteEffect
+)
+
+
 def parse_baseline(
     text: str | None,
 ) -> tuple[ModelDependencyDirectionBaselineEntry, ...]:
@@ -106,17 +125,20 @@ def parse_baseline(
 
 
 def gather(
-    root: Path, filenames: list[str], rules: ModelDependencyDirectionRules
+    container: ModelONEXContainer,
+    root: Path,
+    filenames: list[str],
+    rules: ModelDependencyDirectionRules,
 ) -> tuple[list[ModelSourceFile], list[str]]:
     """Repository-relative (path, source) pairs of the candidate files."""
     if filenames:
         relative = [f for f in filenames if is_candidate(f, rules)]
     else:
-        listing = NodeGitFileListingEffect().handle(
+        listing = container.get_service(_NODE_GIT_FILE_LISTING_EFFECT_TOKEN).handle(
             ModelGitFileListingInput(root=root, scope="tracked")
         )
         relative = [p for p in listing.paths if is_candidate(p, rules)]
-    output = NodeSourceFileGatherEffect().handle(
+    output = container.get_service(_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN).handle(
         ModelSourceFileGatherInput(
             root=str(root),
             explicit_paths=[str(root / p) for p in relative],
@@ -219,14 +241,27 @@ def _out(line: str) -> None:
 
 
 def build_container() -> ModelONEXContainer:
-    """The composition root: a container with the report writer registered."""
+    """Register the runtime's handlers and effects under their service tokens."""
     container = ModelONEXContainer(enable_service_registry=False)
-    registry = container.initialize_service_registry()
-    run_coro_sync(
-        registry.register_instance(
-            NodeValidationReportWriteEffect, NodeValidationReportWriteEffect()
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
         )
     )
+    for token, implementation in (
+        (_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN, NodeSourceFileGatherEffect),
+        (_HANDLER_DEPENDENCY_DIRECTION_TOKEN, HandlerDependencyDirection),
+        (_NODE_GIT_FILE_LISTING_EFFECT_TOKEN, NodeGitFileListingEffect),
+        (_NODE_VALIDATION_REPORT_WRITE_EFFECT_TOKEN, NodeValidationReportWriteEffect),
+    ):
+        run_coro_sync(
+            registry.register_service(
+                token,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
     return container
 
 
@@ -242,6 +277,18 @@ def _write_report(
 def main(
     argv: list[str] | None = None, container: ModelONEXContainer | None = None
 ) -> int:
+    """Run the CLI with container-resolved services."""
+    owned = container is None
+    if container is None:
+        container = build_container()
+    try:
+        return _run(argv, container)
+    finally:
+        if owned:
+            container.close()
+
+
+def _run(argv: list[str] | None, container: ModelONEXContainer) -> int:
     """CLI entry. Returns 0 on PASS/WARN, 1 on FAIL/ERROR or baseline growth."""
     parser = argparse.ArgumentParser(
         prog="check-dependency-direction",
@@ -279,11 +326,10 @@ def main(
     parsed = parser.parse_args(argv)
 
     rules = load_dependency_direction_rules()
-    container = container or build_container()
     root = Path(parsed.root).resolve()
     layer_map = load_layer_map()
     repo = parsed.repo or infer_repo(root, layer_map, rules)
-    files, read_errors = gather(root, parsed.filenames, rules)
+    files, read_errors = gather(container, root, parsed.filenames, rules)
 
     if parsed.write_baseline:
         sys.stdout.write(render_baseline(repo, files, layer_map, parsed.ticket, rules))
@@ -315,7 +361,7 @@ def main(
             _out(f"ERROR: {message}")
         return 1
 
-    report = HandlerDependencyDirection().handle(
+    report = container.get_service(_HANDLER_DEPENDENCY_DIRECTION_TOKEN).handle(
         ModelDependencyDirectionCheckInput(
             repo=repo,
             layer_map=layer_map,

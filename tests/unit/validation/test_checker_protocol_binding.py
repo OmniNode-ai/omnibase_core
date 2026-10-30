@@ -67,7 +67,6 @@ _SOURCE = Path("src/pkg/module.py")
 _CONTAINER_FILE = "src/omnibase_core/container/container_auto_config.py"
 _BASELINED_FILES = [
     "src/omnibase_core/event_bus/testing/fixture_event_bus_substrate.py",
-    "src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py",
     "src/omnibase_core/nodes/node_source_file_gather_effect/runtime_shared_token_policy.py",
     "src/omnibase_core/runtime/harness/harness_dispatch.py",
     "src/omnibase_core/runtime/runtime_local.py",
@@ -324,7 +323,7 @@ def test_a_baselined_file_passes_at_its_entry_fails_above_and_is_stale_below() -
 
 
 def test_baseline_shrinks_to_the_files_the_ticket_names() -> None:
-    """The baseline holds the 10 files and not the container's own registration."""
+    """The baseline holds the 9 files and not the container's own registration."""
     entries = parse_baseline(_BASELINE.read_text(encoding="utf-8"))
     assert sorted(entries) == sorted(_BASELINED_FILES)
     assert _CONTAINER_FILE not in entries

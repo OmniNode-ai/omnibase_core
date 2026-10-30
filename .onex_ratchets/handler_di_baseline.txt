@@ -1,0 +1,75 @@
+# K1 handler_di baseline. Shrink-only, target zero.
+# Each line is a file under handlers/, nodes/ or named *_cli.py that held findings before K1
+# existed, and the number it holds. They are burn-down entries: fix the finding and lower the
+# entry (delete it at zero) in the same change. A file may not hold more than its entry, an
+# entry must equal what the file holds, and an entry the base revision lacks or holds lower fails.
+# Burn-down ticket: none minted yet; the ticket that burns this list down is named here by id.
+# Do not add a line; do not raise a count.
+examples/demo/handlers/support_assistant/handler_anthropic.py 3
+examples/demo/handlers/support_assistant/handler_local.py 2
+examples/demo/handlers/support_assistant/handler_openai.py 4
+src/omnibase_core/handlers/handler_ledger_write_guard.py 1
+src/omnibase_core/handlers/handler_private_vocabulary_resolution.py 2
+src/omnibase_core/nodes/node_ai_slop_check_compute/runtime_ai_slop_check.py 4
+src/omnibase_core/nodes/node_backend_secret_discipline_compute/handler.py 1
+src/omnibase_core/nodes/node_backend_secret_discipline_compute/runtime_backend_secret_discipline.py 1
+src/omnibase_core/nodes/node_backward_compat_check_compute/handler_backward_compat.py 1
+src/omnibase_core/nodes/node_backward_compat_check_compute/runtime_backward_compat_check.py 1
+src/omnibase_core/nodes/node_boundary_import_check_compute/runtime_node_boundary_import_check.py 2
+src/omnibase_core/nodes/node_boundary_import_check_effect/handler.py 7
+src/omnibase_core/nodes/node_canonical_file_shape_check_compute/matcher_node_home.py 1
+src/omnibase_core/nodes/node_canonical_file_shape_check_compute/runtime_canonical_file_shape_check.py 1
+src/omnibase_core/nodes/node_compliance_evidence_effect/handler.py 2
+src/omnibase_core/nodes/node_contract_evidence_check_effect/handler_contract_compliance_check.py 2
+src/omnibase_core/nodes/node_contract_evidence_check_effect/runtime_contract_check_values_lint.py 1
+src/omnibase_core/nodes/node_contract_evidence_check_effect/runtime_contract_substance_floor.py 1
+src/omnibase_core/nodes/node_contract_resolve_compute/handler.py 2
+src/omnibase_core/nodes/node_cross_repo_boundary_check_effect/handler_boundary_parity.py 1
+src/omnibase_core/nodes/node_cross_repo_boundary_check_effect/runtime_boundary_parity.py 2
+src/omnibase_core/nodes/node_cross_repo_boundary_check_effect/runtime_migration_conflicts.py 2
+src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py 1
+src/omnibase_core/nodes/node_dependency_pin_bump_effect/runtime_dependency_pin_bump.py 1
+src/omnibase_core/nodes/node_dict_any_check_compute/handler_dict_any.py 1
+src/omnibase_core/nodes/node_dict_any_check_compute/runtime_dict_any_check.py 1
+src/omnibase_core/nodes/node_direct_model_call_check_effect/runtime_direct_model_call.py 3
+src/omnibase_core/nodes/node_done_write_receipt_gate_compute/handler_done_write_receipt_gate.py 2
+src/omnibase_core/nodes/node_effect.py 3
+src/omnibase_core/nodes/node_exposed_identifiers_check_compute/runtime_exposed_identifiers_check.py 4
+src/omnibase_core/nodes/node_git_file_listing_effect/handler_readme_only_docs.py 2
+src/omnibase_core/nodes/node_git_file_listing_effect/runtime_readme_only_docs.py 3
+src/omnibase_core/nodes/node_hardcoded_topic_check_compute/runtime_hardcoded_topic_check.py 3
+src/omnibase_core/nodes/node_imperative_contract_guard_check_effect/handler_freestanding_imperative_io.py 1
+src/omnibase_core/nodes/node_imperative_contract_guard_check_effect/handler_imperative_contract_guard.py 3
+src/omnibase_core/nodes/node_imperative_contract_guard_check_effect/runtime_arch_handler_contract_compliance.py 1
+src/omnibase_core/nodes/node_imperative_contract_guard_check_effect/runtime_imperative_contract_guard_check.py 2
+src/omnibase_core/nodes/node_integration_skips_check_compute/runtime_integration_skips_check.py 3
+src/omnibase_core/nodes/node_ledger_write_guard_effect/handler.py 2
+src/omnibase_core/nodes/node_local_paths_check_compute/runtime_local_paths_check.py 2
+src/omnibase_core/nodes/node_markdown_links_check_compute/runtime_markdown_links_check.py 4
+src/omnibase_core/nodes/node_no_direct_kafka_producer_check_compute/runtime_no_direct_kafka_producer_check.py 4
+src/omnibase_core/nodes/node_no_env_fallbacks_check_compute/runtime_no_env_fallbacks_check.py 4
+src/omnibase_core/nodes/node_no_hardcoded_ip_check_compute/runtime_no_hardcoded_ip_check.py 3
+src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/runtime_no_io_outside_effects_check.py 4
+src/omnibase_core/nodes/node_no_raw_sqlite3_check_compute/runtime_no_raw_sqlite3_check.py 4
+src/omnibase_core/nodes/node_no_untyped_metadata_check_compute/runtime_no_untyped_metadata_check.py 3
+src/omnibase_core/nodes/node_no_utcnow_check_compute/runtime_no_utcnow_check.py 4
+src/omnibase_core/nodes/node_precommit_interpreter_check_compute/runtime_precommit_interpreter_check.py 3
+src/omnibase_core/nodes/node_private_ip_check_compute/runtime_private_ip_check.py 2
+src/omnibase_core/nodes/node_release_identity_check_compute/runtime_release_identity_check.py 3
+src/omnibase_core/nodes/node_release_identity_gather_effect/handler.py 2
+src/omnibase_core/nodes/node_required_context_producer_check_compute/runtime_required_context_producer_check.py 3
+src/omnibase_core/nodes/node_shape_gate_independence_check_effect/runtime_shape_gate_independence.py 1
+src/omnibase_core/nodes/node_skip_count_ratchet_check_compute/runtime_skip_count_ratchet_check.py 5
+src/omnibase_core/nodes/node_source_file_gather_effect/runtime_shared_token_policy.py 3
+src/omnibase_core/nodes/node_spdx_headers_check_compute/runtime_spdx_headers_check.py 3
+src/omnibase_core/nodes/node_sprint_roll_apply_effect/handler.py 1
+src/omnibase_core/nodes/node_sprint_roll_apply_effect/node_linear_transport_error.py 1
+src/omnibase_core/nodes/node_sprint_roll_apply_effect/node_sprint_roll_journal.py 1
+src/omnibase_core/nodes/node_test_root_collection_check_compute/runtime_test_root_collection_check.py 4
+src/omnibase_core/nodes/node_todo_format_check_effect/runtime_todo_format.py 1
+src/omnibase_core/nodes/node_topic_names_check_compute/runtime_topic_names_check.py 3
+src/omnibase_core/nodes/node_validation_orchestrator/node_cross_repo_validation_orchestrator.py 3
+src/omnibase_core/nodes/node_validation_report_write_effect/handler.py 2
+src/omnibase_core/nodes/node_validation_report_write_effect/handler_validator_triggered_emit.py 1
+src/omnibase_core/nodes/node_validation_report_write_effect/runtime_validator_run.py 1
+src/omnibase_core/nodes/node_work_ledger_state_compute/runtime_work_ledger.py 1
