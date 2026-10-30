@@ -54,3 +54,10 @@ def test_ci_runs_the_check_against_the_merge_base() -> None:
     workflow = (REPO_ROOT / ".github/workflows/ci.yml").read_text()
     assert f'{RUNTIME_COMMAND} --base "$base"' in workflow
     assert 'base="$(git merge-base "$base" HEAD)"' in workflow
+
+
+def test_ci_no_base_tree_check_runs_only_file_shape() -> None:
+    """A schedule run has no base; node-home with no base reads every entry as new."""
+    workflow = (REPO_ROOT / ".github/workflows/ci.yml").read_text()
+    assert f"{RUNTIME_MODULE} --rules file-shape --head HEAD" in workflow
+    assert f"{RUNTIME_MODULE} --head HEAD\n" not in workflow
