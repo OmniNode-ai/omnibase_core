@@ -59,7 +59,9 @@ event_bus:
   publish_topics: [onex.evt.omnibase-core.shared-token-policy-completed.v1]
 # OMN-21558: the caller of the shared workflow credential policy check requests it and reads the
 # completion; neither end is a node of this repository, so event_chain_walker reads both as external.
-externally_produced_topics: [onex.cmd.omnibase-core.shared-token-policy-requested.v1]
+externally_produced_topics:
+  - topic: onex.cmd.omnibase-core.shared-token-policy-requested.v1
+    producer: the caller of the shared workflow credential policy check, outside this repository
 externally_consumed_topics: [onex.evt.omnibase-core.shared-token-policy-completed.v1]
 shared_token_policy:
   entries:

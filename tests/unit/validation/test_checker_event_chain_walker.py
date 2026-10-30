@@ -502,3 +502,41 @@ def test_each_mistyped_parameter_raises_even_with_no_documents(
     mutated = _with_parameter(_contract(), rule_id, key, 42)
     with pytest.raises(ModelOnexError):
         check_event_chain({}, {}, mutated.rules)
+
+
+def test_a_named_external_producer_mapping_satisfies_its_consumer(
+    tmp_path: Path,
+) -> None:
+    topic = "onex.cmd.orders.named-external.v1"
+    contract = tmp_path / "consumer.contract.yaml"
+    contract.write_text(
+        yaml.safe_dump(
+            {
+                "event_bus": {"subscribe_topics": [topic]},
+                "externally_produced_topics": [
+                    {"topic": topic, "producer": "the orders CLI, not a node contract"}
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert ValidatorEventChainWalker().validate(tmp_path).issues == []
+
+
+def test_every_shipped_contract_names_the_producer_of_each_external_topic() -> None:
+    # Downstream topic graphs (omnimarket contract_topic_graph) read the
+    # contracts packaged in omnibase_core and refuse a bare topic string here:
+    # an external producer must be named. Shipped contracts use the mapping form.
+    bare: list[str] = []
+    for path in sorted((_ROOT / "src/omnibase_core").rglob("contract.yaml")):
+        document = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(document, dict):
+            continue
+        for entry in document.get("externally_produced_topics") or []:
+            if not (
+                isinstance(entry, dict)
+                and isinstance(entry.get("topic"), str)
+                and str(entry.get("producer") or "").strip()
+            ):
+                bare.append(f"{path.relative_to(_ROOT)}: {entry!r}")
+    assert bare == []
