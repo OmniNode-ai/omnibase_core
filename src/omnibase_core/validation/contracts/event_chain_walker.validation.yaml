@@ -40,7 +40,7 @@ validation:
         consumer_paths: [event_bus.subscribe_topics, 'consumed_events[].topic', 'consumed_events[].event_pattern',
           'handler_routing.handlers[].topic']
         producer_paths: [event_bus.publish_topics, 'published_events[].topic', 'published_events[].event_pattern']
-        external_producer_paths: [externally_produced_topics, runtime_dispatch.command_topic]
+        external_producer_paths: [externally_produced_topics, 'externally_produced_topics[].topic', runtime_dispatch.command_topic]
         remediation: Add a publishing contract or declare the topic as externally produced or a runtime
           command.
     - rule_id: state_without_exit
