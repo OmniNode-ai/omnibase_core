@@ -1,0 +1,54 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-20134
+title: "A Receipt Gate caller pin has no mechanism that advances it when ModelDodReceipt gains a field"
+summary: Core's repo-evidence caller pinned a receipt-gate dev-merge tag that predates the Binds-Merged-Fix
+  fix-parent fallback (OMN-21556), so omnibase_core#2157 failed dod-verify. This change re-points the
+  pin to a tag that has the fallback and adds a floor test, which is the one-time repair of the ticket's
+  gap. The scheduled pin-bump mechanism the ticket asks for is not built here.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn20134-caller-pin-current
+    statement: Core's repo-evidence caller names a receipt-gate dev-merge tag cut at or after the fix-parent
+      fallback.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the caller's receipt-gate dev-merge tag is not older than the first tag with
+          the fix-parent fallback -- falsifier: uv run pytest tests/ci/test_receipt_gate_caller_pin_fix_parent_omn20134.py
+          -q"
+      - id: AC2
+        statement: "AC2: the caller workflow keeps its shape and its merge-base preservation check names
+          the new tag -- falsifier: uv run pytest tests/ci/test_s6_caller_occ_disabled_omn20969.py tests/ci/test_repo_evidence_caller_omn20074.py
+          -q"
+evidence_requirements:
+  - kind: tests
+    description: The pin floor test and the two caller shape tests pass at the head.
+    command: uv run pytest tests/ci/test_receipt_gate_caller_pin_fix_parent_omn20134.py tests/ci/test_s6_caller_occ_disabled_omn20969.py
+      tests/ci/test_repo_evidence_caller_omn20074.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn20134-ac1-pin-floor
+    description: The caller's pin is not older than the fix-parent fallback tag.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_caller_pin_fix_parent_omn20134.py -q -o
+          addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn20134-ac2-caller-shape
+    description: The caller shape tests accept the re-pointed tag.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_s6_caller_occ_disabled_omn20969.py tests/ci/test_repo_evidence_caller_omn20074.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
