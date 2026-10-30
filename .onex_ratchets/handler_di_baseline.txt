@@ -8,14 +8,7 @@
 examples/demo/handlers/support_assistant/handler_anthropic.py 3
 examples/demo/handlers/support_assistant/handler_local.py 2
 examples/demo/handlers/support_assistant/handler_openai.py 4
-src/omnibase_core/handlers/handler_ci_inheritance_cli.py 7
-src/omnibase_core/handlers/handler_cosmetic_lint.py 3
-src/omnibase_core/handlers/handler_dependency_direction.py 1
-src/omnibase_core/handlers/handler_dependency_direction_cli.py 4
 src/omnibase_core/handlers/handler_ledger_write_guard.py 1
-src/omnibase_core/handlers/handler_merge_queue_parity_cli.py 4
-src/omnibase_core/handlers/handler_no_bare_feature_flags.py 3
-src/omnibase_core/handlers/handler_no_hardcoded_topics.py 3
 src/omnibase_core/handlers/handler_private_vocabulary_resolution.py 2
 src/omnibase_core/nodes/node_ai_slop_check_compute/runtime_ai_slop_check.py 4
 src/omnibase_core/nodes/node_backend_secret_discipline_compute/handler.py 1

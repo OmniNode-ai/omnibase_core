@@ -471,6 +471,16 @@ def test_the_node_modules_hold_no_module_level_rule_table(module: str) -> None:
     tables = []
     for node in tree.body:
         value = node.value if isinstance(node, ast.Assign | ast.AnnAssign) else None
+        if (
+            isinstance(value, ast.Call)
+            and isinstance(value.func, ast.Name)
+            and value.func.id == "cast"
+            and len(value.args) == 2
+            and isinstance(value.args[1], ast.Name)
+            and isinstance(value.args[0], ast.Constant)
+            and value.args[0].value == f"type[{value.args[1].id}]"
+        ):
+            continue  # Container service tokens are type references, not rule data.
         if isinstance(value, ast.Set | ast.Tuple | ast.Dict | ast.Call) or (
             isinstance(value, ast.Constant)
             and isinstance(value.value, str)

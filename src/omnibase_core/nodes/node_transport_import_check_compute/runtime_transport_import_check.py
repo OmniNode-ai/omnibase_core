@@ -13,21 +13,69 @@ from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
+from typing import cast
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.transport_import_check.model_transport_import_check_input import (
     ModelTransportImportCheckInput,
 )
 from omnibase_core.nodes.node_transport_import_check_compute.handler import (
     NodeTransportImportCheckCompute,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.validation.validator_transport_import import _SUPPRESSION_MARKER
+
+_NODE_TRANSPORT_IMPORT_CHECK_COMPUTE_TOKEN = cast(
+    "type[NodeTransportImportCheckCompute]", NodeTransportImportCheckCompute
+)
 
 
 def _out(message: str) -> None:
     sys.stdout.write(message + "\n")
 
 
-def main(argv: list[str] | None = None) -> int:
+def build_container() -> ModelONEXContainer:
+    """Register the runtime's handlers and effects under their service tokens."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for token, implementation in (
+        (_NODE_TRANSPORT_IMPORT_CHECK_COMPUTE_TOKEN, NodeTransportImportCheckCompute),
+    ):
+        run_coro_sync(
+            registry.register_service(
+                token,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
+
+
+def main(
+    argv: list[str] | None = None, *, container: ModelONEXContainer | None = None
+) -> int:
+    """Run the CLI with container-resolved services."""
+    owned = container is None
+    if container is None:
+        container = build_container()
+    try:
+        return _run(argv, container)
+    finally:
+        if owned:
+            container.close()
+
+
+def _run(argv: list[str] | None, container: ModelONEXContainer) -> int:
     """CLI entrypoint. Accepts files (pre-commit staged mode) or directories.
 
     Exit codes:
@@ -56,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parsed = parser.parse_args(argv)
 
-    result = NodeTransportImportCheckCompute().handle(
+    result = container.get_service(_NODE_TRANSPORT_IMPORT_CHECK_COMPUTE_TOKEN).handle(
         ModelTransportImportCheckInput(paths=tuple(str(p) for p in parsed.paths))
     )
     findings = result.findings

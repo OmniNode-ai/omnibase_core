@@ -21,6 +21,15 @@ from typing import Any, cast
 
 import pytest
 import yaml
+from omnibase_core.protocols.validation.protocol_validation_report_writer import (
+    ProtocolValidationReportWriter,
+)
+from omnibase_core.protocols.validation.protocol_validator_run_events import (
+    ProtocolValidatorRunEvents,
+)
+from omnibase_core.protocols.validation.protocol_validator_triggered_emitter import (
+    ProtocolValidatorTriggeredEmitter,
+)
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
@@ -29,6 +38,9 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
 )
 from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_bus import (
     ModelValidatorRuntimeBus,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_settings import (
+    ModelValidatorRuntimeSettings,
 )
 from omnibase_core.models.task_criteria.model_task_criteria_check_input import (
     ModelTaskCriteriaCheckInput,
@@ -383,10 +395,24 @@ def test_runtime_resolves_the_writer_and_the_bus_from_the_container(
         await bus_container.service_registry.register_instance(
             ModelValidatorRuntimeBus, bus
         )
+        for token in (
+            cast(
+                "type[ProtocolValidationReportWriter]", ProtocolValidationReportWriter
+            ),
+            cast("type[ProtocolValidatorRunEvents]", ProtocolValidatorRunEvents),
+            cast(
+                "type[ProtocolValidatorTriggeredEmitter]",
+                ProtocolValidatorTriggeredEmitter,
+            ),
+            ModelValidatorRuntimeSettings,
+        ):
+            await bus_container.service_registry.register_instance(
+                token, composed.get_service(token)
+            )
         await writer_container.service_registry.register_instance(
             interface=NodeValidationReportWriteEffect,
             instance=NodeValidationReportPublishEffect(
-                cast(ModelONEXContainer, bus_spy), handler.settings().run_topic
+                cast(ModelONEXContainer, bus_spy)
             ),
         )
 
@@ -408,7 +434,13 @@ def test_runtime_resolves_the_writer_and_the_bus_from_the_container(
         "missing_configuration_criterion"
     }
     assert writer_spy.resolved == [NodeValidationReportWriteEffect]
-    assert bus_spy.resolved == [ModelValidatorRuntimeBus]
+    assert bus_spy.resolved == [
+        ProtocolValidationReportWriter,
+        ProtocolValidatorRunEvents,
+        ProtocolValidatorTriggeredEmitter,
+        ModelValidatorRuntimeSettings,
+        ModelValidatorRuntimeBus,
+    ]
 
 
 def test_file_validator_reports_issues_at_the_file(tmp_path: Path) -> None:
@@ -437,7 +469,9 @@ def test_section_c_tasks_of_the_validators_plan_are_listed_by_rule_id() -> None:
             contract=_contract(),
         )
     )
-    reported = {(i.context or {})["subject"]: set() for i in result.issues}
+    reported: dict[str, set[str | None]] = {
+        (i.context or {})["subject"]: set() for i in result.issues
+    }
     for issue in result.issues:
         reported[(issue.context or {})["subject"]].add(issue.code)
     assert set(reported) == {"T0.1", "T0.2"}

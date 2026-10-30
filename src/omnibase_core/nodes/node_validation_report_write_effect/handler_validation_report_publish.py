@@ -15,6 +15,7 @@ stays the offline copy the base writer leaves.
 from __future__ import annotations
 
 import asyncio
+from typing import cast
 from uuid import UUID
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -23,31 +24,76 @@ from omnibase_core.models.container.model_onex_container import ModelONEXContain
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
     ModelValidationReportWriteInput,
 )
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output import (
+    ModelValidationReportWriteOutput,
+)
 from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_bus import (
     ModelValidatorRuntimeBus,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_settings import (
+    ModelValidatorRuntimeSettings,
 )
 from omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_input import (
     ModelValidatorTriggeredEmitInput,
 )
+from omnibase_core.models.nodes.validator_triggered_emit.model_validator_triggered_emit_output import (
+    ModelValidatorTriggeredEmitOutput,
+)
+from omnibase_core.models.validation.model_validation_report import (
+    ModelValidationReport,
+)
 from omnibase_core.models.validation.model_validator_run_event import (
     ModelValidatorRunEvent,
 )
-from omnibase_core.nodes.node_validation_report_write_effect.handler import (
-    NodeValidationReportWriteEffect,
+from omnibase_core.models.validation.model_validator_run_events import (
+    ModelValidatorRunEvents,
 )
-from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_triggered_emit import (
-    HandlerValidatorTriggeredEmit,
+from omnibase_core.nodes.node_validation_report_write_effect._report_writer_interface import (
+    ValidationReportWriterInterface,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._run_events_interface import (
+    ValidatorRunEventsInterface,
+)
+from omnibase_core.nodes.node_validation_report_write_effect._triggered_emitter_interface import (
+    ValidatorTriggeredEmitterInterface,
 )
 
 __all__ = ["NodeValidationReportPublishEffect"]
 
 
-class NodeValidationReportPublishEffect(NodeValidationReportWriteEffect):
+_WRITER_TOKEN = cast(
+    "type[ValidationReportWriterInterface[ModelValidationReportWriteInput, ModelValidationReportWriteOutput]]",
+    ValidationReportWriterInterface,
+)
+_RUN_EVENTS_TOKEN = cast(
+    "type[ValidatorRunEventsInterface[ModelValidationReport, ModelValidatorRunEvents]]",
+    ValidatorRunEventsInterface,
+)
+_EMITTER_TOKEN = cast(
+    "type[ValidatorTriggeredEmitterInterface[ModelValidatorTriggeredEmitInput, ModelValidatorTriggeredEmitOutput]]",
+    ValidatorTriggeredEmitterInterface,
+)
+
+
+class NodeValidationReportPublishEffect:
     """The report writer that also publishes through the bus its container holds."""
 
-    def __init__(self, container: ModelONEXContainer, run_topic: str) -> None:
+    def __init__(self, container: ModelONEXContainer) -> None:
+        self._writer = container.get_service(_WRITER_TOKEN)
+        self._run_events = container.get_service(_RUN_EVENTS_TOKEN)
+        self._emitter = container.get_service(_EMITTER_TOKEN)
         self._container = container
-        self._run_topic = run_topic
+        self._run_topic = container.get_service(ModelValidatorRuntimeSettings).run_topic
+
+    def handle(
+        self, request: ModelValidationReportWriteInput
+    ) -> ModelValidationReportWriteOutput:
+        """Persist the offline copy, then publish through the composed bus."""
+        output = self._writer.handle(request)
+        run_event = self._run_events.handle(request.report).events[0]
+        return output.model_copy(
+            update={"events_published": self._publish(request, run_event)}
+        )
 
     def _publish(
         self,
@@ -83,7 +129,7 @@ class NodeValidationReportPublishEffect(NodeValidationReportWriteEffect):
                 request.report.report_id.encode("utf-8"),
                 run_event.model_dump_json().encode("utf-8"),
             )
-            triggered = await HandlerValidatorTriggeredEmit(bus.publish).handle(
+            triggered = await self._emitter.handle(
                 ModelValidatorTriggeredEmitInput(
                     report=request.report,
                     repository=request.repository or "",

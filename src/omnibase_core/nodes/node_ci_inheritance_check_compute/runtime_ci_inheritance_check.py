@@ -44,13 +44,18 @@ import sys
 from functools import cache
 from importlib import resources
 from pathlib import Path
+from typing import cast
 from uuid import uuid4
 
 import yaml
 from pydantic import ValidationError
 
-from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
 )
@@ -120,6 +125,21 @@ __all__ = [
 ]
 
 
+_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN = cast(
+    "type[NodeSourceFileGatherEffect]", NodeSourceFileGatherEffect
+)
+_HANDLER_CI_INHERITANCE_TOKEN = cast("type[HandlerCiInheritance]", HandlerCiInheritance)
+_HANDLER_CI_REPOSITORY_JOBS_TOKEN = cast(
+    "type[HandlerCiRepositoryJobs]", HandlerCiRepositoryJobs
+)
+_HANDLER_VALIDATOR_TRIGGERED_EMIT_TOKEN = cast(
+    "type[HandlerValidatorTriggeredEmit]", HandlerValidatorTriggeredEmit
+)
+_NODE_VALIDATION_REPORT_WRITE_EFFECT_TOKEN = cast(
+    "type[NodeValidationReportWriteEffect]", NodeValidationReportWriteEffect
+)
+
+
 @cache
 def load_contract() -> ModelValidatorSubcontract:
     """The ci_inheritance validation contract shipped inside the package."""
@@ -166,21 +186,43 @@ def load_cli_defaults(
     )
 
 
-def build_container() -> ModelONEXContainer:
-    """The composition root: a container with the report writer registered."""
+def build_container(*, publish: PublishFn | None = None) -> ModelONEXContainer:
+    """Register the runtime's handlers and effects under their service tokens."""
     container = ModelONEXContainer(enable_service_registry=False)
-    registry = container.initialize_service_registry()
-    run_coro_sync(
-        registry.register_instance(
-            NodeValidationReportWriteEffect, NodeValidationReportWriteEffect()
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
         )
     )
+    for token, implementation in (
+        (_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN, NodeSourceFileGatherEffect),
+        (_HANDLER_CI_INHERITANCE_TOKEN, HandlerCiInheritance),
+        (_HANDLER_CI_REPOSITORY_JOBS_TOKEN, HandlerCiRepositoryJobs),
+        (_NODE_VALIDATION_REPORT_WRITE_EFFECT_TOKEN, NodeValidationReportWriteEffect),
+    ):
+        run_coro_sync(
+            registry.register_service(
+                token,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    if publish is not None:
+        run_coro_sync(
+            registry.register_instance(
+                _HANDLER_VALIDATOR_TRIGGERED_EMIT_TOKEN,
+                HandlerValidatorTriggeredEmit(publish),
+            )
+        )
     return container
 
 
-def _gather(directory: str) -> tuple[list[ModelSourceFile], list[str]]:
+def _gather(
+    container: ModelONEXContainer, directory: str
+) -> tuple[list[ModelSourceFile], list[str]]:
     """Read the workflow files directly under ``directory`` (EFFECT boundary)."""
-    output = NodeSourceFileGatherEffect().handle(
+    output = container.get_service(_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN).handle(
         ModelSourceFileGatherInput(
             root=directory, include_patterns=list(load_cli_defaults()[3])
         )
@@ -197,10 +239,10 @@ def _gather(directory: str) -> tuple[list[ModelSourceFile], list[str]]:
 
 
 def _read_baseline(
-    path: str, *, required: bool
+    container: ModelONEXContainer, path: str, *, required: bool
 ) -> tuple[ModelCiInheritanceBaseline | None, list[str]]:
     """Read and parse one baseline file (EFFECT boundary for the read)."""
-    output = NodeSourceFileGatherEffect().handle(
+    output = container.get_service(_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN).handle(
         ModelSourceFileGatherInput(
             root=str(Path(path).parent),
             include_patterns=[Path(path).name],
@@ -230,23 +272,28 @@ def _write_report(
         writer.handle(ModelValidationReportWriteInput(report_path=path, report=report))
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(
+    argv: list[str] | None = None, *, container: ModelONEXContainer | None = None
+) -> int:
     """CLI entry. Returns 0 when no FAIL or ERROR finding, else 1.
 
-    Each triggered validator is published as an event on an in-process
-    in-memory bus, the bus every check runtime here dispatches over; a caller
-    holding a broker-backed bus calls :func:`main_emitting` with its ``publish``.
+    Each triggered validator is published through a sink with no subscriber; a
+    caller holding a bus calls :func:`main_emitting` with its ``publish``.
     """
-    return asyncio.run(_main_on_inmemory_bus(argv))
+    return asyncio.run(_main_on_inmemory_bus(argv, container))
 
 
-async def _main_on_inmemory_bus(argv: list[str] | None) -> int:
-    bus = EventBusInmemory()
-    await bus.start()
-    try:
-        return await main_emitting(argv, bus.publish)
-    finally:
-        await bus.shutdown()
+async def _publish_to_no_subscriber(
+    topic: str, key: bytes | None, value: bytes
+) -> None:
+    """Publish target of the CLI entry: no subscriber listens in this process."""
+    del topic, key, value
+
+
+async def _main_on_inmemory_bus(
+    argv: list[str] | None, container: ModelONEXContainer | None
+) -> int:
+    return await main_emitting(argv, _publish_to_no_subscriber, container=container)
 
 
 async def main_emitting(
@@ -258,17 +305,24 @@ async def main_emitting(
     container: ModelONEXContainer | None = None,
 ) -> int:
     """Run :func:`main` and publish one validator-triggered event per failing validator."""
-    exit_code, report, repository = _run(argv, container or build_container())
-    await HandlerValidatorTriggeredEmit(publish).handle(
-        ModelValidatorTriggeredEmitInput(
-            report=report,
-            repository=repository,
-            pull_request=pull_request,
-            head_sha=head_sha,
-            correlation_id=uuid4(),
+    owned = container is None
+    if container is None:
+        container = build_container(publish=publish)
+    try:
+        exit_code, report, repository = _run(argv, container)
+        await container.get_service(_HANDLER_VALIDATOR_TRIGGERED_EMIT_TOKEN).handle(
+            ModelValidatorTriggeredEmitInput(
+                report=report,
+                repository=repository,
+                pull_request=pull_request,
+                head_sha=head_sha,
+                correlation_id=uuid4(),
+            )
         )
-    )
-    return exit_code
+        return exit_code
+    finally:
+        if owned:
+            container.close()
 
 
 def _run(
@@ -324,20 +378,22 @@ def _run(
             runtime_errors.append("--base-dir is required without --baseline")
     elif not Path(parsed.base_dir).is_dir():
         runtime_errors.append(f"base directory {parsed.base_dir} does not exist")
-    head_files, head_errors = _gather(parsed.head_dir)
+    head_files, head_errors = _gather(container, parsed.head_dir)
     base_files: list[ModelSourceFile] = []
     if not runtime_errors and parsed.base_dir is not None:
-        base_files, base_errors = _gather(parsed.base_dir)
+        base_files, base_errors = _gather(container, parsed.base_dir)
         runtime_errors.extend(base_errors)
     runtime_errors.extend(head_errors)
     baseline: ModelCiInheritanceBaseline | None = None
     base_baseline: ModelCiInheritanceBaseline | None = None
     if parsed.baseline is not None:
-        baseline, baseline_errors = _read_baseline(parsed.baseline, required=True)
+        baseline, baseline_errors = _read_baseline(
+            container, parsed.baseline, required=True
+        )
         runtime_errors.extend(baseline_errors)
     if parsed.base_baseline is not None:
         base_baseline, baseline_errors = _read_baseline(
-            parsed.base_baseline, required=False
+            container, parsed.base_baseline, required=False
         )
         runtime_errors.extend(baseline_errors)
     if not head_files:
@@ -365,12 +421,14 @@ def _run(
         base_baseline=base_baseline,
         compare_base=parsed.base_dir is not None,
     )
-    inheritance_report = HandlerCiInheritance().handle(
+    inheritance_report = container.get_service(_HANDLER_CI_INHERITANCE_TOKEN).handle(
         ModelCiInheritanceReferenceInput(
             check=request, rules=rules_from_contract(load_contract())
         )
     )
-    jobs_report = HandlerCiRepositoryJobs().handle(request)
+    jobs_report = container.get_service(_HANDLER_CI_REPOSITORY_JOBS_TOKEN).handle(
+        request
+    )
     report = ModelValidationReport.from_findings(
         findings=inheritance_report.findings + jobs_report.findings,
         request=ModelValidationRequestRef(profile="default"),
