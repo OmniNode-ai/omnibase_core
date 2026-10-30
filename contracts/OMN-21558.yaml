@@ -190,3 +190,16 @@ dod_evidence:
         check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
           -o addopts='' -k severity_cli
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21558-external-producer-mapping
+    description: A mapping-form external producer satisfies its consumer, and every shipped contract names
+      the producer of each externally produced topic, so omnimarket's contract_topic_graph reads the packaged
+      contracts. Both tests fail at the merge base, whose shipped contracts carry bare topic strings.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_event_chain_walker.py -q --no-cov
+          -o addopts='' -k 'named_external_producer_mapping or names_the_producer_of_each_external_topic'
+        cwd: ${OMNI_HOME}/omnibase_core
