@@ -36,3 +36,10 @@ event_bus:
     - onex.cmd.core.compliance-scan-requested.v1
   publish_topics:
     - onex.evt.core.compliance-node-check-requested.v1
+# OMN-21558: workflows/compliance_workflow.yaml names the scan request as its initial_command (sent by
+# the caller) and node_compliance_scan_compute as the consumer of the per-node check request, a hop
+# that contract declares in the workflow's event_flow and not in an event_bus block.
+externally_produced_topics:
+  - onex.cmd.core.compliance-scan-requested.v1
+externally_consumed_topics:
+  - onex.evt.core.compliance-node-check-requested.v1

@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_cycle_state_without_exit
+node_type: REDUCER_GENERIC
+description: Track order events and reconcile their lifecycle.
+state_machine:
+  version: &id001
+    major: 1
+    minor: 0
+    patch: 0
+  state_machine_name: order_lifecycle
+  state_machine_version: *id001
+  description: Track an order until completion.
+  initial_state: pending
+  terminal_states:
+    - done
+  states:
+    - version: *id001
+      state_name: pending
+      state_type: operational
+      description: Await completion.
+    - version: *id001
+      state_name: processing
+      state_type: operational
+      description: Processing an order.
+    - version: *id001
+      state_name: done
+      state_type: terminal
+      description: Order completed.
+      is_terminal: true
+      is_recoverable: false
+  transitions:
+    - version: *id001
+      transition_name: begin_processing
+      from_state: pending
+      to_state: processing
+      trigger: begin
+    - version: *id001
+      transition_name: retry_processing
+      from_state: processing
+      to_state: pending
+      trigger: retry
+consumed_events:
+  - event_type: begin
+  - event_type: retry

@@ -57,6 +57,10 @@ event_bus:
   version: {major: 1, minor: 0, patch: 0}
   subscribe_topics: [onex.cmd.omnibase-core.shared-token-policy-requested.v1]
   publish_topics: [onex.evt.omnibase-core.shared-token-policy-completed.v1]
+# OMN-21558: the caller of the shared workflow credential policy check requests it and reads the
+# completion; neither end is a node of this repository, so event_chain_walker reads both as external.
+externally_produced_topics: [onex.cmd.omnibase-core.shared-token-policy-requested.v1]
+externally_consumed_topics: [onex.evt.omnibase-core.shared-token-policy-completed.v1]
 shared_token_policy:
   entries:
     - workflow: .github/workflows/auto-merge.yml

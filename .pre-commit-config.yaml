@@ -1988,6 +1988,17 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # Event-chain corpus gate (OMN-21558): check all source contracts together.
+      - id: check-event-chain-walker
+        name: Refuse broken contract event chains (OMN-21558)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_event_chain_walker:ValidatorEventChainWalker src
+        language: system
+        files: (^|/)[^/]*contract\.yaml$
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
       # Protocol binding (OMN-21533, K5): no default implementation constructed, no branch on an
       # implementation class, no module-level binding table and no broker client built outside a
       # binding site, and no setting with a literal value in two node contracts. Binding sites, class
