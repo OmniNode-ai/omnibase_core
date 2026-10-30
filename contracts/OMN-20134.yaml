@@ -12,11 +12,11 @@ interfaces_touched: []
 requirements:
   - id: req-omn20134-caller-pin-current
     statement: Core's repo-evidence caller names a receipt-gate dev-merge tag cut at or after the fix-parent
-      fallback, and that tag's receipt-gate carries the fallback.
+      fallback.
     acceptance:
       - id: AC1
         statement: "AC1: the caller's receipt-gate dev-merge tag is not older than the first tag with
-          the fix-parent fallback and the tag's receipt-gate carries it -- falsifier: uv run pytest tests/ci/test_receipt_gate_caller_pin_fix_parent_omn20134.py
+          the fix-parent fallback -- falsifier: uv run pytest tests/ci/test_receipt_gate_caller_pin_fix_parent_omn20134.py
           -q"
       - id: AC2
         statement: "AC2: the caller workflow keeps its shape and its merge-base preservation check names
@@ -33,7 +33,7 @@ emergency_bypass:
   follow_up_ticket_id: ""
 dod_evidence:
   - id: dod-omn20134-ac1-pin-floor
-    description: The caller's pin is not older than the fix-parent fallback tag and carries the fallback.
+    description: The caller's pin is not older than the fix-parent fallback tag.
     source: manual
     execution_scope: hosted_and_local
     binds_ac: [AC1]

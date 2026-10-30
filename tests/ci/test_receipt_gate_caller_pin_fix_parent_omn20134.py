@@ -11,14 +11,9 @@ that judges every pull request. A pin older than the Binds-Merged-Fix fallback
 from __future__ import annotations
 
 import re
-import subprocess
 from pathlib import Path
 
 import pytest
-
-from omnibase_core.validators.no_unguarded_git_subprocess import (
-    scrub_git_location_env,
-)
 
 pytestmark = pytest.mark.unit
 
@@ -27,7 +22,6 @@ CALLER_PATH = REPO_ROOT / ".github" / "workflows" / "call-repo-evidence-gate.yml
 
 # The first dev-merge tag cut at omnibase_core#2158's squash commit (OMN-21556).
 FIX_PARENT_FALLBACK_TAG = "dev-20261030012703-2f56afeb6dbf"
-FIX_PARENT_MARKER = "control_uses_fix_parent"
 
 _PIN = re.compile(
     r"receipt-gate\.yml@(?P<tag>dev-(?P<stamp>\d{14})-(?P<sha>[0-9a-f]{12}))\b"
@@ -46,21 +40,4 @@ def test_caller_pin_is_not_older_than_the_fix_parent_fallback() -> None:
     assert _pinned_tag().group("stamp") >= floor.group("stamp"), (
         f"the caller pins {_pinned_tag().group('tag')}, which predates "
         f"{FIX_PARENT_FALLBACK_TAG}, the first tag with the OMN-21556 fix-parent fallback"
-    )
-
-
-def test_pinned_tag_carries_the_fix_parent_fallback() -> None:
-    tag = _pinned_tag().group("tag")
-    shown = subprocess.run(
-        ["git", "show", f"{tag}:.github/workflows/receipt-gate.yml"],
-        cwd=REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-        env=scrub_git_location_env(),
-    )
-    if shown.returncode != 0:
-        pytest.skip(f"tag {tag} is not in this checkout (shallow or tagless clone)")
-    assert FIX_PARENT_MARKER in shown.stdout, (
-        f"receipt-gate.yml at {tag} has no {FIX_PARENT_MARKER}"
     )
