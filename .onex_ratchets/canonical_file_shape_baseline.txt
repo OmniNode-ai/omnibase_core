@@ -38,7 +38,6 @@ scripts/check_node_purity.py
 scripts/check_transport_imports.py
 scripts/ci/__init__.py
 scripts/ci/adequacy_receipt.py
-scripts/ci/canonical_handler_shape.py
 scripts/ci/check_async_fixture_decorators.py
 scripts/ci/check_auto_merge_hold.py
 scripts/ci/check_import_ratchet.py

@@ -80,7 +80,7 @@ thresholds:
 # OMN-14081 kept the whole `scripts/ci/` directory here as a "conservative — it
 # houses the selector itself" full-suite trigger. Measured over 30 merged PRs,
 # 6 of 7 `scripts/ci/` escalations touched files with zero relationship to test
-# selection (ci_summary_gate.py, verify_flip_bundle.py, canonical_handler_shape.py,
+# selection (ci_summary_gate.py, verify_flip_bundle.py,
 # product_readiness.py, product_reason_graph.py, adequacy_receipts/*.json) — a
 # full 40-way suite for a change the selector cannot be affected by. The list
 # below keeps EXACTLY the selector surface as an unconditional trigger, so a

@@ -3,12 +3,12 @@
 
 """Fail-closed pre-PR seam gate for canonical-shape flips (OMN-14809, LANE c).
 
-The canonical-shape CI ratchet (``scripts/ci/canonical_handler_shape.py``, OMN-14355)
+The flip receipt verifier (``validator_flip_receipts``, OMN-14355)
 is the *consuming* gate: it decides whether a non-canonical -> canonical baseline flip
 carries valid proof. But the ratchet is structurally blind to a set of coherence holes
 that only surface when the FIVE flip artifacts are checked jointly against live git,
 the live handler source, and the full typed-receipt invariants. This gate RE-INVOKES
-the real consuming gate (it imports ``canonical_handler_shape`` and calls
+the real consuming gate (it imports the flip verification modules and calls
 ``verify_flip_receipt`` / ``classify_node`` / the git + baseline helpers — it does NOT
 reimplement them) and adds seven fail-closed assertions per flipped node that close the
 blind spots enumerated below. It mirrors the ratchet's fan-out CLI
@@ -72,13 +72,13 @@ and makes it SHRINK-ONLY: growth hard-fails, an entry naming a receipt that does
 hard-fails, and REMOVING an entry re-arms assertion 7 for that node — a burn-down is a claim
 the gate executes, not a line you delete. A frozen list is honest debt; silence is not.
 
-Usage (pre-commit / CI, mirrors canonical_handler_shape)::
+Usage (pre-commit / CI)::
 
     uv run python scripts/ci/verify_flip_bundle.py                    # omnibase_core
     uv run python scripts/ci/verify_flip_bundle.py --package omnibase_infra \\
         --src-root ../omnibase_infra/src \\
         --receipts-dir ../omnibase_infra/scripts/ci/adequacy_receipts \\
-        --baseline ../omnibase_infra/scripts/ci/canonical_handler_shape_baseline.py
+        --baseline ../omnibase_infra/scripts/ci/<shape-baseline>.py
 
 The gate discovers the nodes NEWLY flipped in this PR (removed from ``NON_CANONICAL``
 vs origin/dev and canonical now, or carrying a newly-added adequacy receipt) and runs
@@ -99,11 +99,16 @@ from pathlib import Path
 
 from pydantic import BaseModel, ConfigDict
 
+from omnibase_core.validation import validator_flip_artifacts as artifacts
+from omnibase_core.validation import validator_flip_binding as binding
+from omnibase_core.validation import validator_flip_git as git_evidence
+from omnibase_core.validation import validator_flip_receipts as receipts
+from omnibase_core.validation import validator_flip_scope as scope
+
 # Re-invoke the REAL consuming gate + the canonical typed adequacy model. Dual import so
 # the module works both as ``scripts.ci.verify_flip_bundle`` (pytest, repo root on path)
 # and as a standalone ``python scripts/ci/verify_flip_bundle.py`` (script dir on path).
 try:  # pragma: no cover - import shim
-    from scripts.ci import canonical_handler_shape as chs
     from scripts.ci import equivalence_producer as eqp
     from scripts.ci import parity_replay as prp
     from scripts.ci.adequacy_receipt import (
@@ -112,7 +117,6 @@ try:  # pragma: no cover - import shim
     )
 except ImportError:  # pragma: no cover - script-dir invocation
     sys.path.insert(0, str(Path(__file__).resolve().parent))
-    import canonical_handler_shape as chs  # type: ignore[import-not-found, no-redef]
     import equivalence_producer as eqp  # type: ignore[import-not-found, no-redef]
     import parity_replay as prp  # type: ignore[import-not-found, no-redef]
     from adequacy_receipt import (  # type: ignore[import-not-found, no-redef]
@@ -135,7 +139,7 @@ GRANDFATHERED_FLIPS: frozenset[str] = frozenset(
 DEFAULT_BASE_REF = "origin/dev"
 
 # Repo-local parity-debt baseline (OMN-15344). Resolved BY CONVENTION beside whatever
-# canonical_handler_shape baseline the caller points at, deliberately NOT via a required
+# handler-shape baseline the caller points at, deliberately NOT via a required
 # new flag: the per-repo CI wiring that consumes this gate (omnibase_infra / omnimarket)
 # pins omnibase_core at a moving ref, so a required flag would make the pair landable in
 # exactly one order. An ABSENT file is legal and means "no declared debt" — byte-for-byte
@@ -188,7 +192,7 @@ class ModelFlipBundleResult(BaseModel):
 
 # --------------------------------------------------------------------------- #
 # Scope + small git primitives (generic; the gate-specific git helpers are reused
-# from canonical_handler_shape — _git_repo_root / _git_show / _git_ref_exists).
+# from validator_flip_git — _git_repo_root / _git_show / _git_ref_exists).
 # --------------------------------------------------------------------------- #
 
 
@@ -198,20 +202,20 @@ def _apply_scope(
     receipts_dir: Path | None,
     baseline: Path | None,
 ) -> tuple[Path, str, Path, Path]:
-    """Point the imported ratchet at ``package`` exactly as its ``main()`` does.
+    """Point the shared verification scope at ``package``.
 
-    ``classify_node`` / ``verify_flip_receipt`` / ``_resolve_module_file`` read module
-    globals; setting them here (via the ratchet's own pure ``_resolve_scope``) makes
+    ``classify_node`` / ``verify_flip_receipt`` / ``_resolve_module_file`` read the shared
+    scope; setting it here (via the pure ``_resolve_scope``) makes
     every re-invoked function operate on the target package's tree/receipts/baseline.
     """
-    s_src, s_glob, s_base, s_recv = chs._resolve_scope(
+    s_src, s_glob, s_base, s_recv = scope._resolve_scope(
         package, src_root, None, baseline, receipts_dir
     )
-    chs.PACKAGE = package
-    chs.SRC_ROOT = s_src
-    chs.NODES_GLOB = s_glob
-    chs.BASELINE_PATH = s_base
-    chs.RECEIPTS_DIR = s_recv
+    scope.SCOPE.package = package
+    scope.SCOPE.src_root = s_src
+    scope.SCOPE.nodes_glob = s_glob
+    scope.SCOPE.baseline_path = s_base
+    scope.SCOPE.receipts_dir = s_recv
     return s_src, s_glob, s_base, s_recv
 
 
@@ -226,7 +230,7 @@ def _parse_symbol_tuple(source: str, symbol: str) -> tuple[str, ...]:
     """Read a module-level ``symbol = (...)`` literal out of Python SOURCE.
 
     AST-parsed, never exec'd: the base-ref copy comes straight out of ``git show`` and
-    must not be executable input. Mirrors ``canonical_handler_shape._parse_non_canonical``.
+    must not be executable input. Mirrors ``validator_flip_scope._parse_non_canonical``.
     """
     for node in ast.parse(source).body:
         targets: list[str] = []
@@ -274,14 +278,14 @@ def load_base_parity_baseline(
       In CI the PR base is always present, so it is live there.
     """
     anchor = path if path.exists() else path.parent
-    repo_root = chs._git_repo_root(anchor)
-    if repo_root is None or not chs._git_ref_exists(repo_root, base_ref):
+    repo_root = git_evidence._git_repo_root(anchor)
+    if repo_root is None or not git_evidence._git_ref_exists(repo_root, base_ref):
         return None, False
     try:
         rel = path.resolve().relative_to(repo_root.resolve())
     except ValueError:
         return None, False
-    source = chs._git_show(repo_root, base_ref, str(rel).replace(os.sep, "/"))
+    source = git_evidence._git_show(repo_root, base_ref, str(rel).replace(os.sep, "/"))
     if source is None:
         return (), False
     try:
@@ -349,7 +353,7 @@ def _assert_typed_adequacy(node_id: str, receipts_dir: Path) -> tuple[bool, str]
 def _assert_real_gate_verdict(
     node_id: str, handler_module: str | None
 ) -> tuple[bool, str]:
-    ok, reason = chs.verify_flip_receipt(node_id, handler_module)
+    ok, reason = receipts.verify_flip_receipt(node_id, handler_module)
     return ok, f"verify_flip_receipt -> {reason}"
 
 
@@ -359,31 +363,15 @@ def _assert_real_gate_verdict(
 
 
 def _classify_binding(module: str, cls: str | None, node_pkg: str) -> tuple[bool, str]:
-    """Classify ONE contract binding using the ratchet's own resolver primitives."""
-    resolved_module = module or node_pkg
-    files = chs._module_to_files(resolved_module)
-    fn, cdef, path = chs._resolve_handler(files, cls)
-    label = f"{resolved_module}:{cls or '<any>'}"
-    if cdef is None:
-        return False, f"{label} unresolved (phantom/no_binding)"
-    if fn is None:
-        opm = chs._operation_methods(cdef)
-        kind = f"op_method({opm[:3]})" if opm else "empty"
-        return False, f"{label} has no handle() [{kind}]"
-    adaptable, reason = chs._handle_is_adaptable(fn)
-    if not adaptable:
-        return False, f"{label} nonadaptable ({reason})"
-    mod_text = path.read_text(encoding="utf-8") if path and path.exists() else ""
-    if "ModelEventEnvelope" in mod_text:
-        return False, f"{label} references ModelEventEnvelope (envelope_in_core)"
-    return True, f"{label} canonical ({reason})"
+    """Resolve a binding and judge it with the generic checker rule rows."""
+    return binding.classify_binding(module, cls, node_pkg)
 
 
 def _assert_full_node_canonical(
     contract_path: Path, data: dict[str, object]
 ) -> tuple[bool, str]:
-    node_pkg = chs._node_package(contract_path)
-    bindings = chs._contract_bindings(data)
+    node_pkg = binding._node_package(contract_path)
+    bindings = binding._contract_bindings(data)
     if not bindings:
         return False, "contract declares no handler binding"
     offenders: list[str] = []
@@ -452,15 +440,15 @@ def _assert_twin_baseline(
     package: str,
 ) -> tuple[bool, str]:
     # 4a: node absent from the working (post-update) NON_CANONICAL baseline.
-    working = set(chs.load_baseline(baseline_path))
+    working = set(scope.load_baseline(baseline_path))
     if node_id in working:
         return (
             False,
             f"node still in NON_CANONICAL baseline ({baseline_path.name}) — the flip is "
-            f"a silent warn_baselined; run canonical_handler_shape.py --update",
+            f"a silent warn_baselined; supply valid flip proof",
         )
     # 4c: monotonic non-increasing — the shape baseline must not have GROWN vs base.
-    base = chs.load_base_baseline(baseline_path, base_ref)
+    base = scope.load_base_baseline(baseline_path, base_ref)
     if base is None:
         return False, f"cannot resolve base baseline at {base_ref} (fail-closed)"
     growth = sorted(set(working) - set(base))
@@ -539,17 +527,17 @@ def _ruff_format_clean(module_file: Path, cwd: Path) -> tuple[bool, str]:
 def _assert_ordering_seam(
     node_id: str, receipts_dir: Path, target_root: Path
 ) -> tuple[bool, str]:
-    raw = chs._load_json(receipts_dir / f"{node_id}.json")
+    raw = artifacts._load_json(receipts_dir / f"{node_id}.json")
     if raw is None:
         return False, "adequacy receipt unreadable for ordering check"
     recorded = raw.get("handler_module_sha256")
     module = raw.get("handler_module")
     if not isinstance(module, str) or not module:
         return False, "receipt has no handler_module for the ordering check"
-    module_file = chs._resolve_module_file(module)
+    module_file = artifacts._resolve_module_file(module)
     if module_file is None:
         return False, f"handler_module {module} not resolvable"
-    live = chs._sha256_file(module_file)
+    live = artifacts._sha256_file(module_file)
     if live != recorded:
         return (
             False,
@@ -606,7 +594,7 @@ def _assert_reproducible_equivalence(
 ) -> tuple[bool, str]:
     return eqp.byte_compare(
         node_id,
-        receipts_dir / f"{node_id}{chs.EQUIVALENCE_SUFFIX}",
+        receipts_dir / f"{node_id}{artifacts.EQUIVALENCE_SUFFIX}",
         repo_root,
         src_root,
         base_ref,
@@ -625,14 +613,14 @@ def _flip_proof_is_new(
     Fail-closed: any inability to prove the artifact PRE-EXISTED at the base (artifact
     outside the repo, base unresolvable) returns True -> the assertion is applied.
     """
-    art = receipts_dir / f"{node_id}{suffix or chs.EQUIVALENCE_SUFFIX}"
+    art = receipts_dir / f"{node_id}{suffix or artifacts.EQUIVALENCE_SUFFIX}"
     try:
         rel = art.resolve().relative_to(repo_root.resolve())
     except ValueError:
         return True
-    if not chs._git_ref_exists(repo_root, base_ref):
+    if not git_evidence._git_ref_exists(repo_root, base_ref):
         return True
-    src = chs._git_show(repo_root, base_ref, str(rel).replace(os.sep, "/"))
+    src = git_evidence._git_show(repo_root, base_ref, str(rel).replace(os.sep, "/"))
     return src is None
 
 
@@ -664,7 +652,7 @@ def _assert_parity_red_on_base(
     repo_root: Path,
     src_root: Path,
 ) -> tuple[bool, str]:
-    raw = chs._load_json(receipts_dir / f"{node_id}{chs.HANDFLIP_SUFFIX}")
+    raw = artifacts._load_json(receipts_dir / f"{node_id}{artifacts.HANDFLIP_SUFFIX}")
     if raw is None:
         return False, "hand-flip proof unreadable for the parity RED-on-base check"
     parity = raw.get("parity")
@@ -672,7 +660,7 @@ def _assert_parity_red_on_base(
         return False, "hand-flip proof missing parity block"
     test_ids_raw = parity.get("test_ids")
     if not isinstance(test_ids_raw, list) or not test_ids_raw:
-        return False, "hand-flip parity block names no test_ids to execute"
+        return False, "hand-flip parity block names no pytest test_ids to execute"
     base_ref = raw.get("base_ref")
     if not isinstance(base_ref, str) or not base_ref:
         return False, "hand-flip proof missing base_ref"
@@ -739,7 +727,7 @@ def _parity_debt_ratchet(
     working_set = set(working)
 
     for node_id in sorted(working_set):
-        art = receipts_dir / f"{node_id}{chs.HANDFLIP_SUFFIX}"
+        art = receipts_dir / f"{node_id}{artifacts.HANDFLIP_SUFFIX}"
         if not art.exists():
             errors.append(
                 f"{node_id}: STALE entry in {PARITY_BASELINE_FILENAME} — it names a "
@@ -753,7 +741,7 @@ def _parity_debt_ratchet(
     if not base_existed:
         for node_id in sorted(working_set):
             if repo_root is None or _flip_proof_is_new(
-                node_id, receipts_dir, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+                node_id, receipts_dir, repo_root, base_ref, artifacts.HANDFLIP_SUFFIX
             ):
                 errors.append(
                     f"{node_id}: seeded into a NEW {PARITY_BASELINE_FILENAME}, but its "
@@ -773,10 +761,10 @@ def _parity_debt_ratchet(
         )
 
     for node_id in sorted(base_set - working_set):
-        art = receipts_dir / f"{node_id}{chs.HANDFLIP_SUFFIX}"
+        art = receipts_dir / f"{node_id}{artifacts.HANDFLIP_SUFFIX}"
         if not art.exists():
             if repo_root is not None and not _flip_proof_is_new(
-                node_id, receipts_dir, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+                node_id, receipts_dir, repo_root, base_ref, artifacts.HANDFLIP_SUFFIX
             ):
                 errors.append(
                     f"{node_id}: removed from {PARITY_BASELINE_FILENAME} by DELETING its "
@@ -826,15 +814,15 @@ def verify_flip_bundle(
     fan-out call leaves no scope state behind for other callers/tests.
     """
     saved = (
-        chs.PACKAGE,
-        chs.SRC_ROOT,
-        chs.NODES_GLOB,
-        chs.BASELINE_PATH,
-        chs.RECEIPTS_DIR,
-        chs.BASE_REF,
+        scope.SCOPE.package,
+        scope.SCOPE.src_root,
+        scope.SCOPE.nodes_glob,
+        scope.SCOPE.baseline_path,
+        scope.SCOPE.receipts_dir,
+        scope.SCOPE.base_ref,
     )
     try:
-        chs.BASE_REF = base_ref
+        scope.SCOPE.base_ref = base_ref
         return _verify_flip_bundle_impl(
             node_id,
             package,
@@ -846,12 +834,12 @@ def verify_flip_bundle(
         )
     finally:
         (
-            chs.PACKAGE,
-            chs.SRC_ROOT,
-            chs.NODES_GLOB,
-            chs.BASELINE_PATH,
-            chs.RECEIPTS_DIR,
-            chs.BASE_REF,
+            scope.SCOPE.package,
+            scope.SCOPE.src_root,
+            scope.SCOPE.nodes_glob,
+            scope.SCOPE.baseline_path,
+            scope.SCOPE.receipts_dir,
+            scope.SCOPE.base_ref,
         ) = saved
 
 
@@ -867,7 +855,7 @@ def _verify_flip_bundle_impl(
     s_src, _glob, s_base, s_recv = _apply_scope(
         package, src_root, receipts_dir, baseline
     )
-    repo_root = chs._git_repo_root(s_src)
+    repo_root = git_evidence._git_repo_root(s_src)
     target_root = repo_root if repo_root is not None else s_src.parent
     contract_path = s_src / node_id.replace(".", "/") / "contract.yaml"
 
@@ -891,10 +879,10 @@ def _verify_flip_bundle_impl(
     # Preconditions the later assertions rely on: a readable contract + its bindings.
     if not contract_path.exists():
         return _record(0, "preflight", False, f"contract absent at {contract_path}")
-    data = chs.yaml.safe_load(contract_path.read_text(encoding="utf-8"))
+    data = binding.load_binding_document(contract_path.read_text(encoding="utf-8"))
     if not isinstance(data, dict):
         return _record(0, "preflight", False, "contract is not a mapping")
-    finding = chs.classify_node(contract_path)
+    finding = binding.classify_node(contract_path)
     handler_module = finding.handler_module
 
     # Assertion 1 — full typed adequacy invariants (A1)
@@ -945,8 +933,10 @@ def _verify_flip_bundle_impl(
 
     # Assertion 6 — deterministic producer rerun + byte-compare (E1), equivalence +
     # new-flip only.
-    ok_e = chs.verify_equivalence_replay(node_id)[0]
-    no_legacy = "legacy_handler" in (chs._load_json(s_recv / f"{node_id}.json") or {})
+    ok_e = artifacts.verify_equivalence_replay(node_id)[0]
+    no_legacy = "legacy_handler" in (
+        artifacts._load_json(s_recv / f"{node_id}.json") or {}
+    )
     if no_legacy:
         detail6 = "no-legacy path — no legacy handler to replay against; exempt"
     elif not ok_e:
@@ -980,7 +970,7 @@ def _verify_flip_bundle_impl(
     # Assertion 7 — declared parity tests RED-on-their-own-assertion at the receipt's
     # own base_ref (OMN-15340). Hand-flip path only: the equivalence path carries no
     # parity block and is covered by assertion 6's deterministic rerun.
-    handflip_path = s_recv / f"{node_id}{chs.HANDFLIP_SUFFIX}"
+    handflip_path = s_recv / f"{node_id}{artifacts.HANDFLIP_SUFFIX}"
     if no_legacy:
         detail7 = (
             "no-legacy path — contract tests executed green on HEAD by assertion 2; "
@@ -1006,7 +996,7 @@ def _verify_flip_bundle_impl(
             "cannot resolve git repo root to materialize the receipt's base_ref",
         )
     elif not _flip_proof_is_new(
-        node_id, s_recv, repo_root, base_ref, chs.HANDFLIP_SUFFIX
+        node_id, s_recv, repo_root, base_ref, artifacts.HANDFLIP_SUFFIX
     ):
         grandfathered = True
         detail7 = (
@@ -1051,16 +1041,16 @@ def _newly_flipped_nodes(
     git base is unavailable (caller notes + exits 0, matching the ratchet's tolerance —
     the ratchet itself still hard-guards new non-canonical nodes on that run).
     """
-    working = set(chs.load_baseline(baseline_path))
-    base = chs.load_base_baseline(baseline_path, base_ref)
+    working = set(scope.load_baseline(baseline_path))
+    base = scope.load_base_baseline(baseline_path, base_ref)
     if base is None:
         return None
     flips: set[str] = set()
     for node_id in set(base) - working:
         contract = src_root / node_id.replace(".", "/") / "contract.yaml"
-        if contract.exists() and chs.classify_node(contract).is_canonical:
+        if contract.exists() and binding.classify_node(contract).is_canonical:
             flips.add(node_id)
-    repo_root = chs._git_repo_root(src_root)
+    repo_root = git_evidence._git_repo_root(src_root)
     if repo_root is not None:
         added = _git_added_files(repo_root, base_ref)
         try:
@@ -1077,7 +1067,7 @@ def _newly_flipped_nodes(
                     continue
                 node_id = name[: -len(".json")]
                 contract = src_root / node_id.replace(".", "/") / "contract.yaml"
-                if contract.exists() and chs.classify_node(contract).is_canonical:
+                if contract.exists() and binding.classify_node(contract).is_canonical:
                     flips.add(node_id)
     return sorted(flips)
 
@@ -1111,7 +1101,7 @@ def main(argv: list[str] | None = None) -> int:
         "--baseline",
         type=Path,
         default=None,
-        help="Override the canonical_handler_shape baseline module path for --package.",
+        help="Override the handler-shape baseline module path for --package.",
     )
     parser.add_argument(
         "--parity-baseline",
@@ -1155,7 +1145,7 @@ def main(argv: list[str] | None = None) -> int:
         parity_base,
         parity_base_existed,
         s_recv,
-        chs._git_repo_root(s_src),
+        git_evidence._git_repo_root(s_src),
         s_src,
         args.base_ref,
     )
@@ -1183,7 +1173,7 @@ def main(argv: list[str] | None = None) -> int:
         if node_ids is None:
             print(
                 "verify_flip_bundle NOTE — git base unavailable; PR flip-discovery "
-                "skipped (the canonical_handler_shape ratchet still hard-guards new "
+                "skipped (the handler-shape ratchet still hard-guards new "
                 "non-canonical nodes on this run).",
                 file=sys.stderr,
             )

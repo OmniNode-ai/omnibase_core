@@ -1374,6 +1374,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: canonical-handler-shape-ratchet
+  name: Canonical handler-shape check (OMN-21536, K3)
+  description: >
+    Judges every handler class, bound by a contract or not, for a handle the shared runtime cannot adapt,
+    a handler module of bare functions, the event envelope type in a handler core, and a public method
+    that mutates handler state. The patterns, name lists, thresholds and remediation text are the rule
+    rows of handler_shape.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_handler_shape:ValidatorHandlerShape
+  types: [python]
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-hook-writes
   name: Pre-commit hooks check, never rewrite (OMN-21498)
   description: >

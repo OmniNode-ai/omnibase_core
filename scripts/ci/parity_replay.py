@@ -5,7 +5,7 @@
 
 "RED to GREEN for the right reason" was prose until this module existed: nothing in
 CI ever executed a candidate test against the PRE-change tree. The hand-flip proof
-path (``canonical_handler_shape.verify_handflip_proof``) read a self-authored
+path (``validator_flip_receipts.verify_handflip_proof``) read a self-authored
 ``parity.status == "pass"`` string and counted ``parity.test_ids`` without ever
 running them — on either tree. Two failure modes were therefore invisible:
 
@@ -17,7 +17,7 @@ running them — on either tree. Two failure modes were therefore invisible:
 This module executes them. Two entry points:
 
 * :func:`run_on_head` — run the declared ids against the working tree; every id must
-  PASS. Consumed by ``canonical_handler_shape``'s default parity executor, which is
+  PASS. Consumed by ``validator_flip_receipts``'s default parity executor, which is
   what replaces the credited-but-unexecuted ``status`` string.
 * :func:`red_on_base` — materialize the receipt's OWN ``base_ref`` as a detached git
   worktree, overlay the HEAD copies of the declared test files onto that pre-change

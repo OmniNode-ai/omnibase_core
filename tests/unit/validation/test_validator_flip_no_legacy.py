@@ -11,7 +11,11 @@ from pathlib import Path
 
 import pytest
 
-import scripts.ci.canonical_handler_shape as mod
+from omnibase_core.models.flip_bundle.model_parity_verdict import ModelParityVerdict
+from omnibase_core.validation import validator_flip_artifacts as artifacts
+from omnibase_core.validation import validator_flip_parity as parity
+from omnibase_core.validation import validator_flip_receipts as receipts
+from omnibase_core.validation import validator_flip_scope as fscope
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
 )
@@ -122,9 +126,9 @@ def _build_repo(
     )
     _commit(root, "HEAD: canonical handler and contract test")
     (root / "receipts").mkdir()
-    monkeypatch.setattr(mod, "SRC_ROOT", root / "src")
-    monkeypatch.setattr(mod, "RECEIPTS_DIR", root / "receipts")
-    monkeypatch.setattr(mod, "BASE_REF", "dev")
+    monkeypatch.setattr(fscope.SCOPE, "src_root", root / "src")
+    monkeypatch.setattr(fscope.SCOPE, "receipts_dir", root / "receipts")
+    monkeypatch.setattr(fscope.SCOPE, "base_ref", "dev")
     return root, base
 
 
@@ -133,9 +137,9 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> tuple[Path, str]:
     return _build_repo(tmp_path / "repo", monkeypatch)
 
 
-def _executor(executed: bool = True, green: bool = True) -> mod.ParityExecutor:
-    def execute(_node_id: str, _test_ids: tuple[str, ...]) -> mod.ModelParityVerdict:
-        return mod.ModelParityVerdict(executed=executed, green=green, detail="stub")
+def _executor(executed: bool = True, green: bool = True) -> parity.ParityExecutor:
+    def execute(_node_id: str, _test_ids: tuple[str, ...]) -> ModelParityVerdict:
+        return ModelParityVerdict(executed=executed, green=green, detail="stub")
 
     return execute
 
@@ -152,7 +156,7 @@ def _write_receipt(root: Path, base: str, **overrides: object) -> Path:
             ).splitlines()
         ),
         "handler_module": HANDLER_MODULE,
-        "handler_module_sha256": mod._sha256_file(
+        "handler_module_sha256": artifacts._sha256_file(
             root / NODE_REL / "handlers/handler_a.py"
         ),
         "contract_tests": [CONTRACT_TEST],
@@ -164,31 +168,17 @@ def _write_receipt(root: Path, base: str, **overrides: object) -> Path:
     return path
 
 
-def _canon() -> mod.ModelHandlerShapeFinding:
-    return mod.ModelHandlerShapeFinding(
-        node_id=NODE_ID,
-        category="canonical",
-        is_canonical=True,
-        handler_module=HANDLER_MODULE,
-    )
-
-
 @pytest.mark.unit
 def test_no_legacy_flip_with_valid_receipt_passes(
     repo: tuple[Path, str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _write_receipt(*repo)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is True, reason
     assert reason.startswith("no-legacy:")
     assert "contract-tests-executed-green" in reason
-
-    monkeypatch.setattr(mod, "default_parity_executor", _executor())
-    result = mod.evaluate([_canon()], baseline=[], base_baseline=[NODE_ID])
-    assert result.failed is False
-    assert NODE_ID in result.proven_flips
 
 
 @pytest.mark.unit
@@ -197,14 +187,11 @@ def test_no_legacy_flip_without_receipt_fails(
 ) -> None:
     root, _base = repo
     assert not (root / "receipts" / f"{NODE_ID}.json").exists()
-    monkeypatch.setattr(mod, "default_parity_executor", _executor())
-    findings = [_canon()]
-    result = mod.evaluate(findings, baseline=[], base_baseline=[NODE_ID])
-    assert NODE_ID in result.unproven_flips
-    assert result.failed
-    failure = mod._format_failure(result, findings)
-    assert "legacy_handler: none" in failure
-    assert "no adequacy receipt at" in failure
+    ok, reason = receipts.verify_flip_receipt(
+        NODE_ID, HANDLER_MODULE, parity_executor=_executor()
+    )
+    assert not ok
+    assert "no adequacy receipt at" in reason
 
 
 @pytest.mark.unit
@@ -214,7 +201,7 @@ def test_node_that_had_a_handler_cannot_use_no_legacy_path(
 ) -> None:
     root, base = _build_repo(tmp_path / "repo", monkeypatch, legacy=legacy)
     _write_receipt(root, base)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -227,7 +214,7 @@ def test_old_handlerless_commit_cannot_be_cited_past_a_live_handler(
 ) -> None:
     root, base = _build_repo(tmp_path / "repo", monkeypatch, live_handler=True)
     _write_receipt(root, base)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -241,7 +228,7 @@ def test_base_node_files_must_match_git_listing(repo: tuple[Path, str]) -> None:
         root, "ls-tree", "-r", "--name-only", base, "--", NODE_REL
     ).splitlines()
     _write_receipt(root, base, base_node_files=files[1:])
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -257,7 +244,7 @@ def test_contract_tests_must_execute_green(
     repo: tuple[Path, str], executed: bool, green: bool, expected_reason: str
 ) -> None:
     _write_receipt(*repo)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID,
         HANDLER_MODULE,
         parity_executor=_executor(executed=executed, green=green),
@@ -276,7 +263,7 @@ def test_contract_test_file_must_name_the_node(repo: tuple[Path, str]) -> None:
     _write_receipt(
         root, base, contract_tests=["tests/test_unrelated.py::test_unrelated"]
     )
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -286,7 +273,7 @@ def test_contract_test_file_must_name_the_node(repo: tuple[Path, str]) -> None:
 @pytest.mark.unit
 def test_legacy_handler_other_than_none_is_refused(repo: tuple[Path, str]) -> None:
     _write_receipt(*repo, legacy_handler=f"{NODE_ID}.consumer")
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -296,7 +283,7 @@ def test_legacy_handler_other_than_none_is_refused(repo: tuple[Path, str]) -> No
 @pytest.mark.unit
 def test_stale_handler_sha_refused(repo: tuple[Path, str]) -> None:
     _write_receipt(*repo, handler_module_sha256="sha256:00")
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -311,7 +298,7 @@ def test_base_ref_must_be_ancestor_of_head(repo: tuple[Path, str]) -> None:
     unrelated = _commit(root, "Unrelated root commit")
     _git(root, "checkout", "--detach", head)
     _write_receipt(root, unrelated)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -342,7 +329,7 @@ def test_existing_handler_path_unchanged(repo: tuple[Path, str]) -> None:
         "receipt_schema": "adequacy_receipt.v1",
         "node_id": NODE_ID,
         "handler_module": HANDLER_MODULE,
-        "handler_module_sha256": mod._sha256_file(
+        "handler_module_sha256": artifacts._sha256_file(
             root / NODE_REL / "handlers/handler_a.py"
         ),
         "recorded_at": "2026-10-13T00:00:00Z",
@@ -356,7 +343,7 @@ def test_existing_handler_path_unchanged(repo: tuple[Path, str]) -> None:
     (root / "receipts" / f"{NODE_ID}.json").write_text(
         json.dumps(receipt), encoding="utf-8"
     )
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -376,7 +363,7 @@ def test_landed_no_legacy_receipt_remains_valid_on_descendants(
     (root / "unrelated.txt").write_text("unrelated change\n", encoding="utf-8")
     _commit(root, "Unrelated descendant change")
 
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is True, reason
@@ -402,7 +389,7 @@ def test_landed_no_legacy_proof_cannot_be_replaced(
         receipt.write_text(json.dumps(raw), encoding="utf-8")
     _commit(root, "Replace previously landed proof inputs")
 
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -418,7 +405,7 @@ def test_landed_no_legacy_receipt_still_executes_contract_tests(
     _commit(root, "Land the canonical handler with its no-legacy receipt")
     _git(root, "branch", "-f", "dev", "HEAD")
 
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor(green=False)
     )
     assert ok is False
@@ -453,16 +440,12 @@ def test_landed_no_legacy_flip_passes_after_merge(
 ) -> None:
     root, base = repo
     _land_flip(root, base)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is True, reason
 
     # The change that drops the landed node from the baseline is a proven flip.
-    monkeypatch.setattr(mod, "default_parity_executor", _executor())
-    result = mod.evaluate([_canon()], baseline=[], base_baseline=[NODE_ID])
-    assert result.failed is False
-    assert NODE_ID in result.proven_flips
 
 
 @pytest.mark.unit
@@ -471,7 +454,7 @@ def test_landed_flip_over_a_base_handler_is_refused(
 ) -> None:
     root, base = _build_repo(tmp_path / "repo", monkeypatch, live_handler=True)
     _land_flip(root, base)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -487,7 +470,7 @@ def test_receipt_landed_after_a_different_handler_is_refused(
     _write_receipt(root, base)
     landed = _commit(root, "Receipt lands after a legacy and a canonical handler")
     _git(root, "branch", "-f", "dev", landed)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -502,7 +485,7 @@ def test_node_changed_after_the_flip_landed_is_refused(
     _land_flip(root, base)
     (root / NODE_REL / "extra.py").write_text("X = 1\n", encoding="utf-8")
     _commit(root, "Change the node after the flip landed")
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False
@@ -517,7 +500,7 @@ def test_unlanded_receipt_keeps_the_live_base_refusal(
     # dev already holds the handler commit, but the receipt never landed there.
     _git(root, "branch", "-f", "dev", "HEAD")
     _write_receipt(root, base)
-    ok, reason = mod.verify_flip_receipt(
+    ok, reason = receipts.verify_flip_receipt(
         NODE_ID, HANDLER_MODULE, parity_executor=_executor()
     )
     assert ok is False

@@ -36,7 +36,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.ci import canonical_handler_shape as chs
+from omnibase_core.validation.validator_flip_scope import SCOPE
 from scripts.ci import equivalence_producer as eqp
 from scripts.ci.verify_flip_bundle import (
     PARITY_BASELINE_FILENAME,
@@ -278,7 +278,7 @@ def build_flip_repo(
     src_root = root / "src"
     node_dir = src_root / "testpkg" / "nodes" / "node_demo_compute"
     receipts_dir = root / "scripts" / "ci" / "adequacy_receipts"
-    baseline_path = root / "scripts" / "ci" / "canonical_handler_shape_baseline.py"
+    baseline_path = root / "scripts" / "ci" / "baseline.py"
     handler_file = node_dir / "handler.py"
     contract_file = node_dir / "contract.yaml"
     model_file = node_dir / "model.py"
@@ -500,7 +500,7 @@ def test_passes_on_committed_infra_flips(node_id: str) -> None:
         "omnibase_infra",
         _INFRA_ROOT / "src",
         _INFRA_ROOT / "scripts/ci/adequacy_receipts",
-        _INFRA_ROOT / "scripts/ci/canonical_handler_shape_baseline.py",
+        _INFRA_ROOT / "scripts/ci" / SCOPE.baseline_path.name,
         base_ref="origin/dev",
     )
     assert result.ok, result.reason
@@ -857,7 +857,7 @@ def build_handflip_repo(
     src_root = root / "src"
     node_dir = src_root / "testpkg" / "nodes" / "node_demo_compute"
     receipts_dir = root / "scripts" / "ci" / "adequacy_receipts"
-    baseline_path = root / "scripts" / "ci" / "canonical_handler_shape_baseline.py"
+    baseline_path = root / "scripts" / "ci" / "baseline.py"
     handler_file = node_dir / "handler.py"
     contract_file = node_dir / "contract.yaml"
 
@@ -1036,19 +1036,19 @@ STALE_ID = "testpkg.nodes.node_never_existed_compute"
 def restore_scope():
     """``main()`` mutates the ratchet's module globals and does not restore them."""
     saved = (
-        chs.PACKAGE,
-        chs.SRC_ROOT,
-        chs.NODES_GLOB,
-        chs.BASELINE_PATH,
-        chs.RECEIPTS_DIR,
+        SCOPE.package,
+        SCOPE.src_root,
+        SCOPE.nodes_glob,
+        SCOPE.baseline_path,
+        SCOPE.receipts_dir,
     )
     yield
     (
-        chs.PACKAGE,
-        chs.SRC_ROOT,
-        chs.NODES_GLOB,
-        chs.BASELINE_PATH,
-        chs.RECEIPTS_DIR,
+        SCOPE.package,
+        SCOPE.src_root,
+        SCOPE.nodes_glob,
+        SCOPE.baseline_path,
+        SCOPE.receipts_dir,
     ) = saved
 
 

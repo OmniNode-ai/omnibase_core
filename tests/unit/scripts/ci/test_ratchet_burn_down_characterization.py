@@ -20,7 +20,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-import scripts.ci.canonical_handler_shape as shape
 import scripts.ci.rsd_provenance_stamp as stamp
 from omnibase_core.validation.validator_runtime_profiles import (
     RULE_RUNTIME_PROFILES_MISSING,
@@ -59,30 +58,6 @@ def _plant_bare_node(src_root: Path, node_name: str) -> Path:
 # --------------------------------------------------------------------------- #
 # Canonical handler-shape gate (OMN-14355)
 # --------------------------------------------------------------------------- #
-
-
-def test_handler_shape_real_tree_is_all_canonical() -> None:
-    findings = shape.classify_all()
-    assert findings, "positive control: the scan must see core's nodes"
-    assert shape.current_non_canonical(findings) == []
-
-
-def test_handler_shape_full_scan_passes_on_real_tree(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    _pin_module_scope(monkeypatch, shape)
-    assert shape.main(["--scope", "full"]) == 0
-
-
-def test_handler_shape_planted_non_canonical_node_fails(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    _pin_module_scope(monkeypatch, shape)
-    _plant_bare_node(tmp_path, "node_planted_noncanonical")
-    rc = shape.main(
-        ["--scope", "full", "--package", "omnibase_core", "--src-root", str(tmp_path)]
-    )
-    assert rc == 1
 
 
 # --------------------------------------------------------------------------- #
