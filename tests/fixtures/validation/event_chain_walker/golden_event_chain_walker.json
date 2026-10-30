@@ -1,0 +1,60 @@
+{
+  "report_id": "<normalised>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "event_chain_walker",
+      "severity": "FAIL",
+      "location": "src/pkg/violation_consumer_without_producer.contract.yaml",
+      "message": "topic 'onex.evt.orders.unproduced.v1' has no corpus counterpart -- Add a publishing contract or declare the topic as externally produced or a runtime command.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "consumer_without_producer"
+    },
+    {
+      "validator_id": "event_chain_walker",
+      "severity": "FAIL",
+      "location": "src/pkg/violation_event_without_consumer.contract.yaml",
+      "message": "topic 'onex.evt.orders.unobserved.v1' has no corpus counterpart -- Add a subscribing contract or declare the topic as externally consumed or terminal.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "event_without_consumer"
+    },
+    {
+      "validator_id": "event_chain_walker",
+      "severity": "FAIL",
+      "location": "src/pkg/violation_state_without_exit.contract.yaml",
+      "message": "state 'pending' has no exit -- Add an outgoing transition or declare the state terminal when it completes the workflow.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "state_without_exit"
+    },
+    {
+      "validator_id": "event_chain_walker",
+      "severity": "FAIL",
+      "location": "src/pkg/violation_transition_on_undeclared_event.contract.yaml",
+      "message": "transition 'complete_order' uses undeclared event 'complete' -- Declare the trigger as a consumed or published event type or as a state machine operation.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "transition_on_undeclared_event"
+    }
+  ],
+  "metrics": {
+    "total": 4,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 4,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "event_chain_walker"
+    ]
+  }
+}

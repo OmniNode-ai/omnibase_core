@@ -1388,6 +1388,16 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-event-chain-walker
+  name: Refuse broken contract event chains (OMN-21558)
+  description: Refuses unconsumed topics, unproduced topics, states with no exit and undeclared triggers.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_event_chain_walker:ValidatorEventChainWalker
+  files: (^|/)[^/]*contract\.yaml$
+  pass_filenames: false
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-protocol-binding
   name: No protocol bound to its implementation in code (OMN-21533, K5)
   description: >

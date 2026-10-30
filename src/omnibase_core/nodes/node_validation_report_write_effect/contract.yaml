@@ -63,6 +63,11 @@ event_bus:
   publish_topics:
     - onex.evt.platform.validator-run.v1
     - onex.evt.platform.validator-triggered.v1
+# OMN-21558: no node of this repository consumes the run event or the validator-triggered event; they are
+# read outside the corpus (the lab live-overlay tests consume the run topic and filter it by run id).
+externally_consumed_topics:
+  - onex.evt.platform.validator-run.v1
+  - onex.evt.platform.validator-triggered.v1
 
 descriptor:
   node_archetype: effect

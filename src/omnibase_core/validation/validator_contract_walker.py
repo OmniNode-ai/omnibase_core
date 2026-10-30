@@ -109,6 +109,7 @@ from omnibase_core.validation.validator_fsm_analysis import analyze_fsm
 __all__ = [
     "DEFAULT_MAX_PRODUCT_STATES",
     "find_unknown_fsm_keys",
+    "load_machines",
     "walk_contracts",
 ]
 
@@ -305,6 +306,14 @@ def _load(
             )
         )
     return scanned, machines, not_armed_list
+
+
+def load_machines(
+    roots: Sequence[Path],
+) -> tuple[list[ModelContractWalkMachine], list[ModelContractWalkNotArmed]]:
+    """Load armed machines and NOT_ARMED records through the walker's strict loader."""
+    _scanned, machines, not_armed = _load(roots)
+    return machines, not_armed
 
 
 def _relative(root: Path, path: Path) -> str:
