@@ -1,0 +1,60 @@
+{
+  "report_id": "<normalised>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "plan_invariant",
+      "severity": "FAIL",
+      "location": "beta/plans/invariant_without_enforcing_task.md",
+      "message": "invariant INV-012 has no enforcing task; add it to a task's Enforces bullet",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "invariant_without_enforcing_task"
+    },
+    {
+      "validator_id": "plan_invariant",
+      "severity": "FAIL",
+      "location": "beta/plans/task_names_literal_value.md",
+      "message": "task T1 names a literal host: worker.internal; declare it in contract configuration",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "task_names_literal_value"
+    },
+    {
+      "validator_id": "plan_invariant",
+      "severity": "FAIL",
+      "location": "beta/plans/task_names_literal_value_other.md",
+      "message": "task T1 names a literal topic: onex.evt.example.v1; declare it in contract configuration",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "task_names_literal_value"
+    },
+    {
+      "validator_id": "plan_invariant",
+      "severity": "FAIL",
+      "location": "beta/plans/task_without_falsifiable_criterion.md",
+      "message": "task T1 has no falsifiable criterion; add an action and an observable result",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "task_without_falsifiable_criterion"
+    }
+  ],
+  "metrics": {
+    "total": 4,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 4,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "plan_invariant"
+    ]
+  }
+}

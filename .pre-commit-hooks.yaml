@@ -1485,6 +1485,18 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-plan-invariant
+  name: Plan invariant check (OMN-21559)
+  description: >
+    Refuse tasks without a falsifiable criterion, tasks naming literal runtime values, and invariants
+    without enforcing tasks. Every pattern and remedy is contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_plan_invariant:ValidatorPlanInvariant
+  files: beta/plans/[^/]*\.md$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-event-registry-drift
   name: Event-registry drift (OMN-21416)
   description: >
