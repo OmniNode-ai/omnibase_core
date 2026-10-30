@@ -7,7 +7,9 @@ summary: >-
   Core side: a developer.principal overlay row gains an optional role from the closed vocabulary EnumDeveloperPrincipalRole
   (developer, machine). It says whether the principal is a person's development machine or a machine the
   deployment runs itself, and is never a grant. The lab issuer's machine grant audit reads it to audit
-  the deployment's own machines and only those.
+  the deployment's own machines and only those. A machine row may also bind grant roles by name (grant_roles),
+  each a grant set the grants source declares, so a lab host that holds more than the machine profile
+  is one binding and never a copied ACL block; a developer row binds none.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -26,7 +28,8 @@ evidence_requirements:
   - kind: tests
     description: >-
       A row without a role reads as developer, a row may select machine, a role outside the vocabulary
-      is refused, and the schema export round-trips.
+      is refused, a machine row binds grant roles by name once each while a developer row binds none,
+      and the schema export round-trips.
     command: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py -q
 emergency_bypass:
   enabled: false
@@ -42,5 +45,16 @@ dod_evidence:
       - check_type: test_passes
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
           -q -p no:cacheprovider -k role
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21622-ac1-grant-roles
+    description: >-
+      The grant_roles binding's tests. At the merge base the row refuses grant_roles as an extra key,
+      so the binding cases fail.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          -q -p no:cacheprovider -k grant_role
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]

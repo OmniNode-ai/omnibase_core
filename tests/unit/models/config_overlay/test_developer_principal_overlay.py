@@ -184,6 +184,48 @@ def test_a_role_outside_the_vocabulary_is_refused(value: str) -> None:
         ModelDeveloperPrincipalOverlay.model_validate(body)
 
 
+def test_a_machine_row_may_bind_grant_roles() -> None:
+    # OMN-21622: roles compose; the binding names declared grant sets, never a grant
+    body = _body()
+    body["principals"][0]["role"] = "machine"
+    body["principals"][0]["grant_roles"] = ["fleet-member", "fix-listener"]
+    doc = ModelDeveloperPrincipalOverlay.model_validate(body)
+    assert doc.principals[0].grant_roles == ("fleet-member", "fix-listener")
+    assert doc.principals[1].grant_roles == ()
+
+
+def test_a_developer_row_binds_no_grant_role() -> None:
+    body = _body()
+    body["principals"][0]["grant_roles"] = ["fleet-member"]
+    with pytest.raises(ValidationError, match="grant_roles binds a machine row only"):
+        ModelDeveloperPrincipalOverlay.model_validate(body)
+
+
+def test_a_grant_role_is_bound_once() -> None:
+    body = _body()
+    body["principals"][0]["role"] = "machine"
+    body["principals"][0]["grant_roles"] = ["fleet-member", "fleet-member"]
+    with pytest.raises(ValidationError, match="each role once"):
+        ModelDeveloperPrincipalOverlay.model_validate(body)
+
+
+@pytest.mark.parametrize("value", ["", "Fleet", "fleet member", "-fleet", "topic.v1"])
+def test_a_malformed_grant_role_name_is_refused(value: str) -> None:
+    body = _body()
+    body["principals"][0]["role"] = "machine"
+    body["principals"][0]["grant_roles"] = [value]
+    with pytest.raises(ValidationError, match="grant_roles"):
+        ModelDeveloperPrincipalOverlay.model_validate(body)
+
+
+def test_a_grant_cannot_be_typed_as_a_grant_role() -> None:
+    body = _body()
+    body["principals"][0]["role"] = "machine"
+    body["principals"][0]["grant_roles"] = [{"topic": "x", "operation": "WRITE"}]
+    with pytest.raises(ValidationError, match="grant_roles"):
+        ModelDeveloperPrincipalOverlay.model_validate(body)
+
+
 def _schema_script() -> ModuleType:
     path = _REPO_ROOT / "scripts" / "gen_config_overlay_schemas.py"
     spec = importlib.util.spec_from_file_location("gen_config_overlay_schemas", path)
