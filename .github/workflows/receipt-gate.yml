@@ -1409,11 +1409,13 @@ jobs:
           }
           # prepare_control HOME LABEL [FIX]: check the merge base out at HOME/$REPO_SHORT,
           # revert FIX's product (non-test, non-contract, non-bookkeeping) changes there when
-          # one is named, and lay over it every test-side path and cited contract this pull
-          # request changed.
+          # one is named (falling back to FIX's parent if the revert conflicts), and lay
+          # over it every test-side path and cited contract this pull request changed.
+          # Set control_uses_fix_parent so the caller can label the chosen control.
           prepare_control() {
             local control_home="$1" label="$2" fix="${3:-}"
             local control_tree="$control_home/$REPO_SHORT" overlay_paths
+            control_uses_fix_parent=false
             overlay_paths="$(mktemp "$RUNNER_TEMP/dod/overlay-paths.XXXXXX")"
             mkdir -p "$control_home"
             git -C "$head_tree" worktree add --detach "$control_tree" "$MB"
@@ -1453,12 +1455,19 @@ jobs:
                 exit 1
               fi
               if ! git -C "$head_tree" diff --binary --no-renames "$fix^1" "$fix" -- "${product[@]}" | git -C "$control_tree" apply -R; then
-                echo "::error::the product changes of merged fix $fix do not revert cleanly at the merge base, so the control cannot run"
-                exit 1
+                git -C "$head_tree" worktree remove --force "$control_tree"
+                git -C "$head_tree" worktree prune
+                if ! git -C "$head_tree" worktree add --detach "$control_tree" "$fix^1"; then
+                  echo "::error::the product changes of merged fix $fix do not revert cleanly at the merge base, so the control cannot run"
+                  exit 1
+                fi
+                control_uses_fix_parent=true
+                echo "::notice::the product changes of merged fix $fix did not apply in reverse at the merge base; the control runs at the fix's parent"
+              else
+                for path in "${product[@]}"; do
+                  printf 'Reverted from %s: %s\n' "$fix" "$path"
+                done
               fi
-              for path in "${product[@]}"; do
-                printf 'Reverted from %s: %s\n' "$fix" "$path"
-              done
             fi
             git -C "$head_tree" diff --name-only --diff-filter=ACMR -z "$MB" "$HEAD_SHA" > "$overlay_paths"
             local test_paths=0
@@ -1485,18 +1494,18 @@ jobs:
                 fi
               fi
             done < "$overlay_paths"
-            # With a named fix, the reverted product change is what must make the bound tests fail.
+            # With a named fix, the bound tests must fail with it reverted or at its parent.
             if [ -z "$fix" ] && [ "$test_paths" -eq 0 ]; then
               echo "::error::no test-side change: the bound tests cannot be shown to fail at $label"
-              echo "::notice::For an already-merged fix, add a commit trailer 'Binds-Merged-Fix: OMN-<n> <full 40-character sha>' naming the merged product fix for each cited ticket. Its subject must cite the ticket and its product changes must revert cleanly at the merge base; the bound tests must fail with that fix reverted."
+              echo "::notice::For an already-merged fix, add a commit trailer 'Binds-Merged-Fix: OMN-<n> <full 40-character sha>' naming the merged product fix for each cited ticket. Its subject must cite the ticket; the bound tests must fail with its product changes reverted at the merge base, or at the fix's parent if the revert does not apply."
               exit 1
             fi
           }
           # OMN-17427: a binding for a fix that already merged names that fix in a
           # trailer on its own commits, "Binds-Merged-Fix: OMN-<n> <full sha>". Its
           # tests pass at the merge base by construction, so its control runs at the
-          # merge base with that fix's product changes reverted: the head run and the
-          # control run then differ by the fix alone. What makes the commit the fix is
+          # merge base with that fix's product changes reverted, or at its parent if
+          # the revert does not apply. What makes the commit the fix is
           # read from git: it exists, is merged at the merge base, has one parent, and
           # its subject cites the ticket. The trailer only picks which merged commit;
           # the pull request body is never read.
@@ -1547,8 +1556,11 @@ jobs:
               fi
             done < <(git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA")
             label="the merge base with merged fix $fix reverted"
-            echo "$ticket: control at $label"
             prepare_control "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home/$ticket" "$label" "$fix"
+            if [ "$control_uses_fix_parent" = true ]; then
+              label="the parent of merged fix $fix"
+            fi
+            echo "$ticket: control at $label"
             printf '%s\n' "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home/$ticket" > "$RUNNER_TEMP/dod/control-home-$ticket.txt"
             printf '%s\n' "$label" > "$RUNNER_TEMP/dod/control-label-$ticket.txt"
           done < "$RUNNER_TEMP/dod/tickets.txt"

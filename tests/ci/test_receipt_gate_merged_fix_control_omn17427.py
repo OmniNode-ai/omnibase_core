@@ -129,6 +129,7 @@ def _repository(
     version_bump: bool = False,
     dependency_change: bool = False,
     released_after_fix: bool = False,
+    product_deleted_after_fix: bool = False,
 ) -> _GitFixture:
     workspace = tmp_path / "ws"
     head_tree = workspace / ".dod-verify" / "head_home" / "omnimarket"
@@ -155,10 +156,14 @@ def _repository(
     repo = _GitFixture(head_tree, dod_dir, env, {})
     repo.git("init")
     repo.write("src/product.py", "BROKEN = True\n")
+    if product_deleted_after_fix:
+        repo.write("src/legacy.py", "BROKEN = True\n")
     repo.write("pyproject.toml", _pyproject("0.1.0", "dep>=1"))
     repo.write("contracts/runtime/protocol.lock.json", _lock("0.1.0", "aaa"))
     repo.commits["initial"] = repo.commit("chore: initial")
     repo.write("src/product.py", "BROKEN = False\n")
+    if product_deleted_after_fix:
+        repo.write("src/legacy.py", "BROKEN = False\n")
     repo.write("tests/test_product.py", PRODUCT_TEST)
     if version_bump:
         # A squash-merged fix carries the release bump beside the product change.
@@ -171,6 +176,9 @@ def _repository(
         # A squash-merged fix ships its own contract beside the product change.
         repo.write("contracts/OMN-1.yaml", FIX_CONTRACT)
     repo.commits["fix"] = repo.commit(fix_subject)
+    if product_deleted_after_fix:
+        (repo.head_tree / "src/legacy.py").unlink()
+        repo.commits["delete"] = repo.commit("chore: delete the legacy product file")
     if contract_amended_after_fix:
         repo.write("contracts/OMN-1.yaml", FIX_CONTRACT + "# amended on the base\n")
         repo.commits["amend"] = repo.commit("docs(OMN-1): amend the contract")
@@ -285,6 +293,28 @@ def _assert_success(completed: subprocess.CompletedProcess[str]) -> None:
     assert "::error::" not in output
 
 
+def _assert_parent_control(
+    repo: _GitFixture, prepare: subprocess.CompletedProcess[str], fix: str
+) -> Path:
+    _assert_success(prepare)
+    assert (
+        f"::notice::the product changes of merged fix {fix} did not apply in reverse "
+        "at the merge base; the control runs at the fix's parent"
+    ) in prepare.stdout
+    label = f"the parent of merged fix {fix}"
+    assert f"OMN-1: control at {label}" in prepare.stdout
+    assert (repo.dod_dir / "control-label-OMN-1.txt").read_text() == label + "\n"
+    control_tree = (
+        Path((repo.dod_dir / "control-home-OMN-1.txt").read_text().strip())
+        / repo.env["REPO_SHORT"]
+    )
+    assert repo.git("-C", str(control_tree), "rev-parse", "HEAD") == repo.git(
+        "rev-parse", f"{fix}^1"
+    )
+    assert (control_tree / "contracts/OMN-1.yaml").read_text() == CONTRACT
+    return control_tree
+
+
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
 @pytest.mark.parametrize("later", [False, True], ids=["fix-is-base", "later-base"])
 def test_contract_only_binding_fails_with_the_merged_fix_reverted(
@@ -378,17 +408,69 @@ def test_merged_fix_dependency_change_is_reverted_as_a_product_path(
     _bind(repo, [f"OMN-1 {fix}"])
     prepare, control = _run_steps(repo)
 
-    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
-    assert (
-        f"::error::the product changes of merged fix {fix} do not revert cleanly "
-        "at the merge base, so the control cannot run"
-    ) in prepare.stdout
+    _assert_parent_control(repo, prepare, fix)
     assert "Not reverted" not in "".join(
         line
         for line in prepare.stdout.splitlines()
         if line.endswith(": pyproject.toml")
     )
-    assert control is None
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_conflicting_merged_fix_uses_parent_control(tmp_path: Path) -> None:
+    repo = _repository(tmp_path)
+    fix = repo.commits["fix"]
+    repo.write("src/product.py", "BROKEN = False  # rewritten\n")
+    repo.env["BASE_SHA"] = repo.commit("chore: rewrite")
+    bound_test = PRODUCT_TEST + "# bound at this head\n"
+    _bind(repo, [f"OMN-1 {fix}"], extra_files={"tests/test_product.py": bound_test})
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/test_product.py").read_text() == bound_test
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_conflicting_merged_fix_whose_check_passes_at_parent_is_refused(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path, note_after_fix=True)
+    fix = repo.commits["note"]
+    repo.write("src/notes.txt", "The product was fixed and documented.\n")
+    repo.env["BASE_SHA"] = repo.commit("chore: rewrite the note")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    _assert_parent_control(repo, prepare, fix)
+    assert control is not None
+    assert control.returncode != 0, control.stdout + control.stderr
+    assert (
+        "::error::OMN-1 [dod-omn-1-ac1]: bound test also passes at the parent "
+        f"of merged fix {fix}: the control did not fail (always-pass)"
+    ) in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_merged_fix_with_deleted_product_file_uses_parent_control(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert not (repo.head_tree / "src/legacy.py").exists()
+    assert (control_tree / "src/legacy.py").read_text() == "BROKEN = True\n"
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
@@ -690,10 +772,6 @@ def test_real_product_repair_still_requires_all_own_checks_to_fail_at_base(
             "::error::merged fix {named} changes no product path, so reverting it cannot make a bound test fail",
         ),
         (
-            "not-revertible",
-            "::error::the product changes of merged fix {named} do not revert cleanly at the merge base, so the control cannot run",
-        ),
-        (
             "merge-commit",
             "::error::OMN-1: merged fix {named} does not have exactly one parent",
         ),
@@ -725,9 +803,6 @@ def test_invalid_merged_fix_bindings_are_refused_before_control(
     elif case == "test-only-fix":
         repo.write("tests/test_more.py", PRODUCT_TEST)
         named = repo.commit("test(OMN-1): more tests")
-    elif case == "not-revertible":
-        repo.write("src/product.py", "BROKEN = False  # rewritten\n")
-        repo.commit("chore: rewrite")
     elif case == "merge-commit":
         repo.git("checkout", "-b", "side", repo.commits["fix"])
         repo.write("src/side.py", "SIDE = True\n")
