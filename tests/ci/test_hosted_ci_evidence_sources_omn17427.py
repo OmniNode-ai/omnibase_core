@@ -22,6 +22,7 @@ import yaml
 pytestmark = pytest.mark.unit
 
 ROOT = Path(__file__).resolve().parents[2]
+# Immutable commits that last wrote the relocated CLI runtime and jobs handler.
 CLI = "src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py"
 CLI_ROOT = "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/04fca965946ab651513af256b8f84cdecec4a2ab"
 JOBS = "src/omnibase_core/nodes/node_ci_repository_jobs_check_compute/handler_ci_repository_jobs.py"
