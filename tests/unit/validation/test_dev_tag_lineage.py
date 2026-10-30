@@ -11,6 +11,9 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
+from omnibase_core.models.validation.model_dev_tag_lineage_candidate import (
+    ModelDevTagLineageCandidate,
+)
 from omnibase_core.models.validation.model_dev_tag_lineage_facts import (
     ModelDevTagLineageFacts,
 )
@@ -35,6 +38,14 @@ _RULES = (
 )
 
 
+def _single(
+    values: tuple[ModelDevTagLineageCandidate, ...],
+) -> ModelDevTagLineageCandidate:
+    """The one candidate a fixture declares."""
+    assert len(values) == 1, values
+    return values[0]
+
+
 @pytest.mark.parametrize("rule", _RULES)
 @pytest.mark.parametrize("state", ["clean", "violation"])
 def test_planted_rules(rule: str, state: str) -> None:
@@ -42,7 +53,7 @@ def test_planted_rules(rule: str, state: str) -> None:
     policy = load_policy(validator.contract)
     directory = _FIXTURES / f"{state}_{rule}"
     path = directory / "pyproject.toml.txt"
-    (candidate,) = parse_candidates(path.read_text(), policy)
+    candidate = _single(parse_candidates(path.read_text(), policy))
     lock = directory / (policy.lock_name + ".txt")
     entries = parse_lock(lock.read_text(), policy) if lock.exists() else None
     table = json.loads((_FIXTURES / "facts.json").read_text())
@@ -58,8 +69,11 @@ def test_planted_rules(rule: str, state: str) -> None:
 def test_each_unresolved_fact_fails_closed(field: str) -> None:
     validator = ValidatorDevTagLineage()
     policy = load_policy(validator.contract)
-    (candidate,) = parse_candidates(
-        (_FIXTURES / "clean_lineage_unresolved/pyproject.toml.txt").read_text(), policy
+    candidate = _single(
+        parse_candidates(
+            (_FIXTURES / "clean_lineage_unresolved/pyproject.toml.txt").read_text(),
+            policy,
+        )
     )
     data = {
         "tag_exists": True,
@@ -83,7 +97,7 @@ def test_scope_all_tables_filter_and_normalization() -> None:
     policy = load_policy(ValidatorDevTagLineage().contract)
     text = (_FIXTURES / "clean_tag_absent/pyproject.toml.txt").read_text()
     override = '\n[tool.uv]\noverride-dependencies = ["demo-package==9.8.7"]\n'
-    (candidate,) = parse_candidates(text + override, policy, "DEMO.package")
+    candidate = _single(parse_candidates(text + override, policy, "DEMO.package"))
     assert candidate.declared_specs == ("==9.8.7", "==2.3.4")
     assert candidate.url == "file:///fixture/origin.git"
     assert normalize("Demo_Package", policy) == "demo-package"
@@ -98,7 +112,7 @@ def test_scope_all_tables_filter_and_normalization() -> None:
     reordered = policy.model_copy(
         update={"declaration_tables": tuple(reversed(policy.declaration_tables))}
     )
-    (candidate,) = parse_candidates(text + override, reordered)
+    candidate = _single(parse_candidates(text + override, reordered))
     assert candidate.declared_specs == ("==2.3.4", "==9.8.7")
     assert (
         parse_candidates(
@@ -137,7 +151,7 @@ def test_pep440_declarations_admit_the_tag_version(spec: str, admitted: bool) ->
         .read_text()
         .replace("==2.3.4", spec)
     )
-    (candidate,) = parse_candidates(text, policy)
+    candidate = _single(parse_candidates(text, policy))
     facts = ModelDevTagLineageFacts(
         tag_exists=True, commit="a" * 40, version="2.3.4", on_branch=True, detail="ok"
     )
@@ -164,7 +178,7 @@ def test_declared_version_planted_exact_range_and_missing(
     validator = ValidatorDevTagLineage()
     policy = load_policy(validator.contract)
     path = _FIXTURES / fixture / "pyproject.toml.txt"
-    (candidate,) = parse_candidates(path.read_text(), policy)
+    candidate = _single(parse_candidates(path.read_text(), policy))
     table = json.loads((_FIXTURES / "facts.json").read_text())
     issues = check_dev_tag_lineage(
         path,
@@ -201,7 +215,7 @@ def test_every_declaration_in_every_table_must_admit(
         + json.dumps(["demo-package" + spec for spec in overrides])
         + "\n"
     )
-    (candidate,) = parse_candidates(text, policy)
+    candidate = _single(parse_candidates(text, policy))
     facts = ModelDevTagLineageFacts(
         tag_exists=True, commit="a" * 40, version="2.3.4", on_branch=True, detail="ok"
     )
@@ -220,8 +234,8 @@ def test_lock_identity_requires_exactly_one_matching_entry(change: str) -> None:
     validator = ValidatorDevTagLineage()
     policy = load_policy(validator.contract)
     directory = _FIXTURES / "clean_lock_mismatch"
-    (candidate,) = parse_candidates(
-        (directory / "pyproject.toml.txt").read_text(), policy
+    candidate = _single(
+        parse_candidates((directory / "pyproject.toml.txt").read_text(), policy)
     )
     lock = (directory / "uv.lock.txt").read_text()
     if change == "missing":
@@ -373,7 +387,7 @@ def test_every_optional_dependency_declaration_must_admit(
         _FIXTURES / "violation_declared_version_missing/pyproject.toml.txt"
     ).read_text()
     text += f'\n[project.optional-dependencies]\nfeature = ["demo-package>=2.3.0"]\nfull = ["Demo_Package{second_spec}"]\n'
-    (candidate,) = parse_candidates(text, policy)
+    candidate = _single(parse_candidates(text, policy))
     assert candidate.declared_specs == (">=2.3.0", second_spec)
     facts = ModelDevTagLineageFacts(
         tag_exists=True, commit="a" * 40, version="2.3.4", on_branch=True, detail="ok"
