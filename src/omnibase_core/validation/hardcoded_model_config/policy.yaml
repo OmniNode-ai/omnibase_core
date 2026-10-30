@@ -47,6 +47,9 @@ path_classes:
       # The private denylist is the list of retired values this guard refuses, so
       # it names them by construction.
       - "vocabularies/hardcoded_model_config_lab_denylist.yaml"
+      # The contracts_and_di checker's planted model-name violation (OMN-21623): the
+      # fixture exists to prove that checker refuses a model id, so it holds one.
+      - "tests/fixtures/validation/contracts_and_di/violation_literal_model_name.py.txt"
     families: []
 
   # The contract overlay tree is the sanctioned home of deployment facts: model

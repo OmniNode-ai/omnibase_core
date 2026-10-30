@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+async def compose(registry):
+    await registry.register_instance(ProtocolEventBus, EventBusInmemory())
+
+
+def build_bus(container):
+    return container.get_service(ProtocolEventBus)

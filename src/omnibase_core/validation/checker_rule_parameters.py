@@ -51,4 +51,15 @@ def rule_int(rule: ModelValidatorRule, key: str) -> int:
     return value
 
 
-__all__ = ["rule_int", "rule_string", "rule_strings"]
+def rule_float(rule: ModelValidatorRule, key: str) -> float:
+    """A number parameter of ``rule`` as a float; raises when absent or mistyped."""
+    value = (rule.parameters or {}).get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ModelOnexError(
+            message=f"rule {rule.rule_id!r} needs a number under parameters.{key}",
+            error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+        )
+    return float(value)
+
+
+__all__ = ["rule_float", "rule_int", "rule_string", "rule_strings"]

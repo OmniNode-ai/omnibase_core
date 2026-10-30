@@ -1,0 +1,312 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: contracts_and_di
+  validator_name: Contracts and DI Validator
+  validator_description: >-
+    Refuses a value or a binding that belongs in a contract, an overlay or the container (RULING 2026-10-29T01:06:13Z;
+    OMN-21623). Family (a): a literal host, IP, URL, topic, model name, port, timeout or filesystem path
+    in Python code. Family (b): a block of config keyed by a principal or a host that repeats a sibling
+    block, a role or setting hand-copied per machine instead of bound by overlay. Family (c): a handler
+    or node built by hand, and an in-memory implementation built anywhere but a binding site. Family (d):
+    a literal pin of a first-party package or reusable workflow whose repository declares a dev-merge
+    tag source when no advancer manifest moves it. Every pattern, name list, glob, threshold and remediation
+    text is a parameter of a rule row; the checker holds none. There is no suppression comment and no
+    baseline. #magic___^_^___line
+  target_patterns:
+    - '**/*.py'
+    - '**/*.yaml'
+    - '**/*.yml'
+    - '**/pyproject.toml'
+
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/fixtures/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/node_modules/**'
+    - '**/build/**'
+    - '**/dist/**'
+    - '**/.pytest_cache/**'
+    - '**/.ruff_cache/**'
+    - '**/.mypy_cache/**'
+    - '**/.uv-cache/**'
+    - '**/.tox/**'
+    - '**/site-packages/**'
+    - '**/archive/**'
+    - '**/archived/**'
+    - '**/validation/contracts/**'
+
+  rules:
+    # ------------------------------------------------------------ family (a)
+    - rule_id: literal_ip
+      description: An IP address literal in code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns:
+          - '^(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?::[0-9]{1,5})?$'
+        keyword_name_patterns: []
+        target_name_patterns: []
+        call_name_patterns: []
+        named_value_patterns: []
+        value_kinds: [str]
+        allowed_values: []
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Read the address from the overlay or the contract that binds the host; code holds
+          no address.
+
+    - rule_id: literal_host
+      description: A host name literal in code, by shape or by the name it is bound to.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns:
+          - '^(?:localhost|[a-z0-9-]+\.(?:local|lan|internal|home\.arpa))(?::[0-9]{1,5})?$'
+        keyword_name_patterns:
+          - '^(?:host|hostname|host_name|bootstrap_servers?|broker|brokers|server_host)$'
+        target_name_patterns:
+          - '^[A-Z0-9_]*_HOST(?:NAME)?S?$'
+          - '^[A-Z0-9_]*BOOTSTRAP_SERVERS?$'
+        call_name_patterns: []
+        named_value_patterns:
+          - '^(?:localhost|[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+)(?::[0-9]{1,5})?$'
+        value_kinds: [str]
+        allowed_values: ['']
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Bind the host in the overlay or contract and resolve it through the container.
+
+    - rule_id: literal_url
+      description: A URL literal in code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns:
+          - '^[A-Za-z][A-Za-z0-9+.-]*://[^\s{}]+'
+        keyword_name_patterns: []
+        target_name_patterns: []
+        call_name_patterns: []
+        named_value_patterns: []
+        value_kinds: [str]
+        allowed_values: []
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Declare the endpoint in the contract or overlay and inject it; code holds no URL.
+
+    - rule_id: literal_topic
+      description: An event-bus topic literal in code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns:
+          - '^onex\.(?:cmd|evt|dlq|intent|snapshot)\.[a-z0-9_-]+\.[a-z0-9._-]+\.v[0-9]+$'
+        keyword_name_patterns: []
+        target_name_patterns: []
+        call_name_patterns: []
+        named_value_patterns: []
+        value_kinds: [str]
+        allowed_values: []
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Read the topic from the node contract's event bus section; code names no topic.
+
+    - rule_id: literal_model_name
+      description: A model identifier literal in code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns:
+          - '(?i)^(?=[\w./:@-]+$)(?:[\w.@-]+[/:])*(?:qwen[0-9-]|deepseek[-](?:v|r|coder|chat)|glm[-][0-9]|gpt[-][345]|o[134][-]mini|claude[-](?:opus|sonnet|haiku|[345])|gemini[-][0-9]|llama[-]?[0-9]|mistral[-]|nemotro[n]|codestra[l]|devstra[l]|text[-]embedding[-]|nomic[-]embed|kimi[-]k|minimax[-]m)'
+        keyword_name_patterns: []
+        target_name_patterns: []
+        call_name_patterns: []
+        named_value_patterns: []
+        value_kinds: [str]
+        allowed_values: []
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Resolve the model from the contract-declared model-routing policy (INV-037); code
+          names no model.
+
+    - rule_id: literal_port
+      description: A port number literal in code, by the name it is bound to.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns: []
+        keyword_name_patterns:
+          - '^(?:[a-z0-9_]*_)?port$'
+        target_name_patterns:
+          - '^[A-Z0-9_]*_PORT$'
+        call_name_patterns: []
+        named_value_patterns:
+          - '^[0-9]{1,5}$'
+        value_kinds: [int, str]
+        allowed_values: []
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Bind the port in the overlay or contract and inject it.
+
+    - rule_id: literal_timeout
+      description: A timeout, interval, delay or sleep literal in code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns: []
+        keyword_name_patterns:
+          - '^(?:[a-z0-9_]*_)?(?:timeout|deadline|interval|delay|backoff|ttl)(?:_[a-z0-9_]+)?$'
+        target_name_patterns:
+          - '^[A-Z0-9_]*(?:TIMEOUT|DEADLINE|INTERVAL|DELAY|BACKOFF|TTL)[A-Z0-9_]*$'
+        call_name_patterns:
+          - '^sleep$'
+        named_value_patterns: []
+        value_kinds: [int, float]
+        allowed_values: ['0']
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Declare the timeout in the contract or overlay and inject it.
+
+    - rule_id: literal_path
+      description: An absolute or home-relative filesystem path literal in code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: code_literal
+        value_patterns:
+          - '^(?:/Users/|/Volumes/|/home/|/opt/|/srv/|/var/|/etc/|/private/|/tmp/|/mnt/|~/)\S*$'
+        keyword_name_patterns: []
+        target_name_patterns: []
+        call_name_patterns: []
+        named_value_patterns: []
+        value_kinds: [str]
+        allowed_values: []
+        ignore_keyword_names: [description, help, title, example, examples]
+        ignore_call_names: [debug, info, warning, error, exception, critical]
+        remediation: Resolve the location from a required setting injected through the container; code
+          holds no path.
+
+    # ------------------------------------------------------------ family (b)
+    - rule_id: per_principal_block
+      description: >-
+        Sibling config blocks keyed by a principal or a host that repeat the same entries: a role or a
+        setting hand-copied per machine.
+      severity: error
+      enabled: true
+      parameters:
+        kind: repeated_block
+        file_globs: ['*.yaml', '*.yml']
+        identity_keys: [principal, principals, host, hostname, machine, user, login, member]
+        container_keys: [hosts, machines, principals, members, per_host, per_machine, nodes]
+        ignore_keys: [role, description, notes, note, comment, comments, name, title, ticket, owner]
+        min_shared_entries: 4
+        min_overlap_ratio: 0.5
+        remediation: Declare the shared entries once as a role or setting and bind each principal or host
+          to it by overlay; a new machine is one binding, never a copied block.
+
+    # ------------------------------------------------------------ family (c)
+    - rule_id: handler_hand_construction
+      description: A handler or node class constructed by hand instead of resolved from the container.
+      severity: error
+      enabled: true
+      parameters:
+        kind: construction
+        class_patterns:
+          - '(?:Handler|Node)[A-Z]\w*'
+        exclude_class_patterns:
+          - '(?:Handler|Node)[A-Z]\w*(?:Error|Exception|Kind|Type|Status)'
+        allowed_site_globs:
+          - '*/container/container_*.py'
+          - '*/container/registry_*.py'
+        registration_call_names: [register_instance, register_service, register_factory, register]
+        remediation: Resolve the handler from the container with get_service; only a binding site builds
+          it.
+
+    - rule_id: inmemory_outside_injection
+      description: An in-memory implementation constructed anywhere but a binding site.
+      severity: error
+      enabled: true
+      parameters:
+        kind: construction
+        class_patterns:
+          - '\w*(?:InMemory|Inmemory|InMem)\w*'
+        exclude_class_patterns:
+          - '(?:Model|Enum|Protocol)\w*'
+        allowed_site_globs:
+          - '*/container/container_*.py'
+          - '*/overlays/*.py'
+        registration_call_names: [register_instance, register_service, register_factory, register]
+        remediation: Bind the in-memory implementation as the container's default (or an overlay) and
+          resolve the protocol; a caller never builds it, not even as a fallback.
+
+    # ------------------------------------------------------------ family (d)
+    - rule_id: first_party_workflow_pin
+      description: >-
+        A literal ref of a first-party reusable workflow, action or hook repository that no advancer moves,
+        although the pinned repository declares a dev-merge tag source.
+      severity: error
+      enabled: true
+      parameters:
+        kind: first_party_pin
+        file_globs: ['.github/workflows/*.yml', '.github/workflows/*.yaml', '.pre-commit-config.yaml']
+        github_org: OmniNode-ai
+        patterns:
+          - '^[ \t]*(?:-[ \t]*)?uses:[ \t]*["'']?{org}/(?P<repo>[\w.-]+)(?:/[^@\s"'']*)?@(?P<ref>[^\s"''#]+)'
+          - '^[ \t]*(?:-[ \t]*)?repo:[ \t]*["'']?https://github\.com/{org}/(?P<repo>[\w.-]+?)(?:\.git)?["'']?\s*\n\s*rev:\s*["'']?(?P<ref>[^\s"''#]+)'
+        tag_source_globs: ['.github/workflows/dev-merge-tag.yml', '.github/workflows/dev-merge-tag.yaml']
+        advancer_manifests: ['omnibase_core:docs/downstream-repos.yaml']
+        manifest_keys: [repos, name, pin_sites, path, dependency_pin, pyproject, pyproject.toml]
+        remediation: Move the pin with the declared advancer (add the site to its manifest) or read the
+          ref from the dev-merge tag source; a hand-typed ref goes stale.
+
+    - rule_id: first_party_package_pin
+      description: >-
+        A literal exact version or git ref of a first-party package that no advancer moves, although the
+        package's repository declares a dev-merge tag source.
+      severity: error
+      enabled: true
+      parameters:
+        kind: first_party_pin
+        file_globs: [pyproject.toml, '*/pyproject.toml']
+        github_org: OmniNode-ai
+        patterns:
+          - '["''](?P<repo>omnibase[-_]\w+|omnimarket|omniclaude|omniintelligence|omnimemory)(?:\[[^\]]*\])?\s*==\s*(?P<ref>[0-9][\w.+-]*)'
+          - 'git\+https://github\.com/{org}/(?P<repo>[\w.-]+?)(?:\.git)?@(?P<ref>[^\s"''#]+)'
+        tag_source_globs: ['.github/workflows/dev-merge-tag.yml', '.github/workflows/dev-merge-tag.yaml']
+        advancer_manifests: ['omnibase_core:docs/downstream-repos.yaml']
+        manifest_keys: [repos, name, pin_sites, path, dependency_pin, pyproject, pyproject.toml]
+        remediation: Declare the dependency pin in the advancer manifest so the dev-merge tag moves it,
+          or use a version floor; a hand-typed exact pin goes stale.
+
+    # ------------------------------------------------------------ every family
+    - rule_id: unparseable_file
+      description: A target file that does not parse as Python or YAML, so no rule could judge it.
+      severity: error
+      enabled: true
+      parameters:
+        kind: unparseable
+        remediation: Make the file parse; a file no rule can read is never a pass.
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

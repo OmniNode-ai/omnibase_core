@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Clean: the same pattern in a single-quoted scalar.
+patterns:
+  - 'internal\s+notes'

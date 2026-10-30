@@ -1,0 +1,4 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+async def poll(client, settings):
+    return await client.read(settings.topic, timeout_seconds=30)

@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+from pathlib import Path
+
+
+def state_dir(settings) -> Path:
+    return Path(settings.state_dir)

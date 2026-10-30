@@ -1,0 +1,132 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21623
+title: 'contracts_and_di checker in the core validator format: literal values in code, hand-listed per-principal
+  blocks, hand-built handlers and in-memory defaults, and unadvanced first-party pins (stage 1, read-only)'
+summary: 'One contract-driven check for RULING 2026-10-29T01:06:13Z in the generic validator format: a
+  pure checker, a ValidatorBase entry run through the generic runtime, and fifteen rule rows whose patterns,
+  names, globs, thresholds and remediation texts are rule data. Each row has a planted violation fixture
+  and a clean fixture. Not wired as a hook (stage 3) and no baseline.'
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21623-contracts-and-di
+    statement: A value or a binding that belongs in a contract, an overlay or the container is refused
+      where it is written by hand, by rules held as data.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: family (a) refuses a literal host, IP, URL, topic, model name, port, timeout
+          or filesystem path in Python code, each a rule row whose patterns and names are `parameters`
+          -- falsifier: uv run pytest tests/unit/validation/test_checker_contracts_and_di.py -q, where
+          each `violation_<rule>` fixture yields exactly one issue with that rule id and each `clean_<rule>`
+          fixture yields none'
+      - id: AC2
+        statement: 'AC2: family (b) refuses a config block keyed by a principal or host whose entries
+          repeat another block of the same file above the row''s overlap threshold -- falsifier: the same
+          pytest run over the planted per-principal ACL fixture and its role-bound clean fixture'
+      - id: AC3
+        statement: 'AC3: family (c) refuses a handler or node class constructed outside a declared factory
+          site and an in-memory implementation constructed outside a declared binding site -- falsifier:
+          the same pytest run over the planted construction fixtures and their clean fixtures'
+      - id: AC4
+        statement: 'AC4: family (d) refuses a literal first-party workflow or package pin when the pinned
+          repository declares a dev-merge tag source and no advancer manifest covers the pin site -- falsifier:
+          the same pytest run over the planted pin fixtures, the clean fixture being a pin site the advancer
+          manifest lists'
+      - id: AC5
+        statement: 'AC5: every rule row is data: disabling a row in the contract stops its violation fixture
+          from failing, and a row with a missing parameter fails to load rather than passing -- falsifier:
+          the table-driven tests in the same pytest file'
+      - id: AC6
+        statement: 'AC6: the read-only scan of the six repositories reports counts per rule and repository
+          with a positive control -- falsifier: onex run of runtime_validator_run with the validator reference
+          over each repository, the planted fixture directory as the positive control, report rows posted
+          as a comment on this ticket'
+evidence_requirements:
+  - kind: tests
+    description: The contracts-and-DI checker tests pass.
+    command: uv run pytest tests/unit/validation/test_checker_contracts_and_di.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21623-ac1-literals
+    description: Each family (a) row has a planted violation with exactly one issue of its rule and a
+      clean fixture with none.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contracts_and_di.py -q -o addopts=''
+          -k 'literal'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac2-blocks
+    description: The planted per-principal and per-host blocks are refused and the role-bound declaration
+      passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contracts_and_di.py -q -o addopts=''
+          -k 'per_principal_block'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac3-construction
+    description: Hand-built handlers and in-memory implementations are refused; a container registration
+      and a container resolution pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contracts_and_di.py -q -o addopts=''
+          -k 'construction or injection'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac4-pins
+    description: An unadvanced first-party pin is refused, a site the advancer manifest lists passes,
+      and the validator reads the manifest and tag source from the workspace.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contracts_and_di.py -q -o addopts=''
+          -k 'pin or manifest or workspace or worktree'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac5-rule-data
+    description: Disabling a row stops its fixture failing, a missing parameter or unknown kind fails
+      to load, the checker performs no I/O, and K10 reports zero on the new modules.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contracts_and_di.py -q -o addopts=''
+          -k 'disabling or fails_to_load or no_io or suppression'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_contracts_and_di.py
+          src/omnibase_core/validation/validator_contracts_and_di.py
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac6-scan
+    description: The validator runs through the generic runtime and judges its own source clean; the six-repository
+      counts and the positive control are posted on the ticket.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: command
+        check_value: uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_contracts_and_di:ValidatorContractsAndDi src/omnibase_core/validation/checker_contracts_and_di.py
+          src/omnibase_core/validation/validator_contracts_and_di.py
+        cwd: ${OMNI_HOME}/omnibase_core
