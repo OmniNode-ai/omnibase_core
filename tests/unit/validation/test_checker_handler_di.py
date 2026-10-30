@@ -98,7 +98,6 @@ CLEANS: dict[str, list[str]] = {
     ],
     VALUE_LITERAL: ["clean_contract_value_literal/handlers/handler_x.py"],
 }
-_V = "violation_"
 # (rule, parameter) -> (fixture, "clears" | "flags"): the fixture the key controls
 CONTROLS: dict[tuple[str, str], tuple[str, str]] = {
     (CONSTRUCTOR, "class_name_pattern"): (VIOLATIONS[CONSTRUCTOR][0], "clears"),

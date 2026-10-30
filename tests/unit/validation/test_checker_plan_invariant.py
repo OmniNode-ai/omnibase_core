@@ -31,6 +31,9 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
 from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_bus import (
     ModelValidatorRuntimeBus,
 )
+from omnibase_core.models.nodes.validation_report_write.model_validator_runtime_settings import (
+    ModelValidatorRuntimeSettings,
+)
 from omnibase_core.models.plan_invariant.model_plan_invariant_check_input import (
     ModelPlanInvariantCheckInput,
 )
@@ -41,6 +44,9 @@ from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validation_report_publish import (
+    _EMITTER_TOKEN,
+    _RUN_EVENTS_TOKEN,
+    _WRITER_TOKEN,
     NodeValidationReportPublishEffect,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
@@ -573,10 +579,19 @@ def test_runtime_resolves_the_writer_and_the_bus_from_the_container(
         await bus_container.service_registry.register_instance(
             ModelValidatorRuntimeBus, bus
         )
+        for token in (
+            _WRITER_TOKEN,
+            _RUN_EVENTS_TOKEN,
+            _EMITTER_TOKEN,
+            ModelValidatorRuntimeSettings,
+        ):
+            await bus_container.service_registry.register_instance(
+                token, composed.get_service(token)
+            )
         await writer_container.service_registry.register_instance(
             interface=NodeValidationReportWriteEffect,
             instance=NodeValidationReportPublishEffect(
-                cast(ModelONEXContainer, bus_spy), handler.settings().run_topic
+                cast(ModelONEXContainer, bus_spy)
             ),
         )
 
@@ -598,7 +613,13 @@ def test_runtime_resolves_the_writer_and_the_bus_from_the_container(
         "task_without_falsifiable_criterion"
     }
     assert writer_spy.resolved == [NodeValidationReportWriteEffect]
-    assert bus_spy.resolved == [ModelValidatorRuntimeBus]
+    assert bus_spy.resolved == [
+        _WRITER_TOKEN,
+        _RUN_EVENTS_TOKEN,
+        _EMITTER_TOKEN,
+        ModelValidatorRuntimeSettings,
+        ModelValidatorRuntimeBus,
+    ]
 
 
 def test_file_validator_reports_issues_at_the_file(tmp_path: Path) -> None:
