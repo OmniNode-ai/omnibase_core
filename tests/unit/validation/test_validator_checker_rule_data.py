@@ -198,14 +198,6 @@ def test_checker_is_pure_over_facts(monkeypatch: pytest.MonkeyPatch) -> None:
             "src/omnibase_core/validators/contract_config_compliance.py",
             {"INFRA_ALLOWLIST", "_EXCLUDED_PATH_PARTS", "_DEFAULT_SCAN_ROOTS"},
         ),
-        (
-            "src/omnibase_core/validators/handler_di_gate.py",
-            {
-                "_EXCLUDED_PATH_PARTS",
-                "_CONTAINER_RESOLUTION_ATTRS",
-                "_DEFAULT_SCAN_ROOTS",
-            },
-        ),
     ],
 )
 def test_reports_the_constants_still_held_by_the_gates(

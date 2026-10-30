@@ -23,7 +23,7 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
     HandlerPrivateVocabulary,
 )
-from omnibase_core.validators.handler_di_gate import validate_paths
+from omnibase_core.validation.validator_handler_di import ValidatorHandlerDi
 
 pytestmark = pytest.mark.unit
 
@@ -106,7 +106,7 @@ def test_the_handler_di_gate_reports_nothing_on_the_handler_and_its_root() -> No
         / "handler_private_vocabulary.py",
         _SRC / "handlers" / "handler_private_vocabulary_resolution.py",
     ]
-    assert validate_paths(changed) == []
+    assert ValidatorHandlerDi().validate(changed).issues == []
 
 
 def test_the_handler_di_gate_flags_a_handler_that_defaults_its_contract(
@@ -120,7 +120,10 @@ def test_the_handler_di_gate_flags_a_handler_that_defaults_its_contract(
         "        self._contract = contract\n",
         encoding="utf-8",
     )
-    assert len(validate_paths([planted])) == 1
+    issues = ValidatorHandlerDi(root=tmp_path).validate([planted]).issues
+    assert [i.code for i in issues if i.code == "constructor_signature"] == [
+        "constructor_signature"
+    ]
 
 
 def test_no_source_builds_the_handler_at_a_call_site_or_defaults_a_contract() -> None:

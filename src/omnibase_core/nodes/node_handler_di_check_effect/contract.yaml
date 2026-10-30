@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+---
+name: node_handler_di_check_effect
+node_id: node_handler_di_check_effect
+node_type: effect
+tags: [validator_support_node]
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+description: >
+  Reads the handler, node and command line modules named by its targets and the shrink-only baseline,
+  judges them with the pure handler_di checker under the handler_di validator contract, and returns a
+  ModelValidationReport with one finding per refused line and its rule id.
+input_model: omnibase_core.models.validation.model_handler_di_check_input.ModelHandlerDiCheckInput
+output_model: omnibase_core.models.validation.model_validation_report.ModelValidationReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeHandlerDiCheckEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 60000

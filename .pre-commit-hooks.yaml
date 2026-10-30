@@ -245,15 +245,18 @@
   stages: [pre-commit]
 
 - id: handler-di-gate
-  name: Handler DI Gate (OMN-10726)
+  name: Handler DI (K1, OMN-21531)
   description: >
-    AST-based gate that enforces handlers and nodes acquire all resources via DI container. Rejects __init__
-    signatures with extra parameters beyond (self, container) and rejects direct infrastructure construction
-    (EventBusInmemory(), sqlite3.connect(), etc.) inside __init__. Suppression: # handler-di-ok: <reason>
+    AST checker that holds handlers, nodes and command line modules to dependency injection: the constructor
+    signature, direct construction, construction at a call site, fallback and reflective construction,
+    optional port defaults, a module locating its own contract, module singletons, sibling handler imports
+    and contract values held as literals. The scope is every .py under handlers/ and nodes/ plus *_cli.py.
+    Every pattern and remediation text is a rule row of handler_di.validation.yaml. --baseline FILE admits
+    the findings a repository held when it adopted the hook, per file, and only shrinks.
   language: python
-  entry: python -m omnibase_core.validators.handler_di_gate
+  entry: python -m omnibase_core.nodes.node_handler_di_check_effect.runtime_handler_di_check
   types: [python]
-  files: (handlers/handler_.*\.py|nodes/node\.py)$
+  files: (^|/)(handlers|nodes)/.*\.py$|_cli\.py$
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]

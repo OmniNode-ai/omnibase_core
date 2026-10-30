@@ -1,0 +1,197 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: handler_di
+  validator_name: Handler DI (K1)
+  validator_description: |
+    A handler or node acquires every dependency from the container it is given (OMN-21531,
+    plan task T0.3, checker K1; replaces the old handler DI gate and keeps the hook id
+    handler-di-gate). The scope is every .py under handlers/ and nodes/ plus *_cli.py.
+
+    Every class-name pattern, callee pattern, name list and remediation text below is data of
+    the rule row; the checker holds none. Suppress one line with the suppression comment.
+
+  target_patterns:
+    - "**/handlers/*.py"
+    - "**/handlers/**/*.py"
+    - "**/nodes/*.py"
+    - "**/nodes/**/*.py"
+    - "**/*_cli.py"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/node_modules/**"
+    - "**/build/**"
+    - "**/dist/**"
+    - "**/.pytest_cache/**"
+    - "**/.ruff_cache/**"
+    - "**/.mypy_cache/**"
+    - "**/archived/**"
+    - "**/archive/**"
+
+  rules:
+    - rule_id: constructor_signature
+      description: >-
+        Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency
+        from it with container.get_service.
+      severity: error
+      enabled: true
+      parameters:
+        class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
+        init_name: '__init__'
+        self_parameter: 'self'
+        container_parameter: 'container'
+
+    - rule_id: direct_construction
+      description: >-
+        Do not construct infrastructure in __init__: acquire it with container.get_service(...) or container.resolve(...).
+      severity: error
+      enabled: true
+      parameters:
+        class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
+        init_name: '__init__'
+        receiver_name: 'self'
+        resolution_attrs:
+          - 'resolve'
+          - 'get_service'
+          - 'get'
+          - 'get_or_none'
+
+    - rule_id: call_site_construction
+      description: >-
+        Do not build a handler or node where it is called: resolve it from the container with get_service
+        and call the resolved instance.
+      severity: error
+      enabled: true
+      parameters:
+        constructed_name_pattern: '^(Handler|Node)[A-Z]\w*$'
+        invoked_methods:
+          - 'handle'
+
+    - rule_id: fallback_construction
+      description: >-
+        Do not build the dependency a caller left as None: make the parameter required, or resolve it
+        from the container.
+      severity: error
+      enabled: true
+      parameters:
+        class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
+        loader_name_pattern: '^(load_\w+|build_\w+|create_\w+|make_\w+|(Handler|Node)[A-Z]\w*|[A-Z]\w*(Adapter|Backend|Bus|Client|Store|Writer|Reader|Registry|Effect))$'
+        fallback_forms:
+          - 'boolean_or'
+          - 'conditional_expression'
+          - 'none_guard'
+
+    - rule_id: reflective_construction
+      description: >-
+        Do not construct a class chosen at run time with getattr, a globals() lookup or a class held in
+        a variable: resolve the implementation from the container by its protocol.
+      severity: error
+      enabled: true
+      parameters:
+        reflective_getters:
+          - 'getattr'
+          - '__import__'
+        lookup_tables:
+          - 'globals'
+          - 'locals'
+          - 'vars'
+        class_variable_pattern: '_cls$'
+
+    - rule_id: optional_port_default
+      description: >-
+        Do not default a port to None: a handler method takes its port as a required parameter, or resolves
+        it from the container.
+      severity: error
+      enabled: true
+      parameters:
+        class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
+        port_name_pattern: '^(contract|bus|event_bus|publisher|writer|store|client|adapter|backend|resolver|registry|container)$'
+        port_annotation_pattern: 'Protocol[A-Z]\w*'
+
+    - rule_id: contract_self_load
+      description: >-
+        Do not locate the module's own contract.yaml from __file__: the contract reaches the handler through
+        the container.
+      severity: error
+      enabled: true
+      parameters:
+        self_reference_names:
+          - '__file__'
+        contract_file_pattern: 'contract\.ya?ml$'
+        statement_kinds:
+          - 'Assign'
+          - 'AnnAssign'
+          - 'Expr'
+          - 'Return'
+
+    - rule_id: module_singleton
+      description: >-
+        Do not keep module state with global: register the instance in the container with a singleton
+        lifecycle.
+      severity: error
+      enabled: true
+      parameters:
+        statement_kinds:
+          - 'Global'
+
+    - rule_id: sibling_handler_import
+      description: >-
+        Do not import another handler module: depend on its protocol and resolve the implementation from
+        the container.
+      severity: error
+      enabled: true
+      parameters:
+        importer_path_pattern: '(^|/)handlers/|(^|/)handler(_[a-z0-9_]+)?\.py$'
+        importer_exclude_pattern: '(_cli|__init__)\.py$'
+        imported_module_pattern: '^handler(_[a-z0-9_]+)?$'
+
+    - rule_id: contract_value_literal
+      description: >-
+        Do not hold a topic, URL, host, port, timeout or model name in code: declare it in the contract
+        or an overlay and read it through the container.
+      severity: error
+      enabled: true
+      parameters:
+        constant_name_pattern: '^_?([A-Z0-9]+_)*(TOPIC|URL|HOST|PORT|TIMEOUT|ENDPOINT|MODEL)S?(_[A-Z0-9_]+)?$'
+        value_patterns:
+          - '^onex\.(cmd|evt)\.\S+$'
+          - '^[a-z][a-z0-9+.-]*://[^\s/]\S*$'
+          - '^\d{1,3}(\.\d{1,3}){3}(:\d+)?$'
+
+    - rule_id: baseline_ratchet
+      description: >-
+        The findings that sat in handlers, nodes and command line modules before K1 are burn-down entries
+        and the only ones admitted; the baseline holds exactly those, per file, and only shrinks.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/handler_di_baseline.txt'
+        base_ref: 'HEAD'
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+
+  suppression_comments:
+    - 'handler-di-ok:'
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

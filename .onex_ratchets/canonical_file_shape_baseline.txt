@@ -981,7 +981,6 @@ src/omnibase_core/validators/environment_reader_inventory.py
 src/omnibase_core/validators/fsm_handler_drift.py
 src/omnibase_core/validators/generated_node_model_class_exists.py
 src/omnibase_core/validators/gitignore_baseline.py
-src/omnibase_core/validators/handler_di_gate.py
 src/omnibase_core/validators/handler_github_token_env_reads.py
 src/omnibase_core/validators/no_new_os_environ.py
 src/omnibase_core/validators/no_new_os_environ_function_context.py
