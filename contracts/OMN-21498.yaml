@@ -22,21 +22,6 @@ requirements:
         statement: 'AC2: A canary commit with an unformatted file and an AI co-author trailer is refused
           and the working tree is byte-identical after the hook run -- falsifier: pytest case that hashes
           the tree before and after the hook run, plus pre-commit run --files on the canary commit'
-      - id: AC3
-        statement: 'AC3: K8 commit_hygiene refuses a file without a final newline, a file with extra final
-          newlines, a staged tmp/ file and a commit message carrying the AI co-author trailer, and writes
-          nothing -- falsifier: pytest cases over the four rules and a canary commit through pre-commit
-          run on the published hook ids'
-      - id: AC4
-        statement: 'Configuration: every pattern, hook id, argument list, count floor and remediation
-          text of both rules is a parameters entry of a rule row of the .validation.yaml, and an invalid
-          contract fails to load -- falsifier: the table-driven tests mutate every parameters key of every
-          rule row and assert the verdict change'
-      - id: AC5
-        statement: 'Bindings: the checker is pure and the runtime resolves the report writer from the
-          container -- falsifier: a container spy records the resolution, a second injected writer gives
-          the golden report with no code change; the broker overlay half is a stated blocker until the
-          report-writer publish task lands'
 evidence_requirements:
   - kind: "tests"
     description: "The hook-writes, commit-hygiene and runtime tests and the canary pass at the head and
@@ -59,9 +44,16 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/test_validator_hook_writes.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_contract_omn21498_criteria.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run python -m omnibase_core.validation.validator_hook_writes .pre-commit-config.yaml
           .pre-commit-hooks.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -c '! grep -qE "^[[:space:]]+- id: AC[345]$" contracts/OMN-21498.yaml'
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21498-ac2-canary
     description: Each converted hook runs through pre-commit on its canary; every one refuses, the whole
@@ -133,6 +125,57 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: |
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 60 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/handlers/handler_validator_run.py" |
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 60 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/nodes/node_validation_report_write_effect/runtime_validator_run.py" |
             grep -F "writer = container.get_service(NodeValidationReportWriteEffect)" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21498-retire-unticketed-criteria
+    description: >-
+      AC3, AC4 and AC5 are not on the OMN-21498 ticket, which carries AC1 and AC2 only. This item carries
+      the retirement of every binding on those three labels and keeps the hook-writes tests running; it
+      binds no criterion. A second lane accepts the retirement.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_hook_writes.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          bash -c '! grep -qE "^[[:space:]]+- id: AC[345]$" contracts/OMN-21498.yaml'
+        cwd: ${OMNI_HOME}/omnibase_core
+    supersedes_ac_binding:
+      - item: dod-omn21498-ac3-commit-hygiene
+        label: AC3
+        reason_kind: no_longer_applicable
+        reason: AC3 is not on the ticket, so the item that bound it no longer proves a criterion the ticket
+          carries.
+        retired_by: ticket-state-wiring-1915
+        retired_at: '2026-10-29T19:30:00Z'
+      - item: dod-omn21498-configuration
+        label: AC4
+        reason_kind: no_longer_applicable
+        reason: AC4 is not on the ticket, so the item that bound it no longer proves a criterion the ticket
+          carries.
+        retired_by: ticket-state-wiring-1915
+        retired_at: '2026-10-29T19:30:00Z'
+      - item: dod-omn21498-bindings
+        label: AC5
+        reason_kind: no_longer_applicable
+        reason: AC5 is not on the ticket, so the item that bound it no longer proves a criterion the ticket
+          carries.
+        retired_by: ticket-state-wiring-1915
+        retired_at: '2026-10-29T19:30:00Z'
+      - item: dod-omn21498-deploy-checkout-runtime
+        label: AC5
+        reason_kind: no_longer_applicable
+        reason: AC5 is not on the ticket, so the item that bound it no longer proves a criterion the ticket
+          carries.
+        retired_by: ticket-state-wiring-1915
+        retired_at: '2026-10-29T19:30:00Z'
+      - item: dod-omn21498-deploy-published-runtime
+        label: AC5
+        reason_kind: no_longer_applicable
+        reason: AC5 is not on the ticket, and the probe names a source path that does not exist at the
+          merge, so it never read the runtime it describes.
+        retired_by: ticket-state-wiring-1915
+        retired_at: '2026-10-29T19:30:00Z'
