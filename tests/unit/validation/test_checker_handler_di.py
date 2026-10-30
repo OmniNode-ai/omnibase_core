@@ -136,9 +136,11 @@ CONTROLS: dict[tuple[str, str], tuple[str, str]] = {
 BASELINE_KEYS = (
     "baseline_path",
     "base_ref",
+    "move_similarity_percent",
     "grew_message",
     "stale_message",
     "growth_message",
+    "missing_message",
 )
 
 
@@ -714,7 +716,9 @@ def test_an_entry_the_base_lacks_or_raises_is_baseline_growth() -> None:
     )
 
 
-@pytest.mark.parametrize("key", ["grew_message", "stale_message", "growth_message"])
+@pytest.mark.parametrize(
+    "key", ["grew_message", "stale_message", "growth_message", "missing_message"]
+)
 def test_baseline_messages_are_rule_parameters(key: str) -> None:
     contract = _contract()
     row = next(r for r in contract.rules if r.rule_id == BASELINE)
@@ -736,6 +740,9 @@ def test_baseline_messages_are_rule_parameters(key: str) -> None:
         ),
         "growth_message": lambda rules: checker.baseline_growth(
             {"x.py": 2}, {}, BASELINE_FILE, rules
+        ),
+        "missing_message": lambda rules: checker.baseline_missing(
+            {"x.py": 2}, lambda _: False, BASELINE_FILE, rules
         ),
     }
     changed = " ".join(i.message for i in scenarios[key](_rules(mutated)))
@@ -761,10 +768,25 @@ def _baseline_repo(tmp_path: Path, committed: str | None, worktree: str) -> Path
     _git(tmp_path, "commit", "-q", "--allow-empty", "-m", "base")
     if committed is not None:
         baseline.write_text(committed, encoding="utf-8")
+        for path in checker.parse_baseline(committed):
+            _baseline_source(tmp_path / path)
         _git(tmp_path, "add", ".")
         _git(tmp_path, "commit", "-q", "-m", "baseline")
     baseline.write_text(worktree, encoding="utf-8")
+    for path in checker.parse_baseline(worktree):
+        if not (tmp_path / path).is_file():
+            _baseline_source(tmp_path / path)
     return baseline
+
+
+def _baseline_source(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        "class HandlerLegacy:\n"
+        "    def __init__(self, first, second):\n"
+        "        self.bus = Bus()\n" + "".join(f"value_{i} = {i}\n" for i in range(17)),
+        encoding="utf-8",
+    )
 
 
 def _growth(tmp_path: Path, committed: str | None, worktree: str) -> list[str]:
@@ -787,6 +809,134 @@ def test_the_first_install_of_the_baseline_has_nothing_to_grow_from(
     tmp_path: Path,
 ) -> None:
     assert _growth(tmp_path, None, "src/a.py 2\n") == []
+
+
+def _updated_baseline_codes(tmp_path: Path, baseline: Path, text: str) -> list[str]:
+    baseline.write_text(text, encoding="utf-8")
+    validator = ValidatorHandlerDi(contract=_contract(), root=tmp_path)
+    return [str(i.code) for i in validator.validate(baseline).issues]
+
+
+@pytest.mark.unit
+def test_a_moved_finding_passes_before_the_move_is_committed(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/old.py 2\n", "src/old.py 2\n")
+    _git(tmp_path, "mv", "src/old.py", "src/new.py")
+    assert _updated_baseline_codes(tmp_path, baseline, "src/new.py 2\n") == []
+
+
+@pytest.mark.unit
+def test_a_committed_move_carries_the_stale_origin_entry(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/old.py 2\n", "src/old.py 2\n")
+    _git(tmp_path, "mv", "src/old.py", "src/new.py")
+    _git(tmp_path, "commit", "-q", "-m", "move source")
+    assert _updated_baseline_codes(tmp_path, baseline, "src/new.py 2\n") == []
+
+
+@pytest.mark.unit
+def test_two_copies_share_the_origin_entry(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/old.py 2\n", "src/old.py 2\n")
+    for destination in ("src/a.py", "src/b.py"):
+        shutil.copyfile(tmp_path / "src/old.py", tmp_path / destination)
+        _git(tmp_path, "add", destination)
+    _git(tmp_path, "rm", "-q", "-f", "src/old.py")
+    assert _updated_baseline_codes(tmp_path, baseline, "src/a.py 1\nsrc/b.py 1\n") == []
+    assert _updated_baseline_codes(tmp_path, baseline, "src/a.py 2\nsrc/b.py 1\n") == [
+        BASELINE
+    ]
+
+
+@pytest.mark.unit
+def test_a_copy_of_a_file_that_stays_frees_no_budget(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/old.py 2\n", "src/old.py 2\n")
+    shutil.copyfile(tmp_path / "src/old.py", tmp_path / "src/copy.py")
+    _git(tmp_path, "add", "src/copy.py")
+    assert _updated_baseline_codes(
+        tmp_path, baseline, "src/old.py 1\nsrc/copy.py 1\n"
+    ) == [BASELINE]
+
+
+@pytest.mark.unit
+def test_a_finding_without_a_move_origin_is_refused(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/old.py 2\n", "src/old.py 2\n")
+    fresh = tmp_path / "src/fresh.py"
+    fresh.write_text("fresh_value = 'unrelated source'\n", encoding="utf-8")
+    _git(tmp_path, "add", "src/fresh.py")
+    assert _updated_baseline_codes(
+        tmp_path, baseline, "src/old.py 2\nsrc/fresh.py 1\n"
+    ) == [BASELINE]
+
+
+@pytest.mark.unit
+def test_an_increased_count_on_moved_code_is_refused(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/old.py 2\n", "src/old.py 2\n")
+    _git(tmp_path, "mv", "src/old.py", "src/new.py")
+    assert _updated_baseline_codes(tmp_path, baseline, "src/new.py 3\n") == [BASELINE]
+
+
+@pytest.mark.unit
+def test_a_shrunk_count_on_moved_code_passes(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/old.py 2\n", "src/old.py 2\n")
+    _git(tmp_path, "mv", "src/old.py", "src/new.py")
+    assert _updated_baseline_codes(tmp_path, baseline, "src/new.py 1\n") == []
+
+
+@pytest.mark.unit
+def test_a_missing_file_entry_must_be_dropped(tmp_path: Path) -> None:
+    baseline = _baseline_repo(tmp_path, "src/gone.py 1\n", "src/gone.py 1\n")
+    (tmp_path / "src/gone.py").unlink()
+    assert _updated_baseline_codes(tmp_path, baseline, "src/gone.py 1\n") == [BASELINE]
+    assert _updated_baseline_codes(tmp_path, baseline, "") == []
+
+
+@pytest.mark.unit
+def test_growth_reports_the_moved_allowance_in_path_order() -> None:
+    issues = checker.baseline_growth(
+        {"b.py": 1, "a.py": 3},
+        {"old.py": 2},
+        BASELINE_FILE,
+        _rules(),
+        {"a.py": "old.py", "b.py": "old.py"},
+    )
+    assert [i.code for i in issues] == [BASELINE, BASELINE]
+    assert issues[0].message.startswith(
+        "a.py is baselined at 3 and the base revision has 2:"
+    )
+    assert issues[1].message.startswith(
+        "b.py is baselined at 1 and the base revision has 0:"
+    )
+
+
+@pytest.mark.unit
+def test_missing_entries_are_reported_in_path_order() -> None:
+    issues = checker.baseline_missing(
+        {"b.py": 2, "present.py": 3, "a.py": 1},
+        lambda path: path == "present.py",
+        BASELINE_FILE,
+        _rules(),
+    )
+    assert [i.code for i in issues] == [BASELINE, BASELINE]
+    assert [i.file_path for i in issues] == [BASELINE_FILE, BASELINE_FILE]
+    assert issues[0].message.startswith("a.py is baselined at 1 but")
+    assert issues[1].message.startswith("b.py is baselined at 2 but")
+
+
+@pytest.mark.unit
+def test_missing_entries_are_not_checked_when_the_rule_is_inactive() -> None:
+    def unexpected_exists(path: str) -> bool:
+        pytest.fail(f"inactive rule checked {path}")
+
+    assert (
+        checker.baseline_missing({"gone.py": 1}, unexpected_exists, BASELINE_FILE, {})
+        == ()
+    )
+    rules = _rules()
+    rules[BASELINE] = rules[BASELINE].model_copy(update={"enabled": False})
+    assert (
+        checker.baseline_missing(
+            {"gone.py": 1}, unexpected_exists, BASELINE_FILE, rules
+        )
+        == ()
+    )
 
 
 def test_the_baseline_holds_exactly_what_the_tree_holds_and_only_files_that_exist() -> (

@@ -52,6 +52,9 @@ from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validation_report_publish import (
+    _EMITTER_TOKEN,
+    _RUN_EVENTS_TOKEN,
+    _WRITER_TOKEN,
     NodeValidationReportPublishEffect,
 )
 from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
@@ -396,14 +399,9 @@ def test_runtime_resolves_the_writer_and_the_bus_from_the_container(
             ModelValidatorRuntimeBus, bus
         )
         for token in (
-            cast(
-                "type[ProtocolValidationReportWriter]", ProtocolValidationReportWriter
-            ),
-            cast("type[ProtocolValidatorRunEvents]", ProtocolValidatorRunEvents),
-            cast(
-                "type[ProtocolValidatorTriggeredEmitter]",
-                ProtocolValidatorTriggeredEmitter,
-            ),
+            _WRITER_TOKEN,
+            _RUN_EVENTS_TOKEN,
+            _EMITTER_TOKEN,
             ModelValidatorRuntimeSettings,
         ):
             await bus_container.service_registry.register_instance(
@@ -435,9 +433,9 @@ def test_runtime_resolves_the_writer_and_the_bus_from_the_container(
     }
     assert writer_spy.resolved == [NodeValidationReportWriteEffect]
     assert bus_spy.resolved == [
-        ProtocolValidationReportWriter,
-        ProtocolValidatorRunEvents,
-        ProtocolValidatorTriggeredEmitter,
+        _WRITER_TOKEN,
+        _RUN_EVENTS_TOKEN,
+        _EMITTER_TOKEN,
         ModelValidatorRuntimeSettings,
         ModelValidatorRuntimeBus,
     ]

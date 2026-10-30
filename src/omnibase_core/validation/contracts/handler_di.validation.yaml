@@ -172,12 +172,17 @@ validation:
     - rule_id: baseline_ratchet
       description: >-
         The findings that sat in handlers, nodes and command line modules before K1 are burn-down entries
-        and the only ones admitted; the baseline holds exactly those, per file, and only shrinks.
+        and the only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry
+        follows its code when git records a move (rename or copy) and is dropped when its file is gone.
       severity: error
       enabled: true
       parameters:
         baseline_path: '.onex_ratchets/handler_di_baseline.txt'
         base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
         grew_message: >-
           {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
           new finding instead of raising the entry.

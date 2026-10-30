@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import ast
 import re
-from collections.abc import Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping
 from pathlib import Path
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -33,6 +33,7 @@ from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
 from omnibase_core.models.validation.model_handler_di_module_fact import (
     ModelHandlerDiModuleFact,
 )
+from omnibase_core.validation.checker_baseline_moves import carry_baseline
 from omnibase_core.validation.checker_rule_parameters import rule_string, rule_strings
 
 RULE_CONSTRUCTOR = "constructor_signature"
@@ -569,8 +570,34 @@ def baseline_growth(
     base: Mapping[str, int],
     baseline_path: Path,
     rules: Mapping[str, ModelValidatorRule],
+    moves: Mapping[str, str] | None = None,
 ) -> tuple[ModelValidationIssue, ...]:
-    """An entry the base revision lacks, or holds at a lower count, is a baseline that grew."""
+    """Reject entries above their own or recorded origin's base allowance."""
+    if not _active(rules, RULE_BASELINE):
+        return ()
+    row = rules[RULE_BASELINE]
+    allowances = carry_baseline(head, base, moves or {})
+    return tuple(
+        _issue(
+            row,
+            baseline_path,
+            0,
+            rule_string(row, "growth_message").format(
+                path=path, count=count, baselined=allowances[path]
+            ),
+        )
+        for path, count in sorted(head.items())
+        if count > allowances[path]
+    )
+
+
+def baseline_missing(
+    head: Mapping[str, int],
+    exists: Callable[[str], bool],
+    baseline_path: Path,
+    rules: Mapping[str, ModelValidatorRule],
+) -> tuple[ModelValidationIssue, ...]:
+    """Reject baseline entries whose files no longer exist."""
     if not _active(rules, RULE_BASELINE):
         return ()
     row = rules[RULE_BASELINE]
@@ -579,12 +606,10 @@ def baseline_growth(
             row,
             baseline_path,
             0,
-            rule_string(row, "growth_message").format(
-                path=path, count=count, baselined=base.get(path, 0)
-            ),
+            rule_string(row, "missing_message").format(path=path, count=count),
         )
         for path, count in sorted(head.items())
-        if count > base.get(path, 0)
+        if not exists(path)
     )
 
 
@@ -649,6 +674,7 @@ __all__ = [
     "ModelHandlerDiModuleFact",
     "apply_baseline",
     "baseline_growth",
+    "baseline_missing",
     "check_module",
     "parse_baseline",
 ]
