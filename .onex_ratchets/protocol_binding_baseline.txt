@@ -6,7 +6,7 @@
 # (a rule parameter), not a baseline entry.
 # Do not add a line; do not raise a count.
 src/omnibase_core/event_bus/testing/fixture_event_bus_substrate.py 1
-src/omnibase_core/handlers/handler_ci_inheritance_cli.py 1
+src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py 1
 src/omnibase_core/nodes/node_source_file_gather_effect/runtime_shared_token_policy.py 1
 src/omnibase_core/runtime/harness/harness_dispatch.py 1
 src/omnibase_core/runtime/runtime_local.py 1
