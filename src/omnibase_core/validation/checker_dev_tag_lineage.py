@@ -27,6 +27,9 @@ from omnibase_core.models.validation.model_dev_tag_lineage_candidate import (
 from omnibase_core.models.validation.model_dev_tag_lineage_facts import (
     ModelDevTagLineageFacts,
 )
+from omnibase_core.models.validation.model_dev_tag_lineage_invariant_policy import (
+    ModelDevTagLineageInvariantPolicy,
+)
 from omnibase_core.models.validation.model_dev_tag_lineage_lock_entry import (
     ModelDevTagLineageLockEntry,
 )
@@ -54,10 +57,13 @@ def load_policy(contract: ModelValidatorSubcontract) -> ModelDevTagLineagePolicy
         "declared_version_mismatch",
         "lock_mismatch",
         "lineage_unresolved",
+        "first_party_not_dev_tag",
+        "first_party_version_override",
+        "first_party_release_only",
     }
     ids = [rule.rule_id for rule in contract.rules]
     if set(ids) != required or len(ids) != len(required):
-        raise invalid("dev_tag_lineage requires exactly its six rule rows")
+        raise invalid("dev_tag_lineage requires exactly its nine rule rows")
     if (
         not contract.fail_on_error
         or contract.max_violations != 0
@@ -72,10 +78,12 @@ def load_policy(contract: ModelValidatorSubcontract) -> ModelDevTagLineagePolicy
             )
         parameters = dict(rule.parameters or {})
         ModelDevTagLineageRuleParameters.model_validate(
-            {key: parameters.pop(key) for key in ("message", "remediation")}
+            {key: parameters.pop(key) for key in ("phase", "message", "remediation")}
         )
         if rule.rule_id == "lineage_unresolved":
             policy = ModelDevTagLineagePolicy.model_validate(parameters)
+        elif rule.rule_id == "first_party_not_dev_tag":
+            ModelDevTagLineageInvariantPolicy.model_validate(parameters)
         elif parameters:
             raise invalid(f"unexpected rule parameters: {rule.rule_id}")
     if policy is None:
@@ -105,11 +113,10 @@ def _table(document: Mapping[str, object], dotted: str) -> object:
     return value
 
 
-def parse_candidates(
-    text: str, policy: ModelDevTagLineagePolicy, package: str | None = None
-) -> tuple[ModelDevTagLineageCandidate, ...]:
-    """Parse each in-scope source with every declaration in contract table order."""
-    document = tomllib.loads(text)
+def _declarations(
+    document: Mapping[str, object], policy: ModelDevTagLineagePolicy
+) -> dict[str, list[str]]:
+    """Collect declarations from each configured list or grouped declaration table."""
     declarations: dict[str, list[str]] = {}
     for table in policy.declaration_tables:
         entries = _table(document, table)
@@ -117,15 +124,30 @@ def parse_candidates(
             continue
         channels = entries.values() if isinstance(entries, dict) else (entries,)
         for channel in channels:
-            if not isinstance(channel, list) or any(
-                not isinstance(item, str) for item in channel
-            ):
+            if not isinstance(channel, list):
                 raise invalid(f"invalid dependency table: {table}")
             for entry in channel:
+                if (
+                    isinstance(entry, dict)
+                    and set(entry) == {"include-group"}
+                    and isinstance(entry["include-group"], str)
+                ):
+                    continue
+                if not isinstance(entry, str):
+                    raise invalid(f"invalid dependency declaration: {table}")
                 match = re.fullmatch(policy.declaration_pattern, entry)
                 if match:
                     name = normalize(match["name"], policy)
                     declarations.setdefault(name, []).append(match["spec"].strip())
+    return declarations
+
+
+def parse_candidates(
+    text: str, policy: ModelDevTagLineagePolicy, package: str | None = None
+) -> tuple[ModelDevTagLineageCandidate, ...]:
+    """Parse each in-scope source with every declaration in contract table order."""
+    document = tomllib.loads(text)
+    declarations = _declarations(document, policy)
     sources = _table(document, "tool.uv.sources")
     if sources is None:
         return ()
@@ -260,4 +282,84 @@ def check_dev_tag_lineage(
                     suggestion=str(parameters["remediation"]),
                 )
             )
+    return tuple(issues)
+
+
+def check_dev_tag_invariants(
+    path: Path,
+    text: str,
+    contract: ModelValidatorSubcontract,
+    package: str | None = None,
+) -> tuple[ModelValidationIssue, ...]:
+    """Require tag iteration from source text alone, without resolving any git fact."""
+    policy = load_policy(contract)
+    row = next(
+        rule for rule in contract.rules if rule.rule_id == "first_party_not_dev_tag"
+    )
+    parameters = dict(row.parameters or {})
+    for key in ("phase", "message", "remediation"):
+        parameters.pop(key)
+    invariant = ModelDevTagLineageInvariantPolicy.model_validate(parameters)
+
+    def normalized(name: str) -> str:
+        return re.sub(invariant.normalize_pattern, "-", name).lower()
+
+    siblings = {normalized(entry.split("=", 1)[0]) for entry in invariant.siblings}
+    document = tomllib.loads(text)
+    own = _table(document, "project.name")
+    own_name = normalized(own) if isinstance(own, str) else None
+    declarations = _declarations(document, policy)
+    raw_sources = _table(document, "tool.uv.sources")
+    if raw_sources is not None and not isinstance(raw_sources, dict):
+        raise invalid("tool.uv.sources must be a table")
+    sources: dict[str, list[object]] = {}
+    for name, values in (raw_sources or {}).items():
+        sources.setdefault(normalized(name), []).extend(
+            values if isinstance(values, list) else [values]
+        )
+    selected = normalized(package) if package is not None else None
+    issues: list[ModelValidationIssue] = []
+    for name in sorted((declarations.keys() | sources.keys()) & siblings):
+        if name == own_name or (selected is not None and name != selected):
+            continue
+        failures: set[str] = set()
+        for source in sources.get(name, ()):
+            if (
+                not isinstance(source, dict)
+                or not isinstance(source.get("git"), str)
+                or not isinstance(source.get("tag"), str)
+                or not re.fullmatch(invariant.tag_pattern, source["tag"])
+                or any(key in source for key in invariant.incompatible_source_keys)
+            ):
+                failures.add("first_party_not_dev_tag")
+        if name in sources and not sources[name]:
+            failures.add("first_party_not_dev_tag")
+        direct_git = False
+        for spec in declarations.get(name, ()):
+            if re.search(invariant.exact_pattern, spec):
+                failures.add("first_party_version_override")
+            direct = re.fullmatch(invariant.direct_git_pattern, spec)
+            # A malformed/unversioned git URL is still a git requirement, and fails its tag rule.
+            if direct is not None:
+                direct_git = True
+                if not re.fullmatch(invariant.tag_pattern, direct["ref"]):
+                    failures.add("first_party_not_dev_tag")
+            elif re.match(invariant.direct_git_prefix_pattern, spec):
+                direct_git = True
+                failures.add("first_party_not_dev_tag")
+        if name in declarations and name not in sources and not direct_git:
+            failures.add("first_party_release_only")
+        for rule in contract.rules:
+            if rule.rule_id in failures:
+                values = rule.parameters or {}
+                issues.append(
+                    ModelValidationIssue(
+                        severity=rule.severity,
+                        code=rule.rule_id,
+                        rule_name=rule.rule_id,
+                        file_path=path,
+                        message=str(values["message"]).format(package=name),
+                        suggestion=str(values["remediation"]),
+                    )
+                )
     return tuple(issues)

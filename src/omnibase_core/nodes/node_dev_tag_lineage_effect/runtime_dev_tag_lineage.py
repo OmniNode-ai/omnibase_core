@@ -60,6 +60,9 @@ def run(
     parser.add_argument("targets", nargs="*", type=Path)
     parser.add_argument("--root", type=Path, default=Path.cwd())
     parser.add_argument("--package")
+    parser.add_argument(
+        "--rules", help="Comma-separated contract rule ids; omitted runs all rules"
+    )
     parser.add_argument("--report-json")
     parser.add_argument("--overlay", type=Path)
     args = parser.parse_args(argv)
@@ -70,7 +73,12 @@ def run(
         container = container_factory(overlay)
         effect = container.get_service(NodeDevTagLineageEffect)
         validator = ValidatorDevTagLineage(
-            root=args.root, resolver=effect.handle, package=args.package
+            root=args.root,
+            resolver=effect.handle,
+            package=args.package,
+            rules=tuple(rule.strip() for rule in args.rules.split(","))
+            if args.rules is not None
+            else None,
         )
         targets = (
             [args.root / target for target in args.targets]

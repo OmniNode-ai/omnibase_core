@@ -96,5 +96,82 @@
     "version": "2.3.4",
     "on_branch": true,
     "detail": "fixture"
+  },
+  "clean_first_party_dev_tag": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_sha_rev": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_branch": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_release_tag": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_path": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_url": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_index": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_direct_sha": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_override": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_project_exact": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
+  },
+  "violation_first_party_release_only": {
+    "tag_exists": true,
+    "commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "2.3.4",
+    "on_branch": true,
+    "detail": "fixture"
   }
 }

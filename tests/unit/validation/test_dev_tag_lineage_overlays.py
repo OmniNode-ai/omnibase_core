@@ -67,6 +67,16 @@ _PLANTED = (
     "declared_version_missing",
     "lock_mismatch",
     "lineage_unresolved",
+    "first_party_sha_rev",
+    "first_party_branch",
+    "first_party_release_tag",
+    "first_party_path",
+    "first_party_url",
+    "first_party_index",
+    "first_party_direct_sha",
+    "first_party_override",
+    "first_party_project_exact",
+    "first_party_release_only",
 )
 
 
@@ -129,9 +139,9 @@ def _stage(root: Path) -> list[str]:
         if (target / "uv.lock.txt").exists():
             (target / "uv.lock.txt").rename(target / "uv.lock")
         path.write_text(
-            path.read_text().replace(
-                "file:///fixture/origin.git", f"file:///fixture/{name}"
-            )
+            path.read_text()
+            .replace("file:///fixture/origin.git", f"file:///fixture/{name}")
+            .replace("https://example.test/first-party.git", f"file:///fixture/{name}")
         )
         paths.append(str(path.relative_to(root)))
     return sorted(paths)

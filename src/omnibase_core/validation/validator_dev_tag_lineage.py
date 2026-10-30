@@ -22,6 +22,7 @@ from omnibase_core.models.validation.model_dev_tag_lineage_request import (
     ModelDevTagLineageRequest,
 )
 from omnibase_core.validation.checker_dev_tag_lineage import (
+    check_dev_tag_invariants,
     check_dev_tag_lineage,
     invalid,
     load_policy,
@@ -44,15 +45,31 @@ class ValidatorDevTagLineage(ValidatorBase):
         resolver: Callable[[ModelDevTagLineageRequest], ModelDevTagLineageFacts]
         | None = None,
         package: str | None = None,
+        rules: tuple[str, ...] | None = None,
     ) -> None:
         super().__init__(contract)
         self.root = (root or Path.cwd()).resolve()
         self.resolver = resolver
         self.package = package
+        self.rules = rules
+
+    def _selected_rule_ids(self, contract: ModelValidatorSubcontract) -> set[str]:
+        """Resolve selection against the contract, refusing every unknown rule id."""
+        available = {rule.rule_id for rule in contract.rules}
+        if self.rules is None:
+            return available
+        selected = set(self.rules)
+        unknown = selected - available
+        if unknown:
+            raise invalid(
+                f"dev_tag_lineage unknown rule id(s): {', '.join(sorted(unknown))}"
+            )
+        return selected
 
     def validate(self, targets: Path | list[Path]) -> ModelValidationResult[None]:
         """Refuse missing inputs and gather each matching pyproject exactly once."""
         policy = load_policy(self.contract)
+        self._selected_rule_ids(self.contract)
         requested = [targets] if isinstance(targets, Path) else targets
         requested = [
             target.with_name(policy.project_name)
@@ -92,34 +109,44 @@ class ValidatorDevTagLineage(ValidatorBase):
         self, path: Path, contract: ModelValidatorSubcontract
     ) -> tuple[ModelValidationIssue, ...]:
         policy = load_policy(contract)
-        candidates = parse_candidates(
-            path.read_text(encoding="utf-8"), policy, self.package
+        selected = self._selected_rule_ids(contract)
+        phases = {
+            str((rule.parameters or {})["phase"])
+            for rule in contract.rules
+            if rule.rule_id in selected
+        }
+        text = path.read_text(encoding="utf-8")
+        issues = (
+            list(check_dev_tag_invariants(path, text, contract, self.package))
+            if "invariant" in phases
+            else []
+        )
+        candidates = (
+            parse_candidates(text, policy, self.package) if "identity" in phases else ()
         )
         if candidates and self.resolver is None:
             raise invalid(
                 "dev_tag_lineage needs the resolver its runtime resolves from the container"
             )
-        if not candidates:
-            return ()
-        lock_path = path.with_name(policy.lock_name)
-        entries = (
-            parse_lock(lock_path.read_text(encoding="utf-8"), policy)
-            if lock_path.exists()
-            else None
-        )
-        issues: list[ModelValidationIssue] = []
-        for candidate in candidates:
-            if self.resolver is None:
-                raise invalid("dev_tag_lineage resolver is missing")
-            facts = self.resolver(
-                ModelDevTagLineageRequest(
-                    url=candidate.url,
-                    tag=candidate.tag,
-                    branch=policy.branch,
-                    policy=policy,
+        if candidates:
+            lock_path = path.with_name(policy.lock_name)
+            entries = (
+                parse_lock(lock_path.read_text(encoding="utf-8"), policy)
+                if lock_path.exists()
+                else None
+            )
+            for candidate in candidates:
+                if self.resolver is None:
+                    raise invalid("dev_tag_lineage resolver is missing")
+                facts = self.resolver(
+                    ModelDevTagLineageRequest(
+                        url=candidate.url,
+                        tag=candidate.tag,
+                        branch=policy.branch,
+                        policy=policy,
+                    )
                 )
-            )
-            issues.extend(
-                check_dev_tag_lineage(path, candidate, facts, entries, contract)
-            )
-        return tuple(issues)
+                issues.extend(
+                    check_dev_tag_lineage(path, candidate, facts, entries, contract)
+                )
+        return tuple(issue for issue in issues if issue.rule_name in selected)

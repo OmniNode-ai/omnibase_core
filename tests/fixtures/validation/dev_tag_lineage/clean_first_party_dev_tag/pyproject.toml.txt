@@ -1,0 +1,6 @@
+[project]
+name = "consumer"
+version = "1.0.0"
+dependencies = ["omnibase-core>=2.3.0,<3.0"]
+[tool.uv.sources]
+omnibase-core = {git = "https://example.test/first-party.git", tag = "dev-20261029143607-aaaaaaaaaaaa"}

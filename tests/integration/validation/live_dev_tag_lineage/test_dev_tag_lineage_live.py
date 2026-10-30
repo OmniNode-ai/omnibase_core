@@ -21,6 +21,11 @@ pytestmark = [pytest.mark.integration, pytest.mark.timeout(240)]
 _URL = "https://github.com/OmniNode-ai/omnibase_core.git"
 _REAL = "dev-20261029143607-342000ec5702"
 _MISSING = "dev-20261029143607-000000000000"
+_IDENTITY_RULES = ",".join(
+    rule.rule_id
+    for rule in ValidatorDevTagLineage().contract.rules
+    if (rule.parameters or {})["phase"] == "identity"
+)
 
 
 def _source(
@@ -43,12 +48,31 @@ def test_github_tag_identity(tmp_path: Path, tag: str, expected: list[str]) -> N
 
 
 @pytest.mark.parametrize(
-    ("tag", "spec", "override", "exit_code", "rule"),
+    ("tag", "spec", "override", "source_kind", "rules", "exit_code", "rule"),
     [
-        (_REAL, ">=0.47.58,<0.48.0", None, 0, None),
-        (_REAL, ">=0.47.58,<0.48.0", "==0.47.58", 0, None),
-        (_MISSING, ">=0.47.58,<0.48.0", None, 1, "tag_absent"),
-        (_REAL, ">=0.48.0,<0.49.0", None, 1, "declared_version_mismatch"),
+        (_REAL, ">=0.47.58,<0.48.0", None, "tag", None, 0, None),
+        (
+            _REAL,
+            ">=0.47.58,<0.48.0",
+            "==0.47.58",
+            "tag",
+            None,
+            1,
+            "first_party_version_override",
+        ),
+        (_REAL, ">=0.47.58,<0.48.0", "==0.47.58", "tag", _IDENTITY_RULES, 0, None),
+        (_MISSING, ">=0.47.58,<0.48.0", None, "tag", None, 1, "tag_absent"),
+        (_REAL, ">=0.47.58,<0.48.0", None, "rev", None, 1, "first_party_not_dev_tag"),
+        (
+            _REAL,
+            ">=0.47.58,<0.48.0",
+            None,
+            "release",
+            None,
+            1,
+            "first_party_release_only",
+        ),
+        (_REAL, ">=0.48.0,<0.49.0", None, "tag", None, 1, "declared_version_mismatch"),
     ],
 )
 def test_cli_from_external_directory(
@@ -56,10 +80,17 @@ def test_cli_from_external_directory(
     tag: str,
     spec: str,
     override: str | None,
+    source_kind: str,
+    rules: str | None,
     exit_code: int,
     rule: str | None,
 ) -> None:
-    (tmp_path / "pyproject.toml").write_text(_source(tag, spec, override))
+    text = _source(tag, spec, override)
+    if source_kind == "rev":
+        text = text.replace(f'tag = "{tag}"', f'rev = "{"a" * 40}"')
+    elif source_kind == "release":
+        text = text[: text.index("[tool.uv.sources]")]
+    (tmp_path / "pyproject.toml").write_text(text)
     env = scrub_git_location_env()
     for key in (
         "PYTHONPATH",
@@ -91,6 +122,7 @@ def test_cli_from_external_directory(
             "pyproject.toml",
             "--package",
             "omnibase-core",
+            *(["--rules", rules] if rules is not None else []),
         ],
         cwd=tmp_path,
         env=env,
