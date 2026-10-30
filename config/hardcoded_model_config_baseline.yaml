@@ -1692,15 +1692,6 @@ entries:
   - path: tests/unit/models/contracts/test_model_behavior_proven_receipt.py
     family: E-LAN
     content_sha1: ad7f4f82cb35f37e9232abde3c23731e53bf2106
-  - path: tests/unit/models/contracts/test_model_delegation_runtime_profile.py
-    family: E-LAN
-    content_sha1: 178463ab9123b3a402af2104d5f498a4e2f7b6e5
-  - path: tests/unit/models/contracts/test_model_delegation_runtime_profile.py
-    family: E-LAN
-    content_sha1: 8be1781ed1400c97ae3ae87a8a59de57a82f9d5e
-  - path: tests/unit/models/contracts/test_model_delegation_runtime_profile.py
-    family: M
-    content_sha1: 34964251cc2360f016a5240972369250629b5406
   - path: tests/unit/models/contracts/test_runtime_sha_match.py
     family: E-LAN
     content_sha1: 7b1813f83f0a35e14940b36c5d073647ec26b430

@@ -78,7 +78,7 @@ suites:
     repo: omnibase_core
     job: Tests (Split n/m)
     mode: nodeids
-    max_skips: 60
+    max_skips: 58
     baseline_collected: 45557
     provenance:
       measured_at: '2026-09-19'
@@ -108,9 +108,7 @@ suites:
         than the 2026-09-18 measurement''s base.'
     node_ids:
       - tests.scripts.test_prepush_host_table::test_the_slot_probe_counts_held_locks_under_real_zsh
-      - tests.unit.enums.test_compat_enum_parity_omn12189
       - tests.unit.models.cli.test_model_cli_result.TestModelCliResultDataManagement::test_get_typed_metadata
-      - tests.unit.models.contracts.test_model_delegation_runtime_profile
       - tests.unit.models.discovery.test_unified_discovery_system
       - tests.unit.models.nodes.node_services.test_model_service_compute_invocation.TestModelServiceComputeBasicInvocation::test_target_node_validation_by_service_name
       - tests.unit.normalization.test_e2e_contract_validation.TestRealCorpusFilesDoNotThrow::test_migration_audit_mode_does_not_raise[NOTSET]

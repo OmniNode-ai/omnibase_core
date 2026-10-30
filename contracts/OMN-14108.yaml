@@ -1,0 +1,50 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-14108
+title: "omnibase_compat is retired: its last used symbols move to omnibase_core or their one consumer,
+  and no first-party repository depends on it"
+summary: RULING 2026-10-22T21:43:04Z retires omnibase_compat. The PR OCC stamp schema (the evidence-source
+  kind enum, four models, the parser and the renderer) is used by omnibase_infra, omnimarket and omniclaude,
+  so it returns to omnibase_core, where it lived before OMN-14223. Symbols one repository uses move into
+  that repository, and every omnibase-compat pin is removed.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - omnibase_core.enums.enum_pr_evidence_source_kind
+  - omnibase_core.models.validation.model_pr_body_section
+  - omnibase_core.models.validation.model_pr_evidence_source
+  - omnibase_core.models.validation.model_pr_occ_metadata_stamp
+  - omnibase_core.models.validation.model_pr_receipt_gate_skip_token
+  - omnibase_core.contracts.pr_occ_metadata_stamp
+requirements:
+  - id: req-omn14108-stamp-schema-in-core
+    statement: omnibase_core carries the PR OCC stamp schema with the tests that came with it, and no
+      test in omnibase_core imports omnibase_compat.
+    acceptance:
+      - id: AC1
+        statement: "AC1: omnibase_core carries the PR OCC stamp schema (enum, models, parser and renderer)
+          with its tests -- falsifier: `uv run pytest tests/unit/validation/test_pr_occ_metadata_stamp.py
+          tests/unit/models/validation/test_model_pr_occ_metadata_stamp.py -q` passes"
+evidence_requirements:
+  - kind: tests
+    description: The stamp schema's enum, model, parser and renderer tests pass in omnibase_core.
+    command: uv run pytest tests/unit/validation/test_pr_occ_metadata_stamp.py tests/unit/models/validation/test_model_pr_occ_metadata_stamp.py
+      tests/unit/models/validation/test_model_pr_body_section.py tests/unit/models/validation/test_model_pr_evidence_source.py
+      tests/unit/models/validation/test_model_pr_receipt_gate_skip_token.py tests/unit/enums/test_enum_pr_evidence_source_kind.py
+      -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn14108-ac1-stamp-schema
+    description: The moved stamp schema tests pass against the omnibase_core modules.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_pr_occ_metadata_stamp.py tests/unit/models/validation/test_model_pr_occ_metadata_stamp.py
+          tests/unit/models/validation/test_model_pr_body_section.py tests/unit/models/validation/test_model_pr_evidence_source.py
+          tests/unit/models/validation/test_model_pr_receipt_gate_skip_token.py tests/unit/enums/test_enum_pr_evidence_source_kind.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
