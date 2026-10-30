@@ -67,7 +67,7 @@ _SOURCE = Path("src/pkg/module.py")
 _CONTAINER_FILE = "src/omnibase_core/container/container_auto_config.py"
 _BASELINED_FILES = [
     "src/omnibase_core/event_bus/testing/fixture_event_bus_substrate.py",
-    "src/omnibase_core/handlers/handler_ci_inheritance_cli.py",
+    "src/omnibase_core/nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py",
     "src/omnibase_core/nodes/node_source_file_gather_effect/runtime_shared_token_policy.py",
     "src/omnibase_core/runtime/harness/harness_dispatch.py",
     "src/omnibase_core/runtime/runtime_local.py",

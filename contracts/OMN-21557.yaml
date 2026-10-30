@@ -1,0 +1,60 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21557
+title: 'omnibase_core dev red: K5 protocol_binding baseline names the CI-inheritance runtime by its pre-OMN-21518
+  path'
+summary: OMN-21518 moved handlers/handler_ci_inheritance_cli.py to nodes/node_ci_inheritance_check_compute/runtime_ci_inheritance_check.py
+  after OMN-21533 baselined the old path. The one baseline entry and the matching test list entry are
+  renamed; the baseline keeps 10 entries.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21557-baseline-follows-move
+    statement: The K5 protocol_binding baseline names the moved CI-inheritance runtime at its current
+      path and does not grow.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the two protocol_binding baseline tests that fail at the merge base pass, and
+          the whole test file passes -- falsifier: uv run pytest tests/unit/validation/test_checker_protocol_binding.py
+          -q'
+      - id: AC2
+        statement: 'AC2: the protocol_binding baseline still holds 10 entries, every entry names an existing
+          file, and none names src/omnibase_core/handlers/handler_ci_inheritance_cli.py -- falsifier:
+          grep -c '' 1$'' .onex_ratchets/protocol_binding_baseline.txt plus a test -e loop over its paths'
+evidence_requirements:
+  - kind: tests
+    description: The protocol_binding checker tests pass, including the two that fail at the merge base.
+    command: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21557-ac1-baseline-tests
+    description: test_baseline_shrinks_to_the_files_the_ticket_names and test_this_repositorys_source_is_clean_against_the_baseline
+      fail at the merge base and pass at the head; the whole file passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q -o addopts=''
+          -k 'baseline_shrinks_to_the_files_the_ticket_names or repositorys_source_is_clean_against_the_baseline'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_protocol_binding.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21557-ac2-baseline-count
+    description: The baseline holds 10 entries, each naming an existing file, none the pre-move path.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: command
+        check_value: test "$(grep -c ' 1$' .onex_ratchets/protocol_binding_baseline.txt)" -eq 10 && !
+          grep -q handler_ci_inheritance_cli .onex_ratchets/protocol_binding_baseline.txt && grep ' 1$'
+          .onex_ratchets/protocol_binding_baseline.txt | cut -d' ' -f1 | xargs -n1 test -e
+        cwd: ${OMNI_HOME}/omnibase_core
