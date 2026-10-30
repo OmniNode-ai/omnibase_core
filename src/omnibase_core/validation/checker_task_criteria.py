@@ -24,13 +24,21 @@ from omnibase_core.models.task_criteria.model_task_criteria_rules import (
     ModelTaskCriteriaRules,
 )
 
-__all__ = ["check_task_criteria"]
+__all__ = [
+    "block_criteria",
+    "check_task_criteria",
+    "criterion_has_falsifier",
+    "task_blocks",
+]
 
 
-def _blocks(
-    text: str, heading: re.Pattern[str], fallback: str
+def task_blocks(
+    text: str, source_name: str, rules: ModelTaskCriteriaRules
 ) -> list[tuple[str, str]]:
     """Split the text into (task id, block text); a text without headings is one task."""
+    heading = rules.row("missing_configuration_criterion").pattern(
+        "task_heading_pattern"
+    )
     lines = text.splitlines()
     starts = [
         (index, match.group(1) if match.groups() else match.group(0))
@@ -38,7 +46,7 @@ def _blocks(
         if (match := heading.search(line))
     ]
     if not starts:
-        return [(fallback, text)]
+        return [(source_name, text)]
     ends = [index for index, _ in starts[1:]] + [len(lines)]
     return [
         (task, "\n".join(lines[begin:end]))
@@ -46,8 +54,11 @@ def _blocks(
     ]
 
 
-def _criteria(block: str, criterion: re.Pattern[str]) -> list[str]:
+def block_criteria(block: str, rules: ModelTaskCriteriaRules) -> list[str]:
     """Criterion bullets of a block, each with its indented continuation lines."""
+    criterion = rules.row("missing_configuration_criterion").pattern(
+        "criterion_pattern"
+    )
     found: list[str] = []
     open_item = False
     for line in block.splitlines():
@@ -59,6 +70,18 @@ def _criteria(block: str, criterion: re.Pattern[str]) -> list[str]:
         else:
             open_item = False
     return found
+
+
+def criterion_has_falsifier(criterion: str, rules: ModelTaskCriteriaRules) -> bool:
+    """Whether a criterion names a falsifier action and an observable result."""
+    row = rules.row("criterion_without_falsifier")
+    match = row.pattern("falsifier_pattern").search(criterion)
+    said = match.group(1) if match and match.groups() else ""
+    return bool(
+        said
+        and row.pattern("action_pattern").search(said)
+        and row.pattern("observable_pattern").search(said)
+    )
 
 
 def _rule_block(text: str, start: str, end: str, newline: str = "") -> str | None:
@@ -99,13 +122,9 @@ def check_task_criteria(
         return row.enabled and row.judges(request.source_name)
 
     config_row = rules.row("missing_configuration_criterion")
-    blocks = _blocks(
-        request.text,
-        config_row.pattern("task_heading_pattern"),
-        request.source_name,
-    )
+    blocks = task_blocks(request.text, request.source_name, rules)
     for task, block in blocks:
-        criteria = _criteria(block, config_row.pattern("criterion_pattern"))
+        criteria = block_criteria(block, rules)
         if not any(
             config_row.pattern("configuration_pattern").search(c) for c in criteria
         ):
@@ -122,13 +141,7 @@ def check_task_criteria(
 
         fal = rules.row("criterion_without_falsifier")
         for criterion in criteria:
-            match = fal.pattern("falsifier_pattern").search(criterion)
-            said = match.group(1) if match and match.groups() else ""
-            if not (
-                said
-                and fal.pattern("action_pattern").search(said)
-                and fal.pattern("observable_pattern").search(said)
-            ):
+            if not criterion_has_falsifier(criterion, rules):
                 add("criterion_without_falsifier", task, criterion=criterion[:80])
 
         overlay = rules.row("missing_two_overlay_falsifier")

@@ -1,0 +1,29 @@
+192.0.2.42	host
+localhost	host
+worker.local	host
+worker.lan	host
+worker.internal:9092	host,port
+port: 9092	port
+onex.cmd.example.v1	topic
+onex.evt.example.v1	topic
+onex.dlq.example.v1	topic
+onex.snapshot.example.v1	topic
+claude-fixture-0	model
+gpt-0	model
+gemini_fixture_0	model
+qwen_fixture_0	model
+glm_fixture_0	model
+llama_fixture_0	model
+mistral_fixture_0	model
+deepseek_fixture_v0	model
+deepseek_fixture_r0	model
+timeout 30s	timeout
+timeout=12	timeout
+https://example.com/check	url
+/Users/example/check	path
+/Volumes/example/check	path
+/home/example/check	path
+/opt/example/check	path
+/etc/example/check	path
+/var/example/check	path
+/tmp/example/check	path

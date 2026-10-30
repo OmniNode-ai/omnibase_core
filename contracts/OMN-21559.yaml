@@ -1,0 +1,121 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21559
+title: Build the plan_invariant checker
+summary: Pure plan-invariant checker and generic file validator using the committed K12 predicate. All
+  plan syntax and literal kinds are contract rule data. Hosted tests use a recording bus for the Redpanda
+  overlay; the opt-in lab test exercises a live broker.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21559-plan-invariant-checker
+    statement: Refuse tasks with no falsifiable criterion, tasks naming runtime literals, and invariants
+      with no enforcing task.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: Planted plan refused naming each by rule_id, clean plan yields zero.'
+      - id: AC2
+        statement: 'AC2: Every rule severity: error, no warning-only mode, the CLI exits non-zero on the
+          planted fixtures.'
+      - id: AC3
+        statement: 'AC3: Literal kinds and their patterns are rule data; an eighth kind needs no code
+          change.'
+      - id: AC4
+        statement: 'AC4: Every pattern, name list, threshold and remediation text is a parameters entry;
+          K10 rule_table_in_checker reports zero on the checker module (ValidatorCheckerRuleData); a table-driven
+          test mutates every parameters key; an invalid contract fails to load.'
+      - id: AC5
+        statement: 'AC5: The checker is pure; the runtime resolves node_validation_report_write_effect
+          and the bus from the container (get_service); K1 call_site_construction reports zero on the
+          runtime module.'
+      - id: AC6
+        statement: 'AC6: No host, port, topic, model name, timeout or URL in the changed production source.'
+      - id: AC7
+        statement: 'AC7: In-memory and broker overlays on one commit give the same golden report and one
+          ModelValidatorRunEvent each.'
+evidence_requirements:
+  - kind: tests
+    description: Rule fixtures, all rule parameters, fail-closed contracts, purity, predicate reuse, container
+      resolution and golden reports on both overlays.
+    command: uv run pytest tests/unit/validation/test_checker_plan_invariant.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21559-ac1-planted-plan
+    description: Planted plan refused naming each by rule_id, clean plan yields zero.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_plan_invariant.py -q -o addopts=''
+          -k "planted_plan or violation_fixture or clean_fixture"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21559-ac2-severity
+    description: 'Every rule severity: error, no warning-only mode, the CLI exits non-zero on the planted
+      fixtures.'
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_plan_invariant.py -q -o addopts=''
+          -k "severity"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21559-ac3-literal-kinds
+    description: Literal kinds and their patterns are rule data; an eighth kind needs no code change.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_plan_invariant.py -q -o addopts=''
+          -k "kinds"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21559-ac4-configuration
+    description: Every pattern, name list, threshold and remediation text is a parameters entry; K10 rule_table_in_checker
+      reports zero on the checker module (ValidatorCheckerRuleData); a table-driven test mutates every
+      parameters key; an invalid contract fails to load.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_plan_invariant.py -q -o addopts=''
+          -k "every_parameter or invalid_contracts or disabled or production_source_has_no_runtime_literals"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21559-ac5-declared-injected
+    description: The checker is pure; the runtime resolves node_validation_report_write_effect and the
+      bus from the container (get_service); K1 call_site_construction reports zero on the runtime module.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_plan_invariant.py -q -o addopts=''
+          -k "runtime_resolves or reads_no_file or pure or calls_the_k12_predicate"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21559-ac6-no-literal
+    description: No host, port, topic, model name, timeout or URL in the changed production source.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_plan_invariant.py -q -o addopts=''
+          -k "production_source_has_no_runtime_literals"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21559-ac7-overlay-reports
+    description: In-memory and broker overlays on one commit give the same golden report and one ModelValidatorRunEvent
+      each.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_plan_invariant_runtime_overlays.py -q -o
+          addopts='' -k "in_memory_run or redpanda_run"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
