@@ -1,0 +1,52 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21570
+title: "Hosted source-comparison probes in ticket contracts name files that exist in the tree"
+summary: Hosted source comparisons follow moved implementations and pin their published bytes at immutable
+  commits. A live-tree check refuses any ticket contract probe that compares a file that is gone.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21570-source-probes-name-existing-files
+    statement: Hosted source-comparison probes in ticket contracts must name existing files and preserve
+      strict comparisons against immutable published implementations when code moves.
+    acceptance:
+      - id: AC1
+        statement: "Every hosted source comparison in a ticket contract compares a file that exists in
+          the tree, so a handler move cannot leave a probe pointing at a gone file -- falsifier: uv run
+          pytest tests/ci/test_contract_source_probes_exist_omn21570.py -q -o addopts='' -k live_tree"
+      - id: AC2
+        statement: "The OMN-17427 hosted CI-inheritance and repository-jobs probes pin the moved files
+          at immutable commits and keep their strict curl and cmp commands -- falsifier: uv run pytest
+          tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''"
+evidence_requirements:
+  - kind: "tests"
+    description: "The live-tree source existence check and OMN-17427 immutable source comparisons pass."
+    command: "uv run pytest tests/ci/test_contract_source_probes_exist_omn21570.py tests/ci/test_hosted_ci_evidence_sources_omn17427.py
+      -q -o addopts=''"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21570-ac1-live-tree
+    description: Every ticket contract source comparison names a file that exists in the checked-out tree.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_contract_source_probes_exist_omn21570.py -q -o addopts=''
+          -k live_tree
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21570-ac2-17427-pins
+    description: The OMN-17427 hosted probes pin the moved source files at immutable commits and keep
+      their strict curl and cmp commands.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_hosted_ci_evidence_sources_omn17427.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

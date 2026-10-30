@@ -224,13 +224,13 @@ dod_evidence:
     checks:
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/142f76653ca70600f1ba2ea7011a276cd7900105/src/omnibase_core/handlers/handler_dependency_direction.py
-          | cmp - src/omnibase_core/handlers/handler_dependency_direction.py'
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/04fca965946ab651513af256b8f84cdecec4a2ab/src/omnibase_core/nodes/node_dependency_direction_check_effect/handler_dependency_direction.py
+          | cmp - src/omnibase_core/nodes/node_dependency_direction_check_effect/handler_dependency_direction.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/142f76653ca70600f1ba2ea7011a276cd7900105/src/omnibase_core/handlers/handler_dependency_direction_rules.py
-          | cmp - src/omnibase_core/handlers/handler_dependency_direction_rules.py'
+          bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 30 https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/04fca965946ab651513af256b8f84cdecec4a2ab/src/omnibase_core/nodes/node_dependency_direction_check_effect/matcher_dependency_direction.py
+          | cmp - src/omnibase_core/nodes/node_dependency_direction_check_effect/matcher_dependency_direction.py'
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run check-dependency-direction --repo omnibase_core
@@ -306,7 +306,8 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: command
-        check_value: uv run check-public-runner-placement --repo omnibase_core
+        check_value: bash -c 'uv run python -m omnibase_core.validation.validator_public_runner_placement
+          --repo omnibase_core .github/workflows/*.yml'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC8
