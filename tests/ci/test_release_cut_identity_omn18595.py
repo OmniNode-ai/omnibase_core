@@ -126,3 +126,18 @@ def test_release_changelog_retains_version_0_47_55_in_root_readme() -> None:
         "- feat: canonical file shape refuses TypeScript outside its locations and shell scripts everywhere (#2088)"
         in readme
     )
+
+
+def test_release_changelog_retains_version_0_47_58_in_root_readme() -> None:
+    """Keep the 0.47.58 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.58 (2026-10-29)" in readme
+    assert "### Included Since v0.47.57" in readme
+    assert (
+        "- feat: the FSM executor evaluates every operator the condition model accepts (#2103)"
+        in readme
+    )
+    assert (
+        "- T4.1a: hardcoded_model_config families T (tier aliases) and N (engine names) (#2121)"
+        in readme
+    )
