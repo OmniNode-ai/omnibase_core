@@ -197,3 +197,15 @@ dod_evidence:
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_checker_protocol_binding.py
           -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21533-baseline-names-live-files
+    description: Every baseline entry names a file the checkout holds, so a move into a node cannot strand
+      a line.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_protocol_binding_baseline_names_live_files.py
+          -q --no-cov -n 0 -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
