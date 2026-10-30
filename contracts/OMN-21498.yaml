@@ -136,3 +136,17 @@ dod_evidence:
           bash -o pipefail -c 'curl --fail --silent --show-error --location --max-time 60 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/handlers/handler_validator_run.py" |
             grep -F "writer = container.get_service(NodeValidationReportWriteEffect)" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21498-repo-evidence-caller-pin
+    description: The repo-evidence caller pins a dev-merge tag of receipt-gate.yml that carries the merged-fix
+      parent-control fallback, so a Binds-Merged-Fix control whose revert conflicts at the merge base
+      runs at the fix's parent.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_s6_caller_occ_disabled_omn20969.py -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: grep -F "receipt-gate.yml@dev-20261030023816-fcdcc5e88d4a" .github/workflows/call-repo-evidence-gate.yml
+        cwd: ${OMNI_HOME}/omnibase_core
