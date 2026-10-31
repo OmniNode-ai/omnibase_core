@@ -50,20 +50,23 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
   - id: dod-omn21648-ac2-refusal-unchanged
-    description: The exit status and the finding lines of a refusal match a run that lets the suite continue.
+    description: A refusal stops later hooks, and its exit status and finding lines match a run that lets
+      the suite continue. Both behaviors must hold together; refusal equivalence alone already held at
+      the merge base.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
-          -q --no-cov -n 0 -k refusal_result_unchanged
+          -q --no-cov -n 0 -k 'refusal_stops_later_hooks or refusal_result_unchanged'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
   - id: dod-omn21648-ac3-admitted-change-runs-hooks
-    description: A change the check admits still runs the hooks behind it.
+    description: A refusal stops later hooks while a change the check admits still runs them. Both behaviors
+      must hold together; admitted changes already ran later hooks at the merge base.
     source: manual
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
-          -q --no-cov -n 0 -k admitted_change_runs_later_hooks
+          -q --no-cov -n 0 -k 'refusal_stops_later_hooks or admitted_change_runs_later_hooks'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
