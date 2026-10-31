@@ -1,0 +1,69 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21777
+title: 'omnibase_core contracts_and_di literal_topic burn-down, slice rf1500-c1'
+summary: 'Thirty-two literal_topic findings in omnibase_core src leave the Python source: 32 TopicBase
+  members of topics.py are read from the packaged topic_base_names.yaml. Wire values are unchanged. No
+  baseline entry, suppression or constants module is added.'
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21777-literal-topic-slice
+    statement: The topics of the slice are declared in packaged YAML that the modules read, and the modules
+      hold no literal topic for the contracts_and_di checker to refuse.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the contracts_and_di count for literal_topic over the slice paths drops to zero
+          and the repo total drops by the slice size, with no baseline entry or suppression added -- falsifier:
+          onex run of runtime_validator_run with the contracts_and_di reference over omnibase_core src
+          before and after, counts compared per rule'
+      - id: AC2
+        statement: 'AC2: every topic comes from the owning node contract or overlay and is injected, none
+          hard-coded in the touched code -- falsifier: uv run pytest tests/unit -q over the touched modules
+          plus the checker re-run on the slice paths'
+      - id: AC3
+        statement: 'AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
+          the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
+          lab-run at the PR head, receipt path in the PR body'
+evidence_requirements:
+  - kind: tests
+    description: The slice contract tests pass.
+    command: uv run pytest tests/unit/constants/test_literal_topic_slice_omn21777.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21777-ac1-checker-count
+    description: The 32 TopicBase members equal their packaged YAML entries, topics.py draws no literal_topic
+      finding for the slice values, and the wire values are unchanged.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/constants/test_literal_topic_slice_omn21777.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21777-ac2-topics-from-contracts
+    description: The topic registry tests of the constants layer and of topics.py still pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/constants tests/unit/test_topics.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21777-ac3-lab-proof
+    description: The unit tests of the touched modules pass at the PR head; the lab receipt is in the
+      PR body.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/constants/test_literal_topic_slice_omn21777.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
