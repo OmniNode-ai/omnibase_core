@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Synthetic topics the shared event_bus_substrate contract tests publish and
+# subscribe to (OMN-15789). Read by topic_constants.py; Python code holds no
+# topic literal (OMN-21623).
+topics:
+  seam_test: onex.evt.omnibase-infra.event-bus-substrate-seam-test.v1
+  fidelity_join_leave: onex.evt.omnibase-infra.fidelity-join-leave.v1
+  fidelity_earliest: onex.evt.omnibase-infra.fidelity-earliest.v1
+  fidelity_latest: onex.evt.omnibase-infra.fidelity-latest.v1
+  fidelity_rejoin: onex.evt.omnibase-infra.fidelity-rejoin.v1
+  fidelity_rebalance: onex.evt.omnibase-infra.fidelity-rebalance.v1

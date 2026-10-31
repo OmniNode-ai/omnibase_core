@@ -12,7 +12,19 @@ All constants follow ONEX naming convention: module-level UPPER_SNAKE_CASE.
 
 # env-var-ok: constant definitions for event types, not environment variables
 
+from pathlib import Path
+
+from pydantic import TypeAdapter
+from ruamel.yaml import YAML
+
 from omnibase_core.types.typed_dict_event_type import TypedDictEventType
+
+# The topics are declared in the packaged contract next to this module; the
+# foundation layer may not import a model, so the mapping is validated here.
+with (Path(__file__).parent / "event_topics.yaml").open(encoding="utf-8") as _contract:
+    _TOPICS = TypeAdapter(dict[str, str]).validate_python(
+        YAML(typ="safe").load(_contract)["topics"]
+    )
 
 # Tool-related events
 TOOL_INVOCATION = "tool_invocation"
@@ -54,70 +66,41 @@ TOPIC_NODE_HEARTBEAT_EVENT = "onex.evt.node-heartbeat.v1"
 
 # Workflow automation event topics (OMN-2655, OMN-2813)
 # Normalized to 5-segment format: onex.{kind}.{producer}.{event}.v{n}
-TOPIC_GITHUB_PR_STATUS_EVENT = "onex.evt.platform.github-pr-status.v1"
-TOPIC_GIT_HOOK_EVENT = "onex.evt.platform.git-hook.v1"
-TOPIC_LINEAR_SNAPSHOT_EVENT = "onex.evt.platform.linear-snapshot.v1"
-
-# CLI run-node command topics (used by ``onex run-node`` CLI for ad-hoc node dispatch)
-# These are informal topics used only by the CLI tool for direct node invocation.
-# Production node communication uses contract-defined topics from contract.yaml.
-TOPIC_CLI_RUN_NODE_CMD = "onex.cmd.platform.run-node.v1"
-TOPIC_CLI_RUN_NODE_RESPONSE = "onex.evt.platform.run-node-response.v1"
+TOPIC_GITHUB_PR_STATUS_EVENT = _TOPICS["github_pr_status_event"]
+TOPIC_GIT_HOOK_EVENT = _TOPICS["git_hook_event"]
+TOPIC_LINEAR_SNAPSHOT_EVENT = _TOPICS["linear_snapshot_event"]
 
 # Omniintelligence event topics
-TOPIC_EPISODE_BOUNDARY = "onex.evt.omniintelligence.episode-boundary.v1"
+TOPIC_EPISODE_BOUNDARY = _TOPICS["episode_boundary"]
 
 # Validation event topics
-TOPIC_VALIDATION_RUN_COMPLETED_EVENT = "onex.evt.validation.cross-repo-run-completed.v1"
-TOPIC_VALIDATION_RUN_STARTED_EVENT = "onex.evt.validation.cross-repo-run-started.v1"
-TOPIC_VALIDATION_VIOLATIONS_BATCH_EVENT = (
-    "onex.evt.validation.cross-repo-violations-batch.v1"
-)
-
-# Local-paths COMPUTE validator topics (OMN-13293). The two-transport runner is the
-# producer of the command and consumer of the result; the COMPUTE handler is the
-# consumer of the command and producer of the result.
-TOPIC_VALIDATION_LOCAL_PATH_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.local-path-scan-requested.v1"
-)
-TOPIC_VALIDATION_LOCAL_PATH_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.local-path-scan-completed.v1"
-)
-
-# Private-IP COMPUTE validator topics (OMN-13294, G2). Same two-transport seam as
-# the local-paths canary: the runner is the producer of the command and consumer
-# of the result; the COMPUTE handler is the consumer of the command and producer
-# of the result.
-TOPIC_VALIDATION_PRIVATE_IP_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.private-ip-scan-requested.v1"
-)
-TOPIC_VALIDATION_PRIVATE_IP_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.private-ip-scan-completed.v1"
-)
+TOPIC_VALIDATION_RUN_COMPLETED_EVENT = _TOPICS["validation_run_completed_event"]
+TOPIC_VALIDATION_RUN_STARTED_EVENT = _TOPICS["validation_run_started_event"]
+TOPIC_VALIDATION_VIOLATIONS_BATCH_EVENT = _TOPICS["validation_violations_batch_event"]
 
 # No-faked-boundary COMPUTE validator topics (OMN-13497). Same two-transport seam
 # as the private-IP / local-paths validators: the runner is the producer of the
 # command and consumer of the result; the COMPUTE handler is the consumer of the
 # command and producer of the result. The validator bans hand-written fakes /
 # stubs of the platform's own inference / routing / dispatch boundary.
-TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.no-faked-boundary-scan-requested.v1"
-)
-TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.no-faked-boundary-scan-completed.v1"
-)
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_REQUESTED_CMD = _TOPICS[
+    "validation_no_faked_boundary_scan_requested_cmd"
+]
+TOPIC_VALIDATION_NO_FAKED_BOUNDARY_SCAN_COMPLETED_EVENT = _TOPICS[
+    "validation_no_faked_boundary_scan_completed_event"
+]
 
 # Unfinished-work-marker COMPUTE validator topics (OMN-13480, G2 SEA-dogfood) —  # onex-allow-todo-marker OMN-13480 names the marker tokens as the validator subject
 # the marker tokens themselves are the validator's subject, not unfinished work.
 # Same two-transport seam as the local-paths / private-IP canaries:
 # the runner is the producer of the command and consumer of the result; the
 # COMPUTE handler is the consumer of the command and producer of the result.
-TOPIC_VALIDATION_TODO_MARKER_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.todo-marker-scan-requested.v1"
-)
-TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.todo-marker-scan-completed.v1"
-)
+TOPIC_VALIDATION_TODO_MARKER_SCAN_REQUESTED_CMD = _TOPICS[
+    "validation_todo_marker_scan_requested_cmd"
+]
+TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT = _TOPICS[
+    "validation_todo_marker_scan_completed_event"
+]
 
 # Localhost-URL COMPUTE validator topics (OMN-13480, G2 residual of OMN-13294).
 # Same two-transport seam as the local-paths / private-IP / todo-marker canaries:
@@ -126,12 +109,12 @@ TOPIC_VALIDATION_TODO_MARKER_SCAN_COMPLETED_EVENT = (
 # validator blocks hardcoded http(s)://localhost / http(s)://127.0.0.1 URL literals
 # (the loopback endpoints url-authority's public-https-literal rule deliberately
 # excludes).
-TOPIC_VALIDATION_LOCALHOST_URL_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.localhost-url-scan-requested.v1"
-)
-TOPIC_VALIDATION_LOCALHOST_URL_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.localhost-url-scan-completed.v1"
-)
+TOPIC_VALIDATION_LOCALHOST_URL_SCAN_REQUESTED_CMD = _TOPICS[
+    "validation_localhost_url_scan_requested_cmd"
+]
+TOPIC_VALIDATION_LOCALHOST_URL_SCAN_COMPLETED_EVENT = _TOPICS[
+    "validation_localhost_url_scan_completed_event"
+]
 
 # Sibling-pin-hygiene COMPUTE validator topics (OMN-13509). Same two-transport
 # seam as the private-IP / no-faked-boundary / todo-marker validators: the runner
@@ -139,29 +122,12 @@ TOPIC_VALIDATION_LOCALHOST_URL_SCAN_COMPLETED_EVENT = (
 # is the consumer of the command and producer of the result. The validator blocks
 # any sibling dependency pin (omnibase-core/spi/compat git rev or branch=) whose
 # pinned commit is NOT an ancestor of that sibling's dev HEAD.
-TOPIC_VALIDATION_PIN_HYGIENE_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.pin-hygiene-scan-requested.v1"
-)
-TOPIC_VALIDATION_PIN_HYGIENE_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.pin-hygiene-scan-completed.v1"
-)
-
-# Hardcoded-topic-string COMPUTE validator topics (OMN-13294, G2 SEA-dogfood) —
-# this registry IS the canonical source of truth for onex.* topic literals, so it
-# carries the file-level suppression marker for its own validator below:
-# onex-allow-file-topic-literal OMN-13294 (this module declares topic literals as
-# its subject; they are the SOT, not contract drift).
-# Same two-transport seam as the private-IP / todo-marker / pin-hygiene validators:
-# the runner is the producer of the command and consumer of the result; the
-# COMPUTE handler is the consumer of the command and producer of the result. The
-# validator blocks any quoted onex.<a>.<b>.<c> topic literal pasted into handler
-# source instead of being declared in contract.yaml and resolved through it.
-TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.hardcoded-topic-scan-requested.v1"
-)
-TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.hardcoded-topic-scan-completed.v1"
-)
+TOPIC_VALIDATION_PIN_HYGIENE_SCAN_REQUESTED_CMD = _TOPICS[
+    "validation_pin_hygiene_scan_requested_cmd"
+]
+TOPIC_VALIDATION_PIN_HYGIENE_SCAN_COMPLETED_EVENT = _TOPICS[
+    "validation_pin_hygiene_scan_completed_event"
+]
 
 # Doc-content-scan COMPUTE validator topics (OMN-13569, G2). Same two-transport
 # seam as the private-IP / hardcoded-topic validators: the runner is the producer
@@ -170,13 +136,15 @@ TOPIC_VALIDATION_HARDCODED_TOPIC_SCAN_COMPLETED_EVENT = (
 # traces (LAN IP literals, .201/.200 host shorthand, personal /Users|/home paths,
 # ssh user@host lines, personal e-mail addresses) and Linear ticket references
 # (OMN-<digits>) in documentation files (*.md / .mdx / .rst / .txt / .adoc).
-TOPIC_VALIDATION_DOC_CONTENT_SCAN_REQUESTED_CMD = (
-    "onex.cmd.validation.doc-content-scan-requested.v1"
-)
-TOPIC_VALIDATION_DOC_CONTENT_SCAN_COMPLETED_EVENT = (
-    "onex.evt.validation.doc-content-scan-completed.v1"
-)
+TOPIC_VALIDATION_DOC_CONTENT_SCAN_REQUESTED_CMD = _TOPICS[
+    "validation_doc_content_scan_requested_cmd"
+]
+TOPIC_VALIDATION_DOC_CONTENT_SCAN_COMPLETED_EVENT = _TOPICS[
+    "validation_doc_content_scan_completed_event"
+]
 
+# onex-allow-file-topic-literal OMN-13294 (this module declares topic literals as its
+# subject; the event type alias strings below are the SOT, not contract drift).
 # Runtime event type alias strings used in legacy payload migration (OMN-8635)
 # These are NOT Kafka topic names — they are legacy event-type identifiers used as
 # lookup keys to map wire-format strings to typed payload classes.
