@@ -8,10 +8,17 @@ from __future__ import annotations
 import argparse
 import sys
 import tomllib
+from functools import cache
 from pathlib import Path
 
 from omnibase_core.enums.enum_ignore_pattern_source import EnumTraversalMode
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
     ModelSourceFileGatherInput,
@@ -44,6 +51,7 @@ from omnibase_core.nodes.node_test_root_collection_check_compute.matcher_test_ro
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
 PASS_MESSAGE = (
     "OK: every tests/ directory is reachable by a wired pytest invocation, the "
@@ -53,17 +61,46 @@ PASS_MESSAGE = (
 FAIL_MESSAGE = "FAIL: test-collection defect(s) detected (OMN-15378/OMN-15410 class):"
 
 
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeSourceFileGatherEffect,
+        NodeTestRootCollectionCheckCompute,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
+
+
 def _read_paths(
     root: Path, paths: list[Path]
 ) -> tuple[list[ModelSourceFile], list[str]]:
     """Read precisely these configuration dependencies through the EFFECT."""
     if not paths:
         return [], []
-    output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(
-            root=str(root),
-            explicit_paths=[str(path) for path in paths],
-            include_patterns=["*"],
+    output = (
+        _container()
+        .get_service(NodeSourceFileGatherEffect)
+        .handle(
+            ModelSourceFileGatherInput(
+                root=str(root),
+                explicit_paths=[str(path) for path in paths],
+                include_patterns=["*"],
+            )
         )
     )
     files = [
@@ -95,7 +132,7 @@ def gather_request(
     effective_config = (
         config if config is not None else ModelTestRootCollectionCheckConfig()
     )
-    gather = NodeSourceFileGatherEffect()
+    gather = _container().get_service(NodeSourceFileGatherEffect)
     if filenames:
         paths = [Path(name).resolve() for name in filenames]
         files, errors = _read_paths(root, paths)
@@ -175,7 +212,7 @@ def gather_request(
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -197,11 +234,15 @@ def main(argv: list[str] | None = None) -> int:
     runtime_errors: list[str] = []
     if parsed.config is not None:
         config_path = Path(parsed.config).resolve()
-        gathered = NodeSourceFileGatherEffect().handle(
-            ModelSourceFileGatherInput(
-                root=str(config_path.parent),
-                explicit_paths=[str(config_path)],
-                include_patterns=["*"],
+        gathered = (
+            _container()
+            .get_service(NodeSourceFileGatherEffect)
+            .handle(
+                ModelSourceFileGatherInput(
+                    root=str(config_path.parent),
+                    explicit_paths=[str(config_path)],
+                    include_patterns=["*"],
+                )
             )
         )
         runtime_errors.extend(
@@ -225,7 +266,9 @@ def main(argv: list[str] | None = None) -> int:
             VALIDATOR_ID, tuple(runtime_errors)
         )
     else:
-        report = NodeTestRootCollectionCheckCompute().handle(request)
+        report = (
+            _container().get_service(NodeTestRootCollectionCheckCompute).handle(request)
+        )
     _write_report(parsed.report_json, report)
     if report.overall_status == "PASS":
         sys.stdout.write(PASS_MESSAGE + "\n")
