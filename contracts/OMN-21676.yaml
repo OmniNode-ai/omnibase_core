@@ -11,9 +11,8 @@ summary: The receipt-gate reusable accepts verifier-tag, an omnimarket dev-merge
   as the migration fallback, used when the tag is empty. Operator ruling 2026-10-31, extending the ruling
   of 2026-10-29T01:50:26Z, we iterate with tags, not with releases.
 is_seam_ticket: false
-interface_change: true
-interfaces_touched:
-  - receipt-gate.yml workflow_call inputs
+interface_change: false
+interfaces_touched: []
 requirements:
   - id: req-omn21676-verifier-tag-input
     statement: The receipt gate must accept an omnimarket dev-merge tag as the verifier source, keep the
