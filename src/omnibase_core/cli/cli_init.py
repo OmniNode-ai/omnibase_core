@@ -154,13 +154,12 @@ def init_command(
     force: bool,
     onex_home: Path | None,
 ) -> None:
-    """Initialize a new ONEX project or bootstrap user configuration.
+    """Scaffold a new ONEX project directory, or write only the user config.
 
-    Without flags: scaffolds a new ONEX-enabled project directory.
+    First time on this machine? Run onex setup instead.
 
     With --user-config: creates ~/.onex/config.yaml with credential
-    placeholders for local-only (Mode A) operation. Does not overwrite
-    an existing config unless --force is given.
+    placeholders for local-only (Mode A) operation; --force overwrites.
 
     \b
     Examples:

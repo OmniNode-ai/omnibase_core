@@ -1,0 +1,38 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21311
+title: "Onboarding runs from the ONEX CLI: one onex setup replaces the install.sh walk"
+summary: Core half of AC5. The help of onex init, bootstrap and install states one job each, none claims
+  machine setup, each sends a new developer to onex setup, and the root help's quickstart command is onex
+  setup. The onex setup command, its step inventory and AC1 to AC4 ship from omnimarket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21311-core-help-jobs
+    statement: The core commands that overlapped with onboarding state one job each and point a new developer
+      to onex setup.
+    acceptance:
+      - id: AC5
+        statement: "AC5: the overlap with init, bootstrap and install is resolved in the help text: each
+          command states what it is for and onex setup is the documented path for a new developer -- falsifier:
+          `uv run pytest -q tests/unit/cli/test_setup_help_text.py` fails when two commands claim the
+          same job, a core command claims machine setup, or the quickstart's command is not onex setup"
+evidence_requirements:
+  - kind: tests
+    description: The rendered help of init, bootstrap and install claims one job each, none claims machine
+      setup, each names onex setup, and the root quickstart is onex setup.
+    command: uv run pytest -q tests/unit/cli/test_setup_help_text.py -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21311-ac5-core-help
+    description: The core commands' help claims one job each and the root quickstart is onex setup.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest -q tests/unit/cli/test_setup_help_text.py -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]

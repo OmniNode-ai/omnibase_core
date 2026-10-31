@@ -20,15 +20,17 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 
 @click.group("bootstrap")
 def bootstrap() -> None:  # stub-ok
-    """Bootstrap commands for ONEX standalone configuration."""
+    """Write a config piped in from stdin to ~/.onex/config.yaml.
+
+    For provisioning scripts. A new developer runs onex setup instead.
+    """
 
 
 @bootstrap.command("apply")
 def bootstrap_apply() -> None:
     """Read configuration from stdin and write to ~/.onex/config.yaml.
 
-    Reads YAML content from stdin and persists it as the ONEX configuration
-    file. Creates the ~/.onex/ directory if it does not exist.
+    Creates the ~/.onex/ directory if it does not exist.
 
     The piped content is normalized onto the current config schema before it is
     written, so piping a legacy-shaped file cannot reintroduce the schema drift
@@ -39,7 +41,6 @@ def bootstrap_apply() -> None:
     \b
     Example:
         cat config.yaml | onex bootstrap apply
-        echo "kafka:\\n  bootstrap_servers: broker:9092" | onex bootstrap apply
     """
     content = click.get_text_stream("stdin").read()
 
