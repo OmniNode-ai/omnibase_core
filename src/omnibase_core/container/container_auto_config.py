@@ -22,7 +22,11 @@ from typing import Any
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_probe_state import EnumProbeState
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.models.container.model_probe_result import ModelProbeResult
+from omnibase_core.services.trace.service_trace_in_memory_store import (
+    ServiceTraceInMemoryStore,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +60,16 @@ async def auto_configure_registry(
     await _discover_and_register_entry_points(registry)
 
 
+def local_event_bus(*args: Any, **kwargs: Any) -> EventBusInmemory:
+    """The container's default in-memory event bus; callers resolve it here, never build it."""
+    return EventBusInmemory(*args, **kwargs)
+
+
+def local_trace_store() -> ServiceTraceInMemoryStore:
+    """The container's default in-memory trace store; callers resolve it here, never build it."""
+    return ServiceTraceInMemoryStore()
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers
 # ---------------------------------------------------------------------------
@@ -70,27 +84,16 @@ async def _register_local_defaults(
     from omnibase_core.protocols.event_bus.protocol_event_bus import ProtocolEventBus
 
     # -- in-memory event bus -----------------------------------------------
-    try:
-        from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
-
-        bus = EventBusInmemory()
-        await registry.register_instance(ProtocolEventBus, bus)
-        logger.info("EventBus: in-memory (source: default, package: omnibase_core)")
-    except ImportError:
-        logger.debug("EventBusInmemory not available — skipping local bus default")
+    await registry.register_instance(ProtocolEventBus, local_event_bus())
+    logger.info("EventBus: in-memory (source: default, package: omnibase_core)")
 
     # -- disk state store --------------------------------------------------
-    try:
-        from omnibase_core.protocols.storage.protocol_state_store import (
-            ProtocolStateStore,
-        )
-        from omnibase_core.services.state.service_state_disk import ServiceStateDisk
+    from omnibase_core.protocols.storage.protocol_state_store import ProtocolStateStore
+    from omnibase_core.services.state.service_state_disk import ServiceStateDisk
 
-        store = ServiceStateDisk(state_root=state_root)
-        await registry.register_instance(ProtocolStateStore, store)
-        logger.info("StateStore: disk (source: default, package: omnibase_core)")
-    except ImportError:
-        logger.debug("ServiceStateDisk not available — skipping local state default")
+    store = ServiceStateDisk(state_root=state_root)
+    await registry.register_instance(ProtocolStateStore, store)
+    logger.info("StateStore: disk (source: default, package: omnibase_core)")
 
 
 async def _discover_and_register_entry_points(registry: Any) -> None:

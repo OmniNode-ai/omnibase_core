@@ -35,6 +35,7 @@ from omnibase_core.constants.constants_event_types import (
     TOPIC_VALIDATION_DOC_CONTENT_SCAN_COMPLETED_EVENT,
     TOPIC_VALIDATION_DOC_CONTENT_SCAN_REQUESTED_CMD,
 )
+from omnibase_core.container.container_auto_config import local_event_bus
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
@@ -179,11 +180,10 @@ async def _run(paths: list[Path], *, quiet: bool) -> int:
         ModelDocContentScanInput(content=_read_text(fp), path=str(fp))
         for fp in _iter_source_files(paths)
     ]
-    bus = EventBusInmemory()
+    bus = local_event_bus()
     await bus.start()
     try:
-        runner = DocContentScanBusRunner(bus)
-        results = await runner.scan_inputs(inputs)
+        results = await DocContentScanBusRunner(bus).scan_inputs(inputs)
     finally:
         await bus.shutdown()
 

@@ -31,6 +31,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from omnibase_core.container.container_auto_config import local_event_bus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
@@ -64,7 +65,7 @@ class InProcessHarness:
             )
         self._terminal_topics = terminal_topics
         self._max_steps = max_steps
-        self._bus = EventBusInmemory(environment=environment, group="harness")
+        self._bus = local_event_bus(environment=environment, group="harness")
         self._handlers: dict[str, list[ProtocolMessageHandler]] = defaultdict(list)
 
     @property
@@ -103,9 +104,7 @@ class InProcessHarness:
 
         # The work queue holds (topic, envelope) pairs to dispatch. We seed it with
         # the command and drain it breadth-first, re-enqueuing every emitted event.
-        queue: list[tuple[str, ModelEventEnvelope[Any]]] = [
-            (command_topic, command_envelope)
-        ]
+        queue = [(command_topic, command_envelope)]
         steps = 0
         try:
             while queue:

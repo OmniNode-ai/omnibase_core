@@ -1,0 +1,60 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21788
+title: 'omnibase_core inmemory_outside_injection burn-down, slice rf1505-c5: in-memory event bus and stores
+  come from the container'
+summary: 'Twelve modules drop thirteen hand-built in-memory event buses and stores. The container binding
+  site (container_auto_config) provides the local default bus and trace store, and every caller obtains
+  them there. The two module-load protocol self-checks that built a store are replaced by tests.'
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21788-inmemory-injection
+    statement: No in-memory implementation is constructed outside the container binding site in the touched
+      modules.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the contracts_and_di count for inmemory_outside_injection over the slice paths
+          drops from 13 to zero and the repo total drops by 13, with no baseline entry or suppression
+          added -- falsifier: runtime_validator_run with the contracts_and_di reference over omnibase_core
+          src before and after, counts compared per rule'
+      - id: AC2
+        statement: 'AC2: every in-memory implementation is obtained through the container provider and
+          none is constructed outside it in the touched code -- falsifier: uv run pytest tests/unit/container/test_local_inmemory_providers.py,
+          where each slice module draws no inmemory_outside_injection finding and a hand-built bus still
+          draws one'
+evidence_requirements:
+  - kind: tests
+    description: The provider and slice tests pass.
+    command: uv run pytest tests/unit/container/test_local_inmemory_providers.py tests/unit/container/test_auto_config.py
+      -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21788-ac1-count
+    description: Each slice module draws no inmemory_outside_injection finding, and a planted hand-built
+      bus still draws one.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/container/test_local_inmemory_providers.py -q -o addopts=''
+          -k 'inmemory_outside_injection or hand_built'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21788-ac2-providers
+    description: The container providers return the in-memory bus and trace store, and the stores conform
+      to their protocols.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/container/test_local_inmemory_providers.py tests/unit/container/test_auto_config.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
