@@ -1,0 +1,14 @@
+"""RSD-style reducer: the transitions are written again in code."""
+
+from omnibase_core.utils.util_fsm_executor import execute_transition
+
+ALLOWED = {
+    ("drafted", "build_finished"): "built",
+    ("built", "readback_healthy"): "done",
+}
+
+
+async def fold(fsm, state, trigger, context):
+    if (state, trigger) not in ALLOWED:
+        return state
+    return await execute_transition(fsm, state, trigger, context)
