@@ -7,9 +7,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import cache
 from pathlib import Path
 
 from omnibase_core.cli.cli_spdx import _discover_files, _is_eligible_file
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
     ModelSourceFileGatherInput,
@@ -33,6 +40,7 @@ from omnibase_core.nodes.node_spdx_headers_check_compute.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
 # Every eligible extension plus the two exact names cli_spdx treats as eligible.
 _INCLUDE_PATTERNS = [
@@ -45,6 +53,31 @@ _INCLUDE_PATTERNS = [
     "**/Dockerfile",
     "**/Makefile",
 ]
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeSourceFileGatherEffect,
+        NodeSpdxHeadersCheckCompute,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _select(paths: list[str]) -> list[Path]:
@@ -68,11 +101,15 @@ def _gather(paths: list[Path]) -> tuple[list[ModelSourceFile], list[str]]:
     if not paths:
         return [], []
     try:
-        output = NodeSourceFileGatherEffect().handle(
-            ModelSourceFileGatherInput(
-                root=".",
-                explicit_paths=[str(path) for path in paths],
-                include_patterns=_INCLUDE_PATTERNS,
+        output = (
+            _container()
+            .get_service(NodeSourceFileGatherEffect)
+            .handle(
+                ModelSourceFileGatherInput(
+                    root=".",
+                    explicit_paths=[str(path) for path in paths],
+                    include_patterns=_INCLUDE_PATTERNS,
+                )
             )
         )
     except (OSError, UnicodeError) as exc:
@@ -83,7 +120,7 @@ def _gather(paths: list[Path]) -> tuple[list[ModelSourceFile], list[str]]:
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -113,8 +150,10 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(f"ERROR: {error}\n")
         return 1
 
-    report = NodeSpdxHeadersCheckCompute().handle(
-        ModelSpdxHeadersCheckInput(files=files)
+    report = (
+        _container()
+        .get_service(NodeSpdxHeadersCheckCompute)
+        .handle(ModelSpdxHeadersCheckInput(files=files))
     )
     _write_report(parsed.report_json, report)
     if report.overall_status == "PASS":

@@ -14,6 +14,7 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from collections.abc import Iterable, Mapping
+from functools import cache
 from itertools import chain
 from typing import SupportsInt, cast
 from xml.parsers import expat
@@ -22,7 +23,13 @@ import yaml
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.integration_skips_check.model_integration_skip_record import (
     ModelIntegrationSkipRecord,
 )
@@ -58,6 +65,7 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 __all__ = ["main"]
@@ -66,6 +74,31 @@ __all__ = ["main"]
 _JUNIT_PASS = '<?xml version="1.0" encoding="utf-8"?>\n<testsuites><testsuite name="pytest" tests="3" skipped="1">\n <testcase classname="tests.integration.runtime.db.test_postgres_repository_runtime_integration"\n   name="test_execute_select_returns_rows_against_real_postgres" time="0.1"/>\n <testcase classname="tests.integration.handlers.test_registration_storage_postgres_uuid_cast"\n   name="test_query_registrations_casts_node_id_uuid" time="0.1"/>\n <testcase classname="tests.integration.event_bus.test_kafka_boundary"\n   name="test_kafka_roundtrip">\n   <skipped type="pytest.skip" message="Redpanda broker not reachable at localhost:9092: connection refused"/>\n </testcase>\n</testsuite></testsuites>'
 
 _JUNIT_SILENT_SKIP = '<?xml version="1.0" encoding="utf-8"?>\n<testsuites><testsuite name="pytest" tests="2" skipped="2">\n <testcase classname="tests.integration.runtime.db.test_postgres_repository_runtime_integration"\n   name="test_execute_select_returns_rows_against_real_postgres" time="0.0">\n   <skipped type="pytest.skip" message="PostgreSQL integration tests skipped: Missing OMNIBASE_INFRA_DB_URL or required POSTGRES_* fallback variables"/>\n </testcase>\n <testcase classname="tests.integration.handlers.test_registration_storage_postgres_uuid_cast"\n   name="test_query_registrations_casts_node_id_uuid" time="0.0">\n   <skipped type="pytest.skip" message="PostgreSQL not available (set OMNIBASE_INFRA_DB_URL or POSTGRES_HOST+POSTGRES_PASSWORD)"/>\n </testcase>\n</testsuite></testsuites>'
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeIntegrationSkipsCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _input_error(message: str) -> ModelOnexError:
@@ -181,12 +214,16 @@ def input_from_sources(
 def _gather(
     paths: list[str], *, root: str = ".", config: bool = False
 ) -> list[ModelSourceFile]:
-    output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(
-            root=root,
-            explicit_paths=paths,
-            include_patterns=["*"] if paths else ["**/*.xml"],
-            max_file_size=0,
+    output = (
+        _container()
+        .get_service(NodeSourceFileGatherEffect)
+        .handle(
+            ModelSourceFileGatherInput(
+                root=root,
+                explicit_paths=paths,
+                include_patterns=["*"] if paths else ["**/*.xml"],
+                max_file_size=0,
+            )
         )
     )
     for skipped in output.skipped:
@@ -215,7 +252,7 @@ def _gather(
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -256,7 +293,7 @@ def _display(
 def _selftest(
     config: ModelIntegrationSkipsCheckConfig,
 ) -> tuple[int, ModelValidationReport]:
-    handler = NodeIntegrationSkipsCheckCompute()
+    handler = _container().get_service(NodeIntegrationSkipsCheckCompute)
     good = handler.handle(
         input_from_sources(
             [ModelSourceFile(path="pass.xml", source=_JUNIT_PASS)], config
@@ -358,7 +395,7 @@ def main(argv: list[str] | None = None) -> int:
             str(exc),
             args.report_json,
         )
-    report = NodeIntegrationSkipsCheckCompute().handle(request)
+    report = _container().get_service(NodeIntegrationSkipsCheckCompute).handle(request)
     _write_report(args.report_json, report)
     return _display(request, report)
 
