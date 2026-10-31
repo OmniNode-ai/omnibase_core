@@ -510,6 +510,7 @@
       "type": "object"
     },
     "ModelDependency": {
+      "additionalProperties": false,
       "description": "ONEX dependency specification with strong typing enforcement.\n\nProvides structured dependency model for contract dependencies.\nSTRONG TYPES ONLY: Only accepts properly typed ModelDependency instances.\nNo string or dict[str, Any]fallbacks - use structured initialization only.\n\nStrict typing is enforced - no Any types allowed in implementation.",
       "properties": {
         "dependency_type": {
