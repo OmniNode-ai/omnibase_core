@@ -1,0 +1,43 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21627
+title: 'Retrospective crossing models: success contract, evidence snapshot, verdict and reason codes,
+  digest, experiment card'
+summary: The typed models of the weekly retrospective and its deterministic evaluator, one per crossing
+  of the retrospective graph, written before any handler under the contracts-and-seams-first ruling. The
+  omnimarket node contracts and scaffolds that exchange them are a sibling change in omnimarket under
+  the same ticket.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21627-models
+    statement: Every crossing of the retrospective graph has a frozen, extra-forbidding typed model, and
+      the verdict model refuses an unexplained result.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: omnibase_core holds the typed retrospective models (success contract, evidence
+          snapshot, verdict and reason codes, digest, experiment card) with unit tests -- falsifier: uv
+          run pytest tests/unit/models/retrospective -m unit in omnibase_core'
+evidence_requirements:
+  - kind: tests
+    description: Every crossing round-trips through JSON and refuses an unknown field; naive timestamps,
+      non-hex hashes, a PASS with a reason code, a non-PASS without one and a fourth candidate card are
+      refused; an unset success contract names every unresolved value.
+    command: uv run pytest tests/unit/models/retrospective -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21627-ac2-models
+    description: The ten crossing models round-trip and refuse unknown fields; each invariant has a planted
+      violation beside a control. Fails at the merge base, which has no retrospective models.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/retrospective -q --no-cov -o addopts=''
