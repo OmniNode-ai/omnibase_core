@@ -20,8 +20,8 @@ requirements:
           omnibase_core src before and after, counts compared per rule"
       - id: AC2
         statement: "AC2: every hand-built handler dependency in the slice is injected through DI from
-          the node contract and none is constructed by hand in the touched code -- falsifier: uv run
-          pytest tests/unit -q over the touched modules plus the checker re-run on the slice paths"
+          the node contract and none is constructed by hand in the touched code -- falsifier: uv run pytest
+          tests/unit -q over the touched modules plus the checker re-run on the slice paths"
       - id: AC3
         statement: "AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
           the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
