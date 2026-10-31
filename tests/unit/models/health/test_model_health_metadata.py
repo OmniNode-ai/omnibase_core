@@ -343,3 +343,75 @@ class TestModelHealthMetadataFactoryMethods:
 
         assert metadata.maintenance_mode is True
         assert metadata.escalation_enabled is True
+
+
+@pytest.mark.unit
+class TestModelHealthMetadataPresetContract:
+    """The factory presets are read from health_metadata_presets.yaml (OMN-21725)."""
+
+    _FACTORIES = {
+        "production": ModelHealthMetadata.create_production,
+        "development": ModelHealthMetadata.create_development,
+        "maintenance_mode": ModelHealthMetadata.create_maintenance_mode,
+    }
+
+    def _presets(self) -> dict[str, dict[str, object]]:
+        import yaml
+
+        from omnibase_core.models.health import model_health_metadata
+
+        path = model_health_metadata._PRESETS_FILE
+        assert path.name == "health_metadata_presets.yaml"
+        return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+    def test_presets_contract_declares_every_factory(self):
+        """The packaged contract carries one preset per factory."""
+        assert set(self._presets()) == set(self._FACTORIES)
+
+    @pytest.mark.parametrize("name", ["production", "development", "maintenance_mode"])
+    def test_factory_matches_contract(self, name: str):
+        """Each factory's fields equal its contract preset."""
+        metadata = self._FACTORIES[name]()
+        for key, value in self._presets()[name].items():
+            assert getattr(metadata, key) == value
+
+    @pytest.mark.parametrize("name", ["production", "development", "maintenance_mode"])
+    def test_check_interval_is_injectable(self, name: str):
+        """A caller binds its own interval through the factory parameter."""
+        metadata = self._FACTORIES[name](check_interval_seconds=45)
+        assert metadata.check_interval_seconds == 45
+
+
+@pytest.mark.unit
+class TestCheckerReportsNoTimeoutLiteral:
+    """The contracts_and_di checker finds no literal_timeout in the module (OMN-21725)."""
+
+    def test_module_holds_no_timeout_literal(self):
+        from pathlib import Path
+
+        from omnibase_core.models.health import model_health_metadata
+        from omnibase_core.validation.validator_contracts_and_di import (
+            ValidatorContractsAndDi,
+        )
+
+        assert model_health_metadata.__file__ is not None
+        result = ValidatorContractsAndDi().validate_file(
+            Path(model_health_metadata.__file__)
+        )
+        assert [
+            f"{i.line_number}: {i.message}"
+            for i in result.issues
+            if i.code == "literal_timeout"
+        ] == []
+
+    def test_checker_still_flags_a_planted_literal(self, tmp_path):
+        from omnibase_core.validation.validator_contracts_and_di import (
+            ValidatorContractsAndDi,
+        )
+
+        planted = tmp_path / "src" / "omnibase_core" / "planted_interval.py"
+        planted.parent.mkdir(parents=True)
+        planted.write_text("x = dict(check_interval_seconds=30)\n")
+        (tmp_path / ".git").mkdir()
+        result = ValidatorContractsAndDi().validate_file(planted)
+        assert "literal_timeout" in {i.code for i in result.issues}

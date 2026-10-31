@@ -8,7 +8,7 @@
 # an entry here becomes compliant, forcing the count down. Do not hand-add.
 #
 # scan roots: src/omnibase_core
-# count: 972
+# count: 971
 #
 # Regenerate: python -m omnibase_core.validators.pydantic_extra_forbid \
 #     --write-baseline src/omnibase_core
@@ -648,7 +648,6 @@ violations:
   - "omnibase_core.models.health.model_health_check:ModelHealthCheck"
   - "omnibase_core.models.health.model_health_check_metadata:ModelHealthCheckMetadata"
   - "omnibase_core.models.health.model_health_issue:ModelHealthIssue"
-  - "omnibase_core.models.health.model_health_metadata:ModelHealthMetadata"
   - "omnibase_core.models.health.model_health_metric:ModelHealthMetric"
   - "omnibase_core.models.health.model_health_metrics:ModelHealthMetrics"
   - "omnibase_core.models.health.model_health_status:ModelHealthStatus"

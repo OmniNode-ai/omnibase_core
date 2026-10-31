@@ -8,13 +8,27 @@ Health metadata model for storing additional health system configuration,
 environment context, and custom attributes.
 """
 
-from typing import Any
+from pathlib import Path
+from typing import Any, cast
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_duplicates
 
 from .model_health_attributes import ModelHealthAttributes
+
+_PRESETS_FILE = Path(__file__).with_name("health_metadata_presets.yaml")
+
+
+def _preset(name: str, overrides: dict[str, object]) -> dict[str, object]:
+    """One named preset of ``health_metadata_presets.yaml`` with the caller's fields bound over it."""
+    presets = load_yaml_mapping_no_duplicates(
+        _PRESETS_FILE.read_text(encoding="utf-8"), source=str(_PRESETS_FILE)
+    )
+    if "version" not in overrides:
+        overrides = {**overrides, "version": ModelSemVer(major=1, minor=0, patch=0)}
+    return {**cast(dict[str, object], presets[name]), **overrides}
 
 
 class ModelHealthMetadata(BaseModel):
@@ -24,6 +38,8 @@ class ModelHealthMetadata(BaseModel):
     This model stores additional health system metadata including
     environment context, configuration, and custom attributes.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     environment: str = Field(
         default="unknown",
@@ -118,43 +134,14 @@ class ModelHealthMetadata(BaseModel):
     @classmethod
     def create_production(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create production health metadata configuration"""
-        # Provide default version if not specified
-        if "version" not in kwargs:
-            kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
-        return cls(
-            environment="production",
-            check_interval_seconds=30,
-            auto_healing_enabled=True,
-            notification_enabled=True,
-            escalation_enabled=True,
-            **kwargs,
-        )
+        return cls.model_validate(_preset("production", kwargs))
 
     @classmethod
     def create_development(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create development health metadata configuration"""
-        # Provide default version if not specified
-        if "version" not in kwargs:
-            kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
-        return cls(
-            environment="development",
-            check_interval_seconds=60,
-            auto_healing_enabled=False,
-            notification_enabled=False,
-            escalation_enabled=False,
-            **kwargs,
-        )
+        return cls.model_validate(_preset("development", kwargs))
 
     @classmethod
     def create_maintenance_mode(cls, **kwargs: Any) -> "ModelHealthMetadata":
         """Create maintenance mode health metadata configuration"""
-        # Provide default version if not specified
-        if "version" not in kwargs:
-            kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
-        return cls(
-            maintenance_mode=True,
-            auto_healing_enabled=False,
-            notification_enabled=False,
-            check_interval_seconds=120,
-            **kwargs,
-        )
+        return cls.model_validate(_preset("maintenance_mode", kwargs))

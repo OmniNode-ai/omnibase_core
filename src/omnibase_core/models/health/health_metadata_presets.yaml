@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# OMN-21725: the ModelHealthMetadata.create_* presets. Each preset is a mapping of
+# ModelHealthMetadata fields; a caller overrides any of them by passing the field
+# to the factory, which is how a deployment binds its own check interval.
+production:
+  environment: production
+  check_interval_seconds: 30
+  auto_healing_enabled: true
+  notification_enabled: true
+  escalation_enabled: true
+development:
+  environment: development
+  check_interval_seconds: 60
+  auto_healing_enabled: false
+  notification_enabled: false
+  escalation_enabled: false
+maintenance_mode:
+  maintenance_mode: true
+  auto_healing_enabled: false
+  notification_enabled: false
+  check_interval_seconds: 120
