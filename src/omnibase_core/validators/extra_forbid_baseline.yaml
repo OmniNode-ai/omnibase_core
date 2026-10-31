@@ -8,7 +8,7 @@
 # an entry here becomes compliant, forcing the count down. Do not hand-add.
 #
 # scan roots: src/omnibase_core
-# count: 983
+# count: 982
 #
 # Regenerate: python -m omnibase_core.validators.pydantic_extra_forbid \
 #     --write-baseline src/omnibase_core
@@ -195,7 +195,6 @@ violations:
   - "omnibase_core.models.contracts.model_contract_workflow_definition:ModelContractWorkflowDefinition"
   - "omnibase_core.models.contracts.model_contract_workflow_metadata:ModelContractWorkflowMetadata"
   - "omnibase_core.models.contracts.model_contract_workflow_node:ModelContractWorkflowNode"
-  - "omnibase_core.models.contracts.model_dependency:ModelDependency"
   - "omnibase_core.models.contracts.model_effect_retry_config:ModelEffectRetryConfig"
   - "omnibase_core.models.contracts.model_event_coordination_config:ModelEventCoordinationConfig"
   - "omnibase_core.models.contracts.model_event_registry_config:ModelEventRegistryConfig"

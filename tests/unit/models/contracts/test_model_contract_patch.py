@@ -157,6 +157,21 @@ class TestModelContractPatch:
         assert len(patch.dependencies__add) == 2
 
     @pytest.mark.unit
+    def test_dependencies_add_refuses_unknown_key(
+        self, profile_ref: ModelProfileReference
+    ) -> None:
+        """A raw dependency dict with an unknown key fails instead of being dropped."""
+        with pytest.raises(ValidationError, match="extra_forbidden"):
+            ModelContractPatch.model_validate(
+                {
+                    "extends": profile_ref,
+                    "dependencies__add": [
+                        {"name": "ProtocolLogger", "envvar": "LOGGER_URL"}
+                    ],
+                }
+            )
+
+    @pytest.mark.unit
     def test_dependencies_remove(self, profile_ref: ModelProfileReference) -> None:
         """Test removing dependencies."""
         patch = ModelContractPatch(

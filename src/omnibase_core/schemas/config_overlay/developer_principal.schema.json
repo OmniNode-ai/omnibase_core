@@ -11,13 +11,23 @@
     },
     "ModelDeveloperPrincipalDeclaration": {
       "additionalProperties": false,
-      "description": "The identity of one developer machine's principal.\n\nThe row names who holds the principal and holds no grant: the grants come\nfrom the document's ``grants_source``.",
+      "description": "The identity of one developer machine's principal.\n\nThe row names who holds the principal and holds no grant: the grants come\nfrom the document's ``grants_source``. A machine row may bind grant roles by\nname; each role's grant set is declared by ``grants_source`` too, so a\nbinding selects a declared set and never types a grant.",
       "properties": {
         "device": {
           "description": "Device the principal is issued to: lower-case letters, digits and hyphens.",
           "pattern": "^[a-z0-9][a-z0-9-]*$",
           "title": "Device",
           "type": "string"
+        },
+        "grant_roles": {
+          "default": [],
+          "description": "Names of the grant roles this machine holds beyond the profile every machine receives (OMN-21622), each one a grant set ``grants_source`` declares. Only a machine row binds a role, and each role once.",
+          "items": {
+            "pattern": "^[a-z][a-z0-9-]*$",
+            "type": "string"
+          },
+          "title": "Grant Roles",
+          "type": "array"
         },
         "login": {
           "description": "Identity-provider login of the developer who holds the principal.",
