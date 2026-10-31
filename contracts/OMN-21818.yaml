@@ -1,0 +1,40 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21818
+title: A RuntimeLocal run reads its command and terminals with no consumer group on a bus that can
+summary: An armed RuntimeLocal run built a consumer group for its handler and one for each terminal, so
+  every delegated call left Empty groups on the dev broker (2,366 terminal groups and 137 handler groups
+  at 2026-10-31T18:09Z, a share of the 19,154 under which the broker segfaulted three times that day).
+  The run now reads with subscribe_ungrouped where the bus has it.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21818-runtime-local-groupless
+    statement: An armed RuntimeLocal run on a bus with subscribe_ungrouped joins no consumer group, and
+      a hundred runs leave at most one.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a hundred armed runs against the retaining broker double leave at most one consumer
+          group, and fail on the unfixed runtime -- falsifier: uv run pytest tests/unit/runtime/test_runtime_local_groups_per_call.py
+          -q'
+evidence_requirements:
+  - kind: tests
+    description: The runtime, container and runtime-protocol suites run on a lab host at the pushed head.
+    command: uv run pytest tests/unit/runtime tests/unit/container tests/unit/protocols/runtime -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21818-ac1-runtime-local-groupless
+    description: AC1 runs a hundred armed RuntimeLocal runs against the retaining broker double and asserts
+      the runs left at most one consumer group.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/runtime/test_runtime_local_groups_per_call.py -q --no-cov
+          --tb=line
+        cwd: .
