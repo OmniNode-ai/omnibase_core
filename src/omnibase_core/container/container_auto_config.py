@@ -1,85 +1,74 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Auto-configure registry with discovered backends.
-
-Priority: most-specific healthy backend wins.
-Default: local backends (in-memory bus, disk state).
-Entry point group: onex.backends
-
-Each entry point must reference a class with a ``probe()`` classmethod
-returning ``ModelProbeResult``.  Local defaults always register first;
-production backends override only when probe returns AUTHORITATIVE.
-"""
+"""Configure local defaults and selected authoritative backend overrides."""
 
 from __future__ import annotations
 
 import importlib.metadata
 import logging
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.enums.enum_probe_state import EnumProbeState
-from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.models.container.model_probe_result import ModelProbeResult
+from omnibase_core.handlers.handler_backend_discovery import HandlerBackendDiscovery
+from omnibase_core.handlers.handler_backend_override import (
+    HandlerBackendOverride,
+    LocalRegistration,
+)
+from omnibase_core.handlers.handler_backend_selection import HandlerBackendSelection
+from omnibase_core.models.container.model_auto_config_result import (
+    ModelAutoConfigResult,
+)
 
 logger = logging.getLogger(__name__)
 
-
-# ---------------------------------------------------------------------------
-# Public API
-# ---------------------------------------------------------------------------
+_LOCAL_BACKENDS = {"ProtocolEventBus": "inmemory", "ProtocolStateStore": "disk"}
 
 
 async def auto_configure_registry(
     container: Any,
     *,
     state_root: str | Path = ".onex_state",
-) -> None:
-    """Discover and register backends into *container*'s service registry.
-
-    1. Register local defaults (in-memory bus, disk state store).
-    2. Scan ``onex.backends`` entry-point group for additional backends.
-    3. For each discovered backend, call ``probe()`` and override the local
-       default **only** when probe returns AUTHORITATIVE.
-
-    Ambiguous equal-priority resolution (two AUTHORITATIVE backends for the
-    same protocol) raises ``ModelOnexError``.
-    """
-    registry = container.service_registry
-
-    # --- local defaults ---------------------------------------------------
-    await _register_local_defaults(registry, state_root=Path(state_root))
-
-    # --- entry-point discovery --------------------------------------------
-    await _discover_and_register_entry_points(registry)
-
-
-# ---------------------------------------------------------------------------
-# Internal helpers
-# ---------------------------------------------------------------------------
+    pins: Mapping[str, str] | None = None,
+) -> ModelAutoConfigResult:
+    """Validate and stage overrides, then register defaults and replacements."""
+    selected_pins = dict(pins) if pins is not None else {}
+    eps = importlib.metadata.entry_points()
+    backend_eps = eps.select(group="onex.backends") if hasattr(eps, "select") else []
+    probes, findings = HandlerBackendDiscovery().handle(backend_eps)
+    selected = HandlerBackendSelection().handle(probes, selected_pins, _LOCAL_BACKENDS)
+    handler = HandlerBackendOverride()
+    instances, stage_findings = handler.handle(selected, selected_pins, _LOCAL_BACKENDS)
+    findings.extend(stage_findings)
+    reg = container.service_registry
+    defaults = await _register_local_defaults(reg, state_root=Path(state_root))
+    overrides, registration_findings = await handler.register(
+        (reg.unregister_service, reg.register_instance), defaults, selected, instances
+    )
+    findings.extend(registration_findings)
+    return ModelAutoConfigResult(findings=tuple(findings), overrides=overrides)
 
 
 async def _register_local_defaults(
     registry: Any,
     *,
     state_root: Path,
-) -> None:
-    """Register built-in local backends (always available)."""
+) -> dict[str, LocalRegistration]:
+    """Register local defaults, retaining registration IDs and interface types."""
     from omnibase_core.protocols.event_bus.protocol_event_bus import ProtocolEventBus
 
-    # -- in-memory event bus -----------------------------------------------
+    defaults: dict[str, LocalRegistration] = {}
     try:
         from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 
         bus = EventBusInmemory()
-        await registry.register_instance(ProtocolEventBus, bus)
+        registration_id = await registry.register_instance(ProtocolEventBus, bus)
+        defaults["ProtocolEventBus"] = (registration_id, ProtocolEventBus)
         logger.info("EventBus: in-memory (source: default, package: omnibase_core)")
     except ImportError:
         logger.debug("EventBusInmemory not available — skipping local bus default")
 
-    # -- disk state store --------------------------------------------------
     try:
         from omnibase_core.protocols.storage.protocol_state_store import (
             ProtocolStateStore,
@@ -87,73 +76,10 @@ async def _register_local_defaults(
         from omnibase_core.services.state.service_state_disk import ServiceStateDisk
 
         store = ServiceStateDisk(state_root=state_root)
-        await registry.register_instance(ProtocolStateStore, store)
+        registration_id = await registry.register_instance(ProtocolStateStore, store)
+        defaults["ProtocolStateStore"] = (registration_id, ProtocolStateStore)
         logger.info("StateStore: disk (source: default, package: omnibase_core)")
     except ImportError:
         logger.debug("ServiceStateDisk not available — skipping local state default")
 
-
-async def _discover_and_register_entry_points(registry: Any) -> None:
-    """Scan ``onex.backends`` entry points and register authoritative ones."""
-    eps = importlib.metadata.entry_points()
-    backend_eps = eps.select(group="onex.backends") if hasattr(eps, "select") else []
-
-    # Collect probes keyed by protocol name
-    authoritative: dict[str, list[ModelProbeResult]] = {}
-
-    for ep in backend_eps:
-        try:
-            backend_cls = ep.load()
-        except (ImportError, AttributeError, ModuleNotFoundError):
-            logger.warning("Failed to load entry point %s", ep.name, exc_info=True)
-            continue
-
-        if not hasattr(backend_cls, "probe"):
-            logger.warning(
-                "Entry point %s (%s) has no probe() classmethod — skipping",
-                ep.name,
-                ep.value,
-            )
-            continue
-
-        try:
-            result: ModelProbeResult = backend_cls.probe()
-        except (TypeError, ValueError, AttributeError, OSError):
-            logger.warning("probe() failed for entry point %s", ep.name, exc_info=True)
-            continue
-
-        logger.info(
-            "%s: %s (source: entry_point, package: %s, state: %s)",
-            result.protocol_name,
-            result.backend_name,
-            result.package,
-            result.state.value,
-        )
-
-        if result.state == EnumProbeState.AUTHORITATIVE:
-            authoritative.setdefault(result.protocol_name, []).append(result)
-
-    # --- conflict detection -----------------------------------------------
-    for proto_name, results in authoritative.items():
-        if len(results) > 1:
-            names = ", ".join(r.backend_name for r in results)
-            msg = (
-                f"Multiple authoritative backends for {proto_name}: {names}. "
-                f"Specify --backend {proto_name.lower()}=<choice>"
-            )
-            raise ModelOnexError(
-                message=msg,
-                error_code=EnumCoreErrorCode.CONFIGURATION_ERROR,
-            )
-
-    # --- override registration (placeholder for entry-point instances) -----
-    # Actual override wiring will be added when concrete entry points exist.
-    # For now we log and move on — the local defaults remain active.
-    for proto_name, results in authoritative.items():
-        result = results[0]
-        logger.info(
-            "Override registered: %s → %s (package: %s)",
-            proto_name,
-            result.backend_name,
-            result.package,
-        )
+    return defaults

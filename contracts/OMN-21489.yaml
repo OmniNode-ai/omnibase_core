@@ -1,0 +1,156 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21489
+title: The container honours a pinned binding and registers the override
+summary: auto_configure_registry registers the authoritative backend's instance in place of the local
+  default, returns every skipped entry point as a named finding, and takes an optional pin per protocol
+  supplied by the caller.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21489-t-c3-pinned-binding
+    statement: The container registry serves the authoritative backend, or the backend a caller pins,
+      and reports what it skipped.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: With an authoritative fake backend and no pin, `get_service` returns the backend''s
+          instance -- falsifier: the pytest case, which fails on today''s code'
+      - id: AC2
+        statement: 'AC2: With a pin to the local default and an authoritative lab backend reachable, `get_service`
+          returns the local default -- falsifier: the pytest case'
+      - id: AC3
+        statement: 'AC3: A pin naming an absent or non-authoritative backend refuses naming the protocol
+          and the backend -- falsifier: two pytest cases'
+      - id: AC4
+        statement: 'AC4: A skipped entry point is returned in a findings list with its reason -- falsifier:
+          the pytest case with a backend lacking `probe()`'
+      - id: AC5
+        statement: 'AC5: Configuration: a core library carries no deployment value; the pin is an argument
+          the caller reads from its overlay -- falsifier: the tests pass the pin as data and the module
+          reads no environment variable'
+      - id: AC6
+        statement: 'AC6: Bindings: the registry is the binding mechanism; its own tests use the in-memory
+          defaults and fake backends -- falsifier: the same registrations in two orders give the same
+          resolution'
+evidence_requirements:
+  - kind: tests
+    description: The T-C3 test module and the existing auto-configuration module.
+    command: uv run --frozen pytest tests/unit/container/test_auto_config_override.py tests/unit/container/test_auto_config.py
+      -q --no-cov -n 0
+  - kind: ci
+    description: Hosted-runner run of the same files at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/container/test_auto_config_override.py tests/unit/container/test_auto_config.py
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21489-ac1-override-registered
+    description: An authoritative fake backend is served after the call, and the local default is served
+      on the same code path when no backend is discovered.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "replaces_local_default or no_entry_points or other_protocols"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21489-ac2-pin-local-default
+    description: A pin to the local default keeps it while an authoritative backend is reachable, and
+      a pin selects one of two authoritative backends.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "pin_to_local_default or pin_selects"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21489-ac3-pin-refusals
+    description: A pin naming an absent backend, a non-authoritative backend, or an unknown protocol refuses
+      naming the protocol and the backend.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "pin_naming or pin_for_unknown or pinned_uninstantiable or unless_pinned"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21489-ac4-findings
+    description: Entry points that failed to load, have no probe() or whose probe raised come back as
+      findings with a reason.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "findings or uninstantiable"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21489-ac5-no-environment
+    description: The module source names no environment accessor and the tests pass the pin as data.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "no_environment_variable"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21489-ac6-order-independent
+    description: Every permutation of the same entry points resolves to the same instances, unpinned and
+      pinned.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py -q --no-cov
+          -n 0 -k "independent_of_entry_point_order"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21489-deploy-checkout-test
+    description: Hosted-runner run of both auto-configuration test files at the checkout; needs no container
+      daemon or private runtime.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/container/test_auto_config_override.py tests/unit/container/test_auto_config.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21489-delegation-join
+    description: >-
+      Delegation runs joined to the head through their receipts and delegation_events rows. Each listed
+      run has one terminal_ok delegation_events row for its correlation id, a receipt that names the run
+      with outcome done, and a response text equal to the full message of a commit in origin/dev..HEAD
+      (d3cce0b2 drafted b5e2bb79, 95eb50ee drafted 3dc892c7, d97e5f4e drafted the message of the commit
+      that renames this contract). The code in the branch was drafted by Codex threads 01a1849b-b7f6-7df1-9429-b0923b8f46f7
+      and 01a184a0-8c44-7931-8060-df877d841632, which write no delegation_events row. Runs on the lab
+      ssh target named by ONEX_RUNTIME_SSH_HOST.
+    source: manual
+    binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]
+    checks:
+      - check_type: command
+        check_value: |
+          set -eu
+          host="${ONEX_RUNTIME_SSH_HOST:?set to the lab ssh target}"
+          lab_root=Code/omni_home/.onex_state/harness-delegate
+          local_root="${ONEX_STATE_DIR:-${OMNI_HOME:-$PWD}/.onex_state}/harness-delegate"
+          psql_lab="docker exec -i omnibase-infra-postgres psql -X -U postgres -d omnidash_analytics -tA"
+          for id in d3cce0b2-8764-4df5-8f65-396906594f9c 95eb50ee-0d70-490c-8347-dcb6b8967358 d97e5f4e-1786-4190-ae93-ab8fc5bd692b; do
+            rows=$(ssh -o BatchMode=yes "$host" "$psql_lab -c \"select count(*) from delegation_events where correlation_id = '$id' and terminal_ok\"")
+            test "$rows" = 1
+            if test -s "$local_root/$id/receipt.json"; then
+              receipt=$(cat "$local_root/$id/receipt.json")
+            else
+              receipt=$(ssh -o BatchMode=yes "$host" cat "$lab_root/$id/receipt.json")
+            fi
+            printf '%s' "$receipt" | python3 -c 'import json,sys; r=json.load(sys.stdin); assert r["run_id"]==sys.argv[1] and r["outcome"]=="done"' "$id"
+            answer=$(ssh -o BatchMode=yes "$host" "$psql_lab -c \"select response_text from delegation_events where correlation_id = '$id'\"")
+            joined=0
+            for c in $(git log --format=%H origin/dev..HEAD); do
+              if test "$(git log -1 --format=%B "$c")" = "$answer"; then joined=1; fi
+            done
+            test "$joined" = 1
+          done
+        cwd: ${OMNI_HOME}/omnibase_core
