@@ -5,11 +5,13 @@
 
 from __future__ import annotations
 
+from importlib.resources import files
 from pathlib import Path
 from types import ModuleType
 from typing import cast
 
 import pytest
+from ruamel.yaml import YAML
 
 from omnibase_core.backends.cache import backend_cache_redis
 from omnibase_core.cli import cli_gate
@@ -47,6 +49,39 @@ _TOUCHED_MODULES: tuple[ModuleType, ...] = (
     model_node_service_config,
     validator_occ_merge_eligibility,
 )
+
+
+@pytest.mark.unit
+def test_packaged_url_defaults_deployment() -> None:
+    deployed = YAML(typ="safe").load(
+        files("omnibase_core.models.configuration")
+        .joinpath("network_defaults.yaml")
+        .read_text(encoding="utf-8")
+    )
+    defaults = ModelNetworkDefaults.load()
+    url_fields = {
+        "redacted_redis_url",
+        "default_project_url_template",
+        "linear_graphql_url",
+        "unknown_entrypoint_uri",
+        "unknown_namespace_uri",
+        "sqlite_connection_url_template",
+        "mssql_connection_url_template",
+        "broadcast_route_destination",
+        "kafka_advertised_listener",
+        "file_url_prefix",
+        "example_telemetry_endpoint",
+        "container_health_check_url_template",
+        "yamlfmt_repository_url",
+    }
+    assert url_fields <= deployed.keys()
+    assert defaults.model_dump() == deployed
+    assert defaults.default_project_url("deployment-smoke") == deployed[
+        "default_project_url_template"
+    ].format(project_name="deployment-smoke")
+    assert defaults.container_health_check_url(8080, "/health") == deployed[
+        "container_health_check_url_template"
+    ].format(host=deployed["loopback_name"], port=8080, path="/health")
 
 
 @pytest.mark.unit

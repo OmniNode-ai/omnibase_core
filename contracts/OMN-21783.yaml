@@ -49,19 +49,16 @@ dod_evidence:
           -q -o addopts='' -k 'TestCheckerReportsNoUrlLiteral'
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21783-deploy-url-defaults
-    description: Deployment smoke loads the packaged YAML and verifies the typed model equals it, without
-      requiring external services.
+    description: Deployment smoke requires all thirteen migrated URL fields in the packaged YAML, verifies
+      the typed model equals it, and exercises both URL formatting methods without external services.
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC2
     checks:
       - check_type: test_passes
-        check_value: >-
-          uv run python -c "from importlib.resources import files; from ruamel.yaml import YAML; from
-          omnibase_core.models.configuration.model_network_defaults import ModelNetworkDefaults; deployed
-          = YAML(typ='safe').load(files('omnibase_core.models.configuration').joinpath('network_defaults.yaml').read_text());
-          assert ModelNetworkDefaults.load().model_dump() == deployed"
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults_urls.py::test_packaged_url_defaults_deployment
+          -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21783-ac2-contract-read
     description: Every moved URL is read from its entry in the packaged contract.
