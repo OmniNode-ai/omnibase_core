@@ -1,0 +1,72 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21648
+title: A canonical-file-shape refusal ends the pre-commit run in seconds instead of after the full hook
+  suite
+summary: The canonical-file-shape check takes seconds, but a consumer repository runs its whole hook suite
+  after the check refuses, so one refused code line in a baselined script cost a commit cycle of minutes
+  (FRICTION 2026-10-31T03:52:18Z). The canonical-file-shape hook in .pre-commit-hooks.yaml now declares
+  fail_fast, so a consumer's run stops at the refusal with the same exit status and the same finding lines,
+  and the suite runs for a change the check admits. No rule, baseline or threshold changes.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21648-refusal-ends-the-run
+    statement: A refusal by the canonical-file-shape hook ends the consumer's pre-commit run before a
+      later hook runs, the refusal itself is unchanged, and a change the check admits still runs every
+      later hook.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a refusal by the canonical-file-shape hook stops the pre-commit run before a
+          later hook runs -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
+          -k refusal_stops_later_hooks -q --no-cov -n 0 fails at the merge base"
+      - id: AC2
+        statement: "AC2: the refusal result is unchanged, the same exit status and the same finding lines
+          with and without the stop -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
+          -k refusal_result_unchanged -q --no-cov -n 0"
+      - id: AC3
+        statement: "AC3: a change the check admits still runs the later hooks -- falsifier: uv run pytest
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py -k admitted_change_runs_later_hooks
+          -q --no-cov -n 0"
+evidence_requirements:
+  - kind: tests
+    description: The refusal-stops test fails at the merge base, where the hook declares no fail_fast,
+      and all three tests pass at the head.
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21648-ac1-refusal-ends-the-run
+    description: A refusal by the canonical-file-shape hook ends the consumer's run before a later hook.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
+          -q --no-cov -n 0 -k refusal_stops_later_hooks
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21648-ac2-refusal-unchanged
+    description: A refusal stops later hooks, and its exit status and finding lines match a run that lets
+      the suite continue. Both behaviors must hold together; refusal equivalence alone already held at
+      the merge base.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
+          -q --no-cov -n 0 -k 'refusal_stops_later_hooks or refusal_result_unchanged'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21648-ac3-admitted-change-runs-hooks
+    description: A refusal stops later hooks while a change the check admits still runs them. Both behaviors
+      must hold together; admitted changes already ran later hooks at the merge base.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_hook_fail_fast.py
+          -q --no-cov -n 0 -k 'refusal_stops_later_hooks or admitted_change_runs_later_hooks'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
