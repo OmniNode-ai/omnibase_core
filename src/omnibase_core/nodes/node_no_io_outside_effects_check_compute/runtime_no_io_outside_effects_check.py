@@ -38,9 +38,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import cache
 from pathlib import Path
 from typing import Final
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.no_io_outside_effects_check.model_no_io_outside_effects_check_input import (
     ModelNoIoOutsideEffectsCheckInput,
 )
@@ -74,19 +81,49 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
 __all__ = ["main"]
 
 _DEFAULT_ROOT: Final[str] = "src"
 
 
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeNoIoOutsideEffectsCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
+
+
 def _read_node_dir(node_dir: Path) -> tuple[list[ModelSourceFile], list[str]]:
     """Gather a node package's contract.yaml + .py modules from disk."""
-    output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(
-            root=str(node_dir),
-            explicit_paths=[str(member) for member in sorted(node_dir.iterdir())],
-            include_patterns=["**/*.py", f"**/{CONTRACT_FILENAME}"],
+    output = (
+        _container()
+        .get_service(NodeSourceFileGatherEffect)
+        .handle(
+            ModelSourceFileGatherInput(
+                root=str(node_dir),
+                explicit_paths=[str(member) for member in sorted(node_dir.iterdir())],
+                include_patterns=["**/*.py", f"**/{CONTRACT_FILENAME}"],
+            )
         )
     )
     return _split_gather_output(output)
@@ -125,9 +162,13 @@ def _gather_from_root(root: str) -> tuple[list[ModelSourceFile], list[str]]:
     to the paired canonical node. Both ``**/*.py`` and ``**/contract.yaml`` are
     gathered so the COMPUTE can group modules by their node package.
     """
-    output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(
-            root=root, include_patterns=["**/*.py", f"**/{CONTRACT_FILENAME}"]
+    output = (
+        _container()
+        .get_service(NodeSourceFileGatherEffect)
+        .handle(
+            ModelSourceFileGatherInput(
+                root=root, include_patterns=["**/*.py", f"**/{CONTRACT_FILENAME}"]
+            )
         )
     )
     return _split_gather_output(output)
@@ -149,15 +190,17 @@ def _split_gather_output(
 
 def _run(files: list[ModelSourceFile]) -> ModelValidationReport:
     """Dispatch gathered (path, source) pairs to the canonical COMPUTE node."""
-    return NodeNoIoOutsideEffectsCheckCompute().handle(
-        ModelNoIoOutsideEffectsCheckInput(files=files)
+    return (
+        _container()
+        .get_service(NodeNoIoOutsideEffectsCheckCompute)
+        .handle(ModelNoIoOutsideEffectsCheckInput(files=files))
     )
 
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     """Persist the canonical report through the write EFFECT node."""
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 

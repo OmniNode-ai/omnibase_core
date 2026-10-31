@@ -49,9 +49,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import cache
 from pathlib import Path
 from typing import Final
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.no_hardcoded_ip_check.model_no_hardcoded_ip_check_input import (
     ModelNoHardcodedIpCheckInput,
 )
@@ -82,10 +89,36 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
 __all__ = ["main"]
 
 _DEFAULT_ROOTS: Final[tuple[str, ...]] = ("src",)
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeNoHardcodedIpCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _gather_from_filenames(
@@ -97,11 +130,15 @@ def _gather_from_filenames(
     on existing eligible files are returned as fatal diagnostics so the
     runtime does not report PASS with unscanned source.
     """
-    output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(
-            root=".",
-            explicit_paths=[str(path) for path in paths],
-            include_patterns=["**/*.py", "**/*.yaml", "**/*.yml"],
+    output = (
+        _container()
+        .get_service(NodeSourceFileGatherEffect)
+        .handle(
+            ModelSourceFileGatherInput(
+                root=".",
+                explicit_paths=[str(path) for path in paths],
+                include_patterns=["**/*.py", "**/*.yaml", "**/*.yml"],
+            )
         )
     )
     return _split_gather_output(output)
@@ -120,7 +157,7 @@ def _gather_from_roots(roots: list[str]) -> tuple[list[ModelSourceFile], list[st
     """
     files: list[ModelSourceFile] = []
     read_errors: list[str] = []
-    effect = NodeSourceFileGatherEffect()
+    effect = _container().get_service(NodeSourceFileGatherEffect)
     for root in roots:
         output = effect.handle(
             ModelSourceFileGatherInput(
@@ -149,15 +186,17 @@ def _split_gather_output(
 
 def _run(files: list[ModelSourceFile]) -> ModelValidationReport:
     """Dispatch gathered (path, source) pairs to the canonical COMPUTE node."""
-    return NodeNoHardcodedIpCheckCompute().handle(
-        ModelNoHardcodedIpCheckInput(files=files)
+    return (
+        _container()
+        .get_service(NodeNoHardcodedIpCheckCompute)
+        .handle(ModelNoHardcodedIpCheckInput(files=files))
     )
 
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     """Persist the canonical report through the write EFFECT node."""
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 

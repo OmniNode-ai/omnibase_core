@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import sys
 import xml.etree.ElementTree as ET
+from functools import cache
 from pathlib import Path
 from typing import Literal, cast
 from xml.parsers import expat
@@ -19,7 +20,13 @@ from xml.parsers import expat
 import yaml
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
 from omnibase_core.models.nodes.skip_count_ratchet_check.model_skip_count_baseline_entry import (
     ModelSkipCountBaselineEntry,
@@ -57,12 +64,38 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 
 _DEFAULT_BASELINE = (
     Path(__file__).resolve().parents[4] / "config" / "skip_count_baseline.yaml"
 )
 _REQUIRED_PROVENANCE_FIELDS = ("measured_at", "measurement_command", "source_runs")
 _MODES = ("count", "nodeids")
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeSkipCountRatchetCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _input_error(message: str) -> ModelOnexError:
@@ -83,9 +116,13 @@ def canonical_node_id(raw: str) -> str:
 
 def _read(path: Path, kind: str) -> ModelSourceFile:
     try:
-        output = NodeSourceFileGatherEffect().handle(
-            ModelSourceFileGatherInput(
-                root=".", explicit_paths=[str(path)], include_patterns=["*"]
+        output = (
+            _container()
+            .get_service(NodeSourceFileGatherEffect)
+            .handle(
+                ModelSourceFileGatherInput(
+                    root=".", explicit_paths=[str(path)], include_patterns=["*"]
+                )
             )
         )
     except (OSError, UnicodeError) as exc:
@@ -236,7 +273,7 @@ def render_observed(entry_key: str, observed: ModelSkipCountObservation) -> str:
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -276,8 +313,12 @@ def _selftest() -> tuple[int, ModelValidationReport]:
             collected=collected,
             files=1,
         )
-        report = NodeSkipCountRatchetCheckCompute().handle(
-            ModelSkipCountRatchetCheckInput(baseline=entry, observation=observed)
+        report = (
+            _container()
+            .get_service(NodeSkipCountRatchetCheckCompute)
+            .handle(
+                ModelSkipCountRatchetCheckInput(baseline=entry, observation=observed)
+            )
         )
         if report.overall_status != expected:
             failures.append(f"{mode}: expected {expected}, got {report.overall_status}")
@@ -349,9 +390,13 @@ def main(argv: list[str] | None = None) -> int:
             raise _input_error("--suite is required")
         paths = [*args.junit, *(Path(p) for p in args.filenames)]
         if not paths and args.root is not None:
-            output = NodeSourceFileGatherEffect().handle(
-                ModelSourceFileGatherInput(
-                    root=args.root, include_patterns=["**/*.xml"], max_file_size=0
+            output = (
+                _container()
+                .get_service(NodeSourceFileGatherEffect)
+                .handle(
+                    ModelSourceFileGatherInput(
+                        root=args.root, include_patterns=["**/*.xml"], max_file_size=0
+                    )
                 )
             )
             read_errors = [
@@ -398,8 +443,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     except (OSError, UnicodeError) as exc:
         return _error(f"read error: {exc}", args.report_json, 1)
-    report = NodeSkipCountRatchetCheckCompute().handle(
-        ModelSkipCountRatchetCheckInput(baseline=entry, observation=observed)
+    report = (
+        _container()
+        .get_service(NodeSkipCountRatchetCheckCompute)
+        .handle(ModelSkipCountRatchetCheckInput(baseline=entry, observation=observed))
     )
     _write_report(args.report_json, report)
     _, lines = evaluate(entry, observed)

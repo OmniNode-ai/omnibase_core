@@ -7,9 +7,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import cache
 from pathlib import Path
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.exposed_identifiers_check.model_exposed_identifiers_check_input import (
     ModelExposedIdentifiersCheckInput,
 )
@@ -48,11 +55,38 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeExposedIdentifiersCheckCompute,
+        NodeGitFileListingEffect,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -69,12 +103,16 @@ def _gather(
 ) -> tuple[list[ModelSourceFile], list[str]]:
     if not paths:
         return [], []
-    output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(
-            root=str(root),
-            explicit_paths=[str(path) for path in paths],
-            include_patterns=["**/*"],
-            decode_errors="surrogateescape" if lossless else "strict",
+    output = (
+        _container()
+        .get_service(NodeSourceFileGatherEffect)
+        .handle(
+            ModelSourceFileGatherInput(
+                root=str(root),
+                explicit_paths=[str(path) for path in paths],
+                include_patterns=["**/*"],
+                decode_errors="surrogateescape" if lossless else "strict",
+            )
         )
     )
     return (
@@ -104,7 +142,7 @@ def _label(path: Path, root: Path) -> str:
 
 def _default_root() -> Path:
     """Resolve the invocation directory through the Git EFFECT boundary."""
-    return NodeGitFileListingEffect().resolve_root(Path.cwd())
+    return _container().get_service(NodeGitFileListingEffect).resolve_root(Path.cwd())
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -149,9 +187,13 @@ def main(argv: list[str] | None = None) -> int:
             )
     else:
         try:
-            listed = NodeGitFileListingEffect().handle(
-                ModelGitFileListingInput(
-                    root=root, scope=args.scope, base_ref=args.base_ref
+            listed = (
+                _container()
+                .get_service(NodeGitFileListingEffect)
+                .handle(
+                    ModelGitFileListingInput(
+                        root=root, scope=args.scope, base_ref=args.base_ref
+                    )
                 )
             )
         except (OSError, ModelOnexError) as exc:
@@ -181,8 +223,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     if full_tree and scanned == 0:
         return _error(args.report_json, f"zero files scanned under {root}", 1)
-    report = NodeExposedIdentifiersCheckCompute().handle(
-        ModelExposedIdentifiersCheckInput(files=files, denylist_json=document)
+    report = (
+        _container()
+        .get_service(NodeExposedIdentifiersCheckCompute)
+        .handle(ModelExposedIdentifiersCheckInput(files=files, denylist_json=document))
     )
     _write_report(args.report_json, report)
     sys.stdout.write(
