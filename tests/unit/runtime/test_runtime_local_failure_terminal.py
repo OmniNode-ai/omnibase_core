@@ -168,6 +168,16 @@ class _Bus:
 
         return _unsub
 
+    async def subscribe_ungrouped(
+        self,
+        topic: str,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+    ) -> Callable[[], Awaitable[None]]:
+        """A read with no group: it starts at the log end and keeps nothing (OMN-17427)."""
+        group_id = f"ungrouped.{uuid.uuid4().hex}"
+        self.broker.committed[(group_id, topic)] = len(self.broker.log.get(topic, []))
+        return await self.subscribe(topic, on_message=on_message, group_id=group_id)
+
 
 def _contract_body(*, declare_failure_terminal: bool) -> dict[str, Any]:
     """The delegate orchestrator's shape: failure declared under ``runtime_dispatch``.

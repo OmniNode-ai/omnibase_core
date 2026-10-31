@@ -209,6 +209,14 @@ class _DurableBus:
     def handler_groups(self) -> list[str]:
         return [group for topic, group in self.subscriptions if topic == _COMMAND_TOPIC]
 
+    def consumer_groups(self) -> list[str]:
+        """The groups this process made the broker keep: ungrouped reads are not among them."""
+        return [
+            group
+            for _topic, group in self.subscriptions
+            if not group.startswith("ungrouped.")
+        ]
+
     async def start(self) -> None:
         return None
 
@@ -237,6 +245,16 @@ class _DurableBus:
                 self.broker.subscribers.remove(registration)
 
         return _unsub
+
+    async def subscribe_ungrouped(
+        self,
+        topic: str,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+    ) -> Callable[[], Awaitable[None]]:
+        """Read from the log end, with no group the broker would keep (OMN-17427)."""
+        group_id = f"ungrouped.{uuid.uuid4().hex}"
+        self.broker.committed[(group_id, topic)] = len(self.broker.log.get(topic, []))
+        return await self.subscribe(topic, on_message=on_message, group_id=group_id)
 
 
 def _write_contract(
@@ -402,14 +420,13 @@ async def test_host_mode_refuses_a_retained_failed_terminal_from_an_earlier_run(
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_host_mode_terminal_group_is_run_scoped(tmp_path: Path) -> None:
+async def test_host_mode_terminal_read_joins_no_group(tmp_path: Path) -> None:
     """A host must not inherit another run's committed terminal offset either.
 
-    OMN-17304 AC5 run-scoped this group for clients only. ``onex delegate`` is a
-    host, so on the lane every invocation joined one fixed group and resumed the
-    previous run's offset. Run-scoping alone does not fix adoption (a fresh group
-    reads the retained backlog from the beginning) — it must land together with the
-    armed correlation predicate, which the tests above cover.
+    OMN-17304 AC5 run-scoped this group for clients only; OMN-21818 then made the
+    run-scoped read joinless, because a group per run left 2,366 Empty groups on
+    the dev broker. A read with no group has no committed offset to inherit and
+    starts at the log end, so no retained backlog is replayed either.
     """
     broker = _DurableBroker()
     correlation_id = uuid.uuid4()
@@ -422,9 +439,9 @@ async def test_host_mode_terminal_group_is_run_scoped(tmp_path: Path) -> None:
 
     groups = bus.terminal_groups()
     assert len(groups) == 1
-    assert runtime.run_id.hex[:12] in groups[0], (
-        "host-mode terminal subscription reused the shared runtime-local group id "
-        f"{groups[0]!r}; a fresh run resumes another run's committed offset"
+    assert bus.consumer_groups() == [], (
+        "host-mode terminal subscription joined a consumer group "
+        f"{bus.consumer_groups()!r}; the broker keeps it after the run"
     )
 
 
@@ -663,13 +680,13 @@ def test_envelope_payload_failure_beats_an_envelope_level_success(
 
 @pytest.mark.unit
 @pytest.mark.asyncio
-async def test_host_mode_handler_group_is_run_scoped(tmp_path: Path) -> None:
+async def test_host_mode_handler_read_joins_no_group(tmp_path: Path) -> None:
     """The handler subscribe must not use a group derived from the handler name.
 
-    RED before the fix: ``group_id=derive_runtime_local_group_id(entry.handler_name)``
+    RED before OMN-15660: ``group_id=derive_runtime_local_group_id(entry.handler_name)``
     is identical for every invocation of the same handler, so two concurrent runs
     joined one group on the command topic and the broker handed each record to
-    exactly one of them.
+    exactly one of them. Since OMN-21818 the armed run joins no group at all.
     """
     broker = _DurableBroker()
     run_dir = tmp_path / "run"
@@ -681,9 +698,8 @@ async def test_host_mode_handler_group_is_run_scoped(tmp_path: Path) -> None:
 
     groups = bus.handler_groups()
     assert len(groups) == 1
-    assert runtime.run_id.hex[:12] in groups[0], (
-        "the handler subscription reused the handler-name-derived group id "
-        f"{groups[0]!r}; two concurrent invocations of this handler collide on it"
+    assert bus.consumer_groups() == [], (
+        f"the handler subscription joined a consumer group {bus.consumer_groups()!r}"
     )
 
 

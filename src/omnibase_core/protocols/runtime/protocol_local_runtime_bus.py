@@ -41,4 +41,21 @@ class ProtocolLocalRuntimeBus(Protocol):
         ...
 
 
-__all__: list[str] = ["ProtocolLocalRuntimeBus", "UnsubscribeCallback"]
+@runtime_checkable
+class ProtocolLocalRuntimeUngroupedBus(ProtocolLocalRuntimeBus, Protocol):
+    """A runtime bus whose reads can leave no consumer group on a broker (OMN-21818)."""
+
+    async def subscribe_ungrouped(
+        self,
+        topic: str,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+    ) -> UnsubscribeCallback:
+        """Read a topic from its log end, joining no group (OMN-17427)."""
+        ...
+
+
+__all__: list[str] = [
+    "ProtocolLocalRuntimeBus",
+    "ProtocolLocalRuntimeUngroupedBus",
+    "UnsubscribeCallback",
+]

@@ -132,6 +132,16 @@ class _RecordingBus:
 
         return _unsub
 
+    async def subscribe_ungrouped(
+        self,
+        topic: str,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+    ) -> Callable[[], Awaitable[None]]:
+        """A read with no group: it starts at the log end and keeps nothing (OMN-17427)."""
+        return await self.subscribe(
+            topic, on_message=on_message, group_id=f"ungrouped.{uuid.uuid4().hex}"
+        )
+
     async def deliver_terminal(self, payload: dict[str, Any]) -> None:
         message = _RecordedMessage(json.dumps(payload).encode("utf-8"))
         for callback in self._terminal_callbacks:
@@ -283,10 +293,9 @@ async def test_client_mode_terminal_group_is_run_scoped(tmp_path: Path) -> None:
     assert result is EnumWorkflowResult.COMPLETED
     terminal_groups = [g for t, g in bus.subscriptions if t == _TERMINAL_TOPIC]
     assert len(terminal_groups) == 1
-    assert runtime.run_id.hex[:12] in terminal_groups[0], (
-        "client-mode terminal subscription reused the shared runtime-local "
-        f"group id {terminal_groups[0]!r}; a fresh run would resume another "
-        "run's committed offset"
+    assert terminal_groups[0].startswith("ungrouped."), (
+        "client-mode terminal subscription joined the consumer group "
+        f"{terminal_groups[0]!r}; the broker keeps it after the run (OMN-21818)"
     )
 
 
