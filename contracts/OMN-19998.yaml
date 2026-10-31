@@ -163,6 +163,18 @@ requirements:
           after three, and does not retry a permanent error -- falsifier: uv run pytest tests/unit/validation/test_auto_merge_workflow_shape.py
           -q -n 0 -o addopts= -k Transient fails at the merge base, where one transient answer fails the
           step"
+  - id: "req-omn19998-model-dependency-extra-forbid"
+    statement: "The extra=\"forbid\" ratchet fails every pull request once a waiver is inside its one-day
+      horizon, so Quality Gate fails and Tests Gate follows it red. ModelDependency, the only waived model,
+      declares extra=\"forbid\" and leaves the baseline and the waiver file, and the committed node contract
+      schema is regenerated from ModelContractBase."
+    acceptance:
+      - id: "AC18"
+        statement: "AC18: A raw dependencies__add entry with an unknown key fails validation, and the
+          committed node contract schema equals ModelContractBase.model_json_schema() -- falsifier: uv
+          run pytest tests/unit/models/contracts/test_model_contract_patch.py tests/unit/models/contracts/test_contract_placement_leases.py
+          -q -n 0 -o addopts= -k 'unknown_key or exported_schema' fails at the merge base, where ModelDependency
+          drops the unknown key"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -465,3 +477,14 @@ dod_evidence:
           addopts= -k Transient"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC17"]
+  - id: "dod-omn19998-model-dependency-extra-forbid"
+    description: "ModelDependency refuses an unknown key and the committed node contract schema matches
+      the model. At the merge base the unknown-key test fails because the key is dropped."
+    source: "manual"
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/models/contracts/test_model_contract_patch.py tests/unit/models/contracts/test_contract_placement_leases.py
+          -q -n 0 -o addopts= -k 'unknown_key or exported_schema'"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC18"]
