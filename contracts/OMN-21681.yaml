@@ -1,0 +1,92 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21681
+title: 'omnibase_core contracts_and_di literal_host, literal_ip and literal_port burn-down, slice rf1120-c4:
+  hard-coded hosts, addresses and ports move into a packaged contract read through a typed model'
+summary: 'The hosts, addresses and ports omnibase_core models and handlers held as literals are declared
+  in models/configuration/network_defaults.yaml and read through ModelNetworkDefaults. The contracts_and_di
+  checker reports no literal_host, literal_ip or literal_port finding on the touched modules; no baseline
+  entry and no suppression is added.'
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21681-network-defaults
+    statement: A host, an address or a port that omnibase_core code falls back to is declared in a packaged
+      contract that a typed model reads, and the code holds no literal of it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the contracts_and_di count for literal_host over the slice paths drops to zero
+          and the repo total drops by the slice size, with no baseline entry or suppression added -- falsifier:
+          onex run of runtime_validator_run with the contracts_and_di reference over omnibase_core src
+          before and after, counts compared per rule'
+      - id: AC2
+        statement: 'AC2: every moved value is read from a node contract or overlay through an injected
+          setting and no literal of it remains in the touched code -- falsifier: uv run pytest tests/unit
+          -q over the touched modules plus the checker re-run on the slice paths'
+      - id: AC3
+        statement: 'AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
+          the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
+          lab-run at the PR head, receipt path in the PR body'
+evidence_requirements:
+  - kind: tests
+    description: The network defaults contract tests pass.
+    command: uv run pytest tests/unit/models/configuration/test_model_network_defaults.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21681-ac1-checker-counts
+    description: The checker reports no literal_host, literal_ip or literal_port finding on each of the
+      twelve touched modules, and still flags a planted literal. At the merge base the modules hold 41
+      such findings, so these cases fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults.py -q -o
+          addopts='' -k 'TestCheckerReportsNoNetworkLiteral'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21681-deploy-network-defaults
+    description: Deployment smoke loads the packaged YAML and verifies that the service bind default matches
+      its declared value without requiring external services.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run python -c "from importlib.resources import files; from ruamel.yaml import YAML; from
+          omnibase_core.models.configuration.model_network_defaults import ModelNetworkDefaults; from
+          omnibase_core.models.services.model_network_config import ModelNetworkConfig; deployed = YAML(typ='safe').load(files('omnibase_core.models.configuration').joinpath('network_defaults.yaml').read_text());
+          assert ModelNetworkDefaults.load().model_dump() == deployed; assert ModelNetworkConfig().host
+          == deployed['service_bind_address']"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21681-ac2-contract-read
+    description: Every moved value equals its entry in the packaged contract, an explicit argument still
+      wins, and a contract missing a key fails to load.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults.py -q -o
+          addopts='' -k 'TestNetworkDefaultsContract or TestConsumersReadTheContract'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21681-ac3-unit-suite
+    description: The unit suite over the touched modules passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/configuration tests/unit/models/connections tests/unit/models/services
+          tests/unit/handlers/test_handler_dependency_pin_bump.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

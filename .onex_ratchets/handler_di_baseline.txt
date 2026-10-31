@@ -8,7 +8,6 @@
 examples/demo/handlers/support_assistant/handler_anthropic.py 3
 examples/demo/handlers/support_assistant/handler_local.py 2
 examples/demo/handlers/support_assistant/handler_openai.py 4
-src/omnibase_core/handlers/handler_ledger_write_guard.py 1
 src/omnibase_core/handlers/handler_private_vocabulary_resolution.py 2
 src/omnibase_core/nodes/node_ai_slop_check_compute/runtime_ai_slop_check.py 4
 src/omnibase_core/nodes/node_backend_secret_discipline_compute/handler.py 1
@@ -20,14 +19,13 @@ src/omnibase_core/nodes/node_boundary_import_check_effect/handler.py 7
 src/omnibase_core/nodes/node_canonical_file_shape_check_compute/matcher_node_home.py 1
 src/omnibase_core/nodes/node_canonical_file_shape_check_compute/runtime_canonical_file_shape_check.py 1
 src/omnibase_core/nodes/node_compliance_evidence_effect/handler.py 2
-src/omnibase_core/nodes/node_contract_evidence_check_effect/handler_contract_compliance_check.py 2
+src/omnibase_core/nodes/node_contract_evidence_check_effect/handler_contract_compliance_check.py 1
 src/omnibase_core/nodes/node_contract_evidence_check_effect/runtime_contract_check_values_lint.py 1
 src/omnibase_core/nodes/node_contract_evidence_check_effect/runtime_contract_substance_floor.py 1
 src/omnibase_core/nodes/node_contract_resolve_compute/handler.py 2
 src/omnibase_core/nodes/node_cross_repo_boundary_check_effect/handler_boundary_parity.py 1
 src/omnibase_core/nodes/node_cross_repo_boundary_check_effect/runtime_boundary_parity.py 2
 src/omnibase_core/nodes/node_cross_repo_boundary_check_effect/runtime_migration_conflicts.py 2
-src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py 1
 src/omnibase_core/nodes/node_dependency_pin_bump_effect/runtime_dependency_pin_bump.py 1
 src/omnibase_core/nodes/node_dict_any_check_compute/handler_dict_any.py 1
 src/omnibase_core/nodes/node_dict_any_check_compute/runtime_dict_any_check.py 1

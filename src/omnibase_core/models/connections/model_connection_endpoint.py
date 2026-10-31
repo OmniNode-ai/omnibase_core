@@ -15,6 +15,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from omnibase_core.constants import MAX_NAME_LENGTH, MAX_URL_LENGTH
 from omnibase_core.enums.enum_connection_type import EnumConnectionType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import SerializedDict
@@ -102,7 +105,7 @@ class ModelConnectionEndpoint(BaseModel):
 
     def is_local_connection(self) -> bool:
         """Check if this is a local connection."""
-        return self.host in {"localhost", "127.0.0.1", "::1"}
+        return self.host in ModelNetworkDefaults.load().loopback_hosts
 
     def validate_path_for_type(self) -> bool:
         """Validate path is appropriate for connection type."""
@@ -117,15 +120,15 @@ class ModelConnectionEndpoint(BaseModel):
     def create_http(
         cls,
         host: str,
-        port: int = 80,
+        port: int | None = None,
         path: str | None = None,
     ) -> ModelConnectionEndpoint:
-        """Create HTTP endpoint."""
+        """Create HTTP endpoint; the port defaults from the network defaults contract."""
         return cls(
             connection_type=EnumConnectionType.HTTP,
             protocol_version=None,
             host=host,
-            port=port,
+            port=(port if port is not None else ModelNetworkDefaults.load().http_port),
             path=path,
         )
 
@@ -133,15 +136,15 @@ class ModelConnectionEndpoint(BaseModel):
     def create_websocket(
         cls,
         host: str,
-        port: int = 80,
+        port: int | None = None,
         path: str | None = None,
     ) -> ModelConnectionEndpoint:
-        """Create WebSocket endpoint."""
+        """Create WebSocket endpoint; the port defaults from the network defaults contract."""
         return cls(
             connection_type=EnumConnectionType.WEBSOCKET,
             protocol_version=None,
             host=host,
-            port=port,
+            port=(port if port is not None else ModelNetworkDefaults.load().http_port),
             path=path,
         )
 
@@ -161,7 +164,7 @@ class ModelConnectionEndpoint(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

@@ -15,6 +15,9 @@ from importlib import resources
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.dependency_direction.model_repo_layer_map import (
     ModelRepoLayerMap,
 )
@@ -33,7 +36,6 @@ from omnibase_core.validation.validator_first_party_ref import dev_tag_pattern
 __all__ = ["HandlerDependencyPinBump"]
 
 _DISTRIBUTION = "omnibase-core"
-_GIT_HOST = "github.com"
 
 
 def _source_url() -> str:
@@ -45,7 +47,8 @@ def _source_url() -> str:
         ModelRepoLayerMap,
     )
     repo = next(e.repo for e in layer_map.repos if _DISTRIBUTION in e.distributions)
-    return f"https://{_GIT_HOST}/{layer_map.github_org}/{repo}"
+    git_host = ModelNetworkDefaults.load().source_control_host
+    return f"https://{git_host}/{layer_map.github_org}/{repo}"
 
 
 class HandlerDependencyPinBump:

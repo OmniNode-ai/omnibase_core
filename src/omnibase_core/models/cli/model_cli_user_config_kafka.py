@@ -7,6 +7,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
+
 
 class ModelCliUserConfigKafka(BaseModel):
     """Event-bus connection settings."""
@@ -19,7 +23,7 @@ class ModelCliUserConfigKafka(BaseModel):
     )
 
     bootstrap_servers: str = Field(
-        default="localhost:19092",  # fallback-ok: scaffolded placeholder for a user-editable config template, not runtime endpoint resolution
+        default_factory=lambda: ModelNetworkDefaults.load().kafka_bootstrap_servers,  # fallback-ok: scaffolded placeholder for a user-editable config template, not runtime endpoint resolution
         description="Kafka/Redpanda bootstrap servers",
     )
 
