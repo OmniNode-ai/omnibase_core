@@ -343,3 +343,38 @@ class TestModelHealthMetadataFactoryMethods:
 
         assert metadata.maintenance_mode is True
         assert metadata.escalation_enabled is True
+
+
+@pytest.mark.unit
+class TestCheckerReportsNoTimeoutLiteral:
+    """The contracts_and_di checker finds no literal_timeout in the module (OMN-21725)."""
+
+    def test_module_holds_no_timeout_literal(self):
+        from pathlib import Path
+
+        from omnibase_core.models.health import model_health_metadata
+        from omnibase_core.validation.validator_contracts_and_di import (
+            ValidatorContractsAndDi,
+        )
+
+        assert model_health_metadata.__file__ is not None
+        result = ValidatorContractsAndDi().validate_file(
+            Path(model_health_metadata.__file__)
+        )
+        assert [
+            f"{i.line_number}: {i.message}"
+            for i in result.issues
+            if i.code == "literal_timeout"
+        ] == []
+
+    def test_checker_still_flags_a_planted_literal(self, tmp_path):
+        from omnibase_core.validation.validator_contracts_and_di import (
+            ValidatorContractsAndDi,
+        )
+
+        planted = tmp_path / "src" / "omnibase_core" / "planted_interval.py"
+        planted.parent.mkdir(parents=True)
+        planted.write_text("x = dict(check_interval_seconds=30)\n")
+        (tmp_path / ".git").mkdir()
+        result = ValidatorContractsAndDi().validate_file(planted)
+        assert "literal_timeout" in {i.code for i in result.issues}
