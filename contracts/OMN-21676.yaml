@@ -1,0 +1,91 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21676
+title: The receipt gate installs its verifier from an omnimarket dev-merge tag, resolved to a recorded
+  commit
+summary: The receipt-gate reusable accepts verifier-tag, an omnimarket dev-merge tag. The install step
+  resolves the tag to its commit with git ls-remote, refuses a tag whose sha12 suffix does not prefix
+  that commit, a commit that is not on the omnimarket dev branch and a commit that does not descend from
+  the floor commit (ancestry, not a version number), installs the verifier from that commit's own uv.lock
+  and records the tag and the commit in the job summary and the step outputs. verifier-version stays only
+  as the migration fallback, used when the tag is empty. Operator ruling 2026-10-31, extending the ruling
+  of 2026-10-29T01:50:26Z, we iterate with tags, not with releases.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - receipt-gate.yml workflow_call inputs
+requirements:
+  - id: req-omn21676-verifier-tag-input
+    statement: The receipt gate must accept an omnimarket dev-merge tag as the verifier source, keep the
+      version input working only as the fallback, and refuse a value that is not a dev-merge tag.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: receipt-gate.yml declares verifier-tag (string, optional, default empty) beside
+          verifier-version, whose description names it the migration fallback; a set tag wins and the
+          version is ignored with a notice; an empty tag runs the version path unchanged; a value that
+          is not dev-YYYYMMDDHHMMSS-sha12 exits 1 before any network read. -- falsifier: uv run pytest
+          tests/ci/test_receipt_gate_verifier_tag_omn21676.py -q -p no:randomly --no-cov -k "declared_input
+          or version_is_ignored or empty_tag or not_a_dev_merge_tag"'
+  - id: req-omn21676-tag-resolved-and-recorded
+    statement: The tag must be resolved once to an immutable commit, the verifier installed from that
+      commit, and the tag and the commit recorded as the receipt.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: for a tag at or after the floor the install step resolves the tag (a peeled commit
+          of an annotated tag wins), checks out exactly that commit, runs uv sync --frozen --no-dev --no-editable
+          from it, writes tag and commit to verifier-commit.txt and to the step outputs, and the Summarise
+          step prints both. -- falsifier: uv run pytest tests/ci/test_receipt_gate_verifier_tag_omn21676.py
+          -q -p no:randomly --no-cov -k "after_the_floor or floor_commit_itself or annotated or summary_records"'
+  - id: req-omn21676-floor-by-ancestry
+    statement: The floor must be an ancestry fact, not a version number, and a tag that does not hold
+      its identity must be refused before anything is installed.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: the step exits 1 and installs nothing for a tag whose commit is before the floor
+          commit, a tag whose commit is not reachable from the omnimarket dev branch, a tag moved to a
+          commit whose first 12 characters differ from the tag suffix, and a tag absent from the remote;
+          the floor commit is declared on exactly one line, VERIFIER_FLOOR_SHA, and is omnimarket#3511''s
+          squash commit. -- falsifier: uv run pytest tests/ci/test_receipt_gate_verifier_tag_omn21676.py
+          -q -p no:randomly --no-cov -k "before_the_floor or not_on_dev or moved_to_another or absent_tag
+          or floor_commit_is_declared_once"'
+evidence_requirements:
+  - kind: tests
+    description: Execute the install step's own script against a throwaway git remote with a stub uv,
+      with a planted refusal for each identity rule.
+    command: uv run pytest tests/ci/test_receipt_gate_verifier_tag_omn21676.py -q -p no:randomly --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-21676-ac1
+    description: The tag input is declared beside the fallback version input, wins when set and refuses
+      a value that is not a dev-merge tag.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_verifier_tag_omn21676.py -q -p no:randomly
+          --no-cov -k "declared_input or version_is_ignored or empty_tag or not_a_dev_merge_tag"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-21676-ac2
+    description: A tag after the floor is installed from its resolved commit and recorded.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_verifier_tag_omn21676.py -q -p no:randomly
+          --no-cov -k "after_the_floor or floor_commit_itself or annotated or summary_records"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-21676-ac3
+    description: A tag before the floor, off dev, moved or absent is refused with nothing installed.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_verifier_tag_omn21676.py -q -p no:randomly
+          --no-cov -k "before_the_floor or not_on_dev or moved_to_another or absent_tag or floor_commit_is_declared_once"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
