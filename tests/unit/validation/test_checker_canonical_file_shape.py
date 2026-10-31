@@ -779,4 +779,13 @@ def test_a_test_data_file_named_like_an_exception_list_is_not_one() -> None:
 
 def test_baselined_growth_text_names_the_bind_then_edit_path() -> None:
     """The growth message tells the author a bound handler leaves the baseline."""
-    text = CONTRACT.rules[0].parameters  # placeholder replaced below
+    findings = _run(_facts("violation_baselined-file-growth.json"), RULES)
+    assert len(findings) == 1
+    assert findings[0].code == "baselined-file-growth"
+    assert findings[0].message == (
+        "code lines 5 -> 7; a baselined file only shrinks. "
+        "Put the new behaviour in a contract + node + handler "
+        "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z). "
+        "A handler file that a node contract binds leaves the baseline in the "
+        "same commit and may then change freely."
+    )

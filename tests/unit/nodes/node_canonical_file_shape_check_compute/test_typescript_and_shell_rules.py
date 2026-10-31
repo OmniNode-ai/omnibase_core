@@ -464,7 +464,9 @@ def test_baselined_file_growth_any_surface_refused(repo: Path, path: str) -> Non
     assert finding.message == (
         "code lines 3 -> 4; a baselined file only shrinks. "
         "Put the new behaviour in a contract + node + handler "
-        "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z)"
+        "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z). "
+        "A handler file that a node contract binds leaves the baseline in the "
+        "same commit and may then change freely."
     )
 
 
