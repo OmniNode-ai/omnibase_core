@@ -1,0 +1,98 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21506
+title: 'T-C4: the two contract hashes, populated and shared'
+summary: ContractMergeEngine passed resolver_config_hash=None and effective_contract_hash=None into its
+  events. omnibase_core now has compute_resolver_config_hash and compute_effective_contract_hash (canonical
+  JSON, sha256), the engine calls them, carries them in its merge_started and merge_completed events and
+  returns them with the merge result through ContractMergeEngine.resolve.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+  - events
+requirements:
+  - id: req-omn21506
+    statement: The merge engine populates resolver_config_hash and effective_contract_hash from one shared
+      definition, in its events and in its merge result.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: Equivalent inputs give equal hashes. A changed resolver configuration changes
+          only `resolver_config_hash`, and a changed effective contract changes `effective_contract_hash`
+          -- falsifier: four pytest cases'
+      - id: AC2
+        statement: 'AC2: The engine''s started and completed events carry both hashes, and the merge result
+          returns them -- falsifier: the pytest case with a recording emitter'
+      - id: AC3
+        statement: 'AC3: Configuration: a core library carries no deployment value -- falsifier: the test
+          reads no overlay and no environment variable'
+      - id: AC4
+        statement: 'AC4: Bindings: none -- falsifier: the same inputs hash the same in a direct call and
+          through the local in-process entry of the parity harness (T-B2)'
+evidence_requirements:
+  - kind: tests
+    description: Hash equivalence, engine event and result carriage, no deployment value, and direct versus
+      in-process parity.
+    command: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21506-ac1-equivalence
+    description: Four pytest cases in TestHashEquivalence 'equivalent resolver configs and equivalent
+      effective contracts hash equal; a changed resolver configuration moves only resolver_config_hash;
+      a changed effective contract moves effective_contract_hash'.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestHashEquivalence
+    binds_ac:
+      - AC1
+  - id: dod-omn21506-ac2-engine-carriage
+    description: The recording-emitter cases in TestEngineCarriesHashes show merge_started carrying resolver_config_hash,
+      merge_completed carrying effective_contract_hash, and ModelContractMergeResult returning both.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestEngineCarriesHashes
+    binds_ac:
+      - AC2
+  - id: dod-omn21506-ac3-configuration
+    description: TestNoDeploymentValue checks the hash module imports no os, pathlib or yaml and calls
+      no open, getenv or environ, and that hashing succeeds with open, os.environ and os.getenv patched
+      to refuse.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestNoDeploymentValue
+    binds_ac:
+      - AC3
+  - id: dod-omn21506-ac4-bindings
+    description: TestInProcessParity shows byte-identical hashes from a direct call and from the engine's
+      in-process resolve entry. The parity harness of T-B2 is not built at this head, so the engine entry
+      stands in for it.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/merge/test_contract_merge_hashes.py -q -n 0 -k TestInProcessParity
+    binds_ac:
+      - AC4
+  - id: dod-omn21506-delegation-join
+    description: 'Delegation join (DS-6, DS-7): the engine, hash-function and result-model draft came
+      from Codex thread 01a1851a-de1f-78f2-8b10-1ce3bdcbe3e8 (delegation_step receipt 2026-10-29T004257Z-codex-tc4-hash-code,
+      lane t-c4-0035). The receipt records the pushed PR head it was accepted against in its head field.'
+    source: manual
+    checks:
+      - check_type: command
+        check_value: echo 'delegation-join OMN-21506 lane=t-c4-0035 codex=01a1851a-de1f-78f2-8b10-1ce3bdcbe3e8
+          receipt=2026-10-29T004257Z-codex-tc4-hash-code'
+  - id: dod-omn21506-deploy
+    description: 'Deploy-gate evidence: a pure library change to the merge engine, one hash module and
+      one result model; no runtime process, broker topic, image or service deploy. Seam readers adopt
+      it only through the T-Q5 release adoption.'
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "echo 'deploy-gate: OMN-21506 adds two hash functions and a result model to omnibase_core;
+          no Docker image, daemon, broker topic or service deploy required'"
