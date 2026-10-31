@@ -1,0 +1,38 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Wire-format topic names of the selected TopicBase members, keyed by member name (OMN-21777).
+# Read once by topics.py; Python code holds no topic literal for these members (OMN-21623).
+topics:
+  SESSION_STARTED: onex.evt.omniclaude.session-started.v1
+  SESSION_ENDED: onex.evt.omniclaude.session-ended.v1
+  PROMPT_SUBMITTED: onex.evt.omniclaude.prompt-submitted.v1
+  TOOL_EXECUTED: onex.evt.omniclaude.tool-executed.v1
+  AGENT_ACTION: onex.evt.omniclaude.agent-action.v1
+  LEARNING_PATTERN: onex.evt.omniclaude.learning-pattern.v1
+  ROUTING_REQUESTED: onex.cmd.omninode.routing-requested.v1
+  ROUTING_COMPLETED: onex.evt.omninode.routing-completed.v1
+  ROUTING_FAILED: onex.evt.omninode.routing-failed.v1
+  HARNESS_DELEGATION_COMMAND: onex.cmd.omnibase-core.harness-delegation-request.v1
+  HARNESS_DELEGATION_INFER: onex.evt.omnibase-core.harness-delegation-infer.v1
+  HARNESS_DELEGATION_COMPLETED: onex.evt.omnibase-core.harness-delegation-completed.v1
+  HARNESS_SEA_COMMAND: onex.cmd.omnibase-core.harness-sea-request.v1
+  HARNESS_SEA_INFER: onex.evt.omnibase-core.harness-sea-infer.v1
+  HARNESS_SEA_COMPLETED: onex.evt.omnibase-core.harness-sea-completed.v1
+  CLAUDE_HOOK_EVENT: onex.cmd.omniintelligence.claude-hook-event.v1
+  TOOL_CONTENT: onex.cmd.omniintelligence.tool-content.v1
+  SESSION_OUTCOME_CMD: onex.cmd.omniintelligence.session-outcome.v1
+  SESSION_OUTCOME_EVT: onex.evt.omniclaude.session-outcome.v1
+  UTILIZATION_SCORING_CMD: onex.cmd.omniintelligence.utilization-scoring.v1
+  LLM_CALL_COMPLETED: onex.evt.omniintelligence.llm-call-completed.v1
+  WASTE_DETECTED: onex.evt.omniintelligence.waste-detected.v1
+  SAVINGS_ESTIMATED: onex.evt.omnibase-infra.savings-estimated.v1
+  PROJECTION_COST_SUMMARY: onex.snapshot.projection.cost.summary.v1
+  PROJECTION_COST_BY_REPO: onex.snapshot.projection.cost.by_repo.v1
+  PROJECTION_COST_TOKEN_USAGE: onex.snapshot.projection.cost.token_usage.v1
+  AGENT_ACTIONS: onex.evt.omniclaude.agent-actions.v1
+  PERFORMANCE_METRICS: onex.evt.omniclaude.performance-metrics.v1
+  TRANSFORMATIONS: onex.evt.omniclaude.agent-transformation.v1
+  DETECTION_FAILURES: onex.evt.omniclaude.detection-failure.v1
+  DECISION_CONFLICT_STATUS_CHANGED: onex.evt.omniclaude.decision-conflict-status-changed.v1
+  AUDIT_CONTEXT_BUDGET_EXCEEDED: onex.evt.omniclaude.audit-context-budget-exceeded.v1
