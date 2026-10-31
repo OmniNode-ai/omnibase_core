@@ -10,7 +10,8 @@ validation:
     RULING 2026-10-29T01:50:26Z: "we iterate with tags, not with releases. make sure that is also a validator.
     That needs to be an invariant." The identity rules verify the tag; the invariant rules require it
     for first-party iteration, with version ranges instead of exact release overrides.
-  target_patterns: [pyproject.toml, '**/pyproject.toml']
+  target_patterns: [pyproject.toml, '**/pyproject.toml', '.github/workflows/*.yml', '.github/workflows/*.yaml',
+    '**/.github/workflows/*.yml', '**/.github/workflows/*.yaml']
   exclude_patterns: ['**/.git/**', '**/.venv/**', '**/__pycache__/**', '**/tests/**']
   rules:
     - rule_id: tag_absent
@@ -123,6 +124,18 @@ validation:
         message: '{package}: first-party declaration has no source entry or direct git requirement; release-only
           iteration is refused'
         remediation: Add a git source at a dev-merge tag and keep a dependency version range.
+    - rule_id: verifier_version_pin
+      description: A workflow job passes the receipt gate a released-package verifier version.
+      severity: error
+      parameters:
+        phase: invariant
+        message: 'line {line}: verifier-version pins the verifier to a released package version; the gate
+          installs its verifier from an omnimarket dev-merge tag'
+        remediation: Remove the version input and pass verifier-tag set to an omnimarket dev-merge tag
+          (dev-YYYYMMDDHHMMSS-sha12). A verifier fix reaches every repository by moving that tag, not
+          by cutting a release.
+        pin_pattern: '^\s*["'']?verifier-version["'']?\s*:\s*[^\s#]'
+        workflow_suffixes: [.yml, .yaml]
   suppression_comments: []
   fail_on_error: true
   fail_on_warning: true

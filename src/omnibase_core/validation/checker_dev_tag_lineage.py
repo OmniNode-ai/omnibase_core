@@ -39,6 +39,9 @@ from omnibase_core.models.validation.model_dev_tag_lineage_policy import (
 from omnibase_core.models.validation.model_dev_tag_lineage_rule_parameters import (
     ModelDevTagLineageRuleParameters,
 )
+from omnibase_core.models.validation.model_dev_tag_lineage_verifier_pin_policy import (
+    ModelDevTagLineageVerifierPinPolicy,
+)
 
 
 def invalid(message: str) -> ModelOnexError:
@@ -60,10 +63,11 @@ def load_policy(contract: ModelValidatorSubcontract) -> ModelDevTagLineagePolicy
         "first_party_not_dev_tag",
         "first_party_version_override",
         "first_party_release_only",
+        "verifier_version_pin",
     }
     ids = [rule.rule_id for rule in contract.rules]
     if set(ids) != required or len(ids) != len(required):
-        raise invalid("dev_tag_lineage requires exactly its nine rule rows")
+        raise invalid("dev_tag_lineage requires exactly its ten rule rows")
     if (
         not contract.fail_on_error
         or contract.max_violations != 0
@@ -84,6 +88,8 @@ def load_policy(contract: ModelValidatorSubcontract) -> ModelDevTagLineagePolicy
             policy = ModelDevTagLineagePolicy.model_validate(parameters)
         elif rule.rule_id == "first_party_not_dev_tag":
             ModelDevTagLineageInvariantPolicy.model_validate(parameters)
+        elif rule.rule_id == "verifier_version_pin":
+            ModelDevTagLineageVerifierPinPolicy.model_validate(parameters)
         elif parameters:
             raise invalid(f"unexpected rule parameters: {rule.rule_id}")
     if policy is None:
@@ -97,6 +103,22 @@ def load_policy(contract: ModelValidatorSubcontract) -> ModelDevTagLineagePolicy
     ):
         re.compile(pattern)
     return policy
+
+
+def load_verifier_pin_policy(
+    contract: ModelValidatorSubcontract,
+) -> ModelDevTagLineageVerifierPinPolicy:
+    """The typed parameters of the verifier_version_pin rule row."""
+    row = next(
+        (rule for rule in contract.rules if rule.rule_id == "verifier_version_pin"),
+        None,
+    )
+    if row is None:
+        raise invalid("dev_tag_lineage verifier_version_pin rule is missing")
+    parameters = dict(row.parameters or {})
+    for key in ("phase", "message", "remediation"):
+        parameters.pop(key, None)
+    return ModelDevTagLineageVerifierPinPolicy.model_validate(parameters)
 
 
 def normalize(package: str, policy: ModelDevTagLineagePolicy) -> str:
@@ -362,4 +384,38 @@ def check_dev_tag_invariants(
                         suggestion=str(values["remediation"]),
                     )
                 )
+    return tuple(issues)
+
+
+def check_verifier_version_pins(
+    path: Path, text: str, contract: ModelValidatorSubcontract
+) -> tuple[ModelValidationIssue, ...]:
+    """Flag each workflow line that gives the pinned verifier input a value.
+
+    The ruling of 2026-10-31 (OMN-21676) is that the gate iterates with tags, not with
+    releases, so a released-package verifier version in a caller is the form this cannot
+    return in. A reusable workflow that only declares the input (a key with a nested
+    mapping), a comment and a read of the input are not a pin. The pattern is rule data.
+    """
+    load_policy(contract)
+    policy = load_verifier_pin_policy(contract)
+    row = next(
+        rule for rule in contract.rules if rule.rule_id == "verifier_version_pin"
+    )
+    parameters = row.parameters or {}
+    pin = re.compile(policy.pin_pattern)
+    issues: list[ModelValidationIssue] = []
+    for number, line in enumerate(text.splitlines(), start=1):
+        if pin.match(line):
+            issues.append(
+                ModelValidationIssue(
+                    severity=row.severity,
+                    code=row.rule_id,
+                    rule_name=row.rule_id,
+                    file_path=path,
+                    line_number=number,
+                    message=str(parameters["message"]).format(line=number),
+                    suggestion=str(parameters["remediation"]),
+                )
+            )
     return tuple(issues)

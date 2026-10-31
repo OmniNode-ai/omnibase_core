@@ -24,8 +24,10 @@ from omnibase_core.models.validation.model_dev_tag_lineage_request import (
 from omnibase_core.validation.checker_dev_tag_lineage import (
     check_dev_tag_invariants,
     check_dev_tag_lineage,
+    check_verifier_version_pins,
     invalid,
     load_policy,
+    load_verifier_pin_policy,
     parse_candidates,
     parse_lock,
 )
@@ -110,6 +112,13 @@ class ValidatorDevTagLineage(ValidatorBase):
     ) -> tuple[ModelValidationIssue, ...]:
         policy = load_policy(contract)
         selected = self._selected_rule_ids(contract)
+        if path.suffix in load_verifier_pin_policy(contract).workflow_suffixes:
+            # A workflow carries no dependency table or lock: only the pin rule judges it.
+            if "verifier_version_pin" not in selected:
+                return ()
+            return check_verifier_version_pins(
+                path, path.read_text(encoding="utf-8"), contract
+            )
         phases = {
             str((rule.parameters or {})["phase"])
             for rule in contract.rules
