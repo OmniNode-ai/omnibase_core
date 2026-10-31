@@ -51,6 +51,22 @@ dod_evidence:
         check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults.py -q -o
           addopts='' -k 'TestCheckerReportsNoNetworkLiteral'
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21681-deploy-network-defaults
+    description: Deployment smoke loads the packaged YAML and verifies that the service bind default matches
+      its declared value without requiring external services.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run python -c "from importlib.resources import files; from ruamel.yaml import YAML; from
+          omnibase_core.models.configuration.model_network_defaults import ModelNetworkDefaults; from
+          omnibase_core.models.services.model_network_config import ModelNetworkConfig; deployed = YAML(typ='safe').load(files('omnibase_core.models.configuration').joinpath('network_defaults.yaml').read_text());
+          assert ModelNetworkDefaults.load().model_dump() == deployed; assert ModelNetworkConfig().host
+          == deployed['service_bind_address']"
+        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21681-ac2-contract-read
     description: Every moved value equals its entry in the packaged contract, an explicit argument still
       wins, and a contract missing a key fails to load.
