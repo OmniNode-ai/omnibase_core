@@ -24,6 +24,7 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
     parse_semver_from_string,
 )
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 from .model_event_bus_output_field import ModelEventBusOutputField
 
@@ -591,9 +592,13 @@ class ModelEventBusOutputState(BaseModel):
         version: ModelSemVer | str,
         message: str,
         retry_attempt: int,
-        next_retry_delay_seconds: int = 30,
+        next_retry_delay_seconds: int | None = None,
     ) -> ModelEventBusOutputState:
         """Create output state for retry scenarios."""
+        if next_retry_delay_seconds is None:
+            next_retry_delay_seconds = (
+                packaged_service_timings().output_retry_delay_seconds
+            )
         next_retry_at = (
             datetime.now() + timedelta(seconds=next_retry_delay_seconds)
         ).isoformat()

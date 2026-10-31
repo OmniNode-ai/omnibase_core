@@ -8,7 +8,9 @@ Typed model for network access restrictions,
 replacing Dict[str, Any] with structured fields.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 
 class ModelNetworkRestrictions(BaseModel):
@@ -18,6 +20,8 @@ class ModelNetworkRestrictions(BaseModel):
     Defines IP ranges, ports, protocols, and geographic restrictions
     for network access control.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # IP-based restrictions
     allowed_ip_ranges: list[str] = Field(
@@ -243,7 +247,7 @@ class ModelNetworkRestrictions(BaseModel):
             requests_per_hour=100,
             burst_size=5,
             max_connections_per_ip=2,
-            connection_timeout_seconds=10,
+            connection_timeout_seconds=packaged_service_timings().restricted_connection_wait_seconds,
             block_vpn_connections=True,
             block_proxy_connections=True,
             block_tor_connections=True,

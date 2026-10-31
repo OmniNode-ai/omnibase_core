@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# OMN-21796: session, health, CLI, service, destination, cache and probe timings of the
+# model presets and defaults in omnibase_core. Each key is a ModelServiceTimings field; the
+# model requires every key and refuses an unknown one, so this file is the only place the
+# numbers live. A deployment overlays a value by constructing the model with its own mapping
+# and injecting it where the module accepts one.
+session_minimal_idle_minutes: 120
+session_strict_idle_minutes: 15
+session_strict_fresh_auth_minutes: 3
+session_maximum_idle_minutes: 10
+session_maximum_absolute_minutes: 120
+session_maximum_fresh_auth_minutes: 1
+session_maximum_warn_before_minutes: 2
+health_production_check_interval_seconds: 30
+health_development_check_interval_seconds: 60
+health_maintenance_check_interval_seconds: 120
+cli_limited_wait_seconds: 300
+cli_quick_wait_seconds: 30
+database_service_connection_wait_seconds: 30
+database_service_health_check_wait_seconds: 5
+file_destination_flush_interval_ms: 5000
+kafka_destination_flush_interval_ms: 1000
+dedup_default_ttl_hours: 6
+discover_tools_wait_seconds: 5.0
+high_priority_input_wait_seconds: 60
+output_retry_delay_seconds: 30
+compute_cache_default_ttl_minutes: 30
+node_execution_default_wait_seconds: 300
+replay_retry_delay_ms: 100.0
+aliveness_probe_wait_seconds: 30
+restricted_connection_wait_seconds: 10
+secret_cache_ttl_seconds: 300
+trust_policy_max_cache_ttl_seconds: 86400

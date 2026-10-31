@@ -23,6 +23,7 @@ from omnibase_core.models.configuration.model_rest_api_connection_config import 
 )
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 from omnibase_core.utils.util_security import UtilSecurity
 
 # NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
@@ -239,7 +240,7 @@ class ModelExternalServiceConfig(BaseModel):
             username=username,
             password=SecretStr(password),
             ssl_enabled=False,
-            connection_timeout=30,
+            connection_timeout=packaged_service_timings().database_service_connection_wait_seconds,
         )
 
         return cls(
@@ -247,7 +248,7 @@ class ModelExternalServiceConfig(BaseModel):
             service_type="database",
             connection_config=db_config,
             health_check_enabled=True,
-            health_check_timeout=5,
+            health_check_timeout=packaged_service_timings().database_service_health_check_wait_seconds,
             required=required,
             retry_config=ModelRetryConfig.create_standard(),
         )

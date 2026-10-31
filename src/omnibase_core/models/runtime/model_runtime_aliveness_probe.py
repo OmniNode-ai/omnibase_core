@@ -18,8 +18,9 @@ from typing import Any, Self
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_probe_failure_state import EnumProbeFailureState
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
-DEFAULT_TIMEOUT_SECONDS = 30
+DEFAULT_TIMEOUT_SECONDS = packaged_service_timings().aliveness_probe_wait_seconds
 TIMEOUT_ENV_VAR = "RUNTIME_ALIVENESS_TIMEOUT_SECONDS"
 
 __all__ = [

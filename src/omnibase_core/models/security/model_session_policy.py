@@ -8,7 +8,9 @@ Typed model for session management policy configuration,
 replacing Dict[str, Any] with structured fields.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 
 class ModelSessionPolicy(BaseModel):
@@ -17,6 +19,8 @@ class ModelSessionPolicy(BaseModel):
 
     Defines session lifecycle, timeout, and security constraints.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     # Session duration
     max_duration_minutes: int = Field(
@@ -185,7 +189,7 @@ class ModelSessionPolicy(BaseModel):
         """Create minimal session policy."""
         return cls(
             max_duration_minutes=1440,  # 24 hours
-            idle_timeout_minutes=120,  # 2 hours
+            idle_timeout_minutes=packaged_service_timings().session_minimal_idle_minutes,  # 2 hours
             concurrent_sessions=10,
             require_fresh_auth_for_sensitive=False,
             session_cookie_secure=False,
@@ -203,10 +207,10 @@ class ModelSessionPolicy(BaseModel):
         """Create strict session policy."""
         return cls(
             max_duration_minutes=240,  # 4 hours
-            idle_timeout_minutes=15,
+            idle_timeout_minutes=packaged_service_timings().session_strict_idle_minutes,
             concurrent_sessions=1,
             require_fresh_auth_for_sensitive=True,
-            fresh_auth_timeout_minutes=3,
+            fresh_auth_timeout_minutes=packaged_service_timings().session_strict_fresh_auth_minutes,
             require_mfa_for_session=True,
             bind_session_to_ip=True,
             extend_on_activity=False,
@@ -218,13 +222,13 @@ class ModelSessionPolicy(BaseModel):
         """Create maximum security session policy."""
         return cls(
             max_duration_minutes=120,  # 2 hours
-            idle_timeout_minutes=10,
-            absolute_timeout_minutes=120,
+            idle_timeout_minutes=packaged_service_timings().session_maximum_idle_minutes,
+            absolute_timeout_minutes=packaged_service_timings().session_maximum_absolute_minutes,
             concurrent_sessions=1,
             max_sessions_per_ip=1,
             max_sessions_per_device=1,
             require_fresh_auth_for_sensitive=True,
-            fresh_auth_timeout_minutes=1,
+            fresh_auth_timeout_minutes=packaged_service_timings().session_maximum_fresh_auth_minutes,
             require_mfa_for_session=True,
             session_cookie_secure=True,
             session_cookie_httponly=True,
@@ -232,7 +236,7 @@ class ModelSessionPolicy(BaseModel):
             bind_session_to_ip=True,
             geo_restrictions_enabled=True,
             extend_on_activity=False,
-            warn_before_timeout_minutes=2,
+            warn_before_timeout_minutes=packaged_service_timings().session_maximum_warn_before_minutes,
             allow_remember_me=False,
             logout_on_browser_close=True,
             track_session_activity=True,
