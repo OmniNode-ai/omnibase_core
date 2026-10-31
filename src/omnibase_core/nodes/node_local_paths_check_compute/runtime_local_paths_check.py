@@ -10,9 +10,16 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import cache
 from pathlib import Path
 from typing import Final
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.local_paths_check.model_local_paths_check_input import (
     ModelLocalPathsCheckInput,
 )
@@ -43,6 +50,33 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeLocalPathsCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
+
 
 _TEXT_EXTENSIONS: Final[frozenset[str]] = frozenset(
     {
@@ -116,7 +150,7 @@ def _gather_paths(paths: list[Path]) -> tuple[list[ModelSourceFile], list[str]]:
     """
     files: list[ModelSourceFile] = []
     errors: list[str] = []
-    gather = NodeSourceFileGatherEffect()
+    gather = _container().get_service(NodeSourceFileGatherEffect)
     for path in paths:
         if any(part in _SKIP_DIRS for part in path.parts):
             continue
@@ -174,7 +208,7 @@ def _gather_paths(paths: list[Path]) -> tuple[list[ModelSourceFile], list[str]]:
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     """Persist reports exclusively through the canonical write effect."""
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -203,8 +237,10 @@ def main(argv: list[str] | None = None) -> int:
         [Path(p) for p in parsed.filenames] if parsed.filenames else [Path(parsed.root)]
     )
     files, runtime_errors = _gather_paths(paths)
-    scan_report = NodeLocalPathsCheckCompute().handle(
-        ModelLocalPathsCheckInput(files=files)
+    scan_report = (
+        _container()
+        .get_service(NodeLocalPathsCheckCompute)
+        .handle(ModelLocalPathsCheckInput(files=files))
     )
     if (
         not files

@@ -7,7 +7,14 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import cache
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.no_untyped_metadata_check.model_no_untyped_metadata_check_input import (
     ModelNoUntypedMetadataCheckInput,
 )
@@ -34,6 +41,32 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeNoUntypedMetadataCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _split_gather_output(
@@ -52,7 +85,7 @@ def _gather(
     request: ModelSourceFileGatherInput,
 ) -> tuple[list[ModelSourceFile], list[str]]:
     try:
-        output = NodeSourceFileGatherEffect().handle(request)
+        output = _container().get_service(NodeSourceFileGatherEffect).handle(request)
     except (OSError, UnicodeError) as exc:
         return [], [f"{request.root}: read error: {exc}"]
     return _split_gather_output(output)
@@ -75,7 +108,7 @@ def _gather_from_root(root: str) -> tuple[list[ModelSourceFile], list[str]]:
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -108,8 +141,10 @@ def main(argv: list[str] | None = None) -> int:
             sys.stdout.write(f"ERROR: {error}\n")
         return 1
 
-    report = NodeNoUntypedMetadataCheckCompute().handle(
-        ModelNoUntypedMetadataCheckInput(files=files)
+    report = (
+        _container()
+        .get_service(NodeNoUntypedMetadataCheckCompute)
+        .handle(ModelNoUntypedMetadataCheckInput(files=files))
     )
     _write_report(parsed.report_json, report)
     if report.overall_status == "PASS":
