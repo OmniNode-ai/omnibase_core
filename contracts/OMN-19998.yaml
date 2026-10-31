@@ -163,6 +163,16 @@ requirements:
           after three, and does not retry a permanent error -- falsifier: uv run pytest tests/unit/validation/test_auto_merge_workflow_shape.py
           -q -n 0 -o addopts= -k Transient fails at the merge base, where one transient answer fails the
           step"
+  - id: "req-omn19998-evidence-selector-node-ids"
+    statement: "The repo-owned contract guard reads the path a pytest evidence command runs from a file,
+      a file::node id or a tests directory, so a contract that names one of them does not turn Tests Gate
+      red."
+    acceptance:
+      - id: "AC18"
+        statement: "AC18: The selector reader returns the file of a file::node id and an existing tests
+          directory, and still returns nothing for an option value or a directory that does not exist
+          -- falsifier: uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q -n 0 -o addopts=
+          -k pytest_selector"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -465,3 +475,15 @@ dod_evidence:
           addopts= -k Transient"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC17"]
+  - id: "dod-omn19998-evidence-selector-node-ids"
+    description: "The contract guard's selector reader accepts a file::node id and an existing tests directory
+      and refuses an option value or a missing directory. At the merge base the reader does not exist
+      and the tests fail."
+    source: "manual"
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q -n 0 -o addopts=
+          -k pytest_selector"
+        cwd: "${OMNI_HOME}/omnibase_core"
+    binds_ac: ["AC18"]
