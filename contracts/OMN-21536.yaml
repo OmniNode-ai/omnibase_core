@@ -148,3 +148,22 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC7
+  - id: dod-omn21536-core-envelope-burndown
+    description: "Burn-down slice on omnibase_core: the six handler modules that referenced ModelEventEnvelope
+      take one typed request instead, and the handler_shape validator reports no envelope_in_core on them."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/doc_content_scan tests/unit/validation/localhost_url
+          tests/unit/validation/no_faked_boundary tests/unit/validation/pin_hygiene tests/unit/validation/todo_marker
+          tests/unit/validation/test_validator_github_token_env_reads.py -n 0 -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "sh -c '! env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_handler_shape:ValidatorHandlerShape src/omnibase_core/validation/doc_content_scan/handler.py
+          src/omnibase_core/validation/localhost_url/handler.py src/omnibase_core/validation/no_faked_boundary/handler.py
+          src/omnibase_core/validation/pin_hygiene/handler.py src/omnibase_core/validation/todo_marker/handler.py
+          src/omnibase_core/validators/handler_github_token_env_reads.py 2>&1 | grep -q envelope_in_core'"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1

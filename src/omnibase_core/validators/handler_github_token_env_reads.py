@@ -3,28 +3,21 @@
 
 """HandlerGithubTokenEnvReads — COMPUTE handler for github-token env-read ban (OMN-13310).
 
-Implements ``ProtocolMessageHandler`` as a COMPUTE node.  Input payload:
-``ModelGithubTokenScanRequest``; result type: ``ModelGithubTokenScanResult``.
+A COMPUTE handler whose ``handle(request)`` takes ``ModelGithubTokenScanRequest``
+and returns ``ModelGithubTokenScanResult``; the event envelope belongs to the shared
+runtime, not to this handler.
 
 The handler is **pure**: it never reads the filesystem.  File bytes are supplied
-via ``ModelGithubTokenScanRequest.files``; violations are returned as
-``ModelHandlerOutput.result`` (JSON-ledger-safe Pydantic model).
-
-COMPUTE constraints enforced by ``ModelHandlerOutput.for_compute``:
-- no events[], no intents[], no projections[]
-- result is required and must be JSON-ledger-safe
+via ``ModelGithubTokenScanRequest.files``; violations are returned in the
+JSON-ledger-safe result model.
 """
 
 from __future__ import annotations
 
 __all__ = ["HandlerGithubTokenEnvReads"]
 
-from uuid import UUID, uuid4
-
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.validation.model_github_token_scan_request import (
     ModelGithubTokenScanRequest,
 )
@@ -40,13 +33,12 @@ from omnibase_core.validation.validator_github_token_env_reads import (
 class HandlerGithubTokenEnvReads:
     """COMPUTE handler: scan file source texts for raw GitHub-token env reads.
 
-    Implements ``ProtocolMessageHandler`` (structural) as a COMPUTE node.
-    Input payload: ``ModelGithubTokenScanRequest``
-    Result type:   ``ModelGithubTokenScanResult``
+    Request: ``ModelGithubTokenScanRequest``
+    Result:  ``ModelGithubTokenScanResult``
 
     The handler is **pure**: it never reads the filesystem.  File bytes are
     supplied via ``ModelGithubTokenScanRequest.files``; violations are returned
-    as ``ModelHandlerOutput.result`` (JSON-ledger-safe Pydantic model).
+    in the JSON-ledger-safe result model.
     """
 
     @property
@@ -67,21 +59,20 @@ class HandlerGithubTokenEnvReads:
 
     async def handle(
         self,
-        envelope: ModelEventEnvelope[ModelGithubTokenScanRequest],
-    ) -> ModelHandlerOutput[ModelGithubTokenScanResult]:
-        """Scan files supplied in the envelope payload for GitHub-token env reads.
+        request: ModelGithubTokenScanRequest,
+    ) -> ModelGithubTokenScanResult:
+        """Scan files supplied in the request for GitHub-token env reads.
 
         Args:
-            envelope: Input envelope with ``ModelGithubTokenScanRequest`` payload.
+            request: The ``ModelGithubTokenScanRequest`` naming the file texts.
 
         Returns:
-            ``ModelHandlerOutput[ModelGithubTokenScanResult]`` with ``result`` set.
+            ``ModelGithubTokenScanResult`` with the violations and file counts.
         """
         from omnibase_core.models.validation.model_github_token_violation import (
             ModelGithubTokenViolation,
         )
 
-        request = envelope.payload
         all_violations: list[ModelGithubTokenViolation] = []
         files_scanned = 0
         files_skipped = 0
@@ -94,17 +85,8 @@ class HandlerGithubTokenEnvReads:
             files_scanned += 1
             all_violations.extend(scan_source(source, file_path=file_path))
 
-        result = ModelGithubTokenScanResult(
+        return ModelGithubTokenScanResult(
             violations=tuple(all_violations),
             files_scanned=files_scanned,
             files_skipped=files_skipped,
-        )
-
-        correlation_id: UUID = envelope.correlation_id or uuid4()
-
-        return ModelHandlerOutput.for_compute(
-            input_envelope_id=envelope.envelope_id,
-            correlation_id=correlation_id,
-            handler_id=self.handler_id,
-            result=result,
         )

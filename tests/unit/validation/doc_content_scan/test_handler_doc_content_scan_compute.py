@@ -17,8 +17,8 @@ These tests assert three things:
 2. The PATH-based exemptions the text-only corpus could not express:
    ``OMN-<digits>`` is exempt under ``contracts/`` but
    local-env rules still apply there; the line/file suppression markers work.
-3. The generated COMPUTE handler is shaped canonically (ProtocolMessageHandler,
-   COMPUTE kind, returns ``result``, pure) and runs over the in-memory bus — the
+3. The generated COMPUTE handler is shaped canonically (COMPUTE kind, one typed
+   request in, the typed result out, pure) and runs over the in-memory bus — the
    same two-transport seam as the sibling private-IP validator.
 """
 
@@ -30,10 +30,6 @@ from typing import Final
 import pytest
 
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.protocols.runtime.protocol_message_handler import (
-    ProtocolMessageHandler,
-)
 from omnibase_core.validation.doc_content_scan.handler import (
     HandlerDocContentScanCompute,
     scan_source,
@@ -341,9 +337,8 @@ def test_findings_are_order_independent() -> None:
 
 
 @pytest.mark.unit
-def test_handler_is_a_protocol_message_handler() -> None:
+def test_handler_is_a_compute_handler() -> None:
     handler = HandlerDocContentScanCompute()
-    assert isinstance(handler, ProtocolMessageHandler)
     assert handler.node_kind is EnumNodeKind.COMPUTE
     assert handler.handler_id == "validator-doc-content-scan-compute"
 
@@ -351,13 +346,13 @@ def test_handler_is_a_protocol_message_handler() -> None:
 @pytest.mark.unit
 def test_handler_returns_compute_result() -> None:
     handler = HandlerDocContentScanCompute()
-    envelope: ModelEventEnvelope[ModelDocContentScanInput] = ModelEventEnvelope(
-        payload=ModelDocContentScanInput(content="host 10.0.0.1", path="d.md")
+    result = asyncio.run(
+        handler.handle(
+            ModelDocContentScanInput(content=_VIOLATION_FIXTURES[0], path="d.md")
+        )
     )
-    output = asyncio.run(handler.handle(envelope))
-    assert output.result is not None
-    assert output.result.flagged is True
-    assert output.result.path == "d.md"
+    assert result.flagged is True
+    assert result.path == "d.md"
 
 
 @pytest.mark.unit
