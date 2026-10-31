@@ -61,6 +61,7 @@ from omnibase_core.models.events.work.model_work_ledger_render import (
     index_events,
     render_ledger_row,
 )
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 __all__ = [
     "EXIT_CLEAR",
@@ -89,7 +90,6 @@ _LOCK_SUFFIX: Final = ".flock"
 _LOCK_DIR_GITIGNORE: Final = (
     "# ledger_lock.py lock files, never tracked (OMN-19262)\n*\n"
 )
-_LOCK_TIMEOUT_SECONDS: Final = 30.0
 _LOCK_POLL_SECONDS: Final = 0.05
 
 _UUID: Final = r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
@@ -325,7 +325,7 @@ def _md_lock(md: Path) -> Iterator[None]:
         ignore.write_text(_LOCK_DIR_GITIGNORE, encoding="utf-8")
     fd = os.open(lock_file, os.O_RDWR | os.O_CREAT, 0o600)
     try:
-        deadline = time.monotonic() + _LOCK_TIMEOUT_SECONDS
+        deadline = time.monotonic() + packaged_timeouts().work_ledger_lock_seconds
         while True:
             try:
                 fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -334,7 +334,7 @@ def _md_lock(md: Path) -> Iterator[None]:
                 if time.monotonic() >= deadline:
                     raise WorkLedgerUndecidedError(  # error-ok: carried to a reason= line
                         f"md lock {lock_file} not taken within "
-                        f"{_LOCK_TIMEOUT_SECONDS:.0f}s; another writer holds it"
+                        f"{packaged_timeouts().work_ledger_lock_seconds:.0f}s; another writer holds it"
                     ) from None
                 time.sleep(_LOCK_POLL_SECONDS)
         try:

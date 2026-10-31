@@ -19,9 +19,9 @@ import logging
 import subprocess
 from pathlib import Path
 
-logger = logging.getLogger("omnibase")
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
-_REBASE_TIMEOUT = 60
+logger = logging.getLogger("omnibase")
 
 
 class RebaseResult:
@@ -89,7 +89,7 @@ def attempt_rebase(
             cwd=repo_path,
             capture_output=True,
             text=True,
-            timeout=30,
+            timeout=packaged_timeouts().rebase_fetch_seconds,
             check=False,
         )
         if fetch.returncode != 0:
@@ -100,7 +100,7 @@ def attempt_rebase(
             cwd=repo_path,
             capture_output=True,
             text=True,
-            timeout=_REBASE_TIMEOUT,
+            timeout=packaged_timeouts().rebase_run_seconds,
             check=False,
         )
 
@@ -126,6 +126,6 @@ def _abort_rebase(repo_path: Path) -> None:
         cwd=repo_path,
         capture_output=True,
         text=True,
-        timeout=10,
+        timeout=packaged_timeouts().rebase_abort_seconds,
         check=False,
     )

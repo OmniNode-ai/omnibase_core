@@ -21,10 +21,9 @@ import logging
 import subprocess
 
 from omnibase_core.enums.enum_merge_strategy import EnumMergeStrategy
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 logger = logging.getLogger("omnibase")
-
-_API_TIMEOUT = 10
 
 
 class MergeStrategyDetector:
@@ -60,7 +59,7 @@ class MergeStrategyDetector:
                 ],
                 capture_output=True,
                 text=True,
-                timeout=_API_TIMEOUT,
+                timeout=packaged_timeouts().merge_strategy_api_seconds,
                 check=False,
             )
 

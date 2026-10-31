@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# OMN-21623: wall-clock budgets of the operational probes, subprocess calls and
+# lock waits in omnibase_core. Each key is a ModelOperationalTimeouts field; the
+# model requires every key and refuses an unknown one, so this file is the only
+# place the numbers live. A deployment overlays a value by constructing the model
+# with its own mapping and injecting it where the module accepts one.
+merge_queue_enqueue_seconds: 10.0
+merge_strategy_api_seconds: 10.0
+rebase_run_seconds: 60.0
+rebase_fetch_seconds: 30.0
+rebase_abort_seconds: 10.0
+work_ledger_lock_seconds: 30.0
+occ_git_read_seconds: 10.0
+occ_formatter_version_seconds: 5.0
+occ_formatter_lint_seconds: 10.0
+receipt_reprobe_reexec_seconds: 120.0
+contracts_validation_seconds: 300.0
+consumer_graph_lock_seconds: 60.0
+shared_token_policy_response_seconds: 5.0
+introspection_discovery_seconds: 5.0
+introspection_mcp_discovery_seconds: 3.0
+introspection_health_check_seconds: 2.0
+tool_invocation_mcp_seconds: 10.0
+tool_invocation_cli_seconds: 60.0

@@ -18,6 +18,7 @@ from omnibase_core.constants.constants_event_types import (
     REQUEST_REAL_TIME_INTROSPECTION,
 )
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 from .model_introspection_filters import ModelIntrospectionFilters
 
@@ -83,7 +84,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         requester_id: UUID,
         node_id: UUID | None = None,
         filters: ModelIntrospectionFilters | None = None,
-        timeout_ms: int = 5000,
+        timeout_ms: int | None = None,
         include_resource_usage: bool = False,
         **kwargs: Any,
     ) -> "ModelRequestIntrospectionEvent":
@@ -104,6 +105,8 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         if node_id is None:
             node_id = uuid4()
 
+        if timeout_ms is None:
+            timeout_ms = int(packaged_timeouts().introspection_discovery_seconds * 1000)
         return cls(
             node_id=node_id,
             requester_id=requester_id,
@@ -119,7 +122,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         node_id: UUID | None = None,
         requester_id: UUID | None = None,
         protocols: list[str] | None = None,
-        timeout_ms: int = 3000,
+        timeout_ms: int | None = None,
         **kwargs: Any,
     ) -> "ModelRequestIntrospectionEvent":
         """
@@ -145,6 +148,10 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
             status=["ready", "busy"],  # Only active nodes
         )
 
+        if timeout_ms is None:
+            timeout_ms = int(
+                packaged_timeouts().introspection_mcp_discovery_seconds * 1000
+            )
         return cls(
             node_id=node_id,
             requester_id=requester_id,
@@ -159,7 +166,7 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         cls,
         requester_id: UUID | None = None,
         node_id: UUID | None = None,
-        timeout_ms: int = 2000,
+        timeout_ms: int | None = None,
         **kwargs: Any,
     ) -> "ModelRequestIntrospectionEvent":
         """
@@ -179,6 +186,10 @@ class ModelRequestIntrospectionEvent(ModelOnexEvent):
         if node_id is None:
             node_id = uuid4()
 
+        if timeout_ms is None:
+            timeout_ms = int(
+                packaged_timeouts().introspection_health_check_seconds * 1000
+            )
         return cls(
             node_id=node_id,
             requester_id=requester_id,

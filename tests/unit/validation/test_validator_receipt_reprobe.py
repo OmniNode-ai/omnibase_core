@@ -23,10 +23,12 @@ from __future__ import annotations
 
 import pytest
 
+from omnibase_core.models.runtime.model_operational_timeouts import (
+    ModelOperationalTimeouts,
+)
 from omnibase_core.validation import validator_receipt_reprobe
 from omnibase_core.validation.validator_receipt_reprobe import (
     PROBE_COMMAND_ALLOWLIST,
-    PROBE_REEXEC_TIMEOUT_SECONDS,
     ReprobeStatus,
     verify_receipt_by_reexecuting_probe,
     verify_receipts_by_reexecuting_probes,
@@ -308,7 +310,7 @@ def test_allowlist_contains_exact_plan_prefixes() -> None:
 
 def test_timeout_is_120_seconds() -> None:
     """Plan acceptance: timeout cap of 120 seconds per probe."""
-    assert PROBE_REEXEC_TIMEOUT_SECONDS == 120
+    assert ModelOperationalTimeouts.packaged().receipt_reprobe_reexec_seconds == 120
 
 
 # ---------------------------------------------------------------------------

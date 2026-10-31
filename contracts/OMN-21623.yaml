@@ -66,6 +66,18 @@ requirements:
           unused topic constants are gone, and the contracts_and_di checker reports no literal_topic finding
           on either module -- falsifier: uv run pytest tests/unit/constants/test_event_topics_contract.py,
           which fails at the merge base where the topics are string literals in the two modules'
+  - id: req-omn21623-core-operational-timeouts
+    statement: The time budgets of omnibase_core's merge adapters, work-ledger CLI, validators, bus waits
+      and discovery event factories, and the health-check presets, are declared in packaged contracts
+      that models load, and the modules that used them hold no timeout literal for the checker to refuse.
+    acceptance:
+      - id: AC9
+        statement: 'AC9: ModelOperationalTimeouts loads every budget from the packaged operational_timeouts.yaml,
+          refuses a missing, unknown or non-positive budget, the declared budget reaches the subprocess
+          call of a merge-strategy probe and of a rebase, the discovery factories default to the declared
+          waits, the health-check presets equal their packaged YAML, and 12 modules draw no literal_timeout
+          finding from the contracts_and_di checker -- falsifier: uv run pytest tests/unit/models/runtime/test_model_operational_timeouts.py,
+          which fails at the merge base where the model does not exist and the modules carry the literals'
 evidence_requirements:
   - kind: tests
     description: The contracts-and-DI checker tests pass.
@@ -176,4 +188,19 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/constants/test_event_topics_contract.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac9-operational-timeouts
+    description: The packaged operational timeouts load and validate, the declared budget reaches the
+      subprocess calls of a merge-strategy probe and of a rebase, the discovery factories default to the
+      declared waits, the health-check presets equal their packaged YAML, and the 12 modules that held
+      timeout literals draw no literal_timeout finding from the contracts_and_di checker. At the merge
+      base the model does not exist, so these cases fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC9
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/runtime/test_model_operational_timeouts.py -q -o
+          addopts=''
         cwd: ${OMNI_HOME}/omnibase_core

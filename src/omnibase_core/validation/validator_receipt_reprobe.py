@@ -29,7 +29,7 @@ split by ``shlex.split`` — there is no shell interpolation. Only commands
 whose stripped form matches one of the command-boundary prefixes in
 :data:`PROBE_COMMAND_ALLOWLIST` are allowed to run. Anything else fails fast
 with detail mentioning ``allowlist``. Each probe is wall-clock-capped at
-:data:`PROBE_REEXEC_TIMEOUT_SECONDS`.
+``receipt_reprobe_reexec_seconds`` of the packaged operational timeouts.
 
 Public API: :func:`verify_receipt_by_reexecuting_probe` (single-receipt)
 and :func:`verify_receipts_by_reexecuting_probes` (batch, producing a
@@ -54,6 +54,7 @@ from omnibase_core.models.contracts.ticket.model_receipt_reprobe_result import (
     ModelReceiptReprobeResult,
     ReprobeStatus,
 )
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 # ---------------------------------------------------------------------------
 # Allowlist + constants
@@ -76,11 +77,6 @@ PROBE_COMMAND_ALLOWLIST: tuple[str, ...] = (
     "test -f",
     "test -d",
 )
-
-# Wall-clock cap per probe re-execution. Anything slower indicates the probe
-# is hung, not slow — fail closed.
-PROBE_REEXEC_TIMEOUT_SECONDS: int = 120
-
 
 # ---------------------------------------------------------------------------
 # Internal helpers
@@ -133,7 +129,7 @@ def verify_receipt_by_reexecuting_probe(
         ``("PASS", detail)`` if and only if:
 
         * ``probe_command`` is non-empty and allowlisted;
-        * the probe re-executes within :data:`PROBE_REEXEC_TIMEOUT_SECONDS`;
+        * the probe re-executes within ``receipt_reprobe_reexec_seconds``;
         * the re-execution's return code equals the recorded ``exit_code``;
         * the re-execution exited 0 (success).
 
@@ -159,18 +155,21 @@ def verify_receipt_by_reexecuting_probe(
             f"receipt.exit_code must be int, got {type(expected_exit).__name__}",
         )
 
+    # Wall-clock cap per probe re-execution: anything slower is hung, not slow,
+    # so the check fails closed.
+    reexec_seconds = packaged_timeouts().receipt_reprobe_reexec_seconds
     try:
         result = subprocess.run(
             shlex.split(probe),
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=PROBE_REEXEC_TIMEOUT_SECONDS,
+            timeout=reexec_seconds,
             check=False,
         )
     except subprocess.TimeoutExpired as e:
         return (
             ReprobeStatus.FAIL,
-            f"probe re-execution timed out after {PROBE_REEXEC_TIMEOUT_SECONDS}s: {e}",
+            f"probe re-execution timed out after {reexec_seconds:g}s: {e}",
         )
     except (OSError, ValueError) as e:
         # OSError: binary not found, perms; ValueError: shlex unbalanced quotes
@@ -282,7 +281,6 @@ def verify_receipts_by_reexecuting_probes(
 
 __all__ = [
     "PROBE_COMMAND_ALLOWLIST",
-    "PROBE_REEXEC_TIMEOUT_SECONDS",
     "ReprobeStatus",
     "verify_receipt_by_reexecuting_probe",
     "verify_receipts_by_reexecuting_probes",

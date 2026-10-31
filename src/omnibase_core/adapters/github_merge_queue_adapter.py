@@ -20,10 +20,9 @@ import subprocess
 
 from omnibase_core.adapters.merge_strategy_detector import MergeStrategyDetector
 from omnibase_core.enums.enum_merge_strategy import EnumMergeStrategy
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 logger = logging.getLogger("omnibase")
-
-_ENQUEUE_TIMEOUT = 10
 
 
 class GitHubMergeQueueAdapter:
@@ -68,7 +67,7 @@ class GitHubMergeQueueAdapter:
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=_ENQUEUE_TIMEOUT,
+                timeout=packaged_timeouts().merge_queue_enqueue_seconds,
                 check=False,
             )
         except (subprocess.TimeoutExpired, OSError) as exc:
