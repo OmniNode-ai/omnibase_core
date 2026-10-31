@@ -775,3 +775,8 @@ def test_a_test_data_file_named_like_an_exception_list_is_not_one() -> None:
         }
     )
     assert [str(i.file_path) for i in check(facts, RULES)] == ["config/x_baseline.yaml"]
+
+
+def test_baselined_growth_text_names_the_bind_then_edit_path() -> None:
+    """The growth message tells the author a bound handler leaves the baseline."""
+    text = CONTRACT.rules[0].parameters  # placeholder replaced below

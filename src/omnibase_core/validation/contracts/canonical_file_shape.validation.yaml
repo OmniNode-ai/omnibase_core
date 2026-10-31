@@ -81,7 +81,9 @@ validation:
       parameters:
         comment_prefixes: ["#", "//"]
         baselined_growth_text: "code lines {old} -> {new}; a baselined file only shrinks. Put the new
-          behaviour in a contract + node + handler (rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z)"
+          behaviour in a contract + node + handler (rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z).
+          A handler file that a node contract binds leaves the baseline in the same commit and may then
+          change freely."
 
     - rule_id: burndown-baseline
       description: Names the ticketed burn-down baseline, a second shrink-only file that carries the file-rule
