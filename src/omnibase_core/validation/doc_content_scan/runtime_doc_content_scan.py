@@ -38,7 +38,6 @@ from omnibase_core.constants.constants_event_types import (
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
 from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.doc_content_scan.handler import (
     HandlerDocContentScanCompute,
 )
@@ -118,12 +117,7 @@ class DocContentScanBusRunner:
     async def _on_command(self, message: ModelEventMessage) -> None:
         raw = json.loads(message.value.decode("utf-8"))
         scan_input = ModelDocContentScanInput.model_validate(raw)
-        envelope: ModelEventEnvelope[ModelDocContentScanInput] = ModelEventEnvelope(
-            payload=scan_input
-        )
-        output = await self._handler.handle(envelope)
-        result = output.result
-        assert result is not None  # COMPUTE always returns a result
+        result = await self._handler.handle(scan_input)
         await self._bus.publish(
             RESULT_TOPIC, None, result.model_dump_json().encode("utf-8")
         )

@@ -2723,9 +2723,6 @@ entries:
     content_sha1: 4266ed233fb79b59a53d990ba4d88ae63ea3d9df
   - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
     family: E-LAN
-    content_sha1: 501ac9f5e2de79034394a35b742822495ba43534
-  - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
-    family: E-LAN
     content_sha1: 5f7ff3c7b139ce3ec0cb2ffcbc6dfe360cf98ec5
   - path: tests/unit/validation/doc_content_scan/test_handler_doc_content_scan_compute.py
     family: E-LAN

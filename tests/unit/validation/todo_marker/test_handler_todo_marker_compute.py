@@ -5,8 +5,8 @@
 
 These tests assert two things:
 
-1. The generated COMPUTE handler is shaped canonically (ProtocolMessageHandler,
-   COMPUTE kind, returns ``result``, pure) and runs over the in-memory bus — the
+1. The generated COMPUTE handler is shaped canonically (COMPUTE kind, one typed
+   request in, the typed result out, pure) and runs over the in-memory bus — the
    same two-transport seam as the G1 local-paths canary and the G2 private-IP
    validator.
 2. The committed ``scan_source`` reproduces the acceptance corpus verdicts that
@@ -33,10 +33,6 @@ import asyncio
 import pytest
 
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.protocols.runtime.protocol_message_handler import (
-    ProtocolMessageHandler,
-)
 from omnibase_core.validation.todo_marker.handler import (
     HandlerTodoMarkerCompute,
     scan_source,
@@ -118,9 +114,8 @@ def test_marker_as_identifier_substring_is_not_flagged() -> None:
 
 
 @pytest.mark.unit
-def test_handler_is_a_protocol_message_handler() -> None:
+def test_handler_is_a_compute_handler() -> None:
     handler = HandlerTodoMarkerCompute()
-    assert isinstance(handler, ProtocolMessageHandler)
     assert handler.node_kind is EnumNodeKind.COMPUTE
     assert handler.handler_id == "validator-todo-marker-compute"
 
@@ -128,13 +123,13 @@ def test_handler_is_a_protocol_message_handler() -> None:
 @pytest.mark.unit
 def test_handler_returns_compute_result() -> None:
     handler = HandlerTodoMarkerCompute()
-    envelope: ModelEventEnvelope[ModelTodoMarkerScanInput] = ModelEventEnvelope(
-        payload=ModelTodoMarkerScanInput(content=f"{_HASH} {_TODO}: x", path="f.py")
+    result = asyncio.run(
+        handler.handle(
+            ModelTodoMarkerScanInput(content=f"{_HASH} {_TODO}: x", path="f.py")
+        )
     )
-    output = asyncio.run(handler.handle(envelope))
-    assert output.result is not None
-    assert output.result.flagged is True
-    assert output.result.path == "f.py"
+    assert result.flagged is True
+    assert result.path == "f.py"
 
 
 @pytest.mark.unit

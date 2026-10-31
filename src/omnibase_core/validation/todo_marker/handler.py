@@ -24,7 +24,7 @@ advisorily. This handler turns that advisory detection into a BLOCKING gate.
 
 ONEX node type: COMPUTE. Handler output: ``result`` only (no events / intents /
 projections). The handler is PURE and DETERMINISTIC: it scans the source TEXT
-carried on the envelope payload and performs no filesystem / network / env I/O.
+carried on the typed request and performs no filesystem / network / env I/O.
 Loading the staged file set is the EFFECT boundary's job (``runtime_todo_marker``),
 never the handler's — that is what preserves COMPUTE purity (§1A).
 
@@ -39,12 +39,9 @@ from __future__ import annotations
 
 import re
 from typing import Final
-from uuid import UUID
 
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
 from omnibase_core.enums.enum_node_kind import EnumNodeKind
-from omnibase_core.models.dispatch.model_handler_output import ModelHandlerOutput
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.validation.todo_marker.models import (
     ModelTodoMarkerFinding,
     ModelTodoMarkerScanInput,
@@ -164,9 +161,9 @@ def scan_source(  # stub-ok: TODO/FIXME/HACK tokens are the input vocabulary thi
 class HandlerTodoMarkerCompute:
     """COMPUTE handler: scan one source-text payload for unfinished-work markers.
 
-    Implements ``omnibase_core.protocols.runtime.ProtocolMessageHandler`` as a
-    COMPUTE handler. Stateless and pure — safe for concurrent dispatch. Returns
-    the verdict as ``ModelHandlerOutput.result`` (the COMPUTE-required field).
+    ``handle(request)`` takes one typed request and returns the typed verdict; the
+    event envelope belongs to the shared runtime, not to this handler. Stateless and
+    pure — safe for concurrent dispatch.
     """
 
     @property
@@ -187,14 +184,6 @@ class HandlerTodoMarkerCompute:
         return EnumNodeKind.COMPUTE
 
     async def handle(
-        self, envelope: ModelEventEnvelope[ModelTodoMarkerScanInput]
-    ) -> ModelHandlerOutput[ModelTodoMarkerScanResult]:
-        scan_input = envelope.payload
-        result = scan_source(scan_input.content, scan_input.path)
-        correlation_id: UUID = envelope.correlation_id or envelope.envelope_id
-        return ModelHandlerOutput.for_compute(
-            input_envelope_id=envelope.envelope_id,
-            correlation_id=correlation_id,
-            handler_id=self.handler_id,
-            result=result,
-        )
+        self, request: ModelTodoMarkerScanInput
+    ) -> ModelTodoMarkerScanResult:
+        return scan_source(request.content, request.path)

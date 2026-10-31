@@ -20,17 +20,11 @@ from __future__ import annotations
 import asyncio
 import textwrap
 from pathlib import Path
-from typing import cast
-from uuid import uuid4
 
 import pytest
 
-from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.models.validation.model_github_token_scan_request import (
     ModelGithubTokenScanRequest,
-)
-from omnibase_core.models.validation.model_github_token_scan_result import (
-    ModelGithubTokenScanResult,
 )
 from omnibase_core.models.validation.model_github_token_violation import (
     ModelGithubTokenViolation,
@@ -217,15 +211,8 @@ def test_main_exits_0_in_report_mode(tmp_path: Path) -> None:
 def test_handler_clean_input_returns_empty_result() -> None:
     """Handler returns a clean result when no violations are present."""
     request = ModelGithubTokenScanRequest(files={"src/clean.py": _CLEAN_SOURCE})
-    envelope: ModelEventEnvelope[ModelGithubTokenScanRequest] = ModelEventEnvelope(
-        payload=request,
-        envelope_id=uuid4(),
-        correlation_id=uuid4(),
-    )
     handler = HandlerGithubTokenEnvReads()
-    output = asyncio.run(handler.handle(envelope))
-    assert output.result is not None
-    scan_result = cast(ModelGithubTokenScanResult, output.result)
+    scan_result = asyncio.run(handler.handle(request))
     assert scan_result.is_clean
     assert scan_result.files_scanned == 1
 
@@ -240,15 +227,8 @@ def test_handler_violation_input_returns_findings() -> None:
             "src/bad.py": bad_source,
         }
     )
-    envelope: ModelEventEnvelope[ModelGithubTokenScanRequest] = ModelEventEnvelope(
-        payload=request,
-        envelope_id=uuid4(),
-        correlation_id=uuid4(),
-    )
     handler = HandlerGithubTokenEnvReads()
-    output = asyncio.run(handler.handle(envelope))
-    assert output.result is not None
-    scan_result = cast(ModelGithubTokenScanResult, output.result)
+    scan_result = asyncio.run(handler.handle(request))
     assert not scan_result.is_clean
     assert scan_result.files_scanned == 2
     assert len(scan_result.violations) == 1
@@ -266,15 +246,8 @@ def test_handler_allowlisted_files_skipped() -> None:
             "tests/test_handler.py": 'import os\ntoken = os.environ["GH_PAT"]\n',
         }
     )
-    envelope: ModelEventEnvelope[ModelGithubTokenScanRequest] = ModelEventEnvelope(
-        payload=request,
-        envelope_id=uuid4(),
-        correlation_id=uuid4(),
-    )
     handler = HandlerGithubTokenEnvReads()
-    output = asyncio.run(handler.handle(envelope))
-    assert output.result is not None
-    scan_result = cast(ModelGithubTokenScanResult, output.result)
+    scan_result = asyncio.run(handler.handle(request))
     assert scan_result.is_clean
     assert scan_result.files_skipped == 1
 
