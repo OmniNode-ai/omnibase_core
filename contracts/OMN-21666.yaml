@@ -1,0 +1,39 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21666
+title: 'Baselined growth message names the bind-then-edit path'
+summary: 'Baselined growth message names the bind-then-edit path'
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21666-growth-guidance
+    statement: The baselined growth diagnostic explains the bind-then-edit path while refusing growth.
+    acceptance:
+      - id: AC1
+        statement: The growth diagnostic retains the shrink-only refusal and adds the generic sentence
+          explaining that a handler bound by a node contract leaves the baseline in the same commit.
+evidence_requirements:
+  - kind: tests
+    description: The emitted diagnostic is pinned by focused tests.
+    command: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
+      tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py -q --no-cov
+      -o addopts='' -k 'baselined_growth_text_names_the_bind_then_edit_path or baselined_file_growth_any_surface_refused'
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-001
+    description: Hosted deploy smoke loads the checkout's validation contract and checks the emitted growth
+      refusal and bind-then-edit guidance. It needs no service or container daemon and fails against the
+      merge base's diagnostic.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py
+          tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov -o addopts='' -k 'baselined_growth_text_names_the_bind_then_edit_path or baselined_file_growth_any_surface_refused'
+        cwd: ${OMNI_HOME}/omnibase_core
