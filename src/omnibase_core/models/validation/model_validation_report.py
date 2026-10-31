@@ -25,15 +25,21 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 # Status precedence matrix (OMN-2543 requirement)
 # "Status precedence must be explicitly encoded as a lookup (not implicit)"
 # Priority order: ERROR > FAIL > WARN > PASS
-# SKIP and NOT_APPLICABLE do not influence aggregate overall_status.
+# SKIP, NOT_APPLICABLE and ADVISORY do not influence aggregate overall_status,
+# except that a SKIP or NOT_APPLICABLE on a *required* validator counts as FAIL
+# (OMN-21562: pass is not missing or skipped). MISSING always counts as FAIL.
 # ---------------------------------------------------------------------------
 _SEVERITY_PRECEDENCE: dict[str, int] = {
     "ERROR": 40,
     "FAIL": 30,
     "WARN": 20,
     "PASS": 10,
-    # SKIP and NOT_APPLICABLE intentionally absent — they do not contribute.
+    # SKIP, NOT_APPLICABLE and ADVISORY intentionally absent — they contribute
+    # only through the required-validator rule in _compute_overall_status.
 }
+
+# Severities that count as FAIL when the validator is required.
+_REQUIRED_NON_PASS: frozenset[str] = frozenset({"SKIP", "NOT_APPLICABLE"})
 
 # The overall_status literals that map out of the precedence matrix.
 # These are a subset of finding severity literals (no SKIP/NOT_APPLICABLE).
@@ -48,6 +54,7 @@ _PRECEDENCE_TO_STATUS: dict[int, Literal["PASS", "WARN", "FAIL", "ERROR"]] = {
 def _compute_overall_status(
     findings: tuple[ModelValidationFindingRef, ...],
     profile: Literal["strict", "default", "advisory"],
+    required_validators: tuple[str, ...] = (),
 ) -> Literal["PASS", "WARN", "FAIL", "ERROR"]:
     """Compute overall_status from findings using the explicit precedence matrix.
 
@@ -56,14 +63,22 @@ def _compute_overall_status(
     - 'default': findings are evaluated at face value.
     - 'advisory': result is capped at WARN; never FAIL or ERROR.
 
-    SKIP and NOT_APPLICABLE severities are excluded from the computation.
+    SKIP, NOT_APPLICABLE and ADVISORY severities are excluded from the
+    computation, unless the finding's validator is in ``required_validators``
+    and the severity is SKIP or NOT_APPLICABLE, which then counts as FAIL.
+    MISSING always counts as FAIL.
     When there are no contributing findings the result is PASS.
     """
     highest_precedence = _SEVERITY_PRECEDENCE["PASS"]
 
     for finding in findings:
         severity = finding.severity
-        # SKIP and NOT_APPLICABLE do not contribute to overall_status.
+        if severity == "MISSING" or (
+            severity in _REQUIRED_NON_PASS
+            and finding.validator_id in required_validators
+        ):
+            severity = "FAIL"
+        # SKIP, NOT_APPLICABLE and ADVISORY do not contribute to overall_status.
         if severity not in _SEVERITY_PRECEDENCE:
             continue
         # 'strict' profile: elevate WARN to FAIL.
@@ -99,10 +114,17 @@ class ModelValidationFindingRef(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    severity: Literal["PASS", "WARN", "FAIL", "ERROR", "SKIP", "NOT_APPLICABLE"] = (
-        Field(
-            description="Severity of this finding (mirrors ValidationFinding.severity).",
-        )
+    severity: Literal[
+        "PASS",
+        "WARN",
+        "FAIL",
+        "ERROR",
+        "SKIP",
+        "NOT_APPLICABLE",
+        "MISSING",
+        "ADVISORY",
+    ] = Field(
+        description="Severity of this finding (mirrors ValidationFinding.severity).",
     )
 
     # string-id-ok: human-readable validator name (e.g., 'naming_convention'), not a UUID
@@ -131,10 +153,17 @@ class ModelValidationFindingEmbed(BaseModel):
 
     # string-id-ok: human-readable validator name (e.g., 'naming_convention'), not a UUID
     validator_id: str = Field(description="Validator that produced this finding.")
-    severity: Literal["PASS", "WARN", "FAIL", "ERROR", "SKIP", "NOT_APPLICABLE"] = (
-        Field(
-            description="Severity of this finding.",
-        )
+    severity: Literal[
+        "PASS",
+        "WARN",
+        "FAIL",
+        "ERROR",
+        "SKIP",
+        "NOT_APPLICABLE",
+        "MISSING",
+        "ADVISORY",
+    ] = Field(
+        description="Severity of this finding.",
     )
     location: str | None = Field(default=None, description="File/line location.")
     message: str = Field(description="Human-readable description of the finding.")
@@ -193,6 +222,12 @@ class ModelValidationMetrics(BaseModel):
     skip_count: int = Field(default=0, description="Findings with severity SKIP.", ge=0)
     not_applicable_count: int = Field(
         default=0, description="Findings with severity NOT_APPLICABLE.", ge=0
+    )
+    missing_count: int = Field(
+        default=0, description="Findings with severity MISSING.", ge=0
+    )
+    advisory_count: int = Field(
+        default=0, description="Findings with severity ADVISORY.", ge=0
     )
 
 
@@ -254,6 +289,8 @@ def _build_metrics(
         "ERROR": 0,
         "SKIP": 0,
         "NOT_APPLICABLE": 0,
+        "MISSING": 0,
+        "ADVISORY": 0,
     }
     for f in findings:
         counts[f.severity] = counts.get(f.severity, 0) + 1
@@ -266,6 +303,8 @@ def _build_metrics(
         error_count=counts["ERROR"],
         skip_count=counts["SKIP"],
         not_applicable_count=counts["NOT_APPLICABLE"],
+        missing_count=counts["MISSING"],
+        advisory_count=counts["ADVISORY"],
     )
 
 
@@ -324,8 +363,19 @@ class ModelValidationReport(BaseModel):
         description=(
             "Aggregated status derived from all findings via the explicit "
             "precedence matrix (ERROR > FAIL > WARN > PASS). "
-            "SKIP and NOT_APPLICABLE findings do not contribute. "
+            "SKIP, NOT_APPLICABLE and ADVISORY findings do not contribute, "
+            "except SKIP/NOT_APPLICABLE on a required validator (counts as FAIL); "
+            "MISSING always counts as FAIL. "
             "Profile modifiers are applied before the lookup."
+        ),
+    )
+
+    required_validators: tuple[str, ...] = Field(
+        default=(),
+        description=(
+            "Validator IDs required for this run, read by the caller from the "
+            "validator requirements file. A required validator in SKIP or "
+            "NOT_APPLICABLE aggregates to FAIL."
         ),
     )
 
@@ -358,7 +408,7 @@ class ModelValidationReport(BaseModel):
             )
             for f in self.findings
         )
-        expected = _compute_overall_status(refs, self.profile)
+        expected = _compute_overall_status(refs, self.profile, self.required_validators)
         if self.overall_status != expected:
             raise ValueError(
                 f"overall_status '{self.overall_status}' is inconsistent with findings "
@@ -373,6 +423,7 @@ class ModelValidationReport(BaseModel):
         request: ModelValidationRequestRef,
         validators_run: tuple[str, ...] = (),
         request_id: str | None = None,
+        required_validators: tuple[str, ...] = (),
     ) -> ModelValidationReport:
         """Construct a ValidationReport by computing overall_status from findings.
 
@@ -387,6 +438,8 @@ class ModelValidationReport(BaseModel):
             request: The ValidationRequest (or compatible duck-type) that triggered the run.
             validators_run: Ordered list of validator IDs that were invoked.
             request_id: Optional caller-supplied correlation ID.
+            required_validators: Validator IDs the validator requirements file
+                marks required; a SKIP or NOT_APPLICABLE on one aggregates to FAIL.
 
         Returns:
             A frozen ValidationReport with consistent overall_status.
@@ -398,7 +451,7 @@ class ModelValidationReport(BaseModel):
             )
             for f in findings
         )
-        overall = _compute_overall_status(refs, request.profile)
+        overall = _compute_overall_status(refs, request.profile, required_validators)
 
         metrics = _build_metrics(findings)
 
@@ -410,6 +463,7 @@ class ModelValidationReport(BaseModel):
         return cls(
             profile=request.profile,
             overall_status=overall,
+            required_validators=required_validators,
             findings=findings,
             metrics=metrics,
             provenance=provenance,
