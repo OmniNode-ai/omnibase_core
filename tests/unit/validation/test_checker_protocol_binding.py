@@ -65,17 +65,6 @@ _MARK = "zzz-marker"
 _NEVER = r"\bnever-matches-zzz\b"
 _SOURCE = Path("src/pkg/module.py")
 _CONTAINER_FILE = "src/omnibase_core/container/container_auto_config.py"
-_BASELINED_FILES = [
-    "src/omnibase_core/event_bus/testing/fixture_event_bus_substrate.py",
-    "src/omnibase_core/nodes/node_source_file_gather_effect/runtime_shared_token_policy.py",
-    "src/omnibase_core/runtime/harness/harness_dispatch.py",
-    "src/omnibase_core/runtime/runtime_local.py",
-    "src/omnibase_core/validation/doc_content_scan/runtime_doc_content_scan.py",
-    "src/omnibase_core/validation/localhost_url/runtime_localhost_url.py",
-    "src/omnibase_core/validation/no_faked_boundary/runtime_no_faked_boundary.py",
-    "src/omnibase_core/validation/pin_hygiene/runtime_pin_hygiene.py",
-    "src/omnibase_core/validation/todo_marker/runtime_todo_marker.py",
-]
 
 
 def _contract() -> ModelValidatorSubcontract:
@@ -322,30 +311,24 @@ def test_a_baselined_file_passes_at_its_entry_fails_above_and_is_stale_below() -
     assert "lower the entry" in stale[0].message
 
 
-def test_baseline_shrinks_to_the_files_the_ticket_names() -> None:
-    """The baseline holds the 9 files and not the container's own registration."""
+def test_baseline_is_empty_and_the_container_registration_is_not_in_it() -> None:
+    """Every file the ticket names resolves the in-memory bus from the container."""
     entries = parse_baseline(_BASELINE.read_text(encoding="utf-8"))
-    assert sorted(entries) == sorted(_BASELINED_FILES)
+    assert dict(entries) == {}
     assert _CONTAINER_FILE not in entries
-    rules = _contract().rules
-    for name, count in entries.items():
-        text = (_ROOT / name).read_text(encoding="utf-8")
-        found = [
-            i
-            for i in check_protocol_binding(Path(name), text, rules)
-            if i.code == "default_implementation_construction"
-        ]
-        assert len(found) == count, name
 
 
 def test_baseline_shrinks_only_when_the_file_holds_fewer_findings() -> None:
     """An entry above what the file holds is stale; a file above its entry fails."""
     rules = _contract().rules
-    name = _BASELINED_FILES[0]
-    text = (_ROOT / name).read_text(encoding="utf-8")
-    assert check_protocol_binding(Path(name), text, rules, {name: 1}) == ()
-    assert check_protocol_binding(Path(name), text, rules, {name: 2}) != ()
-    assert len(check_protocol_binding(Path(name), text, rules, {})) == 1
+    text = _fixture("violation", "default_implementation_construction").read_text(
+        encoding="utf-8"
+    )
+    key = _SOURCE.as_posix()
+    found = len(check_protocol_binding(_SOURCE, text, rules, {}))
+    assert found >= 1
+    assert check_protocol_binding(_SOURCE, text, rules, {key: found}) == ()
+    assert check_protocol_binding(_SOURCE, text, rules, {key: found + 1}) != ()
 
 
 def test_this_repositorys_source_is_clean_against_the_baseline(
