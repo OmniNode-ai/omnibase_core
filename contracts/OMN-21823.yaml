@@ -1,0 +1,100 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21823
+title: A core lab_receipt validator decides which changes need an installed-and-observed lab receipt for
+  the PR head and judges the receipt
+summary: Pure lab-receipt checker and generic file validator in the contract format of the other core
+  validators. File classes, exemptions, receipt fields, installers, observation words and diagnostics
+  are contract rule data. The present phase judges what a hosted check can read; the verify phase also
+  judges the receipt against supplied lab reads and refuses to run without them. Hosted tests use a recording
+  bus for the Redpanda overlay.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21823-lab-receipt-validator
+    statement: Refuse a change that runs when it carries no installed-and-observed lab receipt for its
+      exact head, and judge the receipt in a present and a verify phase.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: each rule has a planted violation fixture refused naming its rule_id and a paired
+          clean fixture with zero issues.'
+      - id: AC2
+        statement: 'AC2: file classes, exemptions, receipt fields, installers, observation words and refused
+          shapes are rule-row parameters; a table-driven test mutates every parameters key and an invalid
+          contract fails to load; the checker holds no pattern, name or path literal.'
+      - id: AC3
+        statement: 'AC3: the present phase judges what a hosted check can read, the verify phase also
+          judges the receipt against lab reads, and a verify run given no lab read is refused.'
+      - id: AC4
+        statement: 'AC4: the planted fixtures give the same golden report on the in-memory and the Redpanda
+          overlay, with one run event each.'
+      - id: AC5
+        statement: 'AC5: the core hook manifest exposes check-lab-receipt and the validator ran on a lab
+          host at the PR head.'
+evidence_requirements:
+  - kind: tests
+    description: Rule fixtures, classification fixtures, all rule parameters, fail-closed contracts, purity,
+      phases, hook manifest and golden reports on both overlays.
+    command: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21823-ac1-fixtures
+    description: Each rule has a planted violation fixture refused naming its rule_id and a paired clean
+      fixture with zero issues.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+          -k "violation_fixture or clean_fixture or classification_fixtures"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21823-ac2-configuration
+    description: Every file class, exemption, field, installer, word and diagnostic is a parameters entry;
+      a table-driven test mutates every parameters key; an invalid contract fails to load; the checker
+      holds no literal.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+          -k "every_parameter or invalid_contracts or malformed_parameters or production_source_has_no_runtime_literals
+          or pure_and_holds_no_rule_table"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21823-ac3-phases
+    description: The present phase never judges the lab, the verify phase does, and a verify run given
+      no lab read is refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+          -k "phase or lab_read"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21823-ac4-overlay-reports
+    description: In-memory and broker overlays on one commit give the same golden report and one run event
+      each.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_lab_receipt_runtime_overlays.py -q -o addopts=''
+          -k "in_memory_run or redpanda_run"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21823-ac5-hook-and-lab
+    description: The core hook manifest exposes check-lab-receipt.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+          -k "hook_manifest"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
