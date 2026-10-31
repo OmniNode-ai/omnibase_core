@@ -11,7 +11,10 @@
 #      token (OMN-16373; CROSS_REPO_PAT retired).
 #   2. Rewrite handshake pin_sites to the new SHA, or the dependency tag + uv.lock.
 #   3. Commit + push a mode-specific bot branch.
-#   4. Open a PR naming the pin and its tracking ticket.
+#   4. Open a PR naming the pin and its tracking ticket. The body carries the
+#      `[closes-ref-exempt: ...]` escape so downstream closes-ref gates
+#      (omniclaude scripts/lint_closes_ref.py, OMN-14641) pass without a
+#      per-bump `Closes` on the long-lived tracking ticket.
 #   5. Enable auto-merge SQUASH via GraphQL so the PR merges on green CI.
 #      Arming is skipped where the repo disallows auto-merge (OMN-20361); the
 #      PR URL and a hand-landing line go to the step summary and the leg stays
@@ -255,6 +258,8 @@ jobs:
           - Tracking: OMN-21478
 
           Will auto-merge on green CI.
+
+          [closes-ref-exempt: automated omnibase_core dependency pin bump; tracking ticket OMN-21478 is not closed per bump]
           EOF
             )
           else
@@ -269,6 +274,8 @@ jobs:
 
           Will auto-merge on green CI. If CI regresses, DO NOT manually bump the pin to
           paper over the failure — diagnose the handshake break instead.
+
+          [closes-ref-exempt: automated omnibase_core handshake pin bump; tracking ticket OMN-9050 is not closed per bump]
           EOF
             )
           fi
