@@ -44,6 +44,7 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.replay.model_subset_filter import ModelSubsetFilter
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 # Import at runtime (not TYPE_CHECKING) because Pydantic's model_rebuild()
 # needs to resolve this type annotation when the replay __init__.py calls it.
@@ -52,7 +53,7 @@ from omnibase_core.protocols.protocol_replay_progress_callback import (
     ProtocolReplayProgressCallback,
 )
 
-DEFAULT_RETRY_DELAY_MS: float = 100.0
+DEFAULT_RETRY_DELAY_MS: float = packaged_service_timings().replay_retry_delay_ms
 """Default delay between retries in milliseconds."""
 
 

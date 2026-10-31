@@ -45,6 +45,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_latency_level import EnumLatencyLevel
 from omnibase_core.enums.enum_security_level import EnumSecurityLevel
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 from .model_backend_config import ModelBackendConfig
 from .model_config_validation_result import ModelConfigValidationResult
@@ -154,7 +155,7 @@ class ModelSecretConfig(BaseModel):
     )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         arbitrary_types_allowed=True,
         use_enum_values=False,
         validate_assignment=True,
@@ -545,7 +546,7 @@ class ModelSecretConfig(BaseModel):
             backend=backend,
             fallback_backends=fallback_backends,
             cache_enabled=True,
-            cache_ttl_seconds=300,
+            cache_ttl_seconds=packaged_service_timings().secret_cache_ttl_seconds,
         )
 
     @classmethod

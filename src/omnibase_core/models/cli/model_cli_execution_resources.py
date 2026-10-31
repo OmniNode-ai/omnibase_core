@@ -14,6 +14,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 from omnibase_core.types.type_serializable_value import SerializedDict
 
 
@@ -79,11 +80,13 @@ class ModelCliExecutionResources(BaseModel):
     @classmethod
     def create_limited(
         cls,
-        timeout_seconds: int = 300,
+        timeout_seconds: int | None = None,
         max_memory_mb: int = 1024,
         max_retries: int = 3,
     ) -> ModelCliExecutionResources:
         """Create resources with specified limits."""
+        if timeout_seconds is None:
+            timeout_seconds = packaged_service_timings().cli_limited_wait_seconds
         return cls(
             timeout_seconds=timeout_seconds,
             max_memory_mb=max_memory_mb,
@@ -94,13 +97,13 @@ class ModelCliExecutionResources(BaseModel):
     def create_quick(cls) -> ModelCliExecutionResources:
         """Create resources for quick operations."""
         return cls(
-            timeout_seconds=30,
+            timeout_seconds=packaged_service_timings().cli_quick_wait_seconds,
             max_memory_mb=256,
             max_retries=1,
         )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

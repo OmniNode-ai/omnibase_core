@@ -18,6 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from omnibase_core.constants.constants_field_limits import MAX_NAME_LENGTH
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors import OnexError
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 
 class ModelActionDedupBase(BaseModel):
@@ -85,13 +86,16 @@ class ModelActionDedupBase(BaseModel):
     """
 
     model_config = ConfigDict(
+        extra="forbid",
         validate_assignment=True,
         str_strip_whitespace=True,
         use_enum_values=False,
         populate_by_name=True,
     )
 
-    DEFAULT_TTL_HOURS: ClassVar[int] = 6
+    DEFAULT_TTL_HOURS: ClassVar[int] = (
+        packaged_service_timings().dedup_default_ttl_hours
+    )
     """Default TTL for deduplication entries (6 hours)."""
 
     key: str = Field(

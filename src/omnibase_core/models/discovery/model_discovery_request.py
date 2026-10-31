@@ -11,12 +11,13 @@ following ONEX canonical patterns.
 from typing import Any
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_typed_metadata import ModelRequestMetadata
 from omnibase_core.models.discovery.model_tool_discovery_request import (
     ModelDiscoveryFilters,
 )
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 
 class ModelDiscoveryRequest(BaseModel):
@@ -26,6 +27,8 @@ class ModelDiscoveryRequest(BaseModel):
     Follows ONEX canonical patterns with strong typing and validation.
     All discovery operations use this standardized request format.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     operation: str = Field(
         default=...,
@@ -69,7 +72,7 @@ class ModelDiscoveryRequest(BaseModel):
     def create_discover_tools_request(
         cls,
         filters: ModelDiscoveryFilters | None = None,
-        timeout_seconds: float = 5.0,
+        timeout_seconds: float | None = None,
         max_results: int | None = None,
         **kwargs: Any,
     ) -> "ModelDiscoveryRequest":
@@ -85,6 +88,8 @@ class ModelDiscoveryRequest(BaseModel):
         Returns:
             ModelDiscoveryRequest for tool discovery
         """
+        if timeout_seconds is None:
+            timeout_seconds = packaged_service_timings().discover_tools_wait_seconds
         return cls(
             operation="discover_tools",
             filters=filters,

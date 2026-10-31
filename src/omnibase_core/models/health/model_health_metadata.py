@@ -10,9 +10,10 @@ environment context, and custom attributes.
 
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 from .model_health_attributes import ModelHealthAttributes
 
@@ -24,6 +25,8 @@ class ModelHealthMetadata(BaseModel):
     This model stores additional health system metadata including
     environment context, configuration, and custom attributes.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     environment: str = Field(
         default="unknown",
@@ -123,7 +126,7 @@ class ModelHealthMetadata(BaseModel):
             kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
         return cls(
             environment="production",
-            check_interval_seconds=30,
+            check_interval_seconds=packaged_service_timings().health_production_check_interval_seconds,
             auto_healing_enabled=True,
             notification_enabled=True,
             escalation_enabled=True,
@@ -138,7 +141,7 @@ class ModelHealthMetadata(BaseModel):
             kwargs["version"] = ModelSemVer(major=1, minor=0, patch=0)
         return cls(
             environment="development",
-            check_interval_seconds=60,
+            check_interval_seconds=packaged_service_timings().health_development_check_interval_seconds,
             auto_healing_enabled=False,
             notification_enabled=False,
             escalation_enabled=False,
@@ -155,6 +158,6 @@ class ModelHealthMetadata(BaseModel):
             maintenance_mode=True,
             auto_healing_enabled=False,
             notification_enabled=False,
-            check_interval_seconds=120,
+            check_interval_seconds=packaged_service_timings().health_maintenance_check_interval_seconds,
             **kwargs,
         )
