@@ -13,6 +13,9 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.configuration.model_resilience_defaults import (
+    ModelResilienceDefaults,
+)
 from omnibase_core.models.core.model_custom_properties import ModelCustomProperties
 
 
@@ -38,7 +41,7 @@ class ModelRetryAdvanced(BaseModel):
         description="Consecutive failures before opening circuit",
         ge=1,
     )
-    circuit_breaker_reset_timeout_seconds: float = Field(
+    circuit_breaker_reset_seconds: float = Field(
         default=60.0,
         description="Time before attempting to close circuit",
         ge=1.0,
@@ -67,7 +70,7 @@ class ModelRetryAdvanced(BaseModel):
 
     def get_circuit_reset_delay(self) -> float:
         """Get circuit breaker reset delay."""
-        return self.circuit_breaker_reset_timeout_seconds
+        return self.circuit_breaker_reset_seconds
 
     def add_metadata(self, key: str, value: object) -> None:
         """Add custom metadata with bounded type values."""
@@ -113,7 +116,7 @@ class ModelRetryAdvanced(BaseModel):
         return {
             "circuit_breaker_enabled": str(self.circuit_breaker_enabled),
             "circuit_breaker_threshold": str(self.circuit_breaker_threshold),
-            "reset_timeout_seconds": str(self.circuit_breaker_reset_timeout_seconds),
+            "reset_timeout_seconds": str(self.circuit_breaker_reset_seconds),
             "has_description": str(
                 bool(
                     (
@@ -131,14 +134,16 @@ class ModelRetryAdvanced(BaseModel):
     def create_with_circuit_breaker(
         cls,
         threshold: int = 5,
-        reset_timeout: float = 60.0,
+        reset_timeout: float | None = None,
         description: str | None = None,
     ) -> ModelRetryAdvanced:
         """Create with circuit breaker enabled."""
+        if reset_timeout is None:
+            reset_timeout = ModelResilienceDefaults.load().retry_policy.circuit_breaker_reset_seconds
         return cls(
             circuit_breaker_enabled=True,
             circuit_breaker_threshold=threshold,
-            circuit_breaker_reset_timeout_seconds=reset_timeout,
+            circuit_breaker_reset_seconds=reset_timeout,
             description=ModelSchemaValue.from_value(description if description else ""),
         )
 
@@ -154,7 +159,7 @@ class ModelRetryAdvanced(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

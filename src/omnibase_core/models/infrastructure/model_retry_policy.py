@@ -19,6 +19,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_retry_backoff_strategy import EnumRetryBackoffStrategy
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.configuration.model_resilience_defaults import (
+    ModelResilienceDefaults,
+)
 from omnibase_core.models.core.model_retry_config import ModelRetryConfig
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.type_serializable_value import SerializedDict
@@ -214,8 +217,8 @@ class ModelRetryPolicy(BaseModel):
     def create_exponential_backoff(
         cls,
         max_retries: int = 5,
-        base_delay: float = 1.0,
-        max_delay: float = 60.0,
+        base_delay: float | None = None,
+        max_delay: float | None = None,
         multiplier: float = 2.0,
     ) -> ModelRetryPolicy:
         """Create exponential backoff retry policy.
@@ -224,6 +227,8 @@ class ModelRetryPolicy(BaseModel):
         compatibility but are not used in the new API. The multiplier is
         hardcoded to 2 in the new implementation.
         """
+        if base_delay is None:
+            base_delay = ModelResilienceDefaults.load().retry_policy.base_delay_seconds
         config = ModelRetryConfig(
             max_attempts=max_retries,
             backoff_seconds=base_delay,
@@ -235,7 +240,7 @@ class ModelRetryPolicy(BaseModel):
     def create_fixed_delay(
         cls,
         max_retries: int = 3,
-        delay: float = 2.0,
+        delay: float | None = None,
     ) -> ModelRetryPolicy:
         """Create fixed delay retry policy.
 
@@ -243,6 +248,8 @@ class ModelRetryPolicy(BaseModel):
         For true fixed delay, consider using exponential_backoff=False with
         backoff_seconds set to your desired delay.
         """
+        if delay is None:
+            delay = ModelResilienceDefaults.load().retry_policy.fixed_delay_seconds
         config = ModelRetryConfig(
             max_attempts=max_retries,
             backoff_seconds=delay,
@@ -254,7 +261,7 @@ class ModelRetryPolicy(BaseModel):
     def create_for_http(
         cls,
         max_retries: int = 5,
-        base_delay: float = 1.0,
+        base_delay: float | None = None,
         status_codes: list[int] | None = None,
     ) -> ModelRetryPolicy:
         """Create retry policy optimized for HTTP requests.
@@ -262,6 +269,10 @@ class ModelRetryPolicy(BaseModel):
         Note: Jitter is always enabled in the new API via the calculate_delay()
         method's include_jitter parameter.
         """
+        if base_delay is None:
+            base_delay = (
+                ModelResilienceDefaults.load().retry_policy.http_base_delay_seconds
+            )
         config = ModelRetryConfig(
             max_attempts=max_retries,
             backoff_seconds=base_delay,
@@ -276,13 +287,17 @@ class ModelRetryPolicy(BaseModel):
     def create_for_database(
         cls,
         max_retries: int = 3,
-        base_delay: float = 0.5,
+        base_delay: float | None = None,
     ) -> ModelRetryPolicy:
         """Create retry policy optimized for database operations.
 
         Note: Uses linear backoff (exponential_backoff=False). Jitter is
         always enabled in the new API.
         """
+        if base_delay is None:
+            base_delay = (
+                ModelResilienceDefaults.load().retry_policy.database_base_delay_seconds
+            )
         config = ModelRetryConfig(
             max_attempts=max_retries,
             backoff_seconds=base_delay,
@@ -296,7 +311,7 @@ class ModelRetryPolicy(BaseModel):
         cls,
         max_retries: int = 5,
         circuit_threshold: int = 5,
-        reset_timeout: float = 60.0,
+        reset_timeout: float | None = None,
     ) -> ModelRetryPolicy:
         """Create retry policy with circuit breaker."""
         config = ModelRetryConfig(max_attempts=max_retries)
@@ -307,7 +322,7 @@ class ModelRetryPolicy(BaseModel):
         return cls(config=config, advanced=advanced)
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )
