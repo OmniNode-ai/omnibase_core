@@ -59,5 +59,23 @@ dod_evidence:
       - AC3
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/models/health -q -o addopts=''
+        check_value: uv run pytest tests/unit/models/health/test_model_baseline_health_report.py tests/unit/models/health/test_model_health_check.py
+          tests/unit/models/health/test_model_health_check_config.py tests/unit/models/health/test_model_health_issue.py
+          tests/unit/models/health/test_model_health_metadata.py tests/unit/models/health/test_model_health_metric.py
+          tests/unit/models/health/test_model_health_metrics.py tests/unit/models/health/test_model_health_status.py
+          tests/unit/models/health/test_model_performance_metrics.py tests/unit/models/health/test_model_tool_health.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21725-deploy-hosted-health-metadata
+    description: Hosted checkout smoke loads the packaged service timings through the health metadata
+      factories and checks production, development and maintenance intervals. No service or container
+      daemon is required.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/health/test_model_health_metadata.py -q -o addopts=''
+          -k 'TestModelHealthMetadataFactoryMethods'
         cwd: ${OMNI_HOME}/omnibase_core
