@@ -88,7 +88,7 @@ CLASSIFICATION: dict[str, tuple[str, ...]] = {
     "counted_operative": ("operative",),
     "counted_deleted_unit": ("host_unit",),
     "counted_unclassified": ("unclassified",),
-    "counted_internal_source": ("internal_source",),
+    "counted_private_source": ("private_source",),
     "counted_package_source": ("package_source",),
     "counted_mixed": ("host_unit", "hook"),
 }

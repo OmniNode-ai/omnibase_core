@@ -67,11 +67,11 @@
       "host_unit"
     ]
   },
-  "counted_internal_source": {
+  "counted_private_source": {
     "issues": [],
     "required": true,
     "classes": [
-      "internal_source"
+      "private_source"
     ]
   },
   "counted_mixed": {
