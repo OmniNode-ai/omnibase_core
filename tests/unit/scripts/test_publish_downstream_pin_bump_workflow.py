@@ -381,3 +381,18 @@ cat "$TEST_ROOT/$snapshot.json" | /usr/bin/jq -r "$5"
         for name in names:
             assert f"::error::{name}: {conclusion_text}" in result.stdout
             assert f"{name}: {conclusion_text}" in summary.read_text(encoding="utf-8")
+
+
+@pytest.mark.unit
+def test_both_pr_bodies_carry_the_closes_ref_exempt_escape() -> None:
+    # omniclaude's closes-ref-gate (OMN-14641) rejects bump PRs without it (OMN-9050).
+    steps = yaml.safe_load(WORKFLOW.read_text())["jobs"]["bump"]["steps"]
+    metadata = next(s["run"] for s in steps if s.get("name") == "Prepare PR metadata")
+    escapes = [
+        ln.strip()
+        for ln in metadata.splitlines()
+        if ln.strip().startswith("[closes-ref-exempt:")
+    ]
+    assert len(escapes) == 2
+    assert any("OMN-9050" in ln for ln in escapes)
+    assert any("OMN-21478" in ln for ln in escapes)
