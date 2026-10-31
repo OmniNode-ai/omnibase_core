@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Canonical core event topics (OMN-21623). Declared here, read by
+# constants_event_types.py (TOPIC_* names) and constants_topic_taxonomy.py
+# (TOPIC_SUFFIX_* names); Python code holds no topic literal.
+# Format: onex.{kind}.{producer}.{event}.v{n}
+topics:
+  github_pr_status_event: onex.evt.platform.github-pr-status.v1
+  git_hook_event: onex.evt.platform.git-hook.v1
+  linear_snapshot_event: onex.evt.platform.linear-snapshot.v1
+  episode_boundary: onex.evt.omniintelligence.episode-boundary.v1
+  validation_run_completed_event: onex.evt.validation.cross-repo-run-completed.v1
+  validation_run_started_event: onex.evt.validation.cross-repo-run-started.v1
+  validation_violations_batch_event: onex.evt.validation.cross-repo-violations-batch.v1
+  validation_no_faked_boundary_scan_requested_cmd: onex.cmd.validation.no-faked-boundary-scan-requested.v1
+  validation_no_faked_boundary_scan_completed_event: onex.evt.validation.no-faked-boundary-scan-completed.v1
+  validation_todo_marker_scan_requested_cmd: onex.cmd.validation.todo-marker-scan-requested.v1
+  validation_todo_marker_scan_completed_event: onex.evt.validation.todo-marker-scan-completed.v1
+  validation_localhost_url_scan_requested_cmd: onex.cmd.validation.localhost-url-scan-requested.v1
+  validation_localhost_url_scan_completed_event: onex.evt.validation.localhost-url-scan-completed.v1
+  validation_pin_hygiene_scan_requested_cmd: onex.cmd.validation.pin-hygiene-scan-requested.v1
+  validation_pin_hygiene_scan_completed_event: onex.evt.validation.pin-hygiene-scan-completed.v1
+  validation_doc_content_scan_requested_cmd: onex.cmd.validation.doc-content-scan-requested.v1
+  validation_doc_content_scan_completed_event: onex.evt.validation.doc-content-scan-completed.v1

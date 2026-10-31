@@ -55,6 +55,17 @@ requirements:
           source -- falsifier: uv run pytest tests/unit/models/core/test_model_deployment_topology.py
           -k ''equals_its_packaged_contract or literal_port_finding'', which fails at the merge base where
           the factories build the topology from constructor literals'
+  - id: req-omn21623-core-event-topics
+    statement: The core event topics and the event-bus substrate test topics are declared in packaged
+      YAML that the registry modules read, and their source holds no literal topic for the checker to
+      refuse.
+    acceptance:
+      - id: AC8
+        statement: 'AC8: every topic of constants_event_types and of event_bus/testing/topic_constants
+          equals its entry in the packaged event_topics.yaml or substrate_test_topics.yaml, the eight
+          unused topic constants are gone, and the contracts_and_di checker reports no literal_topic finding
+          on either module -- falsifier: uv run pytest tests/unit/constants/test_event_topics_contract.py,
+          which fails at the merge base where the topics are string literals in the two modules'
 evidence_requirements:
   - kind: tests
     description: The contracts-and-DI checker tests pass.
@@ -153,4 +164,16 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/models/core/test_model_deployment_topology.py -q -o addopts=''
           -k 'equals_its_packaged_contract or literal_port_finding'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac8-event-topics
+    description: The topics of both registry modules equal their packaged YAML entries, the unused topic
+      constants are removed, and both modules draw no literal_topic finding from the contracts_and_di
+      checker. At the merge base the topics are string literals, so these cases fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC8
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/constants/test_event_topics_contract.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
