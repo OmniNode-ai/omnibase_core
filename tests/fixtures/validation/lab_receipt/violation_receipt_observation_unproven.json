@@ -21,7 +21,7 @@
         "host": "lab-a",
         "installer": "onex-host-install",
         "installed_revision": "3f5a9c1e7b2d",
-        "observation": "14 tests passed",
+        "observation": "12 tests ran and passed",
         "carrier": "pr-lab-line"
       }
     ],

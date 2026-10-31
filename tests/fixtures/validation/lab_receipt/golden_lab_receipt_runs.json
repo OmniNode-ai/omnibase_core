@@ -61,7 +61,7 @@
       "validator_id": "lab_receipt",
       "severity": "FAIL",
       "location": "checks/receipt_observation_unproven.lab-receipt.json",
-      "message": "the lab receipt on host 'lab-a' does not show the installed revision running: '14 tests passed'",
+      "message": "the lab receipt on host 'lab-a' does not show the installed revision running: '12 tests ran and passed'",
       "remediation": null,
       "evidence": {},
       "rule_id": "receipt_observation_unproven"
