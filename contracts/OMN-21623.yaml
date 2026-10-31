@@ -44,6 +44,17 @@ requirements:
           with a positive control -- falsifier: onex run of runtime_validator_run with the validator reference
           over each repository, the planted fixture directory as the positive control, report rows posted
           as a comment on this ticket'
+  - id: req-omn21623-core-topology-defaults
+    statement: The deployment topology defaults omnibase_core ships are packaged YAML contracts, and the
+      model source that loads them holds no literal port for the checker to refuse.
+    acceptance:
+      - id: AC7
+        statement: 'AC7: default_minimal, default_standard and default_full each equal the topology read
+          from their packaged YAML under deployment_topology_defaults, the ports and services live only
+          in that YAML, and the contracts_and_di checker reports no literal_port finding on the model
+          source -- falsifier: uv run pytest tests/unit/models/core/test_model_deployment_topology.py
+          -k ''equals_its_packaged_contract or literal_port_finding'', which fails at the merge base where
+          the factories build the topology from constructor literals'
 evidence_requirements:
   - kind: tests
     description: The contracts-and-DI checker tests pass.
@@ -129,4 +140,17 @@ dod_evidence:
         check_value: uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
           omnibase_core.validation.validator_contracts_and_di:ValidatorContractsAndDi src/omnibase_core/validation/checker_contracts_and_di.py
           src/omnibase_core/validation/validator_contracts_and_di.py
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21623-ac7-topology-defaults
+    description: The default topology factories equal their packaged YAML contracts and the model source
+      draws no literal_port finding from the contracts_and_di checker. At the merge base the factories
+      build the topology from constructor literals, so these cases fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/core/test_model_deployment_topology.py -q -o addopts=''
+          -k 'equals_its_packaged_contract or literal_port_finding'
         cwd: ${OMNI_HOME}/omnibase_core
