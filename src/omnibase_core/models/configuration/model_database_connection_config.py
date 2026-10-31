@@ -11,6 +11,9 @@ from omnibase_core.constants.constants_field_limits import (
     MAX_NAME_LENGTH,
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
@@ -228,6 +231,10 @@ class ModelDatabaseConnectionConfig(BaseModel):
 
     # === Security Assessment ===
 
+    def _is_local_host(self) -> bool:
+        """Whether the host is the loopback name or its IPv4 address."""
+        return self.host.lower() in ModelNetworkDefaults.load().local_hosts
+
     def is_secure_configuration(self) -> bool:
         """Assess if this is a secure configuration for production."""
         # Check SSL requirement
@@ -240,7 +247,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
             return False
 
         # Check for localhost (not secure for production)
-        if self.host.lower() in ("localhost", "127.0.0.1"):
+        if self._is_local_host():
             return False
 
         # Check for default ports (security through obscurity)
@@ -268,7 +275,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
                 "Use stronger passwords (12+ characters) for production",
             )
 
-        if self.host.lower() in ("localhost", "127.0.0.1"):
+        if self._is_local_host():
             recommendations.append(
                 "Use dedicated database server instead of localhost for production",
             )
@@ -313,8 +320,8 @@ class ModelDatabaseConnectionConfig(BaseModel):
             "ssl_enabled": "yes" if self.ssl_enabled else "no",
             "password_strength": password_strength,
             "host_type": (
-                "localhost"
-                if self.host.lower() in ("localhost", "127.0.0.1")
+                ModelNetworkDefaults.load().loopback_name
+                if self._is_local_host()
                 else "remote"
             ),
             "port_type": (
@@ -338,7 +345,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         }
 
         # Host-based performance assessment
-        if self.host.lower() in ("localhost", "127.0.0.1"):
+        if self._is_local_host():
             profile["network_latency"] = "minimal"
         else:
             profile["network_latency"] = "variable"
@@ -362,7 +369,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if self.ssl_enabled:
             recommendations.append("SSL adds latency - ensure adequate timeout values")
 
-        if self.host.lower() not in ("localhost", "127.0.0.1"):
+        if not self._is_local_host():
             recommendations.append(
                 "Consider connection pooling for remote database connections",
             )

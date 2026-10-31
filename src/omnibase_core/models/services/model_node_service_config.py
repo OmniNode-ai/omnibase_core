@@ -24,6 +24,9 @@ from omnibase_core.models.configuration.model_event_bus_config import (
 from omnibase_core.models.configuration.model_monitoring_config import (
     ModelMonitoringConfig,
 )
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.configuration.model_resource_limits import ModelResourceLimits
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
@@ -228,7 +231,7 @@ class ModelNodeServiceConfig(BaseModel):
             port=int(os.getenv("SERVICE_PORT", "8080")),
             host=os.getenv(
                 "SERVICE_HOST",
-                "0.0.0.0",
+                ModelNetworkDefaults.load().service_bind_address,
             ),
         )
         health_config = ModelHealthCheckConfig(
@@ -263,10 +266,15 @@ class ModelNodeServiceConfig(BaseModel):
         Returns:
             ModelNodeServiceConfig configured for NodeRegistry service
         """
+        network_defaults = ModelNetworkDefaults.load()
         node_registry_defaults = {
             "docker_image": "onex/node-registry",
-            "network": ModelNetworkConfig(port=8081),
-            "monitoring": ModelMonitoringConfig(prometheus_port=9091),
+            "network": ModelNetworkConfig(
+                port=network_defaults.node_registry_service_port
+            ),
+            "monitoring": ModelMonitoringConfig(
+                prometheus_port=network_defaults.node_registry_prometheus_port
+            ),
             "depends_on": ["event-bus"],
         }
         config = {**node_registry_defaults, **overrides}

@@ -30,6 +30,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from omnibase_core.enums.enum_change_type import EnumChangeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
 __all__ = ["ChangeConfigDict", "EnumChangeType", "ModelChangeProposal"]
@@ -63,7 +66,7 @@ _URL_DOMAIN_LABEL = r"[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?"
 _URL_DOMAIN_WITH_TLD = rf"(?:{_URL_DOMAIN_LABEL}\.)+[A-Z]{{2,6}}\.?"
 
 # Localhost: for local development URLs
-_URL_LOCALHOST = r"localhost"
+_URL_LOCALHOST = re.escape(ModelNetworkDefaults.load().loopback_name)
 
 # IPv4 address: four octets (0-255) separated by dots
 # - Octet pattern: 250-255, 200-249, 0-199 (with optional leading zeros)

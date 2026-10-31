@@ -40,6 +40,9 @@ from omnibase_core.enums.enum_ledger_write_target import EnumLedgerWriteTarget
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.ledger_write_guard.model_ledger_test_write_refused import (
     GUARD_NAME,
     ModelLedgerTestWriteRefusedError,
@@ -72,7 +75,7 @@ EXIT_TEST_WRITE_REFUSED: Final = 79
 CANONICAL_TOPIC: Final = re.compile(
     r"^onex\.(?:evt|cmd)\.omnimarket\.work-ledger-[a-z0-9-]+\.v\d+$"
 )
-_LOOPBACK_HOSTS: Final = frozenset({"", "localhost", "127.0.0.1", "::1"})
+_LOOPBACK_HOSTS: Final = frozenset({""}) | ModelNetworkDefaults.load().loopback_hosts
 _RUNNER_MODULES: Final = ("pytest",)
 _PYTEST_ENV: Final = "PYTEST_CURRENT_TEST"
 _OMNI_HOME_ENV: Final = "OMNI_HOME"

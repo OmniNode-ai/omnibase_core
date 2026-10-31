@@ -7,6 +7,9 @@ from urllib.parse import urljoin, urlparse
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.configuration.model_request_config import ModelRequestConfig
 from omnibase_core.models.configuration.model_request_retry_config import (
     ModelRequestRetryConfig,
@@ -100,14 +103,6 @@ class ModelRestApiConnectionConfig(BaseModel):
                 message=msg, error_code=EnumCoreErrorCode.VALIDATION_ERROR
             )
 
-        # Recommend HTTPS for production
-        if parsed.scheme == "http" and not any(
-            localhost in parsed.netloc.lower()
-            for localhost in ["localhost", "127.0.0.1"]
-        ):
-            # This is just a warning pattern, not a hard failure
-            pass
-
         # Ensure URL ends without trailing slash for consistency
         if v.endswith("/") and len(v) > 1:
             v = v.rstrip("/")
@@ -179,7 +174,7 @@ class ModelRestApiConnectionConfig(BaseModel):
     def is_localhost(self) -> bool:
         """Check if this points to localhost."""
         _, host, _, _ = self.get_parsed_url()
-        return host.lower() in ("localhost", "127.0.0.1")
+        return host.lower() in ModelNetworkDefaults.load().local_hosts
 
     def uses_https(self) -> bool:
         """Check if this uses HTTPS."""
@@ -316,7 +311,11 @@ class ModelRestApiConnectionConfig(BaseModel):
         return {
             "protocol": "https" if self.uses_https() else "http",
             "authentication": self.get_authentication_type(),
-            "host_type": "localhost" if self.is_localhost() else "remote",
+            "host_type": (
+                ModelNetworkDefaults.load().loopback_name
+                if self.is_localhost()
+                else "remote"
+            ),
             "overall_security": (
                 "high" if self.is_secure_configuration() else "needs_improvement"
             ),
