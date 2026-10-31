@@ -211,8 +211,9 @@ class _LazyCoreCommandGroup(click.Group):
 def cli(ctx: click.Context, verbose: bool) -> None:
     """ONEX CLI - Command line tools for omnibase_core.
 
-    The onex CLI provides tools for working with ONEX nodes,
-    validation, and development workflows.
+    \b
+    Quickstart (new developer):
+        onex setup
 
     \b
     Verbose Mode (-v, --verbose):
@@ -223,7 +224,6 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 
     \b
     Examples:
-        onex --help
         onex --version
         onex validate src/
         onex info
