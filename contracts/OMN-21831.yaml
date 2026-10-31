@@ -1,0 +1,52 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21831
+title: A typed lab_receipt DoD check type in the ticket contract model replaces the text pattern that
+  recognises the install-and-observe criterion
+summary: The ticket contract model accepts a lab_receipt check with a typed shape (installer, observation)
+  and refuses a missing or unknown field. The lab-receipt checker reads a criterion whose contract check
+  has this type as the cited criterion; the text pattern stays for tickets without a contract.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21831-typed-lab-receipt-check
+    statement: A contract check of type lab_receipt is typed and the checker reads it as the cited criterion.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the ticket contract model accepts a check of type lab_receipt with a typed shape
+          and refuses one with a missing or unknown field.'
+      - id: AC2
+        statement: 'AC2: the lab_receipt checker treats a contract check of this type as the cited criterion
+          without applying the text pattern.'
+evidence_requirements:
+  - kind: tests
+    description: Typed shape tests and checker tests for the typed criterion.
+    command: uv run pytest tests/unit -q -k lab_receipt_check_type
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21831-ac1-typed-shape
+    description: The ticket contract model accepts a lab_receipt check with a typed shape and refuses
+      a missing or unknown field.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/contracts/ticket/test_dod_lab_receipt_check_type.py
+          -q -o addopts='' -k lab_receipt_check_type
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21831-ac2-typed-criterion
+    description: The lab_receipt checker treats a contract check of this type as the cited criterion without
+      applying the text pattern.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+          -k typed_criterion
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2

@@ -12,6 +12,7 @@ this module holds none. It performs no I/O.
 from __future__ import annotations
 
 from omnibase_core.enums.enum_lab_receipt_phase import EnumLabReceiptPhase
+from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.lab_receipt.model_lab_receipt_check_input import (
     ModelLabReceiptCheckInput,
@@ -161,7 +162,11 @@ def check_lab_receipt(request: ModelLabReceiptCheckInput) -> ModelLabReceiptChec
     if required:
         counted = {"count": str(count), "classes": ",".join(classes)}
         criterion = rules.row("receipt_criterion_missing").pattern("criterion_pattern")
-        if not any(criterion.search(c.statement) for c in facts.criteria):
+        if not any(
+            c.check_type is EnumDodCheckType.LAB_RECEIPT
+            or (c.check_type is None and criterion.search(c.statement))
+            for c in facts.criteria
+        ):
             sink.add("receipt_criterion_missing", **counted)
         if not facts.receipts:
             sink.add("receipt_required", **counted)

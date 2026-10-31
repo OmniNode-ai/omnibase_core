@@ -23,6 +23,7 @@ import pytest
 import yaml
 
 from omnibase_core.enums.enum_lab_receipt_phase import EnumLabReceiptPhase
+from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -32,6 +33,9 @@ from omnibase_core.models.lab_receipt.model_lab_receipt_check_input import (
 )
 from omnibase_core.models.lab_receipt.model_lab_receipt_check_result import (
     ModelLabReceiptCheckResult,
+)
+from omnibase_core.models.lab_receipt.model_lab_receipt_criterion import (
+    ModelLabReceiptCriterion,
 )
 from omnibase_core.models.lab_receipt.model_lab_receipt_document import (
     ModelLabReceiptDocument,
@@ -538,3 +542,51 @@ def test_production_source_has_no_runtime_literals(relative_path: str) -> None:
     if relative_path.startswith("validation/checker_"):
         assert not ValidatorCheckerRuleData().validate_file(path).issues
     assert contract_config_compliance.validate_file(path) == []
+
+
+def _with_criteria(
+    name: str, *criteria: ModelLabReceiptCriterion
+) -> ModelLabReceiptCheckResult:
+    document = _document(name)
+    document = document.model_copy(
+        update={
+            "facts": document.facts.model_copy(update={"criteria": tuple(criteria)})
+        }
+    )
+    return check_lab_receipt(
+        ModelLabReceiptCheckInput(
+            source_name=f"checks/{name}.lab-receipt.json",
+            document=document,
+            contract=_contract(),
+        )
+    )
+
+
+def test_typed_criterion_of_the_lab_receipt_check_type_is_the_cited_criterion() -> None:
+    typed = ModelLabReceiptCriterion(
+        ticket="OMN-1",
+        statement="a statement the text pattern does not recognise",
+        check_type=EnumDodCheckType.LAB_RECEIPT,
+    )
+    assert _with_criteria("violation_receipt_criterion_missing", typed).issues == ()
+
+
+def test_typed_criterion_is_not_judged_by_the_text_pattern() -> None:
+    untyped = ModelLabReceiptCriterion(
+        ticket="OMN-1", statement="a statement the text pattern does not recognise"
+    )
+    other_type = untyped.model_copy(update={"check_type": EnumDodCheckType.COMMAND})
+    for criterion in (untyped, other_type):
+        result = _with_criteria("violation_receipt_criterion_missing", criterion)
+        assert [i.code for i in result.issues] == ["receipt_criterion_missing"]
+
+
+def test_typed_criterion_leaves_the_text_pattern_for_tickets_without_a_contract() -> (
+    None
+):
+    result = _check("clean_receipt_criterion_missing")
+    assert result.issues == ()
+    assert all(
+        c.check_type is None
+        for c in _document("clean_receipt_criterion_missing").facts.criteria
+    )
