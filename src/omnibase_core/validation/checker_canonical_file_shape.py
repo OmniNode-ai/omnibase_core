@@ -35,9 +35,7 @@ from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.handlers.handler_canonical_location_rules import (
     TYPESCRIPT_EXTENSIONS,
-    is_shell_script,
-    is_typescript_canonical_location,
-    typescript_workspace_roots,
+    HandlerCanonicalLocationRules,
 )
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
@@ -54,6 +52,12 @@ from omnibase_core.models.validation.model_canonical_file_shape_rules import (
 )
 from omnibase_core.models.validation.model_canonical_file_shape_tree import (
     ModelCanonicalFileShapeTree,
+)
+from omnibase_core.models.validation.model_canonical_location_request import (
+    ModelCanonicalLocationRequest,
+)
+from omnibase_core.models.validation.model_canonical_location_verdict import (
+    ModelCanonicalLocationVerdict,
 )
 
 VALIDATOR_ID = "canonical_file_shape"
@@ -129,11 +133,16 @@ def _is_code(path: str, text: str | None, p: ModelCanonicalFileShapeRules) -> bo
     return suffix == "" and text is not None and text.startswith(p.shebang_prefix)
 
 
+_LOCATION_RULES = HandlerCanonicalLocationRules()
+
+
 def _canonical_location(
-    path: str, roots: frozenset[str], p: ModelCanonicalFileShapeRules
+    path: str,
+    location: ModelCanonicalLocationVerdict,
+    p: ModelCanonicalFileShapeRules,
 ) -> bool:
     if _suffix(path) in TYPESCRIPT_EXTENSIONS:
-        return is_typescript_canonical_location(path, roots)
+        return location.is_typescript_canonical_location
     parts = PurePosixPath(path).parts
     if not parts:
         return False
@@ -240,16 +249,23 @@ def file_rule_refusals(
     refusals: dict[str, tuple[str, str]] = {}
     files = frozenset(tree.files)
     heads = _heads(tree)
-    roots = typescript_workspace_roots(tree.files)
+    roots = _LOCATION_RULES.handle(
+        ModelCanonicalLocationRequest(tracked_files=tree.files)
+    ).workspace_roots
     if RULE_NONCANONICAL in rules.enabled:
         for path in sorted(files):
             head = heads.get(path)
             text = None if head is None else head.decode(errors="replace")
             if not _is_code(path, text, p):
                 continue
-            if is_shell_script(path, head):
+            location = _LOCATION_RULES.handle(
+                ModelCanonicalLocationRequest(
+                    path=path, head_bytes=head, workspace_roots=roots
+                )
+            )
+            if location.is_shell_script:
                 refusals[path] = (RULE_NONCANONICAL, p.shell_text)
-            elif not _canonical_location(path, roots, p):
+            elif not _canonical_location(path, location, p):
                 refusals[path] = (RULE_NONCANONICAL, p.noncanonical_text)
     if RULE_HANDLER in rules.enabled:
         bound = _bound_modules(tree, p)

@@ -167,3 +167,20 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC1
+  - id: dod-omn21536-canonical-location-handler-slice
+    description: "The canonical-location handler takes one typed request and returns one typed verdict;
+      TypeScript workspace admission and shell refusal remain covered, and the handler-shape validator
+      accepts src/omnibase_core/handlers/handler_canonical_location_rules.py without module_function_handler."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov -o addopts=''"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "env PYTHONDONTWRITEBYTECODE=1 uv run --frozen python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_handler_shape:ValidatorHandlerShape src/omnibase_core/handlers/handler_canonical_location_rules.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
