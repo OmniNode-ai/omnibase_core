@@ -9,6 +9,17 @@ import re
 from collections.abc import Iterable
 from pathlib import PurePosixPath
 
+from omnibase_core.models.validation.model_canonical_location_request import (
+    ModelCanonicalLocationRequest,
+)
+from omnibase_core.models.validation.model_canonical_location_verdict import (
+    ModelCanonicalLocationVerdict,
+)
+
+__all__ = ["HandlerCanonicalLocationRules", "TYPESCRIPT_EXTENSIONS"]
+
+_WORDS = re.compile(r"\S+")
+
 # OMN-21332: knowledge_base_internal/
 # beta/plans/2026-10-23-canonical-shape-typescript-react-swift.md, rules T1-T17.
 TYPESCRIPT_EXTENSIONS: frozenset[str] = frozenset(
@@ -17,50 +28,18 @@ TYPESCRIPT_EXTENSIONS: frozenset[str] = frozenset(
 TYPESCRIPT_SRC_EXTENSIONS: frozenset[str] = frozenset((".ts", ".tsx"))
 TYPESCRIPT_TEST_DIRS: frozenset[str] = frozenset(("tests", "test", "__tests__", "e2e"))
 TYPESCRIPT_SRC_DIRS: frozenset[str] = frozenset(
-    (
-        "components",
-        "pages",
-        "models",
-        "api",
-        "generated",
-        "contracts",
-        "handlers",
-        "store",
-        "theme",
+    _WORDS.findall(
+        "components pages models api generated contracts handlers store theme"
     )
 )
 TYPESCRIPT_ENTRYPOINTS: frozenset[str] = frozenset(
-    (
-        "index",
-        "main",
-        "App",
-        "middleware",
-        "proxy",
-        "instrumentation",
-        "instrumentation-client",
+    _WORDS.findall(
+        "index main App middleware proxy instrumentation instrumentation-client"
     )
 )
 TYPESCRIPT_APP_NAMES: frozenset[str] = frozenset(
-    (
-        "page",
-        "layout",
-        "loading",
-        "error",
-        "not-found",
-        "forbidden",
-        "unauthorized",
-        "route",
-        "template",
-        "default",
-        "global-error",
-        "global-not-found",
-        "sitemap",
-        "robots",
-        "manifest",
-        "icon",
-        "apple-icon",
-        "opengraph-image",
-        "twitter-image",
+    _WORDS.findall(
+        "page layout loading error not-found forbidden unauthorized route template default global-error global-not-found sitemap robots manifest icon apple-icon opengraph-image twitter-image"
     )
 )
 TYPESCRIPT_CONFIG_NAME = re.compile(r"^[^/]+\.(config|setup)\.(ts|js|mjs|cjs)$")
@@ -77,7 +56,7 @@ def _suffix(path: str) -> str:
     return PurePosixPath(path).suffix.lower()
 
 
-def is_shell_script(path: str, head_bytes: bytes | None) -> bool:
+def _is_shell_script(path: str, head_bytes: bytes | None) -> bool:
     """A shell suffix, or an extensionless file with a shell interpreter shebang."""
     suffix = _suffix(path)
     if suffix in SHELL_EXTENSIONS:
@@ -103,7 +82,7 @@ def _is_typescript_src_location(parts: tuple[str, ...]) -> bool:
     return parts[0] in TYPESCRIPT_SRC_DIRS
 
 
-def typescript_workspace_roots(files: Iterable[str]) -> frozenset[str]:
+def _typescript_workspace_roots(files: Iterable[str]) -> frozenset[str]:
     """Workspace directories with tracked package.json files at permitted depths."""
     roots = set[str]()
     for path in files:
@@ -128,8 +107,8 @@ def typescript_workspace_roots(files: Iterable[str]) -> frozenset[str]:
     return frozenset(roots)
 
 
-def is_typescript_canonical_location(
-    path: str, workspace_roots: frozenset[str] = frozenset()
+def _is_typescript_canonical_location(
+    path: str, workspace_roots: frozenset[str]
 ) -> bool:
     """TypeScript/React locations, trying each permitted workspace prefix."""
     parts = PurePosixPath(path).parts
@@ -163,19 +142,23 @@ def is_typescript_canonical_location(
     return False
 
 
-def typescript_noncanonical_file_reason() -> str:
-    """Explain the permitted TypeScript/React locations."""
-    return (
-        "new TypeScript/React code file outside a canonical location: "
-        "tests/, test/, __tests__/, e2e/, docs/; workspace root config/setup "
-        "files, next-env.d.ts and direct .storybook/ files (non-root workspaces "
-        "require a tracked package.json); .ts/.tsx under workspace src/: "
-        "test/spec files, root {index,main,App,middleware,proxy,instrumentation,"
-        "instrumentation-client} or *.d.ts, "
-        "app/**/{page,layout,loading,error,not-found,forbidden,unauthorized,route,"
-        "template,default,global-error,global-not-found,sitemap,robots,manifest,"
-        "icon,apple-icon,opengraph-image,twitter-image}, "
-        "hooks/{use[A-Z]*,index}, "
-        "{components,pages,models,api,generated,contracts,handlers,store,theme}/** "
-        "(OMN-21332)."
-    )
+class HandlerCanonicalLocationRules:
+    """Answers the canonical-location questions about one path from the request alone."""
+
+    def handle(
+        self, request: ModelCanonicalLocationRequest
+    ) -> ModelCanonicalLocationVerdict:
+        """Derive the workspace roots, then judge the request's path, if it names one."""
+        roots = request.workspace_roots | _typescript_workspace_roots(
+            request.tracked_files
+        )
+        path = request.path
+        if path is None:
+            return ModelCanonicalLocationVerdict(workspace_roots=roots)
+        return ModelCanonicalLocationVerdict(
+            workspace_roots=roots,
+            is_shell_script=_is_shell_script(path, request.head_bytes),
+            is_typescript_canonical_location=_is_typescript_canonical_location(
+                path, roots
+            ),
+        )
