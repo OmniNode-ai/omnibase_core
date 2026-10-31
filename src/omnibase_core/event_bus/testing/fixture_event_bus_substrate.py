@@ -40,6 +40,7 @@ from typing import TYPE_CHECKING
 
 import pytest_asyncio
 
+from omnibase_core.container.container_auto_config import local_event_bus
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
@@ -97,10 +98,7 @@ def build_core_event_bus_substrate_instance(param: str) -> CoreEventBusSubstrate
             name. (``"real_broker"`` is infra-only -- see module docstring.)
     """
     if param == "inmemory":
-        return EventBusInmemory(
-            environment=DEFAULT_SUBSTRATE_ENVIRONMENT,
-            group=DEFAULT_SUBSTRATE_GROUP,
-        )
+        return local_event_bus(DEFAULT_SUBSTRATE_ENVIRONMENT, DEFAULT_SUBSTRATE_GROUP)
     if param == "semantic_fake":
         return EventBusSemanticFake(
             environment=DEFAULT_SUBSTRATE_ENVIRONMENT,

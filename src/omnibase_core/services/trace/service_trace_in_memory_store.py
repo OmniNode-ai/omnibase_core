@@ -55,7 +55,6 @@ from uuid import UUID
 from omnibase_core.enums.enum_execution_status import EnumExecutionStatus
 from omnibase_core.models.trace import ModelExecutionTrace
 from omnibase_core.models.trace_query import ModelTraceQuery, ModelTraceSummary
-from omnibase_core.protocols.storage.protocol_trace_store import ProtocolTraceStore
 
 
 class ServiceTraceInMemoryStore:
@@ -305,8 +304,5 @@ class ServiceTraceInMemoryStore:
         """
         return len(self._traces)
 
-
-# Verify protocol compliance at module load time
-_store_check: ProtocolTraceStore = ServiceTraceInMemoryStore()
 
 __all__ = ["ServiceTraceInMemoryStore"]

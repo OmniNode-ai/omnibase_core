@@ -134,11 +134,9 @@ class MixinTraceCapture:
         if store is not None:
             self._trace_store = store
         elif enabled:
-            from omnibase_core.services.trace.service_trace_in_memory_store import (
-                ServiceTraceInMemoryStore,
-            )
+            from omnibase_core.container.container_auto_config import local_trace_store
 
-            self._trace_store = ServiceTraceInMemoryStore()
+            self._trace_store = local_trace_store()
 
     # ------------------------------------------------------------------
     # Core API
@@ -198,11 +196,11 @@ class MixinTraceCapture:
         if not enabled or store is None:
             # Lazy auto-init: create a default in-memory store on first use.
             if enabled and store is None:
-                from omnibase_core.services.trace.service_trace_in_memory_store import (
-                    ServiceTraceInMemoryStore,
+                from omnibase_core.container.container_auto_config import (
+                    local_trace_store,
                 )
 
-                self._trace_store = ServiceTraceInMemoryStore()
+                self._trace_store = local_trace_store()
                 store = self._trace_store
             else:
                 # Tracing fully disabled — transparent pass-through.

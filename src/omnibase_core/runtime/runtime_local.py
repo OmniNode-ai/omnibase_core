@@ -2149,9 +2149,9 @@ class RuntimeLocal:
         if bus_kind == "kafka":
             return self._create_kafka_event_bus()
 
-        from omnibase_core.event_bus.event_bus_inmemory import EventBusInmemory
+        from omnibase_core.container.container_auto_config import local_event_bus
 
-        bus = EventBusInmemory(environment="local", group="runtime-local")
+        bus = local_event_bus(environment="local", group="runtime-local")
         logger.info("RuntimeLocal: event bus selected (inmemory)")
         return cast("ProtocolLocalRuntimeBus", bus)
 

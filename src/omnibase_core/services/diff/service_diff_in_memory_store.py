@@ -54,7 +54,6 @@ from omnibase_core.models.diff.model_diff_query import ModelDiffQuery
 from omnibase_core.models.diff.model_diff_storage_configuration import (
     ModelDiffStorageConfiguration,
 )
-from omnibase_core.protocols.storage.protocol_diff_store import ProtocolDiffStore
 
 
 class ServiceDiffInMemoryStore:
@@ -299,8 +298,5 @@ class ServiceDiffInMemoryStore:
         diffs.sort(key=lambda d: d.computed_at, reverse=True)
         return diffs
 
-
-# Verify protocol compliance at module load time
-_store_check: ProtocolDiffStore = ServiceDiffInMemoryStore()
 
 __all__ = ["ServiceDiffInMemoryStore"]
