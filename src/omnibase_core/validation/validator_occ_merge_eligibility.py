@@ -31,6 +31,9 @@ from omnibase_core.errors.error_goal_admission_provider import (
     GoalAdmissionProviderError,
 )
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.contracts.ticket.model_dod_evidence_check import (
     ModelDodEvidenceCheck,
 )
@@ -567,7 +570,7 @@ def _goal_formatter_result(
         entries = config.get("repos", []) if isinstance(config, dict) else []
         pinned = any(
             isinstance(entry, dict)
-            and entry.get("repo") == "https://github.com/google/yamlfmt"
+            and entry.get("repo") == ModelNetworkDefaults.load().yamlfmt_repository_url
             and entry.get("rev") == "v0.21.0"
             for entry in entries
         )

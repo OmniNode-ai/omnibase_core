@@ -8,6 +8,9 @@ import time
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
 from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
 
@@ -34,13 +37,9 @@ class CheckLinear(DoctorCheckBase):
                     "-sf",
                     "-o",
                     "/dev/null",
-                    "-w",
-                    "%{http_code}",
                     "-H",
                     f"Authorization: {token}",
-                    "https://api.linear.app/graphql",
-                    "-X",
-                    "POST",
+                    ModelNetworkDefaults.load().linear_graphql_url,
                     "-H",
                     "Content-Type: application/json",
                     "-d",

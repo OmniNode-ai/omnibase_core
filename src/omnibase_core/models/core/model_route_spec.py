@@ -15,6 +15,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.common.model_schema_value import ModelSchemaValue
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.core.model_routing_constraints import ModelRoutingConstraints
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 
@@ -214,7 +217,7 @@ class ModelRouteSpec(BaseModel):
         """Create broadcast route to all nodes."""
         # NOTE(OMN-1302): kwargs forwarded to Pydantic model constructor, types verified by Pydantic validation.
         return cls(
-            final_destination="broadcast://all",
+            final_destination=ModelNetworkDefaults.load().broadcast_route_destination,
             routing_strategy="broadcast",
             # Why: Runtime validation narrows this dynamic payload before use.
             **kwargs,  # type: ignore[arg-type]

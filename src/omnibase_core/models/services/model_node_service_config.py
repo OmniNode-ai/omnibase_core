@@ -184,7 +184,9 @@ class ModelNodeServiceConfig(BaseModel):
         # A container health-check curls its OWN in-container endpoint; localhost is
         # the correct, intentional loopback target (the container probing itself),
         # not a leaked external endpoint.
-        url = f"http://localhost:{self.network.port}{self.health_check.check_path}"  # onex-allow-internal-ip: container self health-check  # url-authority-ok: container self-health resolves its declared port and check path
+        url = ModelNetworkDefaults.load().container_health_check_url(
+            self.network.port, self.health_check.check_path
+        )
         return ["curl", "-f", url]
 
     def supports_scaling(self) -> bool:

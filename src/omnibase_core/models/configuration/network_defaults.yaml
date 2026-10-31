@@ -17,3 +17,17 @@ node_registry_service_port: 8081
 node_registry_prometheus_port: 9091
 kafka_bootstrap_servers: localhost:19092
 source_control_host: github.com
+# URLs and URL templates (OMN-21783). Templates take str.format fields.
+redacted_redis_url: "redis://***"
+default_project_url_template: "https://github.com/example/{project_name}"
+linear_graphql_url: "https://api.linear.app/graphql"
+unknown_entrypoint_uri: "python://unknown"
+unknown_namespace_uri: "python://omnibase.unknown"
+sqlite_connection_url_template: "sqlite:///{database}"
+mssql_connection_url_template: "mssql://?{params}"
+broadcast_route_destination: "broadcast://all"
+kafka_advertised_listener: "PLAINTEXT://localhost:9092"
+file_url_prefix: "file:///"
+example_telemetry_endpoint: "http://telemetry.example.com"
+container_health_check_url_template: "http://{host}:{port}{path}"
+yamlfmt_repository_url: "https://github.com/google/yamlfmt"

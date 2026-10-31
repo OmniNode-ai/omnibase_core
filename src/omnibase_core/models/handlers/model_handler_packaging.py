@@ -86,6 +86,9 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_hash_algorithm import EnumHashAlgorithm
 from omnibase_core.enums.enum_signature_algorithm import EnumSignatureAlgorithm
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.handlers.model_sandbox_requirements import (
     ModelSandboxRequirements,
@@ -104,7 +107,7 @@ _SCHEME_REQUIREMENTS: dict[str, tuple[bool, bool]] = {
 # Derive allowed scheme prefixes from _SCHEME_REQUIREMENTS
 # file:// uses three slashes (file:///), others use two (scheme://)
 _ALLOWED_SCHEMES = frozenset(
-    "file:///" if scheme == "file" else f"{scheme}://"
+    ModelNetworkDefaults.load().file_url_prefix if scheme == "file" else f"{scheme}://"
     for scheme in _SCHEME_REQUIREMENTS
 )
 
@@ -177,7 +180,10 @@ def _validate_artifact_reference(reference: str) -> tuple[bool, str]:
         if scheme == "file":
             # file:/// URLs: path must be non-empty (absolute path)
             if not parsed.path or parsed.path == "/":
-                return (False, "file:/// URLs must include a path")
+                return (
+                    False,
+                    f"{ModelNetworkDefaults.load().file_url_prefix} URLs must include a path",
+                )
         # https/oci/registry: path must exist after host
         elif not parsed.path or parsed.path == "/":
             return (False, f"{scheme}:// URLs must include a path after the host")

@@ -31,6 +31,9 @@ from typing import Union, cast
 from omnibase_core.enums import EnumNodeMetadataField
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.core.model_node_metadata import NodeMetadataBlock
 from omnibase_core.models.core.model_project_metadata import get_canonical_versions
 from omnibase_core.protocols import ContextValue, ProtocolCanonicalSerializer
@@ -149,8 +152,7 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     version_value = ModelSemVer(major=0, minor=1, patch=0)
 
                 # Validate hash field format - must be 64 hex characters
-                hash_value_raw = original_dict.get("hash", "0" * 64)
-                hash_value = str(hash_value_raw) if hash_value_raw else "0" * 64
+                hash_value = str(original_dict.get("hash") or "0" * 64)
                 if hash_value and (
                     len(hash_value) != 64
                     or not all(c in "0123456789abcdefABCDEF" for c in hash_value)
@@ -159,24 +161,22 @@ class MixinCanonicalYAMLSerializer(ProtocolCanonicalSerializer):
                     hash_value = "0" * 64
 
                 # Use deterministic UUID based on name for consistency (or random if no name)
-                name_raw = original_dict.get("name", "unknown")
-                name = str(name_raw) if name_raw else "unknown"
+                name = str(original_dict.get("name") or "unknown")
                 default_uuid = str(uuid_lib.uuid5(uuid_lib.NAMESPACE_DNS, name))
 
+                epoch = "1970-01-01T00:00:00Z"
                 defaults = {
                     "name": name,
                     "uuid": original_dict.get("uuid", default_uuid),
                     "author": original_dict.get("author", "OmniNode Team"),
-                    "created_at": original_dict.get(
-                        "created_at", "1970-01-01T00:00:00Z"
-                    ),
-                    "last_modified_at": original_dict.get(
-                        "last_modified_at", "1970-01-01T00:00:00Z"
-                    ),
+                    "created_at": original_dict.get("created_at", epoch),
+                    "last_modified_at": original_dict.get("last_modified_at", epoch),
                     "hash": hash_value,
-                    "entrypoint": original_dict.get("entrypoint", "python://unknown"),
+                    "entrypoint": original_dict.get(
+                        "entrypoint", ModelNetworkDefaults.load().unknown_entrypoint_uri
+                    ),
                     "namespace": original_dict.get(
-                        "namespace", "python://omnibase.unknown"
+                        "namespace", ModelNetworkDefaults.load().unknown_namespace_uri
                     ),
                     "version": version_value,
                     "description": original_dict.get("description")

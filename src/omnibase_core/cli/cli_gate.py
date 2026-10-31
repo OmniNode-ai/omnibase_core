@@ -23,6 +23,9 @@ from omnibase_core.gate import (
     discover_omnigate_config,
     load_omnigate_config,
 )
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 
 _CONFIG_NAME = ".omnigate.yaml"
 _HOOK_NAME = "pre-push"
@@ -71,18 +74,14 @@ def _default_config(
 ) -> dict[str, object]:
     resolved_project_name = project_name or repo.resolve().name
     resolved_project_url = (
-        project_url or f"https://github.com/example/{resolved_project_name}"
+        project_url
+        or ModelNetworkDefaults.load().default_project_url(resolved_project_name)
     )
     return {
         "version": {"major": 1, "minor": 0, "patch": 0},
         "project_name": resolved_project_name,
         "project_url": resolved_project_url,
-        "checks": [
-            {
-                "name": "unit",
-                "run": "pytest -q",
-            }
-        ],
+        "checks": [{"name": "unit", "run": "pytest -q"}],
         "gate": {
             "scope": "forks-only",
             "on_missing_receipt": "auto-close",
