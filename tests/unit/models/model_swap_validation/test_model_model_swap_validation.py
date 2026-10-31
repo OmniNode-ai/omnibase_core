@@ -6,10 +6,11 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from uuid import uuid4
 
 import pytest
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from omnibase_core.models.model_swap_validation import (
     ModelModelSwapValidationGatewayCall,
@@ -59,12 +60,38 @@ def result_data() -> dict[str, object]:
     }
 
 
-@pytest.mark.parametrize("floor", [0.8, 1.0, 0.79, float("nan"), float("inf")])
-def test_request_refuses_quality_floor_outside_open_bounds(floor: float) -> None:
+@pytest.mark.parametrize(
+    ("model", "data"),
+    [
+        (ModelModelSwapValidationRequest, request_data),
+        (ModelModelSwapValidationResult, result_data),
+    ],
+)
+@pytest.mark.parametrize(
+    "floor", [0.8, 1.0, 0.79, 1.01, float("nan"), float("inf"), float("-inf")]
+)
+def test_models_refuse_quality_floor_outside_open_bounds(
+    model: type[BaseModel], data: Callable[[], dict[str, object]], floor: float
+) -> None:
     with pytest.raises(ValidationError):
-        ModelModelSwapValidationRequest.model_validate(
-            request_data() | {"quality_floor": floor}
-        )
+        model.model_validate(data() | {"quality_floor": floor})
+
+
+@pytest.mark.parametrize(
+    ("model", "data"),
+    [
+        (ModelModelSwapValidationRequest, request_data),
+        (ModelModelSwapValidationResult, result_data),
+    ],
+)
+def test_quality_floor_schema_preserves_open_bounds(
+    model: type[BaseModel], data: Callable[[], dict[str, object]]
+) -> None:
+    bounds = model.model_json_schema()["properties"]["quality_floor"]
+    assert bounds["exclusiveMinimum"] == 0.8
+    assert bounds["exclusiveMaximum"] == 1.0
+    value = model.model_validate(data())
+    assert model.model_validate_json(value.model_dump_json()) == value
 
 
 def test_backend_judge_requires_backend_identifier() -> None:
@@ -125,6 +152,7 @@ def test_result_round_trips_gate_and_case_evidence() -> None:
         {"tool_commit": "branch-name"},
         {"image_digest": "image:latest"},
         {"tool_cost_measurement_source": "provider_reported_charge"},
+        {"tool_cost_measurement_source": "unpriced"},
         {"decision": "reject"},
         {
             "per_case": [
@@ -228,3 +256,125 @@ def test_ineligible_recommendation_preserves_reported_decision() -> None:
     assert payload["decision"] == "inconclusive"
     assert payload["reported_decision"] == "recommend"
     assert payload["recommendation_effective"] is False
+
+
+def gateway_call_data(source: str, cost: float | None) -> dict[str, object]:
+    return {
+        "role": "judge",
+        "model_id": "example-judge/judge-model",
+        "tokens_in": 10,
+        "tokens_out": 3,
+        "cost_usd": cost,
+        "cost_measurement_source": source,
+    }
+
+
+def cost_result_data() -> dict[str, object]:
+    return result_data() | {
+        "gateway_calls": [
+            gateway_call_data("provider_reported_charge", 0.1),
+            gateway_call_data("provider_reported_charge", 0.2),
+            gateway_call_data("estimated_list_price", 0.04),
+            gateway_call_data("unpriced", None),
+        ],
+        "provider_reported_cost_usd": 0.1 + 0.2,
+        "estimated_cost_usd": 0.04,
+        "tool_estimated_cost_usd": 0.9,
+    }
+
+
+@pytest.mark.parametrize("provider_total", [0.3, 0.1 + 0.2])
+def test_result_cost_totals_match_mixed_receipts_with_float_rounding(
+    provider_total: float,
+) -> None:
+    result = ModelModelSwapValidationResult.model_validate(
+        cost_result_data() | {"provider_reported_cost_usd": provider_total}
+    )
+    assert result.provider_reported_cost_usd == pytest.approx(0.3)
+    assert result.estimated_cost_usd == 0.04
+    assert result.gateway_calls[-1].cost_usd is None
+    assert (
+        ModelModelSwapValidationResult.model_validate_json(result.model_dump_json())
+        == result
+    )
+
+
+@pytest.mark.parametrize(
+    ("field", "total"),
+    [
+        ("provider_reported_cost_usd", 0.31),
+        ("provider_reported_cost_usd", 0),
+        ("estimated_cost_usd", 0.05),
+        ("estimated_cost_usd", 0),
+        ("estimated_cost_usd", 0.94),
+    ],
+)
+def test_result_refuses_cost_total_mismatches(field: str, total: float) -> None:
+    with pytest.raises(ValidationError, match=field):
+        ModelModelSwapValidationResult.model_validate(
+            cost_result_data() | {field: total}
+        )
+
+
+@pytest.mark.parametrize("field", ["provider_reported_cost_usd", "estimated_cost_usd"])
+@pytest.mark.parametrize("calls", [[], [gateway_call_data("unpriced", None)]])
+def test_result_refuses_nonzero_totals_without_priced_receipts(
+    field: str, calls: list[dict[str, object]]
+) -> None:
+    with pytest.raises(ValidationError, match=field):
+        ModelModelSwapValidationResult.model_validate(
+            result_data() | {"gateway_calls": calls, field: 1e-20}
+        )
+
+
+def test_result_accepts_zero_cost_and_unpriced_receipts() -> None:
+    result = ModelModelSwapValidationResult.model_validate(
+        result_data()
+        | {
+            "gateway_calls": [
+                gateway_call_data("provider_reported_charge", 0),
+                gateway_call_data("estimated_list_price", 0),
+                gateway_call_data("unpriced", None),
+            ]
+        }
+    )
+    assert result.provider_reported_cost_usd == result.estimated_cost_usd == 0
+
+
+@pytest.mark.parametrize(
+    ("source", "field"),
+    [
+        ("provider_reported_charge", "provider_reported_cost_usd"),
+        ("estimated_list_price", "estimated_cost_usd"),
+    ],
+)
+def test_result_refuses_overflowing_gateway_cost_totals(
+    source: str, field: str
+) -> None:
+    with pytest.raises(ValidationError, match=field):
+        ModelModelSwapValidationResult.model_validate(
+            result_data()
+            | {
+                "gateway_calls": [gateway_call_data(source, 1e308)] * 2,
+                field: 1e308,
+            }
+        )
+
+
+def test_tool_cost_source_preserves_wire_value_as_schema_constant() -> None:
+    default = ModelModelSwapValidationResult.model_validate(result_data())
+    explicit = ModelModelSwapValidationResult.model_validate(
+        result_data()
+        | {
+            "correlation_id": default.correlation_id,
+            "tool_cost_measurement_source": "estimated_list_price",
+        }
+    )
+    assert explicit == default
+    assert json.loads(default.model_dump_json())["tool_cost_measurement_source"] == (
+        "estimated_list_price"
+    )
+    source_schema = default.model_json_schema()["properties"][
+        "tool_cost_measurement_source"
+    ]
+    assert source_schema["const"] == "estimated_list_price"

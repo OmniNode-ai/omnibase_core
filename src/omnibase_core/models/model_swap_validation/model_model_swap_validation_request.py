@@ -5,10 +5,14 @@
 
 from __future__ import annotations
 
+from typing import Annotated
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants.constants_model_swap_validation import (
+    MODEL_SWAP_QUALITY_FLOOR_BOUNDS,
+)
 from omnibase_core.enums.enum_model_swap_answer_source import EnumModelSwapAnswerSource
 from omnibase_core.enums.enum_model_swap_judge_mode import EnumModelSwapJudgeMode
 
@@ -32,7 +36,7 @@ class ModelModelSwapValidationRequest(BaseModel):
     judge_backend_id: str | None = Field(default=None, min_length=1)
     answer_source: EnumModelSwapAnswerSource
     replay_set_digest: str = Field(pattern=r"^[0-9a-f]{64}$")
-    quality_floor: float = Field(gt=0.8, lt=1.0)
+    quality_floor: Annotated[float, MODEL_SWAP_QUALITY_FLOOR_BOUNDS]
     max_cost_usd: float = Field(gt=0)
     work_unit_repository: str | None = Field(default=None, min_length=1)
 

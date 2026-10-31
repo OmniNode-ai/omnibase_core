@@ -5,11 +5,15 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from math import fsum, isclose
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.constants.constants_model_swap_validation import (
+    MODEL_SWAP_QUALITY_FLOOR_BOUNDS,
+)
 from omnibase_core.enums.enum_model_swap_cost_measurement_source import (
     EnumModelSwapCostMeasurementSource,
 )
@@ -59,7 +63,7 @@ class ModelModelSwapValidationResult(BaseModel):
     )
     recommended_model: str | None = Field(default=None, min_length=1)
     lower_bound: float | None = Field(default=None, ge=0, le=1)
-    quality_floor: float = Field(gt=0.8, lt=1.0)
+    quality_floor: Annotated[float, MODEL_SWAP_QUALITY_FLOOR_BOUNDS]
     gates: tuple[ModelModelSwapValidationGate, ...] = ()
     per_case: tuple[ModelModelSwapValidationCase, ...] = ()
     judge_model: str | None = Field(default=None, min_length=1)
@@ -68,9 +72,9 @@ class ModelModelSwapValidationResult(BaseModel):
     provider_reported_cost_usd: float = Field(default=0, ge=0)
     estimated_cost_usd: float = Field(default=0, ge=0)
     tool_estimated_cost_usd: float | None = Field(default=None, ge=0)
-    tool_cost_measurement_source: EnumModelSwapCostMeasurementSource = (
+    tool_cost_measurement_source: Literal[
         EnumModelSwapCostMeasurementSource.ESTIMATED_LIST_PRICE
-    )
+    ] = EnumModelSwapCostMeasurementSource.ESTIMATED_LIST_PRICE
     exit_code: int | None = None
     tool_error_code: str | None = None
     evidence_only: Literal[True] = True
@@ -96,11 +100,32 @@ class ModelModelSwapValidationResult(BaseModel):
             and self.decision != EnumModelSwapDecision.RECOMMEND
         ):
             raise ValueError("only a recommend decision can name a recommended model")
-        if (
-            self.tool_cost_measurement_source
-            != EnumModelSwapCostMeasurementSource.ESTIMATED_LIST_PRICE
+        for total, source, field_name in (
+            (
+                self.provider_reported_cost_usd,
+                EnumModelSwapCostMeasurementSource.PROVIDER_REPORTED_CHARGE,
+                "provider_reported_cost_usd",
+            ),
+            (
+                self.estimated_cost_usd,
+                EnumModelSwapCostMeasurementSource.ESTIMATED_LIST_PRICE,
+                "estimated_cost_usd",
+            ),
         ):
-            raise ValueError("the tool's own cost is always an estimated list price")
+            try:
+                expected = fsum(
+                    call.cost_usd
+                    for call in self.gateway_calls
+                    if call.cost_measurement_source == source
+                    and call.cost_usd is not None
+                )
+            except OverflowError as error:
+                raise ValueError(
+                    f"{field_name} gateway call total is not finite"
+                ) from error
+            # Permit normal float accumulation, while zero receipts require zero total.
+            if not isclose(total, expected, rel_tol=1e-9):
+                raise ValueError(f"{field_name} must match gateway call costs")
         return self
 
 
