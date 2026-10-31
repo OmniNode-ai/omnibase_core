@@ -936,11 +936,14 @@
     no suppression comment. Checks the whole index against the merge base of HEAD and the landing ref
     (HEAD when none resolves), so a branch that already committed the burn-down file is judged as CI judges
     it. CI runs the same hook after `git reset --soft <merge-base>`, so the index holds the pull request's
-    change. Includes the node-home rule group (also available alone as check-node-home).
+    change. Includes the node-home rule group (also available alone as check-node-home). A refusal ends
+    the run (fail_fast, OMN-21648): the check takes seconds and the hook suite behind it takes minutes,
+    so the suite runs only for a change the check admits. List this hook before slower ones.
   language: python
   entry: python -m omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
   pass_filenames: false
   always_run: true
+  fail_fast: true
 - id: canonical-file-shape-release-trailer
   name: Canonical-file-shape release trailer (OMN-21515)
   description: >
