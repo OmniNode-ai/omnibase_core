@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Network defaults omnibase_core models and handlers read instead of holding a
+# host, an address or a port in code (OMN-21681). Loaded by ModelNetworkDefaults.
+loopback_name: localhost
+loopback_ipv4: 127.0.0.1
+loopback_ipv6: "::1"
+loopback_ipv6_alias: ip6-localhost
+service_bind_address: 0.0.0.0
+http_port: 80
+grpc_port: 50051
+postgresql_port: 5432
+mysql_port: 3306
+sqlite_placeholder_port: 0
+node_registry_service_port: 8081
+node_registry_prometheus_port: 9091
+kafka_bootstrap_servers: localhost:19092
+source_control_host: github.com

@@ -25,6 +25,9 @@ from omnibase_core.handlers.handler_evidence_admissibility import (
     AdmissibilityVerdict,
     classify_evidence_item,
 )
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.nodes.contract_evidence_check.model_contract_compliance_check_request import (
     ModelContractComplianceCheckRequest,
 )
@@ -202,9 +205,7 @@ _LAN_IP_RE = re.compile(
     r")\b"
 )
 _URL_HOST_RE = re.compile(r"https?://([^/\s]+)")
-_LOOPBACK_HOSTS: frozenset[str] = frozenset(
-    {"localhost", "127.0.0.1", "::1", "ip6-localhost"}
-)
+_LOOPBACK_HOSTS: frozenset[str] = ModelNetworkDefaults.load().loopback_hosts_with_alias
 
 
 def _command_binaries(command: str) -> list[str]:

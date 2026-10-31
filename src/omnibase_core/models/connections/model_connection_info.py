@@ -116,7 +116,7 @@ class ModelConnectionInfo(BaseModel):
         return self.security.use_ssl
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )
@@ -179,7 +179,7 @@ class ModelConnectionInfo(BaseModel):
     def create_http(
         cls,
         host: str,
-        port: int = 80,
+        port: int | None = None,
         path: str | None = None,
         use_ssl: bool = False,
     ) -> ModelConnectionInfo:
@@ -202,7 +202,7 @@ class ModelConnectionInfo(BaseModel):
     def create_websocket(
         cls,
         host: str,
-        port: int = 80,
+        port: int | None = None,
         path: str | None = None,
         use_ssl: bool = False,
     ) -> ModelConnectionInfo:
