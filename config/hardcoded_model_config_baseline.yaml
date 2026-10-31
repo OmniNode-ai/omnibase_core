@@ -1206,9 +1206,6 @@ entries:
   - path: src/omnibase_core/validators/dispatched_contract_operation.py
     family: F
     content_sha1: 2097b2a6887980c512ca6f6d733e89f0394d1716
-  - path: src/omnibase_core/validators/extra_forbid_waivers.yaml
-    family: G
-    content_sha1: 873e1924adbbfa20a0aa79f31a8c3a0289d77c51
   - path: src/omnibase_core/validators/generated_node_model_class_exists.py
     family: F
     content_sha1: 2097b2a6887980c512ca6f6d733e89f0394d1716

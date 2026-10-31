@@ -25,14 +25,4 @@
 #
 #   model_config = ConfigDict(extra="forbid")
 #
-waivers:
-  - fqn: omnibase_core.models.contracts.model_dependency:ModelDependency
-    ticket: OMN-16458
-    pr: https://github.com/OmniNode-ai/omnibase_core/pull/1583
-    expires_at: 2026-10-31
-    reason: >-
-      OMN-16452 adds an additive typed `env_var` field so the live `type: "environment"` contract convention
-      stops being silently dropped. Touching the model body trips this ratchet, but the extra="forbid"
-      flip is a separate, larger change: `ModelContractPatch.dependencies__add` coerces raw patch dicts
-      with no before-validator, and omnibase_core is an externally-consumed SDK, so the flip needs a consumer
-      sweep this additive PR cannot carry. Flip + baseline removal are tracked in OMN-16458.
+waivers: []

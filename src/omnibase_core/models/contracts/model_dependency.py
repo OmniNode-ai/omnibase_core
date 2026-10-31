@@ -352,7 +352,7 @@ class ModelDependency(BaseModel):
         return True
 
     model_config = ConfigDict(
-        extra="ignore",  # Allow extra fields from various input formats
+        extra="forbid",
         use_enum_values=False,  # Keep enum objects, don't convert to strings
         validate_assignment=True,
         str_strip_whitespace=True,
