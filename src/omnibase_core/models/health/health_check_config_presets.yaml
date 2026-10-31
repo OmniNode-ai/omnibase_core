@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# OMN-21623: the ModelHealthCheckConfig.create_*_checks presets.
+fast_checks:
+  enabled: true
+  check_interval_seconds: 10
+  timeout_seconds: 2
+  healthy_threshold: 2
+  unhealthy_threshold: 2
+  check_path: /health
+  check_method: HEAD
+thorough_checks:
+  enabled: true
+  check_interval_seconds: 60
+  timeout_seconds: 10
+  healthy_threshold: 3
+  unhealthy_threshold: 3
+  check_path: /health/detailed
+  check_method: GET
+  expected_response_body: healthy
+production_checks:
+  enabled: true
+  check_interval_seconds: 30
+  timeout_seconds: 5
+  healthy_threshold: 3
+  unhealthy_threshold: 2
+  check_path: /health
+  check_method: GET
+  expected_status_codes:
+    - 200
+  check_headers:
+    X-Health-Check: load-balancer
+    X-Environment: production
+  validate_ssl: true
+development_checks:
+  enabled: true
+  check_interval_seconds: 60
+  timeout_seconds: 10
+  healthy_threshold: 2
+  unhealthy_threshold: 3
+  check_path: /health
+  check_method: GET
+  check_headers:
+    X-Health-Check: load-balancer
+    X-Environment: development
+  validate_ssl: false

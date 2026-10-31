@@ -38,6 +38,7 @@ from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
     ModelDodEvidenceItem,
 )
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 from omnibase_core.models.ticket.model_contract_dod_item import ModelContractDodItem
 from omnibase_core.models.validation.model_goal_admission_observation import (
     ModelGoalAdmissionObservation,
@@ -514,14 +515,18 @@ def _goal_result(
 def _git(
     repository: Path,
     *arguments: str,
-    timeout_seconds: float = 10.0,
+    timeout_seconds: float | None = None,
 ) -> subprocess.CompletedProcess[bytes]:
     """Run a bounded Git read using an argument vector, never a shell."""
     return subprocess.run(
         ("git", "-C", str(repository), *arguments),
         check=False,
         capture_output=True,
-        timeout=timeout_seconds,
+        timeout=(
+            timeout_seconds
+            if timeout_seconds is not None
+            else packaged_timeouts().occ_git_read_seconds
+        ),
     )
 
 
@@ -588,7 +593,7 @@ def _goal_formatter_result(
             (formatter, "-version"),
             check=False,
             capture_output=True,
-            timeout=5.0,
+            timeout=packaged_timeouts().occ_formatter_version_seconds,
             text=True,
         )
     except (OSError, subprocess.TimeoutExpired):
@@ -620,7 +625,7 @@ def _goal_formatter_result(
                 ),
                 check=False,
                 capture_output=True,
-                timeout=10.0,
+                timeout=packaged_timeouts().occ_formatter_lint_seconds,
                 text=True,
             )
         except subprocess.TimeoutExpired:

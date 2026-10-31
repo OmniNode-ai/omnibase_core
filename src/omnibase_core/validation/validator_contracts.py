@@ -28,6 +28,7 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_metadata import (
     ModelValidationMetadata,
 )
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 from .validator_utils import ModelValidationResult
 
@@ -36,7 +37,6 @@ if TYPE_CHECKING:
 
 # Constants
 MAX_FILE_SIZE = 50 * 1024 * 1024  # 50MB - prevent DoS attacks
-VALIDATION_TIMEOUT = 300  # 5 minutes
 
 
 def timeout_handler(_signum: int, _frame: object) -> None:
@@ -287,11 +287,12 @@ def validate_contracts_cli() -> int:
         default=["."],
         help="Directories to validate",
     )
+    validation_timeout = packaged_timeouts().contracts_validation_seconds
     parser.add_argument(
         "--timeout",
         type=int,
-        default=VALIDATION_TIMEOUT,
-        help=f"Validation timeout in seconds (default: {VALIDATION_TIMEOUT})",
+        default=int(validation_timeout),
+        help=f"Validation timeout in seconds (default: {validation_timeout:g})",
     )
 
     args = parser.parse_args()

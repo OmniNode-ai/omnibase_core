@@ -13,6 +13,7 @@ from contextlib import contextmanager, suppress
 from pathlib import Path
 
 from omnibase_core.analysis.import_graph import build_import_graph
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 try:  # pragma: no cover - POSIX always provides fcntl
     import fcntl
@@ -27,8 +28,8 @@ _LOCK_POLL_SECONDS = 0.05
 # addopts), so a waiter that blocks past 60s is killed by pytest-timeout anyway.
 # Waiting longer cannot rescue it -- it only keeps a doomed process holding an
 # xdist worker slot. The wait therefore never exceeds the tightest per-test
-# budget this lock is documented against (OMN-15431).
-_LOCK_TIMEOUT_SECONDS = 60.0
+# budget this lock is documented against (OMN-15431). The budget is
+# ``consumer_graph_lock_seconds`` in the packaged operational timeouts.
 
 
 def build_consumer_graph(repo_root: Path) -> dict[str, int]:
@@ -92,7 +93,7 @@ def _single_flight_lock(lock_path: Path) -> Iterator[bool]:
         return
 
     acquired = False
-    deadline = time.monotonic() + _LOCK_TIMEOUT_SECONDS
+    deadline = time.monotonic() + packaged_timeouts().consumer_graph_lock_seconds
     try:
         while True:
             try:

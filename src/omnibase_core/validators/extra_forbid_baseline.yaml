@@ -651,7 +651,6 @@ violations:
   - "omnibase_core.models.graph.model_graph_node:ModelGraphNode"
   - "omnibase_core.models.health.model_health_attributes:ModelHealthAttributes"
   - "omnibase_core.models.health.model_health_check:ModelHealthCheck"
-  - "omnibase_core.models.health.model_health_check_config:ModelHealthCheckConfig"
   - "omnibase_core.models.health.model_health_check_metadata:ModelHealthCheckMetadata"
   - "omnibase_core.models.health.model_health_issue:ModelHealthIssue"
   - "omnibase_core.models.health.model_health_metadata:ModelHealthMetadata"

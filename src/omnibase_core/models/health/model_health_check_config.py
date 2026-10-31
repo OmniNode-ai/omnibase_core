@@ -8,9 +8,26 @@ Health check configuration model for monitoring node health in a load
 balancing system with configurable intervals, timeouts, and failure handling.
 """
 
-from pydantic import BaseModel, Field
+from functools import cache
+from pathlib import Path
+from typing import cast
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_duplicates
 
 from .model_health_check_metadata import ModelHealthCheckMetadata
+
+_PRESETS_FILE = Path(__file__).with_name("health_check_config_presets.yaml")
+
+
+@cache
+def _preset(name: str) -> dict[str, object]:
+    """One named preset of ``health_check_config_presets.yaml``."""
+    presets = load_yaml_mapping_no_duplicates(
+        _PRESETS_FILE.read_text(encoding="utf-8"), source=str(_PRESETS_FILE)
+    )
+    return cast(dict[str, object], presets[name])
 
 
 class ModelHealthCheckConfig(BaseModel):
@@ -20,6 +37,8 @@ class ModelHealthCheckConfig(BaseModel):
     This model defines how health checks should be performed on nodes
     to determine their availability for load balancing decisions.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     enabled: bool = Field(default=True, description="Whether health checks are enabled")
 
@@ -165,66 +184,22 @@ class ModelHealthCheckConfig(BaseModel):
     @classmethod
     def create_fast_checks(cls) -> "ModelHealthCheckConfig":
         """Create configuration for fast health checks"""
-        return cls(
-            enabled=True,
-            check_interval_seconds=10,
-            timeout_seconds=2,
-            healthy_threshold=2,
-            unhealthy_threshold=2,
-            check_path="/health",
-            check_method="HEAD",  # Faster than GET
-        )
+        return cls.model_validate(_preset("fast_checks"))
 
     @classmethod
     def create_thorough_checks(cls) -> "ModelHealthCheckConfig":
         """Create configuration for thorough health checks"""
-        return cls(
-            enabled=True,
-            check_interval_seconds=60,
-            timeout_seconds=10,
-            healthy_threshold=3,
-            unhealthy_threshold=3,
-            check_path="/health/detailed",
-            check_method="GET",
-            expected_response_body="healthy",
-        )
+        return cls.model_validate(_preset("thorough_checks"))
 
     @classmethod
     def create_production_checks(cls) -> "ModelHealthCheckConfig":
         """Create configuration for production health checks"""
-        return cls(
-            enabled=True,
-            check_interval_seconds=30,
-            timeout_seconds=5,
-            healthy_threshold=3,
-            unhealthy_threshold=2,
-            check_path="/health",
-            check_method="GET",
-            expected_status_codes=[200],
-            validate_ssl=True,
-            check_headers={
-                "X-Health-Check": "load-balancer",
-                "X-Environment": "production",
-            },
-        )
+        return cls.model_validate(_preset("production_checks"))
 
     @classmethod
     def create_development_checks(cls) -> "ModelHealthCheckConfig":
         """Create configuration for development health checks"""
-        return cls(
-            enabled=True,
-            check_interval_seconds=60,
-            timeout_seconds=10,
-            healthy_threshold=2,
-            unhealthy_threshold=3,
-            check_path="/health",
-            check_method="GET",
-            validate_ssl=False,  # More lenient for dev
-            check_headers={
-                "X-Health-Check": "load-balancer",
-                "X-Environment": "development",
-            },
-        )
+        return cls.model_validate(_preset("development_checks"))
 
     @classmethod
     def create_disabled(cls) -> "ModelHealthCheckConfig":

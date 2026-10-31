@@ -18,7 +18,6 @@
 # Regenerate only to SHRINK it:
 #   python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config \
 #     --all --baseline <this file> --write-baseline
-
 schema_version: 1
 entries:
   - path: .github/actions/validate-boundaries/action.yml
@@ -399,24 +398,6 @@ entries:
   - path: scripts/validation/validate_structure.py
     family: P
     content_sha1: cab4acd46145d5f4edb1cab814eecd1ba95c07f7
-  - path: src/omnibase_core/adapters/github_merge_queue_adapter.py
-    family: O
-    content_sha1: a5ed57329e5eb53cd7f7043639823fa54bfbb831
-  - path: src/omnibase_core/adapters/merge_strategy_detector.py
-    family: O
-    content_sha1: 70d6345342c55824e2c30bbc103d141bfabfb705
-  - path: src/omnibase_core/adapters/rebase_handler.py
-    family: O
-    content_sha1: 66f2e1903b354e1a03f32d65243a3c2b402bea7a
-  - path: src/omnibase_core/adapters/rebase_handler.py
-    family: O
-    content_sha1: 98dcf908ae4dc997ea61a084a877f58bcef75ce1
-  - path: src/omnibase_core/adapters/rebase_handler.py
-    family: O
-    content_sha1: cd56726d6d96182844a6027f054ca22022a2bbdd
-  - path: src/omnibase_core/analysis/consumer_graph.py
-    family: O
-    content_sha1: 3993a85afd698e7d1e4cb9fa4e109cdc4605710e
   - path: src/omnibase_core/cli/cli_commands.py
     family: O
     content_sha1: 950f3dcde3eeabf6db6391fdb9802b8345d5bb66
@@ -447,9 +428,6 @@ entries:
   - path: src/omnibase_core/cli/cli_work_ledger_projection.py
     family: O
     content_sha1: 72cb8d5f8e791149ac27dda934ecc00c93718b15
-  - path: src/omnibase_core/cli/cli_work_ledger_render.py
-    family: O
-    content_sha1: 0861552c28f67c2c493e99b80e370c10a975469c
   - path: src/omnibase_core/constants/constants_effect.py
     family: O
     content_sha1: 635f68e688a2c5362a60fb8b995ab3b80b06bf51
@@ -891,21 +869,6 @@ entries:
   - path: src/omnibase_core/models/discovery/model_nodehealthevent.py
     family: O
     content_sha1: fd09250201edff94c5475a7c3cafa61adee64f97
-  - path: src/omnibase_core/models/discovery/model_request_introspection_event.py
-    family: O
-    content_sha1: 562dba643545f78a28f9c800c3c5cf78c1ed88ed
-  - path: src/omnibase_core/models/discovery/model_request_introspection_event.py
-    family: O
-    content_sha1: a76cb5215d60e90cae546917b8fdd31b526cc4f6
-  - path: src/omnibase_core/models/discovery/model_request_introspection_event.py
-    family: O
-    content_sha1: b75a778f6574b697c52ba8077ee114f4345438be
-  - path: src/omnibase_core/models/discovery/model_tool_invocation_event.py
-    family: O
-    content_sha1: 000b3e3f2a485aa3d8bdfe7b9f8c2d12a39c1efb
-  - path: src/omnibase_core/models/discovery/model_tool_invocation_event.py
-    family: O
-    content_sha1: 115dd61eee44dd18e2e09414f028ee6ce2064ff4
   - path: src/omnibase_core/models/docker/model_docker_compose_config.py
     family: O
     content_sha1: a5136cc87049d3eac4fc10be7d0e0af841a5ec79
@@ -942,18 +905,6 @@ entries:
   - path: src/omnibase_core/models/generation/model_node_generation_request.py
     family: O
     content_sha1: 77fe92d499350bca51576cb85cfd5fef4bf9f998
-  - path: src/omnibase_core/models/health/model_health_check_config.py
-    family: O
-    content_sha1: 5f852bc25a10c48e0430b53874a506612e9e0511
-  - path: src/omnibase_core/models/health/model_health_check_config.py
-    family: O
-    content_sha1: a68d87e8e89d0ddea3e077ac560faeb003297c4e
-  - path: src/omnibase_core/models/health/model_health_check_config.py
-    family: O
-    content_sha1: a68d87e8e89d0ddea3e077ac560faeb003297c4e
-  - path: src/omnibase_core/models/health/model_health_check_config.py
-    family: O
-    content_sha1: d5a39f8ee2390b50da068821a4bf88760f7abb27
   - path: src/omnibase_core/models/health/model_tool_health.py
     family: O
     content_sha1: 3d63f21f623a3b34609686a0a151567331504b5c
@@ -1119,9 +1070,6 @@ entries:
   - path: src/omnibase_core/nodes/node_shape_gate_independence_check_effect/handler_shape_gate_independence.py
     family: F
     content_sha1: 5575a7ee3e122de2657f49a54856cc7ef62df62a
-  - path: src/omnibase_core/nodes/node_source_file_gather_effect/runtime_shared_token_policy.py
-    family: O
-    content_sha1: 5ce0e28dfa23cb5b5559441c69d2a1e0ad9c2ed1
   - path: src/omnibase_core/nodes/node_sprint_roll_apply_effect/runtime_sprint_roll_apply.py
     family: O
     content_sha1: f7b6743575c030e333d58912930ba80520cfcb4e
@@ -1179,24 +1127,9 @@ entries:
   - path: src/omnibase_core/validation/scripts/validate_string_versions.py
     family: O
     content_sha1: d2d016427589d665376f291c641434c884167767
-  - path: src/omnibase_core/validation/validator_contracts.py
-    family: O
-    content_sha1: a80bd5f608792e03ec0349345e6d953a57dc2b00
-  - path: src/omnibase_core/validation/validator_occ_merge_eligibility.py
-    family: O
-    content_sha1: 2fed17e2910a45d8ca70c97ef582e00a145af241
-  - path: src/omnibase_core/validation/validator_occ_merge_eligibility.py
-    family: O
-    content_sha1: 6a557761214544a27ce2d008ad9db36a2846a5a0
-  - path: src/omnibase_core/validation/validator_occ_merge_eligibility.py
-    family: O
-    content_sha1: b1a5e96b8ffd832f45ebf082a7f38fc4d3c03bff
   - path: src/omnibase_core/validation/validator_pull_request_workflow_ratchet.py
     family: F
     content_sha1: a5998c2a2d2b3042eb3cbcbae5b5cabaed128c16
-  - path: src/omnibase_core/validation/validator_receipt_reprobe.py
-    family: O
-    content_sha1: 08a7fb67003000e6d5403b4d3cb941912754cf99
   - path: src/omnibase_core/validation/validator_receipt_runtime_identity.py
     family: P
     content_sha1: 7e863a1b7934ca42741e648f14a6e29edb53457a

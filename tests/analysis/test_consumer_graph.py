@@ -13,6 +13,9 @@ import pytest
 
 from omnibase_core.analysis import consumer_graph as consumer_graph_module
 from omnibase_core.analysis.consumer_graph import build_consumer_graph
+from omnibase_core.models.runtime.model_operational_timeouts import (
+    ModelOperationalTimeouts,
+)
 from omnibase_core.validators.no_unguarded_git_subprocess import (
     scrub_git_location_env,
 )
@@ -312,7 +315,8 @@ def test_lock_wait_never_outlasts_the_gate_per_test_timeout() -> None:
     ]
     assert timeouts, f"no --timeout= in pyproject addopts: {addopts}"
 
-    assert min(timeouts) >= consumer_graph_module._LOCK_TIMEOUT_SECONDS, (
-        f"lock wait {consumer_graph_module._LOCK_TIMEOUT_SECONDS}s exceeds the "
+    lock_wait = ModelOperationalTimeouts.packaged().consumer_graph_lock_seconds
+    assert min(timeouts) >= lock_wait, (
+        f"lock wait {lock_wait}s exceeds the "
         f"gate per-test timeout {min(timeouts)}s; waiters would be killed mid-wait"
     )

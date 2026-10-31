@@ -23,6 +23,7 @@ from omnibase_core.models.event_bus.model_event_message import ModelEventMessage
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
     ModelSourceFileGatherInput,
 )
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 from omnibase_core.models.validation.model_shared_token_allowlist import (
     ModelSharedTokenAllowlist,
 )
@@ -103,7 +104,10 @@ async def run_policy(
             ),
         )
         await transport.publish(command_topic, None, request.model_dump_json().encode())
-        return await asyncio.wait_for(results.get(), timeout=5)
+        return await asyncio.wait_for(
+            results.get(),
+            timeout=packaged_timeouts().shared_token_policy_response_seconds,
+        )
     finally:
         await transport.shutdown()
 

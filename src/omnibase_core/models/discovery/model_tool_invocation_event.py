@@ -16,6 +16,7 @@ from omnibase_core.constants import (
 from omnibase_core.constants.constants_event_types import TOOL_INVOCATION
 from omnibase_core.models.core.model_onex_event import ModelOnexEvent
 from omnibase_core.models.discovery.model_toolparameters import ModelToolParameters
+from omnibase_core.models.runtime.model_operational_timeouts import packaged_timeouts
 
 
 class ModelToolInvocationEvent(ModelOnexEvent):
@@ -128,7 +129,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         tool_name: str,
         action: str,
         parameters: ModelToolParameters | None = None,
-        timeout_ms: int = 10000,
+        timeout_ms: int | None = None,
         **kwargs: Any,
     ) -> "ModelToolInvocationEvent":
         """
@@ -146,6 +147,8 @@ class ModelToolInvocationEvent(ModelOnexEvent):
             ModelToolInvocationEvent for MCP usage
         """
         mcp_uuid = uuid5(NAMESPACE_DNS, "mcp_server")
+        if timeout_ms is None:
+            timeout_ms = int(packaged_timeouts().tool_invocation_mcp_seconds * 1000)
         return cls(
             node_id=mcp_uuid,
             target_node_id=uuid4(),
@@ -167,7 +170,7 @@ class ModelToolInvocationEvent(ModelOnexEvent):
         tool_name: str,
         action: str,
         parameters: ModelToolParameters | None = None,
-        timeout_ms: int = 60000,
+        timeout_ms: int | None = None,
         **kwargs: Any,
     ) -> "ModelToolInvocationEvent":
         """
@@ -185,6 +188,8 @@ class ModelToolInvocationEvent(ModelOnexEvent):
             ModelToolInvocationEvent for CLI usage
         """
         cli_uuid = uuid5(NAMESPACE_DNS, "cli_client")
+        if timeout_ms is None:
+            timeout_ms = int(packaged_timeouts().tool_invocation_cli_seconds * 1000)
         return cls(
             node_id=cli_uuid,
             target_node_id=uuid4(),
