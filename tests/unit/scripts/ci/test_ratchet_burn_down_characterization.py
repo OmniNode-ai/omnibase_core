@@ -182,7 +182,6 @@ _CORE_URL_AUTHORITY_FINDINGS = {
         "examples/demo/handlers/support_assistant/handler_openai.py",
     ),
     ("public-https-literal", "scripts/emit_ts_types.py"),
-    ("public-https-literal", "src/omnibase_core/doctor/checks/check_linear.py"),
 }
 
 

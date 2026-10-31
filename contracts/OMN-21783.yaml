@@ -82,6 +82,7 @@ dod_evidence:
       - AC3
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/models/configuration tests/unit/cli tests/unit/doctor -q
-          -o addopts=''
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults_urls.py
+          tests/unit/models/nodes/test_model_node_capability.py tests/unit/cli tests/unit/doctor -q -o
+          addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
