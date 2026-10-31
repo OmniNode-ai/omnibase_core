@@ -7,11 +7,18 @@ from __future__ import annotations
 
 import argparse
 import sys
+from functools import cache
 from pathlib import Path
 
 import yaml
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
 from omnibase_core.models.nodes.precommit_interpreter_check.model_precommit_interpreter_check_input import (
     ModelPrecommitInterpreterCheckInput,
@@ -41,6 +48,32 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodePrecommitInterpreterCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _gather(
@@ -48,11 +81,15 @@ def _gather(
 ) -> tuple[list[ModelSourceFile], list[str]]:
     """Read explicitly selected config or referenced shell paths via EFFECT."""
     try:
-        output = NodeSourceFileGatherEffect().handle(
-            ModelSourceFileGatherInput(
-                root=str(root),
-                explicit_paths=[str(path) for path in paths],
-                include_patterns=["*"],
+        output = (
+            _container()
+            .get_service(NodeSourceFileGatherEffect)
+            .handle(
+                ModelSourceFileGatherInput(
+                    root=str(root),
+                    explicit_paths=[str(path) for path in paths],
+                    include_patterns=["*"],
+                )
             )
         )
     except (OSError, UnicodeError) as exc:
@@ -83,7 +120,7 @@ def _gather(
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     """Persist only through the paired report-write EFFECT."""
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -174,7 +211,8 @@ def main(argv: list[str] | None = None) -> int:
             sys.stderr.write(f"{diagnostic}\n")
         return 1
     reports = [
-        NodePrecommitInterpreterCheckCompute().handle(request) for request in requests
+        _container().get_service(NodePrecommitInterpreterCheckCompute).handle(request)
+        for request in requests
     ]
     report = ModelValidationReport.from_findings(
         findings=tuple(finding for result in reports for finding in result.findings),

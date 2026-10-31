@@ -1,0 +1,73 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21726
+title: "omnibase_core contracts_and_di handler_hand_construction burn-down, slice rf1230b-c2"
+summary: Five check runtimes under nodes/ built the effects and COMPUTE node they call by hand, 15 handler_hand_construction
+  findings. Each runtime now binds those nodes in one container and resolves every node it calls from
+  it. No baseline entry, suppression or rule change; five handler_di baseline rows are removed.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21726-handlers-injected
+    statement: The five runtimes resolve the nodes they call from a container; no call site builds one
+      by hand.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the contracts_and_di count for handler_hand_construction over the slice paths
+          drops to zero and the repo total drops by the slice size, with no baseline entry or suppression
+          added -- falsifier: onex run of runtime_validator_run with the contracts_and_di reference over
+          omnibase_core src before and after, counts compared per rule"
+      - id: AC2
+        statement: "AC2: every hand-built handler dependency in the slice is injected through DI from
+          the node contract and none is constructed by hand in the touched code -- falsifier: uv run pytest
+          tests/unit -q over the touched modules plus the checker re-run on the slice paths"
+      - id: AC3
+        statement: "AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
+          the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
+          lab-run at the PR head, receipt path in the PR body"
+evidence_requirements:
+  - kind: tests
+    description: The container-resolution tests and the touched nodes' unit tests pass.
+    command: uv run pytest tests/unit/nodes/test_check_runtimes_resolve_nodes_from_container_c6.py -n
+      0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21726-ac1-count-drop
+    description: The five runtime sources draw no handler_hand_construction finding from the contracts_and_di
+      checker, and the rule still fires on a planted construction.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/test_check_runtimes_resolve_nodes_from_container_c6.py
+          -q -o addopts='' -k 'no_hand_construction_finding or still_refused'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21726-ac2-resolved-from-container
+    description: Each runtime's container hands out the nodes it registered.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/test_check_runtimes_resolve_nodes_from_container_c6.py
+          -q -o addopts='' -k 'container_hands_out'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21726-ac3-cloud-ci
+    description: The PR's hosted CI runs the container-resolution tests at the PR head (cloud lane, no
+      runtime file touched).
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/test_check_runtimes_resolve_nodes_from_container_c6.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
