@@ -75,6 +75,8 @@ def _run_step(tmp_path: Path, version: str) -> tuple[int, str, Path]:
         "GITHUB_WORKSPACE": str(workspace),
         "GITHUB_ENV": str(github_env),
         **{key: str(value) for key, value in step["env"].items()},
+        # OMN-21676: an empty tag is the migration fallback these tests cover.
+        "VERIFIER_TAG": "",
         "VERIFIER_VERSION": version,
     }
     result = subprocess.run(
