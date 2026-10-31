@@ -12,6 +12,9 @@ from omnibase_core.constants.constants_field_limits import (
 )
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.model_network_defaults import (
+    packaged_network_defaults,
+)
 from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
 
@@ -240,7 +243,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
             return False
 
         # Check for localhost (not secure for production)
-        if self.host.lower() in ("localhost", "127.0.0.1"):
+        if self.host.lower() in packaged_network_defaults().local_hosts:
             return False
 
         # Check for default ports (security through obscurity)
@@ -268,7 +271,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
                 "Use stronger passwords (12+ characters) for production",
             )
 
-        if self.host.lower() in ("localhost", "127.0.0.1"):
+        if self.host.lower() in packaged_network_defaults().local_hosts:
             recommendations.append(
                 "Use dedicated database server instead of localhost for production",
             )
@@ -314,7 +317,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
             "password_strength": password_strength,
             "host_type": (
                 "localhost"
-                if self.host.lower() in ("localhost", "127.0.0.1")
+                if self.host.lower() in packaged_network_defaults().local_hosts
                 else "remote"
             ),
             "port_type": (
@@ -338,7 +341,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         }
 
         # Host-based performance assessment
-        if self.host.lower() in ("localhost", "127.0.0.1"):
+        if self.host.lower() in packaged_network_defaults().local_hosts:
             profile["network_latency"] = "minimal"
         else:
             profile["network_latency"] = "variable"
@@ -362,7 +365,7 @@ class ModelDatabaseConnectionConfig(BaseModel):
         if self.ssl_enabled:
             recommendations.append("SSL adds latency - ensure adequate timeout values")
 
-        if self.host.lower() not in ("localhost", "127.0.0.1"):
+        if self.host.lower() not in packaged_network_defaults().local_hosts:
             recommendations.append(
                 "Consider connection pooling for remote database connections",
             )

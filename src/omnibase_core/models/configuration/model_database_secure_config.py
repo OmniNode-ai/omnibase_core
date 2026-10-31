@@ -19,6 +19,9 @@ from omnibase_core.models.configuration.model_connection_parse_result import (
 )
 from omnibase_core.models.configuration.model_latency_profile import ModelLatencyProfile
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.model_network_defaults import (
+    packaged_network_defaults,
+)
 from omnibase_core.models.security.model_secure_credentials import (
     ModelSecureCredentials,
 )
@@ -200,7 +203,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         v = v.strip().lower()
 
         # Allow localhost and IP addresses
-        if v in {"localhost", "127.0.0.1", "::1"}:
+        if v in packaged_network_defaults().loopback_hosts:
             return v
 
         # Check for valid domain format
@@ -990,7 +993,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def create_postgresql(
         cls,
         host: str,
-        port: int = 5432,
+        port: int | None = None,
         database: str = "onex_dev",
         username: str = "onex_user",
         password: str | None = None,
@@ -1004,7 +1007,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             )
         return cls(
             host=host,
-            port=port,
+            port=packaged_network_defaults().postgres_port if port is None else port,
             database=database,
             username=username,
             password=SecretStr(password),
@@ -1015,7 +1018,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def create_mysql(
         cls,
         host: str,
-        port: int = 3306,
+        port: int | None = None,
         database: str = "onex_dev",
         username: str = "onex_user",
         password: str | None = None,
@@ -1029,7 +1032,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             )
         return cls(
             host=host,
-            port=port,
+            port=packaged_network_defaults().mysql_port if port is None else port,
             database=database,
             username=username,
             password=SecretStr(password),
@@ -1044,7 +1047,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Create SQLite configuration."""
         return cls(
             host="sqlite",  # Required by model but not used for SQLite
-            port=0,  # Not applicable for SQLite
+            port=packaged_network_defaults().sqlite_placeholder_port,  # Not applicable for SQLite
             database=database_path,
             username="sqlite",  # Not applicable but required by model
             password=SecretStr(""),  # Not applicable but required by model
@@ -1065,7 +1068,7 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
         """Create production-ready PostgreSQL configuration with SSL."""
         return cls(
             host=host,
-            port=5432,
+            port=packaged_network_defaults().postgres_port,
             database=database,
             username=username,
             password=SecretStr(password),

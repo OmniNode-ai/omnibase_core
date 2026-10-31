@@ -31,6 +31,9 @@ from omnibase_core.models.nodes.contract_evidence_check.model_contract_complianc
 from omnibase_core.models.nodes.contract_evidence_check.model_contract_compliance_check_verdict import (
     ModelContractComplianceCheckVerdict,
 )
+from omnibase_core.models.runtime.model_network_defaults import (
+    packaged_network_defaults,
+)
 
 __all__ = [
     "HandlerContractComplianceCheck",
@@ -203,7 +206,7 @@ _LAN_IP_RE = re.compile(
 )
 _URL_HOST_RE = re.compile(r"https?://([^/\s]+)")
 _LOOPBACK_HOSTS: frozenset[str] = frozenset(
-    {"localhost", "127.0.0.1", "::1", "ip6-localhost"}
+    packaged_network_defaults().loopback_hosts | {"ip6-localhost"}
 )
 
 

@@ -29,6 +29,9 @@ from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.examples.model_security_config import ModelSecurityConfig
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.models.runtime.model_network_defaults import (
+    packaged_network_defaults,
+)
 
 # NOTE: Use relative import to avoid circular import issues when models/services/__init__.py
 # is partially initialized during pytest-split parallel execution (OMN-1765).
@@ -228,7 +231,7 @@ class ModelNodeServiceConfig(BaseModel):
             port=int(os.getenv("SERVICE_PORT", "8080")),
             host=os.getenv(
                 "SERVICE_HOST",
-                "0.0.0.0",
+                packaged_network_defaults().service_bind_host,
             ),
         )
         health_config = ModelHealthCheckConfig(
@@ -265,8 +268,12 @@ class ModelNodeServiceConfig(BaseModel):
         """
         node_registry_defaults = {
             "docker_image": "onex/node-registry",
-            "network": ModelNetworkConfig(port=8081),
-            "monitoring": ModelMonitoringConfig(prometheus_port=9091),
+            "network": ModelNetworkConfig(
+                port=packaged_network_defaults().node_registry_port
+            ),
+            "monitoring": ModelMonitoringConfig(
+                prometheus_port=packaged_network_defaults().node_registry_prometheus_port
+            ),
             "depends_on": ["event-bus"],
         }
         config = {**node_registry_defaults, **overrides}

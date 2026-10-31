@@ -15,6 +15,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_protocol_type import EnumProtocolType
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.model_network_defaults import (
+    packaged_network_defaults,
+)
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_node_connection_summary_type import (
     TypedDictNodeConnectionSummaryType,
@@ -103,14 +106,14 @@ class ModelNodeConnectionSettings(BaseModel):
     def create_http(
         cls,
         endpoint: str,
-        port: int = 80,
+        port: int | None = None,
         secure: bool = False,
     ) -> ModelNodeConnectionSettings:
         """Create HTTP connection settings."""
         protocol = EnumProtocolType.HTTPS if secure else EnumProtocolType.HTTP
         return cls(
             endpoint=endpoint,
-            port=port,
+            port=packaged_network_defaults().http_port if port is None else port,
             protocol=protocol,
         )
 
@@ -118,17 +121,17 @@ class ModelNodeConnectionSettings(BaseModel):
     def create_grpc(
         cls,
         endpoint: str,
-        port: int = 50051,
+        port: int | None = None,
     ) -> ModelNodeConnectionSettings:
         """Create gRPC connection settings."""
         return cls(
             endpoint=endpoint,
-            port=port,
+            port=packaged_network_defaults().grpc_port if port is None else port,
             protocol=EnumProtocolType.GRPC,
         )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

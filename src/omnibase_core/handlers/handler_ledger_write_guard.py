@@ -50,6 +50,9 @@ from omnibase_core.models.ledger_write_guard.model_ledger_write_guard_decision i
 from omnibase_core.models.ledger_write_guard.model_ledger_write_guard_request import (
     ModelLedgerWriteGuardRequest,
 )
+from omnibase_core.models.runtime.model_network_defaults import (
+    packaged_network_defaults,
+)
 
 __all__ = [
     "HandlerLedgerWriteGuard",
@@ -72,7 +75,7 @@ EXIT_TEST_WRITE_REFUSED: Final = 79
 CANONICAL_TOPIC: Final = re.compile(
     r"^onex\.(?:evt|cmd)\.omnimarket\.work-ledger-[a-z0-9-]+\.v\d+$"
 )
-_LOOPBACK_HOSTS: Final = frozenset({"", "localhost", "127.0.0.1", "::1"})
+_LOOPBACK_HOSTS: Final = frozenset({""}) | packaged_network_defaults().loopback_hosts
 _RUNNER_MODULES: Final = ("pytest",)
 _PYTEST_ENV: Final = "PYTEST_CURRENT_TEST"
 _OMNI_HOME_ENV: Final = "OMNI_HOME"

@@ -13,6 +13,9 @@ from omnibase_core.models.configuration.model_request_retry_config import (
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.health.model_health_check_config import ModelHealthCheckConfig
+from omnibase_core.models.runtime.model_network_defaults import (
+    packaged_network_defaults,
+)
 from omnibase_core.overlays.contract_env_ref import resolve_contract_env_binding
 
 
@@ -103,7 +106,7 @@ class ModelRestApiConnectionConfig(BaseModel):
         # Recommend HTTPS for production
         if parsed.scheme == "http" and not any(
             localhost in parsed.netloc.lower()
-            for localhost in ["localhost", "127.0.0.1"]
+            for localhost in packaged_network_defaults().local_hosts
         ):
             # This is just a warning pattern, not a hard failure
             pass
@@ -179,7 +182,7 @@ class ModelRestApiConnectionConfig(BaseModel):
     def is_localhost(self) -> bool:
         """Check if this points to localhost."""
         _, host, _, _ = self.get_parsed_url()
-        return host.lower() in ("localhost", "127.0.0.1")
+        return host.lower() in packaged_network_defaults().local_hosts
 
     def uses_https(self) -> bool:
         """Check if this uses HTTPS."""
