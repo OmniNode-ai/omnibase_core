@@ -10,9 +10,16 @@ import fnmatch
 import json
 import re
 import sys
+from functools import cache
 from pathlib import Path
 from typing import Literal, cast
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.markdown_links_check.model_markdown_link_config import (
     ModelMarkdownLinkConfig,
 )
@@ -52,6 +59,32 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeMarkdownLinksCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _read(
@@ -59,12 +92,16 @@ def _read(
 ) -> tuple[dict[str, str], list[str]]:
     if not paths:
         return {}, []
-    output = NodeSourceFileGatherEffect().handle(
-        ModelSourceFileGatherInput(
-            root=str(paths[0].parent),
-            include_patterns=["*"],
-            explicit_paths=[str(path) for path in paths],
-            decode_errors=decode_errors,
+    output = (
+        _container()
+        .get_service(NodeSourceFileGatherEffect)
+        .handle(
+            ModelSourceFileGatherInput(
+                root=str(paths[0].parent),
+                include_patterns=["*"],
+                explicit_paths=[str(path) for path in paths],
+                decode_errors=decode_errors,
+            )
         )
     )
     return {file.path: file.source for file in output.files}, [
@@ -186,13 +223,17 @@ def build_request(
         selected = _discover(root, config)
     sources: dict[str, str] = {}
     if not paths and selected:
-        gathered = NodeSourceFileGatherEffect().handle(
-            ModelSourceFileGatherInput(
-                root=str(root),
-                include_patterns=["**/*.md"],
-                max_file_size=0,
-                exclude_patterns=list(config.exclude_files),
-                decode_errors="replace",
+        gathered = (
+            _container()
+            .get_service(NodeSourceFileGatherEffect)
+            .handle(
+                ModelSourceFileGatherInput(
+                    root=str(root),
+                    include_patterns=["**/*.md"],
+                    max_file_size=0,
+                    exclude_patterns=list(config.exclude_files),
+                    decode_errors="replace",
+                )
             )
         )
         sources.update({file.path: file.source for file in gathered.files})
@@ -280,7 +321,7 @@ def _format_report(
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -317,7 +358,7 @@ def main(argv: list[str] | None = None) -> int:
             if cross:
                 sys.stdout.write(f"Cross-repo root: {cross}\n")
             sys.stdout.write("\n")
-        report = NodeMarkdownLinksCheckCompute().handle(request)
+        report = _container().get_service(NodeMarkdownLinksCheckCompute).handle(request)
         _, checked, skipped, verbose = analyze(request)
         if args.verbose:
             for line in verbose:

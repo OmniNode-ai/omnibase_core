@@ -23,8 +23,15 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from functools import cache
 from pathlib import Path
 
+from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
+from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.container.model_registry_config import (
+    create_default_registry_config,
+)
 from omnibase_core.models.nodes.ai_slop_check.model_ai_slop_check_input import (
     ModelAiSlopCheckInput,
 )
@@ -53,11 +60,37 @@ from omnibase_core.nodes.node_source_file_gather_effect.handler import (
 from omnibase_core.nodes.node_validation_report_write_effect.handler import (
     NodeValidationReportWriteEffect,
 )
+from omnibase_core.utils.util_run_coro_sync import run_coro_sync
+
+
+@cache
+def _container() -> ModelONEXContainer:
+    """Bind this runtime's effects and COMPUTE node in a container, built once."""
+    container = ModelONEXContainer(enable_service_registry=False)
+    registry = container.initialize_service_registry(
+        create_default_registry_config().model_copy(
+            update={"lazy_loading_enabled": False}
+        )
+    )
+    for implementation in (
+        NodeAiSlopCheckCompute,
+        NodeSourceFileGatherEffect,
+        NodeValidationReportWriteEffect,
+    ):
+        run_coro_sync(
+            registry.register_service(
+                implementation,
+                implementation,
+                EnumServiceLifecycle.SINGLETON,
+                EnumInjectionScope.GLOBAL,
+            )
+        )
+    return container
 
 
 def _write_report(path: str | None, report: ModelValidationReport) -> None:
     if path is not None:
-        NodeValidationReportWriteEffect().handle(
+        _container().get_service(NodeValidationReportWriteEffect).handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
 
@@ -95,9 +128,15 @@ def main(argv: list[str] | None = None) -> int:
     files: list[ModelSourceFile] = []
     errors: dict[str, str] = {}
     if paths:
-        gathered = NodeSourceFileGatherEffect().handle(
-            ModelSourceFileGatherInput(
-                root=".", explicit_paths=paths, include_patterns=["**/*.py", "**/*.md"]
+        gathered = (
+            _container()
+            .get_service(NodeSourceFileGatherEffect)
+            .handle(
+                ModelSourceFileGatherInput(
+                    root=".",
+                    explicit_paths=paths,
+                    include_patterns=["**/*.py", "**/*.md"],
+                )
             )
         )
         files = [ModelSourceFile(path=f.path, source=f.source) for f in gathered.files]
@@ -148,7 +187,8 @@ def main(argv: list[str] | None = None) -> int:
                 findings.append(error_findings[path])
             elif path in sources:
                 findings.extend(
-                    NodeAiSlopCheckCompute()
+                    _container()
+                    .get_service(NodeAiSlopCheckCompute)
                     .handle(request.model_copy(update={"files": [sources[path]]}))
                     .findings
                 )
@@ -160,7 +200,7 @@ def main(argv: list[str] | None = None) -> int:
             validators_run=(VALIDATOR_ID,),
         )
     else:
-        report = NodeAiSlopCheckCompute().handle(request)
+        report = _container().get_service(NodeAiSlopCheckCompute).handle(request)
     _write_report(args.report_json, report)
     rows: list[dict[str, str | int]] = []
     for finding in report.findings:
