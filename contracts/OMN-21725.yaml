@@ -1,0 +1,63 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21725
+title: 'omnibase_core contracts_and_di literal_timeout burn-down, slice rf1230b-c1: health metadata check
+  intervals are guarded by a checker test'
+summary: 'The check intervals the ModelHealthMetadata create_production, create_development and create_maintenance_mode
+  presets held as literals are read from the packaged service timings contract (OMN-21796), and a test
+  guards the module. The contracts_and_di checker reports no literal_timeout finding on model_health_metadata.py;
+  no baseline entry and no suppression is added.'
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21725-health-metadata-presets
+    statement: A check interval a health metadata preset uses comes from the packaged service timings
+      contract and the preset code holds no literal of it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the contracts_and_di count for literal_timeout over the slice paths drops to
+          zero and the repo total drops by the slice size, with no baseline entry or suppression added
+          -- falsifier: onex run of runtime_validator_run with the contracts_and_di reference over omnibase_core
+          src before and after, counts compared per rule'
+      - id: AC2
+        statement: 'AC2: every moved timeout is taken through an injected parameter bound from the node
+          contract or overlay and none remains hard-coded in the touched code -- falsifier: uv run pytest
+          tests/unit -q over the touched modules plus the checker re-run on the slice paths'
+      - id: AC3
+        statement: 'AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
+          the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
+          lab-run at the PR head, receipt path in the PR body'
+evidence_requirements:
+  - kind: tests
+    description: The health metadata tests pass.
+    command: uv run pytest tests/unit/models/health/test_model_health_metadata.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21725-ac1-checker-counts
+    description: The checker reports no literal_timeout finding on model_health_metadata.py and still
+      flags a planted literal.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/health/test_model_health_metadata.py -q -o addopts=''
+          -k 'TestCheckerReportsNoTimeoutLiteral'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21725-ac3-unit-suite
+    description: The health model unit tests pass; the PR's hosted CI stands in for the lab run on this
+      cloud lane.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/health -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
