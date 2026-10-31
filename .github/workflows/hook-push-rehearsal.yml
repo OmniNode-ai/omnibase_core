@@ -34,6 +34,16 @@
 #       with:
 #         path-regex: '^(\.pre-commit-config\.yaml|scripts/hooks/)'
 #         sample-file: src/<package>/<module>.py
+#         # Optional: sibling repositories a pre-push hook reads.
+#         sibling-repositories: omnibase_infra
+#
+# Sibling repositories: a pre-push hook can read a sibling clone (omnimarket's Topic Naming Lint
+# runs omnibase_infra's scripts/validation/lint_topic_names.py). A worker has its siblings under
+# OMNI_HOME; a runner has only the caller's checkout. Each name in `sibling-repositories` is cloned
+# from the caller's owner, at its default branch, beside the workspace (../<name>), and its path is
+# exported to the push as <NAME>_PATH (omnibase_infra gives OMNIBASE_INFRA_PATH). The caller names
+# the repositories, so this workflow depends on none of them. It defaults to empty, and a caller
+# that does not set it runs exactly as before.
 
 name: Hook Push Rehearsal
 
@@ -57,6 +67,14 @@ on:
         required: false
         type: string
         default: "1800"
+      sibling-repositories:
+        description: >-
+          Space-separated repository names under the caller's owner that the pre-push set reads
+          as sibling clones. Each is checked out beside the workspace and its path exported as
+          <NAME>_PATH. Empty (the default) checks out none.
+        required: false
+        type: string
+        default: ""
 
 jobs:
   rehearse:
@@ -99,6 +117,27 @@ jobs:
           echo "touched=true" >> "$GITHUB_OUTPUT"
           echo "changed hook paths:"
           printf '%s\n' "$matched"
+
+      - name: Check out the sibling repositories the pre-push set reads
+        id: siblings
+        if: steps.detect.outputs.touched == 'true' && inputs.sibling-repositories != ''
+        env:
+          SIBLING_REPOSITORIES: ${{ inputs.sibling-repositories }}
+        run: |
+          set -euo pipefail
+          parent="$(dirname "$GITHUB_WORKSPACE")"
+          for name in $SIBLING_REPOSITORIES; do
+            if ! printf '%s' "$name" | grep -Eq '^[A-Za-z0-9_.-]+$'; then
+              echo "::error::sibling-repositories entry '$name' is not a repository name"
+              exit 1
+            fi
+            dest="$parent/$name"
+            rm -rf "$dest"
+            git clone -q --depth=1 "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY_OWNER/$name.git" "$dest"
+            var="$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr -c 'A-Z0-9' '_')_PATH"
+            echo "$var=$dest" >> "$GITHUB_ENV"
+            echo "$name $(git -C "$dest" rev-parse HEAD) at $dest, exported as $var"
+          done
 
       - name: Install the pre-push hook and push a sample commit through it
         if: steps.detect.outputs.touched == 'true'
