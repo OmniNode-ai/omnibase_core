@@ -1,0 +1,20 @@
+{
+  "phase": "present",
+  "facts": {
+    "repository": "OmniNode-ai/example",
+    "head_sha": "3f5a9c1e7b2d4f60a8c3e1d9b7f2a4c6e8d0b1a3",
+    "changed_files": [
+      {
+        "path": "docs/guide.md",
+        "status": "M"
+      },
+      {
+        "path": "README.md",
+        "status": "M"
+      }
+    ],
+    "criteria": [],
+    "receipts": [],
+    "lab_reads": null
+  }
+}

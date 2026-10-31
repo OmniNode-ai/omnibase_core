@@ -1,0 +1,166 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21823: every file class, exemption, receipt field, installer, observation word and diagnostic is rule data.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: lab_receipt
+  validator_name: Lab Receipt Validator
+  validator_description: >-
+    Operator ruling 2026-10-31T17:16:31Z (OMN-17427, mechanism OMN-21676): every pull request that changes
+    something that runs carries a lab receipt that its branch revision was installed on the lab and observed
+    running at the PR head; documentation-only and test-only changes are exempt. The present phase judges
+    what a hosted check can read (the changed files, the head, the cited criteria and the receipt records);
+    the verify phase also judges each receipt against lab reads supplied as facts, and refuses to run
+    without them. A consumer gathers the facts and calls this validator; it holds no copy of the rule.
+  target_patterns: ["**/*.lab-receipt.json"]
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: receipt_required
+      description: >-
+        A change that runs needs a receipt. This row also defines which changes run: per changed file
+        the first match wins, in the order prod, operative, exempt, runtime, and a file in none of them
+        counts as unclassified so that a new kind of file fails closed. Each class entry is <class>::<repository
+        pattern>::<path pattern>.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{count} changed file(s) of class {classes} run, and the pull request carries no lab
+          receipt for head {head}"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [present, verify]
+        unclassified_class: unclassified
+        counted_statuses: [A, M, D, R, C, T]
+        prod_classes:
+          - 'prod_grant::.*::(^|/)(grants|prod)/|prod_promotion|(^|/)manifests/prod'
+        operative_classes:
+          - 'operative::.*::(^|/)(SKILL|CLAUDE|AGENTS)\.md$'
+        exempt_classes:
+          - 'docs::.*::^docs/|(^|/)(README|CHANGELOG)\.md$'
+          - 'markdown::.*::\.md$'
+          - 'tests::.*::(^|/)tests?/|(^|/)(test_[^/]*|[^/]*_test|conftest)\.py$'
+          - 'ticket_contract::.*::^contracts/OMN-[0-9]+\.yaml$'
+        runtime_classes:
+          - 'host_unit::.*::(^|/)(launchd|systemd)/|\.(plist|service|timer)(\.tmpl)?$'
+          - 'hook::.*::(^|/)hooks/'
+          - 'plugin::.*::(^|/)(plugins/|\.claude-plugin/)'
+          - 'tool::.*::(^|/)(scripts|bin)/'
+          - 'container::.*::(^|/)(docker|deploy|deployment|k8s|kustomize|overlays|helm|charts|terraform)/|(^|/)(Dockerfile[^/]*|docker-compose[^/]*|compose[^/]*\.ya?ml)$|\.tf$'
+          - 'workflow::.*::^\.github/(workflows|actions)/'
+          - 'migration::.*::(^|/)(migrations|alembic)/|\.sql$'
+          - 'internal_source::(omniclaude-internal|omnibase_internal)$::^src/'
+          - 'package_source::.*::^src/'
+
+    - rule_id: receipt_criterion_missing
+      description: A change that runs must cite a ticket whose criteria include the install-and-observe
+        criterion.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{count} changed file(s) of class {classes} run, and no cited ticket carries a criterion
+          that the branch revision is installed on the lab and observed running at the PR head"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [present, verify]
+        criterion_pattern: '(?is)\binstall(?:ed)?\b.*\blab\b.*\b(?:observed|running)\b'
+
+    - rule_id: receipt_head_mismatch
+      description: A receipt proves one head; receipts for any other head do not count.
+      severity: error
+      enabled: true
+      parameters:
+        message: "no lab receipt names head {head}; receipts name {detail}"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [present, verify]
+
+    - rule_id: receipt_field_missing
+      description: A receipt for the head must name every required field.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the lab receipt for head {head} on host {host!r} does not name {field}"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [present, verify]
+        required_fields: [host, installer, installed_revision, observation]
+
+    - rule_id: receipt_installer_undeclared
+      description: Only a declared installer counts; a hand edit of a host or a plugin cache is not one.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the lab receipt for head {head} names installer {installer!r}, which is not a declared
+          installer"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [present, verify]
+        installers:
+          - adopt_merged install-tree
+          - onex-host-install
+          - prepr_runtime_pool verify
+          - node_redeploy
+
+    - rule_id: receipt_revision_not_head
+      description: The installed revision must be a prefix of the head sha and long enough to identify
+        it.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the lab receipt on host {host!r} names installed revision {revision!r}, which is not
+          a prefix of head {head}"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [present, verify]
+        revision_pattern: '^[0-9a-fA-F]{7,40}$'
+
+    - rule_id: receipt_observation_unproven
+      description: An observation must say what ran, in enough words, and must not be only that tests
+        or CI passed.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the lab receipt on host {host!r} does not show the installed revision running: {detail!r}"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [present, verify]
+        length_pattern: '(?s)^.{12,}$'
+        observed_words: [tick, fired, firing, ran, running, loaded, invoked, called, launchctl, systemctl,
+          exit 0, exit=0, returned, printed, output, started]
+        refused_patterns:
+          - '(?i)^\W*(\d+\s+)?(focused\s+|unit\s+)?(tests?|pytest|ci)\b[^.;]*\b(pass|passed|passes|green|ok)\W*$'
+          - '(?i)^\W*(ci|checks?|build)\s+(is\s+)?(green|passing|passed)\W*$'
+
+    - rule_id: receipt_not_on_lab
+      description: In the verify phase the lab must say the receipt's revision is installed and running
+        on its host.
+      severity: error
+      enabled: true
+      parameters:
+        message: "no lab read shows revision {revision!r} installed and running on host {host!r} for head
+          {head}"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [verify]
+
+    - rule_id: lab_read_unavailable
+      description: A verify run supplied no lab read is refused, never passed.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the verify phase for head {head} was given no lab read, so no receipt can be corroborated"
+        source_pattern: '\.lab-receipt\.json$'
+        phases: [verify]
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

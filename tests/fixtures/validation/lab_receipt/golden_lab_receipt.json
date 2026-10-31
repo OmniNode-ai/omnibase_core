@@ -1,0 +1,217 @@
+{
+  "clean_lab_read_unavailable": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "clean_receipt_criterion_missing": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "clean_receipt_field_missing": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "clean_receipt_head_mismatch": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "clean_receipt_installer_undeclared": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "clean_receipt_not_on_lab": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "clean_receipt_observation_unproven": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "clean_receipt_required": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
+  "clean_receipt_revision_not_head": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "counted_deleted_unit": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "counted_internal_source": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "internal_source"
+    ]
+  },
+  "counted_mixed": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "host_unit",
+      "hook"
+    ]
+  },
+  "counted_operative": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "operative"
+    ]
+  },
+  "counted_package_source": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "package_source"
+    ]
+  },
+  "counted_unclassified": {
+    "issues": [],
+    "required": true,
+    "classes": [
+      "unclassified"
+    ]
+  },
+  "exempt_docs_only": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
+  "exempt_markdown_only": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
+  "exempt_prod_only": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
+  "exempt_status_unlisted": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
+  "exempt_tests_only": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
+  "exempt_ticket_contract_only": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
+  "violation_lab_read_unavailable": {
+    "issues": [
+      "lab_read_unavailable"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_criterion_missing": {
+    "issues": [
+      "receipt_criterion_missing"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_field_missing": {
+    "issues": [
+      "receipt_field_missing"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_head_mismatch": {
+    "issues": [
+      "receipt_head_mismatch"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_installer_undeclared": {
+    "issues": [
+      "receipt_installer_undeclared"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_not_on_lab": {
+    "issues": [
+      "receipt_not_on_lab"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_observation_unproven": {
+    "issues": [
+      "receipt_observation_unproven"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_required": {
+    "issues": [
+      "receipt_required"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  },
+  "violation_receipt_revision_not_head": {
+    "issues": [
+      "receipt_revision_not_head"
+    ],
+    "required": true,
+    "classes": [
+      "host_unit"
+    ]
+  }
+}

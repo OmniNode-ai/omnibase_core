@@ -1540,6 +1540,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-lab-receipt
+  name: Lab receipt (OMN-21823)
+  description: >
+    A change that runs needs a lab receipt that its exact PR head was installed on the lab and observed
+    running; documentation-only and test-only changes are exempt. The caller passes a facts document named
+    <name>.lab-receipt.json (a phase and the facts of one pull request). The present phase judges what
+    a hosted check can read; the verify phase also judges the receipt against supplied lab reads and refuses
+    to run without them. Every file class, field, installer and diagnostic is contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_lab_receipt:ValidatorLabReceipt
+  files: \.lab-receipt\.json$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-event-registry-drift
   name: Event-registry drift (OMN-21416)
   description: >
