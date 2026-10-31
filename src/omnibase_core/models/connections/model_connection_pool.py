@@ -13,6 +13,9 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_resilience_defaults import (
+    ModelResilienceDefaults,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.types import SerializedDict
 
@@ -136,10 +139,11 @@ class ModelConnectionPool(BaseModel):
     @classmethod
     def create_single_connection(cls) -> ModelConnectionPool:
         """Create configuration for single connection (no pooling)."""
+        preset = ModelResilienceDefaults.load().connection_pool.single_connection
         return cls(
-            timeout_seconds=30,
+            timeout_seconds=preset.operation_seconds,
             retry_count=3,
-            retry_delay_seconds=1,
+            retry_delay_seconds=preset.retry_delay_seconds,
             keepalive_interval=None,
             pool_size=None,
             pool_timeout=None,
@@ -149,36 +153,39 @@ class ModelConnectionPool(BaseModel):
     @classmethod
     def create_small_pool(cls) -> ModelConnectionPool:
         """Create small connection pool configuration."""
+        preset = ModelResilienceDefaults.load().connection_pool.small_pool
         return cls(
-            timeout_seconds=30,
+            timeout_seconds=preset.operation_seconds,
             retry_count=3,
-            retry_delay_seconds=1,
+            retry_delay_seconds=preset.retry_delay_seconds,
             keepalive_interval=None,
             pool_size=5,
             max_overflow=2,
-            pool_timeout=30,
+            pool_timeout=preset.pool_wait_seconds,
         )
 
     @classmethod
     def create_large_pool(cls) -> ModelConnectionPool:
         """Create large connection pool configuration."""
+        preset = ModelResilienceDefaults.load().connection_pool.large_pool
         return cls(
-            timeout_seconds=30,
+            timeout_seconds=preset.operation_seconds,
             retry_count=3,
-            retry_delay_seconds=1,
+            retry_delay_seconds=preset.retry_delay_seconds,
             keepalive_interval=None,
             pool_size=20,
             max_overflow=10,
-            pool_timeout=60,
+            pool_timeout=preset.pool_wait_seconds,
         )
 
     @classmethod
     def create_aggressive_retry(cls) -> ModelConnectionPool:
         """Create configuration with aggressive retry settings."""
+        preset = ModelResilienceDefaults.load().connection_pool.aggressive_retry
         return cls(
-            timeout_seconds=60,
+            timeout_seconds=preset.operation_seconds,
             retry_count=10,
-            retry_delay_seconds=2,
+            retry_delay_seconds=preset.retry_delay_seconds,
             keepalive_interval=None,
             pool_size=None,
             pool_timeout=None,
@@ -188,10 +195,11 @@ class ModelConnectionPool(BaseModel):
     @classmethod
     def create_quick_timeout(cls) -> ModelConnectionPool:
         """Create configuration with quick timeouts."""
+        preset = ModelResilienceDefaults.load().connection_pool.quick_timeout
         return cls(
-            timeout_seconds=5,
+            timeout_seconds=preset.operation_seconds,
             retry_count=1,
-            retry_delay_seconds=1,
+            retry_delay_seconds=preset.retry_delay_seconds,
             keepalive_interval=None,
             pool_size=None,
             pool_timeout=None,
@@ -199,7 +207,7 @@ class ModelConnectionPool(BaseModel):
         )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

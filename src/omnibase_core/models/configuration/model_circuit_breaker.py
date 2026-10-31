@@ -53,6 +53,9 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
 
 from omnibase_core.enums.enum_circuit_breaker_state import EnumCircuitBreakerState
+from omnibase_core.models.configuration.model_resilience_defaults import (
+    ModelResilienceDefaults,
+)
 
 from .model_circuit_breaker_metadata import ModelCircuitBreakerMetadata
 
@@ -647,7 +650,7 @@ class ModelCircuitBreaker(BaseModel):
             enabled=True,
             failure_threshold=3,
             success_threshold=2,
-            timeout_seconds=30,
+            timeout_seconds=ModelResilienceDefaults.load().circuit_breaker.fast_fail_open_seconds,
             window_size_seconds=60,
             failure_rate_threshold=0.3,
             minimum_request_threshold=5,
@@ -660,7 +663,7 @@ class ModelCircuitBreaker(BaseModel):
             enabled=True,
             failure_threshold=10,
             success_threshold=5,
-            timeout_seconds=120,
+            timeout_seconds=ModelResilienceDefaults.load().circuit_breaker.resilient_open_seconds,
             window_size_seconds=300,
             failure_rate_threshold=0.6,
             minimum_request_threshold=20,

@@ -8,8 +8,11 @@ Throttling behavior model for defining how to handle requests when rate limits
 are exceeded, including blocking, queuing, delay, and custom responses.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.models.configuration.model_resilience_defaults import (
+    ModelResilienceDefaults,
+)
 from omnibase_core.models.configuration.model_throttle_response import (
     ModelThrottleResponse,
 )
@@ -22,6 +25,8 @@ class ModelThrottlingBehavior(BaseModel):
     This model defines how to handle requests that exceed rate limits,
     including different strategies for blocking, delaying, queuing, and responding.
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     behavior_type: str = Field(
         default="reject",
@@ -99,7 +104,7 @@ class ModelThrottlingBehavior(BaseModel):
         le=10000,
     )
 
-    queue_timeout_seconds: int = Field(
+    queue_wait_seconds: int = Field(
         default=30,
         description="Maximum time to keep requests in queue",
         ge=1,
@@ -280,12 +285,13 @@ class ModelThrottlingBehavior(BaseModel):
     @classmethod
     def create_graceful_delay(cls) -> "ModelThrottlingBehavior":
         """Create graceful delay throttling behavior"""
+        profile = ModelResilienceDefaults.load().throttling.graceful_delay
         return cls(
             behavior_type="delay",
             delay_type="exponential",
-            base_delay_ms=200,
-            max_delay_ms=2000,
-            delay_multiplier=1.5,
+            base_delay_ms=profile.base_delay_ms,
+            max_delay_ms=profile.max_delay_ms,
+            delay_multiplier=ModelResilienceDefaults.load().throttling.graceful_delay_multiplier,
             jitter_factor=0.2,
             escalation_enabled=False,
         )
@@ -297,7 +303,7 @@ class ModelThrottlingBehavior(BaseModel):
             behavior_type="queue",
             queue_enabled=True,
             queue_max_size=200,
-            queue_timeout_seconds=45,
+            queue_wait_seconds=ModelResilienceDefaults.load().throttling.queue_wait_seconds,
             queue_priority_method="user_tier",
             reject_status_code=429,
             reject_message="Request queued due to high load. Please wait.",
@@ -327,11 +333,12 @@ class ModelThrottlingBehavior(BaseModel):
     @classmethod
     def create_adaptive_throttling(cls) -> "ModelThrottlingBehavior":
         """Create adaptive throttling behavior that adjusts based on load"""
+        profile = ModelResilienceDefaults.load().throttling.adaptive
         return cls(
             behavior_type="delay",
             delay_type="adaptive",
-            base_delay_ms=100,
-            max_delay_ms=3000,
+            base_delay_ms=profile.base_delay_ms,
+            max_delay_ms=profile.max_delay_ms,
             escalation_enabled=True,
             escalation_threshold=3.0,
             escalated_behavior="reject",

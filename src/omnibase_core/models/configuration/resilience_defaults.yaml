@@ -1,0 +1,56 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Retry, backoff, circuit-breaker, throttling and connection-pool timings the
+# resilience models fall back to instead of holding a timeout, delay or
+# interval in code (OMN-21740). Loaded by ModelResilienceDefaults.
+retry_config:
+  conservative:
+    max_attempts: 2
+    backoff_seconds: 1.0
+  standard:
+    max_attempts: 3
+    backoff_seconds: 1.0
+  aggressive:
+    max_attempts: 5
+    backoff_seconds: 0.5
+  fast_fail:
+    max_attempts: 1
+    backoff_seconds: 0.1
+  linear_backoff_seconds: 2.0
+retry_policy:
+  base_delay_seconds: 1.0
+  fixed_delay_seconds: 2.0
+  http_base_delay_seconds: 1.0
+  database_base_delay_seconds: 0.5
+  circuit_breaker_reset_seconds: 60.0
+circuit_breaker:
+  fast_fail_open_seconds: 30
+  resilient_open_seconds: 120
+throttling:
+  graceful_delay:
+    base_delay_ms: 200
+    max_delay_ms: 2000
+  graceful_delay_multiplier: 1.5
+  adaptive:
+    base_delay_ms: 100
+    max_delay_ms: 3000
+  queue_wait_seconds: 45
+connection_pool:
+  single_connection:
+    operation_seconds: 30
+    retry_delay_seconds: 1
+  small_pool:
+    operation_seconds: 30
+    retry_delay_seconds: 1
+    pool_wait_seconds: 30
+  large_pool:
+    operation_seconds: 30
+    retry_delay_seconds: 1
+    pool_wait_seconds: 60
+  aggressive_retry:
+    operation_seconds: 60
+    retry_delay_seconds: 2
+  quick_timeout:
+    operation_seconds: 5
+    retry_delay_seconds: 1

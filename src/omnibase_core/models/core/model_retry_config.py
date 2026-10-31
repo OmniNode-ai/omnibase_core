@@ -3,9 +3,12 @@
 
 import time
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.models.configuration.model_resilience_defaults import (
+    ModelResilienceDefaults,
+)
 from omnibase_core.models.core.model_retry_performance import (
     ModelCircuitBreakerRecommendation,
     ModelRetryPerformanceImpact,
@@ -28,6 +31,8 @@ class ModelRetryConfig(BaseModel):
     - Performance impact assessment
     - Timeout escalation support
     """
+
+    model_config = ConfigDict(extra="forbid")
 
     max_attempts: int = Field(
         default=3,
@@ -362,25 +367,44 @@ class ModelRetryConfig(BaseModel):
     @classmethod
     def create_conservative(cls) -> "ModelRetryConfig":
         """Create conservative retry configuration for critical operations."""
-        return cls(max_attempts=2, backoff_seconds=1.0, exponential_backoff=True)
+        preset = ModelResilienceDefaults.load().retry_config.conservative
+        return cls(
+            max_attempts=preset.max_attempts,
+            backoff_seconds=preset.backoff_seconds,
+            exponential_backoff=True,
+        )
 
     @classmethod
     def create_standard(cls) -> "ModelRetryConfig":
         """Create standard retry configuration for typical operations."""
-        return cls(max_attempts=3, backoff_seconds=1.0, exponential_backoff=True)
+        preset = ModelResilienceDefaults.load().retry_config.standard
+        return cls(
+            max_attempts=preset.max_attempts,
+            backoff_seconds=preset.backoff_seconds,
+            exponential_backoff=True,
+        )
 
     @classmethod
     def create_aggressive(cls) -> "ModelRetryConfig":
         """Create aggressive retry configuration for resilient operations."""
-        return cls(max_attempts=5, backoff_seconds=0.5, exponential_backoff=True)
+        preset = ModelResilienceDefaults.load().retry_config.aggressive
+        return cls(
+            max_attempts=preset.max_attempts,
+            backoff_seconds=preset.backoff_seconds,
+            exponential_backoff=True,
+        )
 
     @classmethod
     def create_linear(
         cls,
         max_attempts: int = 3,
-        backoff_seconds: float = 2.0,
+        backoff_seconds: float | None = None,
     ) -> "ModelRetryConfig":
         """Create linear backoff retry configuration."""
+        if backoff_seconds is None:
+            backoff_seconds = (
+                ModelResilienceDefaults.load().retry_config.linear_backoff_seconds
+            )
         return cls(
             max_attempts=max_attempts,
             backoff_seconds=backoff_seconds,
@@ -390,7 +414,12 @@ class ModelRetryConfig(BaseModel):
     @classmethod
     def create_fast_fail(cls) -> "ModelRetryConfig":
         """Create fast-fail configuration for quick feedback."""
-        return cls(max_attempts=1, backoff_seconds=0.1, exponential_backoff=False)
+        preset = ModelResilienceDefaults.load().retry_config.fast_fail
+        return cls(
+            max_attempts=preset.max_attempts,
+            backoff_seconds=preset.backoff_seconds,
+            exponential_backoff=False,
+        )
 
     @classmethod
     def create_for_timeout(
