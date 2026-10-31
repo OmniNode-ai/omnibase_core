@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
 from omnibase_core.types.typed_dict_node_execution_summary import (
     TypedDictNodeExecutionSummary,
@@ -78,11 +79,11 @@ class ModelNodeExecutionSettings(BaseModel):
             batch_size=batch_size,
             parallel_execution=parallel,
             max_retries=3,
-            timeout_seconds=300,
+            timeout_seconds=packaged_service_timings().node_execution_default_wait_seconds,
         )
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

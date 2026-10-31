@@ -8,7 +8,7 @@
 # an entry here becomes compliant, forcing the count down. Do not hand-add.
 #
 # scan roots: src/omnibase_core
-# count: 972
+# count: 964
 #
 # Regenerate: python -m omnibase_core.validators.pydantic_extra_forbid \
 #     --write-baseline src/omnibase_core
@@ -49,7 +49,6 @@ violations:
   - "omnibase_core.models.cli.model_cli_execution_core:ModelCliExecutionCore"
   - "omnibase_core.models.cli.model_cli_execution_input_data:ModelCliExecutionInputData"
   - "omnibase_core.models.cli.model_cli_execution_metadata:ModelCliExecutionMetadata"
-  - "omnibase_core.models.cli.model_cli_execution_resources:ModelCliExecutionResources"
   - "omnibase_core.models.cli.model_cli_execution_summary:ModelCliExecutionSummary"
   - "omnibase_core.models.cli.model_cli_node_execution_input:ModelCliNodeExecutionInput"
   - "omnibase_core.models.cli.model_cli_output_data:ModelCliOutputData"
@@ -534,13 +533,11 @@ violations:
   - "omnibase_core.models.core.model_yaml_schema_property:ModelYamlSchemaProperty"
   - "omnibase_core.models.core.model_yaml_state:ModelYamlState"
   - "omnibase_core.models.core.model_yaml_with_examples:ModelYamlWithExamples"
-  - "omnibase_core.models.dedup.model_action_dedup_base:ModelActionDedupBase"
   - "omnibase_core.models.detection.model_service_detection_config:ModelServiceDetectionConfig"
   - "omnibase_core.models.discovery.model_current_tool_availability:ModelCurrentToolAvailability"
   - "omnibase_core.models.discovery.model_custommetrics:ModelCustomMetrics"
   - "omnibase_core.models.discovery.model_discovery_config:ModelDiscoveryConfig"
   - "omnibase_core.models.discovery.model_discovery_performance_metrics:ModelPerformanceMetrics"
-  - "omnibase_core.models.discovery.model_discovery_request:ModelDiscoveryRequest"
   - "omnibase_core.models.discovery.model_introspection_additional_info:ModelIntrospectionAdditionalInfo"
   - "omnibase_core.models.discovery.model_introspection_filters:ModelIntrospectionFilters"
   - "omnibase_core.models.discovery.model_metric_value:ModelMetricValue"
@@ -648,7 +645,6 @@ violations:
   - "omnibase_core.models.health.model_health_check:ModelHealthCheck"
   - "omnibase_core.models.health.model_health_check_metadata:ModelHealthCheckMetadata"
   - "omnibase_core.models.health.model_health_issue:ModelHealthIssue"
-  - "omnibase_core.models.health.model_health_metadata:ModelHealthMetadata"
   - "omnibase_core.models.health.model_health_metric:ModelHealthMetric"
   - "omnibase_core.models.health.model_health_metrics:ModelHealthMetrics"
   - "omnibase_core.models.health.model_health_status:ModelHealthStatus"
@@ -752,7 +748,6 @@ violations:
   - "omnibase_core.models.node_metadata.model_node_configuration_value:ModelNodeConfigurationStringValue"
   - "omnibase_core.models.node_metadata.model_node_core_info:ModelNodeCoreInfo"
   - "omnibase_core.models.node_metadata.model_node_core_info_summary:ModelNodeCoreInfoSummary"
-  - "omnibase_core.models.node_metadata.model_node_execution_settings:ModelNodeExecutionSettings"
   - "omnibase_core.models.node_metadata.model_node_feature_flags:ModelNodeFeatureFlags"
   - "omnibase_core.models.node_metadata.model_node_information:ModelNodeInformation"
   - "omnibase_core.models.node_metadata.model_node_information_summary:ModelNodeInformationSummary"
@@ -876,7 +871,6 @@ violations:
   - "omnibase_core.models.security.model_masked_data_class:ModelMaskedData"
   - "omnibase_core.models.security.model_masked_data_dict:ModelMaskedDataDict"
   - "omnibase_core.models.security.model_masked_data_list:ModelMaskedDataList"
-  - "omnibase_core.models.security.model_network_restrictions:ModelNetworkRestrictions"
   - "omnibase_core.models.security.model_operation_details:ModelOperationDetails"
   - "omnibase_core.models.security.model_password_policy:ModelPasswordPolicy"
   - "omnibase_core.models.security.model_performance_optimizations:ModelPerformanceOptimizations"
@@ -900,7 +894,6 @@ violations:
   - "omnibase_core.models.security.model_risk_assessment:ModelRiskAssessment"
   - "omnibase_core.models.security.model_rule_condition_class:ModelRuleCondition"
   - "omnibase_core.models.security.model_rule_condition_value:ModelRuleConditionValue"
-  - "omnibase_core.models.security.model_secret_config:ModelSecretConfig"
   - "omnibase_core.models.security.model_secret_health_check_result:ModelSecretHealthCheckResult"
   - "omnibase_core.models.security.model_secret_manager:ModelSecretManager"
   - "omnibase_core.models.security.model_secure_mask_config:ModelSecureMaskConfig"
@@ -929,7 +922,6 @@ violations:
   - "omnibase_core.models.security.model_security_summaries:ModelSecurityPostureSummary"
   - "omnibase_core.models.security.model_security_summaries:ModelSignatureEvaluationSummary"
   - "omnibase_core.models.security.model_security_summary_class:ModelSecuritySummary"
-  - "omnibase_core.models.security.model_session_policy:ModelSessionPolicy"
   - "omnibase_core.models.security.model_signature_metadata:ModelSignatureMetadata"
   - "omnibase_core.models.security.model_signature_requirements:ModelSignatureRequirements"
   - "omnibase_core.models.security.model_signature_verification_result_class:ModelSignatureVerificationResult"

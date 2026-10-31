@@ -1,0 +1,95 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21796
+title: 'omnibase_core contracts_and_di literal_timeout burn-down, slice rf1540-c5: session, health, CLI,
+  service, destination, cache and probe preset timings read from a packaged contract'
+summary: 'The preset and default timings that sixteen model modules held as literals are declared in models/runtime/service_timings.yaml
+  and read through ModelServiceTimings. The contracts_and_di checker reports no literal_timeout finding
+  on the sixteen touched modules; no baseline entry and no suppression is added.'
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21796-service-timings
+    statement: A preset or default timing that a model falls back to is declared in a packaged contract
+      that a typed model reads, and the touched code holds no literal of it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the contracts_and_di count for literal_timeout over the slice paths drops to
+          zero and the repo total drops by the slice size, with no baseline entry or suppression added
+          -- falsifier: onex run of runtime_validator_run with the contracts_and_di reference over omnibase_core
+          src before and after, counts compared per rule'
+      - id: AC2
+        statement: 'AC2: every timeout value comes from the owning node contract or overlay and is injected,
+          none hard-coded in the touched code -- falsifier: uv run pytest tests/unit -q over the touched
+          modules plus the checker re-run on the slice paths'
+      - id: AC3
+        statement: 'AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
+          the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
+          lab-run at the PR head, receipt path in the PR body'
+evidence_requirements:
+  - kind: tests
+    description: The service timings contract tests pass.
+    command: uv run pytest tests/unit/models/runtime/test_model_service_timings.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21796-ac1-checker-counts
+    description: The checker reports no literal_timeout finding on each of the sixteen touched modules
+      and still flags a planted literal. At the merge base the modules hold 27 such findings, so these
+      cases fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/runtime/test_model_service_timings.py -q -o addopts=''
+          -k 'TestSourcesDrawNoTimeoutLiteralFinding'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21796-ac2-contract-read
+    description: Every moved value equals its entry in the packaged contract, an explicit argument still
+      wins, an overlaid value reaches the call site, and a contract with an unknown key, a missing key
+      or a non-positive timing fails to load.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/runtime/test_model_service_timings.py -q -o addopts=''
+          -k 'TestServiceTimingsContract or TestTimingsReachCallSites'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21796-ac3-touched-module-tests
+    description: The unit tests of the touched models and the timing contracts pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/models/cli/test_model_cli_execution_resources.py
+          tests/unit/models/event_bus/test_model_event_bus_input_state.py tests/unit/models/event_bus/test_model_event_bus_output_state.py
+          tests/unit/models/health/test_model_health_metadata.py tests/unit/models/validation/test_model_event_destination.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/contracts/test_model_external_service_config.py
+          tests/unit/models/runtime/test_model_runtime_aliveness_probe.py tests/unit/models/runtime/test_model_service_timings.py
+          tests/unit/models/runtime/test_model_operational_timeouts.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21796-deploy-hosted-service-timings
+    description: Hosted checkout deploy smoke loads the packaged YAML through the typed model and compares
+      every timing to the value the code held before. No service or container daemon is required.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/models/runtime/test_model_service_timings.py
+          -q -o addopts='' -k 'TestServiceTimingsContract'
+        cwd: ${OMNI_HOME}/omnibase_core

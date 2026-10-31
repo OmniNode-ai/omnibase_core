@@ -18,6 +18,7 @@ from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     parse_semver_from_string,
 )
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 from omnibase_core.models.security.model_certificate_validation_level import (
     ModelCertificateValidationLevel,
 )
@@ -96,7 +97,9 @@ class ModelTrustPolicy(BaseModel):
     MAX_SIGNATURE_AGE_HOURS: ClassVar[int] = 8760  # 1 year
     MAX_SIGNATURE_TIMEOUT_MS: ClassVar[int] = TIMEOUT_LONG_MS  # 5 minutes
     MAX_VERIFICATION_TIMEOUT_MS: ClassVar[int] = TIMEOUT_LONG_MS  # 5 minutes
-    MAX_CACHE_TTL_SECONDS: ClassVar[int] = 86400  # 24 hours
+    MAX_CACHE_TTL_SECONDS: ClassVar[int] = (
+        packaged_service_timings().trust_policy_max_cache_ttl_seconds
+    )
 
     # Policy identification
     policy_id: UUID = Field(

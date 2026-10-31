@@ -21,6 +21,7 @@ from time import monotonic
 from typing import Any
 
 from omnibase_core.enums.enum_cache_eviction_policy import EnumCacheEvictionPolicy
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 __all__ = ["ModelComputeCache"]
 
@@ -50,7 +51,7 @@ class ModelComputeCache:
     def __init__(
         self,
         max_size: int = 1000,
-        default_ttl_minutes: int = 30,
+        default_ttl_minutes: int | None = None,
         ttl_seconds: int | None = None,
         eviction_policy: EnumCacheEvictionPolicy | str = EnumCacheEvictionPolicy.LRU,
         enable_stats: bool = True,
@@ -65,6 +66,10 @@ class ModelComputeCache:
             eviction_policy: Eviction policy - EnumCacheEvictionPolicy or "lru"/"lfu"/"fifo" (default: LRU)
             enable_stats: Enable cache hit/miss statistics (default: True)
         """
+        if default_ttl_minutes is None:
+            default_ttl_minutes = (
+                packaged_service_timings().compute_cache_default_ttl_minutes
+            )
         self.max_size = max_size
         # Normalize eviction_policy to enum
         if isinstance(eviction_policy, str):

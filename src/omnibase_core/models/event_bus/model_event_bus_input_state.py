@@ -16,6 +16,7 @@ from omnibase_core.models.primitives.model_semver import (
     default_model_version,
     parse_semver_from_string,
 )
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 from omnibase_core.models.services.model_custom_fields import ModelCustomFields
 from omnibase_core.models.services.model_retry_strategy import ModelRetryStrategy
 
@@ -232,9 +233,16 @@ class ModelEventBusInputState(BaseModel):
 
     @classmethod
     def create_high_priority(
-        cls, version: ModelSemVer | str, input_field: str, timeout_seconds: int = 60
+        cls,
+        version: ModelSemVer | str,
+        input_field: str,
+        timeout_seconds: int | None = None,
     ) -> "ModelEventBusInputState":
         """Create high priority input state with extended timeout."""
+        if timeout_seconds is None:
+            timeout_seconds = (
+                packaged_service_timings().high_priority_input_wait_seconds
+            )
         # Convert ModelSemVer to str if needed before parsing
         version_str = str(version) if isinstance(version, ModelSemVer) else version
         return cls(

@@ -55,6 +55,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from omnibase_core.enums.enum_event_sink_type import EnumEventSinkType
+from omnibase_core.models.runtime.model_service_timings import packaged_service_timings
 
 __all__ = ["ModelEventDestination"]
 
@@ -244,7 +245,7 @@ class ModelEventDestination(BaseModel):
         name: str,
         file_path: str,
         buffer_size: int = 100,
-        flush_interval_ms: int = 5000,
+        flush_interval_ms: int | None = None,
     ) -> ModelEventDestination:
         """
         Factory method for file destination.
@@ -269,6 +270,10 @@ class ModelEventDestination(BaseModel):
             >>> dest.file_path
             '/var/log/events.jsonl'
         """
+        if flush_interval_ms is None:
+            flush_interval_ms = (
+                packaged_service_timings().file_destination_flush_interval_ms
+            )
         return cls(
             destination_type=EnumEventSinkType.FILE,
             destination_name=name,
@@ -284,7 +289,7 @@ class ModelEventDestination(BaseModel):
         topic: str,
         bootstrap_servers: str,
         buffer_size: int = 100,
-        flush_interval_ms: int = 1000,
+        flush_interval_ms: int | None = None,
     ) -> ModelEventDestination:
         """
         Factory method for Kafka destination.
@@ -311,6 +316,10 @@ class ModelEventDestination(BaseModel):
             >>> dest.topic
             'contract.validation.events'
         """
+        if flush_interval_ms is None:
+            flush_interval_ms = (
+                packaged_service_timings().kafka_destination_flush_interval_ms
+            )
         return cls(
             destination_type=EnumEventSinkType.KAFKA,
             destination_name=name,
