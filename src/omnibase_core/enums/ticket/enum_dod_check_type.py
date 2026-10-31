@@ -42,6 +42,10 @@ class EnumDodCheckType(StrEnum):
     DISPOSITION
         The calling lane's recorded verdict on an answer no executable check
         can settle. The verifier is the lane, never the engine.
+    LAB_RECEIPT
+        The criterion that the change was installed on the lab and observed
+        running at the PR head. check_value is the typed shape of
+        ModelDodLabReceiptCheckValue (OMN-21831).
     """
 
     TEST_EXISTS = "test_exists"
@@ -56,6 +60,7 @@ class EnumDodCheckType(StrEnum):
     COMMAND_EXIT_0 = "command_exit_0"
     SEMANTIC_GRADING = "semantic_grading"
     DISPOSITION = "disposition"
+    LAB_RECEIPT = "lab_receipt"
 
 
 __all__ = ["EnumDodCheckType"]
