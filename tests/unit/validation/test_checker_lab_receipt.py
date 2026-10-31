@@ -382,7 +382,7 @@ def test_invalid_contracts_fail_to_load_rather_than_pass() -> None:
     [
         ("receipt_required", "runtime_classes", ["tool::.*"], "<class>::<repository>"),
         ("receipt_required", "runtime_classes", ["tool::(::x"], "regular expression"),
-        ("receipt_required", "prod_classes", [42], "list of strings"),
+        ("receipt_required", "prod_classes", "prod", "list of strings"),
         ("receipt_required", "phases", ["later"], "unknown phase"),
         ("receipt_field_missing", "required_fields", ["colour"], "does not have"),
         (
