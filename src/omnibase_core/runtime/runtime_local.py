@@ -45,6 +45,7 @@ from omnibase_core.models.runtime.model_contract_terminal_topic import (
 )
 from omnibase_core.protocols.runtime.protocol_local_runtime_bus import (
     ProtocolLocalRuntimeBus,
+    ProtocolLocalRuntimeUngroupedBus,
     UnsubscribeCallback,
 )
 from omnibase_core.protocols.runtime.protocol_local_runtime_dump_model import (
@@ -142,13 +143,8 @@ def derive_runtime_local_group_id(node_name: str) -> str:
 
     The environment token is resolved from ``ENVIRONMENT`` rather than hardcoded — the
     adjacent ``EventBusInmemory(environment="local", ...)`` default is a local-bus
-    concern and must not leak into a name the broker sees.
-
-    Args:
-        node_name: Handler or subscription name.
-
-    Returns:
-        An environment-qualified, IAM-authorized consumer group ID.
+    concern and must not leak into a name the broker sees. ``node_name`` is the handler
+    or subscription name; the result is an environment-qualified, IAM-authorized group id.
     """
     return derive_service_group_id(node_name, service=RUNTIME_LOCAL_SERVICE)
 
@@ -1666,17 +1662,13 @@ class RuntimeLocal:
                 # adapter above; when nothing correlated reached the wire there
                 # is no operand for it, so the shared group is left exactly as
                 # it was rather than made worse.
-                handler_group_node = entry.handler_name
-                if self._expected_correlation_id is not None:
-                    handler_group_node = (
-                        f"{entry.handler_name}_run_{self.run_id.hex[:12]}"
+                # OMN-21818: an armed run reads its command with no consumer group
+                # where the bus can (see _subscribe_run_scoped).
+                unsubscribe_handles.append(
+                    await self._subscribe_run_scoped(
+                        bus, entry.input_topic, adapter.on_message, entry.handler_name
                     )
-                unsub = await bus.subscribe(
-                    entry.input_topic,
-                    on_message=adapter.on_message,
-                    group_id=derive_runtime_local_group_id(handler_group_node),
                 )
-                unsubscribe_handles.append(unsub)
 
         # --- 5. Subscribe to every declared terminal event ---
         def _terminal_listener(
@@ -1715,31 +1707,22 @@ class RuntimeLocal:
         # for "the entire retention window" — strictly worse. When nothing
         # correlated reached the wire there is no operand to filter on, so the
         # shared group is left exactly as it was rather than made worse.
-        terminal_group_node = TERMINAL_CONSUMER_NODE_NAME
-        if self._expected_correlation_id is not None:
-            terminal_group_node = (
-                f"{TERMINAL_CONSUMER_NODE_NAME}_run_{self.run_id.hex[:12]}"
-            )
-        # The FIRST declared terminal keeps the group id it has always had, so
-        # the MSK IAM pattern that authorizes today's delegations is unchanged;
-        # each additional terminal gets its own group under the same prefix,
-        # because two members of one group declaring different subscriptions is
-        # a coordinator hazard, not a saving.
-        # OMN-17427: each fresh run-scoped group join costs about 3 s on the
-        # dev broker. Three trials on 2026-10-20 measured 6.11–6.18 s sequentially
-        # versus 3.05–3.09 s concurrently for the two delegate terminals.
-        # EventBusKafka.subscribe joins outside its lock, so gather lets these
-        # independent subscriptions join concurrently.
+        # OMN-21818: on a durable bus the run-scoped group names this used to mint
+        # (``runtime_local_terminal_run_<hex>`` and ``_t1``) left 2,366 Empty groups
+        # on the dev broker; a bus that can read ungrouped reads from the log end, which
+        # isolates the run just as well (nothing retained is replayed) and leaves
+        # nothing behind (see _subscribe_run_scoped).
+        # OMN-17427: each fresh run-scoped group join cost about 3 s on the dev
+        # broker; gather still starts the independent subscriptions together.
         terminal_subscriptions = await asyncio.gather(
             *(
-                bus.subscribe(
+                self._subscribe_run_scoped(
+                    bus,
                     declared_terminal.topic,
-                    on_message=_terminal_listener(declared_terminal),
-                    group_id=derive_runtime_local_group_id(
-                        terminal_group_node
-                        if index == 0
-                        else f"{terminal_group_node}_t{index}"
-                    ),
+                    _terminal_listener(declared_terminal),
+                    f"{TERMINAL_CONSUMER_NODE_NAME}_t{index}"
+                    if index
+                    else TERMINAL_CONSUMER_NODE_NAME,
                 )
                 for index, declared_terminal in enumerate(terminal_topics)
             ),
@@ -1839,6 +1822,27 @@ class RuntimeLocal:
     # ------------------------------------------------------------------
     # Diagnostic helpers
     # ------------------------------------------------------------------
+
+    async def _subscribe_run_scoped(
+        self,
+        bus: ProtocolLocalRuntimeBus,
+        topic: str,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+        group_node: str,
+    ) -> UnsubscribeCallback:
+        # An armed run (OMN-15660) must not inherit another run's committed offset
+        # or replay the retained log. On a bus that can read with no group
+        # (EventBusKafka) that is a read from
+        # the log end, which joins no group and leaves nothing on the broker
+        # (OMN-21818). A bus with no broker keeps a run-scoped group id, which costs
+        # nothing. An unarmed run keeps the shared group it has always used.
+        armed = self._expected_correlation_id is not None
+        if armed and isinstance(bus, ProtocolLocalRuntimeUngroupedBus):
+            return await bus.subscribe_ungrouped(topic, on_message)
+        node = f"{group_node}_run_{self.run_id.hex[:12]}" if armed else group_node
+        return await bus.subscribe(
+            topic, on_message=on_message, group_id=derive_runtime_local_group_id(node)
+        )
 
     def _record_event(self, topic: str) -> None:
         """Increment the event counter for *topic*."""

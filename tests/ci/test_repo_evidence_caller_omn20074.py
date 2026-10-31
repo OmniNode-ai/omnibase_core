@@ -94,6 +94,48 @@ def test_caller_pins_the_writer_release_cut_reusable() -> None:
     assert tag["stamp"] >= "20261008214913", job["uses"]
 
 
+_PYTEST_VALUE_OPTIONS = frozenset({"-k", "-m", "-o", "-n", "-c", "-p"})
+
+
+def _pytest_selector(check_value: str) -> str:
+    """The path a pytest evidence command runs: a file, a ``file::node`` id or a tests directory."""
+    previous = ""
+    for token in shlex.split(check_value):
+        value_of_option = previous in _PYTEST_VALUE_OPTIONS
+        previous = token
+        if value_of_option:
+            continue
+        path = token.partition("::")[0]
+        if path.endswith((".py", "/tests")) or (
+            path.startswith("tests/") and (REPO_ROOT / path).is_dir()
+        ):
+            return path
+    return ""
+
+
+def test_pytest_selector_reads_files_node_ids_and_directories() -> None:
+    assert (
+        _pytest_selector(
+            "uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py -q"
+        )
+        == "tests/ci/test_repo_evidence_caller_omn20074.py"
+    )
+    assert (
+        _pytest_selector(
+            "uv run pytest tests/ci/test_repo_evidence_caller_omn20074.py::test_caller_workflow_shape"
+            " -q -o addopts=''"
+        )
+        == "tests/ci/test_repo_evidence_caller_omn20074.py"
+    )
+    assert _pytest_selector("uv run pytest tests/ci -q") == "tests/ci"
+    assert _pytest_selector("uv run pytest tests/ci/ -q") == "tests/ci/"
+
+
+def test_pytest_selector_reads_no_path_from_options_or_a_missing_directory() -> None:
+    assert _pytest_selector("uv run pytest -q -o addopts='' -k 'tests/ci'") == ""
+    assert _pytest_selector("uv run pytest tests/no_such_directory -q") == ""
+
+
 def test_every_repo_contract_binds_every_criterion() -> None:
     contracts = sorted((REPO_ROOT / "contracts").glob("OMN-*.yaml"))
     assert contracts, "expected at least one repo-owned contracts/OMN-*.yaml"
@@ -118,14 +160,7 @@ def test_every_repo_contract_binds_every_criterion() -> None:
                     "check_value", ""
                 ).startswith("uv run pytest "):
                     continue
-                selector = next(
-                    (
-                        token
-                        for token in shlex.split(check["check_value"])
-                        if token.endswith((".py", "/tests"))
-                    ),
-                    "",
-                )
+                selector = _pytest_selector(check["check_value"])
                 assert (
                     selector
                     and not Path(selector).is_absolute()

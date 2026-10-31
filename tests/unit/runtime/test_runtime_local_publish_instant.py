@@ -171,6 +171,16 @@ class _RecordingBus:
 
         return _unsub
 
+    async def subscribe_ungrouped(
+        self,
+        topic: str,
+        on_message: Callable[[ProtocolLocalRuntimeMessage], Awaitable[None]],
+    ) -> Callable[[], Awaitable[None]]:
+        """A read with no group: it starts at the log end and keeps nothing (OMN-17427)."""
+        return await self.subscribe(
+            topic, on_message=on_message, group_id=f"ungrouped.{uuid.uuid4().hex}"
+        )
+
 
 def _write_contract(target: Path, *, model_name: str) -> None:
     contract: dict[str, Any] = {
