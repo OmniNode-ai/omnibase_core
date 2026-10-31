@@ -9,10 +9,13 @@ ModelDeploymentTopologyLocalConfig, and EnumDeploymentMode.
 validation errors, frozen/extra-forbid invariants.
 """
 
+from pathlib import Path
+
 import pytest
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_deployment_mode import EnumDeploymentMode
+from omnibase_core.models.core import model_deployment_topology
 from omnibase_core.models.core.model_deployment_topology import ModelDeploymentTopology
 from omnibase_core.models.core.model_deployment_topology_local_config import (
     ModelDeploymentTopologyLocalConfig,
@@ -21,6 +24,9 @@ from omnibase_core.models.core.model_deployment_topology_service import (
     ModelDeploymentTopologyService,
 )
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
+from omnibase_core.validation.validator_contracts_and_di import (
+    ValidatorContractsAndDi,
+)
 
 
 @pytest.mark.unit
@@ -141,3 +147,40 @@ class TestModelDeploymentTopology:
         )
         assert svc.mode == EnumDeploymentMode.CLOUD
         assert svc.local is None
+
+
+@pytest.mark.unit
+class TestDeploymentTopologyDefaultContracts:
+    """The default topologies are packaged YAML contracts, not constructor literals (OMN-21623)."""
+
+    @pytest.mark.parametrize("preset", ["minimal", "standard", "full"])
+    def test_default_factory_equals_its_packaged_contract(self, preset: str) -> None:
+        contract = (
+            Path(model_deployment_topology.__file__).parent
+            / "deployment_topology_defaults"
+            / f"{preset}.yaml"
+        )
+        assert contract.is_file()
+        assert getattr(
+            ModelDeploymentTopology, f"default_{preset}"
+        )() == ModelDeploymentTopology.from_yaml(contract)
+
+    def test_default_full_binds_the_declared_host_ports(self) -> None:
+        ports = {
+            name: svc.local.host_port
+            for name, svc in ModelDeploymentTopology.default_full().services.items()
+            if svc.local is not None
+        }
+        assert ports == {
+            "postgres": 5436,
+            "redpanda": 19092,
+            "valkey": 16379,
+            "infisical": 8880,
+            "keycloak": 8443,
+        }
+
+    def test_model_source_holds_no_literal_port_finding(self) -> None:
+        result = ValidatorContractsAndDi().validate_file(
+            Path(model_deployment_topology.__file__)
+        )
+        assert [i.message for i in result.issues if i.code == "literal_port"] == []

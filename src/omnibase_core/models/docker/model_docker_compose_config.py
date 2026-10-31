@@ -35,10 +35,3 @@ class ModelDockerComposeConfig:
     # Network configuration
     DEFAULT_NETWORK_NAME = "onex-network"
     DEFAULT_BRIDGE_NAME = "onex-bridge"
-
-    # Port assignments
-    ZOOKEEPER_PORT = 2181  # env-var-ok: compose default
-    KAFKA_PORT = 9092  # env-var-ok: compose default
-    PROMETHEUS_PORT = 9090  # env-var-ok: compose default
-    GRAFANA_PORT = 3000  # env-var-ok: compose default
-    REDIS_PORT = 6379  # env-var-ok: compose default

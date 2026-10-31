@@ -27,9 +27,6 @@ from omnibase_core.enums.enum_deployment_mode import EnumDeploymentMode
 from omnibase_core.models.core.model_deployment_topology_database import (
     ModelDeploymentTopologyDatabase,
 )
-from omnibase_core.models.core.model_deployment_topology_local_config import (
-    ModelDeploymentTopologyLocalConfig,
-)
 from omnibase_core.models.core.model_deployment_topology_service import (
     ModelDeploymentTopologyService,
 )
@@ -43,6 +40,7 @@ if TYPE_CHECKING:
 __all__ = ["ModelDeploymentTopology"]
 
 _LOGICAL_DATABASE_REFERENCE_PATTERN = re.compile(r"^[a-z_][a-z0-9_]*$")
+_DEFAULT_CONTRACT_DIR = Path(__file__).parent / "deployment_topology_defaults"
 
 
 def _sort_dict_recursively(obj: Any) -> Any:
@@ -173,106 +171,33 @@ class ModelDeploymentTopology(BaseModel):
     def default_minimal(cls) -> ModelDeploymentTopology:
         """
         Minimal topology: postgres, redpanda, valkey — all LOCAL.
+
+        Declared in ``deployment_topology_defaults/minimal.yaml``.
         """
-        services: dict[str, ModelDeploymentTopologyService] = {
-            "postgres": ModelDeploymentTopologyService(
-                mode=EnumDeploymentMode.LOCAL,
-                local=ModelDeploymentTopologyLocalConfig(
-                    compose_service="omnibase-infra-postgres",
-                    host_port=5436,
-                    health_check_path=None,
-                ),
-            ),
-            "redpanda": ModelDeploymentTopologyService(
-                mode=EnumDeploymentMode.LOCAL,
-                local=ModelDeploymentTopologyLocalConfig(
-                    compose_service="omnibase-infra-redpanda",
-                    host_port=19092,
-                    health_check_path=None,
-                ),
-            ),
-            "valkey": ModelDeploymentTopologyService(
-                mode=EnumDeploymentMode.LOCAL,
-                local=ModelDeploymentTopologyLocalConfig(
-                    compose_service="omnibase-infra-valkey",
-                    host_port=16379,
-                    health_check_path=None,
-                ),
-            ),
-        }
-        presets: dict[str, list[str]] = {
-            "minimal": ["postgres", "redpanda", "valkey"],
-            "standard": ["postgres", "redpanda", "valkey"],
-            "full": ["postgres", "redpanda", "valkey"],
-        }
-        return cls(
-            schema_version="1.0",
-            services=services,
-            presets=presets,
-            active_preset="minimal",
-        )
+        return cls._from_default_contract("minimal")
 
     @classmethod
     def default_standard(cls) -> ModelDeploymentTopology:
         """
         Standard topology: minimal + infisical (secrets profile, health_check_path).
+
+        Declared in ``deployment_topology_defaults/standard.yaml``.
         """
-        base = cls.default_minimal()
-        new_services = dict(base.services)
-        new_services["infisical"] = ModelDeploymentTopologyService(
-            mode=EnumDeploymentMode.LOCAL,
-            local=ModelDeploymentTopologyLocalConfig(
-                compose_service="omnibase-infra-infisical",
-                host_port=8880,
-                compose_profile="secrets",
-                health_check_path="/api/status",
-            ),
-        )
-        new_presets = dict(base.presets)
-        new_presets["standard"] = ["postgres", "redpanda", "valkey", "infisical"]
-        new_presets["full"] = ["postgres", "redpanda", "valkey", "infisical"]
-        return cls(
-            schema_version=base.schema_version,
-            services=new_services,
-            databases=base.databases,
-            presets=new_presets,
-            active_preset="standard",
-        )
+        return cls._from_default_contract("standard")
 
     @classmethod
     def default_full(cls) -> ModelDeploymentTopology:
         """
         Full topology: standard + keycloak (LOCAL) + omninode_runtime (DISABLED).
+
+        Declared in ``deployment_topology_defaults/full.yaml``.
         """
-        base = cls.default_standard()
-        new_services = dict(base.services)
-        new_services["keycloak"] = ModelDeploymentTopologyService(
-            mode=EnumDeploymentMode.LOCAL,
-            local=ModelDeploymentTopologyLocalConfig(
-                compose_service="omnibase-infra-keycloak",
-                host_port=8443,
-                health_check_path="/health/ready",
-            ),
-        )
-        new_services["omninode_runtime"] = ModelDeploymentTopologyService(
-            mode=EnumDeploymentMode.DISABLED,
-            local=None,
-        )
-        new_presets = dict(base.presets)
-        new_presets["full"] = [
-            "postgres",
-            "redpanda",
-            "valkey",
-            "infisical",
-            "keycloak",
-        ]
-        return cls(
-            schema_version=base.schema_version,
-            services=new_services,
-            databases=base.databases,
-            presets=new_presets,
-            active_preset="full",
-        )
+        return cls._from_default_contract("full")
+
+    @classmethod
+    def _from_default_contract(cls, preset: str) -> ModelDeploymentTopology:
+        """Load one packaged default topology; its ports and services live in the YAML."""
+        return cls.from_yaml(_DEFAULT_CONTRACT_DIR / f"{preset}.yaml")
 
     # -----------------------------------------------------------------
     # YAML serialization (ruamel.yaml — Invariant I1)

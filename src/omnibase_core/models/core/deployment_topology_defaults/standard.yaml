@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+active_preset: standard
+databases: {}
+presets:
+  full:
+    - postgres
+    - redpanda
+    - valkey
+    - infisical
+  minimal:
+    - postgres
+    - redpanda
+    - valkey
+  standard:
+    - postgres
+    - redpanda
+    - valkey
+    - infisical
+schema_version: '1.0'
+services:
+  infisical:
+    local:
+      compose_profile: secrets
+      compose_service: omnibase-infra-infisical
+      health_check_path: /api/status
+      host_port: 8880
+    mode: LOCAL
+  postgres:
+    local:
+      compose_profile: null
+      compose_service: omnibase-infra-postgres
+      health_check_path: null
+      host_port: 5436
+    mode: LOCAL
+  redpanda:
+    local:
+      compose_profile: null
+      compose_service: omnibase-infra-redpanda
+      health_check_path: null
+      host_port: 19092
+    mode: LOCAL
+  valkey:
+    local:
+      compose_profile: null
+      compose_service: omnibase-infra-valkey
+      health_check_path: null
+      host_port: 16379
+    mode: LOCAL
