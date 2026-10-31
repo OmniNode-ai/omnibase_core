@@ -8,7 +8,7 @@
 # an entry here becomes compliant, forcing the count down. Do not hand-add.
 #
 # scan roots: src/omnibase_core
-# count: 964
+# count: 963
 #
 # Regenerate: python -m omnibase_core.validators.pydantic_extra_forbid \
 #     --write-baseline src/omnibase_core
@@ -742,7 +742,6 @@ violations:
   - "omnibase_core.models.node_metadata.model_function_relationships:ModelFunctionRelationships"
   - "omnibase_core.models.node_metadata.model_node_capabilities_info:ModelNodeCapabilitiesInfo"
   - "omnibase_core.models.node_metadata.model_node_capabilities_summary:ModelNodeCapabilitiesSummary"
-  - "omnibase_core.models.node_metadata.model_node_capability:ModelNodeCapability"
   - "omnibase_core.models.node_metadata.model_node_configuration:ModelNodeConfiguration"
   - "omnibase_core.models.node_metadata.model_node_configuration_summary:ModelNodeConfigurationSummary"
   - "omnibase_core.models.node_metadata.model_node_configuration_value:ModelNodeConfigurationStringValue"

@@ -16,6 +16,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_performance_impact import EnumPerformanceImpact
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types import TypedDictMetadataDict, TypedDictSerializedModel
@@ -175,7 +178,7 @@ class ModelNodeCapability(BaseModel):
             performance_impact=EnumPerformanceImpact.LOW,
             example_config={
                 "telemetry_endpoint": config_from_string(
-                    "http://telemetry.example.com",
+                    ModelNetworkDefaults.load().example_telemetry_endpoint,
                 ),
             },
         )
@@ -305,7 +308,7 @@ class ModelNodeCapability(BaseModel):
         return self.version_introduced <= version
 
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         use_enum_values=False,
         validate_assignment=True,
     )

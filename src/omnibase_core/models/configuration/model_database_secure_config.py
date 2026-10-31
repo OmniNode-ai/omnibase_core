@@ -415,7 +415,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
     def _get_sqlite_connection_string(self) -> str:
         """Generate SQLite connection string."""
         # For SQLite, database field contains the file path
-        return f"sqlite:///{self.database}"
+        return ModelNetworkDefaults.load().sqlite_connection_url_template.format(
+            database=self.database
+        )
 
     def _get_oracle_connection_string(self, password: str) -> str:
         """Generate Oracle connection string."""
@@ -435,7 +437,9 @@ class ModelDatabaseSecureConfig(ModelSecureCredentials):
             params.append("Encrypt=yes")
             params.append("TrustServerCertificate=no")
 
-        return "mssql://?" + "&".join(params)
+        return ModelNetworkDefaults.load().mssql_connection_url_template.format(
+            params="&".join(params)
+        )
 
     def _get_mongodb_connection_string(self, password: str) -> str:
         """Generate MongoDB connection string."""

@@ -1,0 +1,84 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21783
+title: 'omnibase_core contracts_and_di literal_url burn-down, slice rf1500-c7: URLs come from contracts
+  and overlays'
+summary: 'The 14 URL literals omnibase_core code held in 11 modules are declared in models/configuration/network_defaults.yaml
+  and read through ModelNetworkDefaults. The contracts_and_di checker reports no literal_url finding on
+  the touched modules; no baseline entry and no suppression is added.'
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21783-url-defaults
+    statement: A URL that omnibase_core code falls back to is declared in a packaged contract that a typed
+      model reads, and the code holds no literal of it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the contracts_and_di count for literal_url over the slice paths drops to zero
+          and the repo total drops by the slice size, with no baseline entry or suppression added -- falsifier:
+          onex run of runtime_validator_run with the contracts_and_di reference over omnibase_core src
+          before and after, counts compared per rule'
+      - id: AC2
+        statement: 'AC2: every URL comes from the owning node contract or overlay and is injected, none
+          hard-coded in the touched code -- falsifier: uv run pytest tests/unit -q over the touched modules
+          plus the checker re-run on the slice paths'
+      - id: AC3
+        statement: 'AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
+          the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
+          lab-run at the PR head, receipt path in the PR body'
+evidence_requirements:
+  - kind: tests
+    description: The URL defaults tests pass.
+    command: uv run pytest tests/unit/models/configuration/test_model_network_defaults_urls.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21783-ac1-checker-counts
+    description: The checker reports no literal_url finding on each of the eleven touched modules and
+      still flags a planted URL. At the merge base the modules hold 14 such findings.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults_urls.py
+          -q -o addopts='' -k 'TestCheckerReportsNoUrlLiteral'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21783-deploy-url-defaults
+    description: Deployment smoke requires all thirteen migrated URL fields in the packaged YAML, verifies
+      the typed model equals it, and exercises both URL formatting methods without external services.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults_urls.py::test_packaged_url_defaults_deployment
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21783-ac2-contract-read
+    description: Every moved URL is read from its entry in the packaged contract.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults_urls.py
+          -q -o addopts='' -k 'TestUrlContractValues'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21783-ac3-unit-suite
+    description: The focused unit tests over the touched URL defaults and node capability model pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/configuration/test_model_network_defaults_urls.py
+          tests/unit/models/nodes/test_model_node_capability.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

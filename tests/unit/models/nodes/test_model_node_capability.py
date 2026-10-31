@@ -16,6 +16,7 @@ Tests all aspects of the node capability model including:
 """
 
 import pytest
+from pydantic import ValidationError
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_performance_impact import EnumPerformanceImpact
@@ -364,17 +365,15 @@ class TestModelNodeCapability:
 
         assert capability.validate_instance() is True
 
-    def test_model_config_extra_ignore(self):
-        """Test that model ignores extra fields."""
-        # Should not raise error with extra fields
-        capability = ModelNodeCapability(
-            value="test",
-            description="Test",
-            version_introduced=ModelSemVer(major=1, minor=0, patch=0),
-            extra_field="ignored",
-        )
-
-        assert capability.value == "test"
+    def test_model_config_extra_forbid(self):
+        """Test that model rejects extra fields."""
+        with pytest.raises(ValidationError):
+            ModelNodeCapability(
+                value="test",
+                description="Test",
+                version_introduced=ModelSemVer(major=1, minor=0, patch=0),
+                extra_field="rejected",
+            )
 
     def test_model_config_validate_assignment(self):
         """Test that model validates on assignment."""

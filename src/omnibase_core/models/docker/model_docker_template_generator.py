@@ -9,6 +9,9 @@ enabling contract-driven deployment infrastructure.
 
 """
 
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 from omnibase_core.models.services.model_node_service_config import (
     ModelNodeServiceConfig,
 )
@@ -218,7 +221,7 @@ ENTRYPOINT ["python", "-m", "omnibase.nodes.{self.config.node_name}.v1_0_0"]
             "environment": {
                 "KAFKA_BROKER_ID": "1",
                 "KAFKA_ZOOKEEPER_CONNECT": "zookeeper:2181",
-                "KAFKA_ADVERTISED_LISTENERS": "PLAINTEXT://localhost:9092",
+                "KAFKA_ADVERTISED_LISTENERS": ModelNetworkDefaults.load().kafka_advertised_listener,
                 "KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR": "1",
             },
             "ports": ["9092:9092"],

@@ -75,6 +75,9 @@ from urllib.parse import urlparse, urlunparse
 
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.configuration.model_network_defaults import (
+    ModelNetworkDefaults,
+)
 
 # Type-only imports for static analysis (ADR-005 compliant)
 # These are only evaluated by type checkers, not at runtime
@@ -200,10 +203,7 @@ def sanitize_redis_url(url: str) -> str:
         parsed = urlparse(url)
         if parsed.password:
             # Reconstruct netloc with masked password
-            if parsed.username:
-                safe_netloc = f"{parsed.username}:***@{parsed.hostname}"
-            else:
-                safe_netloc = f":***@{parsed.hostname}"
+            safe_netloc = f"{parsed.username or ''}:***@{parsed.hostname}"
             if parsed.port:
                 safe_netloc += f":{parsed.port}"
             return urlunparse(parsed._replace(netloc=safe_netloc))
@@ -213,7 +213,7 @@ def sanitize_redis_url(url: str) -> str:
         TypeError,
         ValueError,
     ):  # fallback-ok: use original URL if parsing fails
-        return "redis://***"
+        return ModelNetworkDefaults.load().redacted_redis_url
 
 
 # Pattern to match Redis URLs with potential credentials
