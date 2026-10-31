@@ -16,9 +16,16 @@ from __future__ import annotations
 
 import re
 from enum import StrEnum
+from pathlib import Path
+
+from ruamel.yaml import YAML
 
 from omnibase_core.enums import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+
+_TOPIC_BASE_NAMES: dict[str, str] = YAML(typ="safe").load(
+    (Path(__file__).parent / "topic_base_names.yaml").read_text(encoding="utf-8")
+)["topics"]
 
 # Valid topic name pattern: alphanumeric segments separated by single dots
 # No leading/trailing dots, no consecutive dots, no special characters except dots
@@ -46,70 +53,61 @@ class TopicBase(StrEnum):
     # ==========================================================================
     # omniclaude event topics (hooks → event bus)
     # ==========================================================================
-    SESSION_STARTED = "onex.evt.omniclaude.session-started.v1"
-    SESSION_ENDED = "onex.evt.omniclaude.session-ended.v1"
-    PROMPT_SUBMITTED = "onex.evt.omniclaude.prompt-submitted.v1"
-    TOOL_EXECUTED = "onex.evt.omniclaude.tool-executed.v1"
-    AGENT_ACTION = "onex.evt.omniclaude.agent-action.v1"
-    LEARNING_PATTERN = "onex.evt.omniclaude.learning-pattern.v1"
+    SESSION_STARTED = _TOPIC_BASE_NAMES["SESSION_STARTED"]
+    SESSION_ENDED = _TOPIC_BASE_NAMES["SESSION_ENDED"]
+    PROMPT_SUBMITTED = _TOPIC_BASE_NAMES["PROMPT_SUBMITTED"]
+    TOOL_EXECUTED = _TOPIC_BASE_NAMES["TOOL_EXECUTED"]
+    AGENT_ACTION = _TOPIC_BASE_NAMES["AGENT_ACTION"]
+    LEARNING_PATTERN = _TOPIC_BASE_NAMES["LEARNING_PATTERN"]
 
     # ==========================================================================
     # omninode routing topics (agent routing commands/events)
     # ==========================================================================
-    ROUTING_REQUESTED = "onex.cmd.omninode.routing-requested.v1"
-    ROUTING_COMPLETED = "onex.evt.omninode.routing-completed.v1"
-    ROUTING_FAILED = "onex.evt.omninode.routing-failed.v1"
+    ROUTING_REQUESTED = _TOPIC_BASE_NAMES["ROUTING_REQUESTED"]
+    ROUTING_COMPLETED = _TOPIC_BASE_NAMES["ROUTING_COMPLETED"]
+    ROUTING_FAILED = _TOPIC_BASE_NAMES["ROUTING_FAILED"]
 
     # ======================================================================
     # Core-resident local runtime harness topics (OMN-13420)
     # ======================================================================
-    HARNESS_DELEGATION_COMMAND = "onex.cmd.omnibase-core.harness-delegation-request.v1"
-    HARNESS_DELEGATION_INFER = "onex.evt.omnibase-core.harness-delegation-infer.v1"
-    HARNESS_DELEGATION_COMPLETED = (
-        "onex.evt.omnibase-core.harness-delegation-completed.v1"
-    )
-    HARNESS_SEA_COMMAND = "onex.cmd.omnibase-core.harness-sea-request.v1"
-    HARNESS_SEA_INFER = "onex.evt.omnibase-core.harness-sea-infer.v1"
-    HARNESS_SEA_COMPLETED = "onex.evt.omnibase-core.harness-sea-completed.v1"
+    HARNESS_DELEGATION_COMMAND = _TOPIC_BASE_NAMES["HARNESS_DELEGATION_COMMAND"]
+    HARNESS_DELEGATION_INFER = _TOPIC_BASE_NAMES["HARNESS_DELEGATION_INFER"]
+    HARNESS_DELEGATION_COMPLETED = _TOPIC_BASE_NAMES["HARNESS_DELEGATION_COMPLETED"]
+    HARNESS_SEA_COMMAND = _TOPIC_BASE_NAMES["HARNESS_SEA_COMMAND"]
+    HARNESS_SEA_INFER = _TOPIC_BASE_NAMES["HARNESS_SEA_INFER"]
+    HARNESS_SEA_COMPLETED = _TOPIC_BASE_NAMES["HARNESS_SEA_COMPLETED"]
 
     # ==========================================================================
     # Cross-service topics (omniclaude → omniintelligence)
     # ==========================================================================
     # Claude hook event topic (consumed by omniintelligence.NodeClaudeHookEventEffect)
-    CLAUDE_HOOK_EVENT = "onex.cmd.omniintelligence.claude-hook-event.v1"
+    CLAUDE_HOOK_EVENT = _TOPIC_BASE_NAMES["CLAUDE_HOOK_EVENT"]
     # Tool content topic for pattern learning (OMN-1702)
-    TOOL_CONTENT = "onex.cmd.omniintelligence.tool-content.v1"
+    TOOL_CONTENT = _TOPIC_BASE_NAMES["TOOL_CONTENT"]
     # Session outcome: CMD target for intelligence feedback loop (OMN-1735)
-    SESSION_OUTCOME_CMD = "onex.cmd.omniintelligence.session-outcome.v1"
+    SESSION_OUTCOME_CMD = _TOPIC_BASE_NAMES["SESSION_OUTCOME_CMD"]
     # Session outcome: EVT target for dashboards / monitoring
-    SESSION_OUTCOME_EVT = "onex.evt.omniclaude.session-outcome.v1"
+    SESSION_OUTCOME_EVT = _TOPIC_BASE_NAMES["SESSION_OUTCOME_EVT"]
     # Utilization scoring: CMD target for LLM-based scoring (OMN-5505)
-    UTILIZATION_SCORING_CMD = "onex.cmd.omniintelligence.utilization-scoring.v1"
+    UTILIZATION_SCORING_CMD = _TOPIC_BASE_NAMES["UTILIZATION_SCORING_CMD"]
     # LLM call completed: cost telemetry for omnidash llm_cost_aggregates (OMN-7570)
-    LLM_CALL_COMPLETED = "onex.evt.omniintelligence.llm-call-completed.v1"
+    LLM_CALL_COMPLETED = _TOPIC_BASE_NAMES["LLM_CALL_COMPLETED"]
     # Waste detected: computed cost-waste findings from LLM call telemetry (OMN-10341)
-    WASTE_DETECTED = "onex.evt.omniintelligence.waste-detected.v1"
+    WASTE_DETECTED = _TOPIC_BASE_NAMES["WASTE_DETECTED"]
     # Savings estimation: cloud-vs-local counterfactual for projection/API consumers
-    SAVINGS_ESTIMATED = "onex.evt.omnibase-infra.savings-estimated.v1"
+    SAVINGS_ESTIMATED = _TOPIC_BASE_NAMES["SAVINGS_ESTIMATED"]
     # Cost-projection snapshot topics (consumed by omnidash widgets in OMN-10282)
-    # onex-allow-topic-literal: this IS the canonical source-of-truth declaration
-    # of the topic. Its sibling constants escape the gate only because its
-    # pattern segments are [a-z0-9]+ and they carry a hyphen or underscore;
-    # this one is all-alphanumeric and so matches. Pre-existing on origin/dev,
-    # fixed here rather than carried (OMN-15622).
-    PROJECTION_COST_SUMMARY = (
-        "onex.snapshot.projection.cost.summary.v1"  # onex-allow-topic-literal
-    )
-    PROJECTION_COST_BY_REPO = "onex.snapshot.projection.cost.by_repo.v1"
-    PROJECTION_COST_TOKEN_USAGE = "onex.snapshot.projection.cost.token_usage.v1"
+    PROJECTION_COST_SUMMARY = _TOPIC_BASE_NAMES["PROJECTION_COST_SUMMARY"]
+    PROJECTION_COST_BY_REPO = _TOPIC_BASE_NAMES["PROJECTION_COST_BY_REPO"]
+    PROJECTION_COST_TOKEN_USAGE = _TOPIC_BASE_NAMES["PROJECTION_COST_TOKEN_USAGE"]
 
     # ==========================================================================
     # Hook adapter observability topics (migrated to ONEX format, OMN-1552)
     # ==========================================================================
-    AGENT_ACTIONS = "onex.evt.omniclaude.agent-actions.v1"
-    PERFORMANCE_METRICS = "onex.evt.omniclaude.performance-metrics.v1"
-    TRANSFORMATIONS = "onex.evt.omniclaude.agent-transformation.v1"
-    DETECTION_FAILURES = "onex.evt.omniclaude.detection-failure.v1"
+    AGENT_ACTIONS = _TOPIC_BASE_NAMES["AGENT_ACTIONS"]
+    PERFORMANCE_METRICS = _TOPIC_BASE_NAMES["PERFORMANCE_METRICS"]
+    TRANSFORMATIONS = _TOPIC_BASE_NAMES["TRANSFORMATIONS"]
+    DETECTION_FAILURES = _TOPIC_BASE_NAMES["DETECTION_FAILURES"]
 
     # ==========================================================================
     # Context injection topics (OMN-1403)
@@ -278,9 +276,9 @@ class TopicBase(StrEnum):
     DECISION_RECORDED_EVT_OMNICLAUDE = "onex.evt.omniclaude.decision-recorded.v1"
     DECISION_STATUS_CHANGED_EVT = "onex.evt.omniclaude.decision-status-changed.v1"
     DECISION_CONFLICT_DETECTED_EVT = "onex.evt.omniclaude.decision-conflict-detected.v1"
-    DECISION_CONFLICT_STATUS_CHANGED = (
-        "onex.evt.omniclaude.decision-conflict-status-changed.v1"
-    )
+    DECISION_CONFLICT_STATUS_CHANGED = _TOPIC_BASE_NAMES[
+        "DECISION_CONFLICT_STATUS_CHANGED"
+    ]
 
     # ==========================================================================
     # ChangeFrame emission topics (OMN-2651)
@@ -395,9 +393,7 @@ class TopicBase(StrEnum):
     AUDIT_SCOPE_VIOLATION = "onex.evt.omniclaude.audit-scope-violation.v1"
     """Emitted when a scope boundary violation is detected during execution."""
 
-    AUDIT_CONTEXT_BUDGET_EXCEEDED = (
-        "onex.evt.omniclaude.audit-context-budget-exceeded.v1"
-    )
+    AUDIT_CONTEXT_BUDGET_EXCEEDED = _TOPIC_BASE_NAMES["AUDIT_CONTEXT_BUDGET_EXCEEDED"]
     """Emitted when context budget usage is tracked or exceeded."""
 
     AUDIT_RETURN_BOUNDED = "onex.evt.omniclaude.audit-return-bounded.v1"
