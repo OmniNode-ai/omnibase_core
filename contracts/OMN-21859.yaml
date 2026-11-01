@@ -1,0 +1,78 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21859
+title: The omnibase_core repo-evidence caller installs its verifier from the omnimarket dev-merge tag
+summary: The repo-evidence caller in omnibase_core calls the receipt-gate reusable at omnibase_core dev-merge
+  tag dev-20261101005012-ac2f26e3e5bf, passes verifier-tag dev-20261101000200-949993edf3b7 and no longer
+  passes verifier-version. The tests that asserted verifier-version for the caller assert the verifier-tag
+  shape instead. Operator ruling 2026-10-31T21:49:54Z extending OMN-21676, the definition-of-done check
+  installs its verifier from the omnimarket dev-merge tag, not from a released package version.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21859-caller-verifier-tag
+    statement: The caller must call the receipt-gate reusable at the omnibase_core dev-merge tag that
+      carries verifier-tag, pass the omnimarket dev-merge tag as verifier-tag and carry no verifier-version
+      key.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: .github/workflows/call-repo-evidence-gate.yml in omnibase_core calls OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261101005012-ac2f26e3e5bf
+          with verifier-tag dev-20261101000200-949993edf3b7 and no verifier-version key -- falsifier:
+          uv run pytest tests/ci -q -k repo_evidence_caller'
+  - id: req-omn21859-tests-assert-the-new-shape
+    statement: Every test that asserted verifier-version for the caller must assert the verifier-tag shape
+      and the absence of verifier-version, and the tests/ci suite must pass.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: every test in omnibase_core that asserted verifier-version now asserts verifier-tag
+          and passes, and no test in tests/ names verifier-version as a required caller input -- falsifier:
+          uv run pytest tests/ci -q and grep -rn verifier-version tests/ returning no caller assertion'
+  - id: req-omn21859-lab-proof
+    statement: The omnimarket dev-merge tag named by the caller must install from its own uv.lock on a
+      lab host, and the caller tests must run as a lab-run unit.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: lab proof: the real install of tag dev-20261101000200-949993edf3b7 on the lab
+          (clone at the tag commit, uv sync --frozen --no-dev --no-editable from its uv.lock) exits 0,
+          and the repo caller tests run as an /omni:lab-run unit exit 0 -- falsifier: the /omni:lab-run
+          receipt for the caller test command and the tag install command, each exit code 0'
+evidence_requirements:
+  - kind: tests
+    description: The caller tests in tests/ci assert the verifier-tag shape.
+    command: uv run pytest tests/ci -q -k repo_evidence_caller -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-21859-ac1
+    description: The caller calls the receipt-gate reusable at the omnibase_core dev-merge tag, passes
+      verifier-tag and carries no verifier-version key.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci -q -k repo_evidence_caller -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-21859-ac2
+    description: The tests that asserted verifier-version for the caller assert the verifier-tag shape,
+      and tests/ci passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn-21859-ac3
+    description: The caller tests run green as a unit; the tag install receipt is the lab-run receipt
+      quoted in the pull request body.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci -q -k repo_evidence_caller -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3

@@ -1,15 +1,18 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""OMN-17427: the repo-evidence caller pins a verifier that refuses a partly bound contract.
+"""OMN-17427, OMN-21859: the repo-evidence caller installs a verifier that refuses a partly bound contract.
 
 Ruling 2026-10-10T11:04:11Z: the hosted `repo-evidence / dod-verify` context must
 refuse a contract whose acceptance criteria are only partly bound, in every
-repository. The refusal is delivered by the pinned verifier: omnimarket#3511,
-first released in omnimarket 0.4.303. A caller pinning an older verifier would
-still admit a partly bound contract, so the caller's `with.verifier-version`
-must stay at or above that release. This is the caller-side twin of the
-reusable's own VERIFIER_FLOOR check (tests/ci/test_receipt_gate_verifier_floor_omn20032.py).
+repository. The refusal is delivered by the verifier the reusable installs
+(omnimarket#3511 and later). Ruling 2026-10-31T21:49:54Z (OMN-21676): that
+verifier is installed from an omnimarket dev-merge tag, which the reusable
+resolves to a commit and refuses unless it descends from its floor commit, so
+the floor is an ancestry fact the reusable enforces, not a version number the
+caller carries. The caller therefore passes `with.verifier-tag` and no
+`verifier-version`. This is the caller-side twin of the reusable's own floor
+check (tests/ci/test_receipt_gate_verifier_tag_omn21676.py).
 """
 
 from __future__ import annotations
@@ -28,21 +31,15 @@ CALLER_PATH = REPO_ROOT / ".github" / "workflows" / "call-repo-evidence-gate.yml
 PRECOMMIT_CONFIG = REPO_ROOT / ".pre-commit-config.yaml"
 HOOK_ID = "call-repo-evidence-gate-verifier-floor"
 
-# omnimarket#3511: the first release that refuses a contract leaving an
-# acceptance criterion unbound.
-VERIFIER_FLOOR = (0, 4, 303)
-
+_DEV_MERGE_TAG = r"dev-[0-9]{14}-[0-9a-f]{12}"
 _RECEIPT_GATE_USES = re.compile(
-    r"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@dev-[0-9]{14}-[0-9a-f]{12}"
+    rf"OmniNode-ai/omnibase_core/\.github/workflows/receipt-gate\.yml@{_DEV_MERGE_TAG}"
 )
+_VERIFIER_TAG = re.compile(_DEV_MERGE_TAG)
 
 
-def _version(text: str) -> tuple[int, ...]:
-    return tuple(int(part) for part in text.split("."))
-
-
-def _admits(version: str) -> bool:
-    return _version(version) >= VERIFIER_FLOOR
+def _admits(tag: object) -> bool:
+    return isinstance(tag, str) and _VERIFIER_TAG.fullmatch(tag) is not None
 
 
 def _job(path: Path = CALLER_PATH) -> dict[str, Any]:
@@ -66,10 +63,10 @@ def _hook() -> dict[str, Any]:
     return hook
 
 
-def _verifier_version(job: dict[str, Any]) -> str:
-    version = job["with"]["verifier-version"]
-    assert isinstance(version, str), "verifier-version must be a quoted or bare string"
-    return version
+def _verifier_tag(job: dict[str, Any]) -> str:
+    tag = job["with"]["verifier-tag"]
+    assert isinstance(tag, str), "verifier-tag must be a string"
+    return tag
 
 
 def test_caller_repo_evidence_job_calls_the_receipt_gate_reusable() -> None:
@@ -80,35 +77,49 @@ def test_caller_repo_evidence_job_calls_the_receipt_gate_reusable() -> None:
     )
 
 
-def test_caller_verifier_version_is_at_or_above_the_floor() -> None:
-    version = _verifier_version(_job())
-    assert _admits(version), (
-        f"verifier-version {version} is below {'.'.join(map(str, VERIFIER_FLOOR))}, "
-        "the first omnimarket release that refuses a partly bound contract"
+def test_caller_verifier_tag_is_an_omnimarket_dev_merge_tag() -> None:
+    tag = _verifier_tag(_job())
+    assert _admits(tag), (
+        f"verifier-tag {tag} is not an omnimarket dev-merge tag "
+        "(dev-<14 digits>-<12 lowercase hex digits>)"
     )
 
 
-def test_a_caller_below_the_floor_is_caught(tmp_path: Path) -> None:
-    """Negative control: the same assertion fails on a caller copy with a lower pin."""
+def test_caller_does_not_pass_verifier_version() -> None:
+    assert "verifier-version" not in _job()["with"], (
+        "verifier-version is the reusable's warned fallback; the caller passes verifier-tag"
+    )
+
+
+def test_a_caller_with_a_version_instead_of_a_tag_is_caught(tmp_path: Path) -> None:
+    """Negative control: the same assertions fail on a caller copy that names a release."""
     text = CALLER_PATH.read_text(encoding="utf-8")
-    real = _verifier_version(_job())
+    real = _verifier_tag(_job())
     copy = tmp_path / "call-repo-evidence-gate.yml"
     copy.write_text(
-        text.replace(f"verifier-version: {real}", "verifier-version: 0.4.302"),
+        text.replace(f"verifier-tag: {real}", "verifier-version: 0.4.305"),
         encoding="utf-8",
     )
-    assert _verifier_version(_job(copy)) == "0.4.302"
-    assert not _admits(_verifier_version(_job(copy)))
+    job = _job(copy)
+    assert "verifier-tag" not in job["with"]
+    assert "verifier-version" in job["with"]
 
 
 @pytest.mark.parametrize(
-    ("version", "expected"),
-    [("0.4.280", False), ("0.4.302", False), ("0.4.303", True), ("0.4.305", True)],
+    ("tag", "expected"),
+    [
+        ("0.4.305", False),
+        ("dev-20261101000200", False),
+        ("dev-20261101000200-949993EDF3B7", False),
+        ("dev-2026110100020-949993edf3b7", False),
+        ("dev-20261101000200-949993edf3b", False),
+        ("dev-20261101000200-949993edf3b7", True),
+    ],
 )
-def test_floor_comparison_has_a_refusing_and_an_admitting_case(
-    version: str, expected: bool
+def test_tag_shape_has_a_refusing_and_an_admitting_case(
+    tag: str, expected: bool
 ) -> None:
-    assert _admits(version) is expected
+    assert _admits(tag) is expected
 
 
 def test_a_pre_commit_hook_runs_this_check_on_the_caller() -> None:
