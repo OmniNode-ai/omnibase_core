@@ -6,7 +6,9 @@ A Python source goes through ``check_protocol_binding``; a node contract goes th
 ``contract_setting_keys`` and ``check_setting_two_homes`` with the contract the assertion's
 ``comparison_file`` fact names read first, so the audited contract is the later home, as the
 validator reads a list of contracts in order. No baseline is passed: the replay judges the
-audited revision as it stood, with no admitted count.
+audited revision as it stood, with no admitted count. The asserted rule is judged without its
+``binding_sites`` exemption: the audit asserts a finding in the very module the live rule admits
+as the binding site, so the exemption would hide every finding the corpus holds there.
 """
 
 from __future__ import annotations
@@ -31,6 +33,20 @@ from tests.fixtures.andon_replay.driver import ReplayContract, ReplayRun, in_sco
 _CONTRACT_ROLE = "node_contract"
 _COMPARISON_ROLE = "comparison_file"
 _PYTHON_SUFFIX = ".py"
+_BINDING_SITES = "binding_sites"
+
+
+def _without_exemption(
+    rules: Sequence[ModelValidatorRule], rule_id: str
+) -> list[ModelValidatorRule]:
+    """``rules`` with the row ``rule_id`` stripped of its binding sites."""
+    judged: list[ModelValidatorRule] = []
+    for rule in rules:
+        if rule.rule_id == rule_id and _BINDING_SITES in (rule.parameters or {}):
+            parameters = {**(rule.parameters or {}), _BINDING_SITES: []}
+            rule = rule.model_copy(update={"parameters": parameters})
+        judged.append(rule)
+    return judged
 
 
 def _keys(text: str, name: str, rules: Sequence[ModelValidatorRule]) -> tuple[str, ...]:
@@ -51,7 +67,9 @@ def replay(run: ReplayRun) -> Sequence[ModelValidationIssue]:
         return ()
     path = Path(source.path)
     if path.suffix == _PYTHON_SUFFIX:
-        return check_protocol_binding(path, text, rules)
+        return check_protocol_binding(
+            path, text, _without_exemption(rules, run.rule_id)
+        )
     homes: dict[str, list[str]] = {}
     comparison = source.fact_text(_COMPARISON_ROLE)
     if comparison is not None:
