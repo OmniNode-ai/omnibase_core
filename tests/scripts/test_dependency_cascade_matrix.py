@@ -172,7 +172,7 @@ def test_pr_title_branch_and_body_all_carry_the_same_ticket() -> None:
     vars_env = _step_env("Set branch and PR variables")
     assert vars_env.get("RAW_TICKET") == "${{ inputs.ticket }}", vars_env
     vars_script = _step_run("Set branch and PR variables")
-    assert 'BRANCH="automation/bump-${PKG_HYPHEN}-${VERSION}-${TICKET_SLUG}"' in (
+    assert 'BRANCH="automation/bump-${PKG_HYPHEN}-${DEV_TAG}-${TICKET_SLUG}"' in (
         vars_script
     ), vars_script
     assert 'echo "ticket=$TICKET" >> $GITHUB_OUTPUT' in vars_script, vars_script
@@ -250,40 +250,32 @@ def test_python_invocations_use_uv_run() -> None:
     assert re.search(r"(?<!uv run )\bpython3\b", content) is None, (
         "bare `python3` invocation found; use `uv run python` instead"
     )
-    assert "uv run python" in content
+    assert "uv run --no-project python" in content
 
 
 @pytest.mark.unit
-def test_check_dep_provenance_movable_guard_runs_before_uv_lock() -> None:
-    """Bug 3: fail loud on a git-source-overridden pin instead of silently
-    re-resolving to a no-op (or, worse, a suspicious full-file rewrite --
-    see the omniintelligence#827 incident this guard exists to prevent).
+def test_movable_guard_is_replaced_by_the_dev_tag_pin_and_verification() -> None:
+    """OMN-19998: the release-version movable guard (and the infra script it
+    ran) cannot coexist with a dev merge tag source: it refused every git
+    source, so the second cascade after the first dev-tag pin would fail. The
+    pin step now writes the source itself, and the lock is verified to land on
+    that tag, which also fails a leg a constraint cap keeps off the tag.
     """
     job = _job_body()
     steps = job["steps"]
     assert isinstance(steps, list)
     names = [s.get("name") for s in steps if isinstance(s, dict)]
-    assert "Checkout omnibase_infra dep-provenance script" in names, names
-    assert "Check dependency is movable" in names, names
-    assert "Upgrade lockfile" in names, names
-
-    checkout_idx = names.index("Checkout omnibase_infra dep-provenance script")
-    guard_idx = names.index("Check dependency is movable")
-    lockfile_idx = names.index("Upgrade lockfile")
-    assert checkout_idx < guard_idx < lockfile_idx, (
-        "the provenance script must be checked out, then the movable guard "
-        f"must run, then the lockfile upgrade: {names}"
+    assert "Checkout omnibase_infra dep-provenance script" not in names, names
+    assert "Check dependency is movable" not in names, names
+    pin = "Pin dev merge tag source (OMN-19998)"
+    verify = "Verify locked source is the target dev tag (OMN-19998)"
+    assert names.index(pin) < names.index("Upgrade lockfile") < names.index(verify), (
+        names
     )
-
-    guard_script = _step_run("Check dependency is movable")
-    assert "check_dep_provenance.py" in guard_script, guard_script
-    assert "--check-movable" in guard_script, guard_script
 
     lock_script = _step_run("Upgrade lockfile")
     assert "uv lock" in lock_script, lock_script
-    assert '--upgrade-package "${BUMP_PACKAGE}==${RESOLVED}"' in lock_script, (
-        lock_script
-    )
+    assert '--upgrade-package "$PKG_HYPHEN"' in lock_script, lock_script
 
 
 @pytest.mark.unit
@@ -335,7 +327,7 @@ def test_pyproject_pin_kept_in_sync_with_lockfile_bump() -> None:
     steps = job["steps"]
     assert isinstance(steps, list)
     names = [s.get("name") for s in steps if isinstance(s, dict)]
-    assert "Update pyproject.toml pin" in names, names
+    assert "Pin dev merge tag source (OMN-19998)" in names, names
 
     commit_script = _step_run("Commit and push")
     assert "git add uv.lock pyproject.toml" in commit_script, commit_script
@@ -354,7 +346,7 @@ def test_pyproject_pin_updated_before_lockfile_upgrade() -> None:
     steps = job["steps"]
     assert isinstance(steps, list)
     names = [s.get("name") for s in steps if isinstance(s, dict)]
-    pin_idx = names.index("Update pyproject.toml pin")
+    pin_idx = names.index("Pin dev merge tag source (OMN-19998)")
     lockfile_idx = names.index("Upgrade lockfile")
     assert pin_idx < lockfile_idx, (
         "the pyproject.toml pin must be updated BEFORE `uv lock "

@@ -187,7 +187,10 @@ def test_private_source_token_wiring_and_step_order() -> None:
     find = _step(FIND_STEP)
     assert find["id"] == "git_sources"
     assert find["if"] == "steps.token_check.outputs.has_token == 'true'"
-    assert find["env"] == {"REPO_NAME": "${{ matrix.repo }}"}
+    assert find["env"] == {
+        "REPO_NAME": "${{ matrix.repo }}",
+        "PACKAGE_REPO": "${{ inputs.package }}",
+    }
     mint = _step(MINT_STEP)
     assert mint["id"] == "git-source-token"
     assert mint["uses"] == (
