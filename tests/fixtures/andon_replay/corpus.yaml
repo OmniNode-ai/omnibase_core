@@ -14,6 +14,68 @@ resolution:
     omnibase_infra: omnibase_infra
     omniclaude: omniclaude
     knowledge_base_internal: knowledge-base-internal
+replay:
+  contracts_glob: src/omnibase_core/validation/contracts/*.validation.yaml
+  repo_root_from_fixture: ../../..
+  fixtures_dir: tests/fixtures/validation
+  fixture_prefix: violation_
+  expected_assertions: 120
+  row_name_parameters:
+    - family
+  validator_aliases:
+    hardcoded_model_config: hardcoded_model_literals
+    lint-contract-check-values: inline_logic
+    action-pins: first_party_ref
+    no_raw_sqlite3: no_raw_sqlite3
+  adapters:
+    handler_di:
+      module: tests.fixtures.andon_replay.adapters.adapter_handler_di
+      function: replay
+      fixture_function: replay_fixture
+    handler_shape:
+      module: tests.fixtures.andon_replay.adapters.adapter_handler_shape
+      function: replay
+      fixture_function: replay_fixture
+    no_io_outside_effects:
+      module: tests.fixtures.andon_replay.adapters.adapter_no_io_outside_effects
+      function: replay
+      fixture_function: replay_fixture
+    no_raw_sqlite3:
+      module: tests.fixtures.andon_replay.adapters.adapter_no_raw_sqlite3
+      function: replay
+      fixture_function: replay_fixture
+    canonical_file_shape:
+      module: tests.fixtures.andon_replay.adapters.adapter_canonical_file_shape
+      function: replay
+      fixture_function: replay_fixture
+    validator_home:
+      module: tests.fixtures.andon_replay.adapters.adapter_validator_home
+      function: replay
+      fixture_function: replay_fixture
+    checker_rule_data:
+      module: tests.fixtures.andon_replay.adapters.adapter_checker_rule_data
+      function: replay
+      fixture_function: replay_fixture
+    inline_logic:
+      module: tests.fixtures.andon_replay.adapters.adapter_inline_logic
+      function: replay
+      fixture_function: replay_fixture
+    protocol_binding:
+      module: tests.fixtures.andon_replay.adapters.adapter_protocol_binding
+      function: replay
+      fixture_function: replay_fixture
+    first_party_ref:
+      module: tests.fixtures.andon_replay.adapters.adapter_first_party_ref
+      function: replay
+      fixture_function: replay_fixture
+    task_criteria:
+      module: tests.fixtures.andon_replay.adapters.adapter_task_criteria
+      function: replay
+      fixture_function: replay_fixture
+    hardcoded_model_literals:
+      module: tests.fixtures.andon_replay.adapters.adapter_hardcoded_model_literals
+      function: replay
+      fixture_function: replay_fixture
 findings:
   table_snapshot: d3_findings_table
   id_prefix: F
@@ -759,7 +821,7 @@ assertions:
       quote: load_contract()
   - id: F28-1
     finding: F28
-    rule_id: no_io_outside_effects:file-read
+    rule_id: no_io_outside_effects:file_read
     input:
       kind: code
       repository: omnibase_core
@@ -1268,7 +1330,7 @@ assertions:
           path: src/omnibase_core/validation/hardcoded_model_config/policy.yaml
   - id: F39-2
     finding: F39
-    rule_id: no_io_outside_effects:file-read
+    rule_id: no_io_outside_effects:file_read
     input:
       kind: code
       repository: omnimarket
@@ -1405,7 +1467,7 @@ assertions:
           path: src/omnimarket/nodes/node_delivery_path_reducer/contract.yaml
   - id: F40-5
     finding: F40
-    rule_id: no_io_outside_effects:file-read
+    rule_id: no_io_outside_effects:file_read
     input:
       kind: code
       repository: omnimarket
