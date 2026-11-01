@@ -503,8 +503,10 @@ jobs:
               case "$path" in
                 .github/workflows/*.yml | .github/workflows/*.yaml | .github/sibling-pins.yaml | .github/omnimarket-contract-pin.yaml) ;;
                 *)
+                  # OMN-21875: any YAML file is read too, for the uv.lock
+                  # digest refresh the pin-swap classifier derives below.
                   case "${path##*/}" in
-                    pyproject.toml | uv.lock) ;;
+                    pyproject.toml | uv.lock | *.yaml | *.yml) ;;
                     *) pin_swap_paths=false ;;
                   esac
                   ;;
@@ -580,6 +582,7 @@ jobs:
             reason="the pinned classifier failed"
             (cd "$RUNNER_TEMP" && "$DOD_VERIFY_PY" -I - "$probe_dir/paths" "$probe_dir/pyproject-head" "$probe_dir/pyproject-base" "$probe_dir/changelog-head" "$probe_dir/changelog-base" "$probe_dir/release-project-head" "$probe_dir/blobs" <<'PY'
           import difflib
+          import hashlib
           import json
           import re
           import sys
@@ -676,12 +679,18 @@ jobs:
               pin_files = {".github/sibling-pins.yaml", ".github/omnimarket-contract-pin.yaml"}
               manifests = []
               pin_paths = []
+              digest_paths = []
+              locks = []
               for index, path in enumerate(paths):
                   workflow = path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml"))
                   if workflow or path in pin_files:
                       pin_paths.append((index, path, workflow))
                   elif Path(path).name in {"pyproject.toml", "uv.lock"}:
                       manifests.append(path)
+                      if Path(path).name == "uv.lock":
+                          locks.append(index)
+                  elif path.endswith((".yaml", ".yml")):
+                      digest_paths.append((index, path))
                   else:
                       return False, f"path is not allowed for a pin swap: {path}"
               manifest_reason = None
@@ -691,7 +700,51 @@ jobs:
                   )
                   if not pin_only:
                       return False, f"pin swap manifests are not dependency-pin-only: {manifest_reason}"
-              if not pin_paths:
+              # OMN-21875: a YAML file outside the declared pin files may only
+              # refresh a recorded uv.lock digest. Every changed line swaps one
+              # 64-hex value from sha256 of the merge base's changed uv.lock to
+              # sha256 of the head's (omnimarket work contracts, omnimarket#4654).
+              digest_swapped = 0
+              if digest_paths:
+                  first = digest_paths[0][1]
+                  if len(locks) != 1:
+                      return False, f"{first}: a uv.lock digest refresh requires exactly one changed uv.lock"
+                  lock_head = blobs_dir / f"{locks[0]}.head"
+                  lock_base = blobs_dir / f"{locks[0]}.base"
+                  if not lock_head.exists() or not lock_base.exists():
+                      return False, f"{first}: a uv.lock digest refresh requires uv.lock at both refs"
+                  old_digest = hashlib.sha256(lock_base.read_bytes()).hexdigest()
+                  new_digest = hashlib.sha256(lock_head.read_bytes()).hexdigest()
+                  digest_pattern = re.compile(r"^(?P<lead>[ ]*(?:-[ ]+)?[A-Za-z0-9_.-]+:[ ]+)(?P<value>[0-9a-f]{64})(?P<tail>(?:[ ]+#.*)?)$")
+                  for index, path in digest_paths:
+                      head_file, base_file = blobs_dir / f"{index}.head", blobs_dir / f"{index}.base"
+                      if not head_file.exists() or not base_file.exists():
+                          return False, f"pin swap file is added or deleted: {path}"
+                      head = head_file.read_bytes().decode("utf-8").splitlines(keepends=True)
+                      base = base_file.read_bytes().decode("utf-8").splitlines(keepends=True)
+                      file_swapped = 0
+                      for tag, base_start, base_end, head_start, head_end in difflib.SequenceMatcher(
+                          None, base, head, autojunk=False,
+                      ).get_opcodes():
+                          if tag == "equal":
+                              continue
+                          if tag != "replace" or base_end - base_start != head_end - head_start:
+                              return False, f"{path} adds or removes a line"
+                          for offset, (base_line, head_line) in enumerate(zip(
+                              base[base_start:base_end], head[head_start:head_end],
+                          )):
+                              base_body, head_body = base_line.rstrip("\r\n"), head_line.rstrip("\r\n")
+                              old, new = digest_pattern.fullmatch(base_body), digest_pattern.fullmatch(head_body)
+                              if not (base_line[len(base_body):] == head_line[len(head_body):]
+                                      and old is not None and new is not None
+                                      and old["lead"] == new["lead"] and old["tail"] == new["tail"]
+                                      and old["value"] == old_digest and new["value"] == new_digest):
+                                  return False, f"{path} line {head_start + offset + 1} is not solely a uv.lock digest refresh"
+                              file_swapped += 1
+                      if not file_swapped:
+                          return False, f"{path} has no refreshed uv.lock digest"
+                      digest_swapped += 1
+              if not pin_paths and not digest_paths:
                   return False, "pin swap requires a workflow or declared pin file"
               workflow_patterns = [
                   re.compile(r"^(?P<lead>[ ]*(?:-[ ]+)?ref:[ ]+)(?P<value>[0-9a-f]{40})(?P<tail>(?:[ ]+#.*)?)$"),
@@ -737,7 +790,12 @@ jobs:
                   if not file_swapped:
                       return False, f"{path} has no swapped pin line"
                   swapped += file_swapped
-              reason = f"pin swap only: {swapped} pin value(s) in {len(pin_paths)} file(s)"
+              parts = []
+              if pin_paths:
+                  parts.append(f"{swapped} pin value(s) in {len(pin_paths)} file(s)")
+              if digest_swapped:
+                  parts.append(f"uv.lock digest refreshed in {digest_swapped} file(s)")
+              reason = "pin swap only: " + "; ".join(parts)
               if manifests:
                   reason += f"; manifests: {manifest_reason}"
               return True, reason

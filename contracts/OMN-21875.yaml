@@ -1,0 +1,59 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21875
+title: The receipt gate admits a writer-app pin bump whose YAML files only refresh the uv.lock digest
+summary: The OCC writer app's omnibase_core pin bumps on omnimarket change pyproject.toml, uv.lock and
+  70 work contracts whose only changed line moves the recorded uv.lock sha256 from the merge base's digest
+  to the head's (omnimarket#4654). The writer_pin_only classifier refused those YAML paths, so the bump
+  fell through to the evidence gate and failed on the merged OMN-21478 contract. The pin-swap classifier
+  now admits a YAML file whose every changed line swaps sha256 of the base uv.lock for sha256 of the head
+  uv.lock, and refuses every other change in such a file.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21875-lock-digest-refresh-exempt
+    statement: A writer-app diff of dependency manifests and YAML files that only refresh the uv.lock
+      digest must be classified pin-swap-only.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: writer_pin_only exempts a writer-app diff of pyproject.toml, uv.lock and YAML
+          files whose only changed lines move the uv.lock sha256 from the base digest to the head digest
+          -- falsifier: uv run pytest tests/ci/test_receipt_gate_writer_lock_digest.py -q'
+  - id: req-omn21875-lock-digest-refresh-fails-closed
+    statement: Any YAML change that is not exactly a uv.lock digest refresh must keep the gate closed.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: writer_pin_only refuses a digest swap whose new value is not sha256 of the head
+          uv.lock, a digest swap with no uv.lock change, and a YAML file with any other changed line --
+          falsifier: uv run pytest tests/ci/test_receipt_gate_writer_lock_digest.py -q -k refuses'
+evidence_requirements:
+  - kind: tests
+    description: Run the writer_pin_only step's own script against real git objects with a stub verifier.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_lock_digest.py -q -p no:randomly --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-21875-ac1
+    description: A manifest, lockfile and digest-only YAML diff from the writer app is pin-swap-only.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_lock_digest.py -q -p no:randomly
+          --no-cov -k "is_exempt"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-21875-ac2
+    description: A wrong digest, a missing lock change, an extra line, an added file or a source file
+      keeps the writer app not exempt.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_lock_digest.py -q -p no:randomly
+          --no-cov -k "refuses"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
