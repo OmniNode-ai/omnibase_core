@@ -21,7 +21,7 @@ dod_evidence:
     source: "manual"
     checks:
       - check_type: "command"
-        check_value: "uv run python scripts/validate_no_env_fallbacks.py"
+        check_value: "env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_no_env_fallbacks_check_compute.runtime_no_env_fallbacks_check"
   - id: "dod-002"
     description: "Unit tests for doctor checks pass with env var injection"
     source: "manual"
