@@ -1,0 +1,69 @@
+{
+  "report_id": "<normalised>",
+  "profile": "default",
+  "overall_status": "FAIL",
+  "findings": [
+    {
+      "validator_id": "invariant_analysis",
+      "severity": "FAIL",
+      "location": "plan_bad.md",
+      "message": "Scope declaration missing or unknown: architecture, data",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "scope_declaration_missing_or_unknown"
+    },
+    {
+      "validator_id": "invariant_analysis",
+      "severity": "FAIL",
+      "location": "plan_bad.md",
+      "message": "Referenced task absent: T9",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "satisfied_by_task_absent"
+    },
+    {
+      "validator_id": "invariant_analysis",
+      "severity": "FAIL",
+      "location": "plan_bad.md",
+      "message": "Invariant unknown or retired: INV-C",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "invariant_unknown_or_retired"
+    },
+    {
+      "validator_id": "invariant_analysis",
+      "severity": "FAIL",
+      "location": "plan_bad.md",
+      "message": "Not-applicable entry lacks a reason: INV-C",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "not_applicable_unreasoned"
+    },
+    {
+      "validator_id": "invariant_analysis",
+      "severity": "FAIL",
+      "location": "plan_bad.md",
+      "message": "Active invariant unaddressed: INV-B",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "invariant_unaddressed"
+    }
+  ],
+  "metrics": {
+    "total": 5,
+    "pass_count": 0,
+    "warn_count": 0,
+    "fail_count": 5,
+    "error_count": 0,
+    "skip_count": 0,
+    "not_applicable_count": 0
+  },
+  "provenance": {
+    "generated_at": "<normalised>",
+    "request_id": null,
+    "schema_version": "1.0",
+    "validators_run": [
+      "invariant_analysis"
+    ]
+  }
+}
