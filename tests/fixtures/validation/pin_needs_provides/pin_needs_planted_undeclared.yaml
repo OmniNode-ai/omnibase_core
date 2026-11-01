@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Planted undeclared verifier (OMN-21879): 0.4.321 is listed with no needs key at all,
+# and the receipt-gate reusable lists no versions. Both must be refused, never read as "needs nothing".
+verifiers:
+  - verifier_name: caller-evidence-verifier
+    pin_keys: [verifier-version]
+    versions:
+      - version: "0.4.321"
+  - verifier_name: receipt-gate-reusable
+    pin_keys: [OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml]

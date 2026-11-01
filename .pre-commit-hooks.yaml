@@ -1590,6 +1590,19 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-pin-needs-provides
+  name: Pin needs/provides (OMN-21879)
+  description: >
+    Refuse a caller pin of a verifier version whose declared needs the caller does not provide, a pinned
+    version with no needs declaration and a caller with no provides declaration. Pin syntax and the declaration
+    paths are contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_pin_needs_provides:ValidatorPinNeedsProvides
+  files: (^|/)\.github/workflows/[^/]+\.ya?ml$|\.(diff|patch)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-event-registry-drift
   name: Event-registry drift (OMN-21416)
   description: >
