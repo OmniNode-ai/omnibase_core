@@ -45,6 +45,12 @@ from tests.fixtures.andon_replay.driver import (
 )
 
 _TICKET = "ticket"
+# A brief or a job.json spec reaches the production validator as the spec of a dispatched job,
+# whose document name is ``job.json``; a reconstructed brief file name is not what it judges.
+_DISPATCHED_KINDS = frozenset({"job.json", "brief"})
+_DISPATCHED_NAME = "job.json"
+# Repository lifecycle facts the violation fixtures are written against (the unit tests' facts).
+_FIXTURE_LIFECYCLE = {"frozen_tooling": "no-code", "fixing_tooling": "fix-only"}
 _ANCHORED_PREFIX = re.compile(r"\^([A-Za-z][\w-]*:)")
 
 
@@ -73,6 +79,8 @@ def _document_name(path: str, contract: ModelValidatorSubcontract) -> str:
     prefix = _ticket_prefix(contract)
     if prefix and (_TICKET in provenance or _TICKET in str(provenance.get("kind", ""))):
         return f"{prefix}{provenance.get(_TICKET, snapshot_id)}"
+    if provenance.get("kind") in _DISPATCHED_KINDS:
+        return _DISPATCHED_NAME
     recorded = provenance.get("source")
     return recorded if isinstance(recorded, str) else path
 
@@ -95,10 +103,18 @@ def _task_text(text: str, name: str, rules: ModelTaskCriteriaRules, line: int) -
 
 
 def _judge(
-    name: str, text: str, contract: ModelValidatorSubcontract
+    name: str,
+    text: str,
+    contract: ModelValidatorSubcontract,
+    lifecycle: Mapping[str, str] | None = None,
 ) -> tuple[ModelValidationIssue, ...]:
     result = check_task_criteria(
-        ModelTaskCriteriaCheckInput(source_name=name, text=text, contract=contract)
+        ModelTaskCriteriaCheckInput(
+            source_name=name,
+            text=text,
+            contract=contract,
+            repository_lifecycle=dict(lifecycle or {}),
+        )
     )
     return tuple(i.model_copy(update={"file_path": Path(name)}) for i in result.issues)
 
@@ -141,6 +157,6 @@ def replay_fixture(
     rule_id = fixture.stem.partition("_")[2]
     issues: dict[tuple[str | None, str], ModelValidationIssue] = {}
     for name in _fixture_names(contract.subcontract, rule_id):
-        for issue in _judge(name, text, contract.subcontract):
+        for issue in _judge(name, text, contract.subcontract, _FIXTURE_LIFECYCLE):
             issues.setdefault((issue.code, issue.message), issue)
     return list(issues.values())
