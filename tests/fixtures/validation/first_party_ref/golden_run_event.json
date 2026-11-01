@@ -1,6 +1,7 @@
 {
   "profile": "strict",
   "overall_status": "FAIL",
+  "required_validators": [],
   "findings": [
     {
       "validator_id": "first_party_ref",
@@ -19,7 +20,9 @@
     "fail_count": 1,
     "error_count": 0,
     "skip_count": 0,
-    "not_applicable_count": 0
+    "not_applicable_count": 0,
+    "missing_count": 0,
+    "advisory_count": 0
   },
   "provenance": {
     "request_id": null,

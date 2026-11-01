@@ -1,0 +1,76 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21595
+title: 'Handler dependencies are declared in contracts and bound by overlay (omnibase_core half)'
+summary: The handler_dependencies contract block, the overlay binding model and the pure builder that
+  resolves a handler's dependencies from the overlay's binding only, with the announcer's bus, the catalog's
+  store, the lazy-start budget and the reaper's interval as overlay values with no default in code. The
+  omnimarket half, which moves the first two nodes onto it, waits on the release of this change.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21595-overlay-bound-dependencies
+    statement: A contract declares its handler dependencies as protocol identifiers and a lane overlay
+      binds each to an implementation; the builder reads the overlay and nothing else.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the same handler test passes under an overlay that binds the in-memory bus and
+          under one that binds a durable-shaped bus, with no source difference -- falsifier: `uv run pytest
+          tests/unit/services/test_overlay_bound_dependencies.py -q -k "same_handler_test or differ_in_data"`
+          fails, or the test body branches on the binding'
+      - id: AC3
+        statement: 'AC3: a contract with a dependency the overlay does not bind is refused DEPENDENCY_UNBOUND
+          before any factory runs and before any subscription -- falsifier: `uv run pytest tests/unit/services/test_overlay_bound_dependencies.py
+          -q -k "unbound or refused"` fails on a built dependency or a recorded subscription'
+      - id: AC4
+        statement: 'AC4: the announcer''s bus, the catalog''s store, the lazy-start budget and the reaper''s
+          interval are read from the overlay and from nowhere else -- falsifier: `uv run pytest tests/unit/services/test_overlay_bound_dependencies.py
+          -q -k "follow_the_overlay or no_default or numeric_default"` fails on a value the overlay changed
+          that the behaviour did not follow'
+evidence_requirements:
+  - kind: tests
+    description: Overlay binding, builder and contract block tests pass.
+    command: uv run pytest tests/unit/services/test_overlay_bound_dependencies.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21595-ac2-same-handler-test
+    description: One handler test body passes under the in-memory-bus overlay and the durable-shaped-bus
+      overlay.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/services/test_overlay_bound_dependencies.py -q --no-cov
+          -o addopts='' -k 'same_handler_test or differ_in_data'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21595-ac3-unbound
+    description: An unbound dependency is refused DEPENDENCY_UNBOUND, no factory runs and the bus holds
+      no subscription; a control subscription is recorded.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/services/test_overlay_bound_dependencies.py -q --no-cov
+          -o addopts='' -k 'unbound or refused'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21595-ac4-overlay-values
+    description: Bus, store, budget and interval follow the overlay; the overlay has no default for the
+      bus, the store or the budget; no numeric default or environment read sits in the package.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/services/test_overlay_bound_dependencies.py -q --no-cov
+          -o addopts='' -k 'follow_the_overlay or no_default or numeric_default'
+        cwd: ${OMNI_HOME}/omnibase_core

@@ -20,8 +20,10 @@
     }
   ],
   "metrics": {
+    "advisory_count": 0,
     "error_count": 0,
     "fail_count": 2,
+    "missing_count": 0,
     "not_applicable_count": 0,
     "pass_count": 0,
     "skip_count": 0,
@@ -38,5 +40,6 @@
       "protocol_binding"
     ]
   },
-  "report_id": "<normalised>"
+  "report_id": "<normalised>",
+  "required_validators": []
 }

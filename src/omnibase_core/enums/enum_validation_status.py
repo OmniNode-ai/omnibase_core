@@ -32,6 +32,8 @@ class EnumValidationStatus(str, Enum):
         ERROR: The check itself could not complete (e.g. a parse error).
         SKIP: The check was intentionally not executed.
         NOT_APPLICABLE: The check does not apply to this input.
+        MISSING: An expected result is absent; aggregates as FAIL.
+        ADVISORY: Informational result that never gates.
     """
 
     PASS = "pass"
@@ -40,3 +42,5 @@ class EnumValidationStatus(str, Enum):
     ERROR = "error"
     SKIP = "skip"
     NOT_APPLICABLE = "not_applicable"
+    MISSING = "missing"
+    ADVISORY = "advisory"
