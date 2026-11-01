@@ -1,0 +1,114 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: stack_shape
+  validator_name: Stack shape (allowlist)
+  validator_description: |
+    Every service of every lane's compose file set is the runtime, a declared dependency, a
+    one-shot or a baselined entry, and the runtime service runs one replica (OMN-21891,
+    one-runtime plan task T1). The allowlist, the per-lane compose file sets and the baseline are
+    data the caller passes; this contract holds only the message texts and the file format keys.
+
+    The baseline is shrink-only: an entry whose service no longer exists fails, and once the data
+    file exists on the base revision an entry absent from it fails. A baseline entry follows its
+    compose file when git records a move.
+
+  target_patterns:
+    - "**/stack_shape.yaml"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/.venv/**"
+    - "**/node_modules/**"
+
+  rules:
+    - rule_id: service_not_allowed
+      description: >-
+        A service that is not the runtime, a declared dependency, a one-shot or a baselined entry is refused.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          service {service} in {path} (lane {lanes}) is not the runtime, a declared dependency, a one-shot
+          or a baselined entry: fold it into the runtime or declare it in the stack-shape data file.
+    - rule_id: replicas_over_limit
+      description: >-
+        Every replica counts, from replicas, scale and deploy.replicas; a runtime service above the limit
+        fails.
+      severity: error
+      enabled: true
+      parameters:
+        replica_keys:
+          - 'replicas'
+          - 'scale'
+        deploy_key: 'deploy'
+        deploy_replica_key: 'replicas'
+        default_pattern: '^\$\{[A-Za-z_][A-Za-z0-9_]*:?-(\d+)\}$'
+        message: >-
+          service {service} in {path} (lane {lanes}) runs {count} replicas, above the limit of {limit}.
+        unreadable_message: >-
+          service {service} in {path} (lane {lanes}) declares a replica count {value} that cannot be read
+          as a whole number: write the number.
+    - rule_id: compose_file_missing
+      description: >-
+        A compose file a lane names must exist, or the lane is judged on nothing.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          compose file {path} of lane {lanes} does not exist.
+    - rule_id: compose_file_unreadable
+      description: >-
+        A compose file that is not a mapping holding a services mapping cannot be judged.
+      severity: error
+      enabled: true
+      parameters:
+        services_key: 'services'
+        message: >-
+          compose file {path} of lane {lanes} is not valid YAML holding a services mapping: {reason}.
+    - rule_id: stack_shape_data_invalid
+      description: >-
+        The data file the caller passes must hold the allowlist format.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          stack-shape data file {path} is invalid: {reason}.
+    - rule_id: baseline_ratchet
+      description: >-
+        The baseline holds the services that predate the check, each with a ticket, and only shrinks.
+        An entry follows its compose file when git records a move and is dropped when its service is gone.
+      severity: error
+      enabled: true
+      parameters:
+        data_path: 'config/validation/stack_shape.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 50
+        key_separator: '::'
+        missing_message: >-
+          baseline entry {entry} names a service that no longer exists in that compose file: delete the
+          entry; the baseline only shrinks.
+        unlisted_message: >-
+          baseline entry {entry} names a compose file that no lane lists: delete the entry.
+        ticket_message: >-
+          baseline entry {entry} carries no ticket: every baselined service names the ticket that removes
+          it.
+        growth_message: >-
+          baseline entry {entry} is not on the base revision: the baseline only shrinks; fold the service
+          into the runtime or declare it as a dependency instead of baselining it.
+  suppression_comments:
+    - 'stack-shape-ok:'
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
