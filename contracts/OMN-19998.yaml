@@ -551,10 +551,10 @@ dod_evidence:
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC20"]
   - id: "dod-omn19998-cascade-dev-tags-lock"
-    description: "The verification step passes a lock that records the dev merge tag and its commit and
-      fails a registry release or an older tag, which is the lock shape the downstream internal-sibling-pins
-      handler allows. A real uv lock of the omniclaude pyproject plus that handler run (exit 0 against
-      exit 1 on the release-pinned lock) are in the PR body."
+    description: "Hosted deploy probe: the real verification step passes a lock that records the dev merge
+      tag and its commit and fails a registry release or an older tag, which is the lock shape the downstream
+      internal-sibling-pins handler allows. A real uv lock of the omniclaude pyproject plus that handler
+      run (exit 0 against exit 1 on the release-pinned lock) are in the PR body."
     source: "manual"
     execution_scope: hosted_and_local
     checks:
@@ -577,23 +577,26 @@ dod_evidence:
   - id: "dod-omn19998-cascade-dev-tags-no-gate-widened"
     description: "internal-sibling-pins.yml keeps its trigger, hosted runner and command, pinned by its
       own test; this change edits no ratchet baseline and not that workflow, and its diff stat is in the
-      PR body."
+      PR body. The source-pin probe also requires the cascade to emit the dev-tag source accepted by the
+      unchanged gate; at the merge base that pin step is absent and the probe fails."
     source: "manual"
     execution_scope: hosted_and_local
     checks:
       - check_type: "test_passes"
         check_value: "uv run pytest tests/unit/validation/first_party_ref/test_runtime_first_party_ref.py
+          tests/scripts/test_dependency_cascade_dev_tag_omn19998.py::test_pin_step_adds_the_dev_tag_source_the_provenance_gates_accept
           -q -n 0 -o addopts="
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC23"]
   - id: "dod-omn19998-cascade-dev-tags-never-closes"
     description: "The cascade opens pull requests and runs no close, merge, edit or ready verb against
-      any."
+      any. It resolves the newest dev merge tag into the bump branch name; that resolution fails at the
+      merge base, which still targets a release. Both resolution and the no-mutation invariant run."
     source: "manual"
     execution_scope: hosted_and_local
     checks:
       - check_type: "test_passes"
         check_value: "uv run pytest tests/scripts/test_dependency_cascade_dev_tag_omn19998.py -q -n 0
-          -o addopts= -k never_closes_or_merges"
+          -o addopts= -k 'never_closes_or_merges or resolves_the_newest_dev_merge_tag_not_the_release'"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC24"]
