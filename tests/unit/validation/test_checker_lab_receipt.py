@@ -96,6 +96,13 @@ CLASSIFICATION: dict[str, tuple[str, ...]] = {
     "counted_package_source": ("package_source",),
     "counted_mixed": ("host_unit", "hook"),
 }
+# fixture -> (counted classes) for the per-file comment_only flag (OMN-21833).
+COMMENT_ONLY: dict[str, tuple[str, ...]] = {
+    "clean_comment_only_true": (),
+    "violation_comment_only_absent": ("package_source",),
+    "violation_comment_only_false": ("package_source",),
+    "violation_comment_only_mixed": ("package_source",),
+}
 Verdict = tuple[tuple[str, ...], bool, tuple[str, ...]]
 
 
@@ -184,11 +191,31 @@ def test_classification_fixtures_pin_which_changes_run(
     assert result.issues == ()
 
 
+@pytest.mark.parametrize(("name", "classes"), sorted(COMMENT_ONLY.items()))
+def test_comment_only_flag_decides_whether_a_changed_file_counts(
+    name: str, classes: tuple[str, ...]
+) -> None:
+    result = _check(name)
+    assert result.classes == classes
+    assert result.required is bool(classes)
+    assert [i.code for i in result.issues] == (["receipt_required"] if classes else [])
+    assert result.exit_code == (1 if classes else 0)
+
+
+def test_comment_only_true_is_the_only_difference_between_the_pair() -> None:
+    flagged = _document("clean_comment_only_true").facts.changed_files
+    absent = _document("violation_comment_only_absent").facts.changed_files
+    assert flagged[0].comment_only is True
+    assert absent[0].comment_only is False
+    assert flagged[0].model_copy(update={"comment_only": False}) == absent[0]
+
+
 def test_every_fixture_is_pinned_by_a_test() -> None:
     pinned = (
         {f"violation_{r}" for r in RULE_IDS}
         | {f"clean_{r}" for r in RULE_IDS}
         | set(CLASSIFICATION)
+        | set(COMMENT_ONLY)
     )
     assert set(_fixture_names()) == pinned
 
@@ -330,7 +357,9 @@ def _mutations(value: Any) -> list[Any]:
     return ["(?!)", "(?s).+"]
 
 
-def test_every_parameter_of_every_rule_row_changes_a_verdict_or_is_refused() -> None:
+def test_every_key_of_every_rule_row_parameters_changes_a_verdict_or_is_refused() -> (
+    None
+):
     data = yaml.safe_load(CONTRACT_PATH.read_text("utf-8"))["validation"]
     baseline = _all_verdicts(_contract())
     unmoved: list[str] = []
@@ -387,6 +416,10 @@ def test_invalid_contracts_fail_to_load_rather_than_pass() -> None:
         ("receipt_required", "runtime_classes", ["tool::.*"], "<class>::<repository>"),
         ("receipt_required", "runtime_classes", ["tool::(::x"], "regular expression"),
         ("receipt_required", "prod_classes", "prod", "list of strings"),
+        ("receipt_required", "comment_prefixes", [], "at least one non-blank"),
+        ("receipt_required", "comment_prefixes", ["#", " "], "at least one non-blank"),
+        ("receipt_required", "directive_markers", [], "at least one non-blank"),
+        ("receipt_required", "directive_markers", "noqa", "list of strings"),
         ("receipt_required", "phases", ["later"], "unknown phase"),
         ("receipt_field_missing", "required_fields", ["colour"], "does not have"),
         (

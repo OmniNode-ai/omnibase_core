@@ -17,3 +17,7 @@ class ModelLabReceiptChangedFile(BaseModel):
     status: str = Field(
         description="First letter of git's name-status code (A, M, D, R, C, T)"
     )
+    comment_only: bool = Field(
+        default=False,
+        description="True when the diff of this file changes only comments and directive lines; set by the fact-gathering node; absent means counted",
+    )

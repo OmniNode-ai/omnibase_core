@@ -1,4 +1,9 @@
 {
+  "clean_comment_only_true": {
+    "issues": [],
+    "required": false,
+    "classes": []
+  },
   "clean_lab_read_unavailable": {
     "issues": [],
     "required": true,
@@ -132,6 +137,33 @@
     "issues": [],
     "required": false,
     "classes": []
+  },
+  "violation_comment_only_absent": {
+    "issues": [
+      "receipt_required"
+    ],
+    "required": true,
+    "classes": [
+      "package_source"
+    ]
+  },
+  "violation_comment_only_false": {
+    "issues": [
+      "receipt_required"
+    ],
+    "required": true,
+    "classes": [
+      "package_source"
+    ]
+  },
+  "violation_comment_only_mixed": {
+    "issues": [
+      "receipt_required"
+    ],
+    "required": true,
+    "classes": [
+      "package_source"
+    ]
   },
   "violation_lab_read_unavailable": {
     "issues": [
