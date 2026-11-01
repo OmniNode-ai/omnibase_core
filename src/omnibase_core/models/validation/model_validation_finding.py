@@ -44,18 +44,27 @@ class ModelValidationFinding(BaseModel):
         ),
     )
 
-    severity: Literal["PASS", "WARN", "FAIL", "ERROR", "SKIP", "NOT_APPLICABLE"] = (
-        Field(
-            description=(
-                "Severity of this individual finding. "
-                "PASS — the validator ran and found no issue. "
-                "WARN — potential issue that does not block in 'default' profile. "
-                "FAIL — definite issue that blocks in 'default' and 'strict' profiles. "
-                "ERROR — validator encountered an unexpected execution error. "
-                "SKIP — validator intentionally skipped this target. "
-                "NOT_APPLICABLE — validator does not apply to this target."
-            ),
-        )
+    severity: Literal[
+        "PASS",
+        "WARN",
+        "FAIL",
+        "ERROR",
+        "SKIP",
+        "NOT_APPLICABLE",
+        "MISSING",
+        "ADVISORY",
+    ] = Field(
+        description=(
+            "Severity of this individual finding. "
+            "PASS — the validator ran and found no issue. "
+            "WARN — potential issue that does not block in 'default' profile. "
+            "FAIL — definite issue that blocks in 'default' and 'strict' profiles. "
+            "ERROR — validator encountered an unexpected execution error. "
+            "SKIP — validator intentionally skipped this target. "
+            "NOT_APPLICABLE — validator does not apply to this target. "
+            "MISSING — an expected validator result is absent (counts as FAIL). "
+            "ADVISORY — informational, never gates."
+        ),
     )
 
     location: str | None = Field(
