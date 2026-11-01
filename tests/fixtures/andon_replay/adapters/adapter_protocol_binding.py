@@ -39,10 +39,15 @@ _BINDING_SITES = "binding_sites"
 def _without_exemption(
     rules: Sequence[ModelValidatorRule], rule_id: str
 ) -> list[ModelValidatorRule]:
-    """``rules`` with the row ``rule_id`` stripped of its binding sites."""
+    """``rules`` with the row named by ``rule_id`` stripped of its binding sites.
+
+    ``rule_id`` is the corpus spelling, the checker prefix then the row name, so a row is
+    matched on the part after the prefix.
+    """
+    row = rule_id.split(":", 1)[-1]
     judged: list[ModelValidatorRule] = []
     for rule in rules:
-        if rule.rule_id == rule_id and _BINDING_SITES in (rule.parameters or {}):
+        if rule.rule_id == row and _BINDING_SITES in (rule.parameters or {}):
             parameters = {**(rule.parameters or {}), _BINDING_SITES: []}
             rule = rule.model_copy(update={"parameters": parameters})
         judged.append(rule)
