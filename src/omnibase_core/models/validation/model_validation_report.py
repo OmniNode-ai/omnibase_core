@@ -38,9 +38,6 @@ _SEVERITY_PRECEDENCE: dict[str, int] = {
     # only through the required-validator rule in _compute_overall_status.
 }
 
-# Severities that count as FAIL when the validator is required.
-_REQUIRED_NON_PASS: frozenset[str] = frozenset({"SKIP", "NOT_APPLICABLE"})
-
 # The overall_status literals that map out of the precedence matrix.
 # These are a subset of finding severity literals (no SKIP/NOT_APPLICABLE).
 _PRECEDENCE_TO_STATUS: dict[int, Literal["PASS", "WARN", "FAIL", "ERROR"]] = {
@@ -74,7 +71,7 @@ def _compute_overall_status(
     for finding in findings:
         severity = finding.severity
         if severity == "MISSING" or (
-            severity in _REQUIRED_NON_PASS
+            severity in ("SKIP", "NOT_APPLICABLE")
             and finding.validator_id in required_validators
         ):
             severity = "FAIL"
