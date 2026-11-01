@@ -238,12 +238,18 @@ def _yaml_lab(
             )
             for key, value in fields.items():
                 if key in policy.literal_ref_keys and isinstance(value, ScalarNode):
-                    yield ModelFirstPartyReference(
-                        path=path,
-                        line=value.start_mark.line + 1,
-                        value=value.value,
-                        kind="cross",
+                    bare = "/" not in value.value and "@" not in value.value
+                    literal = bool(value.value) and not (
+                        "$" in value.value or "{{" in value.value
                     )
+                    if not bare or (literal and not repo):
+                        yield ModelFirstPartyReference(
+                            path=path,
+                            line=value.start_mark.line + 1,
+                            value=value.value,
+                            kind="bare_ref" if bare else "cross",
+                            source_key=key if bare else "",
+                        )
                 if repo and key in policy.ref_keys and isinstance(value, ScalarNode):
                     yield ModelFirstPartyReference(
                         path=path,
@@ -593,14 +599,33 @@ def check_first_party_refs(
     issues: list[ModelValidationIssue] = []
     occurrences: dict[tuple[str, str], set[str]] = {}
     for ref in _refs(facts, policies):
-        org, repo, pin = _split(ref.value, homes)
         rule = {
             "uses": "first_party_not_dev_tag",
             "precommit": "first_party_not_dev_tag",
             "cross": "cross_repo_ref_not_dev_tag",
+            "bare_ref": "cross_repo_ref_not_dev_tag",
             "source": "first_party_source_not_dev_tag",
         }[ref.kind]
         policy = cast(ModelFirstPartyRefParameters, policies[rule])
+        if ref.kind == "bare_ref":
+            # A literal ref key (deploy_ref, lab_deploy_ref) names a first-party ref
+            # with no repository beside it; it is judged as a first-party ref.
+            if (
+                re.fullmatch(policy.sha_pattern, ref.value)
+                or ref.value in policy.forbidden_refs
+                or not re.fullmatch(policy.tag_pattern, ref.value)
+            ):
+                issues.append(
+                    _issue(
+                        rule,
+                        policy,
+                        ref.path,
+                        ref.line,
+                        f"{ref.source_key}: {ref.value} must name a dev-merge tag",
+                    )
+                )
+            continue
+        org, repo, pin = _split(ref.value, homes)
         if org.lower() == policy.github_org.lower():
             if (
                 pin is None
