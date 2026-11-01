@@ -1190,8 +1190,8 @@ requires-dist = [
     { name = "dependency-injector", specifier = ">=4.49.1,<5.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "jsonschema", specifier = ">=4.25.1,<5.0.0" },
-    { name = "omnibase-spi", marker = "extra == 'full'", git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261028203020-ce27d197198f" },
-    { name = "omnibase-spi", marker = "extra == 'spi'", git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261028203020-ce27d197198f" },
+    { name = "omnibase-spi", marker = "extra == 'full'", git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261101025141-38465d47118c" },
+    { name = "omnibase-spi", marker = "extra == 'spi'", git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261101025141-38465d47118c" },
     { name = "packaging", specifier = ">=26.0,<27.0" },
     { name = "pathspec", specifier = ">=0.12.1" },
     { name = "prometheus-client", marker = "extra == 'full'", specifier = ">=0.21.0,<1.0.0" },
@@ -1245,8 +1245,8 @@ dev = [
 
 [[package]]
 name = "omnibase-spi"
-version = "0.23.8"
-source = { git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261028203020-ce27d197198f#ce27d197198f8968027c82aecfe7461c44b1ffa4" }
+version = "0.23.9"
+source = { git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261101025141-38465d47118c#38465d47118c1bde35821dab36e29e07c6cc217b" }
 dependencies = [
     { name = "omnibase-core" },
     { name = "pydantic" },
