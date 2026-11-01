@@ -273,6 +273,7 @@ def test_the_overlay_keys_and_their_owners() -> None:
         "host.settings": "omnibase_core:host_settings",
         "lane.services": "omnibase_core:lane_services",
         "developer.principal": "omnibase_core:developer_principal",
+        "dod_verify": "omnibase_core:dod_verify",
     }
     assert {s.value for s in EnumConfigOverlaySource} == {"store", "local-home"}
     assert {t.value for t in EnumLlmTierClass} == {"local", "cheap_cloud", "frontier"}

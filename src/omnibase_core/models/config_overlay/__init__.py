@@ -51,6 +51,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.config_overlay.model_developer_principal_overlay import (
         ModelDeveloperPrincipalOverlay,
     )
+    from omnibase_core.models.config_overlay.model_dod_verify_overlay import (
+        ModelDodVerifyOverlay,
+    )
     from omnibase_core.models.config_overlay.model_embedding_endpoint_overlay import (
         ModelEmbeddingEndpointOverlay,
     )
@@ -114,6 +117,7 @@ __all__ = [
     "ModelDeclaredStateObservation",
     "ModelDeveloperPrincipalDeclaration",
     "ModelDeveloperPrincipalOverlay",
+    "ModelDodVerifyOverlay",
     "ModelHostDeclaration",
     "ModelHostNetworkInterfaceSetting",
     "ModelHostSettingsOverlay",
@@ -173,6 +177,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelDeveloperPrincipalOverlay": (
         "omnibase_core.models.config_overlay.model_developer_principal_overlay",
         "ModelDeveloperPrincipalOverlay",
+    ),
+    "ModelDodVerifyOverlay": (
+        "omnibase_core.models.config_overlay.model_dod_verify_overlay",
+        "ModelDodVerifyOverlay",
     ),
     "ModelEmbeddingEndpointOverlay": (
         "omnibase_core.models.config_overlay.model_embedding_endpoint_overlay",

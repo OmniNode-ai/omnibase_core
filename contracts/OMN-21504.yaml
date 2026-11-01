@@ -1,0 +1,89 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21504
+title: 'T-Q1: every factory PR verified against its own task''s DoD, omnibase_core checker and required
+  check'
+summary: 'The receipt gate refuses a PR whose only cited ticket is listed in the dod_verify overlay''s
+  parent_tickets, naming the ticket, and omnibase_core requires repo-evidence / dod-verify on dev. The
+  omnimarket caller and the exemption steps (AC3) are not part of this change.'
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21504-parent-only-refusal
+    statement: A PR that cites only a parent ticket named by the dod_verify overlay is refused by the
+      receipt gate, and omnibase_core requires the dod-verify context on dev.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a PR whose only cited ticket is in the overlay list dod_verify.parent_tickets
+          is refused, naming the ticket -- falsifier: the pytest case with a fixture PR citing only the
+          parent, and its control citing a task ticket'
+      - id: AC2
+        statement: 'AC2: omnibase_core requires repo-evidence / dod-verify on dev, and its caller pins
+          the same receipt-gate commit and verifier floor as omnimarket''s -- falsifier: core''s .github/required-checks.yaml
+          row and the caller''s uses: line, read at review'
+      - id: AC4
+        statement: 'AC4: configuration: the parent-ticket list is the overlay dod_verify -- falsifier:
+          the same PR is refused under one fixture overlay and verified normally under one that omits
+          the ticket'
+      - id: AC5
+        statement: 'AC5: bindings: depends on no new protocol; the check reads the PR''s facts as today
+          -- falsifier: the existing node_dod_verify local-reads guard still passes'
+evidence_requirements:
+  - kind: tests
+    description: The parent-ticket refusal tests pass.
+    command: uv run pytest tests/unit/validation/test_receipt_gate_parent_ticket_only_omn21504.py -n 0
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21504-ac1-parent-only-refused
+    description: A fixture PR citing only the parent is refused naming it, and the control citing a task
+      ticket passes. At the merge base the checker does not exist, so these cases fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_receipt_gate_parent_ticket_only_omn21504.py
+          -n 0 -q -o addopts='' -k 'refuses_a_pr_citing_only_the_parent or control_pr_citing or predicate'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac2-required-row
+    description: The required-checks row for repo-evidence / dod-verify on dev exists and the caller pins
+      the reusable and the verifier by dev-merge tag.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_receipt_gate_parent_ticket_only_omn21504.py
+          -n 0 -q -o addopts='' -k 'requires_repo_evidence or caller_pins'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac4-overlay-configures
+    description: The same PR is refused under an overlay that lists the ticket and verified under one
+      that omits it, and the overlay key and schema are registered.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_receipt_gate_parent_ticket_only_omn21504.py
+          -n 0 -q -o addopts='' -k 'overlay'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac5-local-reads
+    description: The check reads only the resolved tickets file and the overlay, with no network reader.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_receipt_gate_parent_ticket_only_omn21504.py
+          -n 0 -q -o addopts='' -k 'reads_only'
+        cwd: ${OMNI_HOME}/omnibase_core

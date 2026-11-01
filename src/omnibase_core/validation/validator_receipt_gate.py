@@ -63,7 +63,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -781,6 +781,29 @@ def _extract_ticket_ids(pr_body: str, pr_title: str | None = None) -> list[str]:
         if title_matches:
             return sorted({f"OMN-{m}" for m in title_matches})
     return []
+
+
+def find_parent_only_citation(
+    cited_tickets: Collection[str], parent_tickets: Collection[str]
+) -> tuple[str, ...]:
+    """Return the cited tickets when every one of them is a parent ticket.
+
+    A PR that cites at least one ticket outside ``parent_tickets`` (the
+    ``dod_verify`` overlay's list, OMN-21504) is verified against that task's
+    definition of done, so it yields ``()``. A PR that cites nothing yields
+    ``()`` too: the missing citation is refused where the title is read.
+
+    Args:
+        cited_tickets: Ticket ids the PR cites.
+        parent_tickets: Ticket ids the overlay declares as parents.
+
+    Returns:
+        The sorted cited parent tickets when no cited ticket is a task, else ().
+    """
+    cited = set(cited_tickets)
+    if cited and cited <= set(parent_tickets):
+        return tuple(sorted(cited))
+    return ()
 
 
 def _iter_dod_evidence(contract_data: object) -> list[tuple[str, str, str]]:
@@ -1817,6 +1840,7 @@ __all__ = [
     "compute_canonical_contract_sha256",
     "compute_contract_entry_sha256",
     "compute_contract_sha256",
+    "find_parent_only_citation",
     "parse_evidence_source",
     "parse_pr_opened_at",
     "strip_noncanonical_regions",

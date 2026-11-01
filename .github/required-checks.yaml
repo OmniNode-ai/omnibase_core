@@ -205,6 +205,20 @@ gates:
       lives in the core reusable pr-title-check.yml that every repository of the same type calls; caller
       job pr-title and reusable job check-title compose the unchanged context."
 
+  - name: "repo-evidence / dod-verify"
+    mode: REQUIRED
+    branch: dev
+    producer_kind: local
+    caller_workflow: call-repo-evidence-gate.yml
+    caller_job: repo-evidence
+    reusable_workflow: receipt-gate.yml
+    reusable_job: dod-verify
+    job_path: ["repo-evidence", "dod-verify"]
+    skip_semantics: never
+    rationale: "OMN-21504: every factory PR is verified against its own task's definition of done on dev.
+      The caller pins the same receipt-gate commit and verifier tag as omnimarket's caller. The dev branch
+      protection lists this context in the same cut-over (the reconcile job reads live protection)."
+
   - name: "no-plugin-daemon-classes"
     mode: REQUIRED
     producer_kind: local

@@ -28,7 +28,8 @@ WORKFLOW_PATH = (
 GUARD = (
     "steps.bot_exempt.outputs.exempt != 'true' "
     "&& steps.same_repo.outcome != 'failure' "
-    "&& steps.tickets.outcome != 'failure'"
+    "&& steps.tickets.outcome != 'failure' "
+    "&& steps.parent_only.outcome != 'failure'"
 )
 BASE_PROJECT = '[project]\nname = "x"\nversion = "0.1.0"\n'
 HEAD_PROJECT = '[project]\nname = "x"\nversion = "0.1.1"\n'
