@@ -38,6 +38,10 @@ import time
 from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
+from omnibase_core.contracts.contract_merge_hashes import (
+    compute_effective_contract_hash,
+    compute_resolver_config_hash,
+)
 from omnibase_core.enums import EnumNodeType
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_merge_conflict_type import EnumMergeConflictType
@@ -53,6 +57,9 @@ from omnibase_core.models.contracts.model_contract_capability_dependency import 
 )
 from omnibase_core.models.contracts.model_contract_patch import ModelContractPatch
 from omnibase_core.models.contracts.model_handler_contract import ModelHandlerContract
+from omnibase_core.models.merge.model_contract_merge_result import (
+    ModelContractMergeResult,
+)
 from omnibase_core.models.merge.model_merge_conflict import ModelMergeConflict
 from omnibase_core.models.merge.model_overlay_ref import ModelOverlayRef
 from omnibase_core.models.merge.model_overlay_stack_entry import ModelOverlayStackEntry
@@ -233,13 +240,13 @@ class ContractMergeEngine:
         .. versionchanged:: 0.4.1
             Added run_id parameter and event emission for OMN-1151.
         """
-        result, _overlay_refs = self._merge_internal(
+        result = self._merge_internal(
             patch=patch,
             node_type=node_type,
             run_id=run_id,
             overlays=[],
         )
-        return result
+        return result.contract
 
     def merge_with_overlays(
         self,
@@ -277,39 +284,39 @@ class ContractMergeEngine:
             ModelOnexError: If scope ordering is violated and strict_ordering
                 is True, or if any merge step fails.
 
-        Example:
-            >>> from omnibase_core.enums.enum_overlay_scope import EnumOverlayScope
-            >>> from omnibase_core.models.merge.model_overlay_stack_entry import (
-            ...     ModelOverlayStackEntry,
-            ... )
-            >>>
-            >>> stack = [
-            ...     ModelOverlayStackEntry(
-            ...         overlay_id="org-defaults",
-            ...         overlay_patch=org_patch,
-            ...         scope=EnumOverlayScope.ORG,
-            ...         version="1.0.0",
-            ...     ),
-            ...     ModelOverlayStackEntry(
-            ...         overlay_id="user-prefs",
-            ...         overlay_patch=user_patch,
-            ...         scope=EnumOverlayScope.USER,
-            ...         version="2.1.0",
-            ...     ),
-            ... ]
-            >>> contract = engine.merge_with_overlays(base_patch, stack)
-
         .. versionadded:: 0.18.0
             Added as part of overlay stacking pipeline (OMN-2757).
         """
-        sorted_overlays = self._sort_overlays(overlays, strict_ordering=strict_ordering)
-        result, _overlay_refs = self._merge_internal(
+        return self.resolve(
+            patch=patch,
+            overlays=overlays,
+            node_type=node_type,
+            run_id=run_id,
+            strict_ordering=strict_ordering,
+        ).contract
+
+    def resolve(
+        self,
+        patch: ModelContractPatch,
+        overlays: list[ModelOverlayStackEntry] | None = None,
+        node_type: EnumNodeType | None = None,
+        run_id: UUID | None = None,
+        strict_ordering: bool = False,
+    ) -> ModelContractMergeResult:
+        """
+        Merge as :meth:`merge_with_overlays` does, returning the contract with
+        its applied overlay refs, resolver_config_hash and effective_contract_hash
+        (OMN-21506).
+        """
+        sorted_overlays = self._sort_overlays(
+            overlays or [], strict_ordering=strict_ordering
+        )
+        return self._merge_internal(
             patch=patch,
             node_type=node_type,
             run_id=run_id,
             overlays=sorted_overlays,
         )
-        return result
 
     def _merge_internal(
         self,
@@ -317,9 +324,9 @@ class ContractMergeEngine:
         node_type: EnumNodeType | None,
         run_id: UUID | None,
         overlays: list[ModelOverlayStackEntry],
-    ) -> tuple[ModelHandlerContract, list[ModelOverlayRef]]:
+    ) -> ModelContractMergeResult:
         """
-        Core merge implementation shared by merge() and merge_with_overlays().
+        Core merge implementation shared by all public merge entry points.
 
         Applies the base patch, then each overlay in order, collecting
         ModelOverlayRef records. Emits lifecycle events when an emitter is
@@ -332,7 +339,7 @@ class ContractMergeEngine:
             overlays: Pre-sorted overlay stack (may be empty).
 
         Returns:
-            Tuple of (merged contract, applied overlay refs).
+            Merged contract, applied overlay refs, and deterministic hashes.
         """
         # Import event models here to avoid circular imports at module level
         from omnibase_core.models.events.contract_validation import (
@@ -352,6 +359,25 @@ class ContractMergeEngine:
         # Determine contract name for events (use patch name or default)
         event_contract_name = patch.name if patch.name else patch.extends.profile
 
+        # 1. Determine node type and hash the ordered resolver configuration
+        resolved_node_type = self._resolve_node_type(patch, node_type)
+        applied_refs = [
+            ModelOverlayRef(
+                overlay_id=entry.overlay_id,
+                version=entry.version,
+                content_hash=None,
+                scope=entry.scope,
+                order_index=order_index,
+            )
+            for order_index, entry in enumerate(overlays)
+        ]
+        resolver_config_hash = compute_resolver_config_hash(
+            profile=patch.extends.profile,
+            profile_version=patch.extends.version,
+            node_type=resolved_node_type,
+            overlay_refs=applied_refs,
+        )
+
         # Emit merge_started event if emitter is available
         if self._event_emitter is not None:
             overlay_id_refs = [o.overlay_id for o in overlays]
@@ -361,13 +387,10 @@ class ContractMergeEngine:
                 merge_plan_name=None,
                 profile_names=[patch.extends.profile],
                 overlay_refs=overlay_id_refs,
-                resolver_config_hash=None,
+                resolver_config_hash=resolver_config_hash,
                 correlation_id=self._correlation_id,
             )
             self._event_emitter.emit_merge_started(started_event)
-
-        # 1. Determine node type
-        resolved_node_type = self._resolve_node_type(patch, node_type)
 
         # 2. Load base contract from factory
         base = self._profile_factory.get_profile(
@@ -398,7 +421,6 @@ class ContractMergeEngine:
         )
 
         # 4. Apply overlay stack sequentially
-        applied_refs: list[ModelOverlayRef] = []
         for order_index, entry in enumerate(overlays):
             result, changes_applied = self._apply_overlay_entry(
                 current=result,
@@ -406,15 +428,8 @@ class ContractMergeEngine:
                 order_index=order_index,
                 changes_applied=changes_applied,
             )
-            applied_refs.append(
-                ModelOverlayRef(
-                    overlay_id=entry.overlay_id,
-                    version=entry.version,
-                    content_hash=None,
-                    scope=entry.scope,
-                    order_index=order_index,
-                )
-            )
+
+        effective_contract_hash = compute_effective_contract_hash(result)
 
         # 5. Emit merge_completed event if emitter is available
         if self._event_emitter is not None:
@@ -431,7 +446,7 @@ class ContractMergeEngine:
                 run_id=effective_run_id,
                 effective_contract_name=result.name,
                 duration_ms=duration_ms,
-                effective_contract_hash=None,
+                effective_contract_hash=effective_contract_hash,
                 overlays_applied_count=len(applied_refs),
                 overlay_refs=applied_refs,
                 defaults_applied=True,  # Profile defaults are always applied
@@ -441,7 +456,12 @@ class ContractMergeEngine:
             )
             self._event_emitter.emit_merge_completed(completed_event)
 
-        return result, applied_refs
+        return ModelContractMergeResult(
+            contract=result,
+            overlay_refs=applied_refs,
+            resolver_config_hash=resolver_config_hash,
+            effective_contract_hash=effective_contract_hash,
+        )
 
     def _apply_patch_to_base(
         self,
@@ -1042,17 +1062,6 @@ class ContractMergeEngine:
             custom validation for new contract definitions. Override this
             method to implement domain-specific validation rules.
 
-        Example:
-            >>> class CustomMergeEngine(ContractMergeEngine):
-            ...     def _detect_new_contract_issues(
-            ...         self,
-            ...         patch: ModelContractPatch,
-            ...         conflicts: list[ModelMergeConflict],
-            ...     ) -> None:
-            ...         # Add custom validation
-            ...         if not patch.name.startswith("my_org_"):
-            ...             conflicts.append(ModelMergeConflict(...))
-
         Args:
             patch: Patch to analyze.
             conflicts: Mutable list to append detected conflicts to.
@@ -1080,19 +1089,6 @@ class ContractMergeEngine:
             This method serves as an extension point for subclasses to add
             custom descriptor validation. Override and call super() to extend
             the base validation rules with domain-specific checks.
-
-        Example:
-            >>> class CustomMergeEngine(ContractMergeEngine):
-            ...     def _detect_descriptor_conflicts(
-            ...         self,
-            ...         patch: ModelContractPatch,
-            ...         conflicts: list[ModelMergeConflict],
-            ...     ) -> None:
-            ...         # Call base implementation first
-            ...         super()._detect_descriptor_conflicts(patch, conflicts)
-            ...         # Add custom validation
-            ...         if patch.descriptor and patch.descriptor.timeout_ms > 60000:
-            ...             conflicts.append(ModelMergeConflict(...))
 
         Args:
             patch: Patch to analyze.
