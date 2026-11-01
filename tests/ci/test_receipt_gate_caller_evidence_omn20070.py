@@ -59,6 +59,8 @@ def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
         "verifier-version": "0.4.305",
         "compare-with-occ": "false",
         "shadow": "false",
+        "dod-verify-overlay": "",
+        "factory-task-tickets": "",
         "check-timeout-seconds": "",
     }
     assert set(inputs) == set(expected)
@@ -98,6 +100,7 @@ def test_caller_steps_run_in_order_without_an_occ_checkout() -> None:
         "Detect dependency-bot author (receipt-gate exemption)",
         "Refuse anything but a same-repository pull request",
         "Resolve the cited tickets",
+        "Refuse a pull request that cites only a parent ticket (OMN-21504)",
         "Check out the pull request head",
         "Set up Python 3.13",
         "Install uv",
@@ -609,6 +612,7 @@ def test_postgres_steps_are_gated_and_fail_closed_before_any_verdict() -> None:
             "steps.bot_exempt.outputs.exempt != 'true' "
             "&& steps.same_repo.outcome != 'failure' "
             "&& steps.tickets.outcome != 'failure' "
+            "&& steps.parent_only.outcome != 'failure' "
             "&& steps.writer_pin_only.outputs.exempt != 'true' "
             "&& steps.check_timeout.outcome != 'failure'"
         )
