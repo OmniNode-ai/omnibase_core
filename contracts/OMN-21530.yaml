@@ -118,8 +118,8 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/integration/andon_replay -q --no-cov -o addopts='' -k
-          disable_rule_fails_its_assertions
+        check_value: uv run --frozen pytest tests/integration/andon_replay -q -x --no-cov -o addopts=''
+          -k disable_rule_fails_its_assertions
         cwd: .
     binds_ac:
       - AC4
