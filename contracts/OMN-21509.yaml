@@ -97,9 +97,9 @@ dod_evidence:
       - check_type: command
         check_value: |
           set -eu
-          git show -s --format=%B 50ef2b21bb20957e5769a9fa09162018982b4684 | grep -Fq '933acba5-dec5-42b3-a0f9-5c72de02bb36'
-          git show -s --format=%B 50ef2b21bb20957e5769a9fa09162018982b4684 | grep -Fq '01a18573-a002-7f41-96e1-aa8beb32e0b8'
-          git show -s --format=%B 50ef2b21bb20957e5769a9fa09162018982b4684 | grep -Fq '01a1851d-2df2-7f63-b61e-03cccde5216e'
+          git show -s --format=%B 0269f340aa71a0b6c2ec719413ceb4c014e126a1 | grep -Fq '933acba5-dec5-42b3-a0f9-5c72de02bb36'
+          git show -s --format=%B 0269f340aa71a0b6c2ec719413ceb4c014e126a1 | grep -Fq '01a18573-a002-7f41-96e1-aa8beb32e0b8'
+          git show -s --format=%B 0269f340aa71a0b6c2ec719413ceb4c014e126a1 | grep -Fq '01a1851d-2df2-7f63-b61e-03cccde5216e'
           uv run python - <<'RECEIPT'
           import json
           from pathlib import Path
@@ -126,13 +126,15 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1, AC2, AC3, AC4]
   - id: dod-omn21509-deploy-published-source
-    description: Read the published canonical location handler at the checkout commit. Fail when the generic
-      validator file predicate is absent. This hosted-runner check needs no private runtime.
+    description: Read the published canonical file shape validator contract at the checkout commit from
+      raw.githubusercontent.com. Fail when the generic validator file predicate (now the canonical_prefixed_dirs
+      entries validation:checker_ and validation:validator_) is absent. This hosted-runner check needs
+      no private runtime.
     source: manual
     execution_scope: hosted_and_local
     checks:
       - check_type: command
         check_value: |
-          bash -o pipefail -c 'gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_canonical_location_rules.py?ref=$(git rev-parse HEAD)" --jq .content | base64 -d | grep -F "GENERIC_VALIDATOR_FILE.fullmatch(parts[3]) is not None" > /dev/null'
+          bash -o pipefail -c 'out=$(curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/validation/contracts/canonical_file_shape.validation.yaml") && grep -F "validation:checker_" <<< "$out" > /dev/null && grep -F "validation:validator_" <<< "$out" > /dev/null'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1]
