@@ -30,7 +30,7 @@ def _judge(
     module: ModelSourceFile,
     contract_source: ModelSourceFile | None,
 ) -> Sequence[ModelValidationIssue]:
-    if contract_source is None or not in_scope(contract, module.path):
+    if not in_scope(contract, module.path):
         return ()
     return check_no_io_outside_effects(
         ModelNoIoOutsideEffectsFacts(contract=contract_source, module=module),
