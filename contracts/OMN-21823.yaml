@@ -109,3 +109,5 @@ dod_evidence:
       - check_type: command
         check_value: grep -q private_source src/omnibase_core/validation/contracts/lab_receipt.validation.yaml
         cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
