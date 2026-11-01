@@ -40,6 +40,8 @@ CALLER_INPUTS = {
     "compare-with-occ",
     "shadow",
     "check-timeout-seconds",
+    "factory-task-tickets",
+    "dod-verify-overlay",
 }
 
 CLI_MODULES = (

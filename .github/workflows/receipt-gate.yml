@@ -46,6 +46,15 @@
 #                   (default: "false"). With "true", dod-verify records its
 #                   verdict (the first refused step) as one `Shadow verdict:`
 #                   job-summary line and one notice annotation, then passes.
+#   factory-task-tickets: the factory task tickets (OMN ids; a Linear ticket
+#                   whose parent is listed in the dod_verify overlay's
+#                   parent_tickets), resolved by the caller because the gate has
+#                   no Linear reader (OMN-21504). The dependency-bot author step
+#                   and the writer app's pin-only step refuse to apply to a pull
+#                   request whose title cites one, which then runs the evidence
+#                   steps like any other. Empty lists none. The docs-only zone
+#                   filter decides which CI jobs run and is not read here, so it
+#                   exempts nothing.
 #   check-timeout-seconds: how long each dod_verify check may run, a whole
 #                   number of seconds from 1 to 900 (OMN-21166). Empty, the
 #                   default, keeps the verifier's own 30 s. Browser checks
@@ -84,6 +93,16 @@ on:
         type: string
         required: false
         default: "false"
+      dod-verify-overlay:
+        description: "The dod_verify overlay document as JSON (OMN-21504): parent_tickets lists the tickets refused as a PR's only cited ticket; empty lists none."
+        type: string
+        required: false
+        default: ""
+      factory-task-tickets:
+        description: "The factory task tickets as OMN ids separated by commas, spaces or newlines, or a JSON array (OMN-21504): tickets whose parent is listed in the dod_verify overlay's parent_tickets, resolved by the caller. A pull request citing one is never exempt as a dependency-bot or writer-app change; empty lists none."
+        type: string
+        required: false
+        default: ""
       check-timeout-seconds:
         description: "Seconds each dod_verify check may run, 1 to 900; empty keeps the verifier default of 30 (OMN-21166)."
         type: string
@@ -179,6 +198,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          FACTORY_TASK_TICKETS: ${{ inputs.factory-task-tickets }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           set -euo pipefail
@@ -221,6 +242,33 @@ jobs:
               writer_app="true"
               ;;
           esac
+
+          # OMN-21504: neither exemption applies to a pull request that cites a
+          # factory task ticket; it is judged on its own contract. The title is
+          # GitHub-verified metadata (the event payload, or the API on a
+          # merge_group event); with a factory list set and no readable title
+          # the exemption is withheld.
+          if { [ "$exempt" = "true" ] || [ "$writer_app" = "true" ]; } && [ -n "$(printf '%s' "${FACTORY_TASK_TICKETS:-}" | tr -d '[:space:]')" ]; then
+            title="${PR_TITLE:-}"
+            if [ -z "$title" ] && [ -n "$resolved_pr_num" ]; then
+              title="$(gh pr view "$resolved_pr_num" --repo "$GH_REPO" --json title --jq '.title' 2>/dev/null || true)"
+            fi
+            factory_cited=""
+            while IFS= read -r cited; do
+              if printf '%s\n' "$FACTORY_TASK_TICKETS" | grep -oE 'OMN-[0-9]+' | grep -qxF "$cited"; then
+                factory_cited="${factory_cited:+$factory_cited, }$cited"
+              fi
+            done < <(printf '%s\n' "$title" | grep -oE 'OMN-[0-9]+' | sort -u || true)
+            if [ -z "$title" ]; then
+              echo "::notice::No exemption (OMN-21504): the pull request title is unreadable, so a factory task ticket cannot be ruled out; the evidence gate continues."
+              exempt="false"
+              writer_app="false"
+            elif [ -n "$factory_cited" ]; then
+              echo "::notice::No exemption (OMN-21504): the pull request cites factory task ticket(s) ${factory_cited}; it is judged on its own contract, author '${author_login}' notwithstanding."
+              exempt="false"
+              writer_app="false"
+            fi
+          fi
 
           if [ "$exempt" = "true" ]; then
             echo "::notice::Receipt-gate exemption (OMN-13762): PR authored by trusted dependency bot '${author_login}'. Dependency-bump PRs carry no Linear ticket or OCC receipt; the evidence gate is not applicable. Receipt-evidence steps are skipped; the job still reports success."
@@ -282,10 +330,48 @@ jobs:
             fi
           done < "$RUNNER_TEMP/dod/tickets.txt"
 
+      # OMN-21504: a parent ticket groups task tickets and carries no contract
+      # of its own, so a PR that cites only parent tickets has no task whose
+      # definition of done it could be verified against. The list is the
+      # dod_verify overlay's parent_tickets, passed by the caller (a
+      # pull_request_target caller reads it from the base branch, never from
+      # the PR head). Mirrors omnibase_core.validation.validator_receipt_gate.
+      # find_parent_only_citation. A PR that cites at least one other ticket is
+      # judged as before.
+      - name: Refuse a pull request that cites only a parent ticket (OMN-21504)
+        id: parent_only
+        continue-on-error: ${{ inputs.shadow == 'true' }}
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        env:
+          DOD_VERIFY_OVERLAY: ${{ inputs.dod-verify-overlay }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DOD_VERIFY_OVERLAY:-}" ]; then
+            echo "::notice::no dod_verify overlay configured; no parent ticket is listed"
+            exit 0
+          fi
+          parents="$(jq -c -e 'select(.schema_version == "dod_verify.v1" and ((.parent_tickets // []) | type == "array" and all(.[]; type == "string" and test("^OMN-[0-9]+$")))) | (.parent_tickets // [])' <<< "$DOD_VERIFY_OVERLAY")" || {
+            echo "::error::the dod_verify overlay is not a valid dod_verify.v1 document"
+            exit 1
+          }
+          task_cited=0
+          cited_parents=""
+          while IFS= read -r ticket; do
+            if jq -e --arg t "$ticket" 'index($t) != null' <<< "$parents" > /dev/null; then
+              cited_parents="${cited_parents:+$cited_parents, }$ticket"
+            else
+              task_cited=1
+            fi
+          done < "$RUNNER_TEMP/dod/tickets.txt"
+          if [ "$task_cited" = 0 ] && [ -n "$cited_parents" ]; then
+            echo "::error::pull request cites only parent ticket(s) $cited_parents; cite the task ticket this change belongs to (OMN-21504)"
+            exit 1
+          fi
+
       - name: Check out the pull request head
         id: head_checkout
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: ${{ github.repository }}
@@ -297,7 +383,7 @@ jobs:
       - name: Set up Python 3.13
         id: setup_python
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure'
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: "3.13"
@@ -305,7 +391,7 @@ jobs:
       - name: Install uv
         id: install_uv
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure'
         uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
 
       # OMN-21166: a browser check outlives the verifier's 30 s default, so the
@@ -314,7 +400,7 @@ jobs:
       - name: Resolve the per-check timeout
         id: check_timeout
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure'
         env:
           CHECK_TIMEOUT_SECONDS: ${{ inputs.check-timeout-seconds }}
         run: |
@@ -359,7 +445,7 @@ jobs:
       - name: Install the pinned verifier
         id: verifier
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.check_timeout.outcome != 'failure'
         env:
           VERIFIER_TAG: ${{ inputs.verifier-tag }}
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
@@ -467,15 +553,37 @@ jobs:
       - name: Derive the OCC writer app's dependency-pin-only or release-cut verdict at the head (OMN-17427, OMN-20074)
         id: writer_pin_only
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.bot_exempt.outputs.writer_app == 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          FACTORY_TASK_TICKETS: ${{ inputs.factory-task-tickets }}
         run: |
           set -euo pipefail
           exempt=false
           reason="could not derive the dependency-pin-only or release-cut verdict"
+          # OMN-21504: a pull request that cites a factory task ticket is never
+          # exempt as a writer-app change; with a factory list set and no
+          # readable title the exemption is withheld.
+          if [ -n "$(printf '%s' "${FACTORY_TASK_TICKETS:-}" | tr -d '[:space:]')" ]; then
+            factory_cited=""
+            while IFS= read -r cited; do
+              if printf '%s\n' "$FACTORY_TASK_TICKETS" | grep -oE 'OMN-[0-9]+' | grep -qxF "$cited"; then
+                factory_cited="${factory_cited:+$factory_cited, }$cited"
+              fi
+            done < <(printf '%s\n' "${PR_TITLE:-}" | grep -oE 'OMN-[0-9]+' | sort -u || true)
+            if [ -z "${PR_TITLE:-}" ]; then
+              echo "::notice::OCC writer app is not exempt: the pull request title is unreadable, so a factory task ticket cannot be ruled out (OMN-21504); the evidence gate continues."
+              echo "exempt=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            elif [ -n "$factory_cited" ]; then
+              echo "::notice::OCC writer app is not exempt: the pull request cites factory task ticket(s) ${factory_cited} (OMN-21504); the evidence gate continues."
+              echo "exempt=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
           derive_pin_only() {
             head_tree="$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT"
             reason="merge base is unresolvable"
@@ -892,7 +1000,7 @@ jobs:
       - name: Provide the PostgreSQL 16 server tools
         id: pg_tools
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         run: |
           set -euo pipefail
           pg16_bin=/usr/lib/postgresql/16/bin
@@ -949,7 +1057,7 @@ jobs:
       - name: Export the Postgres service to the bound tests
         id: pg_env
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           POSTGRES_PORT: ${{ job.services.postgres.ports['5432'] }}
         run: |
@@ -1009,7 +1117,7 @@ jobs:
       - name: Provision the contracts' declared sibling checkouts
         id: sibling_checkouts
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -1245,7 +1353,7 @@ jobs:
       - name: Scope each cited contract to what this pull request adds or changes
         id: scope
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -1483,7 +1591,7 @@ jobs:
       - name: Verify the contract at the PR head
         id: head_verify
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           GH_TOKEN: ${{ github.token }}
@@ -1531,7 +1639,7 @@ jobs:
       - name: Prepare the merge base with the pull request's test side laid over it
         id: merge_base
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -1734,7 +1842,7 @@ jobs:
       - name: Must-fail control at the merge base
         id: base_control
         continue-on-error: ${{ inputs.shadow == 'true' }}
-        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
+        if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.parent_only.outcome != 'failure' && steps.writer_pin_only.outputs.exempt != 'true' && steps.check_timeout.outcome != 'failure'
         env:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -1948,7 +2056,7 @@ jobs:
             {
               new_path=verified
               refused_step=none
-              for step_id in bot_exempt same_repo tickets head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts scope head_verify merge_base base_control; do
+              for step_id in bot_exempt same_repo tickets parent_only head_checkout setup_python install_uv check_timeout verifier writer_pin_only pg_tools pg_env sibling_checkouts scope head_verify merge_base base_control; do
                 if [ "$(jq -r --arg id "$step_id" '.[$id].outcome // empty' <<< "$STEPS_JSON")" = failure ]; then
                   new_path=refused
                   refused_step="$step_id"

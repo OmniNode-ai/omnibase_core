@@ -1,0 +1,123 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21510: every marker syntax, drawing template and diagnostic is rule data.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: diagram_drift
+  validator_name: Diagram Drift Validator
+  validator_description: >-
+    Every Mermaid diagram of a document equals the one generated from the contract fragment its marker
+    names. A diagram marker precedes a mermaid block and pairs by id with the fragment marker that precedes
+    a yaml block; the first non-blank line under a diagram must name the node of its contract. A state
+    machine fragment is drawn as a state diagram and a workflow graph fragment as a flowchart, both from
+    the fragment's raw mapping, after the core models accept it. Moved from the omnimarket diagram check
+    (OMN-21476); a caller passes the document text and gets these issues unchanged.
+  target_patterns: ["**/*.md"]
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: diagram_differs
+      description: A diagram line differs from the line generated from its fragment. This row also holds
+        the drawing templates; a template is filled with the named fields of the fragment.
+      severity: error
+      enabled: true
+      parameters:
+        message: "line {line} of the diagram differs from the one generated from the fragment: expected
+          {want!r}, found {have!r}"
+        source_pattern: '\.md$'
+        no_line_text: "(no line)"
+        indent: "    "
+        state_header: "stateDiagram-v2"
+        graph_header: "flowchart TB"
+        initial_line: "[*] --> {initial}"
+        transition_line: "{source} --> {target} : {trigger}"
+        priority_suffix: " (priority {priority})"
+        conditions_suffix: " [{expressions}]"
+        condition_join: " and "
+        terminal_line: "{state} --> [*]"
+        compute_node_type: "COMPUTE_GENERIC"
+        compute_node_line: '{id}("{label}")'
+        node_line: '{id}["{label}"]'
+        edge_line: "{dep} --> {id}"
+        collapsed_edge_line: '{dep} -- "{label}" --> {successor}'
+        quote: '"'
+        quote_entity: "#quot;"
+    - rule_id: diagram_without_fragment
+      description: A diagram marker names a contract that has no fragment marker.
+      severity: error
+      enabled: true
+      parameters:
+        message: "no contract-fragment marker names {contract_id}"
+        source_pattern: '\.md$'
+    - rule_id: fragment_without_diagram
+      description: A fragment no diagram marker names.
+      severity: error
+      enabled: true
+      parameters:
+        message: "no diagram-contract marker names {contract_id}"
+        source_pattern: '\.md$'
+    - rule_id: fragment_refused
+      description: The core model refused a fragment, or the marker names a block the fragment does not
+        hold.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the core model refused the fragment: {reason}"
+        source_pattern: '\.md$'
+        mismatch_message: "the marker names block {block} but the fragment holds a {kind}"
+    - rule_id: duplicate_fragment
+      description: Two fragments carry one id.
+      severity: error
+      enabled: true
+      parameters:
+        message: "a second fragment for {contract_id}; the first is at line {first_line}"
+        source_pattern: '\.md$'
+    - rule_id: missing_contract_line
+      description: The first non-blank line under a diagram does not name the node of its contract.
+      severity: error
+      enabled: true
+      parameters:
+        message: "the line under the diagram does not name {node}"
+        source_pattern: '\.md$'
+    - rule_id: malformed_marker
+      description: A marker that is followed by no block of its language. This row also defines marker
+        syntax; a diagram marker captures the node, the block and an optional collapsed word.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{problem}"
+        source_pattern: '\.md$'
+        diagram_marker_pattern: '^<!-- diagram-contract: ([^:\s]+):(\S+?)(?: (collapsed))? -->$'
+        fragment_marker_pattern: '^<!-- contract-fragment: ([^:\s]+):(\S+?) -->$'
+        fence: "```"
+        yaml_language: "yaml"
+        mermaid_language: "mermaid"
+        missing_yaml_message: "a contract-fragment marker is followed by no yaml block"
+        missing_mermaid_message: "a diagram-contract marker is followed by no mermaid block"
+    - rule_id: view_not_supported
+      description: A collapsed view was asked of a state machine, which has only the full view.
+      severity: error
+      enabled: true
+      parameters:
+        message: "a state machine has only the full view"
+        source_pattern: '\.md$'
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
