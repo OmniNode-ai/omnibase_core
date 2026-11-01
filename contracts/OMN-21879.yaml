@@ -1,0 +1,69 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21879
+title: Verifier pins declare needs, callers declare provides, a generic core check refuses a mismatch
+summary: Pure pin needs/provides checker and generic file validator in omnibase_core. Each verifier version
+  declares what it needs from its environment and each caller what it provides, both as data files; pin
+  syntax and the declaration paths are parameters of pin_needs_provides.validation.yaml. The isolated
+  replay and the one-train pin table are later slices.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21879-pin-needs-provides
+    statement: A caller pin of a verifier version whose declared needs the caller does not provide is
+      refused before merge by a generic omnibase_core validator.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a verifier version that declares a need not provided by the caller is refused
+          by the omnibase_core check, and the recorded diff of omnibase_infra#5489 used as a fixture is
+          refused"
+      - id: AC2
+        statement: "AC2: a caller that provides every declared need is admitted, and a verifier with no
+          needs declaration is refused rather than assumed to need nothing"
+      - id: AC3
+        statement: "AC3: the check is a generic omnibase_core validator with its declaration format in
+          data and no repository name or pin value in code"
+evidence_requirements:
+  - kind: tests
+    description: Refused and admitted pins on caller files and on the pin-move diff fixture, a planted
+      undeclared verifier, fail-closed contracts, purity and the runtime entry.
+    command: uv run pytest tests/unit/validation/test_checker_pin_needs_provides.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21879-ac1-unprovided-need-refused
+    description: A pinned version with a need the caller does not provide is refused, and the pin-move
+      diff fixture is refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_pin_needs_provides.py -q -o addopts=''
+          -k "recorded_pin_move or unprovided_need or every_unprovided or runtime_entry"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21879-ac2-admit-and-undeclared
+    description: A caller that provides every need is admitted; a planted verifier with no needs declaration
+      is refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_pin_needs_provides.py -q -o addopts=''
+          -k "admits or planted_verifier or absent_from_the_declaration or no_provides"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21879-ac3-generic-no-hardcoded
+    description: Generic validator; declaration format and pin syntax in data; no repository name or pin
+      value in production source.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_pin_needs_provides.py -q -o addopts=''
+          -k "pin_needs_provides_no_hardcoded or contract_data or invalid_contracts or reads_no_file"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3

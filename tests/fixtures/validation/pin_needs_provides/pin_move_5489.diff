@@ -1,0 +1,17 @@
+Reconstruction of the caller pin move of omnibase_infra#5489 (OMN-21879).
+The pull request moved the caller's verifier pin to 0.4.320, a verifier version
+that needs a Linear credential the caller does not provide. The verbatim diff
+was not readable from the session that wrote this fixture (no clone of that
+repository); the moved line and its key are as the ticket and the operator
+ruling record them. No secret value appears here.
+
+diff --git a/.github/workflows/call-repo-evidence-gate.yml b/.github/workflows/call-repo-evidence-gate.yml
+--- a/.github/workflows/call-repo-evidence-gate.yml
++++ b/.github/workflows/call-repo-evidence-gate.yml
+@@ -77,5 +77,5 @@ jobs:
+   repo-evidence:
+     uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261031120000-000000000000
+     with:
+       evidence-source: caller
+-      verifier-version: "0.4.319"
++      verifier-version: "0.4.320"

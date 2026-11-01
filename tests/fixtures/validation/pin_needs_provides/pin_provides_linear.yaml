@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Provides declaration fixture (OMN-21879): a caller that provides the Linear credential.
+callers:
+  - caller: .github/workflows/call-repo-evidence-gate.yml
+    provides:
+      - kind: secret
+        name: LINEAR_API_KEY

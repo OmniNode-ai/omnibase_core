@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Provides declaration fixture (OMN-21879): the caller passes no secrets to the reusable.
+callers:
+  - caller: .github/workflows/call-repo-evidence-gate.yml
+    provides: []
