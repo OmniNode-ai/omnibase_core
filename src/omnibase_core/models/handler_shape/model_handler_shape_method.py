@@ -30,3 +30,7 @@ class ModelHandlerShapeMethod(BaseModel):
     self_attribute_calls: tuple[str, ...] = Field(
         default=(), description="Method names called on an attribute of the receiver."
     )
+    injected_calls: tuple[str, ...] = Field(
+        default=(),
+        description="Names called in the body that are bound from a parameter of the method.",
+    )

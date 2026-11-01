@@ -17,7 +17,8 @@ Rule row kinds (the ``kind`` parameter):
   module-level functions and no class.
 * ``forbidden_reference`` -- a handler module that references a forbidden type name.
 * ``self_mutation`` -- a public method of a handler class, other than ``handle``,
-  that assigns to the receiver or calls a mutating method on one of its attributes.
+  that assigns to the receiver, calls a mutating method on one of its attributes or calls a
+  callable it was handed (a parameter, or a name unpacked from one) whose name is a mutating verb.
 """
 
 from __future__ import annotations
@@ -130,6 +131,7 @@ def _require(rule: ModelValidatorRule) -> None:
             "handler_class_prefixes",
             "exempt_method_names",
             "mutating_call_names",
+            "injected_mutating_call_patterns",
         ),
     }
     for key in keys_by_kind.get(kind, ()):
@@ -143,6 +145,14 @@ def _require(rule: ModelValidatorRule) -> None:
         rule_int(rule, "min_public_functions")
     if kind == "self_mutation":
         rule_string(rule, "private_method_prefix")
+        for pattern in rule_strings(rule, "injected_mutating_call_patterns"):
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                raise ModelOnexError(
+                    message=f"rule {rule.rule_id!r}: parameters.injected_mutating_call_patterns is not a regular expression: {exc}",
+                    error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
+                ) from exc
     rule_string(rule, "remediation")
 
 
@@ -192,6 +202,9 @@ def _check_rule(
         exempt = rule_strings(rule, "exempt_method_names")
         private = rule_string(rule, "private_method_prefix")
         mutating = rule_strings(rule, "mutating_call_names")
+        injected = [
+            re.compile(p) for p in rule_strings(rule, "injected_mutating_call_patterns")
+        ]
         for cls in _handler_classes(rule, module):
             for method in cls.methods:
                 if (
@@ -201,12 +214,20 @@ def _check_rule(
                 ):
                     continue
                 calls = sorted(set(method.self_attribute_calls) & set(mutating))
-                if method.assigns_self_attribute or calls:
-                    how = (
-                        "assigns to self"
-                        if method.assigns_self_attribute
-                        else f"calls {calls}"
-                    )
+                handed = sorted(
+                    {
+                        name
+                        for name in method.injected_calls
+                        if any(p.fullmatch(name) for p in injected)
+                    }
+                )
+                if method.assigns_self_attribute or calls or handed:
+                    if method.assigns_self_attribute:
+                        how = "assigns to self"
+                    elif calls:
+                        how = f"calls {calls}"
+                    else:
+                        how = f"calls the injected callables {handed}"
                     issues.append(
                         _issue(
                             rule,

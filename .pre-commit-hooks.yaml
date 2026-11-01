@@ -250,13 +250,14 @@
     AST checker that holds handlers, nodes and command line modules to dependency injection: the constructor
     signature, direct construction, construction at a call site, fallback and reflective construction,
     optional port defaults, a module locating its own contract, module singletons, sibling handler imports
-    and contract values held as literals. The scope is every .py under handlers/ and nodes/ plus *_cli.py.
-    Every pattern and remediation text is a rule row of handler_di.validation.yaml. --baseline FILE admits
-    the findings a repository held when it adopted the hook, per file, and only shrinks.
+    and contract values held as literals. Every rule judges handlers/, nodes/ and *_cli.py modules; construction
+    at a call site is judged in every .py. Every pattern and remediation text is a rule row of handler_di.validation.yaml.
+    --baseline FILE admits the findings a repository held when it adopted the hook, per file, and only
+    shrinks.
   language: python
   entry: python -m omnibase_core.nodes.node_handler_di_check_effect.runtime_handler_di_check
   types: [python]
-  files: (^|/)(handlers|nodes)/.*\.py$|_cli\.py$
+  files: \.py$
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
@@ -1295,7 +1296,10 @@
   name: Internal siblings resolve from dev merge tags (OMN-19998)
   description: >
     Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
-    Third-party workflow actions require full commit SHAs.
+    Third-party workflow actions require full commit SHAs. Optional shrink-only per-file baseline (OMN-21900):
+    pass --baseline .onex/baselines/first_party_ref.yaml to hold the findings that could not be removed;
+    a finding not in it fails, an entry whose finding is gone fails as stale, and --write-baseline creates
+    the file or shrinks it and refuses to add an entry. Without --baseline every finding fails.
   language: python
   entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
   files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
@@ -1345,7 +1349,10 @@
   name: Workflow action pins (OMN-17427)
   description: >
     Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
-    Third-party workflow actions require full commit SHAs.
+    Third-party workflow actions require full commit SHAs. Optional shrink-only per-file baseline (OMN-21900):
+    pass --baseline .onex/baselines/first_party_ref.yaml to hold the findings that could not be removed;
+    a finding not in it fails, an entry whose finding is gone fails as stale, and --write-baseline creates
+    the file or shrinks it and refuses to add an entry. Without --baseline every finding fails.
   language: python
   entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
   files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
@@ -1586,6 +1593,19 @@
   language: python
   entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_diagram_drift:ValidatorDiagramDrift
   files: \.md$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-pin-needs-provides
+  name: Pin needs/provides (OMN-21879)
+  description: >
+    Refuse a caller pin of a verifier version whose declared needs the caller does not provide, a pinned
+    version with no needs declaration and a caller with no provides declaration. Pin syntax and the declaration
+    paths are contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_pin_needs_provides:ValidatorPinNeedsProvides
+  files: (^|/)\.github/workflows/[^/]+\.ya?ml$|\.(diff|patch)$
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]

@@ -59,7 +59,10 @@ BASELINE = checker.RULE_BASELINE
 VIOLATIONS: dict[str, list[str]] = {
     CONSTRUCTOR: ["violation_constructor_signature/handlers/handler_x.py"],
     DIRECT: ["violation_direct_construction/handlers/handler_x.py"],
-    CALL_SITE: ["violation_call_site_construction/handlers/handler_x_cli.py"],
+    CALL_SITE: [
+        "violation_call_site_construction/handlers/handler_x_cli.py",
+        "violation_call_site_construction_outside_handlers/services/service_y.py",
+    ],
     FALLBACK: [
         "violation_fallback_construction_or/handlers/handler_x.py",
         "violation_fallback_construction_ternary/handlers/handler_x.py",
@@ -89,7 +92,10 @@ VIOLATIONS: dict[str, list[str]] = {
 CLEANS: dict[str, list[str]] = {
     CONSTRUCTOR: ["clean_constructor_signature/handlers/handler_x.py"],
     DIRECT: ["clean_direct_construction/handlers/handler_x.py"],
-    CALL_SITE: ["clean_call_site_construction/handlers/handler_x_cli.py"],
+    CALL_SITE: [
+        "clean_call_site_construction/handlers/handler_x_cli.py",
+        "clean_call_site_construction_outside_handlers/services/service_y.py",
+    ],
     FALLBACK: ["clean_fallback_construction/handlers/handler_x.py"],
     REFLECTIVE: ["clean_reflective_construction/handlers/handler_x.py"],
     OPTIONAL_PORT: ["clean_optional_port_default/handlers/handler_x.py"],
@@ -137,6 +143,12 @@ CONTROLS: dict[tuple[str, str], tuple[str, str]] = {
     (VALUE_LITERAL, "constant_name_pattern"): (VIOLATIONS[VALUE_LITERAL][0], "clears"),
     (VALUE_LITERAL, "value_patterns"): (VIOLATIONS[VALUE_LITERAL][1], "clears"),
 }
+CONTROLS.update(
+    {
+        (rule_id, "scope_path_pattern"): (VIOLATIONS[rule_id][0], "clears")
+        for rule_id in VIOLATIONS
+    }
+)
 BASELINE_KEYS = (
     "baseline_path",
     "base_ref",
@@ -252,6 +264,29 @@ def test_a_handler_with_no_node_and_a_cli_module_are_in_scope() -> None:
 
 def test_a_module_outside_handlers_nodes_and_cli_is_not_judged() -> None:
     assert _codes("clean_scope_outside/services/service_x.py") == []
+
+
+def test_a_handler_built_by_hand_is_reported_wherever_the_call_sits() -> None:
+    """F27-1: the call site sits in a validation module, outside handlers/ and nodes/."""
+    assert _codes(
+        "violation_call_site_construction_outside_handlers/services/service_y.py"
+    ) == [CALL_SITE]
+    assert (
+        _codes("clean_call_site_construction_outside_handlers/services/service_y.py")
+        == []
+    )
+
+
+def test_only_the_call_site_rule_reaches_beyond_handlers_nodes_and_cli() -> None:
+    """The other rules keep their scope: every row names it, the call-site row names every module."""
+    scopes = {
+        r.rule_id: (r.parameters or {}).get("scope_path_pattern")
+        for r in _contract().rules
+        if r.rule_id != BASELINE
+    }
+    assert set(scopes) == set(VIOLATIONS)
+    wide = {rule_id for rule_id, scope in scopes.items() if scope == r"\.py$"}
+    assert wide == {CALL_SITE}
 
 
 def test_scope_is_the_contract_target_patterns() -> None:

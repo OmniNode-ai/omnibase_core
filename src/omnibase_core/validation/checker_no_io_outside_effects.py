@@ -7,7 +7,10 @@ Facts in (one node contract and, optionally, one module found anywhere under the
 contract's directory), ``ModelValidationIssue`` out: no file read, no clock, no
 environment. A module is judged unless its nearest contract declares an exempt
 archetype; a contract that names no recognised archetype is judged as non-EFFECT
-(fail closed) and reported by ``package_scope``.
+(fail closed) and reported by ``package_scope``. A module with no node contract above it
+is judged as non-EFFECT too when its path matches ``package_scope``'s
+``nodeless_module_patterns`` (a handler that no node binds is not in an EFFECT node);
+any other module with no contract is not judged.
 
 Every rule row of ``contracts/no_io_outside_effects.validation.yaml`` names one
 surface through matcher parameters; this module holds none of them. A call, import or
@@ -39,6 +42,9 @@ from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
+)
+from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
+    ModelSourceFile,
 )
 from omnibase_core.models.validation.model_no_io_outside_effects_facts import (
     ModelNoIoOutsideEffectsFacts,
@@ -351,6 +357,12 @@ def check_no_io_outside_effects(
     """Issues for one contract alone, or for one module judged in its contract's package."""
     scope = _row(rules, RULE_SCOPE)
     contract = facts.contract
+    nodeless = _regexes(scope, "nodeless_module_patterns")
+    if contract is None:
+        module = facts.module
+        if module is None or not any(p.search(module.path) for p in nodeless):
+            return ()
+        return _judge_module(module, rules)
     try:
         data = load_yaml_mapping_no_duplicates(contract.source, source=contract.path)
     except (yaml.YAMLError, ValueError) as exc:
@@ -379,6 +391,13 @@ def check_no_io_outside_effects(
     exempt = {a.lower() for a in rule_strings(scope, "exempt_archetypes")}
     if archetype in exempt:
         return ()
+    return _judge_module(facts.module, rules)
+
+
+def _judge_module(
+    module: ModelSourceFile, rules: Mapping[str, ModelValidatorRule]
+) -> tuple[ModelValidationIssue, ...]:
+    """The issues of one module judged as non-EFFECT, under every enabled matcher row."""
     matchers = [
         _matcher(row)
         for rule_id, row in rules.items()
@@ -386,7 +405,6 @@ def check_no_io_outside_effects(
         and rule_id
         not in {RULE_SCOPE, RULE_CONTRACT_UNPARSEABLE, RULE_MODULE_UNPARSEABLE}
     ]
-    module = facts.module
     try:
         tree = ast.parse(module.source, filename=module.path)
     except SyntaxError as exc:

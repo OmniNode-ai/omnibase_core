@@ -13,7 +13,10 @@ Rules: constructor_signature, direct_construction, call_site_construction,
 fallback_construction, reflective_construction, optional_port_default,
 contract_self_load, module_singleton, sibling_handler_import, contract_value_literal.
 
-A rule whose row is absent or disabled is not run; an enabled row with a missing or
+Every rule row names the modules it judges with ``scope_path_pattern``: the module path must
+match it. The contract's ``target_patterns`` are the union of those scopes, so a rule whose
+pattern is wider than the others (``call_site_construction``, a handler built by hand anywhere)
+reaches modules the others do not. A rule whose row is absent or disabled is not run; an enabled row with a missing or
 mistyped parameter raises, so a broken contract fails to load instead of passing every file.
 """
 
@@ -84,6 +87,16 @@ def _patterns(row: ModelValidatorRule, key: str) -> tuple[re.Pattern[str], ...]:
             message=f"rule {row.rule_id!r} holds an invalid regular expression under parameters.{key}: {exc}",
             error_code=EnumCoreErrorCode.INVALID_CONFIGURATION,
         ) from exc
+
+
+_NO_MODULE = ast.Module(body=[], type_ignores=[])
+
+
+def _scoped(path: Path, tree: ast.Module, row: ModelValidatorRule) -> ast.Module:
+    """The tree a rule judges: the module when its path is in the row's scope, else an empty
+    module, so the row's other parameters are still read and a broken row fails to load."""
+    in_scope = _pattern(row, "scope_path_pattern").search(path.as_posix())
+    return tree if in_scope else _NO_MODULE
 
 
 def _callee_name(func: ast.expr) -> str | None:
@@ -641,33 +654,37 @@ def check_module(
         return ()
     path = Path(fact.posix_path)
     issues: list[ModelValidationIssue] = []
-    if _active(rules, RULE_CONSTRUCTOR):
-        issues.extend(_check_constructor_signature(path, tree, rules[RULE_CONSTRUCTOR]))
-    if _active(rules, RULE_DIRECT):
-        issues.extend(_check_direct_construction(path, tree, rules[RULE_DIRECT]))
-    if _active(rules, RULE_CALL_SITE):
-        issues.extend(_check_call_site_construction(path, tree, rules[RULE_CALL_SITE]))
-    if _active(rules, RULE_FALLBACK):
-        issues.extend(_check_fallback_construction(path, tree, rules[RULE_FALLBACK]))
-    if _active(rules, RULE_REFLECTIVE):
-        issues.extend(
-            _check_reflective_construction(path, tree, rules[RULE_REFLECTIVE])
-        )
-    if _active(rules, RULE_NONE_DEFAULT):
-        issues.extend(
-            _check_optional_port_default(path, tree, rules[RULE_NONE_DEFAULT])
-        )
-    if _active(rules, RULE_CONTRACT_LOAD):
-        issues.extend(_check_contract_self_load(path, tree, rules[RULE_CONTRACT_LOAD]))
-    if _active(rules, RULE_SINGLETON):
-        issues.extend(_check_module_singleton(path, tree, rules[RULE_SINGLETON]))
+    checks: tuple[
+        tuple[
+            str,
+            Callable[
+                [Path, ast.Module, ModelValidatorRule], list[ModelValidationIssue]
+            ],
+        ],
+        ...,
+    ] = (
+        (RULE_CONSTRUCTOR, _check_constructor_signature),
+        (RULE_DIRECT, _check_direct_construction),
+        (RULE_CALL_SITE, _check_call_site_construction),
+        (RULE_FALLBACK, _check_fallback_construction),
+        (RULE_REFLECTIVE, _check_reflective_construction),
+        (RULE_NONE_DEFAULT, _check_optional_port_default),
+        (RULE_CONTRACT_LOAD, _check_contract_self_load),
+        (RULE_SINGLETON, _check_module_singleton),
+    )
+    for rule_id, check in checks:
+        if _active(rules, rule_id):
+            row = rules[rule_id]
+            issues.extend(check(path, _scoped(path, tree, row), row))
     if _active(rules, RULE_SIBLING):
+        row = rules[RULE_SIBLING]
         issues.extend(
-            _check_sibling_handler_import(path, fact, tree, rules[RULE_SIBLING])
+            _check_sibling_handler_import(path, fact, _scoped(path, tree, row), row)
         )
     if _active(rules, RULE_VALUE_LITERAL):
+        row = rules[RULE_VALUE_LITERAL]
         issues.extend(
-            _check_contract_value_literal(path, tree, rules[RULE_VALUE_LITERAL])
+            _check_contract_value_literal(path, _scoped(path, tree, row), row)
         )
     return tuple(sorted(issues, key=lambda i: (i.line_number or 0, i.code or "")))
 

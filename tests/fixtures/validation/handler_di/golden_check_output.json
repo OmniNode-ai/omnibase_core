@@ -16,6 +16,15 @@
     {
       "validator_id": "handler_di",
       "severity": "FAIL",
+      "location": "violation_call_site_construction_outside_handlers/services/service_y.py:5",
+      "message": "HandlerVocabulary(...).handle(...) builds the handler at the call site: Do not build a handler or node where it is called: resolve it from the container with get_service and call the resolved instance.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "call_site_construction"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
       "location": "violation_constructor_signature/handlers/handler_x.py:4",
       "message": "class 'HandlerX' __init__ params (container, event_bus): Accept exactly (self, container): take the ModelONEXContainer and resolve every other dependency from it with container.get_service.",
       "remediation": null,
@@ -267,10 +276,10 @@
     }
   ],
   "metrics": {
-    "total": 29,
+    "total": 30,
     "pass_count": 0,
     "warn_count": 0,
-    "fail_count": 29,
+    "fail_count": 30,
     "error_count": 0,
     "skip_count": 0,
     "not_applicable_count": 0,

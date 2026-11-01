@@ -12,17 +12,15 @@ validation:
   validator_description: |
     A handler or node acquires every dependency from the container it is given (OMN-21531,
     plan task T0.3, checker K1; replaces the old handler DI gate and keeps the hook id
-    handler-di-gate). The scope is every .py under handlers/ and nodes/ plus *_cli.py.
+    handler-di-gate). A rule judges the modules its scope_path_pattern names: every .py under
+    handlers/ and nodes/ plus *_cli.py for all rules but call_site_construction, which judges every
+    .py, because a handler built by hand at a call site is the same fault wherever the call sits.
 
     Every class-name pattern, callee pattern, name list and remediation text below is data of
     the rule row; the checker holds none. Suppress one line with the suppression comment.
 
   target_patterns:
-    - "**/handlers/*.py"
-    - "**/handlers/**/*.py"
-    - "**/nodes/*.py"
-    - "**/nodes/**/*.py"
-    - "**/*_cli.py"
+    - "**/*.py"
 
   exclude_patterns:
     - "**/tests/**"
@@ -47,6 +45,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
         init_name: '__init__'
         self_parameter: 'self'
@@ -58,6 +57,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
         init_name: '__init__'
         receiver_name: 'self'
@@ -74,6 +74,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '\.py$'
         constructed_name_pattern: '^(Handler|Node)[A-Z]\w*$'
         invoked_methods:
           - 'handle'
@@ -85,6 +86,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
         loader_name_pattern: '^(load_\w+|build_\w+|create_\w+|make_\w+|(Handler|Node)[A-Z]\w*|[A-Z]\w*(Adapter|Backend|Bus|Client|Store|Writer|Reader|Registry|Effect))$'
         fallback_forms:
@@ -99,6 +101,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         reflective_getters:
           - 'getattr'
           - '__import__'
@@ -115,6 +118,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         class_name_pattern: '(?i)handler|node|reducer|orchestrator|effect'
         port_name_pattern: '^(contract|bus|event_bus|publisher|writer|store|client|adapter|backend|resolver|registry|container)$'
         port_annotation_pattern: 'Protocol[A-Z]\w*'
@@ -129,6 +133,7 @@ validation:
         loader_call_names:
           - 'load_contract'
         loader_class_pattern: '(?i)handler'
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         self_reference_names:
           - '__file__'
         contract_file_pattern: 'contract\.ya?ml$'
@@ -145,6 +150,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         statement_kinds:
           - 'Global'
 
@@ -155,6 +161,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         importer_path_pattern: '(^|/)handlers/|(^|/)handler(_[a-z0-9_]+)?\.py$'
         importer_exclude_pattern: '(_cli|__init__)\.py$'
         imported_module_pattern: '^handler(_[a-z0-9_]+)?$'
@@ -166,6 +173,7 @@ validation:
       severity: error
       enabled: true
       parameters:
+        scope_path_pattern: '(^|/)(handlers|nodes)/.*\.py$|_cli\.py$'
         constant_name_pattern: '^_?([A-Z0-9]+_)*(TOPIC|URL|HOST|PORT|TIMEOUT|ENDPOINT|MODEL)S?(_[A-Z0-9_]+)?$'
         value_patterns:
           - '^onex\.(cmd|evt)\.\S+$'

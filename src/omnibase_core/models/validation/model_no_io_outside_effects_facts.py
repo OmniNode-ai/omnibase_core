@@ -5,7 +5,8 @@
 
 One node contract and, optionally, one Python module found under the contract's
 directory. A contract given alone is judged for its own faults; a contract given with
-a module is the archetype context the module is judged in.
+a module is the archetype context the module is judged in. A module given with no contract is one
+that no node contract sits above; the ``package_scope`` row says which such modules are judged.
 """
 
 from __future__ import annotations
@@ -20,9 +21,9 @@ __all__ = ["ModelNoIoOutsideEffectsFacts"]
 
 
 class ModelNoIoOutsideEffectsFacts(BaseModel):
-    """The nearest node contract and, optionally, the module judged inside its directory."""
+    """The nearest node contract (none when no node sits above the module) and the module judged."""
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
-    contract: ModelSourceFile
+    contract: ModelSourceFile | None = None
     module: ModelSourceFile | None = None

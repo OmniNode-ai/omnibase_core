@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Needs declaration fixture (OMN-21879): what each verifier version needs from its environment.
+verifiers:
+  - verifier_name: caller-evidence-verifier
+    pin_keys: [verifier-version]
+    versions:
+      - version: "0.4.319"
+        needs: []
+      - version: "0.4.320"
+        needs:
+          - kind: secret
+            name: LINEAR_API_KEY
+  - verifier_name: receipt-gate-reusable
+    pin_keys: [OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml]
+    versions:
+      - version: dev-20261031120000-000000000000
+        needs: []

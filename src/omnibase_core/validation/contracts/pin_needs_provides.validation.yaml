@@ -1,0 +1,75 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21879: every pin syntax, declaration path and diagnostic is rule data.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: pin_needs_provides
+  validator_name: Pin Needs/Provides Validator
+  validator_description: >-
+    A caller that pins a verifier version must provide everything that version declares it needs from
+    its environment. Each verifier names the pin keys a caller pins it under and declares, per version,
+    what it needs; each caller declares what it provides. Both declarations are data files whose paths
+    are parameters below. A pinned version with no needs declaration and a caller with no provides declaration
+    are refused, never assumed empty. A caller file is judged whole; a unified diff of caller files (selected
+    by diff_source_pattern) is judged on its added lines only, so a pin move is refused before merge.
+  target_patterns:
+    - "**/.github/workflows/*.yml"
+    - "**/.github/workflows/*.yaml"
+    - "**/*.diff"
+    - "**/*.patch"
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: need_not_provided
+      description: A pinned verifier version declares a need its caller does not provide. This row also
+        holds the pin syntax; each pin pattern captures a pin_key and a version, and only a pin key a
+        declared verifier names is a verifier pin.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{caller} pins {verifier} at {version}, which needs {need}; the caller does not provide
+          it"
+        source_pattern: '.'
+        diff_source_pattern: '\.(diff|patch)$'
+        diff_file_pattern: '^\+\+\+ (?:b/)?(?P<path>\S+)'
+        added_line_prefix: "+"
+        pin_patterns:
+          - '^\s*-?\s*(?P<pin_key>[A-Za-z0-9_.-]+):\s*["'']?(?P<version>[^\s"''#]+)'
+          - '^\s*-?\s*uses:\s*["'']?(?P<pin_key>[^@\s"'']+)@(?P<version>[^\s"''#]+)'
+    - rule_id: needs_undeclared
+      description: A pinned verifier version has no needs declaration; it is refused rather than assumed
+        to need nothing. This row names the needs declaration file.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{caller} pins {verifier} at {version}, which has no needs declaration; an undeclared
+          verifier version is refused, not assumed to need nothing"
+        source_pattern: '.'
+        needs_declaration_path: ".onex/pin_needs.yaml"
+    - rule_id: provides_undeclared
+      description: A caller pins a verifier but has no provides declaration. This row names the provides
+        declaration file.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{caller} pins {verifier} at {version} but has no provides declaration"
+        source_pattern: '.'
+        provides_declaration_path: ".onex/pin_provides.yaml"
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

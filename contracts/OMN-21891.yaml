@@ -1,0 +1,76 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21891
+title: 'Allowlist stack-shape validator (omnibase_core half)'
+summary: The generic stack-shape checker, its validator and its contract. Every allowed dependency, per-lane
+  compose file set, replica limit and baseline entry is data the caller passes; the validator refuses
+  any compose service that is not the runtime, a declared dependency, a one-shot or a baselined entry,
+  counts replicas from replicas, scale and deploy.replicas, and holds the baseline to the merge base.
+  The omnibase_infra half (its data file, the widened hook and the required CI job) waits on the release
+  of this change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21891-allowlist-stack-shape
+    statement: A compose service outside the allowlist, a baseline that grows, and a runtime service above
+      its replica limit are each refused, with the offending service named.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: every service outside the runtime, declared dependencies, one-shots and baseline
+          is refused, with a planted copy of projection-claude-hook-events-writer and of cost-estimator-web
+          each reported by name on every lane -- falsifier: `uv run pytest tests/unit/validation/test_checker_stack_shape.py
+          -q` fails'
+      - id: AC2
+        statement: 'AC2: a baseline entry whose service no longer exists fails, and once the baseline
+          file exists on the merge base an entry absent from the merge base fails, so a new service plus
+          its baseline entry is refused -- falsifier: `uv run pytest tests/unit/validation/test_checker_stack_shape.py
+          -q -k baseline` fails'
+      - id: AC4
+        statement: 'AC4: the check counts every replica of a service from replicas, scale and deploy.replicas,
+          so the runtime service at replicas 2 fails -- falsifier: `uv run pytest tests/unit/validation/test_checker_stack_shape.py
+          -q -k replicas` fails'
+evidence_requirements:
+  - kind: tests
+    description: Stack-shape checker and validator tests pass.
+    command: uv run pytest tests/unit/validation/test_checker_stack_shape.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21891-ac1-allowlist
+    description: A planted copy of each named service is refused by name on every one of the eight lanes;
+      a clean stack passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_stack_shape.py -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21891-ac2-baseline
+    description: A baseline entry for a missing service, and an entry absent from the base revision, each
+      fail; an unchanged, shrunk or first-install baseline passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_stack_shape.py -q --no-cov -o addopts=''
+          -k baseline
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21891-ac4-replicas
+    description: The runtime service at replicas 2, scale 2, deploy.replicas 2 or an interpolated default
+      of 2 fails; replicas 1 passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_stack_shape.py -q --no-cov -o addopts=''
+          -k replicas
+        cwd: ${OMNI_HOME}/omnibase_core

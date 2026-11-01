@@ -11,8 +11,9 @@ validation:
   validator_name: Handler Shape Validator
   validator_description: Judges every handler class, bound by a contract or not, for a handle the shared
     runtime cannot adapt, a handler module of bare functions, an envelope type in the core and a public
-    method that mutates handler state. Every pattern, name list, threshold and remediation text is a rule
-    row of this file (OMN-21536, plan task T2.4a, checker K3).
+    method that mutates handler state, directly or through a callable it was handed. Every pattern, name
+    list, threshold and remediation text is a rule row of this file (OMN-21536, plan task T2.4a, checker
+    K3).
   target_patterns:
     - '**/handler*.py'
     - '**/handlers/**/*.py'
@@ -74,5 +75,8 @@ validation:
         private_method_prefix: _
         exempt_method_names: [initialize, shutdown, close]
         mutating_call_names: [append, extend, add, update, pop, clear, setdefault, remove, discard, insert]
+        injected_mutating_call_patterns:
+          - '(un|de)?register\w*'
+          - '(add|remove|delete|put|insert|discard|evict|drop|clear|set|store|save)(_\w+)?'
         remediation: 'Keep the handler stateless: return the new value from handle, or hold the state
           in an injected collaborator.'

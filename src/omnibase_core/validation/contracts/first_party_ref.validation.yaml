@@ -23,6 +23,8 @@ validation:
     - '**/deploy*.yml'
     - lab/*.yaml
     - lab/*.yml
+    - '**/lab/*.yaml'
+    - '**/lab/*.yml'
     - briefs/**/*.md
     - briefs/**/*.yaml
     - briefs/**/*.yml
@@ -94,6 +96,8 @@ validation:
           - '**/deploy*.yml'
           - lab/*.yaml
           - lab/*.yml
+          - '**/lab/*.yaml'
+          - '**/lab/*.yml'
           - briefs/**/*.md
           - briefs/**/*.yaml
           - briefs/**/*.yml
@@ -113,6 +117,8 @@ validation:
           - '**/deploy*.yml'
           - lab/*.yaml
           - lab/*.yml
+          - '**/lab/*.yaml'
+          - '**/lab/*.yml'
           - .github/required-checks.yaml
         repository_keys:
           - repo
@@ -180,6 +186,8 @@ validation:
           - '**/deploy*.yml'
           - lab/*.yaml
           - lab/*.yml
+          - '**/lab/*.yaml'
+          - '**/lab/*.yml'
           - .github/required-checks.yaml
           - briefs/**/*.md
           - briefs/**/*.yaml

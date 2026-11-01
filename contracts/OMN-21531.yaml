@@ -158,3 +158,60 @@ dod_evidence:
           -o addopts='' && "${UV_PROJECT_ENVIRONMENT:-.venv}/bin/onex" --help
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8]
+  - id: dod-omn21531-aca-handler-shape-injected-callable
+    description: handler_shape reports mutating_public_method for a public method that mutates a registry
+      through callables it was handed (the audited method of F20-2); the violation fixture yields one
+      issue and the clean fixture none; disabling the row clears the violation.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_handler_shape.py -q --no-cov
+          -o addopts='' -k "handed_callable or injected_mutating_call_patterns"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn21531-acb-handler-di-call-site-anywhere
+    description: handler_di reports call_site_construction for a handler built by hand in a module outside
+      handlers/ and nodes/ (the audited call of F27-1); the other nine rules keep their scope; the violation
+      fixture yields one issue and the clean fixture none.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_handler_di.py -q --no-cov
+          -o addopts='' -k "built_by_hand or only_the_call_site_rule or violation_fixture or clean_fixture
+          or scope_path_pattern"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+      - AC7
+  - id: dod-omn21531-acc-no-io-nodeless-handler
+    description: no_io_outside_effects reports file_read for a file read in a handler module that no node
+      contract sits above (the audited read of F28-1); the violation fixture yields one issue and the
+      clean fixture none; disabling the row clears the violation.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_no_io_outside_effects.py
+          -q --no-cov -o addopts='' -k "nodeless or no_node or scope_keys or scope_row_missing"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn21531-acd-replay-of-the-three
+    description: Hosted regression replay of the three checker gaps using the committed violation and
+      clean cases. The tests require the injected-callable mutation, the call-site construction outside
+      handlers and the nodeless handler file read to be reported, and exercise disabling the affected
+      rule rows. This binds AC7 to checkout-local tests; it does not claim the separate integrated corpus
+      replay or require an external scratch worktree, audited clones or an unshipped replay adapter.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_handler_shape.py tests/unit/validation/test_checker_handler_di.py
+          tests/unit/validation/test_checker_no_io_outside_effects.py -q --no-cov -o addopts='' -k "handed_callable
+          or built_by_hand or no_node or nodeless"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7

@@ -74,6 +74,7 @@ _BROKEN_CONTRACT = "name: [unclosed\n"
 _CLEAN_MODULE = "x = 1\n"
 _ENV_MODULE = 'import os\n\nVALUE = os.getenv("X")\n'
 _HANDLER = "handlers/handler_x.py"
+_READ_MODULE = "def read(path):\n    return path.read_text(encoding='utf-8')\n"
 _PLANTED = "violation_file_read"
 
 
@@ -205,6 +206,67 @@ def test_disabling_a_rule_row_fails_that_rules_fixture_and_only_that_rules(
             assert [i.rule_name for i in issues] == [other]
 
 
+# --- a handler that no node contract sits above (F28-1) ---------------------
+
+
+def _nodeless(path: str, source: str = _READ_MODULE) -> list[ModelValidationIssue]:
+    facts = ModelNoIoOutsideEffectsFacts(
+        module=ModelSourceFile(path=path, source=source)
+    )
+    return list(
+        check_no_io_outside_effects(facts, {r.rule_id: r for r in _contract().rules})
+    )
+
+
+def test_a_file_read_in_a_handler_with_no_node_is_reported_as_file_read(
+    tmp_path: Path,
+) -> None:
+    work = tmp_path / "work"
+    shutil.copytree(_FIXTURES / "violation_file_read_nodeless", work / "violation")
+    issues = _validate(_contract(), work)
+    assert [(i.rule_name, i.line_number) for i in issues] == [("file_read", 10)]
+    assert [i.rule_name for i in _nodeless("src/pkg/handlers/handler_x.py")] == [
+        "file_read"
+    ]
+
+
+def test_a_handler_with_no_node_and_no_io_is_clean(tmp_path: Path) -> None:
+    work = tmp_path / "work"
+    shutil.copytree(_FIXTURES / "clean_file_read_nodeless", work / "clean")
+    assert _validate(_contract(), work) == []
+
+
+def test_disabling_the_file_read_row_clears_the_nodeless_fixture(
+    tmp_path: Path,
+) -> None:
+    work = tmp_path / "work"
+    shutil.copytree(_FIXTURES / "violation_file_read_nodeless", work / "violation")
+    contract = _with_rule(_contract(), "file_read", enabled=False)
+    assert _validate(contract, work) == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "src/pkg/utils/util_x.py",
+        "src/pkg/validation/checker_x.py",
+        "tests/unit/handlers/test_handler_x.py",
+        "src/pkg/tests/handler_x.py",
+    ],
+)
+def test_a_module_that_is_no_handler_or_is_a_test_with_no_node_is_not_judged(
+    path: str,
+) -> None:
+    assert _nodeless(path) == []
+
+
+@pytest.mark.parametrize(
+    "path", ["handlers/handler_x.py", "src/pkg/handler_y.py", "src/pkg/handlers/a/b.py"]
+)
+def test_a_handler_module_with_no_node_is_judged_wherever_it_sits(path: str) -> None:
+    assert [i.rule_name for i in _nodeless(path)] == ["file_read"]
+
+
 def test_ac1_file_read_and_inmemory_bus_in_a_handler_are_refused() -> None:
     read = _check(_contract(), "from pathlib import Path\n\nPath(p).read_text()\n")
     bus = _check(_contract(), "EventBusInmemory()\n")
@@ -289,6 +351,7 @@ _SCOPE_KEYS = {
     "archetype_fields",
     "known_archetypes",
     "exempt_archetypes",
+    "nodeless_module_patterns",
 }
 
 
@@ -346,13 +409,32 @@ def test_scope_keys_change_the_verdicts_they_control(tmp_path: Path) -> None:
     assert _check(contract, sql, _EFFECT) == []
     mutated = _with_parameter(contract, "package_scope", "exempt_archetypes", _NEVER)
     assert _ids(_check(mutated, sql, _EFFECT)) == ["import_database"]
+    # nodeless_module_patterns: a handler with no node above it is judged only while a pattern names it
+    read = ModelSourceFile(path="src/pkg/handlers/handler_x.py", source=_READ_MODULE)
+    nodeless = ModelNoIoOutsideEffectsFacts(module=read)
+    rules = {r.rule_id: r for r in contract.rules}
+    assert [i.rule_name for i in check_no_io_outside_effects(nodeless, rules)] == [
+        "file_read"
+    ]
+    mutated = _with_parameter(
+        contract, "package_scope", "nodeless_module_patterns", _NEVER
+    )
+    assert (
+        check_no_io_outside_effects(nodeless, {r.rule_id: r for r in mutated.rules})
+        == ()
+    )
     # contract_filename: a contract of another name places no package
     tree = _tree(tmp_path, "import_database", "violation")
     assert len(_validate(contract, tree)) == 1
     renamed = _with_parameter(
         contract, "package_scope", "contract_filename", "zzz.yaml"
     )
-    assert _validate(renamed, tree) == []
+    # the module is then a handler with no node above it, judged only while a pattern names it
+    assert len(_validate(renamed, tree)) == 1
+    unnamed = _with_parameter(
+        renamed, "package_scope", "nodeless_module_patterns", _NEVER
+    )
+    assert _validate(unnamed, tree) == []
 
 
 _JUDGED_BY: dict[str, tuple[str | None, str]] = {
