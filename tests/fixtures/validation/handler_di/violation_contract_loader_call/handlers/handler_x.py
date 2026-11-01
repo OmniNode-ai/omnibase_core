@@ -5,4 +5,4 @@ from omnibase_core.contracts.contract_loader import load_contract
 
 class HandlerX:
     def handle(self, tag: str) -> bool:
-        return tag.startswith(load_contract().dev_tag_pattern)
+        return tag.startswith(load_contract("contract.yaml")["dev_tag_pattern"])

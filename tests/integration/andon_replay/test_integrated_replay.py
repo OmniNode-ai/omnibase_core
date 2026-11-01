@@ -169,10 +169,13 @@ def test_disable_rule_fails_its_assertions(
     corpus: driver.ModelCorpus,
     contracts: dict[str, driver.ReplayContract],
     environment: dict[str, str],
-    report: tuple[list[driver.ModelReplayResult], list[str]],
 ) -> None:
     """Disable one rule row in a copy of its contract: its own fixture stops reporting it
-    and exactly the corpus assertions that name it newly fail."""
+    and exactly the corpus assertions that name it newly fail.
+
+    The assertions that name the rule must hold under the shipped contract first: a
+    failure that was already there cannot be told apart from one the disabled row causes.
+    """
     owner = driver.owner_of(corpus, contracts, rule_id)
     assert owner is not None
     contract = contracts[owner]
@@ -180,19 +183,20 @@ def test_disable_rule_fails_its_assertions(
     assert row is not None
     disabled = driver.disabled_contract(contract, row, tmp_path)
     named = set(driver.assertions_naming(corpus, rule_id))
-    results, _ = report
-    before_failed = driver.failed_ids(results)
 
     def of_owner(a: driver.ModelAssertion) -> bool:
         return driver.owner_of(corpus, contracts, a.rule_id) == owner
 
+    before, _ = driver.replay(corpus, BASE_DIR, environment, contracts, of_owner)
+    before_failed = driver.failed_ids(before)
+    assert not (named & before_failed), (
+        f"{rule_id}: assertions failing under the shipped contract"
+    )
     after, _ = driver.replay(
         corpus, BASE_DIR, environment, {**contracts, owner: disabled}, of_owner
     )
     replayed = {r.assertion_id for r in after}
-    assert (
-        driver.failed_ids(after) - before_failed == (named & replayed) - before_failed
-    )
+    assert driver.failed_ids(after) - before_failed == (named & replayed)
     fixtures = driver.rule_fixtures(corpus, driver.repo_root(corpus), owner, row)
     judge = driver.load_fixture_adapter(corpus, owner)
     assert judge is not None

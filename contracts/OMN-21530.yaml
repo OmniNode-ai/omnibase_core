@@ -111,15 +111,19 @@ dod_evidence:
     binds_ac:
       - AC3
   - id: dod-omn21530-ac4-disable-rule
-    description: Table-driven over the corpus's rule index, each rule row is disabled in a tmp copy of
-      its contract; the rule's own violation fixture stops reporting it and exactly the assertions that
-      name the rule newly fail.
+    description: Table-driven over the corpus's rule index, each handler_di rule row is disabled in a
+      tmp copy of its contract; the assertions that name the rule pass under the shipped contract, the
+      rule's own violation fixture stops reporting it, and exactly the assertions that name the rule newly
+      fail. The hosted merge-base control gives each check 30 s, so this check selects the handler_di
+      rows, the family whose checker this pull request changes; at the merge base the contract_self_load
+      assertions already fail and the control fails there. The whole table runs in the integration test
+      splits and on the lab.
     source: manual
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/integration/andon_replay -q -x --no-cov -o addopts=''
-          -k disable_rule_fails_its_assertions
+          -k "disable_rule_fails_its_assertions and handler_di"
         cwd: .
     binds_ac:
       - AC4
