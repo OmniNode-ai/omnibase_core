@@ -1,11 +1,19 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 #
-# Dependency Cascade Workflow (OMN-2751)
+# Dependency Cascade Workflow (OMN-2751, OMN-19998)
 #
 # Opens dependency-bump PRs in downstream repos when a foundation package is
-# released. Each downstream repo gets a PR that runs `uv lock --upgrade-package`
-# to pick up the new version.
+# released. Each downstream repo gets a PR that pins the package at its newest
+# DEV MERGE TAG (`dev-<UTC YYYYMMDDHHMMSS>-<sha12>`, made by the package's own
+# dev-merge-tag.yml on every dev push) as a `[tool.uv.sources]` git source and
+# re-locks. RULING 2026-10-29T01:50:26Z (OMN-21433): first-party dependencies
+# iterate on dev merge tags, not on releases. The cascade used to wait for the
+# RELEASED version on the index and write an exact `==X.Y.Z` pin or a registry
+# lock entry; the downstream `internal-sibling-pins` job refuses that where the
+# package already carries a newer dev merge tag (OMN-21282), so every bump PR
+# the cascade opened went red on its own Quality Gate. No step of this workflow
+# resolves, waits for or writes a released version any more.
 #
 # Downstream mapping:
 #   omnibase_core  -> omnibase_infra, omniintelligence, omnimemory, omniclaude, omninode_infra
@@ -20,12 +28,17 @@ on:
   workflow_call:
     inputs:
       package:
-        description: 'Released package name (e.g. omnibase_infra)'
+        description: 'Package whose dev merge tag is pinned (e.g. omnibase_infra)'
         required: true
         type: string
       version:
-        description: 'Released version tag (e.g. v0.11.0)'
-        required: true
+        description: >-
+          Released version that triggered the cascade (e.g. v0.11.0). Optional
+          and informational (OMN-19998): it is validated when given and never
+          written as a pin, never waited for on the index. The pin is the
+          newest dev merge tag of the package.
+        required: false
+        default: ''
         type: string
       ticket:
         description: >-
@@ -61,12 +74,13 @@ on:
   workflow_dispatch:
     inputs:
       package:
-        description: 'Released package name (e.g. omnibase_infra)'
+        description: 'Package whose dev merge tag is pinned (e.g. omnibase_infra)'
         required: true
         type: string
       version:
-        description: 'Released version tag (e.g. v0.11.0)'
-        required: true
+        description: 'Released version that triggered the cascade (e.g. v0.11.0). Optional and informational (OMN-19998): never written as a pin; the pin is the newest dev merge tag.'
+        required: false
+        default: ''
         type: string
       ticket:
         description: 'OMN ticket that closed the release being cascaded (OMN-16286), e.g. OMN-15449.'
@@ -176,13 +190,21 @@ jobs:
         if: steps.token_check.outputs.has_token == 'true'
         env:
           REPO_NAME: ${{ matrix.repo }}
+          # OMN-19998: the bumped package's own repository is a git source of
+          # the lock this run writes, so its tags and its commit are read too.
+          PACKAGE_REPO: ${{ inputs.package }}
         run: |
           sources=$(
-            for file in pyproject.toml uv.lock; do
-              if [ -f "$file" ]; then
-                grep -Eo 'git\+https://github\.com/OmniNode-ai/[A-Za-z0-9._-]+|git[[:space:]]*=[[:space:]]*"https://github\.com/OmniNode-ai/[A-Za-z0-9._-]+' "$file" || true
+            {
+              for file in pyproject.toml uv.lock; do
+                if [ -f "$file" ]; then
+                  grep -Eo 'git\+https://github\.com/OmniNode-ai/[A-Za-z0-9._-]+|git[[:space:]]*=[[:space:]]*"https://github\.com/OmniNode-ai/[A-Za-z0-9._-]+' "$file" || true
+                fi
+              done | sed -E 's@^.*https://github\.com/OmniNode-ai/@@; s/\.git$//'
+              if [[ "$PACKAGE_REPO" =~ ^[A-Za-z0-9_-]+$ ]]; then
+                printf '%s\n' "$PACKAGE_REPO"
               fi
-            done | sed -E 's@^.*https://github\.com/OmniNode-ai/@@; s/\.git$//' | LC_ALL=C sort -u
+            } | LC_ALL=C sort -u
           )
           private_repos=()
           while IFS= read -r name; do
@@ -234,8 +256,11 @@ jobs:
           RAW_PACKAGE: ${{ inputs.package }}
           RAW_TICKET: ${{ inputs.ticket }}
           RAW_EVIDENCE_SOURCE: ${{ inputs.evidence_source }}
+          GIT_SOURCE_TOKEN: ${{ steps.git-source-token.outputs.token }}
+          GIT_SOURCE_REPOS: ${{ steps.git_sources.outputs.repos }}
         run: |
-          VERSION="${RAW_VERSION#v}"
+          export LC_ALL=C
+          RELEASE="${RAW_VERSION#v}"
           PACKAGE="$RAW_PACKAGE"
           TICKET="$RAW_TICKET"
           EVIDENCE_SOURCE="$RAW_EVIDENCE_SOURCE"
@@ -244,8 +269,10 @@ jobs:
             echo "::error::OMN-16286: inputs.package '${PACKAGE}' does not match the safe package-name pattern ^[A-Za-z0-9_-]+\$."
             exit 1
           fi
-          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([A-Za-z0-9.+-]*)?$ ]]; then
-            echo "::error::OMN-16286: inputs.version '${VERSION}' does not match the safe SemVer-ish pattern."
+          # OMN-19998: the released version is informational only. It is
+          # validated when given and is never the pin.
+          if [ -n "$RELEASE" ] && ! [[ "$RELEASE" =~ ^[0-9]+\.[0-9]+\.[0-9]+([A-Za-z0-9.+-]*)?$ ]]; then
+            echo "::error::OMN-16286: inputs.version '${RELEASE}' does not match the safe SemVer-ish pattern."
             exit 1
           fi
           if ! [[ "$TICKET" =~ ^OMN-[0-9]+$ ]]; then
@@ -257,6 +284,50 @@ jobs:
             exit 1
           fi
 
+          # OMN-19998: resolve the newest dev merge tag of the package from its
+          # own tags (RULING 2026-10-29T01:50:26Z, OMN-21433). The tag name is
+          # dev-<UTC YYYYMMDDHHMMSS>-<sha12>; the fixed-width stamp makes the
+          # greatest name the newest merge. The tag exists in git before this
+          # runs, so there is no index propagation to wait for.
+          # The org URL comes from the run's own context (GITHUB_SERVER_URL,
+          # GITHUB_REPOSITORY_OWNER), the same value the downstream git source
+          # must carry.
+          url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY_OWNER}/${PACKAGE}.git"
+          auth_args=()
+          if [ -n "${GIT_SOURCE_TOKEN:-}" ] && [[ ",${GIT_SOURCE_REPOS:-}," == *",${PACKAGE},"* ]]; then
+            auth=$(printf 'x-access-token:%s' "$GIT_SOURCE_TOKEN" | base64 | tr -d '\n')
+            echo "::add-mask::${auth}"
+            auth_args=(-c "http.${url}.extraheader=AUTHORIZATION: basic ${auth}")
+          fi
+          if ! refs=$(GIT_TERMINAL_PROMPT=0 git ${auth_args[@]+"${auth_args[@]}"} -c credential.helper= ls-remote --tags "$url" 'refs/tags/dev-*'); then
+            echo "::error::OMN-19998: cannot list the tags of ${url}."
+            exit 1
+          fi
+          DEV_TAG=""
+          while IFS=$'\t' read -r _sha ref; do
+            name="${ref#refs/tags/}"
+            name="${name%'^{}'}"
+            if [[ "$name" =~ ^dev-[0-9]{14}-[0-9a-f]{12}$ ]]; then
+              if [ -z "$DEV_TAG" ] || [[ "$name" > "$DEV_TAG" ]]; then
+                DEV_TAG="$name"
+              fi
+            fi
+          done <<< "$refs"
+          if [ -z "$DEV_TAG" ]; then
+            echo "::error::OMN-19998: ${url} carries no dev merge tag (dev-<UTC YYYYMMDDHHMMSS>-<sha12>) to pin."
+            exit 1
+          fi
+          # A tag object is peeled to the commit it names; a lightweight tag is the commit.
+          TAG_SHA=$(printf '%s\n' "$refs" | awk -v want="refs/tags/${DEV_TAG}^{}" '$2 == want { print $1 }')
+          if [ -z "$TAG_SHA" ]; then
+            TAG_SHA=$(printf '%s\n' "$refs" | awk -v want="refs/tags/${DEV_TAG}" '$2 == want { print $1 }')
+          fi
+          if ! [[ "$TAG_SHA" =~ ^[0-9a-f]{40}$ ]] || [ "${TAG_SHA:0:12}" != "${DEV_TAG##*-}" ]; then
+            echo "::error::OMN-19998: dev merge tag ${DEV_TAG} names commit '${TAG_SHA}', which does not match the sha12 in the tag."
+            exit 1
+          fi
+          echo "CASCADE-DEV-TAG package=${PACKAGE} tag=${DEV_TAG} sha=${TAG_SHA} release=${RELEASE:-none}"
+
           # Use hyphenated package name for the branch (PyPI convention)
           PKG_HYPHEN="${PACKAGE//_/-}"
           # OMN-16286: the branch name must itself carry the ticket token --
@@ -264,30 +335,17 @@ jobs:
           # Evidence-Ticket all reference the same OMN-<n> (case-insensitive,
           # token-bounded match).
           TICKET_SLUG="$(printf '%s' "$TICKET" | tr '[:upper:]' '[:lower:]')"
-          BRANCH="automation/bump-${PKG_HYPHEN}-${VERSION}-${TICKET_SLUG}"
+          BRANCH="automation/bump-${PKG_HYPHEN}-${DEV_TAG}-${TICKET_SLUG}"
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # `version` is the cascade provenance block's required-version field
+          # (OMN-18235): it now carries the dev merge tag the bump pins.
+          echo "version=$DEV_TAG" >> $GITHUB_OUTPUT
+          echo "tag_sha=$TAG_SHA" >> $GITHUB_OUTPUT
+          echo "release=$RELEASE" >> $GITHUB_OUTPUT
           echo "pkg_hyphen=$PKG_HYPHEN" >> $GITHUB_OUTPUT
           echo "package=$PACKAGE" >> $GITHUB_OUTPUT
           echo "ticket=$TICKET" >> $GITHUB_OUTPUT
           echo "evidence_source=$EVIDENCE_SOURCE" >> $GITHUB_OUTPUT
-
-      # OMN-16286 (ports omnibase_infra's own OMN-15604 AC4 guard verbatim --
-      # single source of truth stays in omnibase_infra; this sparse-checks-out
-      # only the one script into a side directory so it does not disturb the
-      # downstream repo's own checkout above).
-      - name: Checkout omnibase_infra dep-provenance script
-        if: steps.token_check.outputs.has_token == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          repository: OmniNode-ai/omnibase_infra
-          # OMN-20001: release tag v0.38.61, not live default branch; the
-          # script is identical at v0.38.61 and infra main. Bump = consumer PR.
-          ref: e2aa4548874020a989c807b33bf55c032e897485
-          path: _dep_provenance_gate
-          sparse-checkout: |
-            scripts/check_dep_provenance.py
-          sparse-checkout-cone-mode: false
 
       - name: Create branch
         if: steps.token_check.outputs.has_token == 'true'
@@ -296,131 +354,120 @@ jobs:
         run: |
           git checkout -b "$BRANCH"
 
-      # OMN-16286 (CodeRabbit finding): keep an exact pyproject.toml pin
-      # (`==X.Y.Z`) in sync with the lockfile BEFORE running
-      # `uv lock --upgrade-package`, not after. `uv lock --upgrade-package`
-      # cannot select a version outside an exact `==` requirement in
-      # pyproject.toml -- if the pin stays stale, the lock step below
-      # silently re-resolves to the SAME old version and the SKIP check
-      # would misreport "already on latest" even though the repo is still
-      # pinned old. A downstream repo that pins exactly (e.g. omnibase_infra's
-      # `omnibase-core==0.46.8`) otherwise ends up with a lockfile and a pin
-      # that silently disagree the moment this cascade lands (observed live
-      # on infra#2805). A repo with a range/no pin is untouched -- the regex
-      # only matches an exact pin for this package.
-      - name: Update pyproject.toml pin
+      # OMN-19998 (RULING 2026-10-29T01:50:26Z, OMN-21433): write the package's
+      # newest dev merge tag as the downstream source pin,
+      #   <pkg> = { git = "https://github.com/OmniNode-ai/<repo>.git", tag = "<dev tag>" }
+      # which is exactly the shape the downstream dependency-provenance gate
+      # exempts and the internal-sibling-pins job allows. The source line is
+      # the cascade's own input, so the old "is this dependency movable"
+      # guard, which refused every git source, no longer applies; the
+      # verification step after the lock proves the lock landed on the tag.
+      # An exact `==X.Y.Z` requirement on the package is relaxed to a range
+      # that keeps its floor: this workflow writes no release pin.
+      # `--no-project` keeps uv from syncing or re-locking the downstream
+      # project (OMN-17427).
+      - name: Pin dev merge tag source (OMN-19998)
         if: steps.token_check.outputs.has_token == 'true'
         env:
           PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
-          RESOLVED: ${{ steps.vars.outputs.version }}
+          PACKAGE: ${{ steps.vars.outputs.package }}
+          DEV_TAG: ${{ steps.vars.outputs.version }}
         run: |
-          echo "Pinned version for ${PKG_HYPHEN}: ${RESOLVED}"
+          echo "Pinning ${PKG_HYPHEN} at dev merge tag ${DEV_TAG}"
 
-          uv run python - <<'PYEOF'
-          import re, os
+          uv run --no-project python - <<'PYEOF'
+          import os
+          import re
+          import sys
+          import tomllib
+
           pkg = os.environ["PKG_HYPHEN"]
-          version = os.environ["RESOLVED"]
-          content = open("pyproject.toml").read()
-          updated = re.sub(
-              r'"' + re.escape(pkg) + r'==[0-9]+\.[0-9]+\.[0-9]+"',
-              f'"{pkg}=={version}"',
-              content,
+          repo = os.environ["PACKAGE"]
+          tag = os.environ["DEV_TAG"]
+
+
+          def fail(message):
+              print(f"::error::OMN-19998: {message}")
+              sys.exit(1)
+
+
+          def normalize(name):
+              return re.sub(r"[-_.]+", "-", name.strip().strip("\"'").lower())
+
+
+          if not re.fullmatch(r"dev-[0-9]{14}-[0-9a-f]{12}", tag):
+              fail(f"{tag!r} is not a dev merge tag (dev-<UTC YYYYMMDDHHMMSS>-<sha12>).")
+          if not re.fullmatch(r"[A-Za-z0-9_-]+", repo):
+              fail(f"{repo!r} is not a safe repository name.")
+
+          url = "/".join(
+              (
+                  os.environ["GITHUB_SERVER_URL"],
+                  os.environ["GITHUB_REPOSITORY_OWNER"],
+                  f"{repo}.git",
+              )
           )
-          open("pyproject.toml", "w").write(updated)
+          entry = f'{pkg} = {{ git = "{url}", tag = "{tag}" }}\n'
+          text = open("pyproject.toml").read()
+
+          for header in re.findall(r"^\[tool\.uv\.sources\.([^\]]+)\]", text, re.M):
+              if normalize(header) == normalize(pkg):
+                  fail(
+                      f"[tool.uv.sources.{header}] is a sub-table; rewrite it to an "
+                      "inline table by hand before the cascade can pin it."
+                  )
+
+          lines = text.splitlines(keepends=True)
+          header_at = next(
+              (i for i, line in enumerate(lines)
+               if re.match(r"^\[tool\.uv\.sources\]\s*(#.*)?$", line)),
+              None,
+          )
+          if header_at is None:
+              if lines and not lines[-1].endswith("\n"):
+                  lines[-1] += "\n"
+              lines += ["\n", "[tool.uv.sources]\n", entry]
+          else:
+              end = next(
+                  (i for i in range(header_at + 1, len(lines))
+                   if lines[i].startswith("[")),
+                  len(lines),
+              )
+              hit = None
+              for i in range(header_at + 1, end):
+                  match = re.match(r"^([A-Za-z0-9_.\"'-]+)\s*=", lines[i])
+                  if match and normalize(match.group(1)) == normalize(pkg):
+                      if not re.match(r"^[^=]+=\s*\{.*\}\s*(#.*)?$", lines[i]):
+                          fail(f"the {pkg} source is not a one-line inline table: {lines[i].strip()}")
+                      hit = i
+                      break
+              if hit is None:
+                  lines.insert(header_at + 1, entry)
+              else:
+                  lines[hit] = entry
+          text = "".join(lines)
+
+          # An exact `==X.Y.Z` requirement is a release pin: keep its floor and
+          # cap it at the next minor, the range shape the downstream repos use.
+          name_re = re.escape(pkg).replace(r"\-", "[-_.]")
+
+          def relax(match):
+              major, minor, patch = (int(part) for part in match.group(2, 3, 4))
+              return f'"{match.group(1)}>={major}.{minor}.{patch},<{major}.{minor + 1}.0"'
+
+          text = re.sub(
+              r'"(' + name_re + r')==([0-9]+)\.([0-9]+)\.([0-9]+)"', relax, text
+          )
+
+          sources = tomllib.loads(text).get("tool", {}).get("uv", {}).get("sources", {})
+          pinned = [v for k, v in sources.items() if normalize(k) == normalize(pkg)]
+          if pinned != [{"git": url, "tag": tag}]:
+              fail(f"pyproject.toml does not hold exactly the {pkg} dev tag source: {pinned}")
+          if re.search(r'"' + name_re + r'==', text):
+              fail(f"an exact {pkg}== requirement is still in pyproject.toml")
+          open("pyproject.toml", "w").write(text)
+          print(f"CASCADE-DEV-TAG-PIN package={pkg} tag={tag}")
           PYEOF
-
-      # OMN-16286 / OMN-15604 AC4: `uv lock --upgrade-package` cannot move a
-      # [tool.uv.sources] git pin -- uv always prefers an explicit source
-      # override over registry resolution, so re-locking against the SAME
-      # override typically re-resolves to a byte-identical uv.lock. Left
-      # unchecked, the SKIP check below would misreport that as "already on
-      # latest" when this repo is actually still stuck on the git pin (this
-      # is exactly what produced omniintelligence PR #827's untrustworthy
-      # ~54% full-file uv.lock rewrite). Fail loud and explicit BEFORE
-      # attempting the (guaranteed no-op / suspicious) lock, instead of after.
-      # OMN-16926: the range-cap channel reads the committed constraint, so
-      # rewrite a stale exact `==` pin to the target first or every exact-pin
-      # leg would fail. A range cap is untouched by the exact-only regex and
-      # still fails this guard.
-      # OMN-17427: release run 39298434472 failed in omnibase_infra because
-      # project-aware `uv run` re-locked the rewritten exact pin before the
-      # index wait. This text-only check needs only packaging, so run outside
-      # the downstream project to avoid syncing or re-locking it.
-      - name: Check dependency is movable
-        if: steps.token_check.outputs.has_token == 'true'
-        env:
-          PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
-          TARGET_VERSION: ${{ steps.vars.outputs.version }}
-          REPO_NAME: ${{ matrix.repo }}
-        run: |
-          if ! uv run --no-project --with packaging python "${GITHUB_WORKSPACE}/_dep_provenance_gate/scripts/check_dep_provenance.py" \
-            --pyproject pyproject.toml \
-            --check-movable "$PKG_HYPHEN" \
-            --target-version "$TARGET_VERSION"; then
-            echo "::error::Dependency cascade leg for ${PKG_HYPHEN} in ${REPO_NAME} cannot reach ${TARGET_VERSION}: either a [tool.uv.sources] git override or a pyproject.toml constraint that does not admit ${TARGET_VERSION} (a range cap such as '<0.47.0'). The cascade does not widen caps. Remove the override or update the constraint before re-running this cascade (OMN-15604, OMN-16926)."
-            exit 1
-          fi
-
-      # OMN-18941: wait on the named condition "this exact version is listed
-      # on the index the lock resolves against", not a blind retry of uv lock.
-      # The waited_s token is telemetry: a cut logging waited_s>0 settles
-      # propagation lag; a cut still failing after the wait settles that the
-      # cause is not the index. Interval: 10 s; total: 600 s. The observed lag
-      # on the 0.47.29 cut was within ~1 minute of upload, so 600 s is about ten
-      # times that and far below the job's default 360-minute limit: a stuck
-      # index fails one leg fast.
-      - name: Wait for released version on the index (OMN-18941)
-        if: steps.token_check.outputs.has_token == 'true'
-        env:
-          PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
-          RESOLVED: ${{ steps.vars.outputs.version }}
-        run: |
-          CASCADE_INDEX_BASE="${CASCADE_INDEX_BASE:-https://pypi.org/simple}"
-          CASCADE_WAIT_INTERVAL_S="${CASCADE_WAIT_INTERVAL_S:-10}"
-          CASCADE_WAIT_TOTAL_S="${CASCADE_WAIT_TOTAL_S:-600}"
-
-          if ! command -v curl >/dev/null 2>&1; then
-            echo "::error::curl is required to wait for the released version on the index."
-            exit 1
-          fi
-
-          started_us="${EPOCHREALTIME/[.,]/}"
-          while true; do
-            listed=false
-            poll_us="${EPOCHREALTIME/[.,]/}"
-            if body=$(curl -fsS --max-time 20 \
-              -H 'Accept: application/vnd.pypi.simple.v1+json' \
-              -H 'Cache-Control: no-cache' \
-              -H 'Pragma: no-cache' \
-              "${CASCADE_INDEX_BASE}/${PKG_HYPHEN}/?cb=${poll_us}"); then
-              filenames=$(printf '%s' "$body" | grep -oE '"filename": *"[^"]+"' || true)
-              while IFS= read -r filename; do
-                filename="${filename#*:}"
-                filename="${filename#*\"}"
-                filename="${filename%\"}"
-                case "$filename" in
-                  *-"${RESOLVED}"-*.whl | *-"${RESOLVED}".tar.gz | *-"${RESOLVED}".zip)
-                    listed=true
-                    break
-                    ;;
-                esac
-              done <<< "$filenames"
-            fi
-
-            now_us="${EPOCHREALTIME/[.,]/}"
-            waited=$(( (now_us - started_us) / 1000000 ))
-            if [ "$listed" = true ]; then
-              echo "CASCADE-INDEX-WAIT-OK package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
-              exit 0
-            fi
-            if [ "$waited" -ge "$CASCADE_WAIT_TOTAL_S" ]; then
-              echo "CASCADE-INDEX-WAIT-TIMEOUT package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
-              echo "::error::Released version ${PKG_HYPHEN}==${RESOLVED} is not listed on ${CASCADE_INDEX_BASE} after ${waited} seconds."
-              exit 1
-            fi
-            echo "Not listed yet: ${PKG_HYPHEN}==${RESOLVED} (${waited} seconds elapsed)."
-            sleep "$CASCADE_WAIT_INTERVAL_S"
-          done
 
       # OMN-16517 (docs/plans/2026-08-23-cloud-ci-offload-plan.md Stage 1):
       # sanitized generator environment. This step previously ran `uv lock`
@@ -439,16 +486,15 @@ jobs:
       # is a DIFFERENT, narrower defense (runner-level *user* config only)
       # and cannot substitute for sanitizing this step's own environment.
       #
-      # Deliberately NOT `--index` (the ADDITIONAL-index flag -- it adds a
-      # higher-priority index and sanitizes nothing) -- `--default-index`
-      # pins the actual default/lowest-priority index this step resolves
-      # against.
+      # Deliberately NOT `--index` (the ADDITIONAL-index flag) -- it adds a
+      # higher-priority index and sanitizes nothing; `--default-index` pins
+      # the actual default/lowest-priority index this step resolves against.
       - name: Upgrade lockfile
         if: steps.token_check.outputs.has_token == 'true'
         env:
           BUMP_PACKAGE: ${{ steps.vars.outputs.package }}
           PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
-          RESOLVED: ${{ steps.vars.outputs.version }}
+          DEV_TAG: ${{ steps.vars.outputs.version }}
           REPO_NAME: ${{ matrix.repo }}
           GIT_SOURCE_TOKEN: ${{ steps.git-source-token.outputs.token }}
           GIT_SOURCE_REPOS: ${{ steps.git_sources.outputs.repos }}
@@ -477,76 +523,39 @@ jobs:
             echo "CASCADE-GIT-SOURCE-AUTH repos=${GIT_SOURCE_REPOS}"
           fi
 
-          # Upgrade the package in the lockfile. pyproject.toml's exact pin
-          # (if any) was already brought forward by the previous step, so
-          # this can now actually resolve to the new version instead of
-          # being capped by a stale `==` requirement.
-          #
-          # OMN-17427: in release run 39298434472, omnimemory's index probe
-          # passed but uv still selected 0.47.48 instead of the admitted
-          # 0.47.49. Request the exact release and retry only on uv's own
-          # "no version of <pkg>==<version>" answer, not a blind retry.
+          # Re-lock the package against the dev tag source the previous step
+          # wrote. The tag is a git ref that exists already, so uv resolves it
+          # in one pass: no index wait, no retry. A failure of uv is the
+          # failure of the leg (an unsatisfiable range, an unreadable source).
           #
           # --no-config: ignore any ambient uv.toml (user- or
           # workspace-level) on the runner -- the sanitized env vars above
           # only clear the ENV channel, not a config-file channel.
           # --default-index: pin the actual public index this resolution
-          # uses, rather than relying on uv's built-in default (which
-          # --no-config does not change, but which this makes explicit and
-          # future-proof against a workflow-level default changing).
-          # --refresh-package: makes uv's own HTTP cache unable to serve a
-          # stale simple-index entry for the package after the wait step
-          # observed the version present. uv documents that --upgrade-package
-          # implies --refresh-package; the explicit flag keeps this guarantee
-          # from depending on that implication.
-          CASCADE_WAIT_INTERVAL_S="${CASCADE_WAIT_INTERVAL_S:-10}"
-          CASCADE_WAIT_TOTAL_S="${CASCADE_WAIT_TOTAL_S:-600}"
-          started_us="${EPOCHREALTIME/[.,]/}"
-          while true; do
-            if out=$(
-              uv lock --no-config --default-index https://pypi.org/simple --upgrade-package "${BUMP_PACKAGE}==${RESOLVED}" --refresh-package "$BUMP_PACKAGE" 2>&1
-            ); then
-              status=0
-            else
-              status=$?
-            fi
-            printf '%s\n' "$out"
-            now_us="${EPOCHREALTIME/[.,]/}"
-            waited=$(( (now_us - started_us) / 1000000 ))
-            if [ "$status" -eq 0 ]; then
-              echo "CASCADE-UV-INDEX-WAIT-OK package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
-              break
-            fi
-            normalized=$(printf '%s' "$out" | tr '[:space:]' ' ' | tr -s ' ')
-            if [[ "$normalized" != *"no version of ${PKG_HYPHEN}==${RESOLVED}"* ]]; then
-              exit "$status"
-            fi
-            if [ "$waited" -ge "$CASCADE_WAIT_TOTAL_S" ]; then
-              echo "CASCADE-UV-INDEX-WAIT-TIMEOUT package=${PKG_HYPHEN} version=${RESOLVED} waited_s=${waited}"
-              echo "::error::uv cannot resolve released version ${PKG_HYPHEN}==${RESOLVED} after ${waited} seconds."
-              exit 1
-            fi
-            sleep "$CASCADE_WAIT_INTERVAL_S"
-          done
+          # uses for the other dependencies.
+          uv lock --no-config --default-index https://pypi.org/simple --upgrade-package "$PKG_HYPHEN"
 
           # Check if anything changed in either file -- a pin-only bump with
           # no lockfile delta (or vice versa) is still a real change to land.
           if git diff --quiet uv.lock pyproject.toml; then
             echo "SKIP=true" >> $GITHUB_ENV
-            echo "No lockfile/pin changes -- the next step verifies ${REPO_NAME} already locks the target version"
+            echo "No lockfile/pin changes -- the next step verifies ${REPO_NAME} already locks the target dev tag"
           else
             echo "SKIP=false" >> $GITHUB_ENV
-            echo "Lockfile/pin updated with new ${BUMP_PACKAGE} version"
+            echo "Lockfile/pin updated to ${BUMP_PACKAGE} dev merge tag ${DEV_TAG}"
           fi
 
-      # OMN-16926: a no-diff lock is "already on the target" only when uv.lock
-      # locks exactly the released version. Anything else fails the leg rather
-      # than reporting a skip.
-      - name: Verify locked version is the target
+      # OMN-16926 / OMN-19998: a no-diff lock is "already on the target" only
+      # when uv.lock records exactly the dev merge tag and the commit it names.
+      # Anything else (a registry entry, an older tag, another commit) fails
+      # the leg rather than reporting a skip.
+      - name: Verify locked source is the target dev tag (OMN-19998)
         if: steps.token_check.outputs.has_token == 'true'
         env:
           PKG_HYPHEN: ${{ steps.vars.outputs.pkg_hyphen }}
-          RESOLVED: ${{ steps.vars.outputs.version }}
+          PACKAGE: ${{ steps.vars.outputs.package }}
+          DEV_TAG: ${{ steps.vars.outputs.version }}
+          TAG_SHA: ${{ steps.vars.outputs.tag_sha }}
           REPO_NAME: ${{ matrix.repo }}
         run: |
           uv run --no-project python - <<'PYEOF'
@@ -556,8 +565,10 @@ jobs:
           import tomllib
 
           pkg = os.environ["PKG_HYPHEN"]
-          target = os.environ["RESOLVED"]
-          repo = os.environ["REPO_NAME"]
+          repo = os.environ["PACKAGE"]
+          tag = os.environ["DEV_TAG"]
+          sha = os.environ["TAG_SHA"]
+          target_repo = os.environ["REPO_NAME"]
 
           def normalize(name):
               return re.sub(r"[-_.]+", "-", name.lower())
@@ -566,7 +577,7 @@ jobs:
               with open("./uv.lock", "rb") as lockfile:
                   lock = tomllib.load(lockfile)
           except (OSError, tomllib.TOMLDecodeError) as exc:
-              print(f"::error::Cannot read uv.lock for {pkg} in {repo}: {exc}")
+              print(f"::error::Cannot read uv.lock for {pkg} in {target_repo}: {exc}")
               sys.exit(1)
 
           package = next(
@@ -575,16 +586,20 @@ jobs:
               None,
           )
           if package is None:
-              print(f"::error::Package {pkg} is not in uv.lock for {repo}; expected target {target}.")
+              print(f"::error::Package {pkg} is not in uv.lock for {target_repo}; expected dev tag {tag}.")
               sys.exit(1)
 
-          locked = package.get("version")
-          if locked == target:
-              print(f"CASCADE-LOCKED-VERSION-OK package={pkg} version={locked} repo={repo}")
+          server = os.environ["GITHUB_SERVER_URL"]
+          owner = os.environ["GITHUB_REPOSITORY_OWNER"]
+          expected = f"{server}/{owner}/{repo}.git?tag={tag}#{sha}"
+          source = package.get("source")
+          locked = source.get("git") if isinstance(source, dict) else None
+          if locked == expected:
+              print(f"CASCADE-LOCKED-SOURCE-OK package={pkg} tag={tag} sha={sha} repo={target_repo}")
               sys.exit(0)
 
-          print(f"CASCADE-LOCKED-VERSION-MISMATCH package={pkg} locked={locked} target={target} repo={repo}")
-          print(f"::error::{pkg} in {repo} locks {locked}, target {target}: uv lock --upgrade-package did not reach the target (a cap or override the movable guard did not catch), so this leg is not already on the released version.")
+          print(f"CASCADE-LOCKED-SOURCE-MISMATCH package={pkg} locked={source} target={expected} repo={target_repo}")
+          print(f"::error::{pkg} in {target_repo} locks {source}, target {expected}: the lock did not land on the dev merge tag (a cap or override the pin step did not control), so this leg is not on the dev tag.")
           sys.exit(1)
           PYEOF
 
@@ -602,7 +617,7 @@ jobs:
           git config user.email "307849072+onexbot-occ-writer[bot]@users.noreply.github.com"
           git add uv.lock pyproject.toml
           git commit -m "chore(deps): bump ${BUMP_PACKAGE} to ${RESOLVED}" \
-            -m "Automated dependency cascade from ${{ github.repository }} release ${RESOLVED}." \
+            -m "Automated dependency cascade from ${{ github.repository }}: pins dev merge tag ${RESOLVED}." \
             --trailer "Onex-Workflow: ${GITHUB_WORKFLOW}" \
             --trailer "Onex-Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
           git push origin "$BRANCH"
@@ -645,10 +660,11 @@ jobs:
             --body "$(cat <<'PREOF'
           ## Summary
 
-          Automated dependency bump triggered by a new release of `${{ steps.vars.outputs.package }}` (${{ steps.vars.outputs.version }}).
+          Automated dependency bump: pins `${{ steps.vars.outputs.package }}` at its newest dev merge tag `${{ steps.vars.outputs.version }}` (RULING 2026-10-29T01:50:26Z: first-party dependencies iterate on dev merge tags, not on releases).
 
-          - Updates `uv.lock` via `uv lock --upgrade-package ${{ steps.vars.outputs.package }}`
-          - Updates `pyproject.toml` exact pin (`==X.Y.Z`) to match, when this repo pins that exactly
+          - Sets the `[tool.uv.sources]` git source of `${{ steps.vars.outputs.package }}` to that dev merge tag
+          - Updates `uv.lock` via `uv lock --upgrade-package ${{ steps.vars.outputs.pkg_hyphen }}`
+          - Relaxes an exact `==X.Y.Z` requirement on the package to a range, when this repo had one
           - No other source code changes
 
           ## Cascade provenance (OMN-16286, OMN-18202)
@@ -657,8 +673,9 @@ jobs:
           CI running against the new lockfile. It deliberately carries no
           evidence stamp of its own at creation: this repo's OCC autobind mints
           a companion bound to THIS PR's own commit and adds the stamp once
-          that companion exists (OMN-18202 AC1). The upstream release that
-          triggered this bump already proved the released package version:
+          that companion exists (OMN-18202 AC1). The upstream dev merge tag
+          this bump pins is the version field below (it carries the dev merge
+          tag, not a release):
 
           - Source repo: `OmniNode-ai/${{ steps.vars.outputs.package }}`
           - Released version: `${{ steps.vars.outputs.version }}`
@@ -670,7 +687,7 @@ jobs:
           ## Test plan
 
           - [ ] CI passes (lockfile resolution is valid)
-          - [ ] Downstream tests pass with the new dependency version
+          - [ ] Downstream tests pass with the dev merge tag
           PREOF
           )" \
             --head "$BRANCH" \
@@ -708,5 +725,5 @@ jobs:
         run: |
           echo "### Skipped: ${REPO_NAME}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "${REPO_NAME} already locks ${BUMP_PACKAGE} ${RESOLVED}, the released version (verified against uv.lock)." >> $GITHUB_STEP_SUMMARY
+          echo "${REPO_NAME} already locks ${BUMP_PACKAGE} at dev merge tag ${RESOLVED} (verified against uv.lock)." >> $GITHUB_STEP_SUMMARY
           echo "No lockfile changes needed." >> $GITHUB_STEP_SUMMARY
