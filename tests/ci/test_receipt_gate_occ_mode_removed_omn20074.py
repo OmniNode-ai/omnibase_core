@@ -35,6 +35,7 @@ REMOVED_PATHS = (
 
 CALLER_INPUTS = {
     "evidence-source",
+    "verifier-tag",
     "verifier-version",
     "compare-with-occ",
     "shadow",

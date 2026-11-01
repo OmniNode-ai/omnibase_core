@@ -21,9 +21,24 @@
 #   evidence-source: caller is the only accepted value, and the default. Any
 #                   other value fails dod-verify; callers still pass it
 #                   explicitly.
-#   verifier-version: pinned omnimarket PyPI release (default: 0.4.305; must be
+#   verifier-tag:   the omnimarket dev-merge tag the verifier is installed from
+#                   (dev-<UTC YYYYMMDDHHMMSS>-<sha12>; OMN-21676, operator
+#                   ruling 2026-10-31: the gate iterates with tags, not with
+#                   releases). The tag is resolved with git ls-remote to its
+#                   commit, its sha12 suffix must prefix that commit (a tag
+#                   moved to another commit is refused), the commit must be
+#                   reachable from the omnimarket dev branch and must descend
+#                   from the floor commit VERIFIER_FLOOR_SHA (ancestry, not a
+#                   version number), and the verifier is installed from that
+#                   commit's own uv.lock. The tag and the resolved commit are
+#                   recorded in the job summary and in the verifier step's
+#                   outputs. When set, verifier-version is ignored.
+#   verifier-version: MIGRATION FALLBACK ONLY, used when verifier-tag is empty:
+#                   pinned omnimarket PyPI release (default: 0.4.305; must be
 #                   numeric MAJOR.MINOR.PATCH and at or above the install
-#                   step's VERIFIER_FLOOR, OMN-20032).
+#                   step's VERIFIER_FLOOR, OMN-20032). Callers move to
+#                   verifier-tag; the dev_tag_lineage validator flags a caller
+#                   that still passes verifier-version.
 #   compare-with-occ: must be "false" (the default). Kept so existing callers
 #                   that pass it stay valid; "true" fails dod-verify.
 #   shadow:         "true" while a repository counts this gate's verdict
@@ -49,8 +64,13 @@ on:
         type: string
         required: false
         default: caller
+      verifier-tag:
+        description: "omnimarket dev-merge tag (dev-YYYYMMDDHHMMSS-sha12) the verifier is installed from; wins over verifier-version when set (OMN-21676)."
+        type: string
+        required: false
+        default: ""
       verifier-version:
-        description: Pinned omnimarket PyPI release for caller evidence verification.
+        description: "Migration fallback, used only when verifier-tag is empty: pinned omnimarket PyPI release for caller evidence verification."
         type: string
         required: false
         default: "0.4.305"
@@ -314,31 +334,115 @@ jobs:
           exit 1
 
       # OMN-20032: refuse a verifier older than the floor before installing it.
-      # VERIFIER_FLOOR is the one place the floor lives: 0.4.303 is the first
-      # omnimarket release carrying omnimarket#3511, which makes node_dod_verify
-      # refuse a contract that leaves an acceptance criterion unbound. A later
-      # release that tightens verification raises this one value.
+      # VERIFIER_FLOOR is the one place the version floor lives: 0.4.303 is the
+      # first omnimarket release carrying omnimarket#3511, which makes
+      # node_dod_verify refuse a contract that leaves an acceptance criterion
+      # unbound. A later release that tightens verification raises this one
+      # value.
+      #
+      # OMN-21676: the gate iterates with tags, not with releases (operator
+      # ruling 2026-10-31, extending the ruling of 2026-10-29T01:50:26Z). With
+      # verifier-tag set, the verifier is the omnimarket commit that dev-merge
+      # tag names, and the version path above is not run. The tag is resolved
+      # to its commit once, with git ls-remote (a peeled line wins over the tag
+      # line); the tag's sha12 suffix must prefix that commit, so a tag that was
+      # moved to another commit is refused. The floor is an ancestry fact,
+      # VERIFIER_FLOOR_SHA (omnimarket#3511's squash commit) must be an
+      # ancestor of the commit, and the commit must be reachable from the
+      # omnimarket dev branch, so a version number never decides it. The source
+      # is fetched by the tag, its commit is read back, and the verifier is
+      # installed from that commit's own uv.lock (a plain pip install of the git
+      # commit cannot resolve the unreleased first-party tags the lock pins).
+      # The tag and the resolved commit are the receipt: they go to
+      # $RUNNER_TEMP/dod/verifier-commit.txt, to this step's outputs and to the
+      # job summary.
       - name: Install the pinned verifier
         id: verifier
         continue-on-error: ${{ inputs.shadow == 'true' }}
         if: steps.bot_exempt.outputs.exempt != 'true' && steps.same_repo.outcome != 'failure' && steps.tickets.outcome != 'failure' && steps.check_timeout.outcome != 'failure'
         env:
+          VERIFIER_TAG: ${{ inputs.verifier-tag }}
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
           VERIFIER_FLOOR: "0.4.303"
+          VERIFIER_FLOOR_SHA: "e565ba5ba00c5a9201c9eb66c0259840960f4ea4"
+          VERIFIER_REPO_URL: "${{ github.server_url }}/OmniNode-ai/omnimarket.git"
+          VERIFIER_BRANCH: "dev"
         run: |
           set -euo pipefail
-          if [[ ! "$VERIFIER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::verifier-version must match numeric MAJOR.MINOR.PATCH"
-            exit 1
+          if [ -n "${VERIFIER_TAG:-}" ]; then
+            if [[ ! "$VERIFIER_TAG" =~ ^dev-[0-9]{14}-[0-9a-f]{12}$ ]]; then
+              echo "::error::verifier-tag must be an omnimarket dev-merge tag, dev-YYYYMMDDHHMMSS-<sha12>"
+              exit 1
+            fi
+            export GIT_TERMINAL_PROMPT=0
+            tag_suffix="${VERIFIER_TAG##*-}"
+            refs="$(git ls-remote --tags "$VERIFIER_REPO_URL" "refs/tags/$VERIFIER_TAG" "refs/tags/$VERIFIER_TAG^{}")" || {
+              echo "::error::could not read the tag $VERIFIER_TAG from $VERIFIER_REPO_URL"
+              exit 1
+            }
+            tag_sha="$(awk -v ref="refs/tags/$VERIFIER_TAG^{}" '$2 == ref { print $1 }' <<< "$refs")"
+            if [ -z "$tag_sha" ]; then
+              tag_sha="$(awk -v ref="refs/tags/$VERIFIER_TAG" '$2 == ref { print $1 }' <<< "$refs")"
+            fi
+            if [[ ! "$tag_sha" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::verifier-tag $VERIFIER_TAG is absent from $VERIFIER_REPO_URL"
+              exit 1
+            fi
+            if [ "${tag_sha:0:12}" != "$tag_suffix" ]; then
+              echo "::error::verifier-tag $VERIFIER_TAG names commit $tag_sha, whose first 12 characters differ from the tag's own suffix $tag_suffix; the tag was moved, refusing it"
+              exit 1
+            fi
+            lineage="$RUNNER_TEMP/dod/verifier-lineage"
+            mkdir -p "$RUNNER_TEMP/dod"
+            rm -rf "$lineage"
+            git init --quiet --bare "$lineage"
+            git -C "$lineage" fetch --quiet --filter=tree:0 --no-tags "$VERIFIER_REPO_URL" "+refs/heads/$VERIFIER_BRANCH:refs/remotes/origin/$VERIFIER_BRANCH" "refs/tags/$VERIFIER_TAG:refs/tags/$VERIFIER_TAG" || {
+              echo "::error::could not fetch the history of $VERIFIER_BRANCH and $VERIFIER_TAG; lineage is unresolved, so the tag is refused"
+              exit 1
+            }
+            if ! git -C "$lineage" merge-base --is-ancestor "$tag_sha" "refs/remotes/origin/$VERIFIER_BRANCH"; then
+              echo "::error::verifier-tag $VERIFIER_TAG (commit $tag_sha) is not reachable from the omnimarket $VERIFIER_BRANCH branch"
+              exit 1
+            fi
+            if ! git -C "$lineage" cat-file -e "$VERIFIER_FLOOR_SHA^{commit}" 2>/dev/null || ! git -C "$lineage" merge-base --is-ancestor "$VERIFIER_FLOOR_SHA" "$tag_sha"; then
+              echo "::error::verifier-tag $VERIFIER_TAG (commit $tag_sha) does not descend from the floor commit $VERIFIER_FLOOR_SHA; commits before it admit a contract that leaves an acceptance criterion unbound. Use a newer omnimarket dev-merge tag."
+              exit 1
+            fi
+            src="$GITHUB_WORKSPACE/.dod-verify/verifier-src"
+            rm -rf "$src"
+            git init --quiet "$src"
+            git -C "$src" fetch --quiet --depth 1 --no-tags "$VERIFIER_REPO_URL" "refs/tags/$VERIFIER_TAG"
+            fetched="$(git -C "$src" rev-parse --verify "FETCH_HEAD^{commit}")"
+            if [ "$fetched" != "$tag_sha" ]; then
+              echo "::error::verifier-tag $VERIFIER_TAG resolved to $tag_sha and then fetched as $fetched; the tag moved during the install, refusing it"
+              exit 1
+            fi
+            git -C "$src" checkout --quiet --detach "$fetched"
+            if [ -n "${VERIFIER_VERSION:-}" ]; then
+              echo "::notice::verifier-tag is set, so verifier-version $VERIFIER_VERSION is ignored (OMN-21676)"
+            fi
+            uv venv --clear --python 3.13 "$GITHUB_WORKSPACE/.dod-verify/venv"
+            UV_PROJECT_ENVIRONMENT="$GITHUB_WORKSPACE/.dod-verify/venv" uv sync --project "$src" --frozen --no-dev --no-editable --no-config --python 3.13
+            printf 'tag=%s commit=%s floor_commit=%s\n' "$VERIFIER_TAG" "$tag_sha" "$VERIFIER_FLOOR_SHA" > "$RUNNER_TEMP/dod/verifier-commit.txt"
+            if [ -n "${GITHUB_OUTPUT:-}" ]; then
+              printf 'verifier_tag=%s\nverifier_commit=%s\n' "$VERIFIER_TAG" "$tag_sha" >> "$GITHUB_OUTPUT"
+            fi
+            echo "::notice::verifier installed from omnimarket tag $VERIFIER_TAG, commit $tag_sha"
+          else
+            echo "::warning::verifier-version is the migration fallback; pass verifier-tag, an omnimarket dev-merge tag (OMN-21676)"
+            if [[ ! "$VERIFIER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::verifier-version must match numeric MAJOR.MINOR.PATCH"
+              exit 1
+            fi
+            IFS=. read -r v_major v_minor v_patch <<< "$VERIFIER_VERSION"
+            IFS=. read -r f_major f_minor f_patch <<< "$VERIFIER_FLOOR"
+            if (( 10#$v_major < 10#$f_major || (10#$v_major == 10#$f_major && (10#$v_minor < 10#$f_minor || (10#$v_minor == 10#$f_minor && 10#$v_patch < 10#$f_patch))) )); then
+              echo "::error::verifier-version $VERIFIER_VERSION is below the floor $VERIFIER_FLOOR; releases before it admit a contract that leaves an acceptance criterion unbound. Re-pin the caller's verifier-version to $VERIFIER_FLOOR or newer."
+              exit 1
+            fi
+            uv venv --clear --python 3.13 "$GITHUB_WORKSPACE/.dod-verify/venv"
+            uv pip install --python "$GITHUB_WORKSPACE/.dod-verify/venv/bin/python" --no-config "omnimarket==${VERIFIER_VERSION}"
           fi
-          IFS=. read -r v_major v_minor v_patch <<< "$VERIFIER_VERSION"
-          IFS=. read -r f_major f_minor f_patch <<< "$VERIFIER_FLOOR"
-          if (( 10#$v_major < 10#$f_major || (10#$v_major == 10#$f_major && (10#$v_minor < 10#$f_minor || (10#$v_minor == 10#$f_minor && 10#$v_patch < 10#$f_patch))) )); then
-            echo "::error::verifier-version $VERIFIER_VERSION is below the floor $VERIFIER_FLOOR; releases before it admit a contract that leaves an acceptance criterion unbound. Re-pin the caller's verifier-version to $VERIFIER_FLOOR or newer."
-            exit 1
-          fi
-          uv venv --clear --python 3.13 "$GITHUB_WORKSPACE/.dod-verify/venv"
-          uv pip install --python "$GITHUB_WORKSPACE/.dod-verify/venv/bin/python" --no-config "omnimarket==${VERIFIER_VERSION}"
           DOD_VERIFY_PY="$GITHUB_WORKSPACE/.dod-verify/venv/bin/python"
           echo "DOD_VERIFY_PY=$DOD_VERIFY_PY" >> "$GITHUB_ENV"
           "$DOD_VERIFY_PY" -c "import omnimarket.nodes.node_dod_verify"
@@ -1758,13 +1862,18 @@ jobs:
         if: always()
         env:
           VERIFIER_VERSION: ${{ inputs.verifier-version }}
+          VERIFIER_TAG: ${{ inputs.verifier-tag }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           SHADOW: ${{ inputs.shadow }}
           STEPS_JSON: ${{ toJSON(steps) }}
         run: |
           # Best-effort summary, including when an earlier step failed.
           {
-            printf 'Verifier version: %s\n\nHead SHA: %s\n\n' "$VERIFIER_VERSION" "$HEAD_SHA"
+            if [ -n "${VERIFIER_TAG:-}" ]; then
+              printf 'Verifier tag: %s\n\nVerifier source: %s\n\nHead SHA: %s\n\n' "$VERIFIER_TAG" "$(cat "$RUNNER_TEMP/dod/verifier-commit.txt" 2>/dev/null || printf '%s' 'unavailable')" "$HEAD_SHA"
+            else
+              printf 'Verifier version: %s\n\nHead SHA: %s\n\n' "$VERIFIER_VERSION" "$HEAD_SHA"
+            fi
             printf 'Merge base SHA: %s\n\n' "$(cat "$RUNNER_TEMP/dod/merge-base.txt" 2>/dev/null || printf '%s' 'unavailable')"
             if [ -f "$RUNNER_TEMP/dod/tickets.txt" ]; then
               while IFS= read -r ticket; do

@@ -55,6 +55,7 @@ def test_inputs_preserve_existing_defaults_and_expose_caller_verifier() -> None:
     inputs = trigger["workflow_call"]["inputs"]
     expected = {
         "evidence-source": "caller",
+        "verifier-tag": "",
         "verifier-version": "0.4.305",
         "compare-with-occ": "false",
         "shadow": "false",
