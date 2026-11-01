@@ -2009,6 +2009,16 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      - id: check-contract-chain-coverage
+        name: Report contract chain coverage (OMN-21561)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_contract_chain_coverage:ValidatorContractChainCoverage src
+        language: system
+        files: (^|/)[^/]*contract\.yaml$
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
       - id: check-dev-tag-lineage
         name: Verify dev-merge tag lineage (OMN-17427)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_dev_tag_lineage_effect.runtime_dev_tag_lineage

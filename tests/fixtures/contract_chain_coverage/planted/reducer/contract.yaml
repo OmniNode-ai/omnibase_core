@@ -1,0 +1,98 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_version:
+  major: 0
+  minor: 1
+  patch: 0
+name: node_planted_reducer
+node_type: REDUCER_GENERIC
+description: Track order events and reconcile their lifecycle.
+state_machine:
+  version: &id001
+    major: 1
+    minor: 0
+    patch: 0
+  state_machine_name: planted_coverage
+  state_machine_version: *id001
+  description: Track an order until completion.
+  initial_state: INIT
+  terminal_states:
+    - DONE
+    - FAILED
+  states:
+    - version: &id002
+        major: 1
+        minor: 0
+        patch: 0
+      state_name: INIT
+      state_type: operational
+      description: Planted INIT state.
+    - version: *id002
+      state_name: WORK
+      state_type: operational
+      description: Planted WORK state.
+    - version: *id002
+      state_name: SPIN
+      state_type: operational
+      description: Planted SPIN state.
+    - version: *id002
+      state_name: ORPHAN
+      state_type: operational
+      description: Planted ORPHAN state.
+    - version: *id002
+      state_name: DONE
+      state_type: terminal
+      description: Planted DONE state.
+      is_terminal: true
+      is_recoverable: false
+    - version: *id002
+      state_name: FAILED
+      state_type: terminal
+      description: Planted FAILED state.
+      is_terminal: true
+      is_recoverable: false
+  transitions:
+    - version: *id002
+      transition_name: init_to_work
+      from_state: INIT
+      to_state: WORK
+      trigger: start
+      conditions:
+        - condition_name: ready
+          condition_type: expression
+          expression: ready == true
+    - version: *id002
+      transition_name: init_to_failed
+      from_state: INIT
+      to_state: FAILED
+      trigger: fail
+    - version: *id002
+      transition_name: work_to_done
+      from_state: WORK
+      to_state: DONE
+      trigger: finish
+    - version: *id002
+      transition_name: work_to_spin
+      from_state: WORK
+      to_state: SPIN
+      trigger: spin
+    - version: *id002
+      transition_name: spin_loop
+      from_state: SPIN
+      to_state: SPIN
+      trigger: repeat
+    - version: *id002
+      transition_name: orphan_to_done
+      from_state: ORPHAN
+      to_state: DONE
+      trigger: recover
+  error_states:
+    - FAILED
+consumed_events:
+  - event_type: start
+  - event_type: fail
+  - event_type: finish
+  - event_type: spin
+  - event_type: repeat
+  - event_type: recover

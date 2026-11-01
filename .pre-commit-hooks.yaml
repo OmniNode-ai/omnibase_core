@@ -1418,6 +1418,16 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-contract-chain-coverage
+  name: Report contract chain coverage (OMN-21561)
+  description: Reports unbound contract chains and corpus liveness at warning severity.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_contract_chain_coverage:ValidatorContractChainCoverage
+  files: (^|/)[^/]*contract\.yaml$
+  pass_filenames: false
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-protocol-binding
   name: No protocol bound to its implementation in code (OMN-21533, K5)
   description: >

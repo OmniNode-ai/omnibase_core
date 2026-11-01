@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Corpus counterparts supplied by the PR watcher and ledger effect in production.
+# The PR handoff contract beside this fixture is copied verbatim.
+contract_version:
+  major: 0
+  minor: 1
+  patch: 0
+name: node_pr_handoff_topic_peers
+node_type: EFFECT_GENERIC
+event_bus:
+  publish_topics:
+    - onex.evt.omnimarket.pr-state-observed.v1
+    - onex.evt.omnimarket.pr-handoff-ledger-appended.v1
+  subscribe_topics:
+    - onex.cmd.omnimarket.pr-handoff-ledger-append-requested.v1

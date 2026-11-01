@@ -1,0 +1,45 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""AST-only committed chain bindings; this text is never collected by pytest."""
+
+@bus_overlay("redpanda")
+@chain_obligation("orchestrator/contract.yaml::edge::plan->run")
+def chain_0():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("reducer/contract.yaml::guard::init_to_work::true")
+def chain_4():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("reducer/contract.yaml::transition::init_to_failed")
+def chain_5():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("reducer/contract.yaml::transition::init_to_work")
+def chain_6():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("reducer/contract.yaml::transition::orphan_to_done")
+def chain_7():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("reducer/contract.yaml::transition::work_to_done")
+def chain_9():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("reducer/contract.yaml::transition::work_to_spin")
+def chain_10():
+    pass

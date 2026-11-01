@@ -1,0 +1,292 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+#
+# ONEX Node Contract
+# Node: NodePrHandoffOrchestrator (OMN-20636)
+#
+# The PR handoff workflow: a lane that opened a PR publishes one handoff
+# request on the bus and stops; this orchestrator, on a runtime that receives
+# the PR watcher's observations, decides when the PR is ready and hands it to
+# the landing lane by appending the same ledger rows pr-handoff wrote by hand.
+# No language model anywhere. It replaces the readiness half of pr-handoff's
+# handoff_row.sh, which read a copy of the PR watcher state taken when a lab
+# lane launched and so refused (exit 5) every PR the lane opened itself
+# (FRICTION 2026-10-05T14:01:01Z).
+#
+# Why a workflow of its own and not an operation of node_pr_landing_orchestrator:
+# that machine is model-checked (revision 1 of plan 5.1), keyed per PR episode,
+# and ends only in MERGED or CLOSED. A handoff is a request by one lane at one
+# head that ends handed off or refused; adding its states to the landing table
+# would change a verified machine for a different question. It lives in the same
+# family (the PR landing vocabulary, the PR watcher's observations, the ledger's
+# bus append) and shares no private model with it.
+#
+# Chains (tests/chains/pr_handoff, asserted with chain_assert, every walker
+# obligation in tests/chains/pr_handoff/walker_report.json bound exactly once):
+#   golden: requested > accepted > [waits] > ledger append > handed-off
+#   error : invalid request, stale head, missing ticket, not owned, missing lab
+#           proof, held, withheld, PR not open, superseded, timed out, ledger
+#           refused, append unconfirmed
+#
+# Time comes only from messages (requested_at, observed_at, answered_at): the
+# completion bound of WAITING is the request's wait budget, checked whenever a
+# message for the PR arrives. The bound of APPENDING is the ledger effect's own
+# answer, which always comes (a lost receipt is answered as pending and resent
+# under the same ledger request id, deduplicated by the ledger host).
+name: "node_pr_handoff_orchestrator"
+contract_name: "node_pr_handoff_orchestrator"
+node_name: "node_pr_handoff_orchestrator"
+contract_version:
+  major: 0
+  minor: 1
+  patch: 0
+node_version:
+  major: 0
+  minor: 1
+  patch: 0
+node_type: "ORCHESTRATOR_GENERIC"
+description: >
+  PR handoff workflow orchestrator. Keyed by handoff_key repo#n, it accepts a lane's handoff request,
+  re-evaluates it on every PR watcher observation of the PR through the pure node_pr_handoff_decision_compute,
+  sends the handoff rows to node_pr_handoff_ledger_effect when ready, and emits exactly one handed-off
+  or failed terminal per request.
+input_model:
+  name: "ModelPrHandoffRequested"
+  module: "omnimarket.models.pr_handoff"
+  description: "One lane's request to hand one PR at one head to the landing lane."
+output_model:
+  name: "ModelPrHandoffHandedOff"
+  module: "omnimarket.models.pr_handoff"
+  description: "Terminal: the ledger holds the handoff MSG and the closing row."
+runtime_profiles:
+  - main
+runtime_lanes:
+  - compose-dev
+  # Lab first (rule 24): the h202 compose lane; h201's dev lane is frozen.
+  - compose-dev-202
+# No state_io block yet: the rows live in the runtime process (the handler's
+# in-memory store under the same compare-and-set). A durable row needs the
+# pr_handoff_workflow_state table (omnibase_infra forward migration, its grant,
+# and the application-relation ownership manifest), tracked as OMN-20638; the
+# codec (state_codec.StateIoCodec) and the key (handoff_key, derived on every
+# ingress) are already the ones that block will name. Until then a runtime
+# restart drops a waiting request without a terminal; the lane's next request
+# for the PR starts a new one.
+state_machine:
+  version: {major: 1, minor: 0, patch: 0}
+  state_machine_name: pr_handoff_workflow
+  state_machine_version: {major: 1, minor: 0, patch: 0}
+  description: "PR handoff workflow, keyed by repo#n. Each refusal the decision compute can return has
+    its own trigger evaluated_<error_code>, so every error chain is its own walker path. Drops (a redelivered
+    request, an answer for another request id, an observation of a terminal row) are not edges."
+  initial_state: REQUESTED
+  terminal_states: [HANDED_OFF, REFUSED, TIMED_OUT]
+  error_states: [REFUSED, TIMED_OUT]
+  persistence_enabled: true
+  states:
+    - version: {major: 1, minor: 0, patch: 0}
+      state_name: REQUESTED
+      state_type: operational
+      description: "A request was read; it is accepted or refused in the same leg."
+    - version: {major: 1, minor: 0, patch: 0}
+      state_name: WAITING
+      state_type: operational
+      description: "Accepted; evaluated against the newest observation on every message for the PR until
+        ready, refused or past the wait budget."
+    - version: {major: 1, minor: 0, patch: 0}
+      state_name: APPENDING
+      state_type: operational
+      description: "Ready; the handoff rows are with the ledger effect under one ledger request id."
+    - version: {major: 1, minor: 0, patch: 0}
+      state_name: HANDED_OFF
+      state_type: terminal
+      description: "Terminal: the ledger holds the MSG and the closing row."
+      is_terminal: true
+      is_recoverable: false
+    - version: {major: 1, minor: 0, patch: 0}
+      state_name: REFUSED
+      state_type: terminal
+      description: "Terminal error with a typed error_code; nothing was appended."
+      is_terminal: true
+      is_recoverable: false
+    - version: {major: 1, minor: 0, patch: 0}
+      state_name: TIMED_OUT
+      state_type: terminal
+      description: "Terminal error: the wait budget or the append attempts ran out."
+      is_terminal: true
+      is_recoverable: false
+  transitions:
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: requested_to_waiting_on_accepted
+      from_state: REQUESTED
+      to_state: WAITING
+      trigger: accepted
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: requested_to_refused_on_rejected_invalid_request
+      from_state: REQUESTED
+      to_state: REFUSED
+      trigger: rejected_invalid_request
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_waiting_on_evaluated_wait
+      from_state: WAITING
+      to_state: WAITING
+      trigger: evaluated_wait
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_appending_on_evaluated_ready
+      from_state: WAITING
+      to_state: APPENDING
+      trigger: evaluated_ready
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_evaluated_stale_head
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: evaluated_stale_head
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_evaluated_missing_ticket
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: evaluated_missing_ticket
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_evaluated_not_owned
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: evaluated_not_owned
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_evaluated_missing_lab_proof
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: evaluated_missing_lab_proof
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_evaluated_held
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: evaluated_held
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_evaluated_withheld
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: evaluated_withheld
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_evaluated_pr_not_open
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: evaluated_pr_not_open
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_refused_on_superseded
+      from_state: WAITING
+      to_state: REFUSED
+      trigger: superseded
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: waiting_to_timed_out_on_completion_bound_expired
+      from_state: WAITING
+      to_state: TIMED_OUT
+      trigger: completion_bound_expired
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: appending_to_handed_off_on_append_accepted
+      from_state: APPENDING
+      to_state: HANDED_OFF
+      trigger: append_accepted
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: appending_to_appending_on_append_pending
+      from_state: APPENDING
+      to_state: APPENDING
+      trigger: append_pending
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: appending_to_refused_on_append_refused
+      from_state: APPENDING
+      to_state: REFUSED
+      trigger: append_refused
+    - version: {major: 1, minor: 0, patch: 0}
+      transition_name: appending_to_timed_out_on_append_attempts_exhausted
+      from_state: APPENDING
+      to_state: TIMED_OUT
+      trigger: append_attempts_exhausted
+event_bus:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  subscribe_topics:
+    # The lanes' requests (pr-handoff's handoff.sh with ONEX_PR_HANDOFF_VIA=bus).
+    - onex.cmd.omnimarket.pr-handoff-requested.v1
+    # The PR watcher's observations, one per changed PR per watcher tick.
+    - onex.evt.omnimarket.pr-state-observed.v1
+    # The ledger effect's answer for each append attempt.
+    - onex.evt.omnimarket.pr-handoff-ledger-appended.v1
+  publish_topics:
+    - onex.evt.omnimarket.pr-handoff-accepted.v1
+    - onex.evt.omnimarket.pr-handoff-handed-off.v1
+    - onex.evt.omnimarket.pr-handoff-failed.v1
+    - onex.cmd.omnimarket.pr-handoff-ledger-append-requested.v1
+published_events:
+  - event_type: "PrHandoffAccepted"
+    topic: onex.evt.omnimarket.pr-handoff-accepted.v1
+    description: "REQUESTED to WAITING: the request will be answered by exactly one terminal."
+  - event_type: "PrHandoffHandedOff"
+    topic: onex.evt.omnimarket.pr-handoff-handed-off.v1
+    description: "Terminal: the ledger holds the handoff MSG and the closing row."
+  - event_type: "PrHandoffFailed"
+    topic: onex.evt.omnimarket.pr-handoff-failed.v1
+    description: "Terminal error with a typed error_code."
+  - event_type: "PrHandoffLedgerAppendCommand"
+    topic: onex.cmd.omnimarket.pr-handoff-ledger-append-requested.v1
+    description: "The handoff rows for the ledger effect; one ledger request id per handoff."
+externally_produced_topics:
+  - topic: onex.cmd.omnimarket.pr-handoff-requested.v1
+    producer: "pr-handoff's handoff.sh on the requesting lane's host, through `onex work-ledger handoff`,
+      not a node contract"
+externally_consumed_topics:
+  # The requesting lane's pr-handoff reads its answer here; no node consumes them.
+  - onex.evt.omnimarket.pr-handoff-accepted.v1
+  - onex.evt.omnimarket.pr-handoff-handed-off.v1
+  - onex.evt.omnimarket.pr-handoff-failed.v1
+handler_routing:
+  routing_strategy: "payload_type_match"
+  handlers:
+    - operation: "pr_handoff.orchestrate.requested"
+      message_category: "command"
+      handler:
+        name: "HandlerPrHandoffOrchestrator"
+        module: "omnimarket.nodes.node_pr_handoff_orchestrator.handlers.handler_pr_handoff_orchestrator"
+      event_model:
+        name: "ModelPrHandoffRequested"
+        module: "omnimarket.models.pr_handoff"
+      topic: onex.cmd.omnimarket.pr-handoff-requested.v1
+      description: "Accept or refuse a request, then evaluate it against the newest observation of its
+        PR."
+    - operation: "pr_handoff.orchestrate.observed"
+      message_category: "event"
+      handler:
+        name: "HandlerPrHandoffOrchestrator"
+        module: "omnimarket.nodes.node_pr_handoff_orchestrator.handlers.handler_pr_handoff_orchestrator"
+      event_model:
+        name: "ModelPrHandoffObservationIngress"
+        module: "omnimarket.nodes.node_pr_handoff_orchestrator.models.model_pr_handoff_observation_ingress"
+      topic: onex.evt.omnimarket.pr-state-observed.v1
+      description: "Re-evaluate a waiting request on its PR's newest observation; a PR with no live request
+        is dropped."
+    - operation: "pr_handoff.orchestrate.ledger_appended"
+      message_category: "event"
+      handler:
+        name: "HandlerPrHandoffOrchestrator"
+        module: "omnimarket.nodes.node_pr_handoff_orchestrator.handlers.handler_pr_handoff_orchestrator"
+      event_model:
+        name: "ModelPrHandoffLedgerAppended"
+        module: "omnimarket.models.pr_handoff"
+      topic: onex.evt.omnimarket.pr-handoff-ledger-appended.v1
+      description: "The ledger effect's answer for the request in flight: handed off, resent, or failed."
+metadata:
+  description: "Deterministic PR handoff over the bus: a lane's request decided on live PR state and appended
+    to the ledger."
+  author: "OmniNode Team"
+  license: "MIT"
+  created: "2026-10-05"
+  tags:
+    - orchestrator
+    - pr-handoff
+    - pr-landing
+    - fsm
+    - workflow
+  related_tickets:
+    - "OMN-20636"
