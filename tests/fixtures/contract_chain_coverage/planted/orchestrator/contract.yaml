@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_version:
+  major: 0
+  minor: 1
+  patch: 0
+name: node_planted_orchestrator
+node_type: ORCHESTRATOR_GENERIC
+workflow_coordination:
+  workflow_definition:
+    execution_graph:
+      nodes:
+        - node_id: plan
+          depends_on: []
+        - node_id: run
+          depends_on:
+            - plan
+        - node_id: check
+          depends_on:
+            - run
+          step_config:
+            loops_to: run
+event_bus:
+  publish_topics:
+    - onex.evt.planted.dead-end.v1
+  subscribe_topics:
+    - onex.cmd.planted.orphan.v1

@@ -1,0 +1,208 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21561
+title: 'contract_chain_coverage: a blocking core check that every state-machine transition, graph edge,
+  guard branch and loop exit of a contract has a test bound under both overlays'
+summary: Report unbound contract-chain obligations and corpus liveness through a pure checker and injected
+  validator runtime; warning-only pending an amended operator ruling.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21561-contract-chain-coverage
+    statement: Publish contract-chain coverage obligations, bindings, generated scenarios and corpus liveness
+      findings.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the planted fixture `tests/fixtures/contract_chain_coverage/planted/` (a 6-state
+          reducer with one unreachable state, one dead state, one non-terminal state with no failure exit,
+          one guarded edge with only the true half bound, a self-loop with no exit; a 3-node execution
+          graph with one `loops_to`; two contracts leaving one dead end topic and one orphan; a test file
+          binding every path except one) yields exactly one finding per `rule_id` -- falsifier: `uv run
+          pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q`'
+      - id: AC2
+        statement: 'AC2: deleting one binding, dropping one subscriber and removing one guard half each
+          make exactly their rule fire (the `TestAMutantThatArmsAHeldPrFails` pattern), and the pass-case
+          fixture (the pr_handoff workflow copy) yields zero findings -- falsifier: the mutant tests in
+          `tests/unit/validation/test_checker_contract_chain_coverage.py`'
+      - id: AC3
+        statement: 'AC3: the walker emits its cases in the scenario shape the existing parity harness
+          consumes, each parametrized over the overlay fixture so one record runs in memory and on Redpanda
+          -- falsifier: the generated case runs under both profiles through `node_binding_parity_orchestrator`
+          on the lab with equal results'
+      - id: AC4
+        statement: 'AC4: every rule ships at `severity: error` against a per-repository shrink-only baseline
+          with a dated zero target, and the report-only operator ruling of 2026-09-25 (docstring of `validator_contract_walker.py`)
+          is amended first -- falsifier: a RULING row amending 2026-09-25 exists on the ledger before
+          the first `error` rule merges (the operator is asked as one plain question in the ledger before
+          work starts)'
+      - id: AC5
+        statement: 'AC5: `scripts/validate_state_coverage.py` and `scripts/ci/check_golden_chain_coverage.py`
+          are deleted only after the coverage table shows the same denominators -- falsifier: a test comparing
+          the walker''s table with the old scripts'' outputs on the dev snapshot, and `git ls-files` on
+          both paths prints nothing after'
+      - id: AC6
+        statement: 'AC6: KC-config: every pattern, name list, threshold and remediation text is a `parameters`
+          entry of the checker''s `.validation.yaml` -- falsifier: K10 `rule_table_in_checker` reports
+          zero on the checker module, and a table-driven test mutates every `parameters` key of every
+          rule row in turn, asserting the verdict change on the fixture that key controls and asserting
+          separately that an invalid contract fails to load rather than passing'
+      - id: AC7
+        statement: 'AC7: KC-a (Declared and injected): the checker is pure (facts in, issues out); its
+          runtime resolves `node_validation_report_write_effect` and the bus from the container (`models/container/model_onex_container.py`
+          `get_service`) -- falsifier: a container spy in the runtime test records the resolution of the
+          writer and the bus; the checker test calls the checker with facts only while `open` and `Path`
+          reads are patched to raise; and K1 `call_site_construction` reports zero on the runtime module'
+      - id: AC8
+        statement: 'AC8: KC-b (No literal): the changed source holds no host, port, topic, model name,
+          timeout or URL -- falsifier: hardcoded_topic, hardcoded_model_config with K6, url_authority
+          and contract_config_compliance report zero on the changed production source and workflow files
+          in the checker''s declared scope; the `.validation.yaml` rule data and the planted fixtures
+          are excluded by `exclude_patterns`'
+      - id: AC9
+        statement: 'AC9: KC-c (Two overlays, one commit): the runtime runs on the in-memory default and
+          with the CI bus overlay with no code change -- falsifier: on one commit, the ticket''s own fixture
+          set run twice, once on the in-memory default and once with the broker overlay; both reports
+          equal the committed golden report after normalising run id and timestamps, and each run puts
+          exactly one `ModelValidatorRunEvent` carrying the report''s run id, observed by an in-memory
+          listener in the first run and by a run-event topic consumer filtered by that run id on a lab
+          host in the second; the overlay file is the only difference'
+evidence_requirements:
+  - kind: tests
+    description: Focused checker and unit overlay tests pass; live overlay execution requires the lab
+      option and is not claimed.
+    command: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov -o
+      addopts='' -n 0 && uv run pytest tests/unit/validation/test_contract_chain_coverage_overlays.py
+      -q --no-cov -o addopts='' -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21561-ac1-fixtures
+    description: The planted corpus yields exactly one finding per enabled rule; held machine execution
+      evidence emits nothing.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'planted_has_exactly_one_per_enabled_rule'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac2-mutants
+    description: Deleting one transition binding, subscriber or guard half fires exactly the controlled
+      rule. The pass fixture yields zero findings.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'TestAMutantThatArmsAHeldPrFails or pass_corpus_has_no_findings'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac3-scenarios
+    description: Generated cases round-trip through the committed scenario model. In-memory and recording-bus
+      overlay runtime tests match the golden report. Generated-case execution through node_binding_parity_orchestrator
+      on a live lab broker is not claimed.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'table_generation_and_committed_cases_round_trip'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_contract_chain_coverage_overlays.py -q --no-cov
+          -o addopts='' -n 0 -k 'both_overlays'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac4-severity
+    description: 'The rules ship at severity: warning because the amending RULING is absent. The single
+      row data key is severity and fail_on_warning is false. Error enforcement, a shrink-only baseline
+      and a dated zero target are not claimed.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'severity or report_only_and_exclusions'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac5-denominators
+    description: The coverage table publishes per-kind row-count denominators for the planted and pass
+      fixtures in the golden. The old scripts scripts/validate_state_coverage.py and scripts/ci/check_golden_chain_coverage.py
+      live in the omnimarket repository, outside this PR's scope; comparison against their outputs and
+      their deletion are follow-up work.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'coverage_table_publishes_fixture_denominators'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac6-parameters
+    description: The guarded table mutates every parameters key; missing and mistyped values raise before
+      empty facts can pass. The enabled execution-evidence row validates its parameters and still emits
+      nothing. K10 scans the checker and validator for rule tables.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'parameter'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run python -m omnibase_core.validation.validator_checker_rule_data src/omnibase_core/validation/checker_contract_chain_coverage.py
+          src/omnibase_core/validation/validator_contract_chain_coverage.py
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac7-injection
+    description: Facts-only checker execution tolerates all patched file reads. A container spy resolves
+      the report writer followed by the bus. The K1 call_site_construction scanner present on this base
+      reports zero on the validator runtime module.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'runtime_resolves or checker_is_pure or checker_has_no_yaml_loader or
+          runtime_module_has_no_call_site_construction'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac8-literals
+    description: URL authority, hardcoded topics, hardcoded model config and contract config compliance
+      scan both new checker and validator sources with zero findings. Rule data and planted fixtures are
+      excluded from the validator corpus.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC8
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_contract_chain_coverage.py -q --no-cov
+          -o addopts='' -n 0 -k 'new_sources_have_no_operational_literals or report_only_and_exclusions'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21561-ac9-overlays
+    description: The in-memory listener and Redpanda overlay bound to a recording bus each observe exactly
+      one run event carrying their report id; both normalized reports equal the same committed golden.
+      Live-broker/Redpanda parity on a lab host is not claimed; the live test uses the existing --validator-runtime-overlay
+      option.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC9
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_contract_chain_coverage_overlays.py -q --no-cov
+          -o addopts='' -n 0 -k 'both_overlays'
+        cwd: ${OMNI_HOME}/omnibase_core

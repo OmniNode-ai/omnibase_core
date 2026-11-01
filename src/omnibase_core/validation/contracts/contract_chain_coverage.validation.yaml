@@ -1,0 +1,134 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version: {major: 1, minor: 0, patch: 0}
+  validator_id: contract_chain_coverage
+  validator_name: Contract Chain Coverage Validator
+  validator_description: Report contract-chain coverage and corpus liveness; report-only under 2026-09-25.
+  target_patterns: ['**/contract.yaml', '**/*.contract.yaml']
+  exclude_patterns:
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/validation/contracts/**'
+    - '**/fixtures/contract_chain_coverage/**'
+  rules:
+    - rule_id: uncovered_transition
+      description: An armed FSM transition has no committed chain binding.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: transition
+        id_template: '{owner}::transition::{transition_name}'
+        marker_name: chain_obligation
+        overlay_marker_name: bus_overlay
+        test_roots: [tests]
+        test_file_globs: ['**/test_*.py', '**/*.py.txt']
+        test_exclude_patterns: ['fixtures/**']
+        generated_cases_glob: 'tests/chains/generated/**/*.chains.json'
+        missing_marker: MISSING
+        overlay_profiles: [memory, redpanda]
+        scenario_kind: node_operation
+        scenario_node_template: '{owner}'
+        scenario_operation_template: '{id}'
+        allowed_differences: []
+        remediation: Bind the transition to a committed chain test or generated parity case.
+    - rule_id: uncovered_graph_edge
+      description: An execution graph dependency edge has no committed chain binding.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: graph_edge
+        nodes_path: workflow_coordination.workflow_definition.execution_graph.nodes
+        node_id_key: node_id
+        dependencies_key: depends_on
+        id_template: '{owner}::edge::{from_node}->{to_node}'
+        remediation: Bind the dependency edge to a committed chain test or generated parity case.
+    - rule_id: guard_branch_unbound
+      description: A transition guard half has no committed chain binding.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: guard_branch
+        branches: ['true', 'false']
+        id_template: '{owner}::guard::{transition_name}::{branch}'
+        remediation: Bind both outcomes of the transition guard to chain tests.
+    - rule_id: loop_exit_unbound
+      description: A graph loop or an escapable FSM self-loop has no bound exit chain.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: loop_exit
+        nodes_path: workflow_coordination.workflow_definition.execution_graph.nodes
+        node_id_key: node_id
+        loops_to_path: step_config.loops_to
+        id_template: '{owner}::loop_exit::{node_id}'
+        fsm_id_template: '{owner}::loop_exit::{transition_name}'
+        remediation: Bind a chain that exits the loop.
+    - rule_id: dead_end_topic
+      description: A published topic has no corpus subscriber or external consumer declaration.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: unconsumed_topic
+        producer_paths: [event_bus.publish_topics, 'event_bus.publish_topics[].topic', 'published_events[].topic',
+          'published_events[].event_pattern']
+        consumer_paths: [event_bus.subscribe_topics, 'event_bus.subscribe_topics[].topic', 'consumed_events[].topic',
+          'consumed_events[].event_pattern', 'handler_routing.handlers[].topic']
+        external_consumer_paths: [externally_consumed_topics, 'externally_consumed_topics[].topic', 'terminal_events.*',
+          'runtime_dispatch.terminal_events.*']
+        remediation: Add a subscriber or declare the topic externally consumed or terminal.
+    - rule_id: orphan_subscription
+      description: A subscribed topic has no corpus publisher or external producer declaration.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: unproduced_topic
+        consumer_paths: [event_bus.subscribe_topics, 'event_bus.subscribe_topics[].topic', 'consumed_events[].topic',
+          'consumed_events[].event_pattern', 'handler_routing.handlers[].topic']
+        producer_paths: [event_bus.publish_topics, 'event_bus.publish_topics[].topic', 'published_events[].topic',
+          'published_events[].event_pattern']
+        external_producer_paths: [externally_produced_topics, 'externally_produced_topics[].topic', runtime_dispatch.command_topic]
+        remediation: Add a publisher or declare the topic externally produced or a runtime command.
+    - rule_id: unreachable_state
+      description: An armed FSM state is unreachable from its initial state.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: unreachable
+        remediation: Connect the state to a reachable transition or remove the unused state.
+    - rule_id: dead_state
+      description: A reachable non-terminal state cannot reach a terminal state.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: dead
+        wildcard_state: '*'
+        remediation: Add a path from the state to a declared terminal state.
+    - rule_id: no_failure_exit
+      description: A reachable live non-terminal state can succeed but cannot reach a declared error state.
+      severity: warning
+      enabled: true
+      parameters:
+        kind: failure_exit
+        wildcard_state: '*'
+        remediation: Add a failure transition leading to a declared error state.
+    - rule_id: machine_not_executed
+      description: Disabled; execution evidence is delegated to the T-G2/T-G2b tickets.
+      severity: warning
+      enabled: false
+      parameters:
+        kind: execution_evidence
+        evidence_glob: 'tests/chains/evidence/**/*.json'
+        minimum_executions: 1
+        remediation: Supply execution evidence through the T-G2/T-G2b execution-evidence work.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: warning
+  parallel_execution: false
