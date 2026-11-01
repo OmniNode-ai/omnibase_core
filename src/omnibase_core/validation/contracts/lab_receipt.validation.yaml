@@ -34,7 +34,9 @@ validation:
         A change that runs needs a receipt. This row also defines which changes run: per changed file
         the first match wins, in the order prod, operative, exempt, runtime, and a file in none of them
         counts as unclassified so that a new kind of file fails closed. Each class entry is <class>::<repository
-        pattern>::<path pattern>.
+        pattern>::<path pattern>. A changed file the facts flag comment_only is not counted, and the fact-gathering
+        node reads comment_prefixes and directive_markers to set the flag (a line starting with a prefix
+        is a comment unless it holds a directive marker).
       severity: error
       enabled: true
       parameters:
@@ -44,6 +46,9 @@ validation:
         phases: [present, verify]
         unclassified_class: unclassified
         counted_statuses: [A, M, D, R, C, T]
+        comment_prefixes: ["#", "//", "--", ";", "/*", "*", "<!--"]
+        directive_markers: ["noqa", "type: ignore", "pragma", "pylint:", "fmt:", "isort:", "mypy:", "shellcheck",
+          "SPDX-", "eslint-"]
         prod_classes:
           - 'prod_grant::.*::(^|/)(grants|prod)/|prod_promotion|(^|/)manifests/prod'
         operative_classes:

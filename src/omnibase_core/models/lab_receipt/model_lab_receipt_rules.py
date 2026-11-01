@@ -41,6 +41,8 @@ _TEXT_KEYS: dict[str, tuple[str, ...]] = {
 _LIST_KEYS: dict[str, tuple[str, ...]] = {
     "receipt_required": (
         "counted_statuses",
+        "comment_prefixes",
+        "directive_markers",
         "prod_classes",
         "operative_classes",
         "exempt_classes",
@@ -51,6 +53,7 @@ _LIST_KEYS: dict[str, tuple[str, ...]] = {
     "receipt_observation_unproven": ("observed_words", "refused_patterns"),
 }
 _REGEX_LISTS = frozenset({"refused_patterns"})
+_NONEMPTY_LISTS = ("comment_prefixes", "directive_markers")
 _CLASS_LISTS = (
     "prod_classes",
     "operative_classes",
@@ -150,6 +153,12 @@ class ModelLabReceiptRules(BaseModel):
                         f"{rule_id}: required parameter {name} must be a list of strings"
                     )
                 lists[name] = tuple(value)
+                if name in _NONEMPTY_LISTS and (
+                    not value or any(item.strip() == "" for item in value)
+                ):
+                    raise _contract_error(
+                        f"{rule_id}: parameter {name} must name at least one non-blank entry"
+                    )
                 if name == _PHASES and not set(value) <= phases:
                     raise _contract_error(
                         f"{rule_id}: parameter {name} names an unknown phase"

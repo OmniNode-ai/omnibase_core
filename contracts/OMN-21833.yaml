@@ -1,0 +1,60 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21833
+title: The lab_receipt facts carry a per-file comment_only flag and the exemption step treats a flagged
+  file as not counted
+summary: The lab_receipt facts gain an optional per-file comment_only flag (absent means counted). The
+  exemption step of the checker does not count a changed file whose flag is true. The comment prefixes
+  and directive markers the fact-gathering node reads to set the flag are rule-row parameters of lab_receipt.validation.yaml,
+  and the checker holds no such literal.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21833-comment-only-flag
+    statement: A changed file whose comment_only flag is true must not be counted, and a file whose flag
+      is false or absent must be counted.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a changed file with comment_only true is not counted and a changed file with
+          it false or absent is counted, with a paired violation and clean fixture -- falsifier: uv run
+          pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts='''' -k comment_only'
+  - id: req-omn21833-contract-parameters
+    statement: The comment prefixes and directive markers must be rule-row parameters that the parameter
+      test mutates, and the checker must hold no such literal.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the comment prefixes and directive markers are rule-row parameters, every key
+          of them is mutated by the parameter test, and the checker holds no such literal -- falsifier:
+          uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts='''' -k parameters'
+evidence_requirements:
+  - kind: tests
+    description: The focused lab_receipt checker test file.
+    command: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn-21833-ac1
+    description: A flagged file is not counted; a false or absent flag is counted; the paired fixtures
+      pin both.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+          -k comment_only
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn-21833-ac2
+    description: Both new lists are rule-row parameters, mutated by the parameter test, with no literal
+      in the checker.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py -q -o addopts=''
+          -k parameters
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
