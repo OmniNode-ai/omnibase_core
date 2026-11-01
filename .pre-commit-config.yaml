@@ -1877,7 +1877,7 @@ repos:
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_handler_di_check_effect.runtime_handler_di_check
         language: system
         args: [--baseline, .onex_ratchets/handler_di_baseline.txt]
-        files: ^(src/.*(handlers|nodes)/.*\.py|.*_cli\.py|\.onex_ratchets/handler_di_baseline\.txt)$
+        files: ^(src/.*\.py|.*_cli\.py|\.onex_ratchets/handler_di_baseline\.txt)$
         pass_filenames: true
         require_serial: true
         stages: [pre-commit]

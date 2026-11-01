@@ -13,7 +13,8 @@ validation:
     I/O is permitted only in EFFECT nodes (OMN-21532, plan task T0.4, findings F28, F39, F40).
     Every Python module anywhere under a node directory whose contract.yaml does not declare an
     exempt archetype is judged, handlers and nested packages included. A module is judged against
-    the nearest contract above it.
+    the nearest contract above it. A handler module that no node contract sits above (its path matches
+    package_scope.nodeless_module_patterns) is judged as non-EFFECT: it is in no EFFECT node.
 
     Each rule row below names one surface through matcher parameters: import_roots, import_modules,
     callee_patterns, method_names, command_executables with command_callee_patterns, subscripts,
@@ -57,6 +58,9 @@ validation:
           - 'orchestrator'
         exempt_archetypes:
           - 'effect'
+        nodeless_module_patterns:
+          - '^(?!(?:.*/)?tests/)(?:.*/)?handlers/'
+          - '^(?!(?:.*/)?tests/)(?:.*/)?handler_[^/]*\.py$'
         remediation: >-
           Declare node_type (or descriptor.node_archetype) as compute, effect, reducer or orchestrator
           in the node's contract.yaml; only an effect contract exempts its package from this check. #magic___^_^___line

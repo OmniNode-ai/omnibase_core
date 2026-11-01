@@ -5,7 +5,8 @@
 
 ``ValidatorBase`` entry over :mod:`omnibase_core.validation.checker_no_io_outside_effects`.
 A target is a ``contract.yaml`` (judged alone) or a ``.py`` module (judged against the
-nearest ``contract.yaml`` above it). The validator reads; the checker judges; the report
+nearest ``contract.yaml`` above it; with none above it, judged as non-EFFECT when the
+``package_scope`` row's ``nodeless_module_patterns`` name its path). The validator reads; the checker judges; the report
 writer and the bus come from the container in the runtime that runs it.
 
 Usage (pre-commit hook)::
@@ -85,4 +86,6 @@ class ValidatorNoIoOutsideEffects(ValidatorBase):
                     ),
                     rules,
                 )
-        return ()
+        return check_no_io_outside_effects(
+            ModelNoIoOutsideEffectsFacts(module=self._source(path)), rules
+        )

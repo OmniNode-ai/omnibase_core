@@ -128,6 +128,43 @@ def test_disabling_a_rule_row_fails_that_rules_fixture(
             assert len(_issues(contract, _staged(tmp_path, "violation", other))) == 1
 
 
+_INJECTED = "mutating_public_method_injected_callable"
+_INJECTED_RULE = "mutating_public_method"
+
+
+def _staged_named(tmp_path: Path, fixture: str, name: str) -> Path:
+    target = tmp_path / f"handler_{name}.py"
+    shutil.copy(_FIXTURES / f"{fixture}_{name}.py", target)
+    return target
+
+
+def test_a_mutation_through_a_handed_callable_yields_exactly_one_issue(
+    tmp_path: Path,
+) -> None:
+    """F20-2: ``register`` mutates a registry through ``unregister`` and
+    ``register_instance`` unpacked from its parameter, not through ``self``."""
+    issues = _issues(_contract(), _staged_named(tmp_path, "violation", _INJECTED))
+    assert [issue.rule_name for issue in issues] == [_INJECTED_RULE]
+    assert "register" in issues[0].message
+    assert "injected callables" in issues[0].message
+
+
+def test_a_read_through_a_handed_callable_yields_no_issue(tmp_path: Path) -> None:
+    assert _issues(_contract(), _staged_named(tmp_path, "clean", _INJECTED)) == []
+
+
+def test_disabling_the_row_clears_the_handed_callable_fixture(tmp_path: Path) -> None:
+    contract = _with_enabled(_contract(), _INJECTED_RULE, False)
+    assert _issues(contract, _staged_named(tmp_path, "violation", _INJECTED)) == []
+
+
+def test_the_handed_callable_patterns_are_rule_data(tmp_path: Path) -> None:
+    contract = _with_parameter(
+        _contract(), _INJECTED_RULE, "injected_mutating_call_patterns", [_NEVER]
+    )
+    assert _issues(contract, _staged_named(tmp_path, "violation", _INJECTED)) == []
+
+
 def test_a_handler_class_no_contract_binds_is_classified(tmp_path: Path) -> None:
     """AC1: a bare module holding a class, with no node and no contract beside it."""
     path = _source(
@@ -153,6 +190,8 @@ _ENVELOPE_HANDLE = (
     "def handle(self, request: ModelEventEnvelope) -> None: ...\n"
 )
 _MUTATES_PREFIX = "class HandlerA:\n    def record(self, item: str) -> None:\n        self._items.append(item)\n"
+
+_MUTATES_INJECTED = "class HandlerA:\n    def record(self, put, item: str) -> None:\n        put(item)\n"
 
 # (rule, key) -> (source, staged name, value that flips the verdict, issues before)
 _CASES: dict[tuple[str, str], tuple[str, str, object, int]] = {
@@ -260,6 +299,12 @@ _CASES: dict[tuple[str, str], tuple[str, str, object, int]] = {
     ),
     ("mutating_public_method", "mutating_call_names"): (
         _MUTATES_PREFIX,
+        "plain.py",
+        [_NEVER],
+        1,
+    ),
+    ("mutating_public_method", "injected_mutating_call_patterns"): (
+        _MUTATES_INJECTED,
         "plain.py",
         [_NEVER],
         1,
