@@ -42,7 +42,7 @@ dod_evidence:
         check_value: "! grep -nE 'scripts/validate_no_env_fallbacks|events/topics\\.py|handler_hardcoded_model_tier_engine|handler_canonical_location_rules\\.py|omn-21520-bd3-node-runtimes|50ef2b21bb20957e|test_occ_manual_replay_entrypoint|test_occ_companion_effect_edited_trigger|9faebe99e6f1|GENERIC_VALIDATOR_PREFIXES'
           contracts/OMN-10733.yaml contracts/OMN-13703.yaml contracts/OMN-16359.yaml contracts/OMN-21331.yaml
           contracts/OMN-21463.yaml contracts/OMN-21509.yaml contracts/OMN-21514.yaml contracts/OMN-21520.yaml"
-        cwd: ${OMNI_HOME}/omnibase_core
+        cwd: .
   - id: dod-omn21571-ac2-planted-regressions
     description: Each corrected item passes against the real tree and fails against a planted regression
       of the behaviour it asserts.
@@ -52,4 +52,4 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_corrected_contract_items_omn21571.py -q -o addopts=''
-        cwd: ${OMNI_HOME}/omnibase_core
+        cwd: .
