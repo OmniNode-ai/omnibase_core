@@ -96,7 +96,36 @@ jobs:
 
 
 DEV_MERGE_TAG_USES_TAIL = (
-    "@dev-20261030152335-66d35d2283c3 # Dev-merge tag (OMN-21495)."
+    "@dev-20261101005012-ac2f26e3e5bf # omnibase_core dev-merge tag (OMN-21859)."
+)
+
+# OMN-21859: the caller installs its verifier from an omnimarket dev-merge tag
+# (verifier-tag) and passes no verifier-version; the header comments that
+# described verifier-version as the pin say so. Restore the merge base's lines
+# so every other byte compares.
+VERIFIER_TAG_LINE = "verifier-tag: dev-20261101000200-949993edf3b7"
+BASE_VERIFIER_VERSION_LINE = "verifier-version: 0.4.305"
+VERIFIER_PIN_COMMENT_RESTORES = (
+    (
+        """# The dev-merge tag pin makes the reusable immutable; verifier-tag names the
+# omnimarket dev-merge tag the verifier that reads the caller's contracts is
+# installed from (OMN-21859).
+""",
+        """# The full-SHA pin makes the reusable immutable; verifier-version pins the
+# released verifier used to read the caller's contracts.
+""",
+    ),
+    (
+        """# The reusable resolves verifier-tag to a commit and refuses a moved tag, a tag
+# not on omnimarket dev and a tag not descending from its floor commit
+# (OMN-21676); verifier-version is only its warned fallback, so this caller
+# does not pass it. The reusable is not called as
+""",
+        """# verifier-version 0.4.305 is the first omnimarket release carrying
+# omnimarket#3563 (node_dod_verify names contract_in_another_repo), the verifier
+# half of #1912. It is not called as
+""",
+    ),
 )
 
 
@@ -118,6 +147,9 @@ def _assert_preserved(text: str) -> None:
         line for line in BASE_CALLER.splitlines() if "receipt-gate.yml@" in line
     ).split("receipt-gate.yml", 1)[1]
     text = text.replace(DEV_MERGE_TAG_USES_TAIL, base_uses_tail)
+    text = text.replace(VERIFIER_TAG_LINE, BASE_VERIFIER_VERSION_LINE)
+    for current, base_text in VERIFIER_PIN_COMMENT_RESTORES:
+        text = text.replace(current, base_text)
     base = yaml.safe_load(BASE_CALLER)
     actual = yaml.safe_load(text)
     base["jobs"]["repo-evidence"]["with"]["compare-with-occ"] = "false"
@@ -134,7 +166,7 @@ def test_scope_control_rejects_another_input_pin_or_line() -> None:
     text = CALLER_PATH.read_text(encoding="utf-8")
     for old in (
         "evidence-source: caller",
-        "verifier-version: 0.4.305",
+        VERIFIER_TAG_LINE,
         yaml.safe_load(text)["jobs"]["repo-evidence"]["uses"],
     ):
         with pytest.raises(AssertionError):

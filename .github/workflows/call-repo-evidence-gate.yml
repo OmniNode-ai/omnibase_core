@@ -18,8 +18,9 @@
 # Per-PR concurrency cancels superseded runs so the latest event gets a verdict.
 # Read-only contents and pull-requests permissions are all this caller needs;
 # checkout and verification belong to the reusable, with no caller secrets.
-# The full-SHA pin makes the reusable immutable; verifier-version pins the
-# released verifier used to read the caller's contracts.
+# The dev-merge tag pin makes the reusable immutable; verifier-tag names the
+# omnimarket dev-merge tag the verifier that reads the caller's contracts is
+# installed from (OMN-21859).
 #
 # The job id is the context prefix: repo-evidence / dod-verify carries the
 # verdict, so do not add a job name. The reusable also reports a skipped
@@ -28,9 +29,10 @@
 #
 # The reusable is pinned by full SHA to omnibase_core#1914's squash commit on dev,
 # which carries #1912's contract-home marker and caller-mode verify no-op.
-# verifier-version 0.4.305 is the first omnimarket release carrying
-# omnimarket#3563 (node_dod_verify names contract_in_another_repo), the verifier
-# half of #1912. It is not called as
+# The reusable resolves verifier-tag to a commit and refuses a moved tag, a tag
+# not on omnimarket dev and a tag not descending from its floor commit
+# (OMN-21676); verifier-version is only its warned fallback, so this caller
+# does not pass it. The reusable is not called as
 # ./.github/workflows/receipt-gate.yml. A pull request that edits
 # receipt-gate.yml in this repository does not change the definition that
 # judges it.
@@ -42,7 +44,7 @@
 # CI Summary expects on pull_request runs and no OCC caller remains in this
 # repository, so compare-with-occ stays "false"; the difference step would
 # otherwise wait for an OCC verdict and fail closed without one.
-# verifier-version stays a release that ships the classifier, so a rollback
+# verifier-tag stays a tag that ships the classifier, so a rollback
 # turns the step back on with this one input. The PR-workflow budget note below
 # records why this file took its slot. S6 part 2 has since deleted
 # call-receipt-gate.yml, so nothing here produces occ-preflight / eligibility,
@@ -72,8 +74,8 @@ permissions:
 
 jobs:
   repo-evidence:
-    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261030152335-66d35d2283c3 # Dev-merge tag (OMN-21495).
+    uses: OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261101005012-ac2f26e3e5bf # omnibase_core dev-merge tag (OMN-21859).
     with:
       evidence-source: caller
-      verifier-version: 0.4.305
+      verifier-tag: dev-20261101000200-949993edf3b7
       compare-with-occ: "false"

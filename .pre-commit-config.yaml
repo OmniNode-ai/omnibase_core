@@ -205,8 +205,8 @@ repos:
 
       # OMN-17427: the hosted repo-evidence / dod-verify context must refuse a
       # partly bound contract (ruling 2026-10-10T11:04:11Z). The refusal comes from
-      # the pinned verifier, so the call-repo-evidence-gate caller must keep
-      # verifier-version at or above 0.4.303. Check-only. Runs in CI through the
+      # the installed verifier, so the call-repo-evidence-gate caller must pass an
+      # omnimarket dev-merge tag as verifier-tag and no verifier-version (OMN-21859). Check-only. Runs in CI through the
       # Pre-commit Suite job (precommit-suite), which the required CI Summary context needs.
       - id: call-repo-evidence-gate-verifier-floor
         name: call-repo-evidence-gate caller verifier floor (OMN-17427)
