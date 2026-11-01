@@ -2,6 +2,7 @@
   "report_id": "<normalised>",
   "profile": "default",
   "overall_status": "FAIL",
+  "required_validators": [],
   "findings": [
     {
       "validator_id": "event_chain_walker",
@@ -47,7 +48,9 @@
     "fail_count": 4,
     "error_count": 0,
     "skip_count": 0,
-    "not_applicable_count": 0
+    "not_applicable_count": 0,
+    "missing_count": 0,
+    "advisory_count": 0
   },
   "provenance": {
     "generated_at": "<normalised>",

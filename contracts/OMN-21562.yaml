@@ -34,12 +34,13 @@ dod_evidence:
     binds_ac:
       - AC1
   - id: dod-omn-21562-ac2
-    description: The JSON round-trip test and the existing report suite pass.
+    description: The MISSING and ADVISORY JSON round-trip test and the enum member test pass; both exercise
+      the new members, so they are red at the merge base.
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_validation_models_omn2543.py tests/unit/handlers/test_handler_validator_run_events.py
-          -q
+        check_value: uv run pytest tests/unit/models/validation -q -k "required_skip_missing_and_advisory_json_round_trip
+          or required_skip_enum_members"
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
