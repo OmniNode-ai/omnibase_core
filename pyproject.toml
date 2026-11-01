@@ -224,6 +224,11 @@ sql-parser = ["sqlglot>=26.0.0,<31.0.0"]
 # dev dependencies -- pytest/pytest-asyncio become a real import-time
 # dependency of that one submodule, so the wheel metadata says so honestly.
 testing = ["pytest>=8.4.0", "pytest-asyncio>=1.4,<2"]
+# OMN-14206: omnibase_core.nodes.node_test_selector_compute.closure_selector builds
+# the import graph with grimp (imported lazily; absent grimp fails closed to the
+# whole-tree sentinel). Its own extra so omnibase_infra / omnimarket can consume
+# the packaged selector with `omnibase-core[test-selection]` instead of a copy.
+test-selection = ["grimp>=3.15,<4.0.0"]
 full = ["omnibase-spi>=0.20.2", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0", "pytest>=8.4.0", "pytest-asyncio>=1.4,<2"]
 
 [dependency-groups]

@@ -571,6 +571,8 @@ _SELECTOR_OWN_FILES = [
     "scripts/ci/test_selection_closure.py",
     "scripts/ci/test_selection_adjacency.yaml",
     "src/omnibase_core/nodes/node_test_selector_compute/selector_core.py",
+    # OMN-14206: the packaged closure primitive is the governing selection logic.
+    "src/omnibase_core/nodes/node_test_selector_compute/closure_selector.py",
 ]
 
 

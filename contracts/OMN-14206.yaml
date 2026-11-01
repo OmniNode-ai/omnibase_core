@@ -1,0 +1,65 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-14206
+title: Package the core test-closure selector in the wheel and make its candidate test roots configurable
+  per repository
+summary: The file-grain import-graph closure selector moves from scripts/ci into the omnibase_core wheel
+  (nodes/node_test_selector_compute/closure_selector.py) with candidate test roots, test-file patterns
+  and separately-gated prefixes as parameters, so omnibase_infra and omnimarket consume it without a copy
+  and without the fail-open that a tests/unit-only candidate universe has on a repository whose tests
+  live elsewhere.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn14206-packaged-closure
+    statement: The closure selector is wheel content with no dependency on scripts/, and scripts/ci re-exports
+      it rather than forking it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: omnibase_core.nodes.node_test_selector_compute.closure_selector is in the built
+          wheel and imports nothing from scripts.'
+      - id: AC2
+        statement: 'AC2: compute_closure_selection takes candidate_roots, test_file_patterns and ignored_prefixes;
+          a dependent test outside tests/unit is selected when its root is configured, and the fail-closed
+          sentinel is the configured roots.'
+evidence_requirements:
+  - kind: tests
+    description: Packaging, shim and candidate-root tests for the packaged selector.
+    command: uv run pytest tests/unit/nodes/node_test_selector_compute/test_closure_selector.py -q -o
+      addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn14206-ac1-packaged
+    description: The closure selector lives under src/omnibase_core and imports nothing from scripts;
+      the scripts module re-exports the packaged primitive.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_test_selector_compute/test_closure_selector.py
+          -q -o addopts='' -k "wheel_package_tree or does_not_import_from_scripts or scripts_shim"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn14206-ac2-roots
+    description: Configured candidate roots select dependents outside tests/unit; the default stays tests/unit
+      only; malformed roots are refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_test_selector_compute/test_closure_selector.py
+          -q -o addopts='' -k "roots or patterns or sentinel or prefixes or normalize"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-deploy
+    description: 'Deploy-gate evidence: CI selector library packaging change only; no Docker image, daemon,
+      broker topic or runtime process is deployed by this change.'
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "echo 'deploy-gate: OMN-14206 moves a CI test-selection library into the wheel; no
+          runtime deploy is required before merge'"

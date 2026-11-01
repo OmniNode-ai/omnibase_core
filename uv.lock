@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -1144,6 +1144,9 @@ spi = [
 sql-parser = [
     { name = "sqlglot" },
 ]
+test-selection = [
+    { name = "grimp" },
+]
 testing = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
@@ -1188,6 +1191,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=50.0.0,<51.0.0" },
     { name = "deepdiff", specifier = ">=8.0.0,<10.0.0" },
     { name = "dependency-injector", specifier = ">=4.49.1,<5.0.0" },
+    { name = "grimp", marker = "extra == 'test-selection'", specifier = ">=3.15,<4.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "jsonschema", specifier = ">=4.25.1,<5.0.0" },
     { name = "omnibase-spi", marker = "extra == 'full'", git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261101025141-38465d47118c" },
@@ -1213,7 +1217,7 @@ requires-dist = [
     { name = "tree-sitter", specifier = ">=0.25.2,<0.27" },
     { name = "tree-sitter-python", specifier = ">=0.25.0,<0.26" },
 ]
-provides-extras = ["spi", "cli", "kafka", "cache", "metrics", "sql-parser", "testing", "full"]
+provides-extras = ["spi", "cli", "kafka", "cache", "metrics", "sql-parser", "testing", "test-selection", "full"]
 
 [package.metadata.requires-dev]
 dev = [
