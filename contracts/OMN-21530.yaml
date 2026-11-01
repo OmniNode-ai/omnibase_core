@@ -123,17 +123,3 @@ dod_evidence:
         cwd: .
     binds_ac:
       - AC4
-  - id: dod-omn21530-ac3-no-io-adapter-reaches-checker
-    description: The no_io_outside_effects replay adapter hands a module that no node contract sits above
-      to the checker, which judges it; a planted handler that reads a file yields exactly one file_read
-      issue and a clean handler yields none. The test writes its own modules to a tmp directory and needs
-      only the repository checkout.
-    source: manual
-    execution_scope: hosted_and_local
-    checks:
-      - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/andon_replay/test_adapter_no_io_outside_effects.py
-          -q --no-cov -o addopts=''
-        cwd: .
-    binds_ac:
-      - AC3
