@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "description": "The tickets the receipt gate refuses as a pull request's only citation.\n\nA parent ticket groups task tickets and carries no contract of its own, so a\npull request that cites only a parent has no task whose definition of done\nit could be verified against.",
+  "properties": {
+    "parent_tickets": {
+      "default": [],
+      "description": "Ticket ids refused when they are the only ticket a PR cites.",
+      "items": {
+        "pattern": "^OMN-[0-9]+$",
+        "type": "string"
+      },
+      "title": "Parent Tickets",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "dod_verify.v1",
+      "description": "Schema version tag.",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version"
+  ],
+  "title": "ModelDodVerifyOverlay",
+  "type": "object"
+}
