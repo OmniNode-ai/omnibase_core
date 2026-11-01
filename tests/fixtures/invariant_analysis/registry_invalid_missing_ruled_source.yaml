@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+invariants:
+  - enforcement: Architecture checks.
+    id: INV-A
+    ruled:
+      date: '2026-10-01'
+    scope:
+      - architecture
+    statement: Preserve architecture decisions.
+    status: active
+  - enforcement: Data checks.
+    id: INV-B
+    ruled:
+      date: '2026-10-01'
+      source: decision
+    scope:
+      - data
+    statement: Preserve data integrity.
+    status: active
+  - enforcement: Previous checks.
+    id: INV-C
+    ruled:
+      date: '2026-10-01'
+      source: decision
+    scope:
+      - architecture
+    statement: Previous architecture decision.
+    status: superseded
+    superseded_by: INV-A
+scopes:
+  - architecture
+  - data
+  - process

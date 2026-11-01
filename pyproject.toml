@@ -75,6 +75,8 @@ Repository = "https://github.com/OmniNode-ai/omnibase_core"
 Documentation = "https://github.com/OmniNode-ai/knowledge_base"
 
 [project.scripts]
+# OMN-21565: global invariant accounting through the container-bound runtime.
+check-invariant-analysis = "omnibase_core.nodes.node_validation_report_write_effect.runtime_invariant_analysis:main"
 onex = "omnibase_core.cli.cli_commands:cli"
 # Backward-compatibility alias (renamed from 'omni-agent' to 'onex' in v0.3.0)
 omni-agent = "omnibase_core.cli.cli_commands:cli"

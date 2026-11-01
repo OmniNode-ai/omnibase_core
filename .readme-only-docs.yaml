@@ -17,6 +17,8 @@ exceptions:
     reason: Deterministic IR verification consumes this captured evidence fixture.
   - path: .onex_state/evidence/deterministic-ir/deterministic-ir-evidence.txt
     reason: Deterministic IR verification consumes this captured evidence fixture.
+  - path: tests/fixtures/invariant_analysis/*.md
+    reason: Invariant-analysis tests read these plan and authority documents as data.
   - path: tests/fixtures/*.txt
     reason: Tests read these deliberately valid and invalid input fixtures as data.
   - path: tests/unit/nodes/node_direct_model_call_check_compute/samples/*.txt
