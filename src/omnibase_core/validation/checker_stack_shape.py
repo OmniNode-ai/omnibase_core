@@ -92,6 +92,9 @@ def validate_rules(rules: Mapping[str, ModelValidatorRule]) -> None:
             rule_string(row, "unreadable_message")
         elif rule_id == RULE_FILE_UNREADABLE:
             rule_string(row, "services_key")
+            rule_string(row, "removal_marker")
+            re.compile(rule_string(row, "removal_pattern"))
+            re.compile(rule_string(row, "directive_pattern"))
         elif rule_id == RULE_BASELINE:
             rule_string(row, "data_path")
             rule_string(row, "base_ref")
@@ -181,17 +184,28 @@ def compose_services(
     text: str, rules: Mapping[str, ModelValidatorRule]
 ) -> dict[str, dict[object, object]]:
     """Service name -> its body; raises ``ModelOnexError`` when the file holds no services mapping."""
-    key = rule_string(rules[RULE_FILE_UNREADABLE], "services_key")
+    row = rules[RULE_FILE_UNREADABLE]
+    key = rule_string(row, "services_key")
+    marker = rule_string(row, "removal_marker")
+    # compose merge tags are directives to compose, not data: a removed service is not a service
+    text = re.sub(
+        rule_string(row, "removal_pattern"),
+        lambda m: f'{m.group(1)}"{marker}"',
+        text,
+    )
+    text = re.sub(rule_string(row, "directive_pattern"), r"\1", text)
     try:
-        document = load_yaml_mapping_no_duplicates(text, source="compose file")
-    except (yaml.YAMLError, ValueError) as exc:
+        # compose reads a repeated key as its last value, as SafeLoader does
+        document = yaml.load(text, Loader=yaml.SafeLoader)
+    except yaml.YAMLError as exc:
         raise _invalid(str(exc).splitlines()[0]) from exc
-    services = document.get(key)
+    services = document.get(key) if isinstance(document, dict) else None
     if not isinstance(services, dict):
         raise _invalid(f"no {key} mapping")
     return {
         str(name): body if isinstance(body, dict) else {}
         for name, body in services.items()
+        if body != marker
     }
 
 

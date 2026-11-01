@@ -72,6 +72,9 @@ validation:
       enabled: true
       parameters:
         services_key: 'services'
+        removal_pattern: '(?m)(:[ \t]+)!reset\b[ \t]*(?:null|~)?[ \t]*(?=$|#)'
+        removal_marker: '!reset'
+        directive_pattern: '(?m)([:-][ \t]+)!(?:override|reset)\b[ \t]*'
         message: >-
           compose file {path} of lane {lanes} is not valid YAML holding a services mapping: {reason}.
     - rule_id: stack_shape_data_invalid

@@ -238,13 +238,18 @@ def test_a_service_list_without_services_key_fails_loudly(tmp_path: Path) -> Non
     assert _codes(tmp_path) == [checker.RULE_FILE_UNREADABLE]
 
 
-def test_a_duplicated_service_key_is_refused_not_silently_merged(
-    tmp_path: Path,
-) -> None:
+def test_a_repeated_nested_key_reads_as_its_last_value(tmp_path: Path) -> None:
     _stack(tmp_path)
     (tmp_path / _lane_file("dev")).write_text(
-        "services:\n  runtime: {}\n  runtime: {}\n", encoding="utf-8"
+        "services:\n  runtime:\n    healthcheck:\n      interval: 1s\n      interval: 2s\n",
+        encoding="utf-8",
     )
+    assert _issues(tmp_path) == []
+
+
+def test_a_compose_file_that_is_not_a_mapping_is_unreadable(tmp_path: Path) -> None:
+    _stack(tmp_path)
+    (tmp_path / _lane_file("dev")).write_text("- runtime\n", encoding="utf-8")
     assert _codes(tmp_path) == [checker.RULE_FILE_UNREADABLE]
 
 
@@ -431,3 +436,28 @@ def test_a_missing_contract_parameter_fails_at_load(rule_id: str, key: str) -> N
 def test_malformed_data_file_fails_loudly(tmp_path: Path) -> None:
     _stack(tmp_path, data={"runtime": "not-a-mapping"})
     assert _codes(tmp_path) == [checker.RULE_DATA_INVALID]
+
+
+def test_compose_merge_tags_are_directives_not_data(tmp_path: Path) -> None:
+    _stack(tmp_path)
+    (tmp_path / _lane_file("dev")).write_text(
+        "services:\n"
+        "  runtime:\n"
+        "    ports: !override\n"
+        "      - '1:1'\n"
+        "    volumes: !reset []\n"
+        "  postgres: !reset null\n"
+        "  removed-one: !reset null\n",
+        encoding="utf-8",
+    )
+    assert _issues(tmp_path) == []
+
+
+def test_a_service_with_an_empty_body_is_still_a_service(tmp_path: Path) -> None:
+    _stack(tmp_path)
+    (tmp_path / _lane_file("dev")).write_text(
+        "services:\n  runtime: {}\n  intruder:\n", encoding="utf-8"
+    )
+    issues = _issues(tmp_path)
+    assert [c for c, _ in issues] == [checker.RULE_NOT_ALLOWED]
+    assert "intruder" in issues[0][1]
