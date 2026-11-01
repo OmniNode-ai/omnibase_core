@@ -2380,6 +2380,14 @@
       "title": "Golden Path",
       "type": "array"
     },
+    "handler_dependencies": {
+      "description": "Protocol identifiers the contract's handlers need. The lane overlay binds each to an implementation; a protocol it does not bind refuses the contract as DEPENDENCY_UNBOUND before any subscription.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Handler Dependencies",
+      "type": "array"
+    },
     "handler_routing": {
       "anyOf": [
         {

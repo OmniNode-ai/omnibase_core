@@ -105,15 +105,15 @@ dod_evidence:
         check_value: uv run pytest tests/unit/validation/hardcoded_model_config -q -p no:randomly -k handler_is_a_typed_pure_compute
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21463-deploy-source
-    description: Read the published pure scanner handler at the checkout commit through the GitHub contents
-      API and require both tier and engine classification. This hosted-runner probe needs no container
-      daemon or private runtime.
+    description: Read the published pure tier and engine scanner (now checker_hardcoded_model_tier in
+      validation/) at the checkout commit from raw.githubusercontent.com and require both tier and engine
+      classification. This hosted-runner probe needs no container daemon or private runtime.
     source: manual
     execution_scope: hosted_and_local
     binds_ac: [AC2]
     checks:
       - check_type: command
         check_value: |
-          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_hardcoded_model_tier_engine.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | uv run python -c 'import sys; source = sys.stdin.read(); assert "def scan_tier_engine(" in source; assert "if value in tiers:" in source; assert "elif value in engines and value is not None:" in source'
+          curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git rev-parse HEAD)/src/omnibase_core/validation/checker_hardcoded_model_tier.py" |
+            uv run python -c 'import sys; source = sys.stdin.read(); assert "def scan_tier_engine(" in source; assert "if value in tiers:" in source; assert "elif value in engines and value is not None:" in source'
         cwd: ${OMNI_HOME}/omnibase_core
