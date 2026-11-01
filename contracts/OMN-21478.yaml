@@ -44,6 +44,14 @@ requirements:
         statement: The dependency pin handler rewrites only the declared omnibase-core source tag for
           opted-in consumers. The publish workflow selects dependency mode for dev pushes, refreshes the
           lockfile, and exposes repo and mode to each matrix leg.
+      - id: AC7
+        statement: 'AC7: No consumer is opted in to the dependency pin bump, because a core-only bump
+          cannot resolve in a consumer that also pins omnibase_infra by a dev merge tag -- omnibase_infra
+          pins omnibase-core in its own [tool.uv.sources] and uv honours a git dependency''s sources,
+          so a head whose core tag differs from the one its pinned omnibase_infra commit names carries
+          two conflicting omnibase-core URLs and omnimarket''s Sibling Release Compatibility Gate (OMN-20381)
+          refuses it -- falsifier: tests/unit/handlers/test_handler_dependency_pin_bump.py::test_real_manifest_dependency_opt_ins
+          fails at the merge base, whose docs/downstream-repos.yaml opts omnimarket in'
 evidence_requirements:
   - kind: tests
     description: One parametrized case per operator, the node_graph_reducer registry_loaded guard, and
@@ -142,4 +150,21 @@ dod_evidence:
             base64 -d | grep -F '> timedelta(hours=policy.max_trailing_hours)' > /dev/null &&
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'source["tag"] = dependency_tag' > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21478-ac7-no-dependency-opt-in
+    description: The manifest opts no consumer in to the dependency pin bump, so dependency mode enumerates
+      an empty matrix and no core-only bump PR is opened. Asserted by the manifest test and by parsing
+      the manifest read at the head commit through the GitHub contents API, never a mutable working copy.
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/handlers/test_handler_dependency_pin_bump.py -q
+          --no-cov -k "real_manifest_dependency_opt_ins"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/docs/downstream-repos.yaml?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d |
+            python3 -c 'import sys,yaml; m=yaml.safe_load(sys.stdin); d=[r["name"] for r in m["repos"] if r.get("dependency_pin") is not None]; sys.exit(0 if d==[] else 1)'
         cwd: ${OMNI_HOME}/omnibase_core
