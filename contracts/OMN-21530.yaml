@@ -7,7 +7,8 @@ summary: Part (a) of the replay task. tests/fixtures/andon_replay/corpus.yaml ho
   expected rule_id and an input bundle (a code input is a repository, a full revision, a path, a line,
   a quote and the fact bundle the rule needs; a text input is a snapshot with its sha256). The replay
   driver is generic code that holds no revision, path or rule id. Part (b), the integrated replay of every
-  checker over the corpus, waits for the checkers and is not part of this change.
+  checker over the corpus (tests/integration/andon_replay), runs each assertion through the checker that
+  owns its rule_id and reports the misses.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -29,10 +30,25 @@ requirements:
         statement: "AC5: Configuration: the corpus is data; the replay driver holds no revision, path
           or rule id in code -- falsifier: K10 `rule_table_in_checker` and hardcoded_model_config report
           zero on the driver"
+  - id: req-omn21530-replay
+    statement: The integrated replay runs every checker over the whole corpus at the audited revisions,
+      and disabling a rule row fails that rule's fixture and exactly the assertions that name it.
+    acceptance:
+      - id: AC3
+        statement: "AC3: the integrated run reports every assertion at its audited revision with its `rule_id`
+          -- falsifier: `uv run pytest tests/integration/andon_replay -q` on the lab, exit 0"
+      - id: AC4
+        statement: "AC4: disabling any rule row in any `.validation.yaml` fails that rule's fixture and
+          fails exactly the corpus assertions that name it -- falsifier: a table-driven test that disables
+          each rule in turn and compares the failed assertion set"
 evidence_requirements:
   - kind: tests
     description: Corpus coverage, input resolution and the planted-violation copies.
     command: uv run pytest tests/unit/andon_replay -q -n 0 --no-cov
+  - kind: tests
+    description: Integrated replay of every checker over the corpus, the disable-a-rule table and the
+      planted controls.
+    command: uv run pytest tests/integration/andon_replay -q -n 0 --no-cov
 emergency_bypass:
   enabled: false
   justification: ""
@@ -78,3 +94,32 @@ dod_evidence:
         cwd: .
     binds_ac:
       - AC5
+  - id: dod-omn21530-ac3-integrated-replay
+    description: Every corpus assertion is replayed through the checker that owns its rule id and is reported
+      with that rule id at its audited revision (clone) or snapshot. With the clone root and the require-clones
+      variable the corpus names set, a missing clone fails the run (the lab run sets both); without them
+      only the text snapshots are replayed and the unreplayed assertions are counted. A copy whose assertion
+      expects a rule id its checker does not report fails, and a copy that drops an assertion fails the
+      coverage count.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/integration/andon_replay -q --no-cov -o addopts='' -k
+          "reports_every_assertion or planted or names_the_checker"
+        cwd: .
+    binds_ac:
+      - AC3
+  - id: dod-omn21530-ac4-disable-rule
+    description: Table-driven over the corpus's rule index, each rule row is disabled in a tmp copy of
+      its contract; the rule's own violation fixture stops reporting it and exactly the assertions that
+      name the rule newly fail.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/integration/andon_replay -q --no-cov -o addopts='' -k
+          disable_rule_fails_its_assertions
+        cwd: .
+    binds_ac:
+      - AC4

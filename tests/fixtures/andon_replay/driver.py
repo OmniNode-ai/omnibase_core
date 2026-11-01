@@ -20,17 +20,27 @@ from __future__ import annotations
 import fnmatch
 import functools
 import hashlib
+import importlib
 import shutil
 import subprocess
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
+)
+from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
+from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
+    ModelValidatorRule,
+)
+from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
+    ModelValidatorSubcontract,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
@@ -103,11 +113,35 @@ class ModelAssertion(BaseModel):
     note: str | None = None
 
 
+class ModelAdapter(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    module: str
+    function: str
+    fixture_function: str | None = None
+
+
+class ModelReplay(BaseModel):
+    """How the integrated replay finds contracts, fixtures and per-checker adapters."""
+
+    model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
+
+    contracts_glob: str
+    repo_root_from_fixture: str
+    fixtures_dir: str
+    fixture_prefix: str
+    expected_assertions: int = Field(gt=0)
+    row_name_parameters: list[str]
+    validator_aliases: dict[str, str]
+    adapters: dict[str, ModelAdapter]
+
+
 class ModelCorpus(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     schema_version: int
     resolution: ModelResolution
+    replay: ModelReplay | None = None
     findings: ModelFindings
     snapshots: list[ModelSnapshot]
     assertions: list[ModelAssertion]
@@ -440,3 +474,420 @@ def resolve_inputs(
             f"{corpus.resolution.clone_root_env} does not name a directory"
         )
     return report
+
+
+# ---------------------------------------------------------------------------
+# Integrated replay (OMN-21530, plan task T0.8b)
+#
+# The replay step builds one source per assertion (the audited revision read from
+# the canonical clone, or the text snapshot), hands it with the checker's contract to
+# the adapter the corpus names for that checker, and collects the rule ids the checker
+# reports. Which checker owns a rule id, which adapter calls it and how a rule id is
+# spelled are corpus and contract data; the code below holds none of them.
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ReplayContract:
+    """One ``.validation.yaml`` as the replay reads it."""
+
+    path: Path
+    validator_id: str
+    subcontract: ModelValidatorSubcontract
+
+    @property
+    def rules(self) -> dict[str, ModelValidatorRule]:
+        return {r.rule_id: r for r in self.subcontract.rules}
+
+
+@dataclass(frozen=True)
+class ReplaySource:
+    """The files one checker run may read: a revision of a clone, or a local tree.
+
+    ``text(path)`` is the content at ``path`` (None when absent), ``names()`` every
+    path of the tree, ``fact_text(role)`` and ``fact_names(role)`` the same for the
+    fact the assertion's input bundle names under ``role``.
+    """
+
+    path: str
+    line: int | None
+    text: Callable[[str], str | None]
+    names: Callable[[], list[str]]
+    fact_text: Callable[[str], str | None]
+    fact_names: Callable[[str], list[str]]
+    fact_revision: Callable[[str], str | None]
+
+
+@dataclass(frozen=True)
+class ReplayRun:
+    """What an adapter is handed: the owning contract and the source to judge."""
+
+    validator_id: str
+    contract: ReplayContract | None
+    source: ReplaySource
+
+
+Adapter = Callable[[ReplayRun], Sequence[ModelValidationIssue]]
+
+
+class ModelReplayResult(BaseModel):
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    assertion_id: str
+    expected: str
+    validator_id: str | None
+    reported: list[str] = Field(default_factory=list)
+    detail: str = ""
+
+    @property
+    def ok(self) -> bool:
+        return self.expected in self.reported
+
+
+def repo_root(corpus: ModelCorpus) -> Path:
+    if corpus.replay is None:
+        raise ValueError("corpus has no replay section")
+    return (FIXTURE_DIR / corpus.replay.repo_root_from_fixture).resolve()
+
+
+def in_scope(contract: ReplayContract, path: str) -> bool:
+    """The contract's own scope test, as the validator base applies it to a path."""
+    sub = contract.subcontract
+    rooted = f"/{path}"
+    if any(fnmatch.fnmatch(rooted, p) for p in sub.exclude_patterns):
+        return False
+    return any(fnmatch.fnmatch(rooted, p) for p in sub.target_patterns)
+
+
+def load_contracts(corpus: ModelCorpus, root: Path) -> dict[str, ReplayContract]:
+    """Every contract the corpus's glob finds under ``root``, by validator id."""
+    if corpus.replay is None:
+        raise ValueError("corpus has no replay section")
+    contracts: dict[str, ReplayContract] = {}
+    for path in sorted(root.glob(corpus.replay.contracts_glob)):
+        loaded = yaml.safe_load(path.read_text(encoding="utf-8"))
+        body = loaded.get("validation", loaded)
+        sub = ModelValidatorSubcontract.model_validate(body)
+        contracts[body["validator_id"]] = ReplayContract(
+            path, body["validator_id"], sub
+        )
+    return contracts
+
+
+def owner_of(
+    corpus: ModelCorpus, contracts: Mapping[str, ReplayContract], rule_id: str
+) -> str | None:
+    """The validator id that owns ``rule_id``: its prefix (after aliasing), else the one
+    contract that holds a row of that name, else the alias of the bare id, else None."""
+    if corpus.replay is None:
+        raise ValueError("corpus has no replay section")
+    aliases = corpus.replay.validator_aliases
+    prefix = rule_id.split(":", 1)[0] if ":" in rule_id else None
+    candidates = [aliases.get(prefix, prefix)] if prefix else []
+    candidates.append(aliases.get(rule_id, ""))
+    for candidate in candidates:
+        if candidate in contracts or candidate in corpus.replay.adapters:
+            return candidate
+    holders = [v for v, c in contracts.items() if rule_id in c.rules]
+    return holders[0] if len(holders) == 1 else None
+
+
+def row_of(
+    corpus: ModelCorpus, contract: ReplayContract | None, rule_id: str
+) -> str | None:
+    """The row of ``contract`` a corpus rule id names: the id itself, its part after the
+    checker prefix, or the row whose parameter (one the corpus lists) holds that part."""
+    if corpus.replay is None:
+        raise ValueError("corpus has no replay section")
+    if contract is None:
+        return None
+    rows = contract.rules
+    tail = rule_id.split(":", 1)[-1]
+    for name in (rule_id, tail):
+        if name in rows:
+            return name
+    for name, row in rows.items():
+        params = row.parameters or {}
+        if any(params.get(key) == tail for key in corpus.replay.row_name_parameters):
+            return name
+    return None
+
+
+def reported_ids(
+    corpus: ModelCorpus, validator_id: str, issues: Sequence[ModelValidationIssue]
+) -> list[str]:
+    """The spellings under which a corpus can name what a checker reported: a rule name
+    bare or behind the checker's id or one of its aliases, and the checker's own id (and
+    its aliases) when it reported anything, for a corpus id that names a checker."""
+    if corpus.replay is None:
+        raise ValueError("corpus has no replay section")
+    prefixes = [validator_id] + [
+        alias
+        for alias, target in corpus.replay.validator_aliases.items()
+        if target == validator_id
+    ]
+    spelled: list[str] = []
+    for issue in issues:
+        for name in (issue.code, issue.rule_name):
+            if name:
+                spelled.append(name)
+                spelled.extend(f"{prefix}:{name}" for prefix in prefixes)
+    if issues:
+        spelled.extend(prefixes)
+    return list(dict.fromkeys(spelled))
+
+
+def _clone_dir(corpus: ModelCorpus, clone_root: Path, repository: str) -> Path:
+    return clone_root / corpus.resolution.clone_dirs.get(repository, repository)
+
+
+def _fact_by_role(item: ModelInput, role: str) -> ModelFact | None:
+    return next((f for f in item.facts if f.role == role), None)
+
+
+@functools.cache
+def _git_text(clone: Path, timeout: int, revision: str, path: str) -> str | None:
+    done = _git(clone, timeout, "show", f"{revision}:{path}")
+    return done.stdout.decode("utf-8", "replace") if done.returncode == 0 else None
+
+
+@functools.cache
+def _git_names_cached(clone: Path, timeout: int, revision: str) -> tuple[str, ...]:
+    done = _git(clone, timeout, "ls-tree", "-r", "--name-only", revision)
+    return tuple(done.stdout.decode("utf-8", "replace").splitlines())
+
+
+def _git_names(clone: Path, timeout: int, revision: str) -> list[str]:
+    return list(_git_names_cached(clone, timeout, revision))
+
+
+def clone_source(
+    corpus: ModelCorpus, base_dir: Path, clone_root: Path, assertion: ModelAssertion
+) -> ReplaySource | None:
+    """The source of one assertion; None when its clone or snapshot is not readable."""
+    timeout = corpus.resolution.git_timeout_seconds
+    item = assertion.input
+    if item.kind == "text":
+        snap = _snapshot(corpus, item.snapshot or "")
+        if snap is None or not (base_dir / snap.path).is_file():
+            return None
+        body = (base_dir / snap.path).read_text(encoding="utf-8")
+        return ReplaySource(
+            path=snap.path,
+            line=None,
+            text=lambda _path: body,
+            names=lambda: [snap.path],
+            fact_text=lambda _role: None,
+            fact_names=lambda _role: [],
+            fact_revision=lambda _role: None,
+        )
+    clone = _clone_dir(corpus, clone_root, item.repository or "")
+    if not clone.is_dir() or not item.revision or not item.path:
+        return None
+    revision = item.revision
+    if not _commit_exists(clone, revision, timeout):
+        return None
+
+    def fact_clone(role: str) -> tuple[Path, ModelFact] | None:
+        fact = _fact_by_role(item, role)
+        if fact is None:
+            return None
+        where = _clone_dir(corpus, clone_root, fact.repository)
+        return (where, fact) if where.is_dir() else None
+
+    def fact_text(role: str) -> str | None:
+        found = fact_clone(role)
+        if found is None or not found[1].path:
+            return None
+        return _git_text(found[0], timeout, found[1].revision, found[1].path)
+
+    def fact_names(role: str) -> list[str]:
+        found = fact_clone(role)
+        return [] if found is None else _git_names(found[0], timeout, found[1].revision)
+
+    def fact_revision(role: str) -> str | None:
+        fact = _fact_by_role(item, role)
+        return None if fact is None else fact.revision
+
+    return ReplaySource(
+        path=item.path,
+        line=item.line,
+        text=lambda path: _git_text(clone, timeout, revision, path),
+        names=lambda: _git_names(clone, timeout, revision),
+        fact_text=fact_text,
+        fact_names=fact_names,
+        fact_revision=fact_revision,
+    )
+
+
+def directory_source(root: Path, relative: str) -> ReplaySource:
+    """A checker's own fixture: a local tree, judged at ``relative`` under ``root``."""
+
+    def text(path: str) -> str | None:
+        target = root / path
+        return target.read_text(encoding="utf-8") if target.is_file() else None
+
+    return ReplaySource(
+        path=relative,
+        line=None,
+        text=text,
+        names=lambda: sorted(
+            p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file()
+        ),
+        fact_text=lambda _role: None,
+        fact_names=lambda _role: [],
+        fact_revision=lambda _role: None,
+    )
+
+
+def load_adapter(corpus: ModelCorpus, validator_id: str) -> Adapter | None:
+    if corpus.replay is None or validator_id not in corpus.replay.adapters:
+        return None
+    named = corpus.replay.adapters[validator_id]
+    adapter: Adapter = getattr(importlib.import_module(named.module), named.function)
+    return adapter
+
+
+def rule_fixtures(
+    corpus: ModelCorpus, root: Path, validator_id: str, rule_id: str
+) -> list[Path]:
+    """The checker's own violation fixtures of one rule row (files or directories)."""
+    if corpus.replay is None:
+        raise ValueError("corpus has no replay section")
+    home = root / corpus.replay.fixtures_dir / validator_id
+    stem = corpus.replay.fixture_prefix + rule_id
+    return (
+        sorted(p for p in home.glob("*") if p.name.startswith(stem))
+        if home.is_dir()
+        else []
+    )
+
+
+FixtureAdapter = Callable[[ReplayContract, Path], Sequence[ModelValidationIssue]]
+
+
+def load_fixture_adapter(
+    corpus: ModelCorpus, validator_id: str
+) -> FixtureAdapter | None:
+    if corpus.replay is None or validator_id not in corpus.replay.adapters:
+        return None
+    named = corpus.replay.adapters[validator_id]
+    if named.fixture_function is None:
+        return None
+    adapter: FixtureAdapter = getattr(
+        importlib.import_module(named.module), named.fixture_function
+    )
+    return adapter
+
+
+def replay_assertion(
+    corpus: ModelCorpus,
+    contracts: Mapping[str, ReplayContract],
+    assertion: ModelAssertion,
+    source: ReplaySource,
+) -> ModelReplayResult:
+    """Call the checker that owns the assertion's rule id; the rule ids it reports."""
+    owner = owner_of(corpus, contracts, assertion.rule_id)
+    result = ModelReplayResult(
+        assertion_id=assertion.id, expected=assertion.rule_id, validator_id=owner
+    )
+    if owner is None:
+        result.detail = "no checker owns this rule id"
+        return result
+    adapter = load_adapter(corpus, owner)
+    if adapter is None:
+        result.detail = f"no adapter for checker {owner}"
+        return result
+    try:
+        issues = adapter(
+            ReplayRun(validator_id=owner, contract=contracts.get(owner), source=source)
+        )
+    except ModelOnexError as refusal:
+        # a checker that refuses its contract reports nothing: the assertion is not met
+        result.detail = f"checker refused: {refusal.message}"
+        return result
+    result.reported = reported_ids(corpus, owner, issues)
+    result.detail = "; ".join(
+        f"{i.code or i.rule_name}@{i.file_path}:{i.line_number}" for i in issues
+    )
+    return result
+
+
+def replay(
+    corpus: ModelCorpus,
+    base_dir: Path,
+    env: Mapping[str, str],
+    contracts: Mapping[str, ReplayContract],
+    only: Callable[[ModelAssertion], bool] = lambda _a: True,
+) -> tuple[list[ModelReplayResult], list[str]]:
+    """Replay the selected assertions; the second value lists those not replayable
+    here (clone or snapshot unreadable) with the reason."""
+    clone_root_value = env.get(corpus.resolution.clone_root_env, "")
+    clone_root = Path(clone_root_value) if clone_root_value else None
+    results: list[ModelReplayResult] = []
+    unreadable: list[str] = []
+    for assertion in corpus.assertions:
+        if not only(assertion):
+            continue
+        needs_clone = assertion.input.kind == "code"
+        if needs_clone and (clone_root is None or not clone_root.is_dir()):
+            unreadable.append(f"{assertion.id}: no clone root")
+            continue
+        source = clone_source(corpus, base_dir, clone_root or Path(), assertion)
+        if source is None:
+            unreadable.append(f"{assertion.id}: input not readable")
+            continue
+        results.append(replay_assertion(corpus, contracts, assertion, source))
+    return results, unreadable
+
+
+def coverage_problems(
+    corpus: ModelCorpus,
+    results: Sequence[ModelReplayResult],
+    unreadable: Sequence[str],
+) -> list[str]:
+    """The replay report must account for exactly the assertions the corpus promises."""
+    if corpus.replay is None:
+        raise ValueError("corpus has no replay section")
+    promised = corpus.replay.expected_assertions
+    accounted = len(results) + len(unreadable)
+    problems: list[str] = []
+    if accounted != promised:
+        problems.append(
+            f"replay accounts for {accounted} assertions, corpus promises {promised}"
+        )
+    seen = [r.assertion_id for r in results]
+    if len(set(seen)) != len(seen):
+        problems.append("an assertion is reported twice")
+    return problems
+
+
+def disabled_contract(
+    contract: ReplayContract, rule_id: str, target_dir: Path
+) -> ReplayContract:
+    """A copy of ``contract`` in ``target_dir`` with the row ``rule_id`` disabled."""
+    raw = yaml.safe_load(contract.path.read_text(encoding="utf-8"))
+    body = raw.get("validation", raw)
+    for row in body["rules"]:
+        if row["rule_id"] == rule_id:
+            row["enabled"] = False
+    target_dir.mkdir(parents=True, exist_ok=True)
+    out = target_dir / contract.path.name
+    out.write_text(yaml.safe_dump(raw, sort_keys=False), encoding="utf-8")
+    return ReplayContract(
+        out, contract.validator_id, ModelValidatorSubcontract.model_validate(body)
+    )
+
+
+def failed_ids(results: Sequence[ModelReplayResult]) -> set[str]:
+    return {r.assertion_id for r in results if not r.ok}
+
+
+def fixture_codes(
+    judge: FixtureAdapter, contract: ReplayContract, fixture: Path
+) -> list[str]:
+    """Rule ids a checker reports on its own fixture; a refused contract reports none."""
+    try:
+        return [i.code for i in judge(contract, fixture) if i.code]
+    except ModelOnexError:
+        return []
