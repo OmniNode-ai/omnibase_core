@@ -19,8 +19,11 @@
 #         lock: repo-relative lockfile path (default: uv.lock)
 #       notes: optional human context
 #
-# omnidash, omniweb and omninode_infra are deliberately excluded from dependency_pin
-# bumps; their handshake pin_sites (if any) remain independent.
+# omnidash, omniweb, omninode_infra and omnimarket are deliberately excluded from
+# dependency_pin bumps; their handshake pin_sites (if any) remain independent.
+# No repo is opted in today: see omnimarket's note (OMN-17427) for why a core-only
+# dependency bump cannot resolve in a consumer that also pins omnibase_infra by a
+# dev merge tag.
 #
 # When a new repo/file starts pinning omnibase_core, ADD it here — the bot relies on this
 # manifest, not discovery. Ticket: OMN-9050.
@@ -71,9 +74,18 @@ repos:
   - name: omnimarket
     owner: OmniNode-ai
     pin_sites: []
-    dependency_pin: {}
     notes: "OMN-21478: consumes omnibase-core via a dev tag in pyproject.toml and uv.lock; no handshake
-      pin_sites are declared."
+      pin_sites are declared. OMN-17427: the dependency_pin opt-in is withdrawn because a core-only bump
+      cannot resolve there. omnibase_infra pins omnibase-core by a dev merge tag in its own
+      [tool.uv.sources], and uv honours a git dependency's sources, so an omnimarket head whose core tag
+      differs from the one its pinned omnibase_infra commit names carries two conflicting omnibase-core
+      URLs. omnimarket's Sibling Release Compatibility Gate (OMN-20381) refuses exactly that with
+      'Requirements contain conflicting URLs for package omnibase-core'. omnimarket dev
+      8c3430ed4d1fd360c4e30d2528265cb4d25dcce9 (omnimarket#4647, 2026-10-31T07:00:39Z) made the pair an
+      invariant in tests/ci/test_sibling_core_pin_pair_omn17427.py, which also records the eight earlier
+      core-only bumps (omnimarket#4588 to #4624) that stalled on it. The order that works is: omnibase_infra
+      moves its core tag, then one omnimarket change moves both tags, relocks and records the pair -- a
+      core-only bump can never be that change."
 
   - name: omnimemory
     owner: OmniNode-ai
