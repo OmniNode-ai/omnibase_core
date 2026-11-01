@@ -1,0 +1,71 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21900
+title: Every first-party reference is a dev-merge tag, never a sha - core half
+summary: The first_party_ref validator already refuses a first-party sha, branch or release ref on workflow
+  uses, pre-commit revs, pyproject and uv git sources and structured lab deploy refs. This change adds
+  one planted-sha and planted-dev-tag case per surface, closes the two surfaces it did not read (a lab
+  file one directory below a lab directory, and a bare deploy_ref or lab_deploy_ref literal with no repository
+  beside it), and gives the runtime a shrink-only per-file baseline so a consumer can hold the findings
+  it cannot remove in the same change. The tag-only rule is unchanged; main, dev and master stay forbidden.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21900-surfaces
+    statement: A planted first-party sha is refused and a planted dev-merge tag passes on every surface
+      the operator ruling names, and the runtime holds unremovable findings only in a shrink-only per-file
+      baseline.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: for each of the surfaces pre-commit rev, pyproject or uv git source, workflow
+          uses and lab deploy ref, a planted first-party sha is refused by the core validator and a planted
+          dev-merge tag passes -- falsifier: uv run pytest tests/unit/validation -k first_party_ref in
+          omnibase_core, one case per surface'
+      - id: AC3
+        statement: 'AC3: the runtime accepts a generated shrink-only per-file baseline with no suppression
+          marker, and a canary adding one finding to a baselined file is refused -- falsifier: the baseline
+          tests of test_runtime_first_party_ref_baseline.py'
+evidence_requirements:
+  - kind: tests
+    description: The first_party_ref validator tests pass at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/validation/first_party_ref -n 0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21900-ac1-surfaces
+    description: Every surface refuses a planted first-party sha and a branch ref and passes a planted
+      dev-merge tag.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_first_party_ref_surfaces.py
+          -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21900-ac3-baseline
+    description: The baseline is generated, carries a zero-target note and no suppression marker, only
+      shrinks, and refuses a canary finding added to a baselined file.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_runtime_first_party_ref_baseline.py
+          -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21900-deploy-checkout-test
+    description: Hosted-runner run of the first_party_ref tests at the checkout; they need no container
+      daemon, network or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC3]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/first_party_ref/test_first_party_ref_surfaces.py
+          tests/unit/validation/first_party_ref/test_runtime_first_party_ref_baseline.py -q --no-cov -o
+          addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

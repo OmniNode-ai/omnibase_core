@@ -1296,7 +1296,10 @@
   name: Internal siblings resolve from dev merge tags (OMN-19998)
   description: >
     Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
-    Third-party workflow actions require full commit SHAs.
+    Third-party workflow actions require full commit SHAs. Optional shrink-only per-file baseline (OMN-21900):
+    pass --baseline .onex/baselines/first_party_ref.yaml to hold the findings that could not be removed;
+    a finding not in it fails, an entry whose finding is gone fails as stale, and --write-baseline creates
+    the file or shrinks it and refuses to add an entry. Without --baseline every finding fails.
   language: python
   entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
   files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
@@ -1346,7 +1349,10 @@
   name: Workflow action pins (OMN-17427)
   description: >
     Blocking first-party dev-merge tag, sibling source, freshness and single-home invariants from validation/contracts/first_party_ref.validation.yaml.
-    Third-party workflow actions require full commit SHAs.
+    Third-party workflow actions require full commit SHAs. Optional shrink-only per-file baseline (OMN-21900):
+    pass --baseline .onex/baselines/first_party_ref.yaml to hold the findings that could not be removed;
+    a finding not in it fails, an entry whose finding is gone fails as stale, and --write-baseline creates
+    the file or shrinks it and refuses to add an entry. Without --baseline every finding fails.
   language: python
   entry: python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
   files: (^\.github/|^\.pre-commit-config\.yaml$|(^|/)pyproject\.toml$|brief|lab|deploy)
