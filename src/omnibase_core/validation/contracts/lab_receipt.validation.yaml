@@ -66,7 +66,7 @@ validation:
           - 'container::.*::(^|/)(docker|deploy|deployment|k8s|kustomize|overlays|helm|charts|terraform)/|(^|/)(Dockerfile[^/]*|docker-compose[^/]*|compose[^/]*\.ya?ml)$|\.tf$'
           - 'workflow::.*::^\.github/(workflows|actions)/'
           - 'migration::.*::(^|/)(migrations|alembic)/|\.sql$'
-          - 'internal_source::(omniclaude-internal|omnibase_internal)$::^src/'
+          - 'private_source::[-_]internal$::^src/'
           - 'package_source::.*::^src/'
 
     - rule_id: receipt_criterion_missing
