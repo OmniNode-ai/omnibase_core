@@ -54,6 +54,41 @@ def _rooted_at(node: ast.expr, receiver: str) -> bool:
     return isinstance(node, ast.Name) and node.id == receiver
 
 
+def _injected_calls(function: _Function, receiver: str | None) -> tuple[str, ...]:
+    """Names called in ``function`` that are a parameter or were unpacked from one."""
+    arguments = function.args
+    bound = {
+        a.arg for a in [*arguments.posonlyargs, *arguments.args, *arguments.kwonlyargs]
+    }
+    bound.update(a.arg for a in (arguments.vararg, arguments.kwarg) if a is not None)
+    bound.discard(receiver or "")
+    assignments = [n for n in ast.walk(function) if isinstance(n, ast.Assign)]
+    grown = True
+    while grown:
+        grown = False
+        for assignment in assignments:
+            if not (
+                isinstance(assignment.value, ast.Name) and assignment.value.id in bound
+            ):
+                continue
+            for target in assignment.targets:
+                for leaf in ast.walk(target):
+                    if (
+                        isinstance(leaf, ast.Name)
+                        and isinstance(leaf.ctx, ast.Store)
+                        and leaf.id not in bound
+                    ):
+                        bound.add(leaf.id)
+                        grown = True
+    return tuple(
+        node.func.id
+        for node in ast.walk(function)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id in bound
+    )
+
+
 def _method_facts(function: _Function) -> ModelHandlerShapeMethod:
     decorators = {d.id for d in function.decorator_list if isinstance(d, ast.Name)}
     args = [*function.args.posonlyargs, *function.args.args]
@@ -94,6 +129,7 @@ def _method_facts(function: _Function) -> ModelHandlerShapeMethod:
         has_kwargs=function.args.kwarg is not None,
         assigns_self_attribute=assigns,
         self_attribute_calls=tuple(calls),
+        injected_calls=_injected_calls(function, receiver),
     )
 
 

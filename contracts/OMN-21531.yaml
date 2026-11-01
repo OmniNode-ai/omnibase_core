@@ -158,3 +158,63 @@ dod_evidence:
           -o addopts='' && "${UV_PROJECT_ENVIRONMENT:-.venv}/bin/onex" --help
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6, AC7, AC8]
+  - id: dod-omn21531-aca-handler-shape-injected-callable
+    description: handler_shape reports mutating_public_method for a public method that mutates a registry
+      through callables it was handed (the audited method of F20-2); the violation fixture yields one
+      issue and the clean fixture none; disabling the row clears the violation.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_handler_shape.py -q --no-cov
+          -o addopts='' -k "handed_callable or injected_mutating_call_patterns"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn21531-acb-handler-di-call-site-anywhere
+    description: handler_di reports call_site_construction for a handler built by hand in a module outside
+      handlers/ and nodes/ (the audited call of F27-1); the other nine rules keep their scope; the violation
+      fixture yields one issue and the clean fixture none.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_handler_di.py -q --no-cov
+          -o addopts='' -k "built_by_hand or only_the_call_site_rule or violation_fixture or clean_fixture
+          or scope_path_pattern"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+      - AC7
+  - id: dod-omn21531-acc-no-io-nodeless-handler
+    description: no_io_outside_effects reports file_read for a file read in a handler module that no node
+      contract sits above (the audited read of F28-1); the violation fixture yields one issue and the
+      clean fixture none; disabling the row clears the violation.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_no_io_outside_effects.py
+          -q --no-cov -o addopts='' -k "nodeless or no_node or scope_keys or scope_row_missing"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn21531-acd-replay-of-the-three
+    description: With this branch's checker files and contracts overlaid on a tree at the replay corpus
+      head, the integrated replay reports F20-2 and F27-1 at their audited revisions and the corpus, its
+      snapshots and its adapters are unchanged; F28-1 is judged by the checker (acc) but the replay adapter
+      returns before the checker when no node contract is found, so that assertion is not claimed here.
+      Needs the corpus tree and the audited clones, which a hosted runner does not hold.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: >-
+          cd "${OMNI_HOME}/omni_worktrees/OMN-21531-replay/omnibase_core" && git diff --quiet 47a12a0258a8
+          -- tests/fixtures/andon_replay && PYTHONPATH=. uv run python -c "from tests.fixtures.andon_replay
+          import driver as d; c = d.load_corpus(d.DEFAULT_CORPUS_PATH); k = d.load_contracts(c, d.repo_root(c));
+          r, u = d.replay(c, d.DEFAULT_CORPUS_PATH.parent, d.environment(c), k, lambda a: a.id in ('F20-2',
+          'F27-1')); assert len(r) == 2 and all(x.ok for x in r), [(x.assertion_id, x.ok) for x in r]"
+        cwd: ${OMNI_HOME}
+    binds_ac:
+      - AC7
