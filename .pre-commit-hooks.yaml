@@ -1578,6 +1578,18 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-diagram-drift
+  name: Diagram drift (OMN-21510)
+  description: >
+    Refuse a Mermaid diagram that differs from the one generated from the contract fragment its marker
+    names. Every marker syntax, drawing template and diagnostic is contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_diagram_drift:ValidatorDiagramDrift
+  files: \.md$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-event-registry-drift
   name: Event-registry drift (OMN-21416)
   description: >

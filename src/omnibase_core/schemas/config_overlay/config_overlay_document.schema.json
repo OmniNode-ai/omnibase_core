@@ -13,7 +13,8 @@
         "broker.principal_grants",
         "host.settings",
         "lane.services",
-        "developer.principal"
+        "developer.principal",
+        "dod_verify"
       ],
       "title": "EnumConfigOverlayKey",
       "type": "string"

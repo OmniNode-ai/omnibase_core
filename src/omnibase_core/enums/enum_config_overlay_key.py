@@ -22,6 +22,9 @@ lane services. Core owns their schemas without naming deployment values.
 ``developer.principal`` (OMN-19975, plan task T4.2 of knowledge-base-internal
 ``beta/plans/2026-09-28-local-mvp-plan.md``) declares which developer machines
 hold a broker principal. It holds identities only; their grants are derived.
+
+``dod_verify`` (OMN-21504, task T-Q1 of the factory design plan) declares the
+parent tickets the receipt gate refuses as a PR's only cited ticket.
 """
 
 from __future__ import annotations
@@ -44,6 +47,7 @@ class EnumConfigOverlayKey(StrEnum):
     HOST_SETTINGS = "host.settings"
     LANE_SERVICES = "lane.services"
     DEVELOPER_PRINCIPAL = "developer.principal"
+    DOD_VERIFY = "dod_verify"
 
     @property
     def schema_ref(self) -> str:
@@ -66,6 +70,7 @@ _SCHEMA_REFS: dict[EnumConfigOverlayKey, str] = {
     EnumConfigOverlayKey.HOST_SETTINGS: "omnibase_core:host_settings",
     EnumConfigOverlayKey.LANE_SERVICES: "omnibase_core:lane_services",
     EnumConfigOverlayKey.DEVELOPER_PRINCIPAL: "omnibase_core:developer_principal",
+    EnumConfigOverlayKey.DOD_VERIFY: "omnibase_core:dod_verify",
 }
 
 
