@@ -18,6 +18,14 @@ requirements:
         statement: 'AC1: the shipped manifest lists check-handshake.yml as omnidash''s only pin site,
           so the bot rewrites one file whose pin the other workflows read. -- falsifier: uv run pytest
           tests/unit/scripts/test_pin_bump.py -q -k omnidash'
+  - id: req-core-spi-dev-tag-fresh
+    statement: omnibase_core pins omnibase-spi at a dev merge tag no older than the tag that cleared the
+      2026-11-01 stale_pin red, with uv.lock on the same tag.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: pyproject.toml pins omnibase-spi at dev-20261101025141-38465d47118c or a later
+          dev merge tag and uv.lock resolves the same tag -- falsifier: uv run pytest tests/unit/scripts/test_spi_dev_tag_pin.py
+          -q'
 evidence_requirements:
   - kind: tests
     description: The shipped manifest declares one omnidash pin site.
@@ -43,4 +51,12 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/scripts/test_publish_downstream_pin_bump_workflow.py -q
           -k closes_ref_exempt
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn-9050-core-spi-dev-tag-fresh
+    description: The omnibase-spi pin is at or after the clearing dev tag and uv.lock matches it.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/scripts/test_spi_dev_tag_pin.py -q
         cwd: ${OMNI_HOME}/omnibase_core
