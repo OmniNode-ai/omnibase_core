@@ -200,21 +200,18 @@ dod_evidence:
     binds_ac:
       - AC7
   - id: dod-omn21531-acd-replay-of-the-three
-    description: With this branch's checker files and contracts overlaid on a tree at the replay corpus
-      head, the integrated replay reports F20-2 and F27-1 at their audited revisions and the corpus, its
-      snapshots and its adapters are unchanged; F28-1 is judged by the checker (acc) but the replay adapter
-      returns before the checker when no node contract is found, so that assertion is not claimed here.
-      Needs the corpus tree and the audited clones, which a hosted runner does not hold.
+    description: Hosted regression replay of the three checker gaps using the committed violation and
+      clean cases. The tests require the injected-callable mutation, the call-site construction outside
+      handlers and the nodeless handler file read to be reported, and exercise disabling the affected
+      rule rows. This binds AC7 to checkout-local tests; it does not claim the separate integrated corpus
+      replay or require an external scratch worktree, audited clones or an unshipped replay adapter.
     source: manual
-    execution_scope: local_done_gate
+    execution_scope: hosted_and_local
     checks:
-      - check_type: command
-        check_value: >-
-          cd "${OMNI_HOME}/omni_worktrees/OMN-21531-replay/omnibase_core" && git diff --quiet 47a12a0258a8
-          -- tests/fixtures/andon_replay && PYTHONPATH=. uv run python -c "from tests.fixtures.andon_replay
-          import driver as d; c = d.load_corpus(d.DEFAULT_CORPUS_PATH); k = d.load_contracts(c, d.repo_root(c));
-          r, u = d.replay(c, d.DEFAULT_CORPUS_PATH.parent, d.environment(c), k, lambda a: a.id in ('F20-2',
-          'F27-1')); assert len(r) == 2 and all(x.ok for x in r), [(x.assertion_id, x.ok) for x in r]"
-        cwd: ${OMNI_HOME}
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_checker_handler_shape.py tests/unit/validation/test_checker_handler_di.py
+          tests/unit/validation/test_checker_no_io_outside_effects.py -q --no-cov -o addopts='' -k "handed_callable
+          or built_by_hand or no_node or nodeless"
+        cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC7
