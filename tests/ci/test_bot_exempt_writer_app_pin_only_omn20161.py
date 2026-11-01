@@ -84,6 +84,8 @@ def _run(
         "GH_TOKEN": "t",
         "PR_NUMBER": pr_number,
         "PR_EVENT_AUTHOR": author,
+        "PR_TITLE": "chore: bump (OMN-90201)",
+        "FACTORY_TASK_TICKETS": "",
         "MERGE_GROUP_HEAD_REF": merge_group_head_ref,
         "GH_REPO": "o/r",
     }

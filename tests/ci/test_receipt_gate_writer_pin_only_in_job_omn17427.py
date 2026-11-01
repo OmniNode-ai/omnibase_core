@@ -255,6 +255,8 @@ def test_writer_pin_only_step_is_gated_and_gates_every_evidence_step() -> None:
         "REPO_SHORT": "${{ github.event.repository.name }}",
         "HEAD_SHA": "${{ github.event.pull_request.head.sha }}",
         "BASE_SHA": "${{ github.event.pull_request.base.sha }}",
+        "PR_TITLE": "${{ github.event.pull_request.title }}",
+        "FACTORY_TASK_TICKETS": "${{ inputs.factory-task-tickets }}",
     }
     assert 'cd "$RUNNER_TEMP" && "$DOD_VERIFY_PY" -I - ' in step["run"]
     for step_id in (

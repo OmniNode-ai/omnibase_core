@@ -46,6 +46,15 @@
 #                   (default: "false"). With "true", dod-verify records its
 #                   verdict (the first refused step) as one `Shadow verdict:`
 #                   job-summary line and one notice annotation, then passes.
+#   factory-task-tickets: the factory task tickets (OMN ids; a Linear ticket
+#                   whose parent is listed in the dod_verify overlay's
+#                   parent_tickets), resolved by the caller because the gate has
+#                   no Linear reader (OMN-21504). The dependency-bot author step
+#                   and the writer app's pin-only step refuse to apply to a pull
+#                   request whose title cites one, which then runs the evidence
+#                   steps like any other. Empty lists none. The docs-only zone
+#                   filter decides which CI jobs run and is not read here, so it
+#                   exempts nothing.
 #   check-timeout-seconds: how long each dod_verify check may run, a whole
 #                   number of seconds from 1 to 900 (OMN-21166). Empty, the
 #                   default, keeps the verifier's own 30 s. Browser checks
@@ -86,6 +95,11 @@ on:
         default: "false"
       dod-verify-overlay:
         description: "The dod_verify overlay document as JSON (OMN-21504): parent_tickets lists the tickets refused as a PR's only cited ticket; empty lists none."
+        type: string
+        required: false
+        default: ""
+      factory-task-tickets:
+        description: "The factory task tickets as OMN ids separated by commas, spaces or newlines, or a JSON array (OMN-21504): tickets whose parent is listed in the dod_verify overlay's parent_tickets, resolved by the caller. A pull request citing one is never exempt as a dependency-bot or writer-app change; empty lists none."
         type: string
         required: false
         default: ""
@@ -184,6 +198,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           PR_EVENT_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          FACTORY_TASK_TICKETS: ${{ inputs.factory-task-tickets }}
           MERGE_GROUP_HEAD_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           set -euo pipefail
@@ -226,6 +242,33 @@ jobs:
               writer_app="true"
               ;;
           esac
+
+          # OMN-21504: neither exemption applies to a pull request that cites a
+          # factory task ticket; it is judged on its own contract. The title is
+          # GitHub-verified metadata (the event payload, or the API on a
+          # merge_group event); with a factory list set and no readable title
+          # the exemption is withheld.
+          if { [ "$exempt" = "true" ] || [ "$writer_app" = "true" ]; } && [ -n "$(printf '%s' "${FACTORY_TASK_TICKETS:-}" | tr -d '[:space:]')" ]; then
+            title="${PR_TITLE:-}"
+            if [ -z "$title" ] && [ -n "$resolved_pr_num" ]; then
+              title="$(gh pr view "$resolved_pr_num" --repo "$GH_REPO" --json title --jq '.title' 2>/dev/null || true)"
+            fi
+            factory_cited=""
+            while IFS= read -r cited; do
+              if printf '%s\n' "$FACTORY_TASK_TICKETS" | grep -oE 'OMN-[0-9]+' | grep -qxF "$cited"; then
+                factory_cited="${factory_cited:+$factory_cited, }$cited"
+              fi
+            done < <(printf '%s\n' "$title" | grep -oE 'OMN-[0-9]+' | sort -u || true)
+            if [ -z "$title" ]; then
+              echo "::notice::No exemption (OMN-21504): the pull request title is unreadable, so a factory task ticket cannot be ruled out; the evidence gate continues."
+              exempt="false"
+              writer_app="false"
+            elif [ -n "$factory_cited" ]; then
+              echo "::notice::No exemption (OMN-21504): the pull request cites factory task ticket(s) ${factory_cited}; it is judged on its own contract, author '${author_login}' notwithstanding."
+              exempt="false"
+              writer_app="false"
+            fi
+          fi
 
           if [ "$exempt" = "true" ]; then
             echo "::notice::Receipt-gate exemption (OMN-13762): PR authored by trusted dependency bot '${author_login}'. Dependency-bump PRs carry no Linear ticket or OCC receipt; the evidence gate is not applicable. Receipt-evidence steps are skipped; the job still reports success."
@@ -515,10 +558,32 @@ jobs:
           REPO_SHORT: ${{ github.event.repository.name }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          FACTORY_TASK_TICKETS: ${{ inputs.factory-task-tickets }}
         run: |
           set -euo pipefail
           exempt=false
           reason="could not derive the dependency-pin-only or release-cut verdict"
+          # OMN-21504: a pull request that cites a factory task ticket is never
+          # exempt as a writer-app change; with a factory list set and no
+          # readable title the exemption is withheld.
+          if [ -n "$(printf '%s' "${FACTORY_TASK_TICKETS:-}" | tr -d '[:space:]')" ]; then
+            factory_cited=""
+            while IFS= read -r cited; do
+              if printf '%s\n' "$FACTORY_TASK_TICKETS" | grep -oE 'OMN-[0-9]+' | grep -qxF "$cited"; then
+                factory_cited="${factory_cited:+$factory_cited, }$cited"
+              fi
+            done < <(printf '%s\n' "${PR_TITLE:-}" | grep -oE 'OMN-[0-9]+' | sort -u || true)
+            if [ -z "${PR_TITLE:-}" ]; then
+              echo "::notice::OCC writer app is not exempt: the pull request title is unreadable, so a factory task ticket cannot be ruled out (OMN-21504); the evidence gate continues."
+              echo "exempt=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            elif [ -n "$factory_cited" ]; then
+              echo "::notice::OCC writer app is not exempt: the pull request cites factory task ticket(s) ${factory_cited} (OMN-21504); the evidence gate continues."
+              echo "exempt=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
           derive_pin_only() {
             head_tree="$GITHUB_WORKSPACE/.dod-verify/head_home/$REPO_SHORT"
             reason="merge base is unresolvable"

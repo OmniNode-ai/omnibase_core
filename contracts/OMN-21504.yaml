@@ -4,8 +4,10 @@ ticket_id: OMN-21504
 title: 'T-Q1: every factory PR verified against its own task''s DoD, omnibase_core checker and required
   check'
 summary: 'The receipt gate refuses a PR whose only cited ticket is listed in the dod_verify overlay''s
-  parent_tickets, naming the ticket, and omnibase_core requires repo-evidence / dod-verify on dev. The
-  omnimarket caller and the exemption steps (AC3) are not part of this change.'
+  parent_tickets, naming the ticket, and omnibase_core requires repo-evidence / dod-verify on dev. No
+  exemption of the gate (dependency-bot author, writer-app pin-only change) admits a PR citing a factory
+  task ticket, and the docs-only zone filter exempts nothing. The omnimarket caller is not part of this
+  change.'
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
@@ -23,6 +25,10 @@ requirements:
         statement: 'AC2: omnibase_core requires repo-evidence / dod-verify on dev, and its caller pins
           the same receipt-gate commit and verifier floor as omnimarket''s -- falsifier: core''s .github/required-checks.yaml
           row and the caller''s uses: line, read at review'
+      - id: AC3
+        statement: 'AC3: no exemption of the receipt gate (bot author, writer-app pin-only change, docs-only
+          zone) admits a PR that cites a factory task ticket -- falsifier: one fixture event per exemption
+          through the gate''s exemption steps'
       - id: AC4
         statement: 'AC4: configuration: the parent-ticket list is the overlay dod_verify -- falsifier:
           the same PR is refused under one fixture overlay and verified normally under one that omits
@@ -63,6 +69,21 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/test_receipt_gate_parent_ticket_only_omn21504.py
           -n 0 -q -o addopts='' -k 'requires_repo_evidence or caller_pins'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21504-ac3-exemptions-refuse-factory-tickets
+    description: One fixture event per exemption through the gate's exemption steps. The dependency-bot
+      author step and the writer app's pin-only step each refuse to apply when the title cites a factory
+      task ticket and still apply when it cites a non-factory ticket; the docs-only zone is read by no
+      step of the job, and only those two steps can exempt. At the merge base the factory-task-tickets
+      input does not exist, so the refusal cases fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_factory_task_exemptions_omn21504.py -n 0
+          -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21504-ac4-overlay-configures
     description: The same PR is refused under an overlay that lists the ticket and verified under one
