@@ -1,0 +1,82 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21510
+title: Move the diagram-drift check to omnibase_core
+summary: Pure diagram-drift checker and generic file validator in omnibase_core, moved from the omnimarket
+  diagram check. Marker syntax, drawing templates and diagnostics are parameters of diagram_drift.validation.yaml.
+  The omnimarket caller is a separate child ticket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21510-diagram-drift-checker
+    statement: Every Mermaid diagram of a document equals the one generated from its contract fragment,
+      judged by a core checker in the generic validator format.
+    acceptance:
+      - id: AC1
+        statement: "AC1: The core checker reproduces the merged check's verdicts on the merged task's
+          fixtures; the omnimarket caller that returns the checker's issues unchanged is a separate child
+          ticket."
+      - id: AC2
+        statement: "AC2: The omnimarket node holds no predicate and no rule table; the predicate and every
+          rule table live in the core checker and its contract (the caller change is the separate child
+          ticket)."
+      - id: AC3
+        statement: "AC3: Every rule table that was a module constant is the checker's .validation.yaml
+          contract; a fixture contract that removes one entry changes the verdict on the fixture that
+          entry catches."
+      - id: AC4
+        statement: "AC4: Bindings: pure; byte-identical results in process and through the local in-process
+          entry of the runtime."
+evidence_requirements:
+  - kind: tests
+    description: The merged check's cases on the plan fixture, every parameter mutated, fail-closed contracts,
+      purity and the in-process runtime entry.
+    command: uv run pytest tests/unit/validation/test_checker_diagram_drift.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21510-ac1-merged-verdicts
+    description: The core checker reproduces the merged check's verdicts on the merged task's fixtures.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_diagram_drift.py -q -o addopts=''
+          -k "fixture_copy or edge_changed or removed_transition or no_fragment or no_diagram or core_model_refuses
+          or no_line_naming or one_id or collapsed_view or no_block_after or no_markers or blank_lines
+          or quote"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21510-ac2-no-rule-table
+    description: The checker module is pure and holds no rule table or predicate constant.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_diagram_drift.py -q -o addopts=''
+          -k "holds_no_rule_table or production_source_has_no_runtime_literals"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21510-ac3-contract-data
+    description: Every parameter of every rule row is contract data; removing one entry changes the verdict.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_diagram_drift.py -q -o addopts=''
+          -k "every_parameter or removes_one_entry or invalid_contracts or disabled"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21510-ac4-pure-bindings
+    description: Pure; byte-identical in process and through the runtime entry.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_diagram_drift.py -q -o addopts=''
+          -k "reads_no_file or byte_identical or holds_no_rule_table"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
