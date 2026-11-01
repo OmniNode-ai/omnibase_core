@@ -1,0 +1,137 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21565
+title: Build the invariant_analysis blocking check
+summary: Global invariant accounting and authority-document coverage with pure handlers, repository overlays
+  and container-bound reporting.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21565-invariant-analysis
+    statement: Block incomplete invariant analysis and stale authority-document coverage across the repository.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: `tests/fixtures/invariant_analysis/` (`registry.yaml` with INV-A and INV-B active
+          and INV-C superseded, `overlay.yaml`, `plan_bad.md`, `plan_clean.md`) yields exactly the rule-id
+          set of the planted violations (no line for INV-B; `INV-A satisfied-by T9` with no T9 heading;
+          `INV-C not-applicable: n/a` giving both `not_applicable_unreasoned` and `invariant_unknown_or_retired`;
+          an undeclared `always_scopes` scope; a copy with the heading removed) with non-zero exit, and
+          `plan_clean.md` yields zero -- falsifier: `uv run pytest tests/unit/validation/test_invariant_analysis.py
+          -q`'
+      - id: AC2
+        statement: 'AC2: appending INV-D to the registry makes `plan_clean.md` fail (re-run on registry
+          change) -- falsifier: `uv run pytest tests/unit/validation/test_invariant_analysis.py -q -k
+          registry_change`'
+      - id: AC3
+        statement: 'AC3: the near-miss cases of `check_invariant_coverage.py:21-30` are carried as fixture
+          cases -- falsifier: `uv run pytest tests/unit/validation/test_invariant_analysis.py -q -k near_miss`
+          names each case'
+      - id: AC4
+        statement: 'AC4: Configuration: registry path, plan globs, scopes, reason length and placeholders
+          come from the overlay and the contract -- falsifier: a table-driven KC-config test mutates every
+          `parameters` key and asserts the verdict change'
+      - id: AC5
+        statement: 'AC5: Bindings: the check runs on the in-memory overlay and the Redpanda overlay of
+          OMN-21529 with equal reports -- falsifier: the two-overlay run on one commit, reports equal
+          after normalising run id and timestamps'
+      - id: AC6
+        statement: 'AC6: KC-a (Declared and injected): the checker is pure and its runtime resolves the
+          report writer and the bus from the container -- falsifier: a container spy in the runtime test,
+          and the checker test run with `open` and `Path` reads patched to raise'
+      - id: AC7
+        statement: 'AC7: KC-b (No literal): the changed source holds no host, port, topic, model name,
+          timeout or URL -- falsifier: hardcoded_topic, hardcoded_model_config, url_authority and contract_config_compliance
+          report zero on the changed production source'
+      - id: AC8
+        statement: 'AC8: KC-replay: every T0.8a assertion naming this ticket''s rules is reported with
+          its `rule_id` -- falsifier: disabling a rule''s row in the `.validation.yaml` fails that rule''s
+          fixture and exactly the corpus assertions that name it'
+evidence_requirements:
+  - kind: tests
+    description: Focused rule and runtime-overlay falsifiers.
+    command: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts='' tests/unit/validation/test_invariant_analysis_runtime_overlays.py
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21565-ac1
+    description: AC1 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn21565-ac2
+    description: AC2 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts='' -k
+          registry_change
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn21565-ac3
+    description: AC3 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts='' -k
+          near_miss
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn21565-ac4
+    description: AC4 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts='' -k
+          configuration
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn21565-ac5
+    description: AC5 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis_runtime_overlays.py -q
+          -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn21565-ac6
+    description: AC6 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts='' tests/unit/validation/test_invariant_analysis_runtime_overlays.py
+          -k purity
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6
+  - id: dod-omn21565-ac7
+    description: AC7 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts='' -k
+          production_source_has_no_runtime_literals
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7
+  - id: dod-omn21565-ac8
+    description: AC8 focused falsifier.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_invariant_analysis.py -q -o addopts='' -k
+          replay
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC8

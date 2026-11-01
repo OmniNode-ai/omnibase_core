@@ -1,0 +1,120 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21565: all syntax and diagnostics are rule data.
+# target_patterns is a placeholder: the root overlay replaces it with plan_globs
+# at runtime, so a consuming repository owns its plan location.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: invariant_analysis
+  validator_name: Invariant analysis
+  validator_description: Global invariant accounting and authority-document coverage.
+  target_patterns:
+    - __overlay_plan_globs__
+  exclude_patterns: []
+  rules:
+    - rule_id: analysis_section_missing
+      description: Add the invariant analysis section.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Invariant analysis section missing: {detail}'
+        remediation: Add the invariant analysis section.
+        heading_pattern: ^##\s+Invariant analysis\s*$
+        section_end_pattern: ^#{1,3}\s
+    - rule_id: scope_declaration_missing_or_unknown
+      description: Declare known scopes including all mandatory scopes.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Scope declaration missing or unknown: {detail}'
+        remediation: Declare known scopes including all mandatory scopes.
+        scopes_pattern: ^Scopes:\s*(.*)$
+        scope_split_pattern: '[,\s]+'
+    - rule_id: invariant_unaddressed
+      description: Add a satisfied-by or reasoned not-applicable entry.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Active invariant unaddressed: {detail}'
+        remediation: Add a satisfied-by or reasoned not-applicable entry.
+    - rule_id: satisfied_by_task_absent
+      description: Reference task headings present in this document.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Referenced task absent: {detail}'
+        remediation: Reference task headings present in this document.
+        entry_pattern: ^\s*-\s+(\S+)\s+satisfied-by\s+(.*?)\s*$
+        task_split_pattern: \s*,\s*
+    - rule_id: not_applicable_unreasoned
+      description: Provide a substantive reason meeting the configured minimum length.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Not-applicable entry lacks a reason: {detail}'
+        remediation: Provide a substantive reason meeting the configured minimum length.
+        entry_pattern: ^\s*-\s+(\S+)\s+not-applicable:\s*(.*?)\s*$
+        trim_pattern: ^[\W_]+|[\W_]+$
+    - rule_id: invariant_unknown_or_retired
+      description: Use an active identifier from the registry.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Invariant unknown or retired: {detail}'
+        remediation: Use an active identifier from the registry.
+        entry_pattern: ^\s*-\s+(INV-[A-Z0-9]+)\b
+    - rule_id: registry_invalid
+      description: Repair the registry before evaluating documents.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Invariant registry invalid: {detail}'
+        remediation: Repair the registry before evaluating documents.
+        overlay_filename: invariant_analysis.overlay.yaml
+        id_pattern: ^INV-[A-Z0-9]+$
+        required_fields:
+          - id
+          - statement
+          - scope
+          - ruled
+          - enforcement
+          - status
+        required_ruled_fields:
+          - date
+          - source
+        valid_statuses:
+          - active
+          - superseded
+        active_status: active
+        superseded_status: superseded
+        lifecycle_entries_key: plans
+        lifecycle_path_key: path
+        lifecycle_status_key: status
+    - rule_id: authority_doc_coverage
+      description: Declare known authority scopes and exactly one block covering their active invariants.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'Authority document coverage invalid: {detail}'
+        remediation: Declare known authority scopes and exactly one block covering their active invariants.
+        marker_pattern: ^(?:<!--\s*)?authority-doc:\s*(.*?)\s*(?:-->)?$
+        header_scan_lines: 20
+        coverage_start: <!-- invariant-coverage:start -->
+        coverage_end: <!-- invariant-coverage:end -->
+        id_pattern: \bINV-[A-Z0-9]+\b
+        fence_pattern: ^\s*(?:```|~~~)
+        scope_split_pattern: '[,\s]+'
+        markdown_glob: '**/*.md'
+        scan_exclusions:
+          - '**/.git/**'
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

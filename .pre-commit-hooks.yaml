@@ -1538,6 +1538,19 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-invariant-analysis
+  name: Invariant analysis (OMN-21565)
+  description: >
+    Scans globally and ignores passed filenames; registry changes recheck every plan and authority document.
+    Rule syntax and diagnostics come from the contract and repository overlay.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_invariant_analysis:ValidatorInvariantAnalysis
+    .
+  pass_filenames: false
+  always_run: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-plan-invariant
   name: Plan invariant check (OMN-21559)
   description: >
