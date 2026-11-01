@@ -34,16 +34,17 @@ dod_evidence:
     source: "manual"
     checks:
       - check_type: "command"
-        check_value: "python -c 'from omnibase_core.models.logging.model_structured_log_entry import ModelStructuredLogEntry;
-          assert all(f in ModelStructuredLogEntry.model_fields for f in [\"artifact_refs\", \"source_system\",
-          \"operation\", \"correlation_id\", \"session_id\", \"node_id\", \"timestamp\"]); print(\"fields-ok\")'"
+        check_value: "uv run python -c 'from omnibase_core.models.logging.model_structured_log_entry import
+          ModelStructuredLogEntry; assert all(f in ModelStructuredLogEntry.model_fields for f in [\"artifact_refs\",
+          \"source_system\", \"operation\", \"correlation_id\", \"session_id\", \"node_id\", \"timestamp\"]);
+          print(\"fields-ok\")'"
   - id: "dod-topic-registry"
     description: "topic_registry.yaml registers TopicBase.PLATFORM_LOG_ENTRY with durability_tier: durable"
     source: "manual"
     checks:
       - check_type: "command"
         check_value: "grep -F 'durability_tier: durable' src/omnibase_core/contracts/topic_registry.yaml
-          && grep -F 'PLATFORM_LOG_ENTRY' src/omnibase_core/events/topics.py && echo 'topic-registry-ok'"
+          && grep -F 'PLATFORM_LOG_ENTRY' src/omnibase_core/topics.py && echo 'topic-registry-ok'"
   - id: "dod-unit-tests"
     description: "21 unit tests pass for ModelStructuredLogEntry with no live infra"
     source: "manual"

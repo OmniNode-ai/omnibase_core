@@ -1,0 +1,55 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21571
+title: Eight core ticket contracts fail on dev for reasons that are not path moves
+summary: Eight ticket contracts named files, symbols, branch refs and commits that no longer exist. Each
+  corrected item asserts the same behaviour against what now holds it, and each correction has a planted
+  regression that makes the corrected command fail.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21571-corrected-contract-items
+    statement: Every failing item of OMN-10733, OMN-13703, OMN-16359, OMN-21331, OMN-21463, OMN-21509,
+      OMN-21514 and OMN-21520 asserts its original behaviour against the code, test, contract or commit
+      that now holds it.
+    acceptance:
+      - id: AC1
+        statement: "AC1: each of the eight contracts passes on core dev with its item corrected to the
+          same assertion against what now holds it -- falsifier: dod_verify for each of the eight ids
+          at core dev's head reports PASS"
+      - id: AC2
+        statement: "AC2: no criterion is weakened and a planted regression of each corrected behaviour
+          makes its item fail -- falsifier: uv run pytest tests/ci/test_corrected_contract_items_omn21571.py
+          -q -o addopts=''"
+evidence_requirements:
+  - kind: tests
+    description: Each corrected item passes against the real tree and fails against a planted regression.
+    command: uv run pytest tests/ci/test_corrected_contract_items_omn21571.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn21571-ac1-no-stale-references
+    description: None of the eight contracts names the gone script, module, branch ref, commit or test
+      files that made their items fail.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: command
+        check_value: "! grep -nE 'scripts/validate_no_env_fallbacks|events/topics\\.py|handler_hardcoded_model_tier_engine|handler_canonical_location_rules\\.py|omn-21520-bd3-node-runtimes|50ef2b21bb20957e|test_occ_manual_replay_entrypoint|test_occ_companion_effect_edited_trigger|9faebe99e6f1|GENERIC_VALIDATOR_PREFIXES'
+          contracts/OMN-10733.yaml contracts/OMN-13703.yaml contracts/OMN-16359.yaml contracts/OMN-21331.yaml
+          contracts/OMN-21463.yaml contracts/OMN-21509.yaml contracts/OMN-21514.yaml contracts/OMN-21520.yaml"
+        cwd: .
+  - id: dod-omn21571-ac2-planted-regressions
+    description: Each corrected item passes against the real tree and fails against a planted regression
+      of the behaviour it asserts.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_corrected_contract_items_omn21571.py -q -o addopts=''
+        cwd: .

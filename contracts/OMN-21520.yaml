@@ -95,7 +95,8 @@ dod_evidence:
         cwd: .
       - check_type: test_passes
         check_value: >-
-          bash -o pipefail -c 'gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_text_file_write_effect/handler.py?ref=omn-21520-bd3-node-runtimes"
-          --jq .content | base64 -d | grep -F "class NodeTextFileWriteEffect" > /dev/null'
+          bash -o pipefail -c 'curl -fsS --max-time 20 "https://raw.githubusercontent.com/OmniNode-ai/omnibase_core/$(git
+          rev-parse HEAD)/src/omnibase_core/nodes/node_text_file_write_effect/handler.py" | grep -F "class
+          NodeTextFileWriteEffect" > /dev/null'
         cwd: .
     binds_ac: [AC1, AC2, AC3]
