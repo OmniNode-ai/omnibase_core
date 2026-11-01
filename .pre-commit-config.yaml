@@ -205,8 +205,8 @@ repos:
 
       # OMN-17427: the hosted repo-evidence / dod-verify context must refuse a
       # partly bound contract (ruling 2026-10-10T11:04:11Z). The refusal comes from
-      # the pinned verifier, so the call-repo-evidence-gate caller must keep
-      # verifier-version at or above 0.4.303. Check-only. Runs in CI through the
+      # the installed verifier, so the call-repo-evidence-gate caller must pass an
+      # omnimarket dev-merge tag as verifier-tag and no verifier-version (OMN-21859). Check-only. Runs in CI through the
       # Pre-commit Suite job (precommit-suite), which the required CI Summary context needs.
       - id: call-repo-evidence-gate-verifier-floor
         name: call-repo-evidence-gate caller verifier floor (OMN-17427)
@@ -2003,6 +2003,16 @@ repos:
         name: Refuse broken contract event chains (OMN-21558)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
           omnibase_core.validation.validator_event_chain_walker:ValidatorEventChainWalker src
+        language: system
+        files: (^|/)[^/]*contract\.yaml$
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
+      - id: check-contract-chain-coverage
+        name: Report contract chain coverage (OMN-21561)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_contract_chain_coverage:ValidatorContractChainCoverage src
         language: system
         files: (^|/)[^/]*contract\.yaml$
         pass_filenames: false

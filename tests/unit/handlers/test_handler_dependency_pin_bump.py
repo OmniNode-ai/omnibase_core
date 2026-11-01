@@ -185,16 +185,24 @@ def test_uses_configured_pyproject_and_case_insensitive_git_url(
 
 
 def test_real_manifest_dependency_opt_ins() -> None:
+    """OMN-17427: no consumer is opted in, so no core-only dependency bump is emitted.
+
+    omnimarket was the one opt-in. omnibase_infra pins omnibase-core by a dev merge
+    tag in its own ``[tool.uv.sources]`` and uv honours a git dependency's sources, so
+    an omnimarket head whose core tag differs from the one its pinned omnibase_infra
+    commit names carries two conflicting omnibase-core URLs and its Sibling Release
+    Compatibility Gate (OMN-20381) refuses the head. The opt-in is withdrawn; the
+    defaults stay asserted so a future opt-in still gets pyproject.toml and uv.lock.
+    """
     manifest = Path(__file__).resolve().parents[3] / "docs" / "downstream-repos.yaml"
     settings = load_yaml_content_as_model(
         manifest.read_text("utf-8"), ModelDependencyPinManifest
     )
     repos = {entry.name: entry.dependency_pin for entry in settings.repos}
-    assert repos["omnimarket"] == ModelDependencyPin()
     assert ModelDependencyPin().pyproject == "pyproject.toml"
     assert ModelDependencyPin().lock == "uv.lock"
-    assert {name for name, pin in repos.items() if pin is not None} == {"omnimarket"}
-    for repo in ("omnidash", "omniweb", "omninode_infra"):
+    assert {name for name, pin in repos.items() if pin is not None} == set()
+    for repo in ("omnimarket", "omnidash", "omniweb", "omninode_infra"):
         assert repos[repo] is None
 
 

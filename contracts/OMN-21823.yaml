@@ -98,3 +98,16 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC5
+  - id: dod-omn21823-private-source-class
+    description: The lab_receipt contract class is private_source, chosen by a suffix pattern.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_lab_receipt.py tests/unit/validation/test_lab_receipt_runtime_overlays.py
+          -q -o addopts='' -k "private_source or in_memory_run or redpanda_run"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: grep -q private_source src/omnibase_core/validation/contracts/lab_receipt.validation.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1

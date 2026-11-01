@@ -44,6 +44,8 @@ def _counted_classes(
     for changed in facts.changed_files:
         if changed.status[:1] not in statuses:
             continue
+        if changed.comment_only:
+            continue
         where = (facts.repository, changed.path)
         if any(c.selects(*where) for c in rules.classes["prod_classes"]):
             continue

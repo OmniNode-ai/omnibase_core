@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+registry_path: registry.yaml
+lifecycle_path: lifecycle.yaml
+plan_globs: ['plan_*.md']
+exempt_lifecycle_statuses: [superseded, parked, complete, memo]
+always_scopes: [process]
+task_heading_pattern: '^###\s+(T\d+)\b'
+min_reason_length: 12
+denied_placeholders: ['n/a', 'todo', 'not applicable']
+skip_dirs: [_scratch, archive]

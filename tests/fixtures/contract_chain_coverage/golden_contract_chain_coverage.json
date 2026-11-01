@@ -1,0 +1,313 @@
+{
+  "report": {
+    "report_id": "<normalised>",
+    "profile": "default",
+    "overall_status": "WARN",
+    "findings": [
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/reducer/contract.yaml",
+        "message": "obligation 'src/pkg/reducer/contract.yaml::transition::spin_loop' has no binding -- Bind the transition to a committed chain test or generated parity case.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "uncovered_transition"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/orchestrator/contract.yaml",
+        "message": "obligation 'src/pkg/orchestrator/contract.yaml::edge::run->check' has no binding -- Bind the dependency edge to a committed chain test or generated parity case.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "uncovered_graph_edge"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/reducer/contract.yaml",
+        "message": "obligation 'src/pkg/reducer/contract.yaml::guard::init_to_work::false' has no binding -- Bind both outcomes of the transition guard to chain tests.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "guard_branch_unbound"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/orchestrator/contract.yaml",
+        "message": "obligation 'src/pkg/orchestrator/contract.yaml::loop_exit::check' has no binding -- Bind a chain that exits the loop.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "loop_exit_unbound"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/orchestrator/contract.yaml",
+        "message": "topic 'onex.evt.planted.dead-end.v1' has no corpus counterpart -- Add a subscriber or declare the topic externally consumed or terminal.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "dead_end_topic"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/orchestrator/contract.yaml",
+        "message": "topic 'onex.cmd.planted.orphan.v1' has no corpus counterpart -- Add a publisher or declare the topic externally produced or a runtime command.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "orphan_subscription"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/reducer/contract.yaml",
+        "message": "state 'ORPHAN' violates unreachable_state -- Connect the state to a reachable transition or remove the unused state.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "unreachable_state"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/reducer/contract.yaml",
+        "message": "state 'SPIN' violates dead_state -- Add a path from the state to a declared terminal state.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "dead_state"
+      },
+      {
+        "validator_id": "contract_chain_coverage",
+        "severity": "WARN",
+        "location": "src/pkg/reducer/contract.yaml",
+        "message": "state 'WORK' violates no_failure_exit -- Add a failure transition leading to a declared error state.",
+        "remediation": null,
+        "evidence": {},
+        "rule_id": "no_failure_exit"
+      }
+    ],
+    "metrics": {
+      "total": 9,
+      "pass_count": 0,
+      "warn_count": 9,
+      "fail_count": 0,
+      "error_count": 0,
+      "skip_count": 0,
+      "not_applicable_count": 0
+    },
+    "provenance": {
+      "generated_at": "<normalised>",
+      "request_id": null,
+      "schema_version": "1.0",
+      "validators_run": [
+        "contract_chain_coverage"
+      ]
+    }
+  },
+  "issues": [
+    {
+      "severity": "warning",
+      "message": "obligation 'src/pkg/reducer/contract.yaml::transition::spin_loop' has no binding -- Bind the transition to a committed chain test or generated parity case.",
+      "code": "uncovered_transition",
+      "file_path": "src/pkg/reducer/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "uncovered_transition",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "obligation 'src/pkg/orchestrator/contract.yaml::edge::run->check' has no binding -- Bind the dependency edge to a committed chain test or generated parity case.",
+      "code": "uncovered_graph_edge",
+      "file_path": "src/pkg/orchestrator/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "uncovered_graph_edge",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "obligation 'src/pkg/reducer/contract.yaml::guard::init_to_work::false' has no binding -- Bind both outcomes of the transition guard to chain tests.",
+      "code": "guard_branch_unbound",
+      "file_path": "src/pkg/reducer/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "guard_branch_unbound",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "obligation 'src/pkg/orchestrator/contract.yaml::loop_exit::check' has no binding -- Bind a chain that exits the loop.",
+      "code": "loop_exit_unbound",
+      "file_path": "src/pkg/orchestrator/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "loop_exit_unbound",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "topic 'onex.evt.planted.dead-end.v1' has no corpus counterpart -- Add a subscriber or declare the topic externally consumed or terminal.",
+      "code": "dead_end_topic",
+      "file_path": "src/pkg/orchestrator/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "dead_end_topic",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "topic 'onex.cmd.planted.orphan.v1' has no corpus counterpart -- Add a publisher or declare the topic externally produced or a runtime command.",
+      "code": "orphan_subscription",
+      "file_path": "src/pkg/orchestrator/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "orphan_subscription",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "state 'ORPHAN' violates unreachable_state -- Connect the state to a reachable transition or remove the unused state.",
+      "code": "unreachable_state",
+      "file_path": "src/pkg/reducer/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "unreachable_state",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "state 'SPIN' violates dead_state -- Add a path from the state to a declared terminal state.",
+      "code": "dead_state",
+      "file_path": "src/pkg/reducer/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "dead_state",
+      "suggestion": null,
+      "context": null
+    },
+    {
+      "severity": "warning",
+      "message": "state 'WORK' violates no_failure_exit -- Add a failure transition leading to a declared error state.",
+      "code": "no_failure_exit",
+      "file_path": "src/pkg/reducer/contract.yaml",
+      "line_number": null,
+      "column_number": null,
+      "rule_name": "no_failure_exit",
+      "suggestion": null,
+      "context": null
+    }
+  ],
+  "coverage_table": [
+    {
+      "owner": "src/pkg/orchestrator/contract.yaml",
+      "kind": "graph_edge",
+      "id": "src/pkg/orchestrator/contract.yaml::edge::plan->run",
+      "location": "tests/test_planted_chains.py.txt:7",
+      "overlays": [
+        "redpanda"
+      ]
+    },
+    {
+      "owner": "src/pkg/orchestrator/contract.yaml",
+      "kind": "graph_edge",
+      "id": "src/pkg/orchestrator/contract.yaml::edge::run->check",
+      "location": "MISSING",
+      "overlays": []
+    },
+    {
+      "owner": "src/pkg/orchestrator/contract.yaml",
+      "kind": "loop_exit",
+      "id": "src/pkg/orchestrator/contract.yaml::loop_exit::check",
+      "location": "MISSING",
+      "overlays": []
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "guard_branch",
+      "id": "src/pkg/reducer/contract.yaml::guard::init_to_work::false",
+      "location": "MISSING",
+      "overlays": []
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "guard_branch",
+      "id": "src/pkg/reducer/contract.yaml::guard::init_to_work::true",
+      "location": "tests/test_planted_chains.py.txt:13",
+      "overlays": [
+        "redpanda"
+      ]
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "transition",
+      "id": "src/pkg/reducer/contract.yaml::transition::init_to_failed",
+      "location": "tests/test_planted_chains.py.txt:19",
+      "overlays": [
+        "redpanda"
+      ]
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "transition",
+      "id": "src/pkg/reducer/contract.yaml::transition::init_to_work",
+      "location": "tests/test_planted_chains.py.txt:25",
+      "overlays": [
+        "redpanda"
+      ]
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "transition",
+      "id": "src/pkg/reducer/contract.yaml::transition::orphan_to_done",
+      "location": "tests/test_planted_chains.py.txt:31",
+      "overlays": [
+        "redpanda"
+      ]
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "transition",
+      "id": "src/pkg/reducer/contract.yaml::transition::spin_loop",
+      "location": "MISSING",
+      "overlays": []
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "transition",
+      "id": "src/pkg/reducer/contract.yaml::transition::work_to_done",
+      "location": "tests/test_planted_chains.py.txt:37",
+      "overlays": [
+        "redpanda"
+      ]
+    },
+    {
+      "owner": "src/pkg/reducer/contract.yaml",
+      "kind": "transition",
+      "id": "src/pkg/reducer/contract.yaml::transition::work_to_spin",
+      "location": "tests/test_planted_chains.py.txt:43",
+      "overlays": [
+        "redpanda"
+      ]
+    }
+  ],
+  "denominators": {
+    "planted": {
+      "graph_edge": 2,
+      "guard_branch": 2,
+      "loop_exit": 1,
+      "transition": 6
+    },
+    "pass": {
+      "loop_exit": 2,
+      "transition": 17
+    }
+  }
+}

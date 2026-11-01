@@ -1,0 +1,117 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+
+"""AST-only committed chain bindings; this text is never collected by pytest."""
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::loop_exit::appending_to_appending_on_append_pending")
+def chain_0():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::loop_exit::waiting_to_waiting_on_evaluated_wait")
+def chain_1():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::appending_to_appending_on_append_pending")
+def chain_2():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::appending_to_handed_off_on_append_accepted")
+def chain_3():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::appending_to_refused_on_append_refused")
+def chain_4():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::appending_to_timed_out_on_append_attempts_exhausted")
+def chain_5():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::requested_to_refused_on_rejected_invalid_request")
+def chain_6():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::requested_to_waiting_on_accepted")
+def chain_7():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_appending_on_evaluated_ready")
+def chain_8():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_evaluated_held")
+def chain_9():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_evaluated_missing_lab_proof")
+def chain_10():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_evaluated_missing_ticket")
+def chain_11():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_evaluated_not_owned")
+def chain_12():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_evaluated_pr_not_open")
+def chain_13():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_evaluated_stale_head")
+def chain_14():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_evaluated_withheld")
+def chain_15():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_refused_on_superseded")
+def chain_16():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_timed_out_on_completion_bound_expired")
+def chain_17():
+    pass
+
+
+@bus_overlay("redpanda")
+@chain_obligation("node_pr_handoff_orchestrator/contract.yaml::transition::waiting_to_waiting_on_evaluated_wait")
+def chain_18():
+    pass
