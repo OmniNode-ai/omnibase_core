@@ -24,8 +24,17 @@
     {
       "validator_id": "handler_di",
       "severity": "FAIL",
+      "location": "violation_contract_loader_call/handlers/handler_x.py:8",
+      "message": "handle loads its own contract with load_contract(): Do not locate the module's own contract.yaml from __file__, and do not call a contract loader in a handler method: the contract reaches the handler through the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "contract_self_load"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
       "location": "violation_contract_self_load/handlers/handler_x.py:5",
-      "message": "the module locates its own contract file: Do not locate the module's own contract.yaml from __file__: the contract reaches the handler through the container.",
+      "message": "the module locates its own contract file: Do not locate the module's own contract.yaml from __file__, and do not call a contract loader in a handler method: the contract reaches the handler through the container.",
       "remediation": null,
       "evidence": {},
       "rule_id": "contract_self_load"
@@ -79,6 +88,15 @@
       "validator_id": "handler_di",
       "severity": "FAIL",
       "location": "violation_fallback_construction_guard/handlers/handler_x.py:6",
+      "message": "__init__ loads its own contract with load_contract(): Do not locate the module's own contract.yaml from __file__, and do not call a contract loader in a handler method: the contract reaches the handler through the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "contract_self_load"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_guard/handlers/handler_x.py:6",
       "message": "load_contract() builds the dependency a caller left as None: Do not build the dependency a caller left as None: make the parameter required, or resolve it from the container.",
       "remediation": null,
       "evidence": {},
@@ -106,6 +124,15 @@
       "validator_id": "handler_di",
       "severity": "FAIL",
       "location": "violation_fallback_construction_or/handlers/handler_x.py:5",
+      "message": "__init__ loads its own contract with load_contract(): Do not locate the module's own contract.yaml from __file__, and do not call a contract loader in a handler method: the contract reaches the handler through the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "contract_self_load"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_or/handlers/handler_x.py:5",
       "message": "load_contract() builds the dependency a caller left as None: Do not build the dependency a caller left as None: make the parameter required, or resolve it from the container.",
       "remediation": null,
       "evidence": {},
@@ -128,6 +155,15 @@
       "remediation": null,
       "evidence": {},
       "rule_id": "optional_port_default"
+    },
+    {
+      "validator_id": "handler_di",
+      "severity": "FAIL",
+      "location": "violation_fallback_construction_ternary/handlers/handler_x.py:5",
+      "message": "__init__ loads its own contract with load_contract(): Do not locate the module's own contract.yaml from __file__, and do not call a contract loader in a handler method: the contract reaches the handler through the container.",
+      "remediation": null,
+      "evidence": {},
+      "rule_id": "contract_self_load"
     },
     {
       "validator_id": "handler_di",
@@ -230,10 +266,10 @@
     }
   ],
   "metrics": {
-    "total": 25,
+    "total": 29,
     "pass_count": 0,
     "warn_count": 0,
-    "fail_count": 25,
+    "fail_count": 29,
     "error_count": 0,
     "skip_count": 0,
     "not_applicable_count": 0

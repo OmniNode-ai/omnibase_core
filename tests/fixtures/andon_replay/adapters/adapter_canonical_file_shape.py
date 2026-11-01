@@ -24,6 +24,9 @@ from omnibase_core.models.validation.model_canonical_file_shape_change import (
 from omnibase_core.models.validation.model_canonical_file_shape_facts import (
     ModelCanonicalFileShapeFacts,
 )
+from omnibase_core.models.validation.model_canonical_file_shape_rule_set import (
+    ModelCanonicalFileShapeRuleSet,
+)
 from omnibase_core.models.validation.model_canonical_file_shape_rules import (
     ModelCanonicalFileShapeRules,
 )
@@ -194,9 +197,27 @@ def replay(run: ReplayRun) -> Sequence[ModelValidationIssue]:
     named = _named_modules(source.text(source.path), source.line, p)
     return [
         issue
-        for issue in check(facts, rules)
+        for issue in _issues_of_rule(facts, rules, run.rule_id)
         if issue.file_path == Path(source.path) or str(issue.file_path) in named
     ]
+
+
+def _issues_of_rule(
+    facts: ModelCanonicalFileShapeFacts,
+    rules: ModelCanonicalFileShapeRuleSet,
+    asserted: str,
+) -> list[ModelValidationIssue]:
+    """The issues of the asserted rule judged alone.
+
+    The checker refuses a path under the first file rule that matches it, so a handler file that is
+    also a command line entry reports only the handler rule. An assertion names one rule, and the
+    question is whether that rule reports the input, so that rule is run on its own; a rule id the
+    contract does not enable (or an assertion naming the checker) runs the checker as it is.
+    """
+    name = asserted.rsplit(":", 1)[-1]
+    if name not in rules.enabled:
+        return check(facts, rules)
+    return check(facts, rules.model_copy(update={"enabled": frozenset({name})}))
 
 
 def replay_fixture(

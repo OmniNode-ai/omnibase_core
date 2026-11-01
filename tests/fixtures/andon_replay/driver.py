@@ -520,11 +520,12 @@ class ReplaySource:
 
 @dataclass(frozen=True)
 class ReplayRun:
-    """What an adapter is handed: the owning contract and the source to judge."""
+    """What an adapter is handed: the owning contract, the source to judge and the asserted rule id."""
 
     validator_id: str
     contract: ReplayContract | None
     source: ReplaySource
+    rule_id: str = ""
 
 
 Adapter = Callable[[ReplayRun], Sequence[ModelValidationIssue]]
@@ -800,7 +801,12 @@ def replay_assertion(
         return result
     try:
         issues = adapter(
-            ReplayRun(validator_id=owner, contract=contracts.get(owner), source=source)
+            ReplayRun(
+                validator_id=owner,
+                contract=contracts.get(owner),
+                source=source,
+                rule_id=assertion.rule_id,
+            )
         )
     except ModelOnexError as refusal:
         # a checker that refuses its contract reports nothing: the assertion is not met

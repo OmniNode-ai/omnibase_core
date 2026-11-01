@@ -395,6 +395,19 @@ def _check_contract_self_load(
                     row, path, stmt.lineno, "the module locates its own contract file"
                 )
             )
+    loaders = frozenset(rule_strings(row, "loader_call_names"))
+    for cls in _classes(tree, _pattern(row, "loader_class_pattern")):
+        for method in _methods(cls):
+            issues.extend(
+                _issue(
+                    row,
+                    path,
+                    call.lineno,
+                    f"{method.name} loads its own contract with {_callee_name(call.func)}()",
+                )
+                for call in ast.walk(method)
+                if isinstance(call, ast.Call) and _callee_name(call.func) in loaders
+            )
     return issues
 
 

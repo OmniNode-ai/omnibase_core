@@ -344,6 +344,10 @@ def _safe_load(text: str | None) -> object:
     if text is None:
         return None
     try:
+        # the C loader reads the same documents as safe_load, several times faster, and a
+        # tree holds hundreds of contract.yaml files
+        if hasattr(yaml, "CSafeLoader"):
+            return yaml.load(text, Loader=yaml.CSafeLoader)
         return yaml.safe_load(text)
     except yaml.YAMLError:
         return None

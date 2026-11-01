@@ -609,4 +609,4 @@ exclude_lines = [
 ]
 
 [tool.uv.sources]
-omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "dev-20261028203020-ce27d197198f" }
+omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "dev-20261101025141-38465d47118c" }

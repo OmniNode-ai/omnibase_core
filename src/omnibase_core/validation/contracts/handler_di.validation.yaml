@@ -121,11 +121,14 @@ validation:
 
     - rule_id: contract_self_load
       description: >-
-        Do not locate the module's own contract.yaml from __file__: the contract reaches the handler through
-        the container.
+        Do not locate the module's own contract.yaml from __file__, and do not call a contract loader
+        in a handler method: the contract reaches the handler through the container.
       severity: error
       enabled: true
       parameters:
+        loader_call_names:
+          - 'load_contract'
+        loader_class_pattern: '(?i)handler'
         self_reference_names:
           - '__file__'
         contract_file_pattern: 'contract\.ya?ml$'

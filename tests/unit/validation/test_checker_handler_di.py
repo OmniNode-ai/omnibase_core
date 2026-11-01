@@ -74,7 +74,10 @@ VIOLATIONS: dict[str, list[str]] = {
         "violation_optional_port_default_name/handlers/handler_x.py",
         "violation_optional_port_default_annotation/handlers/handler_x.py",
     ],
-    CONTRACT_LOAD: ["violation_contract_self_load/handlers/handler_x.py"],
+    CONTRACT_LOAD: [
+        "violation_contract_self_load/handlers/handler_x.py",
+        "violation_contract_loader_call/handlers/handler_x.py",
+    ],
     SINGLETON: ["violation_module_singleton/handlers/handler_x.py"],
     SIBLING: ["violation_sibling_handler_import/handlers/handler_x.py"],
     VALUE_LITERAL: [
@@ -122,6 +125,8 @@ CONTROLS: dict[tuple[str, str], tuple[str, str]] = {
         VIOLATIONS[OPTIONAL_PORT][1],
         "clears",
     ),
+    (CONTRACT_LOAD, "loader_call_names"): (VIOLATIONS[CONTRACT_LOAD][1], "clears"),
+    (CONTRACT_LOAD, "loader_class_pattern"): (VIOLATIONS[CONTRACT_LOAD][1], "clears"),
     (CONTRACT_LOAD, "self_reference_names"): (VIOLATIONS[CONTRACT_LOAD][0], "clears"),
     (CONTRACT_LOAD, "contract_file_pattern"): (VIOLATIONS[CONTRACT_LOAD][0], "clears"),
     (CONTRACT_LOAD, "statement_kinds"): (VIOLATIONS[CONTRACT_LOAD][0], "clears"),
