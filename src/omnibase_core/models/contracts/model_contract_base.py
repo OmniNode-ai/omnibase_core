@@ -254,6 +254,16 @@ class ModelContractBase(BaseModel, ABC):
         ),
     )
 
+    # Handler dependencies bound by the lane overlay (OMN-21595)
+    handler_dependencies: list[str] = Field(
+        default_factory=list,
+        description=(
+            "Protocol identifiers the contract's handlers need. The lane overlay "
+            "binds each to an implementation; a protocol it does not bind refuses "
+            "the contract as DEPENDENCY_UNBOUND before any subscription."
+        ),
+    )
+
     # Validation and constraints
     validation_rules: ModelValidationRules = Field(
         default_factory=ModelValidationRules,
@@ -787,6 +797,16 @@ class ModelContractBase(BaseModel, ABC):
             )
 
         return result_deps
+
+    @field_validator("handler_dependencies")
+    @classmethod
+    def validate_handler_dependencies(cls, v: list[str]) -> list[str]:
+        """Require non-empty, unique protocol identifiers."""
+        if any(not name.strip() for name in v):
+            raise ValueError("handler_dependencies entries must be non-empty")
+        if len(set(v)) != len(v):
+            raise ValueError("handler_dependencies must not repeat a protocol")
+        return v
 
     @field_validator("yaml_consumed_events", mode="before")
     @classmethod
