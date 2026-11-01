@@ -57,12 +57,15 @@ dod_evidence:
     binds_ac:
       - AC1
   - id: dod-omn-21859-ac2
-    description: The tests that asserted verifier-version for the caller assert the verifier-tag shape,
-      and tests/ci passes.
+    description: All three caller test modules affected by the verifier-tag migration pass, including
+      the negative controls and unchanged-input checks. The full tests/ci suite remains covered by CI;
+      this hosted evidence check runs the caller modules within the verifier's per-check budget.
     source: manual
+    execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/ci -q -o addopts=''
+        check_value: uv run pytest tests/ci/test_repo_evidence_caller_verifier_floor_omn17427.py tests/ci/test_repo_evidence_caller_omn20074.py
+          tests/ci/test_s6_caller_occ_disabled_omn20969.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
