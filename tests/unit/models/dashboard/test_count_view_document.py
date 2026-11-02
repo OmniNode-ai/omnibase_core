@@ -6,10 +6,12 @@
 from __future__ import annotations
 
 import pytest
-from omnibase_core.enums.enum_view_disposition import EnumViewDisposition
-from omnibase_core.utils.util_view_document_count import count_view_document
-from omnibase_core.utils.util_view_document_digest import seal_view_document
 
+from omnibase_core.enums.enum_view_disposition import EnumViewDisposition
+from omnibase_core.models.dashboard.model_view_document_counter import (
+    count_view_document,
+)
+from omnibase_core.models.dashboard.model_view_document_digest import seal_view_document
 from tests.unit.models.dashboard.view_builders import (
     MOMENT,
     NEW_KINDS,

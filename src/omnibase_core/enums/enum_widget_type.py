@@ -24,6 +24,19 @@ from omnibase_core.enums.enum_str_enum_base import UtilStrValueHelper
 __all__ = ("EnumWidgetType",)
 
 
+_ROW_DRIVEN_VIEW_KIND_VALUES: frozenset[str] = frozenset(
+    {
+        "line_card",
+        "machine_bay",
+        "stage_progress",
+        "stop",
+        "freshness",
+        "trend",
+        "drawer_detail",
+    }
+)
+
+
 @unique
 class EnumWidgetType(UtilStrValueHelper, str, Enum):
     """Dashboard widget type enumeration.
@@ -44,6 +57,18 @@ class EnumWidgetType(UtilStrValueHelper, str, Enum):
             Config: :class:`~omnibase_core.models.dashboard.ModelWidgetConfigStatusGrid`
         EVENT_FEED: Real-time event stream with filtering capabilities.
             Config: :class:`~omnibase_core.models.dashboard.ModelWidgetConfigEventFeed`
+        LINE_CARD: One production line's status as a card (view-centric kind).
+        MACHINE_BAY: One machine bay and its current state (view-centric kind).
+        STAGE_PROGRESS: Position of an item within an ordered set of stages.
+        STOP: A stoppage, its reason and when it began (view-centric kind).
+        FRESHNESS: How old a feed's last observation is against its allowance.
+        TREND: A series of timestamped values for one measure.
+        DRAWER_DETAIL: Labelled detail entries shown in an expandable drawer.
+
+    The seven view-centric kinds (``LINE_CARD`` through ``DRAWER_DETAIL``) are
+    row-driven: each has a config in the ``ModelWidgetConfig`` union and a row
+    model under ``models/dashboard/model_view_row_*``. Together with
+    ``METRIC_CARD`` they are the eight view kinds (:attr:`is_view_kind`).
 
     Example:
         Use in widget definition::
@@ -60,14 +85,22 @@ class EnumWidgetType(UtilStrValueHelper, str, Enum):
     METRIC_CARD = "metric_card"
     STATUS_GRID = "status_grid"
     EVENT_FEED = "event_feed"
+    LINE_CARD = "line_card"
+    MACHINE_BAY = "machine_bay"
+    STAGE_PROGRESS = "stage_progress"
+    STOP = "stop"
+    FRESHNESS = "freshness"
+    TREND = "trend"
+    DRAWER_DETAIL = "drawer_detail"
 
     @property
     def is_data_bound(self) -> bool:
         """Check if widget type requires external data binding.
 
-        Data-bound widgets (CHART, TABLE, EVENT_FEED) display real-time or
-        historical data from external sources. They need continuous data
-        updates and typically subscribe to a data source for real-time updates.
+        Data-bound widgets (CHART, TABLE, EVENT_FEED and the seven row-driven
+        view kinds) display real-time or historical data from external
+        sources. They need continuous data updates and typically subscribe to a
+        data source for real-time updates.
 
         Note:
             Mutually exclusive with :attr:`is_aggregation` - a widget type is
@@ -76,13 +109,33 @@ class EnumWidgetType(UtilStrValueHelper, str, Enum):
 
         Returns:
             True if the widget type requires data binding (CHART, TABLE,
-            EVENT_FEED), False otherwise (METRIC_CARD, STATUS_GRID).
+            EVENT_FEED and the row-driven view kinds), False otherwise
+            (METRIC_CARD, STATUS_GRID).
         """
-        return self in {
-            EnumWidgetType.CHART,
-            EnumWidgetType.TABLE,
-            EnumWidgetType.EVENT_FEED,
-        }
+        return (
+            self
+            in {
+                EnumWidgetType.CHART,
+                EnumWidgetType.TABLE,
+                EnumWidgetType.EVENT_FEED,
+            }
+            or self.value in _ROW_DRIVEN_VIEW_KIND_VALUES
+        )
+
+    @property
+    def is_view_kind(self) -> bool:
+        """Check if this is one of the eight view kinds.
+
+        The view kinds are what a view contract may declare for a section:
+        ``METRIC_CARD`` plus the seven row-driven kinds. ``CHART``, ``TABLE``,
+        ``STATUS_GRID`` and ``EVENT_FEED`` are dashboard widgets, not view kinds.
+
+        Returns:
+            True for METRIC_CARD and the seven row-driven view kinds.
+        """
+        return self is EnumWidgetType.METRIC_CARD or (
+            self.value in _ROW_DRIVEN_VIEW_KIND_VALUES
+        )
 
     @property
     def is_aggregation(self) -> bool:

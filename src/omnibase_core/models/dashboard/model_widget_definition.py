@@ -48,21 +48,64 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.models.dashboard.model_widget_config_chart import (
     ModelWidgetConfigChart,
 )
+from omnibase_core.models.dashboard.model_widget_config_drawer_detail import (
+    ModelWidgetConfigDrawerDetail,
+)
 from omnibase_core.models.dashboard.model_widget_config_event_feed import (
     ModelWidgetConfigEventFeed,
+)
+from omnibase_core.models.dashboard.model_widget_config_freshness import (
+    ModelWidgetConfigFreshness,
+)
+from omnibase_core.models.dashboard.model_widget_config_line_card import (
+    ModelWidgetConfigLineCard,
+)
+from omnibase_core.models.dashboard.model_widget_config_machine_bay import (
+    ModelWidgetConfigMachineBay,
 )
 from omnibase_core.models.dashboard.model_widget_config_metric_card import (
     ModelWidgetConfigMetricCard,
 )
+from omnibase_core.models.dashboard.model_widget_config_stage_progress import (
+    ModelWidgetConfigStageProgress,
+)
 from omnibase_core.models.dashboard.model_widget_config_status_grid import (
     ModelWidgetConfigStatusGrid,
+)
+from omnibase_core.models.dashboard.model_widget_config_stop import (
+    ModelWidgetConfigStop,
 )
 from omnibase_core.models.dashboard.model_widget_config_table import (
     ModelWidgetConfigTable,
 )
+from omnibase_core.models.dashboard.model_widget_config_trend import (
+    ModelWidgetConfigTrend,
+)
 
 __all__ = ("ModelWidgetDefinition", "ModelWidgetConfig")
 
+
+#: The five dashboard widget configs.
+_CoreWidgetConfigs = (
+    ModelWidgetConfigChart
+    | ModelWidgetConfigTable
+    | ModelWidgetConfigMetricCard
+    | ModelWidgetConfigStatusGrid
+    | ModelWidgetConfigEventFeed
+)
+
+#: View kinds that report the state of one thing (OMN-21997).
+_ViewStateConfigs = (
+    ModelWidgetConfigLineCard
+    | ModelWidgetConfigMachineBay
+    | ModelWidgetConfigStageProgress
+    | ModelWidgetConfigStop
+)
+
+#: View kinds that report a measurement or its detail (OMN-21997).
+_ViewMeasureConfigs = (
+    ModelWidgetConfigFreshness | ModelWidgetConfigTrend | ModelWidgetConfigDrawerDetail
+)
 
 #: Discriminated union of all widget configuration types.
 #:
@@ -77,12 +120,15 @@ __all__ = ("ModelWidgetDefinition", "ModelWidgetConfig")
 #:     - ``metric_card``: :class:`ModelWidgetConfigMetricCard`
 #:     - ``status_grid``: :class:`ModelWidgetConfigStatusGrid`
 #:     - ``event_feed``: :class:`ModelWidgetConfigEventFeed`
+#:     - ``drawer_detail``: :class:`ModelWidgetConfigDrawerDetail`
+#:     - ``freshness``: :class:`ModelWidgetConfigFreshness`
+#:     - ``line_card``: :class:`ModelWidgetConfigLineCard`
+#:     - ``machine_bay``: :class:`ModelWidgetConfigMachineBay`
+#:     - ``stage_progress``: :class:`ModelWidgetConfigStageProgress`
+#:     - ``stop``: :class:`ModelWidgetConfigStop`
+#:     - ``trend``: :class:`ModelWidgetConfigTrend`
 ModelWidgetConfig = Annotated[
-    ModelWidgetConfigChart
-    | ModelWidgetConfigTable
-    | ModelWidgetConfigMetricCard
-    | ModelWidgetConfigStatusGrid
-    | ModelWidgetConfigEventFeed,
+    _CoreWidgetConfigs | _ViewStateConfigs | _ViewMeasureConfigs,
     Field(discriminator="config_kind"),
 ]
 

@@ -54,6 +54,7 @@ from omnibase_core.models.dashboard.model_widget_config_table import (
 )
 from omnibase_core.models.dashboard.model_widget_definition import ModelWidgetConfig
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from tests.unit.models.dashboard.view_builders import CONFIG_BUILDERS
 
 _HEX_LITERAL = re.compile(r"#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b")
 
@@ -63,6 +64,8 @@ _WIDGET_CONFIG_MODELS: tuple[type[BaseModel], ...] = (
     ModelWidgetConfigMetricCard,
     ModelWidgetConfigStatusGrid,
     ModelWidgetConfigEventFeed,
+    # the seven view kinds (OMN-21997)
+    *(type(build()) for build in CONFIG_BUILDERS.values()),
 )
 
 _COLOUR_FIELD = re.compile(r"colou?r")

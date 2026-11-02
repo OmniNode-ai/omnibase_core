@@ -9,15 +9,15 @@ import json
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
+
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.dashboard.model_view_document import ModelViewDocument
-from omnibase_core.utils.util_view_document_digest import (
+from omnibase_core.models.dashboard.model_view_document_digest import (
     compute_view_document_digest,
     seal_view_document,
     verify_view_document,
 )
-from pydantic import ValidationError
-
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.utils.util_canonical_hash import compute_canonical_hash
 from omnibase_core.utils.util_widget_envelope import verify_widget_envelope
 from tests.unit.models.dashboard.view_builders import (

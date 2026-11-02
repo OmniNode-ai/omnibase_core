@@ -14,7 +14,14 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
+from omnibase_core.enums.enum_empty_state_reason import EnumEmptyStateReason
+from omnibase_core.enums.enum_status_severity import EnumStatusSeverity
+from omnibase_core.enums.enum_widget_type import EnumWidgetType
+from omnibase_core.models.dashboard.model_component_contract import (
+    ModelComponentContract,
+)
 from omnibase_core.models.dashboard.model_view_detail_entry import ModelViewDetailEntry
+from omnibase_core.models.dashboard.model_view_document_digest import seal_view_document
 from omnibase_core.models.dashboard.model_view_empty_state import ModelViewEmptyState
 from omnibase_core.models.dashboard.model_view_row_drawer_detail import (
     ModelViewRowDrawerDetail,
@@ -68,6 +75,9 @@ from omnibase_core.models.dashboard.model_widget_config_line_card import (
 from omnibase_core.models.dashboard.model_widget_config_machine_bay import (
     ModelWidgetConfigMachineBay,
 )
+from omnibase_core.models.dashboard.model_widget_config_metric_card import (
+    ModelWidgetConfigMetricCard,
+)
 from omnibase_core.models.dashboard.model_widget_config_stage_progress import (
     ModelWidgetConfigStageProgress,
 )
@@ -76,17 +86,6 @@ from omnibase_core.models.dashboard.model_widget_config_stop import (
 )
 from omnibase_core.models.dashboard.model_widget_config_trend import (
     ModelWidgetConfigTrend,
-)
-from omnibase_core.utils.util_view_document_digest import seal_view_document
-
-from omnibase_core.enums.enum_empty_state_reason import EnumEmptyStateReason
-from omnibase_core.enums.enum_status_severity import EnumStatusSeverity
-from omnibase_core.enums.enum_widget_type import EnumWidgetType
-from omnibase_core.models.dashboard.model_component_contract import (
-    ModelComponentContract,
-)
-from omnibase_core.models.dashboard.model_widget_config_metric_card import (
-    ModelWidgetConfigMetricCard,
 )
 from omnibase_core.models.dashboard.model_widget_envelope import ModelWidgetEnvelope
 from omnibase_core.models.dashboard.model_widget_provenance import ModelWidgetProvenance

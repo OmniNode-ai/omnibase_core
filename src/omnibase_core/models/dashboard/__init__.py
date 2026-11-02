@@ -129,20 +129,128 @@ if TYPE_CHECKING:
         ModelThemeCatalogEntry,
     )
     from omnibase_core.models.dashboard.model_theme_instance import ModelThemeInstance
+    from omnibase_core.models.dashboard.model_view_contract import ModelViewContract
+    from omnibase_core.models.dashboard.model_view_detail_entry import (
+        ModelViewDetailEntry,
+    )
+    from omnibase_core.models.dashboard.model_view_disposition_count import (
+        ModelViewDispositionCount,
+    )
+    from omnibase_core.models.dashboard.model_view_document import (
+        ModelViewDocument,
+        ModelViewSection,
+    )
+    from omnibase_core.models.dashboard.model_view_document_count import (
+        ModelViewDocumentCount,
+    )
+    from omnibase_core.models.dashboard.model_view_empty_state import (
+        ModelViewEmptyState,
+    )
+    from omnibase_core.models.dashboard.model_view_field_binding import (
+        ModelViewFieldBinding,
+        ModelViewFieldSource,
+    )
+    from omnibase_core.models.dashboard.model_view_field_map import ModelViewFieldMap
+    from omnibase_core.models.dashboard.model_view_field_source_column import (
+        ModelViewFieldSourceColumn,
+    )
+    from omnibase_core.models.dashboard.model_view_field_source_constant import (
+        ModelViewFieldSourceConstant,
+    )
+    from omnibase_core.models.dashboard.model_view_field_source_reference import (
+        ModelViewFieldSourceReference,
+    )
+    from omnibase_core.models.dashboard.model_view_manifest import ModelViewManifest
+    from omnibase_core.models.dashboard.model_view_order_column import (
+        ModelViewOrderColumn,
+    )
+    from omnibase_core.models.dashboard.model_view_row_base import ModelViewRowBase
+    from omnibase_core.models.dashboard.model_view_row_drawer_detail import (
+        ModelViewRowDrawerDetail,
+    )
+    from omnibase_core.models.dashboard.model_view_row_freshness import (
+        ModelViewRowFreshness,
+    )
+    from omnibase_core.models.dashboard.model_view_row_id import ModelViewRowId
+    from omnibase_core.models.dashboard.model_view_row_line_card import (
+        ModelViewRowLineCard,
+    )
+    from omnibase_core.models.dashboard.model_view_row_machine_bay import (
+        ModelViewRowMachineBay,
+    )
+    from omnibase_core.models.dashboard.model_view_row_selection import (
+        ModelViewRowSelection,
+    )
+    from omnibase_core.models.dashboard.model_view_row_stage_progress import (
+        ModelViewRowStageProgress,
+    )
+    from omnibase_core.models.dashboard.model_view_row_stop import ModelViewRowStop
+    from omnibase_core.models.dashboard.model_view_row_trend import ModelViewRowTrend
+    from omnibase_core.models.dashboard.model_view_section_base import (
+        ModelViewSectionBase,
+    )
+    from omnibase_core.models.dashboard.model_view_section_contract import (
+        ModelViewSectionContract,
+    )
+    from omnibase_core.models.dashboard.model_view_section_drawer_detail import (
+        ModelViewSectionDrawerDetail,
+    )
+    from omnibase_core.models.dashboard.model_view_section_freshness import (
+        ModelViewSectionFreshness,
+    )
+    from omnibase_core.models.dashboard.model_view_section_line_card import (
+        ModelViewSectionLineCard,
+    )
+    from omnibase_core.models.dashboard.model_view_section_machine_bay import (
+        ModelViewSectionMachineBay,
+    )
+    from omnibase_core.models.dashboard.model_view_section_stage_progress import (
+        ModelViewSectionStageProgress,
+    )
+    from omnibase_core.models.dashboard.model_view_section_stop import (
+        ModelViewSectionStop,
+    )
+    from omnibase_core.models.dashboard.model_view_section_trend import (
+        ModelViewSectionTrend,
+    )
+    from omnibase_core.models.dashboard.model_view_trend_point import (
+        ModelViewTrendPoint,
+    )
     from omnibase_core.models.dashboard.model_widget_config_chart import (
         ModelWidgetConfigChart,
+    )
+    from omnibase_core.models.dashboard.model_widget_config_drawer_detail import (
+        ModelWidgetConfigDrawerDetail,
     )
     from omnibase_core.models.dashboard.model_widget_config_event_feed import (
         ModelWidgetConfigEventFeed,
     )
+    from omnibase_core.models.dashboard.model_widget_config_freshness import (
+        ModelWidgetConfigFreshness,
+    )
+    from omnibase_core.models.dashboard.model_widget_config_line_card import (
+        ModelWidgetConfigLineCard,
+    )
+    from omnibase_core.models.dashboard.model_widget_config_machine_bay import (
+        ModelWidgetConfigMachineBay,
+    )
     from omnibase_core.models.dashboard.model_widget_config_metric_card import (
         ModelWidgetConfigMetricCard,
+    )
+    from omnibase_core.models.dashboard.model_widget_config_stage_progress import (
+        ModelWidgetConfigStageProgress,
     )
     from omnibase_core.models.dashboard.model_widget_config_status_grid import (
         ModelWidgetConfigStatusGrid,
     )
+    from omnibase_core.models.dashboard.model_widget_config_stop import (
+        ModelWidgetConfigStop,
+    )
     from omnibase_core.models.dashboard.model_widget_config_table import (
         ModelWidgetConfigTable,
+    )
+    from omnibase_core.models.dashboard.model_widget_config_trend import (
+        ModelWidgetConfigTrend,
     )
     from omnibase_core.models.dashboard.model_widget_definition import (
         ModelWidgetConfig,
@@ -154,6 +262,49 @@ if TYPE_CHECKING:
     )
 
 __all__: tuple[str, ...] = (
+    # View-centric models (OMN-21997)
+    "ModelViewContract",
+    "ModelViewDetailEntry",
+    "ModelViewDispositionCount",
+    "ModelViewDocument",
+    "ModelViewDocumentCount",
+    "ModelViewEmptyState",
+    "ModelViewFieldBinding",
+    "ModelViewFieldMap",
+    "ModelViewFieldSource",
+    "ModelViewFieldSourceColumn",
+    "ModelViewFieldSourceConstant",
+    "ModelViewFieldSourceReference",
+    "ModelViewManifest",
+    "ModelViewOrderColumn",
+    "ModelViewRowBase",
+    "ModelViewRowDrawerDetail",
+    "ModelViewRowFreshness",
+    "ModelViewRowId",
+    "ModelViewRowLineCard",
+    "ModelViewRowMachineBay",
+    "ModelViewRowSelection",
+    "ModelViewRowStageProgress",
+    "ModelViewRowStop",
+    "ModelViewRowTrend",
+    "ModelViewSection",
+    "ModelViewSectionBase",
+    "ModelViewSectionContract",
+    "ModelViewSectionDrawerDetail",
+    "ModelViewSectionFreshness",
+    "ModelViewSectionLineCard",
+    "ModelViewSectionMachineBay",
+    "ModelViewSectionStageProgress",
+    "ModelViewSectionStop",
+    "ModelViewSectionTrend",
+    "ModelViewTrendPoint",
+    "ModelWidgetConfigDrawerDetail",
+    "ModelWidgetConfigFreshness",
+    "ModelWidgetConfigLineCard",
+    "ModelWidgetConfigMachineBay",
+    "ModelWidgetConfigStageProgress",
+    "ModelWidgetConfigStop",
+    "ModelWidgetConfigTrend",
     # Theme contract, instances, and catalog (OMN-13389 / OMN-16882)
     "ModelThemeActivation",
     "ModelThemeCatalog",
@@ -366,6 +517,174 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelWidgetProvenance": (
         "omnibase_core.models.dashboard.model_widget_provenance",
         "ModelWidgetProvenance",
+    ),
+    "ModelViewContract": (
+        "omnibase_core.models.dashboard.model_view_contract",
+        "ModelViewContract",
+    ),
+    "ModelViewDetailEntry": (
+        "omnibase_core.models.dashboard.model_view_detail_entry",
+        "ModelViewDetailEntry",
+    ),
+    "ModelViewDispositionCount": (
+        "omnibase_core.models.dashboard.model_view_disposition_count",
+        "ModelViewDispositionCount",
+    ),
+    "ModelViewDocument": (
+        "omnibase_core.models.dashboard.model_view_document",
+        "ModelViewDocument",
+    ),
+    "ModelViewDocumentCount": (
+        "omnibase_core.models.dashboard.model_view_document_count",
+        "ModelViewDocumentCount",
+    ),
+    "ModelViewEmptyState": (
+        "omnibase_core.models.dashboard.model_view_empty_state",
+        "ModelViewEmptyState",
+    ),
+    "ModelViewFieldBinding": (
+        "omnibase_core.models.dashboard.model_view_field_binding",
+        "ModelViewFieldBinding",
+    ),
+    "ModelViewFieldMap": (
+        "omnibase_core.models.dashboard.model_view_field_map",
+        "ModelViewFieldMap",
+    ),
+    "ModelViewFieldSource": (
+        "omnibase_core.models.dashboard.model_view_field_binding",
+        "ModelViewFieldSource",
+    ),
+    "ModelViewFieldSourceColumn": (
+        "omnibase_core.models.dashboard.model_view_field_source_column",
+        "ModelViewFieldSourceColumn",
+    ),
+    "ModelViewFieldSourceConstant": (
+        "omnibase_core.models.dashboard.model_view_field_source_constant",
+        "ModelViewFieldSourceConstant",
+    ),
+    "ModelViewFieldSourceReference": (
+        "omnibase_core.models.dashboard.model_view_field_source_reference",
+        "ModelViewFieldSourceReference",
+    ),
+    "ModelViewManifest": (
+        "omnibase_core.models.dashboard.model_view_manifest",
+        "ModelViewManifest",
+    ),
+    "ModelViewOrderColumn": (
+        "omnibase_core.models.dashboard.model_view_order_column",
+        "ModelViewOrderColumn",
+    ),
+    "ModelViewRowBase": (
+        "omnibase_core.models.dashboard.model_view_row_base",
+        "ModelViewRowBase",
+    ),
+    "ModelViewRowDrawerDetail": (
+        "omnibase_core.models.dashboard.model_view_row_drawer_detail",
+        "ModelViewRowDrawerDetail",
+    ),
+    "ModelViewRowFreshness": (
+        "omnibase_core.models.dashboard.model_view_row_freshness",
+        "ModelViewRowFreshness",
+    ),
+    "ModelViewRowId": (
+        "omnibase_core.models.dashboard.model_view_row_id",
+        "ModelViewRowId",
+    ),
+    "ModelViewRowLineCard": (
+        "omnibase_core.models.dashboard.model_view_row_line_card",
+        "ModelViewRowLineCard",
+    ),
+    "ModelViewRowMachineBay": (
+        "omnibase_core.models.dashboard.model_view_row_machine_bay",
+        "ModelViewRowMachineBay",
+    ),
+    "ModelViewRowSelection": (
+        "omnibase_core.models.dashboard.model_view_row_selection",
+        "ModelViewRowSelection",
+    ),
+    "ModelViewRowStageProgress": (
+        "omnibase_core.models.dashboard.model_view_row_stage_progress",
+        "ModelViewRowStageProgress",
+    ),
+    "ModelViewRowStop": (
+        "omnibase_core.models.dashboard.model_view_row_stop",
+        "ModelViewRowStop",
+    ),
+    "ModelViewRowTrend": (
+        "omnibase_core.models.dashboard.model_view_row_trend",
+        "ModelViewRowTrend",
+    ),
+    "ModelViewSection": (
+        "omnibase_core.models.dashboard.model_view_document",
+        "ModelViewSection",
+    ),
+    "ModelViewSectionBase": (
+        "omnibase_core.models.dashboard.model_view_section_base",
+        "ModelViewSectionBase",
+    ),
+    "ModelViewSectionContract": (
+        "omnibase_core.models.dashboard.model_view_section_contract",
+        "ModelViewSectionContract",
+    ),
+    "ModelViewSectionDrawerDetail": (
+        "omnibase_core.models.dashboard.model_view_section_drawer_detail",
+        "ModelViewSectionDrawerDetail",
+    ),
+    "ModelViewSectionFreshness": (
+        "omnibase_core.models.dashboard.model_view_section_freshness",
+        "ModelViewSectionFreshness",
+    ),
+    "ModelViewSectionLineCard": (
+        "omnibase_core.models.dashboard.model_view_section_line_card",
+        "ModelViewSectionLineCard",
+    ),
+    "ModelViewSectionMachineBay": (
+        "omnibase_core.models.dashboard.model_view_section_machine_bay",
+        "ModelViewSectionMachineBay",
+    ),
+    "ModelViewSectionStageProgress": (
+        "omnibase_core.models.dashboard.model_view_section_stage_progress",
+        "ModelViewSectionStageProgress",
+    ),
+    "ModelViewSectionStop": (
+        "omnibase_core.models.dashboard.model_view_section_stop",
+        "ModelViewSectionStop",
+    ),
+    "ModelViewSectionTrend": (
+        "omnibase_core.models.dashboard.model_view_section_trend",
+        "ModelViewSectionTrend",
+    ),
+    "ModelViewTrendPoint": (
+        "omnibase_core.models.dashboard.model_view_trend_point",
+        "ModelViewTrendPoint",
+    ),
+    "ModelWidgetConfigDrawerDetail": (
+        "omnibase_core.models.dashboard.model_widget_config_drawer_detail",
+        "ModelWidgetConfigDrawerDetail",
+    ),
+    "ModelWidgetConfigFreshness": (
+        "omnibase_core.models.dashboard.model_widget_config_freshness",
+        "ModelWidgetConfigFreshness",
+    ),
+    "ModelWidgetConfigLineCard": (
+        "omnibase_core.models.dashboard.model_widget_config_line_card",
+        "ModelWidgetConfigLineCard",
+    ),
+    "ModelWidgetConfigMachineBay": (
+        "omnibase_core.models.dashboard.model_widget_config_machine_bay",
+        "ModelWidgetConfigMachineBay",
+    ),
+    "ModelWidgetConfigStageProgress": (
+        "omnibase_core.models.dashboard.model_widget_config_stage_progress",
+        "ModelWidgetConfigStageProgress",
+    ),
+    "ModelWidgetConfigStop": (
+        "omnibase_core.models.dashboard.model_widget_config_stop",
+        "ModelWidgetConfigStop",
+    ),
+    "ModelWidgetConfigTrend": (
+        "omnibase_core.models.dashboard.model_widget_config_trend",
+        "ModelWidgetConfigTrend",
     ),
 }
 

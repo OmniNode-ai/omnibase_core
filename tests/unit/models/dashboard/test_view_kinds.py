@@ -8,14 +8,14 @@ from __future__ import annotations
 from typing import get_args
 
 import pytest
-from omnibase_core.models.dashboard.model_widget_config_line_card import (
-    ModelWidgetConfigLineCard,
-)
 from pydantic import ValidationError
 
 from omnibase_core.enums.enum_widget_type import EnumWidgetType
 from omnibase_core.models.dashboard.model_component_contract import (
     ModelComponentContract,
+)
+from omnibase_core.models.dashboard.model_widget_config_line_card import (
+    ModelWidgetConfigLineCard,
 )
 from omnibase_core.models.dashboard.model_widget_definition import ModelWidgetConfig
 from omnibase_core.models.dashboard.model_widget_envelope import ModelWidgetEnvelope
@@ -105,15 +105,12 @@ class TestViewKindConfigs:
         assert sealed.config.config_kind == kind
         verify_widget_envelope(sealed)
 
-    @pytest.mark.parametrize("kind", NEW_KINDS)
+    @pytest.mark.parametrize("kind", [k for k in NEW_KINDS if k != "line_card"])
     def test_view_kind_envelope_refuses_a_config_of_another_kind(
         self, kind: str
     ) -> None:
-        wrong = ModelWidgetConfigLineCard() if kind != "line_card" else None
-        if wrong is None:
-            pytest.skip("line_card is the foreign config used for the others")
         with pytest.raises(ValidationError, match="does not match config_kind"):
-            envelope(kind, config=wrong)
+            envelope(kind, config=ModelWidgetConfigLineCard())
 
 
 @pytest.mark.unit

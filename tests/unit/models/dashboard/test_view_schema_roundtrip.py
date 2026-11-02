@@ -17,10 +17,12 @@ from typing import Any
 
 import jsonschema
 import pytest
-from omnibase_core.models.dashboard.model_view_document import ModelViewDocument
-from omnibase_core.utils.util_view_document_digest import verify_view_document
 from pydantic import ValidationError
 
+from omnibase_core.models.dashboard.model_view_document import ModelViewDocument
+from omnibase_core.models.dashboard.model_view_document_digest import (
+    verify_view_document,
+)
 from omnibase_core.utils.util_canonical_hash import compute_canonical_hash
 from tests.unit.models.dashboard.view_builders import (
     NEW_KINDS,
@@ -86,8 +88,9 @@ class TestViewSchemaRoundtrip:
     def test_view_schema_roundtrip_empty_state_section_validates(
         self, kind: str
     ) -> None:
-        from omnibase_core.utils.util_view_document_digest import seal_view_document
-
+        from omnibase_core.models.dashboard.model_view_document_digest import (
+            seal_view_document,
+        )
         from tests.unit.models.dashboard.view_builders import (
             MOMENT,
             VERSION,
