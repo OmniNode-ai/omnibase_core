@@ -41,10 +41,14 @@ validation:
         src_root: "src"
         shebang_prefix: "#!"
         canonical_src_min_parts: 4
-        noncanonical_text: "new code file outside a canonical location (src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/,
-          src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). Build it as a contract + node
-          + handler."
-        shell_text: "shell scripts have no canonical location in any repository (OMN-21332)."
+        noncanonical_text: "{path}: new code file outside a canonical location (src/<pkg>/{{nodes,handlers,models,protocols,contracts,enums}}/,
+          src/<pkg>/validation/{{checker_*,validator_*}}.py, tests/, docs/). Build it as node {node}:
+          a contract + node + handler."
+        shell_text: "{path}: shell scripts have no canonical location in any repository (OMN-21332). Build
+          it as node {node}: a contract + node + handler."
+        node_name_template: "node_{stem}"
+        node_stem_separator_pattern: "[^a-z0-9]+"
+        node_stem_separator: "_"
         # TypeScript/React and shell locations (OMN-21332, plan rules T1-T17).
         typescript_extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
         typescript_src_extensions: [".ts", ".tsx"]
@@ -78,6 +82,19 @@ validation:
           # a canonical location or rewritten as contract + node + handler. A new
           # line is refused.
 
+    - rule_id: script-unit-new
+      description: A new launchd, cron or systemd unit whose text runs a script. A scheduled script is
+        still a script; the job is a node and the schedule triggers the node.
+      severity: error
+      enabled: true
+      parameters:
+        unit_extensions: [".plist", ".cron", ".crontab", ".timer", ".service"]
+        unit_dirs: ["launchd", "cron", "cron.d", "systemd"]
+        unit_added_statuses: ["A", "C"]
+        unit_script_pattern: '(?<![\w.-])[\w./~$-]+\.(?:sh|bash|zsh|py|rb|pl|js|mjs|cjs|ts)\b|(?:^|[\s/>"])scripts?/'
+        script_unit_text: "{path}: new scheduled unit runs a script; scripts have no canonical location.
+          Build the job as node {node}: a contract + node + handler, and schedule the node."
+
     - rule_id: baseline-stale
       description: A baseline entry whose file was removed, moved or made canonical.
       severity: error
@@ -104,10 +121,10 @@ validation:
       enabled: true
       parameters:
         comment_prefixes: ["#", "//"]
-        baselined_growth_text: "code lines {old} -> {new}; a baselined file only shrinks. Put the new
-          behaviour in a contract + node + handler (rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z).
-          A handler file that a node contract binds leaves the baseline in the same commit and may then
-          change freely."
+        baselined_growth_text: "{path}: code lines {old} -> {new}; a baselined file only shrinks. Put
+          the new behaviour in node {node}, a contract + node + handler (rulings 2026-10-01T12:36:54Z,
+          2026-10-15T08:14:15Z). A handler file that a node contract binds leaves the baseline in the
+          same commit and may then change freely."
 
     - rule_id: burndown-baseline
       description: Names the ticketed burn-down baseline, a second shrink-only file that carries the file-rule

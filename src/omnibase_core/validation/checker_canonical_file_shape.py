@@ -8,7 +8,7 @@ access. Every pattern, name list, path, threshold and remediation text comes fro
 the ``parameters`` of the rule rows in
 ``contracts/canonical_file_shape.validation.yaml`` (``load_rule_set``).
 
-Rules: noncanonical-file, handler_outside_node, cli_entry_outside_node (file
+Rules: noncanonical-file, script-unit-new, handler_outside_node, cli_entry_outside_node (file
 rules, refused paths that the shrink-only baseline may carry), baseline-stale,
 baseline-growth, baselined-file-growth, burndown-ticket-missing,
 burndown-baseline-removed, burndown-extra-entry, burndown-ticket-uncited,
@@ -37,6 +37,9 @@ from omnibase_core.models.common.model_validation_issue import ModelValidationIs
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
 )
+from omnibase_core.models.validation.model_canonical_file_shape_change import (
+    ModelCanonicalFileShapeChange,
+)
 from omnibase_core.models.validation.model_canonical_file_shape_facts import (
     ModelCanonicalFileShapeFacts,
 )
@@ -58,6 +61,7 @@ from omnibase_core.models.validation.model_canonical_location_verdict import (
 
 VALIDATOR_ID = "canonical_file_shape"
 RULE_NONCANONICAL = "noncanonical-file"
+RULE_SCRIPT_UNIT = "script-unit-new"
 RULE_BASELINE_STALE = "baseline-stale"
 RULE_BASELINE_GROWTH = "baseline-growth"
 RULE_BASELINED_GROWTH = "baselined-file-growth"
@@ -125,6 +129,33 @@ def _suffix(path: str) -> str:
 
 def _heads(tree: ModelCanonicalFileShapeTree) -> dict[str, bytes]:
     return {line.path: line.text.encode() for line in tree.shebang_lines}
+
+
+def node_name(path: str, p: ModelCanonicalFileShapeRules) -> str:
+    """The node a refused file should become, named from the file stem by the contract template."""
+    stem = PurePosixPath(path).stem.lower()
+    cleaned = _regex(p.node_stem_separator_pattern).sub(p.node_stem_separator, stem)
+    return p.node_name_template.format(stem=cleaned.strip(p.node_stem_separator))
+
+
+def _refusal_text(template: str, path: str, p: ModelCanonicalFileShapeRules) -> str:
+    return template.format(path=path, node=node_name(path, p))
+
+
+def _is_script_unit(
+    change: ModelCanonicalFileShapeChange, p: ModelCanonicalFileShapeRules
+) -> bool:
+    """A newly added launchd, cron or systemd unit whose text runs a script."""
+    if change.status not in p.unit_added_statuses or change.new_text is None:
+        return False
+    parts = PurePosixPath(change.path).parts
+    if parts[0] == p.docs_root or any(part in p.test_dirs for part in parts[:-1]):
+        return False
+    if _suffix(change.path) not in p.unit_extensions and not any(
+        part in p.unit_dirs for part in parts[:-1]
+    ):
+        return False
+    return _regex(p.unit_script_pattern, True).search(change.new_text) is not None
 
 
 def _is_code(path: str, text: str | None, p: ModelCanonicalFileShapeRules) -> bool:
@@ -387,9 +418,15 @@ def file_rule_refusals(
                 p,
             )
             if location.is_shell_script:
-                refusals[path] = (RULE_NONCANONICAL, p.shell_text)
+                refusals[path] = (
+                    RULE_NONCANONICAL,
+                    _refusal_text(p.shell_text, path, p),
+                )
             elif not _canonical_location(path, location, p):
-                refusals[path] = (RULE_NONCANONICAL, p.noncanonical_text)
+                refusals[path] = (
+                    RULE_NONCANONICAL,
+                    _refusal_text(p.noncanonical_text, path, p),
+                )
     if RULE_HANDLER in rules.enabled:
         bound = _bound_modules(tree, p)
         candidates = {
@@ -973,6 +1010,15 @@ def check(
         issues.extend(
             _diff_issues(rules, change.path, change.new_text, change.old_text, declared)
         )
+        if RULE_SCRIPT_UNIT in rules.enabled and _is_script_unit(change, p):
+            issues.append(
+                _issue(
+                    rules,
+                    change.path,
+                    RULE_SCRIPT_UNIT,
+                    _refusal_text(p.script_unit_text, change.path, p),
+                )
+            )
         if (
             RULE_BASELINED_GROWTH in rules.enabled
             and change.old_text is not None
@@ -986,7 +1032,12 @@ def check(
                         rules,
                         change.path,
                         RULE_BASELINED_GROWTH,
-                        p.baselined_growth_text.format(old=old_n, new=new_n),
+                        p.baselined_growth_text.format(
+                            path=change.path,
+                            node=node_name(change.path, p),
+                            old=old_n,
+                            new=new_n,
+                        ),
                     )
                 )
     issues.extend(_lifecycle_issues(facts, rules))
