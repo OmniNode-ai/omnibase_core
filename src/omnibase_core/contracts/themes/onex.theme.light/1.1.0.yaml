@@ -4,13 +4,13 @@
 theme_id: onex.theme.light
 schema_version:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
   prerelease: null
   build: null
 instance_revision:
   major: 1
-  minor: 0
+  minor: 1
   patch: 0
   prerelease: null
   build: null
@@ -20,7 +20,7 @@ tokens:
   theme_id: onex.theme.light
   contract_version:
     major: 1
-    minor: 0
+    minor: 1
     patch: 0
     prerelease: null
     build: null
@@ -38,12 +38,19 @@ tokens:
   color_status_info: '#0369a1'
   color_border_default: '#e2e8f0'
   color_border_strong: '#cbd5e1'
+  color_tint_ok: '#15803d1a'
+  color_tint_warn: '#b453091a'
+  color_tint_stop: '#b91c1c1a'
+  color_neutral_idle: '#94a3b8'
+  color_focus_ring: '#4f46e5'
   spacing_xs: 0.25rem
   spacing_sm: 0.5rem
   spacing_md: 1rem
   spacing_lg: 1.5rem
   spacing_xl: 2rem
   font_family_base: '''Inter'', system-ui, sans-serif'
+  font_family_display: '''Inter Tight'', ''Inter'', system-ui, sans-serif'
+  font_family_mono: '''JetBrains Mono'', ui-monospace, ''SF Mono'', Menlo, monospace'
   font_size_sm: 0.875rem
   font_size_md: 1rem
   font_size_lg: 1.125rem
@@ -52,3 +59,5 @@ tokens:
   border_radius_sm: 0.25rem
   border_radius_md: 0.5rem
   border_radius_lg: 1rem
+  motion_duration: 150ms
+  motion_easing: cubic-bezier(0.2, 0, 0, 1)

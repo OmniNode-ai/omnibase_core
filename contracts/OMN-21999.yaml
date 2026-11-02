@@ -1,0 +1,97 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21999
+title: omnibase_core defines the declared threshold policy with its pure evaluator, and the view delivery
+  and render receipt models (view-centric plan S2, policy and receipts)
+summary: Adds ModelViewThresholdPolicy with ordered, non-overlapping bands that reuse ModelMetricThreshold,
+  a pure evaluator that returns a ModelSeverityVerdict carrying the policy id, version and digest or a
+  typed out-of-band outcome, a policy digest with a pin check, and the frozen ModelViewDeliveryReceipt
+  and ModelViewRenderReceipt models. Library models, utils and tests only; no node, topic, container or
+  consumer changes.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21999-policy-and-receipts
+    statement: The threshold policy, its pure evaluator and digest, and the two receipt models exist in
+      omnibase_core with tests that validate each model against its emitted JSON Schema.
+    acceptance:
+      - id: AC1
+        statement: "AC1: ModelViewThresholdPolicy carries policy id, version, the mapped field it reads
+          and ordered bands reusing ModelMetricThreshold, each band naming a severity, and refuses unordered
+          or overlapping bands -- falsifier: uv run pytest tests/unit/models/dashboard -k view_threshold_policy
+          -q"
+      - id: AC2
+        statement: "AC2: a pure evaluator returns the declared band at each boundary value, writes a ModelSeverityVerdict
+          carrying the policy id, version and digest, returns a typed out-of-band outcome for a value
+          in no band and never a default -- falsifier: uv run pytest tests/unit/models/dashboard -k view_threshold_evaluator
+          -q"
+      - id: AC3
+        statement: "AC3: the policy digest changes when any band changes, and a view contract reference
+          by id, version and digest is refused when the computed digest differs from the pin -- falsifier:
+          uv run pytest tests/unit/models/dashboard -k view_threshold_digest -q"
+      - id: AC4
+        statement: "AC4: ModelViewDeliveryReceipt (request id, view id, origin tick, source document digest
+          received, received time, decode outcome with cause) and ModelViewRenderReceipt (render id, a
+          started record and a completed record with section and row ids drawn, drawn with a cause or
+          refused) are frozen extra=forbid models that validate against their emitted JSON Schema -- falsifier:
+          uv run pytest tests/unit/models/dashboard -k view_receipt -q"
+evidence_requirements:
+  - kind: tests
+    description: The view threshold and receipt tests pass at the head.
+    command: uv run pytest tests/unit/models/dashboard -k "view_threshold or view_receipt" -q --no-cov
+      -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21999-ac1-policy
+    description: The policy model carries id, version, mapped field and ordered bands, and refuses unordered
+      and overlapping bands.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/dashboard -k view_threshold_policy -q --no-cov -n
+          0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21999-ac2-evaluator
+    description: The pure evaluator returns the declared band at each boundary, a verdict carrying the
+      policy id, version and digest, and a typed out-of-band outcome for a value in no band.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/dashboard -k view_threshold_evaluator -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21999-ac3-digest
+    description: The policy digest changes with any band change and the pin check refuses a reference
+      whose digest differs from the computed one.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/dashboard -k view_threshold_digest -q --no-cov -n
+          0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn21999-ac4-receipts
+    description: The delivery and render receipt models are frozen, forbid extra fields and validate against
+      their emitted JSON Schema.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/dashboard -k view_receipt -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn21999-deploy-hosted-library-only
+    description: Hosted deploy probe. Library models, utils and tests only; the view tests pass on the
+      hosted runner and no container, image, topic or consumer changes.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/models/dashboard -k "view_threshold or view_receipt" -q
+          --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
