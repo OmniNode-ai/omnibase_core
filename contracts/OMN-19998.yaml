@@ -207,6 +207,14 @@ requirements:
         statement: "AC24: The cascade only opens pull requests; it closes, merges, edits or marks none
           ready, so the stale release-pin PRs are left to their owners -- falsifier: uv run pytest tests/scripts/test_dependency_cascade_dev_tag_omn19998.py
           -q -n 0 -o addopts= -k never_closes_or_merges"
+  - id: req-omn19998-refusal-legal-home
+    statement: Canonical-file-shape refusals name the legal home of a new node and the move there.
+    acceptance:
+      - id: AC25
+        statement: "AC25: The noncanonical, shell, unbound-handler and outside-market node refusal texts
+          name omnimarket, src/omnimarket/nodes/node_<name>/ and the move; planted Python scripts, shell
+          scripts and node directories are refused with that guidance. -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_refusal_names_legal_home.py
+          -q -o addopts="
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -600,3 +608,15 @@ dod_evidence:
           -o addopts= -k 'never_closes_or_merges or resolves_the_newest_dev_merge_tag_not_the_release'"
         cwd: "${OMNI_HOME}/omnibase_core"
     binds_ac: ["AC24"]
+  - id: dod-omn19998-deploy-refusal-legal-home
+    description: "Hosted deploy probe runs the real canonical-file-shape checkers and reads all four refusal
+      texts from the shipped contract. Missing legal-home or move guidance fails the probe. The tests
+      use temporary git repositories and require no network or lab services."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_refusal_names_legal_home.py
+          -q -o addopts="
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC25]
