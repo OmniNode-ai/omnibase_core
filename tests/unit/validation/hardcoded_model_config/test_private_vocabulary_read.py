@@ -19,11 +19,11 @@ from omnibase_core.models.private_vocabulary import (
     ModelPrivateVocabularyRequest,
     ModelPrivateVocabularyResolution,
 )
-from omnibase_core.nodes.node_source_file_gather_effect.handler import (
-    NodeSourceFileGatherEffect,
+from omnibase_core.nodes.node_source_file_gather_effect._private_vocabulary_interface import (
+    PrivateVocabularyInterface,
 )
-from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
-    HandlerPrivateVocabulary,
+from omnibase_core.nodes.node_source_file_gather_effect._source_file_gather_interface import (
+    SourceFileGatherInterface,
 )
 from omnibase_core.validation.hardcoded_model_config import (
     runtime_hardcoded_model_config as runtime,
@@ -48,7 +48,7 @@ def test_the_gate_resolves_the_handler_and_the_effect_from_the_container(
         return real_get_service(protocol_type, service_name)
 
     monkeypatch.setattr(container, "get_service", spy_get_service)
-    handler = real_get_service(HandlerPrivateVocabulary)
+    handler = real_get_service(PrivateVocabularyInterface)
     asked: list[ModelPrivateVocabularyRequest] = []
     original = handler.handle
 
@@ -66,8 +66,8 @@ def test_the_gate_resolves_the_handler_and_the_effect_from_the_container(
         now=datetime.now(UTC),
     )
     runtime.load_policy(resolution)
-    assert HandlerPrivateVocabulary in resolved
-    assert NodeSourceFileGatherEffect in resolved
+    assert PrivateVocabularyInterface in resolved
+    assert SourceFileGatherInterface in resolved
     assert [r.vocabulary_name for r in asked] == [_DENYLIST]
 
 

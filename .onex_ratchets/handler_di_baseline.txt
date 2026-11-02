@@ -8,7 +8,6 @@
 examples/demo/handlers/support_assistant/handler_anthropic.py 3
 examples/demo/handlers/support_assistant/handler_local.py 2
 examples/demo/handlers/support_assistant/handler_openai.py 4
-src/omnibase_core/handlers/handler_private_vocabulary_resolution.py 2
 src/omnibase_core/nodes/node_backend_secret_discipline_compute/handler.py 1
 src/omnibase_core/nodes/node_backend_secret_discipline_compute/runtime_backend_secret_discipline.py 1
 src/omnibase_core/nodes/node_backward_compat_check_compute/handler_backward_compat.py 1
