@@ -8,16 +8,16 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_canonical_location_rules import (
-    HandlerCanonicalLocationRules,
-)
 from omnibase_core.models.validation.model_canonical_file_shape_tree import (
     ModelCanonicalFileShapeTree,
 )
 from omnibase_core.models.validation.model_canonical_location_request import (
     ModelCanonicalLocationRequest,
 )
-from omnibase_core.validation.checker_canonical_file_shape import file_rule_refusals
+from omnibase_core.validation.checker_canonical_file_shape import (
+    canonical_location,
+    file_rule_refusals,
+)
 from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
     BASELINE,
     RULES,
@@ -46,17 +46,14 @@ def repo(tmp_path: Path) -> Path:
     return init_repo(tmp_path)
 
 
-_LOCATION_RULES = HandlerCanonicalLocationRules()
-
-
 def typescript_workspace_roots(files: tuple[str, ...]) -> frozenset[str]:
     request = ModelCanonicalLocationRequest(tracked_files=files)
-    return _LOCATION_RULES.handle(request).workspace_roots
+    return canonical_location(request, RULES.parameters).workspace_roots
 
 
 def is_shell_script(path: str, head_bytes: bytes | None) -> bool:
     request = ModelCanonicalLocationRequest(path=path, head_bytes=head_bytes)
-    return _LOCATION_RULES.handle(request).is_shell_script
+    return canonical_location(request, RULES.parameters).is_shell_script
 
 
 def _is_canonical_location(
@@ -531,3 +528,54 @@ def test_baselined_file_growth_any_surface_unbaselined_canonical_growth_accepted
     _write(repo, canonical_path, BASE_TEXT + "d=4\n")
     _git(repo, "add", "-A")
     assert _rules(repo) == []
+
+
+_WEB = ("web/package.json",)
+_INERT = "(?!)"
+# key -> (path, tracked files, head bytes) whose verdict the key controls.
+LOCATION_MUTATIONS: dict[str, tuple[str | None, tuple[str, ...], bytes | None]] = {
+    "typescript_extensions": ("docs/a.ts", (), None),
+    "typescript_test_dirs": ("tests/a.ts", (), None),
+    "typescript_src_extensions": ("web/src/components/Nav.tsx", _WEB, None),
+    "typescript_src_dirs": ("web/src/components/Nav.tsx", _WEB, None),
+    "typescript_entrypoints": ("web/src/index.ts", _WEB, None),
+    "typescript_declaration_suffix": ("web/src/types.d.ts", _WEB, None),
+    "typescript_app_dir": ("web/src/app/page.tsx", _WEB, None),
+    "typescript_app_names": ("web/src/app/page.tsx", _WEB, None),
+    "typescript_hooks_dir": ("web/src/hooks/useX.ts", _WEB, None),
+    "typescript_hook_name_pattern": ("web/src/hooks/useX.ts", _WEB, None),
+    "typescript_root_names": ("web/next-env.d.ts", _WEB, None),
+    "typescript_root_dirs": ("web/.storybook/main.ts", _WEB, None),
+    "typescript_config_name_pattern": ("web/vite.config.ts", _WEB, None),
+    "typescript_test_name_pattern": ("web/src/other/a.test.ts", _WEB, None),
+    "typescript_workspace_manifest": (None, _WEB, None),
+    "typescript_packages_dir": (None, ("packages/ui/package.json",), None),
+    "typescript_package_scope_prefix": (None, ("packages/@s/ui/package.json",), None),
+    "shell_extensions": ("bin/a.sh", (), None),
+    "shell_shebang_pattern": ("bin/tool", (), b"#!/bin/bash\n"),
+}
+
+
+def test_every_location_key_has_a_mutation_row() -> None:
+    from tests.unit.validation.test_checker_canonical_file_shape import LOCATION_KEYS
+
+    assert set(LOCATION_MUTATIONS) == LOCATION_KEYS
+
+
+@pytest.mark.parametrize("key", sorted(LOCATION_MUTATIONS))
+def test_mutating_a_location_key_changes_its_verdict(key: str) -> None:
+    path, files, head = LOCATION_MUTATIONS[key]
+    current = getattr(RULES.parameters, key)
+    if isinstance(current, tuple):
+        inert: object = ()
+    elif key.endswith("_pattern"):
+        inert = _INERT
+    else:
+        inert = "\x00"
+    request = ModelCanonicalLocationRequest(
+        path=path, head_bytes=head, tracked_files=files
+    )
+    mutated = RULES.parameters.model_copy(update={key: inert})
+    assert canonical_location(request, RULES.parameters) != canonical_location(
+        request, mutated
+    )

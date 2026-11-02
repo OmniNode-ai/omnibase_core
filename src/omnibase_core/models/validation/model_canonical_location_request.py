@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelCanonicalLocationRequest(BaseModel):
-    """One question for ``HandlerCanonicalLocationRules.handle``.
+    """One question for ``checker_canonical_file_shape.canonical_location``.
 
     ``tracked_files`` are the tracked paths the workspace roots are derived from.
     ``path`` is the path to judge, ``head_bytes`` the leading bytes of that file
