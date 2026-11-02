@@ -1,0 +1,4 @@
+try:
+    from foo import Bar
+except ImportError:
+    Bar = Baz = None

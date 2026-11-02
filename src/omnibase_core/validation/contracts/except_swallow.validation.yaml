@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: except_swallow
+  validator_name: Except Swallow Validator
+  validator_description: Refuses a broad except block that logs and does not re-raise. The scope, the
+    names, the annotation marker and the remediation text are the rule rows of this file (OMN-22005, plan
+    task T2.4; the report-mode script it replaces was OMN-10817).
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: except_swallow
+      description: A broad except that logs and does not re-raise lets the caller proceed as if nothing
+        failed.
+      severity: error
+      enabled: true
+      parameters:
+        broad_exceptions: [Exception, BaseException]
+        logger_methods: [warning, info, debug, error, critical, exception]
+        comment_prefix: '# '
+        annotation_marker: 'reraise-ok'
+        reason: a broad except logs and does not re-raise
+        remediation: >-
+          Add a raise after the logger call, or annotate the except line with the reraise-ok comment and
+          a reason.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/except_swallow_baseline.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

@@ -1,0 +1,4 @@
+try:
+    value = int("x")
+except ValueError:
+    value = None

@@ -1,0 +1,5 @@
+try:
+    from foo import Bar
+except ImportError:
+    class Bar:
+        pass

@@ -1,0 +1,4 @@
+try:
+    import foo
+except (ValueError, ModuleNotFoundError):
+    foo = None

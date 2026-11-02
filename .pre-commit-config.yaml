@@ -1143,43 +1143,52 @@ repos:
         always_run: true
         stages: [pre-commit]
 
-      # OMN-10817: Except-log-no-reraise (silent swallow) detector
-      # Rejects broad except+log blocks that don't re-raise.
+      # OMN-10817, enforced by OMN-22005 (plan task T2.4): Rejects broad except+log blocks that don't re-raise.
       # Annotation: add  # reraise-ok: <reason>  on the except line.
-      # REPORT MODE: exits 0, reports violations. Switch to enforce by removing --report.
+      # The findings that sat in the tree before the refusal are the shrink-only
+      # .onex_ratchets/except_swallow_baseline.yaml (burn-down ticket and zero-target date in its
+      # header); handing the baseline file to the hook checks it did not grow against HEAD.
       - id: no-except-swallow
         name: No except-log-no-reraise (OMN-10817)
-        entry: uv run python scripts/validation/validate_no_except_swallow.py --report
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_except_swallow:ValidatorExceptSwallow
         language: system
+        args: [--baseline, .onex_ratchets/except_swallow_baseline.yaml]
+        files: ^(.*\.py|\.onex_ratchets/except_swallow_baseline\.yaml)$
         pass_filenames: true
         require_serial: true
-        types: [python]
         stages: [pre-commit]
 
-      # OMN-10818: Event-bus none-guard-before-publish detector
-      # Rejects if-bus-is-not-None guards wrapping publish/emit/send calls.
+      # OMN-10818, enforced by OMN-22005 (plan task T2.4): Rejects if-bus-is-not-None guards wrapping publish/emit/send calls.
       # Annotation: add  # none-guard-ok: <reason>  on the if line.
-      # REPORT MODE: exits 0, reports violations. Switch to enforce by removing --report.
+      # The findings that sat in the tree before the refusal are the shrink-only
+      # .onex_ratchets/none_guard_publish_baseline.yaml (burn-down ticket and zero-target date in its
+      # header); handing the baseline file to the hook checks it did not grow against HEAD.
       - id: no-none-guard-publish
         name: No event-bus none-guard-before-publish (OMN-10818)
-        entry: uv run python scripts/validation/validate_no_none_guard_publish.py --report
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_none_guard_publish:ValidatorNoneGuardPublish
         language: system
+        args: [--baseline, .onex_ratchets/none_guard_publish_baseline.yaml]
+        files: ^(.*\.py|\.onex_ratchets/none_guard_publish_baseline\.yaml)$
         pass_filenames: true
         require_serial: true
-        types: [python]
         stages: [pre-commit]
 
-      # OMN-10819: ImportError-assigned-to-None fallback detector
-      # Rejects `except ImportError: Symbol = None` patterns.
+      # OMN-10819, enforced by OMN-22005 (plan task T2.4): Rejects `except ImportError: Symbol = None` patterns.
       # Annotation: add  # import-fallback-ok: <reason>  on the assignment line.
-      # REPORT MODE: exits 0, reports violations. Switch to enforce by removing --report.
+      # The findings that sat in the tree before the refusal are the shrink-only
+      # .onex_ratchets/import_none_fallback_baseline.yaml (burn-down ticket and zero-target date in its
+      # header); handing the baseline file to the hook checks it did not grow against HEAD.
       - id: no-import-none-fallback
         name: No ImportError-assigned-to-None fallback (OMN-10819)
-        entry: uv run python scripts/validation/validate_no_import_none_fallback.py --report
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_import_none_fallback:ValidatorImportNoneFallback
         language: system
+        args: [--baseline, .onex_ratchets/import_none_fallback_baseline.yaml]
+        files: ^(.*\.py|\.onex_ratchets/import_none_fallback_baseline\.yaml)$
         pass_filenames: true
         require_serial: true
-        types: [python]
         stages: [pre-commit]
 
       # SPDX Header Requirement

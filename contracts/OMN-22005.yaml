@@ -1,0 +1,137 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22005
+title: "Core's three report-mode detectors (except-swallow, none-guard-publish, import-none-fallback)
+  become generic-format checkers that refuse, with shrink-only baselines"
+summary: "The no-except-swallow, no-none-guard-publish and no-import-none-fallback hooks run generic-format
+  checkers that refuse, held to per-file shrink-only baselines that name the burn-down ticket and a zero-target
+  date; the three report-mode scripts and their tests are removed."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22005-detectors-refuse
+    statement: "The three advisory detectors refuse a new finding in any file and a grown finding count
+      in a baselined file, with every pattern, marker and remediation text in the checker's validation
+      contract."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the three hook ids run the new checkers, enforcing and no longer in report mode,
+          and scripts/validation/validate_no_except_swallow.py, validate_no_none_guard_publish.py and
+          validate_no_import_none_fallback.py are gone -- falsifier: git ls-files scripts/validation |
+          grep -c -E \"no_except_swallow|no_none_guard_publish|no_import_none_fallback\" prints a number
+          above 0, or uv run pre-commit run no-except-swallow --files tests/fixtures/validation/except_swallow/planted.py
+          exits 0"
+      - id: AC2
+        statement: "AC2: each checker refuses its planted violation in a fixture and admits the annotated
+          form (none-guard-ok, import-fallback-ok, and the except-swallow annotation the script honours
+          today), with a red-first test per rule row and a verdict-parity test against the removed script's
+          finding set on the current source tree -- falsifier: uv run pytest tests/unit/validation -k
+          \"except_swallow or none_guard_publish or import_none_fallback\" -q fails, or removing one expected
+          finding from a fixture leaves its test passing"
+      - id: AC3
+        statement: "AC3: every pattern, marker and remediation text is a parameter of the checker's .validation.yaml
+          and no host, port, topic or model name sits in the changed source -- falsifier: the checker_rule_data
+          validator (K10) and hardcoded_model_config report a finding on the changed source, or a table-driven
+          test that mutates each parameter key leaves the verdict unchanged"
+      - id: AC4
+        statement: "AC4: the current tree passes with a generated per-file shrink-only baseline whose
+          header names a burn-down ticket and a zero-target date, a new finding in a baselined file is
+          refused, and a new finding in a clean file is refused -- falsifier: uv run pre-commit run no-except-swallow
+          --all-files exits non-zero on a canary commit adding one swallow to a baselined file"
+      - id: AC5
+        statement: "AC5: each run puts one run event on the in-memory bus listener and one triggered event
+          per refusing validator -- falsifier: uv run pytest tests/unit/validation -k \"bus and (except_swallow
+          or none_guard_publish or import_none_fallback)\" -q fails"
+evidence_requirements:
+  - kind: tests
+    description: The checker, baseline and bus tests of the three detectors pass.
+    command: "uv run pytest tests/unit/validation/test_checker_except_swallow.py tests/unit/validation/test_checker_none_guard_publish.py
+      tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22005-ac1
+    description: "The three scripts are not tracked and no hook entry names a validate_no_ script or --report."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: command
+        check_value: "test \"$(git ls-files scripts/validation | grep -c -E 'no_except_swallow|no_none_guard_publish|no_import_none_fallback')\"
+          = 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "! grep -E 'validate_no_(except_swallow|none_guard_publish|import_none_fallback)'
+          .pre-commit-config.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_except_swallow.py tests/unit/validation/test_checker_none_guard_publish.py
+          tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0 -k
+          'refuses_the_planted_violation'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22005-ac2
+    description: "Planted violations are refused, annotated and clean forms are admitted, and the finding
+      set equals the removed scripts' on src/."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_except_swallow.py tests/unit/validation/test_checker_none_guard_publish.py
+          tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0 -k
+          'refuses_the_planted_violation or admits_the_annotated or fixture_set_is_complete or message_carries'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22005-ac3
+    description: "Each parameter key changes the verdict or message when mutated, and the K10 checker_rule_data
+      hook passes on the changed source."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_except_swallow.py tests/unit/validation/test_checker_none_guard_publish.py
+          tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0 -k
+          'mutating or missing_parameter or every_parameter'"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "uv run pre-commit run check-checker-rule-data --files src/omnibase_core/validation/checker_except_swallow.py
+          src/omnibase_core/validation/checker_none_guard_publish.py src/omnibase_core/validation/checker_import_none_fallback.py
+          src/omnibase_core/validation/checker_detector_common.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22005-ac4
+    description: "The baselines equal the tree's findings, name OMN-22005 and 2026-11-16 in the header,
+      and growth in a baselined or clean file is refused."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_except_swallow.py tests/unit/validation/test_checker_none_guard_publish.py
+          tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0 -k
+          'baseline or new_finding or finding_added or fixed_finding'"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "grep -l 'Burn-down ticket: OMN-22005. Zero target: 2026-11-16.' .onex_ratchets/except_swallow_baseline.yaml
+          .onex_ratchets/none_guard_publish_baseline.yaml .onex_ratchets/import_none_fallback_baseline.yaml
+          | test \"$(wc -l)\" -eq 3"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22005-ac5
+    description: "A run puts one run event on the in-memory bus; a refusing run adds one triggered event
+      and a clean run none."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_except_swallow.py tests/unit/validation/test_checker_none_guard_publish.py
+          tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0 -k
+          'bus'"
+        cwd: ${OMNI_HOME}/omnibase_core

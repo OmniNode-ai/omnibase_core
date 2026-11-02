@@ -145,9 +145,6 @@ scripts/validation/validate-typeddict-patterns.py
 scripts/validation/validate-typing-syntax.py
 scripts/validation/validate-union-usage.py
 scripts/validation/validate_naming.py
-scripts/validation/validate_no_except_swallow.py
-scripts/validation/validate_no_import_none_fallback.py
-scripts/validation/validate_no_none_guard_publish.py
 scripts/validation/validate_optimization.py
 scripts/validation/validate_precommit_fail_loud.py
 scripts/validation/validate_precommit_pin_parity.py

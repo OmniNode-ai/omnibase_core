@@ -1,0 +1,4 @@
+class Handler:
+    def run(self):
+        if self._event_bus is not None:
+            self._event_bus.publish("topic")

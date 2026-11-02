@@ -1,0 +1,5 @@
+def run(work, logger):
+    try:
+        work()
+    except Exception:  # reraise-ok: the caller polls the status
+        logger.warning("swallowed")

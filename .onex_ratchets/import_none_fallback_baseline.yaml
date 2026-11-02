@@ -1,0 +1,11 @@
+# import_none_fallback baseline. Shrink-only, target zero.
+# Each line is a file that held an ImportError handler that assigns a symbol to None before the import_none_fallback refusal existed, and the number it holds.
+# They are burn-down entries: fix the finding and lower the entry (delete it at zero) in the same
+# change. A file may not hold more than its entry, an entry must equal what the file holds, and an
+# entry the base revision lacks or holds higher fails.
+# Burn-down ticket: OMN-22005. Zero target: 2026-11-16.
+# Do not add a line; do not raise a count.
+---
+scripts/validation/validate-string-versions.py: 2
+src/omnibase_core/models/container/model_onex_container.py: 2
+src/omnibase_core/validation/scripts/validate_string_versions.py: 2

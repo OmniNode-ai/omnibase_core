@@ -1,0 +1,5 @@
+def run(work):
+    try:
+        work()
+    except Exception:
+        return None

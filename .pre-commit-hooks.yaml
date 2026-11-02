@@ -1450,6 +1450,48 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-except-swallow
+  name: No broad except that logs and does not re-raise (OMN-10817)
+  description: >
+    A broad except (Exception, BaseException or bare) whose body logs and does not re-raise lets the caller
+    proceed as if nothing failed. The names, the annotation marker and the remediation text are the rule
+    rows of except_swallow.validation.yaml. --baseline FILE admits the findings a repository held when
+    it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_except_swallow:ValidatorExceptSwallow
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: no-none-guard-publish
+  name: No event-bus none-guard around a publish call (OMN-10818)
+  description: >
+    An 'if <bus> is not None' (or truthy) guard around a publish, emit, send or dispatch call skips the
+    publication when the bus is absent. The names, the annotation marker and the remediation text are
+    the rule rows of none_guard_publish.validation.yaml. --baseline FILE admits the findings a repository
+    held when it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_none_guard_publish:ValidatorNoneGuardPublish
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: no-import-none-fallback
+  name: No ImportError handler that assigns a symbol to None (OMN-10819)
+  description: >
+    An ImportError or ModuleNotFoundError handler that assigns a name to None moves the failure from import
+    time to the call site. The names, the annotation marker and the remediation text are the rule rows
+    of import_none_fallback.validation.yaml. --baseline FILE admits the findings a repository held when
+    it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_import_none_fallback:ValidatorImportNoneFallback
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-checker-rule-data
   name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
   description: >
