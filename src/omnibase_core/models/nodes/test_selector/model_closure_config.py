@@ -25,7 +25,7 @@ __all__ = ["ModelClosureConfig"]
 
 def _invalid(message: str) -> PydanticCustomError:
     # Pydantic reports this as a ValidationError, like a ValueError would be.
-    return PydanticCustomError("closure_config", message)
+    return PydanticCustomError("closure_config", "{message}", {"message": message})
 
 
 def _normalize_dir(raw: str, *, what: str) -> str:
