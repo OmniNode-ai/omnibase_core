@@ -23,6 +23,10 @@ requirements:
         statement: "AC2: every touched node is resolved from the container and no call site constructs
           it by hand in the touched code -- falsifier: uv run pytest tests/unit/nodes/test_check_runtimes_resolve_nodes_from_container_c3.py
           and the touched nodes' unit tests, plus the checker re-run on the slice paths"
+      - id: AC3
+        statement: "AC3: the slice lands as one PR titled with this ticket id and carries lab proof of
+          the tests and the checker re-run -- falsifier: uv run pytest tests/unit -q on the lab through
+          lab-run at the PR head, receipt path in the PR body"
 evidence_requirements:
   - kind: tests
     description: The container-resolution tests and the touched nodes' unit tests pass.
@@ -57,3 +61,62 @@ dod_evidence:
         check_value: uv run pytest tests/unit/nodes/test_check_runtimes_resolve_nodes_from_container_c3.py
           -q -o addopts='' -k 'container_hands_out'
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: boundary-import-ac1-di-check
+    description: The target passes the DI gate and its former baseline entry is absent.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run python -c "from pathlib import Path; p = 'src/omnibase_core/nodes/node_boundary_import_check_effect/handler.py';
+          assert Path(p).is_file(); assert not any(line.split() and line.split()[0] == p for line in Path('.onex_ratchets/handler_di_baseline.txt').read_text().splitlines())"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          uv run pre-commit run handler-di-gate --files src/omnibase_core/nodes/node_boundary_import_check_effect/handler.py
+          src/omnibase_core/nodes/node_boundary_import_check_compute/runtime_node_boundary_import_check.py
+          .onex_ratchets/handler_di_baseline.txt
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_contracts_and_di:ValidatorContractsAndDi src/omnibase_core/nodes/node_boundary_import_check_effect/handler.py
+          src/omnibase_core/nodes/node_boundary_import_check_compute/runtime_node_boundary_import_check.py
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: boundary-import-ac2-constructor-di
+    description: Missing collaborators refuse construction; supplied collaborators handle all reads and
+      report writes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py -q --no-cov
+          -n 0 -k 'effect_ or container_reads_contract_dependencies'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: boundary-import-ac3-lab-regression
+    description: >-
+      Repeat the lab-tested integration cases at the PR head. The publishing lane records the lab observation
+      and PR title in the PR handoff.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: boundary-import-deploy-checkout
+    description: >-
+      Exercise contract-driven bootstrap, unbound dependency refusal, source reads, historical baseline
+      comparisons and artifact persistence on the hosted checkout. This library change requires no external
+      service or host installation.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run pytest tests/unit/nodes/node_boundary_import_check_compute/test_runtime.py -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1, AC2, AC3]
