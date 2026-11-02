@@ -1,0 +1,98 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21998
+title: omnibase_core theme contract gains the board tokens (state tint fills, idle colour, display and
+  mono font families, focus ring, motion)
+summary: ModelRendererThemeContract declares color_tint_ok, color_tint_warn, color_tint_stop, color_neutral_idle,
+  color_focus_ring, font_family_display, font_family_mono, motion_duration and motion_easing. The three
+  bundled theme instances (light, dark, warm) are republished as revision 1.1.0 against schema 1.1.0 with
+  a value for each, and their content digests are recomputed from the published values at catalog build.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21998-board-tokens
+    statement: The theme contract carries the board tokens and every bundled instance supplies them.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: ModelRendererThemeContract declares tint fill tokens for the ok, warn and stop
+          states, a neutral idle colour, display and mono font family tokens, a focus ring token and motion
+          tokens (duration and easing), and a theme instance missing any of them is refused -- falsifier:
+          uv run pytest tests/unit/models/dashboard -k theme_board_tokens -q'
+      - id: AC2
+        statement: 'AC2: the bundled theme instances in the catalog carry values for every new token in
+          light and dark and their content digests are recomputed, so a changed token value changes the
+          digest -- falsifier: uv run pytest tests/unit/models/dashboard -k "theme_catalog or theme_digest"
+          -q'
+      - id: AC3
+        statement: 'AC3: the emitted JSON Schema for the theme contract lists the new tokens and the schema-freshness
+          test passes against it -- falsifier: uv run pytest tests/unit/models/dashboard/test_theme_board_tokens.py
+          tests/unit/models/dashboard/test_theme_catalog.py tests/unit/models/dashboard/test_model_renderer_theme_contract.py
+          -k "theme and schema" -q'
+      - id: AC4
+        statement: 'AC4: no new token is a hex literal in a widget or view config, and the is_color_token_name
+          check accepts the new colour tokens and refuses a non-colour token -- falsifier: uv run pytest
+          tests/unit/models/dashboard -k is_color_token_name -q'
+evidence_requirements:
+  - kind: tests
+    description: The dashboard model tests pass at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/models/dashboard tests/unit/scripts -n 0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21998-ac1-contract
+    description: The contract declares every board token and an instance missing one is refused.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k theme_board_tokens -n 0 -q
+          --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21998-ac2-catalog-digest
+    description: Light, dark and warm instances carry every new token and the digest moves with a value.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k "theme_catalog or theme_digest"
+          -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21998-ac3-schema
+    description: The schema emitted by model_json_schema() and by scripts/emit_ts_types.py lists every
+      new token. omnibase_core commits no generated schema artifact, so there is no freshness file to
+      regenerate.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard/test_theme_board_tokens.py tests/unit/models/dashboard/test_theme_catalog.py
+          tests/unit/models/dashboard/test_model_renderer_theme_contract.py -k "theme and schema" -n 0
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21998-ac4-color-token-name
+    description: is_color_token_name accepts the five new colour tokens, refuses the four non-colour ones
+      and the widget configs refuse a hex literal.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k is_color_token_name -n 0 -q
+          --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21998-deploy-checkout-test
+    description: Hosted-runner run of the changed model tests at the checkout; they need no container
+      daemon, network or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/models/dashboard
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
