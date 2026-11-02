@@ -28,6 +28,18 @@ requirements:
         statement: "AC2: import layering holds after the moves -- falsifier: `uv run lint-imports` exits
           0 and `git grep -n -E 'omnibase_core.handlers.handler_(agent_skill_codec|canonical_location_rules|evidence_admissibility|hardcoded_model_tier_engine|occ_contract_view|private_vocabulary|validator_run)'
           -- src/omnibase_core/validation src/omnibase_core/enums` prints nothing"
+  - id: req-omn21519-canonical-location-slice
+    statement: The canonical-location slice removes one more BD-2 handler while preserving the TypeScript
+      and shell rules through contract parameters consumed by the file-shape checker.
+    acceptance:
+      - id: AC3
+        statement: The canonical-location handler is absent from the source tree and from the canonical-file-shape
+          baseline. The evidence-admissibility and private-vocabulary-resolution moves remain separate
+          work.
+      - id: AC4
+        statement: The file-shape checker exports canonical_location, reads all nineteen TypeScript and
+          shell location parameters from its validation contract, and preserves workspace-root, path-boundary
+          and shell-detection behavior. Mutating each location parameter changes its verdict.
 evidence_requirements:
   - kind: tests
     description: The file-shape rule tests and the moved modules' tests pass at the pushed head.
@@ -99,4 +111,42 @@ dod_evidence:
       - check_type: test_passes
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_handler_validator_run.py
           -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21519-ac3-canonical-location-removal
+    description: The relocated handler no longer occupies a baseline line or a source file. Reading the
+      baseline makes this a content check; the merge base still lists the handler and fails it.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC3]
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --frozen python -c 'from pathlib import Path; old = "src/omnibase_core/handlers/handler_canonical_location_rules.py";
+          assert old not in Path(".onex_ratchets/canonical_file_shape_baseline.txt").read_text().splitlines();
+          assert not Path(old).exists()'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21519-ac4-canonical-location-parameters
+    description: Every location parameter has a mutation row, and changing each parameter changes the
+      verdict of canonical_location imported from the validation checker. At the merge base that export
+      does not exist, so the overlaid tests fail collection.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov -o addopts='' -k 'mutating_a_location_key or every_location_key'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21519-deploy-canonical-location
+    description: Hosted smoke loads the shipped validation contract and calls the relocated checker for
+      workspace roots, TypeScript path boundaries and shell detection. No sibling checkout, broker or
+      container daemon is needed. The merge base lacks the checker export used by these tests.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
+          -q --no-cov -o addopts='' -k 'workspace_roots_exact_forms or typescript_shape_boundaries or
+          shell_script_refused_detection'
         cwd: ${OMNI_HOME}/omnibase_core
