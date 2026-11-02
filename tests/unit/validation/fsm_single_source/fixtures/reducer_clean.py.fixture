@@ -1,0 +1,14 @@
+"""A reducer that asks core's executor and keeps no table."""
+
+import logging
+
+from omnibase_core.utils.util_fsm_executor import execute_transition
+
+LOG = logging.getLogger(__name__)
+FIXTURE_STATE = "done"
+
+
+async def fold(fsm, state, trigger, context):
+    LOG.info("folding from %s", "drafted")
+    result = await execute_transition(fsm, state, trigger, context)
+    return result.new_state if result.success else "refused"
