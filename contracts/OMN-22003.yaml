@@ -1,16 +1,21 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
-schema_version: "1.0.0"
+schema_version: 1.0.0
 ticket_id: OMN-22003
 title: A validator requirement that emits no run event is refused - the handshake spec declares emits
   and the consumer reports a non-writing entry
-summary: validator-requirements.yaml (schema 1.5.0) declares emits (required, or exempt with a reason)
+summary: 'validator-requirements.yaml (schema 1.5.0) declares emits (required, or exempt with a reason)
   on all 26 entries and carries the emits_check match rules; an entry without emits is rejected on load.
   The requirements consumer gains the NON_EMITTING_ENTRY gap kind, reported per pre-commit hook for an
   emits-required validator whose wired entry is not a core-format runtime naming the report writer, and
   writes its verdict through NodeValidationReportWriteEffect with --report-json and --overlay. The consumer
-  judges only when asked (--emits). AC3 is not met - see its statement.
+  judges only when asked (--emits). Ticket AC3 (own tree passes with the emits check enforced; a canary
+  bare-script hook is refused) is NOT delivered by this PR and so carries no requirement and no evidence
+  here: six hooks (three bare scripts, three module runtimes in import-restricted packages) of the tree
+  still do not write through the report writer, enforcing the check on the tree would fail it, and the
+  rule forbids a baseline or exception list for them. It moves to the follow-up ticket named in the PR
+  report.'
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -33,18 +38,6 @@ requirements:
           -q -k emits fails on a fixture repository config holding one bare-script hook beside one core-format
           hook. This PR judges pre-commit entries; CI entries are matched by keyword only and are not
           judged.'
-  - id: req-omn22003-own-tree
-    statement: omnibase_core's own tree passes the consumer with the emits check enforced, with no baseline
-      growth and no list of any kind.
-    acceptance:
-      - id: AC3
-        statement: 'AC3 (NOT MET in this PR): the hook validate-validator-requirements runs the emits
-          check on omnibase_core''s own tree and refuses a canary commit that adds one bare-script hook
-          for an emits-required validator. Not met because six pre-commit hooks of the tree are still
-          not core-format runtimes writing through the report writer (five bare scripts and one module
-          runtime); enforcing the check on the tree would fail it, and the rule forbids a baseline or
-          exception file for them, so the hook does not pass --emits yet. The follow-up ticket named in
-          the PR report converts them and then turns the flag on.'
   - id: req-omn22003-no-literals
     statement: The check judges entries and names no literal host, port, topic or model name.
     acceptance:
@@ -74,7 +67,8 @@ dod_evidence:
     description: The model requires emits, exempt needs a reason, every spec entry declares it, and a
       spec with one entry stripped of the field fails to load.
     source: manual
-    binds_ac: [AC1]
+    binds_ac:
+      - AC1
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/validation -k "validator_requirements and emits"
@@ -84,7 +78,8 @@ dod_evidence:
     description: One bare-script hook beside one core-format hook yields exactly one NON_EMITTING_ENTRY
       gap, for the bare script, and none for the core-format hook.
     source: manual
-    binds_ac: [AC2]
+    binds_ac:
+      - AC2
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/nodes/node_requirements_consumer_check_compute
@@ -93,7 +88,8 @@ dod_evidence:
   - id: dod-omn22003-ac4-no-literals
     description: The hardcoded-topic validator reports no finding on the changed source.
     source: manual
-    binds_ac: [AC4]
+    binds_ac:
+      - AC4
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/validation/test_validator_requirements_emits_omn22003.py
@@ -103,7 +99,8 @@ dod_evidence:
     description: The gap is a finding in the report written through the report writer; the run event and
       one triggered event are observed on the in-memory bus listener.
     source: manual
-    binds_ac: [AC5]
+    binds_ac:
+      - AC5
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/nodes/node_requirements_consumer_check_compute
