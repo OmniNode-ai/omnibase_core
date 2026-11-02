@@ -20,6 +20,7 @@ import builtins
 import inspect
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 import yaml
@@ -34,19 +35,44 @@ from omnibase_core.handlers.handler_private_vocabulary_resolution import (
     resolve_private_vocabulary,
 )
 from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.contracts.subcontracts.model_protocol_dependency import (
+    ModelProtocolDependency,
+)
 from omnibase_core.models.private_vocabulary import (
     ModelPrivateVocabularyContract,
     ModelPrivateVocabularyFileFact,
     ModelPrivateVocabularyRequest,
     ModelPrivateVocabularyResolution,
 )
+from omnibase_core.models.validation.model_contracts_and_di_facts import (
+    ModelContractsAndDiFacts,
+)
+from omnibase_core.models.validation.model_handler_di_module_fact import (
+    ModelHandlerDiModuleFact,
+)
 from omnibase_core.nodes.node_source_file_gather_effect import (
     handler_private_vocabulary as handler_module,
+)
+from omnibase_core.nodes.node_source_file_gather_effect._private_vocabulary_interface import (
+    PrivateVocabularyInterface,
+)
+from omnibase_core.nodes.node_source_file_gather_effect._source_file_gather_interface import (
+    SourceFileGatherInterface,
+)
+from omnibase_core.nodes.node_source_file_gather_effect.handler import (
+    NodeSourceFileGatherEffect,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
     HandlerPrivateVocabulary,
 )
+from omnibase_core.resolution.resolver_protocol_dependency import (
+    resolve_protocol_dependencies,
+)
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.validation.checker_contracts_and_di import check_contracts_and_di
+from omnibase_core.validation.checker_handler_di import check_module
+from omnibase_core.validation.validator_contracts_and_di import ValidatorContractsAndDi
+from omnibase_core.validation.validator_handler_di import ValidatorHandlerDi
 
 pytestmark = pytest.mark.unit
 
@@ -66,6 +92,107 @@ def load_contract() -> ModelPrivateVocabularyContract:
 @pytest.fixture(scope="module")
 def container() -> ModelONEXContainer:
     return build_container()
+
+
+def test_injected_collaborators_are_used_without_constructing_replacements(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An injected reader and planner survive bootstrap and the complete read path."""
+    reader = Mock(spec=NodeSourceFileGatherEffect, wraps=NodeSourceFileGatherEffect())
+    planner = Mock(spec=HandlerPrivateVocabulary)
+    target = _write(tmp_path / "injected.yaml")
+    planner.plan.return_value = Mock(path=target)
+    expected = Mock(spec=ModelPrivateVocabularyResolution)
+    planner.handle.return_value = expected
+
+    def refuse_construction(*args: object, **kwargs: object) -> None:
+        pytest.fail("bootstrap constructed a replacement for an injected collaborator")
+
+    monkeypatch.setattr(NodeSourceFileGatherEffect, "__init__", refuse_construction)
+    monkeypatch.setattr(HandlerPrivateVocabulary, "__init__", refuse_construction)
+    injected = build_container(reader=reader, handler=planner)
+    try:
+        actual = _resolve(injected, explicit=target)
+        assert actual is expected
+        assert reader.handle.call_count == 2  # contract, then selected vocabulary
+        request = planner.handle.call_args.args[0]
+        assert request.file_fact.path == target
+        assert request.file_fact.text == "schema_version: 1\n"
+    finally:
+        injected.close()
+
+
+def test_node_contract_ports_resolve_from_the_container(
+    container: ModelONEXContainer,
+) -> None:
+    document = yaml.safe_load(
+        Path(handler_module.__file__).with_name("contract.yaml").read_text("utf-8")
+    )
+    dependencies = [
+        ModelProtocolDependency.model_validate(row)
+        for row in document["protocol_dependencies"]
+    ]
+    resolved = resolve_protocol_dependencies(dependencies, container)
+    assert resolved["source_file_gather"] is container.get_service(
+        SourceFileGatherInterface
+    )
+    assert resolved["private_vocabulary"] is container.get_service(
+        PrivateVocabularyInterface
+    )
+
+
+def test_resolution_refuses_an_unconfigured_container(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def refuse_construction(*args: object, **kwargs: object) -> None:
+        pytest.fail("resolution constructed a missing collaborator")
+
+    monkeypatch.setattr(NodeSourceFileGatherEffect, "__init__", refuse_construction)
+    monkeypatch.setattr(HandlerPrivateVocabulary, "__init__", refuse_construction)
+    empty = ModelONEXContainer()
+    try:
+        with pytest.raises(ModelOnexError):
+            _resolve(empty, explicit=tmp_path / "unused.yaml")
+    finally:
+        empty.close()
+
+
+def test_resolution_sources_have_no_di_findings_with_positive_controls() -> None:
+    root = Path(__file__).resolve().parents[3]
+    paths = (
+        Path("src/omnibase_core/handlers/handler_private_vocabulary_resolution.py"),
+        Path(
+            "src/omnibase_core/nodes/node_source_file_gather_effect/"
+            "runtime_private_vocabulary.py"
+        ),
+    )
+    di_rules = {row.rule_id: row for row in ValidatorHandlerDi().contract.rules}
+    contract_rules = list(ValidatorContractsAndDi().contract.rules)
+    facts = ModelContractsAndDiFacts(
+        repository="omnibase_core",
+        tag_source_repositories=frozenset(),
+        advanced_sites=frozenset(),
+    )
+    for path in paths:
+        source = (root / path).read_text("utf-8")
+        assert (
+            check_module(ModelHandlerDiModuleFact(path.as_posix(), source), di_rules)
+            == ()
+        )
+        assert not [
+            issue
+            for issue in check_contracts_and_di(path, source, contract_rules, facts)
+            if issue.rule_name == "handler_hand_construction"
+        ]
+    planted = "from example.handler import HandlerExample\nHandlerExample()\n"
+    assert check_module(
+        ModelHandlerDiModuleFact(paths[0].as_posix(), planted), di_rules
+    )
+    assert [
+        issue
+        for issue in check_contracts_and_di(paths[0], planted, contract_rules, facts)
+        if issue.rule_name == "handler_hand_construction"
+    ]
 
 
 def _hygiene_relative_path() -> str:
@@ -296,8 +423,8 @@ def test_an_unparseable_timestamp_is_refused_naming_the_key(tmp_path: Path) -> N
 # --- the handler is pure and takes its contract by injection ----------------
 
 
-def _pure_handler() -> HandlerPrivateVocabulary:
-    return build_container().get_service(HandlerPrivateVocabulary)
+def _pure_handler() -> PrivateVocabularyInterface:
+    return build_container().get_service(PrivateVocabularyInterface)
 
 
 def _forbid(*_args: object, **_kwargs: object) -> None:

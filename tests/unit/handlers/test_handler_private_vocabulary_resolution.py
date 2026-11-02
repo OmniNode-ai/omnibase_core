@@ -17,11 +17,14 @@ from omnibase_core.handlers.handler_private_vocabulary_resolution import (
     build_container,
     read_file_fact,
 )
+from omnibase_core.nodes.node_source_file_gather_effect._private_vocabulary_interface import (
+    PrivateVocabularyInterface,
+)
+from omnibase_core.nodes.node_source_file_gather_effect._source_file_gather_interface import (
+    SourceFileGatherInterface,
+)
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
-)
-from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
-    HandlerPrivateVocabulary,
 )
 from omnibase_core.validation.validator_handler_di import ValidatorHandlerDi
 
@@ -78,9 +81,9 @@ def test_the_container_holds_the_gather_effect_and_the_contract_injected_handler
 ):
     container = build_container()
     assert isinstance(
-        container.get_service(NodeSourceFileGatherEffect), NodeSourceFileGatherEffect
+        container.get_service(SourceFileGatherInterface), NodeSourceFileGatherEffect
     )
-    handler = container.get_service(HandlerPrivateVocabulary)
+    handler = container.get_service(PrivateVocabularyInterface)
     assert {_HYGIENE_ENV, _ROOT_ENV} <= handler.declared_environment_keys()
 
 

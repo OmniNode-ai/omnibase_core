@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Composition root for private-vocabulary resolution (OMN-21494).
+"""Container-resolved private-vocabulary resolution.
 
 The only file reads are the source-file gather EFFECT node's. ``build_container`` loads the
-packaged vocabulary contract through it and registers both with the pure handler.
+packaged vocabulary contract through the node runtime's DI composition root.
 ``resolve_private_vocabulary`` plans with the handler, reads with the effect and judges with
 the handler; the caller captures the environment and the clock at the process boundary.
 """
@@ -14,10 +14,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
-from typing import Final
+from typing import Final, cast
 
-from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
-from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
@@ -26,19 +24,16 @@ from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_inpu
     ModelSourceFileGatherInput,
 )
 from omnibase_core.models.private_vocabulary import (
-    ModelPrivateVocabularyContract,
     ModelPrivateVocabularyFileFact,
     ModelPrivateVocabularyRequest,
     ModelPrivateVocabularyResolution,
 )
-from omnibase_core.nodes.node_source_file_gather_effect.handler import (
-    NodeSourceFileGatherEffect,
+from omnibase_core.nodes.node_source_file_gather_effect._private_vocabulary_interface import (
+    PrivateVocabularyInterface,
 )
-from omnibase_core.nodes.node_source_file_gather_effect.handler_private_vocabulary import (
-    HandlerPrivateVocabulary,
+from omnibase_core.nodes.node_source_file_gather_effect._source_file_gather_interface import (
+    SourceFileGatherInterface,
 )
-from omnibase_core.utils.util_run_coro_sync import run_coro_sync
-from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 
 __all__ = [
     "PACKAGED_CONTRACT",
@@ -52,6 +47,14 @@ PACKAGED_CONTRACT: Final[Path] = (
     Path(__file__).parent.parent / "contracts" / "private_vocabularies.yaml"
 )
 
+# These protocol classes are registry keys, never constructors.
+_READER_TOKEN = cast(
+    "type[SourceFileGatherInterface]", cast(object, SourceFileGatherInterface)
+)
+_HANDLER_TOKEN = cast(
+    "type[PrivateVocabularyInterface]", cast(object, PrivateVocabularyInterface)
+)
+
 
 def _failed(path: Path, reason: str) -> ModelPrivateVocabularyFileFact:
     return ModelPrivateVocabularyFileFact(
@@ -63,7 +66,7 @@ def _failed(path: Path, reason: str) -> ModelPrivateVocabularyFileFact:
 
 
 def read_file_fact(
-    reader: NodeSourceFileGatherEffect, path: Path
+    reader: SourceFileGatherInterface, path: Path
 ) -> ModelPrivateVocabularyFileFact:
     """Ask the gather effect for exactly ``path`` and report what it observed."""
     try:
@@ -90,43 +93,23 @@ def read_file_fact(
     )
 
 
-def _load_contract(
-    reader: NodeSourceFileGatherEffect, path: Path
-) -> ModelPrivateVocabularyContract:
-    fact = read_file_fact(reader, path)
-    if fact.error is not None or fact.text is None:
-        raise ModelOnexError(
-            message=fact.error
-            or f"{path}: cannot read private vocabulary contract: not a file",
-            error_code=EnumCoreErrorCode.FILE_READ_ERROR,
-        )
-    try:
-        return load_yaml_content_as_model(fact.text, ModelPrivateVocabularyContract)
-    except ModelOnexError as exc:
-        raise ModelOnexError(
-            message=" ".join(
-                f"{path}: private vocabulary contract is invalid: {exc.message}".splitlines()
-            ),
-            error_code=EnumCoreErrorCode.CONFIGURATION_PARSE_ERROR,
-        ) from exc
+def build_container(
+    contract_path: Path = PACKAGED_CONTRACT,
+    *,
+    reader: SourceFileGatherInterface | None = None,
+    handler: PrivateVocabularyInterface | None = None,
+) -> ModelONEXContainer:
+    """Delegate bootstrap to the source-file gather node's composition root."""
+    from omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary import (
+        build_container as build_runtime_container,
+    )
 
-
-def build_container(contract_path: Path = PACKAGED_CONTRACT) -> ModelONEXContainer:
-    """Register the gather effect, the contract and the handler that takes it."""
-    reader = NodeSourceFileGatherEffect()
-    contract = _load_contract(reader, contract_path)
-    container = ModelONEXContainer()
-    registry = container.service_registry
-    run_coro_sync(registry.register_instance(NodeSourceFileGatherEffect, reader))
-    run_coro_sync(registry.register_instance(ModelPrivateVocabularyContract, contract))
-    handler = HandlerPrivateVocabulary(container)
-    run_coro_sync(registry.register_instance(HandlerPrivateVocabulary, handler))
-    return container
+    return build_runtime_container(contract_path, reader=reader, handler=handler)
 
 
 def capture_environment(container: ModelONEXContainer) -> dict[str, str]:
     """Capture the process environment keys the vocabulary contract declares."""
-    handler = container.get_service(HandlerPrivateVocabulary)
+    handler = container.get_service(_HANDLER_TOKEN)
     captured = ModelEnvironmentBootstrap.capture_process_environment(
         declared_keys=handler.declared_environment_keys()
     )
@@ -142,8 +125,8 @@ def resolve_private_vocabulary(
     explicit_path: Path | None = None,
 ) -> ModelPrivateVocabularyResolution:
     """Plan with the handler, read with the effect, judge with the handler."""
-    handler = container.get_service(HandlerPrivateVocabulary)
-    reader = container.get_service(NodeSourceFileGatherEffect)
+    handler = container.get_service(_HANDLER_TOKEN)
+    reader = container.get_service(_READER_TOKEN)
     request = ModelPrivateVocabularyRequest(
         vocabulary_name=name,
         explicit_path=explicit_path,

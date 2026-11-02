@@ -23,6 +23,16 @@ description: >
 input_model: omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input.ModelSourceFileGatherInput
 output_model: omnibase_core.models.nodes.source_file_gather.model_source_file_gather_output.ModelSourceFileGatherOutput
 
+protocol_dependencies:
+  - name: SourceFileGatherInterface
+    bind_as: source_file_gather
+    protocol: omnibase_core.nodes.node_source_file_gather_effect._source_file_gather_interface:SourceFileGatherInterface
+    required: true
+  - name: PrivateVocabularyInterface
+    bind_as: private_vocabulary
+    protocol: omnibase_core.nodes.node_source_file_gather_effect._private_vocabulary_interface:PrivateVocabularyInterface
+    required: true
+
 handler_routing:
   version: {major: 1, minor: 0, patch: 0}
   routing_strategy: payload_type_match
