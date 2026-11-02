@@ -16,11 +16,15 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.models.nodes.test_selector.model_closure_config import (
+    ModelClosureConfig,
+)
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_duplicates
 
 __all__ = [
     "ModelAdjacencyEntry",
     "ModelAdjacencyMap",
+    "ModelClosureConfig",
     "ModelThresholds",
 ]
 
@@ -63,6 +67,9 @@ class ModelAdjacencyMap(BaseModel):
     # cannot be kept honest against the real graph (that IS the OMN-14921
     # finding); do not resurrect it.
     adjacency: dict[str, ModelAdjacencyEntry] = Field(default_factory=dict)
+    # OMN-14206: where this repository's import-graph closure looks for
+    # candidate tests. Omitted -> tests/unit/ only (omnibase_core's behaviour).
+    closure: ModelClosureConfig = Field(default_factory=ModelClosureConfig)
 
     @classmethod
     def from_yaml_text(

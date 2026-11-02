@@ -23,6 +23,14 @@ requirements:
         statement: 'AC2: compute_closure_selection takes candidate_roots, test_file_patterns and ignored_prefixes;
           a dependent test outside tests/unit is selected when its root is configured, and the fail-closed
           sentinel is the configured roots.'
+  - id: req-omn14206-policy-closure-config
+    statement: A repository sets its closure candidate roots, test-file patterns and ignored prefixes
+      in the closure block of its selector policy YAML, and the selector passes them to the packaged closure.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: ModelAdjacencyMap parses an optional closure block (defaults tests/unit/ only,
+          malformed roots refused at load), and detect_test_paths.compute_selection passes its values
+          to compute_closure_selection.'
 evidence_requirements:
   - kind: tests
     description: Packaging, shim and candidate-root tests for the packaged selector.
@@ -55,6 +63,17 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC2
+  - id: dod-omn14206-ac3-policy-closure
+    description: The policy closure block is parsed and validated, and its values reach the packaged closure
+      from detect_test_paths; omnibase_core's own policy keeps tests/unit/ only.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_test_selector_compute/test_closure_config.py
+          tests/unit/scripts/ci/test_detect_test_paths_closure_config_omn14206.py -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
   - id: dod-deploy
     description: 'Deploy-gate evidence: CI selector library packaging change only; no Docker image, daemon,
       broker topic or runtime process is deployed by this change.'
