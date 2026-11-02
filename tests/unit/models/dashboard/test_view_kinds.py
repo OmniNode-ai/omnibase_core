@@ -40,18 +40,20 @@ class TestViewKindEnum:
     def test_view_kind_enum_has_the_seven_new_kinds_beside_the_existing_ones(
         self,
     ) -> None:
-        values = {member.value for member in EnumWidgetType}
+        values = {member.value for member in EnumWidgetType.__members__.values()}
 
         assert set(NEW_KINDS) <= values
         assert {"metric_card", "chart"} <= values
 
     def test_view_kind_is_view_kind_marks_the_eight_view_kinds(self) -> None:
-        view_kinds = {m.value for m in EnumWidgetType if m.is_view_kind}
+        view_kinds = {
+            m.value for m in EnumWidgetType.__members__.values() if m.is_view_kind
+        }
 
         assert view_kinds == {"metric_card", *NEW_KINDS}
 
     def test_view_kind_data_bound_and_aggregation_stay_exclusive(self) -> None:
-        for member in EnumWidgetType:
+        for member in EnumWidgetType.__members__.values():
             assert not (member.is_data_bound and member.is_aggregation)
 
 
