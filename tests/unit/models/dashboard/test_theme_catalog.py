@@ -76,12 +76,19 @@ def _dark_tokens(*, accent: str = "#6366f1") -> ModelRendererThemeContract:
         color_status_info="#38bdf8",
         color_border_default="#334155",
         color_border_strong="#475569",
+        color_tint_ok="#22c55e26",
+        color_tint_warn="#f59e0b26",
+        color_tint_stop="#ef444426",
+        color_neutral_idle="#94a3b8",
+        color_focus_ring="#818cf8",
         spacing_xs="0.25rem",
         spacing_sm="0.5rem",
         spacing_md="1rem",
         spacing_lg="1.5rem",
         spacing_xl="2rem",
         font_family_base="'Inter', system-ui, sans-serif",
+        font_family_display="'Inter Tight', 'Inter', system-ui, sans-serif",
+        font_family_mono="'JetBrains Mono', ui-monospace, monospace",
         font_size_sm="0.875rem",
         font_size_md="1rem",
         font_size_lg="1.125rem",
@@ -90,6 +97,8 @@ def _dark_tokens(*, accent: str = "#6366f1") -> ModelRendererThemeContract:
         border_radius_sm="0.25rem",
         border_radius_md="0.5rem",
         border_radius_lg="1rem",
+        motion_duration="150ms",
+        motion_easing="cubic-bezier(0.2, 0, 0, 1)",
     )
 
 
