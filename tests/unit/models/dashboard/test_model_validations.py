@@ -83,82 +83,39 @@ class TestModelChartAxisConfigValidation:
 
 @pytest.mark.unit
 class TestModelChartSeriesConfigColorValidation:
-    """Tests for ModelChartSeriesConfig hex color validation."""
+    """ModelChartSeriesConfig.color names a theme token, never a colour value (OMN-16948)."""
 
     def test_none_color_valid(self) -> None:
         """Test that None color is valid."""
         config = ModelChartSeriesConfig(name="Test", data_key="value", color=None)
         assert config.color is None
 
-    def test_valid_hex_6_digits(self) -> None:
-        """Test valid 6-digit hex color."""
-        config = ModelChartSeriesConfig(name="Test", data_key="value", color="#FF0000")
-        assert config.color == "#FF0000"
+    @pytest.mark.parametrize(
+        "token",
+        ["color_accent_primary", "color_status_error", "color_border_strong"],
+    )
+    def test_theme_token_name_is_accepted(self, token: str) -> None:
+        """A colour token of ModelRendererThemeContract is a valid series colour."""
+        config = ModelChartSeriesConfig(name="Test", data_key="value", color=token)
+        assert config.color == token
 
-    def test_valid_hex_3_digits(self) -> None:
-        """Test valid 3-digit hex color."""
-        config = ModelChartSeriesConfig(name="Test", data_key="value", color="#F00")
-        assert config.color == "#F00"
-
-    def test_valid_hex_8_digits_rgba(self) -> None:
-        """Test valid 8-digit hex color (RRGGBBAA)."""
-        config = ModelChartSeriesConfig(
-            name="Test", data_key="value", color="#FF0000FF"
-        )
-        assert config.color == "#FF0000FF"
-
-    def test_valid_hex_4_digits_rgba(self) -> None:
-        """Test valid 4-digit hex color (RGBA)."""
-        config = ModelChartSeriesConfig(name="Test", data_key="value", color="#F00F")
-        assert config.color == "#F00F"
-
-    def test_lowercase_hex_valid(self) -> None:
-        """Test lowercase hex is valid."""
-        config = ModelChartSeriesConfig(name="Test", data_key="value", color="#abcdef")
-        assert config.color == "#abcdef"
-
-    def test_mixed_case_hex_valid(self) -> None:
-        """Test mixed case hex is valid."""
-        config = ModelChartSeriesConfig(name="Test", data_key="value", color="#AbCdEf")
-        assert config.color == "#AbCdEf"
-
-    def test_invalid_hex_missing_hash(self) -> None:
-        """Test that hex without # is invalid."""
+    @pytest.mark.parametrize(
+        "value",
+        [
+            "#FF0000",
+            "#F00",
+            "#FF0000FF",
+            "rgb(255, 0, 0)",
+            "red",
+            "",
+            "spacing_md",
+            "color_not_a_token",
+        ],
+    )
+    def test_colour_values_and_non_colour_tokens_are_rejected(self, value: str) -> None:
+        """A colour value, a non-colour token or an unknown name is refused."""
         with pytest.raises(ValidationError) as exc_info:
-            ModelChartSeriesConfig(name="Test", data_key="value", color="FF0000")
-        # Check for value_error on color field from our custom hex validator
-        errors = exc_info.value.errors()
-        assert any(
-            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
-        )
-
-    def test_invalid_hex_wrong_length(self) -> None:
-        """Test that hex with wrong length is invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelChartSeriesConfig(
-                name="Test", data_key="value", color="#FF000"
-            )  # 5 digits
-        # Check for value_error on color field from our custom hex validator
-        errors = exc_info.value.errors()
-        assert any(
-            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
-        )
-
-    def test_invalid_hex_non_hex_chars(self) -> None:
-        """Test that non-hex characters are invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelChartSeriesConfig(name="Test", data_key="value", color="#GGGGGG")
-        # Check for value_error on color field from our custom hex validator
-        errors = exc_info.value.errors()
-        assert any(
-            e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
-        )
-
-    def test_invalid_hex_empty(self) -> None:
-        """Test that empty color is invalid."""
-        with pytest.raises(ValidationError) as exc_info:
-            ModelChartSeriesConfig(name="Test", data_key="value", color="")
-        # Check for value_error on color field from our custom hex validator
+            ModelChartSeriesConfig(name="Test", data_key="value", color=value)
         errors = exc_info.value.errors()
         assert any(
             e["type"] == "value_error" and e["loc"] == ("color",) for e in errors
@@ -235,7 +192,10 @@ class TestModelValidationsRoundtrip:
     def test_chart_series_config_roundtrip(self) -> None:
         """Test ModelChartSeriesConfig roundtrip serialization."""
         config = ModelChartSeriesConfig(
-            name="Revenue", data_key="revenue", color="#4CAF50", series_type="bar"
+            name="Revenue",
+            data_key="revenue",
+            color="color_status_success",
+            series_type="bar",
         )
         data = config.model_dump()
         restored = ModelChartSeriesConfig.model_validate(data)

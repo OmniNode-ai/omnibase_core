@@ -7,7 +7,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from omnibase_core.utils.util_hex_color import validate_hex_color_optional
+from omnibase_core.models.dashboard.model_renderer_theme_contract import (
+    ModelRendererThemeContract,
+)
 
 __all__ = ("ModelChartSeriesConfig",)
 
@@ -28,7 +30,13 @@ class ModelChartSeriesConfig(BaseModel):
     data_key: str = Field(
         ..., min_length=1, description="Key to extract data from source"
     )
-    color: str | None = Field(default=None, description="Series color (hex)")
+    color: str | None = Field(
+        default=None,
+        description=(
+            "Name of the ModelRendererThemeContract colour token this series "
+            "resolves to (e.g. 'color_accent_primary'). A NAME, never a colour value."
+        ),
+    )
     series_type: Literal["line", "bar", "area", "scatter"] = Field(
         default="line", description="How to render this series"
     )
@@ -36,5 +44,17 @@ class ModelChartSeriesConfig(BaseModel):
     @field_validator("color")
     @classmethod
     def validate_color(cls, v: str | None) -> str | None:
-        """Validate that color is a valid hex color code when provided."""
-        return validate_hex_color_optional(v)
+        """Validate that color names a theme colour token when provided.
+
+        Raises:
+            ValueError: If ``v`` is not a colour token of the theme contract.
+        """
+        if v is None:
+            return None
+        if not ModelRendererThemeContract.is_color_token_name(v):
+            raise ValueError(
+                f"'{v}' is not a colour token of ModelRendererThemeContract; a "
+                f"colour field must name a theme token (e.g. 'color_accent_primary'), "
+                f"and a colour value is never accepted"
+            )
+        return v

@@ -24,9 +24,9 @@ Example:
             show_trend=True,
             trend_key="error_rate_previous",
             thresholds=(
-                ModelMetricThreshold(value=1.0, color="#22c55e", label="Good"),
-                ModelMetricThreshold(value=5.0, color="#eab308", label="Warning"),
-                ModelMetricThreshold(value=10.0, color="#ef4444", label="Critical"),
+                ModelMetricThreshold(value=1.0, color="color_status_success", label="Good"),
+                ModelMetricThreshold(value=5.0, color="color_status_warning", label="Warning"),
+                ModelMetricThreshold(value=10.0, color="color_status_error", label="Critical"),
             ),
         )
 """
@@ -83,7 +83,11 @@ class ModelWidgetConfigMetricCard(BaseModel):
     """
 
     model_config = ConfigDict(
-        frozen=True, extra="forbid", from_attributes=True, populate_by_name=True
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
     )
 
     config_kind: Literal["metric_card"] = Field(

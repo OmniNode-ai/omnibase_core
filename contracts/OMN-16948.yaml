@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-16948
+title: A sealed widget envelope validates against its own published schema, and widget colour fields name
+  theme tokens
+summary: Aliased widget-config fields (value_format/format, event_filter/filter, display_format/format)
+  serialize by alias, so the seal digest covers the same bytes the published JSON Schema describes. ModelChartSeriesConfig.color
+  and ModelMetricThreshold.color name a ModelRendererThemeContract colour token instead of a hex value,
+  and gate GC.5 now walks every model reachable from a widget config. The omniui fixture re-capture (AC5)
+  is a separate pull request in the omniui repository.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn16948-seal-schema
+    statement: A sealed ModelWidgetEnvelope of every config_kind validates against the schema that scripts/emit_ts_types.py
+      publishes, and its seal verifies over the same bytes.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a sealed ModelWidgetEnvelope validates against its own published JSON Schema;
+          the choice is seal and serialize by alias, and the migration consequence is that an envelope
+          sealed before this change must be re-sealed -- falsifier: test_widget_envelope_schema_roundtrip.py
+          fails on origin/dev and passes on the branch'
+      - id: AC2
+        statement: 'AC2: a round-trip test seals an envelope for every config_kind in the discriminated
+          union, validates each against model_json_schema(), and asserts both hold -- falsifier: a union
+          member with no builder fails the coverage test'
+  - id: req-omn16948-tokens
+    statement: Widget colour fields name a theme token and gate GC.5 reads every reachable field.
+    acceptance:
+      - id: AC3
+        statement: 'AC3: ModelChartSeriesConfig.color and ModelMetricThreshold.color name a theme colour
+          token and the hex validator is removed -- falsifier: a hex value is refused on both fields'
+      - id: AC4
+        statement: 'AC4: the GC.5 check walks every model reachable from a widget config -- falsifier:
+          a planted nested colour field is refused'
+evidence_requirements:
+  - kind: tests
+    description: The dashboard model tests pass at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/models/dashboard tests/unit/scripts/test_emit_ts_types.py
+      -n 0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn16948-ac1-ac2-roundtrip
+    description: Every config_kind seals, validates against the published schema and verifies its seal.
+    source: manual
+    binds_ac: [AC1, AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard/test_widget_envelope_schema_roundtrip.py
+          -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn16948-ac3-tokens
+    description: A theme colour token is accepted and a hex value is refused on both colour fields.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard/test_model_metric_threshold.py
+          tests/unit/models/dashboard/test_model_validations.py -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn16948-ac4-gc5
+    description: GC.5 walks every reachable model and refuses a planted nested colour field.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard/test_status_grid_severity.py -n
+          0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn16948-deploy-checkout-test
+    description: Hosted-runner run of the changed model tests at the checkout; they need no container
+      daemon, network or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/models/dashboard
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
