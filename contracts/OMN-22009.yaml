@@ -1,0 +1,76 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22009
+title: Canonical file-shape handshake refusal regression tests
+summary: >-
+  Partial delivery of AC1 through the existing requirements-consumer node runtime. An isolated fixture
+  projects the canonical-file-shape requirement to all repositories and checks missing-hook and missing-CI
+  refusals, each followed by a passing repair. The production applies_to_repos values remain unchanged
+  because the registry audit found missing wiring. AC2 and AC3 remain pending external repository evidence;
+  the fixture tests do not establish either criterion.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22009-handshake
+    statement: A repository missing the canonical-file-shape hook is refused by the handshake verifier.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: the handshake verifier fails a repository that lacks the canonical-file-shape hook -- falsifier:
+          uv run pytest on the handshake verifier test with a fixture repository missing the hook, expecting
+          a refusal naming the repository
+  - id: req-omn22009-frozen-ci
+    statement: Frozen repositories enforce their lifecycle policy in their own required CI check.
+    acceptance:
+      - id: AC2
+        statement: >-
+          AC2: the two frozen repositories refuse a new code file in their own required ci check -- falsifier:
+          a PR adding a new handler file to the frozen tooling repository goes red on ci, read from the
+          check-run on the PR head
+  - id: req-omn22009-canaries
+    statement: Each repository refuses the three canonical-file-shape canary defects.
+    acceptance:
+      - id: AC3
+        statement: >-
+          AC3: canary defects (new script, new code in a no-code fixture, untrailered growth in a fix-only
+          fixture) are refused in each repository -- falsifier: pre-commit run --files over the three
+          canary files in each repository exits non-zero with one finding per path
+evidence_requirements:
+  - kind: tests
+    description: Named missing-hook and missing-CI refusals with passing repaired fixtures.
+    command: >-
+      uv run pytest tests/unit/nodes/node_requirements_consumer_check_compute/test_canonical_file_shape_handshake_omn22009.py
+      -n 0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn22009-ac1-handshake
+    description: The runtime refuses the fixture by repository name for a missing hook or CI keyword and
+      admits each repaired fixture.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run pytest tests/unit/nodes/node_requirements_consumer_check_compute/test_canonical_file_shape_handshake_omn22009.py
+          -n 0 -q --no-cov
+        cwd: .
+  - id: dod-omn22009-ac2-frozen-ci-pending
+    description: Pending external evidence from each frozen repository's own required CI check; no such
+      PR or check-run was exercised by this test-only change.
+    source: manual
+    status: pending
+    binds_ac: [AC2]
+    checks: []
+  - id: dod-omn22009-ac3-canaries-pending
+    description: Pending per-repository pre-commit canary evidence; the local lifecycle fixture tests
+      do not establish enforcement in each consuming repository.
+    source: manual
+    status: pending
+    binds_ac: [AC3]
+    checks: []
