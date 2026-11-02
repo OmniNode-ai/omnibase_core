@@ -14,11 +14,11 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from scripts.ci.enum_additive_diff import classify_enum_diff_additive
-from scripts.ci.test_selection_closure import compute_closure_selection
-from scripts.ci.test_selection_loader import (
-    load_adjacency_map,
+from omnibase_core.nodes.node_test_selector_compute.closure_selector import (
+    compute_policy_closure,
 )
+from scripts.ci.enum_additive_diff import classify_enum_diff_additive
+from scripts.ci.test_selection_loader import load_adjacency_map
 from scripts.ci.test_selection_models import (
     EnumFullSuiteReason,
     ModelTestSelection,
@@ -516,8 +516,8 @@ def compute_selection(
         closure_files: list[str] = []
         if closure_inputs:
             closure_files = list(
-                compute_closure_selection(
-                    closure_inputs, repo_root=closure_root
+                compute_policy_closure(
+                    closure_inputs, closure_root, config.closure
                 ).selected_files
             )
         selected = _with_unnarrowable(
@@ -538,7 +538,7 @@ def compute_selection(
     # whole-tree sentinel inside compute_closure_selection itself; a genuinely
     # empty result here means the closure positively proved zero test files
     # reference the change (stronger evidence than "no mapping found").
-    closure = compute_closure_selection(changed_files, repo_root=closure_root)
+    closure = compute_policy_closure(changed_files, closure_root, config.closure)
     # The closure answers only for tests/unit/; the paths it structurally cannot
     # see (OMN-15661) are unioned in so a narrowed run still covers them.
     selected = _with_unnarrowable(closure.selected_files, unnarrowable)

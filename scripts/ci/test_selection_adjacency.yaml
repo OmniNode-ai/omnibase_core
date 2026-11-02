@@ -110,10 +110,26 @@ test_infrastructure_paths:
   # closure cannot select (the mirror of the oracle's unnarrowable_test_paths),
   # so it is selection-affecting surface on the same footing as selector_core.py.
   - src/omnibase_core/nodes/node_test_selector_compute/runtime_test_selector.py
+  # OMN-14206: the policy model now carries the `closure:` settings below, so a
+  # change to how it parses them changes what the closure selects.
+  - src/omnibase_core/models/nodes/test_selector/model_adjacency_map.py
+  - src/omnibase_core/models/nodes/test_selector/model_closure_config.py
   - tests/conftest.py
   - tests/fixtures/
   - tests/pytest.ini
   - pytest.ini
+
+# `closure:` (OMN-14206, optional) — where this repository's import-graph closure
+# looks for candidate tests. Omitted here, so omnibase_core keeps the defaults
+# (tests/unit/ only). A repository whose tests live elsewhere declares, e.g.:
+#
+#   closure:
+#     candidate_roots: [tests/unit/, tests/nodes/]
+#     test_file_patterns: ["test_*.py"]
+#     ignored_prefixes: [tests/integration/]
+#
+# Validated by ModelClosureConfig: roots must be relative, non-empty and not
+# nested, and an ignored prefix must not overlap a root.
 
 # NO `adjacency:` key below this line — see the retirement note at the top of
 # this file. `ModelAdjacencyMap.reject_adjacency_reintroduction` raises at
