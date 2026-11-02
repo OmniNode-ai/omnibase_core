@@ -21,7 +21,11 @@ class ModelTableColumnConfig(BaseModel):
     """
 
     model_config = ConfigDict(
-        frozen=True, extra="forbid", from_attributes=True, populate_by_name=True
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
     )
 
     key: str = Field(..., min_length=1, description="Data key for this column")

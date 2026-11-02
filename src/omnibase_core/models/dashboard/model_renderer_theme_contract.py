@@ -267,3 +267,18 @@ class ModelRendererThemeContract(BaseModel):
         description="Large border radius (e.g. '1rem')",
         min_length=1,
     )
+
+    @classmethod
+    def is_color_token_name(cls, value: str) -> bool:
+        """Return whether ``value`` names a colour token (a ``color_*`` field).
+
+        A widget config that carries a colour must carry a token NAME, resolved
+        through the active theme instance, never a colour value (OMN-16948).
+
+        Args:
+            value: The candidate token name.
+
+        Returns:
+            True if ``value`` is a ``color_*`` field of this contract.
+        """
+        return value.startswith("color_") and value in cls.model_fields

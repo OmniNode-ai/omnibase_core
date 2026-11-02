@@ -9,14 +9,16 @@ colours in its own default. These tests pin the replacement and its two gates:
 
 - **GC.4** — a ``critical`` tile renders a distinct **label and icon**, not only
   a colour.
-- **GC.5** — no hex literal survives in any ``ModelWidgetConfig*`` default.
+- **GC.5** — no hex literal survives in any default reachable from a widget
+  config, and no colour field reachable from one accepts a colour value
+  (widened from ``ModelWidgetConfig*`` defaults by OMN-16948).
 """
 
 from __future__ import annotations
 
 import json
 import re
-from typing import Any
+from typing import Any, get_args
 
 import pytest
 from pydantic import BaseModel, ValidationError
@@ -50,6 +52,7 @@ from omnibase_core.models.dashboard.model_widget_config_status_grid import (
 from omnibase_core.models.dashboard.model_widget_config_table import (
     ModelWidgetConfigTable,
 )
+from omnibase_core.models.dashboard.model_widget_definition import ModelWidgetConfig
 from omnibase_core.models.primitives.model_semver import ModelSemVer
 
 _HEX_LITERAL = re.compile(r"#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b")
@@ -61,6 +64,60 @@ _WIDGET_CONFIG_MODELS: tuple[type[BaseModel], ...] = (
     ModelWidgetConfigStatusGrid,
     ModelWidgetConfigEventFeed,
 )
+
+_COLOUR_FIELD = re.compile(r"colou?r")
+_PROBE_COLOUR_VALUE = "#ff0000"
+
+
+def _reachable_models(roots: tuple[type[BaseModel], ...]) -> list[type[BaseModel]]:
+    """Every model reachable from ``roots`` through field annotations.
+
+    Walks unions, tuples, lists, mappings and optionals, so a nested model
+    cannot hide a colour field from the gate.
+    """
+    seen: dict[type[BaseModel], None] = {}
+
+    def visit(annotation: Any) -> None:
+        if isinstance(annotation, type) and issubclass(annotation, BaseModel):
+            if annotation in seen:
+                return
+            seen[annotation] = None
+            for field in annotation.model_fields.values():
+                visit(field.annotation)
+            return
+        for argument in get_args(annotation):
+            visit(argument)
+
+    for root in roots:
+        visit(root)
+    return sorted(seen, key=lambda model: model.__name__)
+
+
+def _gc5_offenders(roots: tuple[type[BaseModel], ...]) -> list[str]:
+    """GC.5 over every field reachable from ``roots``.
+
+    Two ways to put a colour value in a config: a default that carries a hex
+    literal, and a colour-named field that accepts one from the author.
+    """
+    offenders: list[str] = []
+    for model in _reachable_models(roots):
+        for name, field in model.model_fields.items():
+            default: Any = field.get_default(call_default_factory=True)
+            if default is not None:
+                rendered = json.dumps(default, default=str)
+                if _HEX_LITERAL.search(rendered):
+                    offenders.append(f"{model.__name__}.{name} default = {rendered}")
+            if _COLOUR_FIELD.search(name):
+                try:
+                    model.__pydantic_validator__.validate_assignment(
+                        model.model_construct(), name, _PROBE_COLOUR_VALUE
+                    )
+                except ValidationError:
+                    continue
+                offenders.append(
+                    f"{model.__name__}.{name} accepts {_PROBE_COLOUR_VALUE}"
+                )
+    return offenders
 
 
 def _verdict(
@@ -175,18 +232,41 @@ class TestGateGC4:
 class TestGateGC5:
     """GC.5 — no hex literal survives in any widget-config default."""
 
-    def test_no_widget_config_default_contains_a_hex_literal(self) -> None:
-        offenders: list[str] = []
-        for model in _WIDGET_CONFIG_MODELS:
-            for name, field in model.model_fields.items():
-                default: Any = field.get_default(call_default_factory=True)
-                if default is None:
-                    continue
-                rendered = json.dumps(default, default=str)
-                if _HEX_LITERAL.search(rendered):
-                    offenders.append(f"{model.__name__}.{name} = {rendered}")
+    def test_no_field_reachable_from_a_widget_config_carries_or_accepts_a_colour(
+        self,
+    ) -> None:
+        assert _gc5_offenders(_WIDGET_CONFIG_MODELS) == []
 
-        assert offenders == []
+    def test_the_walk_reaches_the_nested_models_that_once_passed_the_gate(self) -> None:
+        reached = {model.__name__ for model in _reachable_models(_WIDGET_CONFIG_MODELS)}
+
+        assert {"ModelChartSeriesConfig", "ModelMetricThreshold"} <= reached
+        assert reached >= {m.__name__ for m in _WIDGET_CONFIG_MODELS}
+
+    def test_the_union_and_the_gate_roots_name_the_same_widget_configs(self) -> None:
+        union = get_args(get_args(ModelWidgetConfig)[0])
+
+        assert set(union) == set(_WIDGET_CONFIG_MODELS)
+
+    def test_a_planted_nested_colour_field_is_refused(self) -> None:
+        """Falsifier: the shape of the defect OMN-16948 found must trip the gate."""
+
+        class _PlantedSeries(BaseModel):
+            color: str = "plain"
+            border_colour: str = "#112233"
+
+        class _PlantedConfig(BaseModel):
+            series: tuple[_PlantedSeries, ...] = ()
+
+        offenders = _gc5_offenders((_PlantedConfig,))
+
+        assert sorted(offenders) == sorted(
+            [
+                "_PlantedSeries.color accepts #ff0000",
+                '_PlantedSeries.border_colour default = "#112233"',
+                "_PlantedSeries.border_colour accepts #ff0000",
+            ]
+        )
 
     def test_status_colors_is_gone_rather_than_deprecated(self) -> None:
         assert "status_colors" not in ModelWidgetConfigStatusGrid.model_fields

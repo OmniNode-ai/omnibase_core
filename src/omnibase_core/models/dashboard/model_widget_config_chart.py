@@ -19,8 +19,8 @@ Example:
         config = ModelWidgetConfigChart(
             chart_type="line",
             series=(
-                ModelChartSeriesConfig(name="CPU", data_key="cpu", color="#3b82f6"),
-                ModelChartSeriesConfig(name="Memory", data_key="memory", color="#10b981"),
+                ModelChartSeriesConfig(name="CPU", data_key="cpu", color="color_accent_primary"),
+                ModelChartSeriesConfig(name="Memory", data_key="memory", color="color_accent_secondary"),
             ),
             x_axis=ModelChartAxisConfig(label="Time"),
             y_axis=ModelChartAxisConfig(label="Usage %", min_value=0, max_value=100),

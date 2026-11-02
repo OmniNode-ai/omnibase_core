@@ -70,7 +70,11 @@ class ModelWidgetConfigEventFeed(BaseModel):
     """
 
     model_config = ConfigDict(
-        frozen=True, extra="forbid", from_attributes=True, populate_by_name=True
+        frozen=True,
+        extra="forbid",
+        from_attributes=True,
+        populate_by_name=True,
+        serialize_by_alias=True,
     )
 
     config_kind: Literal["event_feed"] = Field(
