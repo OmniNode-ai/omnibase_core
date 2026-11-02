@@ -33,3 +33,10 @@ class ModelValidatorRequirementGap(BaseModel):
         description="Classification of the compliance gap"
     )
     detail: str = Field(description="Human-readable detail describing the gap")
+    hook_id: str | None = Field(
+        default=None,
+        description=(
+            "Pre-commit hook id the gap is reported for, when the gap is about "
+            "one wired hook rather than the validator as a whole"
+        ),
+    )

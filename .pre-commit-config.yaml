@@ -961,7 +961,8 @@ repos:
       # - Mutable defaults must use default_factory
       - id: validate-pydantic-conventions
         name: Validate Pydantic conventions
-        entry: uv run python -m omnibase_core.validation.validator_pydantic_conventions
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_pydantic_conventions:ValidatorPydanticConventions
         language: system
         types: [python]
         files: ^src/omnibase_core/
@@ -1011,7 +1012,8 @@ repos:
 
       - id: check-stub-implementations
         name: ONEX Stub Implementation Detector
-        entry: uv run python scripts/validation/check_stub_implementations.py
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_stub_implementations:ValidatorStubImplementations
         language: system
         pass_filenames: true
         require_serial: true
@@ -1212,7 +1214,8 @@ repos:
       # See: scripts/validation/validate-union-usage.py module docstring for rationale.
       - id: onex-single-class-per-file
         name: ONEX Single Class Per File
-        entry: uv run python scripts/validation/validate-single-class-per-file.py
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_single_class_per_file:ValidatorSingleClassPerFile
         language: system
         pass_filenames: true
         require_serial: true
@@ -2278,7 +2281,8 @@ repos:
       # NOTE: always_run=true means files: pattern is ignored - script does its own discovery
       - id: check-enum-governance
         name: ONEX Enum Governance Validation
-        entry: uv run python -m omnibase_core.validation.checker_enum_governance src/
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.checker_enum_governance:CheckerEnumGovernance src/
         language: system
         pass_filenames: false
         always_run: true

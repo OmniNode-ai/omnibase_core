@@ -41,6 +41,7 @@ def _spec(tmp_path: Path) -> Path:
                         "silent_skip_allowed": False,
                         "excludes": {"allowed": [], "forbidden": []},
                         "applies_to_repos": "all",
+                        "emits": "required",
                         "pre_commit_hook_ids": ["my-validator"],
                     }
                 },

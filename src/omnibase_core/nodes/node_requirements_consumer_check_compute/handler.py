@@ -16,6 +16,8 @@ from omnibase_core.validation.validator_requirements_consumer import (
     ValidatorRequirementsConsumer,
 )
 
+VALIDATOR_ID = "validator-requirements"
+
 
 class NodeRequirementsConsumerCheckCompute:
     """Scan one repo against the validator-requirements spec and return its gaps."""
@@ -30,6 +32,8 @@ class NodeRequirementsConsumerCheckCompute:
             else ValidatorRequirementsConsumer.from_canonical()
         )
         gaps = consumer.scan_repo(
-            repo_name=request.repo, repo_root=Path(request.repo_root)
+            repo_name=request.repo,
+            repo_root=Path(request.repo_root),
+            check_emits=request.check_emits,
         )
         return ModelRequirementsConsumerCheckOutput(gaps=tuple(gaps))

@@ -37,6 +37,9 @@ REQUIRED_TOP_LEVEL_KEYS = {
     # OMN-13574: per-repo Model-B failing-rollup opt-in. Additive; the legacy
     # consumer ignores it so the other 11 repos' handshake is unaffected.
     "model_b_rollup_enforcement",
+    # OMN-22003: match rules of the emits check (module pattern, core package,
+    # report-writer marker) so the consumer holds no pattern of its own.
+    "emits_check",
 }
 
 REQUIRED_VALIDATOR_FIELDS = {
@@ -53,6 +56,9 @@ REQUIRED_VALIDATOR_FIELDS = {
     # the spec rather than hardcoded in the consumer.
     "pre_commit_hook_ids",
     "ci_workflow_keywords",
+    # OMN-22003: every entry declares whether it must emit through the report
+    # writer; an entry without it is rejected on load.
+    "emits",
 }
 
 VALID_SCOPE_VALUES = {"required", "optional"}

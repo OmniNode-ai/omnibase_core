@@ -222,8 +222,9 @@
   description: >
     AST-based detection of stub implementations (pass, ellipsis, NotImplementedError). Exempts Protocol
     classes, ABC abstract methods, @overload, test files, and lines annotated with "# stub-ok: <reason>".
-  language: script
-  entry: scripts/validation/check_stub_implementations.py
+  language: system
+  entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+    omnibase_core.validation.validator_stub_implementations:ValidatorStubImplementations
   pass_filenames: true
   require_serial: true
   types: [python]

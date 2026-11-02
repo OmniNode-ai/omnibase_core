@@ -1,0 +1,103 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version: {major: 1, minor: 0, patch: 0}
+  validator_id: stub_implementations
+  validator_name: Stub Implementations Validator
+  validator_description: >
+    Detects incomplete function bodies, direct unimplemented raises, pass/return pairs and unfinished-work
+    docstrings. Preserves the script's AST precedence, exemptions and line-local approvals (OMN-22003).
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns: []
+  rules:
+    - rule_id: empty_body
+      description: A function must contain an implementation after its docstring.
+      severity: error
+      enabled: true
+      parameters: &stub_parameters
+        kind: empty_body
+        path_pattern: '\.py$'
+        exempt_path_markers:
+          - test_
+          - /tests/
+          - /examples/
+          - /prototypes/
+          - /archived/
+          - /archive/
+          - conftest.py
+        exempt_files: []
+        protocol_base_names: [Protocol]
+        abstract_base_names: [ABC, ABCMeta]
+        exempt_decorator_names: [abstractmethod, overload]
+        dunder_pattern: '^__.*__$'
+        checked_dunder_names: [__init__]
+        approval_comment_leader: '#'
+        approval_markers: [stub-ok, 'noqa: stub']
+        work_item_pattern: 'T[O]DO|FIXM[E]|XX[X]'
+        exception_names: [NotImplementedError]
+        single_statement_count: 1
+        docstring_excerpt_length: 80
+        message: Function contains only docstring (no implementation)
+        missing_target_message: 'Path does not exist: {path}'
+        remediation: '{suggestion}'
+        suggestion_exact_names: [__init__]
+        suggestion_exact_messages: [Initialize instance attributes with proper values]
+        suggestion_prefixes: [get_, set_, validate_, process_]
+        suggestion_prefix_messages:
+          - Implement getter logic to retrieve and return the requested data
+          - Implement setter logic to validate and store the provided data
+          - Implement validation logic and raise appropriate errors for invalid data
+          - Implement processing logic based on the function's purpose
+        docstring_remediation: 'Implement the documented behavior: {docstring}...'
+        default_remediation: Implement actual logic based on function's documented purpose
+    - rule_id: only_pass
+      description: A function must contain more than a pass statement.
+      severity: error
+      enabled: true
+      parameters:
+        !!merge <<: *stub_parameters
+        kind: only_pass
+        message: Function contains only 'pass' statement
+    - rule_id: only_ellipsis
+      description: A function must contain more than an ellipsis.
+      severity: error
+      enabled: true
+      parameters:
+        !!merge <<: *stub_parameters
+        kind: only_ellipsis
+        message: Function contains only '...' (Ellipsis)
+    - rule_id: not_implemented_error
+      description: A concrete function must implement its behavior.
+      severity: error
+      enabled: true
+      parameters:
+        !!merge <<: *stub_parameters
+        kind: not_implemented_error
+        message: Function raises NotImplementedError (stubbed)
+    - rule_id: pass_return
+      description: A pass immediately followed by return suggests an incomplete implementation.
+      severity: error
+      enabled: true
+      parameters:
+        !!merge <<: *stub_parameters
+        kind: pass_return
+        message: Function has 'pass' followed by return (stub pattern)
+        remediation: Remove 'pass' and implement actual logic before return
+    - rule_id: todo_in_docstring
+      description: A function docstring must not mark unfinished implementation work.
+      severity: error
+      enabled: true
+      parameters:
+        !!merge <<: *stub_parameters
+        kind: todo_in_docstring
+        message: Function docstring contains an unfinished-work marker
+        remediation: Complete the implementation and remove the unfinished-work markers
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false
