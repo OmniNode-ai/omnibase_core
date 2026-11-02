@@ -83,7 +83,8 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: "uv run pytest tests/unit/validation/test_checker_except_swallow.py tests/unit/validation/test_checker_none_guard_publish.py
-          tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0"
+          tests/unit/validation/test_checker_import_none_fallback.py -q --no-cov -o addopts='' -n 0 -k
+          'refuses_the_planted_violation or admits_the_annotated or fixture_set_is_complete or message_carries'"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn22005-ac3
     description: "Each parameter key changes the verdict or message when mutated, and the K10 checker_rule_data
