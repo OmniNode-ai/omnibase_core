@@ -104,6 +104,18 @@ def test_empty_test_file_patterns_are_refused() -> None:
         ModelClosureConfig(test_file_patterns=("",))
 
 
+def test_validation_error_preserves_dynamic_path_text() -> None:
+    root = "tests/{message}/../unit/"
+    with pytest.raises(ValidationError) as exc_info:
+        ModelClosureConfig(candidate_roots=(root,))
+
+    error = exc_info.value.errors()[0]
+    assert error["type"] == "closure_config"
+    assert (
+        error["msg"] == f"candidate root must be repo-relative with no '..': {root!r}"
+    )
+
+
 def test_ignored_prefix_inside_a_candidate_root_is_refused() -> None:
     """A candidate root wins over an ignored prefix, so an overlap would
     silently do nothing; refuse it instead."""
