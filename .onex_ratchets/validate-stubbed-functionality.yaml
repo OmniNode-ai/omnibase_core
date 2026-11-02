@@ -1,0 +1,435 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the validate-stubbed-functionality hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: validate-stubbed-functionality
+entries:
+  - path: src/omnibase_core/cli/cli_bootstrap.py
+    rule: validate-stubbed-functionality
+    text: sha256:5f85fe31267079dde8d56a113416dd4930711e92c46b841a3ae53880c8d2f26a
+  - path: src/omnibase_core/cli/cli_compliance.py
+    rule: validate-stubbed-functionality
+    text: sha256:4549ab6d1edcf816653750cdb37d77db17cd7a708fca3532659a00129225e9a9
+  - path: src/omnibase_core/cli/cli_config.py
+    rule: validate-stubbed-functionality
+    text: sha256:b8439b3051354064d388db64367c6617005111b0e45115bfdf9fb5df2b801152
+  - path: src/omnibase_core/cli/cli_hooks.py
+    rule: validate-stubbed-functionality
+    text: sha256:42f81ebbe0508c2a8fae800f412bff5456bc4cbb1f5ab1e729f03853b613a30c
+  - path: src/omnibase_core/cli/cli_new.py
+    rule: validate-stubbed-functionality
+    text: sha256:00a8c4c63f14a317a6b05d03af11a0d97038561ec0c6ace9afcb3c17af9307d7
+  - path: src/omnibase_core/cli/cli_registry.py
+    rule: validate-stubbed-functionality
+    text: sha256:87fcfe0a5d72bff4ed9b48c6608ed244408038f52bb9798977d1daf633b63252
+  - path: src/omnibase_core/cli/cli_spdx.py
+    rule: validate-stubbed-functionality
+    text: sha256:a057828051439b9377758361a17d8971604343161930fe921c06ff24e216b3db
+  - path: src/omnibase_core/cli/cli_validate_shape.py
+    rule: validate-stubbed-functionality
+    text: sha256:b7dc62d837d8dd9581c2205eb51aef97cedc8932d1680bb08095eadeaeac2ff8
+  - path: src/omnibase_core/contracts/contract_loader.py
+    rule: validate-stubbed-functionality
+    text: sha256:c7be53157e64319df7c7be591baaaf086e99ef2e72e5d5e4d9b8745ce8241d25
+  - path: src/omnibase_core/enums/enum_onex_error_code.py
+    rule: validate-stubbed-functionality
+    text: sha256:e8e865f9b6d86a99fbae21381444ec87a7a79f1981dfc993d3c4aa2f9d555d46
+  - path: src/omnibase_core/enums/enum_onex_error_code.py
+    rule: validate-stubbed-functionality
+    text: sha256:e8e865f9b6d86a99fbae21381444ec87a7a79f1981dfc993d3c4aa2f9d555d46
+  - path: src/omnibase_core/enums/enum_onex_error_code.py
+    rule: validate-stubbed-functionality
+    text: sha256:e8e865f9b6d86a99fbae21381444ec87a7a79f1981dfc993d3c4aa2f9d555d46
+  - path: src/omnibase_core/mixins/mixin_discovery_responder.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/mixins/mixin_event_bus.py
+    rule: validate-stubbed-functionality
+    text: sha256:e8e865f9b6d86a99fbae21381444ec87a7a79f1981dfc993d3c4aa2f9d555d46
+  - path: src/omnibase_core/mixins/mixin_event_driven_node.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/mixins/mixin_tool_execution.py
+    rule: validate-stubbed-functionality
+    text: sha256:3bb217767476435ebaa66235cef6bb63af8e2532a4396de104949e2f4f2f85de
+  - path: src/omnibase_core/mixins/mixin_tool_execution.py
+    rule: validate-stubbed-functionality
+    text: sha256:3bb217767476435ebaa66235cef6bb63af8e2532a4396de104949e2f4f2f85de
+  - path: src/omnibase_core/mixins/mixin_tool_execution.py
+    rule: validate-stubbed-functionality
+    text: sha256:3bb217767476435ebaa66235cef6bb63af8e2532a4396de104949e2f4f2f85de
+  - path: src/omnibase_core/models/cli/model_cli_action.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_command_option.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_debug_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_execution.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_execution_config.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_execution_context.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_execution_core.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_execution_metadata.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_execution_resources.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_execution_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_node_execution_input.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_output_data.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_performance_metrics.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_cli_result.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_output_format_options.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/cli/model_result_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/common/model_error_context.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/common/model_flexible_value.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/common/model_numeric_value.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_cloud_service_properties.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_connection_auth.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_connection_endpoint.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_connection_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_connection_metrics.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_connection_pool.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_connection_security.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_custom_connection_properties.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_database_properties.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_message_queue_properties.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/connections/model_performance_properties.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/contracts/ticket/model_dod_receipt.py
+    rule: validate-stubbed-functionality
+    text: sha256:4e6ba15e18dcd993d30007ecf88e7edd9bf4165090456060fb92636ae2020805
+  - path: src/omnibase_core/models/core/model_custom_fields_accessor.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/core/model_custom_properties.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/core/model_field_accessor.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/core/model_typed_configuration.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/core/model_validation_error_factory.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/event_bus/model_transport_publish_acknowledgement.py
+    rule: validate-stubbed-functionality
+    text: sha256:0f2e92919a71f7a3abd10a92e0c26f43ea0b3c0e78d504ab91b84b0af58d04bc
+  - path: src/omnibase_core/models/fsm/model_fsm_operation.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_input_state_class.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_metadata_analytics_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_metadata_field_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_metadata_node_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_metadatanodeanalytics.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_metadatausagemetrics.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_nested_configuration.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_node_info_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_node_union.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_structured_description.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_structured_display_name.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/model_typed_metrics.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_quality_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_timestamps.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_deprecation_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_documentation.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_node.py
+    rule: validate-stubbed-functionality
+    text: sha256:277d793b78773bc5292f0bf188b9bf1fda3d74726b7dcafefd50e3da3a5fc214
+  - path: src/omnibase_core/models/node_metadata/model_function_node.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_node.py
+    rule: validate-stubbed-functionality
+    text: sha256:e44d4523a5a4a8150c72172cffbafbba04142711fb60da5dbd2c523fcef5d1cb
+  - path: src/omnibase_core/models/node_metadata/model_function_node_core.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_node_metadata_class.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_node_performance.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_node_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_function_relationships.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_capabilities_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_capabilities_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_capability.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_configuration.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_configuration_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_connection_settings.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_core_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_core_info_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_core_metadata_class.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_execution_settings.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_feature_flags.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_information.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_information_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_metadata_info.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_organization_metadata.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_resource_limits.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_status_active.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/node_metadata/model_node_type.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_computation_output_data_class.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_effect_parameters.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_event_metadata.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_event_payload.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_message_payload.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_operation_payload.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_operationparameters.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_system_metadata.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_workflow_instance_metadata.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/operations/model_workflow_payload.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/plan/model_plan_document.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/security/model_security_event_summary.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/utils/model_yaml_dump_options.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/validation/model_todo_format_finding.py
+    rule: validate-stubbed-functionality
+    text: sha256:dee327656dd13065318023330e42ee14de7a65c5046ac4127e02a467e96d3fb5
+  - path: src/omnibase_core/models/validation/model_todo_format_report.py
+    rule: validate-stubbed-functionality
+    text: sha256:cc99cc330b52881e0e4649db6adb016bc295e666675ef9da7466c5fec6b6e116
+  - path: src/omnibase_core/models/validation/model_todo_format_report.py
+    rule: validate-stubbed-functionality
+    text: sha256:cc99cc330b52881e0e4649db6adb016bc295e666675ef9da7466c5fec6b6e116
+  - path: src/omnibase_core/models/validation/model_validation_error.py
+    rule: validate-stubbed-functionality
+    text: sha256:37992c22232b4712e447e7067cfaa1fe3ed7c98e3080608ed81f7c2b1e62992c
+  - path: src/omnibase_core/models/vector/model_vector_connection_config.py
+    rule: validate-stubbed-functionality
+    text: sha256:9cc1fcd545ca9ddb225b8f1f1e9087b66aef18c830b72d01523d7826f042492b
+  - path: src/omnibase_core/nodes/node_contract_resolve_compute/handler.py
+    rule: validate-stubbed-functionality
+    text: sha256:c5a6a72111ec5a04141bca50f76482b0b86a5ef6a3424b02be1c2c55bf6bf5cc
+  - path: src/omnibase_core/nodes/node_occ_append_only_check_compute/runtime_occ_append_only_check.py
+    rule: validate-stubbed-functionality
+    text: sha256:3392b308c98f991177ceb75d4ef04ad012663a4726cfca3edd9ebe538d35704e
+  - path: src/omnibase_core/nodes/node_todo_format_check_effect/handler_todo_format.py
+    rule: validate-stubbed-functionality
+    text: sha256:8ded911ec880fedd78520675a55d9c5efe966a0ed146c9a06c473052b9780b67
+  - path: src/omnibase_core/nodes/node_todo_format_check_effect/runtime_todo_format.py
+    rule: validate-stubbed-functionality
+    text: sha256:25d2d5d5711c4e8b93674dc936046380f3d85b6ee75c4deab1182e6e248560ef
+  - path: src/omnibase_core/protocols/handler/contracts/protocol_handler_contract.py
+    rule: validate-stubbed-functionality
+    text: sha256:5efc073a7f03cd7a74efd53bb2258e1648fa01fbb44bca944fb0af8adc89b006
+  - path: src/omnibase_core/protocols/runtime/protocol_acknowledging_publish.py
+    rule: validate-stubbed-functionality
+    text: sha256:3839d1f427e33d2ade89649c3c1503f2db077bac58f68dbdff589e010e505fd1
+  - path: src/omnibase_core/protocols/runtime/protocol_transport_publish_acknowledgement.py
+    rule: validate-stubbed-functionality
+    text: sha256:8f90d00ddc224c13da4a053f50ba75897d5667d9b335e03e98f588366a465576
+  - path: src/omnibase_core/runtime/runtime_dual_sink.py
+    rule: validate-stubbed-functionality
+    text: sha256:e8ad1a26b4f37c6f17d2ba2ee77ac1dffcd657a047d20d100a6ee866462157f5
+  - path: src/omnibase_core/utils/util_bootstrap.py
+    rule: validate-stubbed-functionality
+    text: sha256:435bcc9a568e444d5e6723fb11b80eb2574e44d9612570726f70469cdc4a035f
+  - path: src/omnibase_core/utils/util_bootstrap.py
+    rule: validate-stubbed-functionality
+    text: sha256:baca78cae7b2cd6c4087b207347e8729553ec8ecb0b2d76d0c60ebf9761178b6
+  - path: src/omnibase_core/utils/util_forward_reference_resolver.py
+    rule: validate-stubbed-functionality
+    text: sha256:b6d267efe80a3dbcf2f2d67e21d8c15783a2f031427f827d43b6222fe9c4bf02
+  - path: src/omnibase_core/utils/util_substantive_report_text.py
+    rule: validate-stubbed-functionality
+    text: sha256:752a337dbe2b180488f0609f53933cf78c12e245f1dccd63f5ecba8f573705e5
+  - path: src/omnibase_core/validation/phases/validator_merge.py
+    rule: validate-stubbed-functionality
+    text: sha256:b6d267efe80a3dbcf2f2d67e21d8c15783a2f031427f827d43b6222fe9c4bf02
+  - path: src/omnibase_core/validation/phases/validator_merge.py
+    rule: validate-stubbed-functionality
+    text: sha256:b6d267efe80a3dbcf2f2d67e21d8c15783a2f031427f827d43b6222fe9c4bf02
+  - path: src/omnibase_core/validation/phases/validator_merge.py
+    rule: validate-stubbed-functionality
+    text: sha256:b6d267efe80a3dbcf2f2d67e21d8c15783a2f031427f827d43b6222fe9c4bf02
+  - path: src/omnibase_core/validation/todo_marker/handler.py
+    rule: validate-stubbed-functionality
+    text: sha256:34824310e6a3f2312c071e951685ecc9b4a688d8ccb6d017aae28202bfb4c6b5
+  - path: src/omnibase_core/validation/todo_marker/handler.py
+    rule: validate-stubbed-functionality
+    text: sha256:f6c77554586687593331b8a09536645b4875400e54fa8277c91ef14fee714554
+  - path: src/omnibase_core/validation/todo_marker/models.py
+    rule: validate-stubbed-functionality
+    text: sha256:5770c36b6731a97f1d63259db18e1fc0ac26689f5024d81b65f2f83a4d9dd8d7
+  - path: src/omnibase_core/validation/todo_marker/runtime_todo_marker.py
+    rule: validate-stubbed-functionality
+    text: sha256:041d403513e026799044eb7b6fb4f8223fb949d581fd69e48a28c69ab678833e
+  - path: src/omnibase_core/validation/validator_receipt_gate.py
+    rule: validate-stubbed-functionality
+    text: sha256:53088e0034db87429633826f88facf3a183d1ee8780bb8e849ab03fba33beadd
+  - path: src/omnibase_core/validation/validator_receipt_honesty.py
+    rule: validate-stubbed-functionality
+    text: sha256:7674e6307a0e034fba6225da3529fb739d896db5bac9c606a4f6d16af2c86750
+  - path: src/omnibase_core/validators/publisher_injection_gate.py
+    rule: validate-stubbed-functionality
+    text: sha256:35452116a471d8f0dcabd64eb2f762ed31ecc9d08a90d7cc958cca6ba8d4ab83

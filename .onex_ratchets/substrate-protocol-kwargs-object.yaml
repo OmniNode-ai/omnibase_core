@@ -1,0 +1,33 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the substrate-protocol-kwargs-object hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: substrate-protocol-kwargs-object
+entries:
+  - path: src/omnibase_core/protocols/compute/protocol_parallel_executor.py
+    rule: substrate-protocol-kwargs-object
+    text: sha256:519f40551a8eeb23aef2864758e8b0699454ba373cd234dc43616a0ecd2f9452
+  - path: src/omnibase_core/protocols/logging/protocol_minimal_logger.py
+    rule: substrate-protocol-kwargs-object
+    text: sha256:1ba3572fef4f1bb17503237bea5a96c47e80c4e34a57db1101d567cdfcd8ec4b
+  - path: src/omnibase_core/protocols/logging/protocol_minimal_logger.py
+    rule: substrate-protocol-kwargs-object
+    text: sha256:ac5652a5e3afa6ba66b2617aa7ea51f68e07404e058a972fa8751f8898fc8c9f
+  - path: src/omnibase_core/protocols/logging/protocol_minimal_logger.py
+    rule: substrate-protocol-kwargs-object
+    text: sha256:e734f48878f70f3633624c630fee7916ea6ae34f812b7d7d1250cba3bc12d037
+  - path: src/omnibase_core/resolution/resolver_handler.py
+    rule: substrate-protocol-kwargs-object
+    text: sha256:79a8557f6f4a535159ad919869bc860839ed671ee68188b967a05e7c1a43135c
+  - path: src/omnibase_core/resolution/resolver_handler.py
+    rule: substrate-protocol-kwargs-object
+    text: sha256:79a8557f6f4a535159ad919869bc860839ed671ee68188b967a05e7c1a43135c

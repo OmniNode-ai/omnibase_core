@@ -1,19 +1,11 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""The validate-union-usage hook is one whole-tree ratchet (OMN-19515).
+"""Union discovery and the per-file replacement of the whole-tree allowance.
 
-The hook used to run with ``pass_filenames: true`` and an invalid-union cap
-that the script applied to each pre-commit xargs batch. pre-commit shuffles
-the file list with a fixed seed and partitions it, so adding any file
-reshuffled every batch and could push one batch over the cap while the
-whole-tree total barely moved (omnibase_core#1761: 440 on dev, 441 on the PR,
-one batch at 188 against a cap of 160).
-
-These tests pin the replacement: one invocation over the whole matching tree,
-one ceiling equal to the measured total, and no counting of the classinfo
-argument of ``isinstance``/``issubclass``, which is a runtime class check and
-not a type annotation.
+The hook now receives staged filenames and judges each source finding against
+its baseline entry. The legacy script's directory discovery and classinfo
+exclusions remain covered while its predicates await a later migration slice.
 """
 
 from __future__ import annotations
@@ -60,11 +52,6 @@ def _hook() -> dict[str, Any]:
             if hook.get("id") == HOOK_ID:
                 return dict(hook)
     raise AssertionError(f"hook {HOOK_ID} not found in {PRECOMMIT_CONFIG}")
-
-
-def _ceiling(hook: dict[str, Any]) -> int:
-    args = list(hook["args"])
-    return int(args[args.index("--allow-invalid") + 1])
 
 
 @pytest.mark.unit
@@ -168,37 +155,21 @@ class TestExcludeRegex:
 
 
 @pytest.mark.unit
-class TestHookIsOneWholeTreeRatchet:
-    """The hook config runs one invocation against one whole-tree ceiling."""
+class TestHookUsesPerFileBaseline:
+    """The staged batch cannot borrow allowance from any other file."""
 
-    def test_hook_does_not_receive_batched_filenames(self) -> None:
+    def test_hook_receives_filenames(self) -> None:
+        assert _hook()["pass_filenames"] is True
+
+    def test_hook_has_no_global_allowance(self) -> None:
         hook = _hook()
-        assert hook.get("pass_filenames") is False
+        assert "--allow-invalid" not in str(hook)
+        assert "--baseline .onex_ratchets/validate-union-usage.yaml" in hook["entry"]
 
-    def test_hook_excludes_protocols_in_the_script(self) -> None:
-        args = list(_hook()["args"])
-        assert "--exclude-regex" in args
-        assert args[args.index("--exclude-regex") + 1] == (
-            "^src/omnibase_core/protocols/"
+    def test_runtime_preserves_protocol_exclusion(self) -> None:
+        from omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check import (
+            load_rules,
         )
 
-    def test_configured_ceiling_equals_measured_whole_tree_total(self) -> None:
-        """Ratchet: the ceiling is the tree's own count, never headroom.
-
-        Removing an invalid union fails this test until the ceiling is
-        lowered to match; adding one fails the hook itself.
-        """
-        hook = _hook()
-        args = list(hook["args"])
-        args[args.index("--allow-invalid") + 1] = "1000000"
-        result = subprocess.run(
-            [sys.executable, str(SCRIPT), *args],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        assert result.returncode == 0, result.stdout + result.stderr
-        match = re.search(r"(\d+) invalid unions", result.stdout)
-        assert match is not None, result.stdout
-        assert int(match.group(1)) == _ceiling(hook)
+        rule = next(r for r in load_rules().rules if r.hook == HOOK_ID)
+        assert "src/omnibase_core/protocols/" in rule.exclude_prefixes

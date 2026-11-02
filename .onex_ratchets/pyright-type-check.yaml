@@ -1,0 +1,72 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the pyright-type-check hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: pyright-type-check
+entries:
+  - path: src/omnibase_core/merge/contract_merge_engine.py
+    rule: reportArgumentType
+    text: sha256:3d50e2b8534bb0dffcce28821377377db3ee0a3b8c58bab98c8d5adcecb707c7
+  - path: src/omnibase_core/merge/contract_merge_engine.py
+    rule: reportArgumentType
+    text: sha256:c42e47cd6bb25da210b101b93ab351a087d4f4f7b628f663cf9d0809fc4580db
+  - path: src/omnibase_core/merge/contract_merge_engine.py
+    rule: reportArgumentType
+    text: sha256:e64a5fc71d240077fe11892ed4a6b37809da07705013ad0217a4cdb55f0498a3
+  - path: src/omnibase_core/merge/contract_merge_engine.py
+    rule: reportArgumentType
+    text: sha256:f082bf1e2c8835607b46d28ee927eef23c97257b7aabc8805d2ec669143fdbfa
+  - path: src/omnibase_core/mixins/mixin_canonical_serialization.py
+    rule: reportArgumentType
+    text: sha256:eff69ebdf34112686aaedae6b77b7a3343b65a0b2055e6976c2f6c4e1e88c4b8
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: reportArgumentType
+    text: sha256:413daa4a8cdb390feebba06c5a1fd3f429fe0fd3269e729b9d33a89f2fe659f8
+  - path: src/omnibase_core/models/contracts/ticket/model_dod_receipt.py
+    rule: reportArgumentType
+    text: sha256:9dffead2bb1dfdebcb068dc2f05fdbb8c34b232dceaa89fba4b2604252e30dba
+  - path: src/omnibase_core/models/core/model_custom_fields_accessor.py
+    rule: reportAssignmentType
+    text: sha256:3b95bf8318421821b9dadaadf6fbe6f642bbf4c6a02a963e921f5e150e86a813
+  - path: src/omnibase_core/models/events/work/model_work_claim_requested.py
+    rule: reportArgumentType
+    text: sha256:9dffead2bb1dfdebcb068dc2f05fdbb8c34b232dceaa89fba4b2604252e30dba
+  - path: src/omnibase_core/models/infrastructure/model_time_based.py
+    rule: reportArgumentType
+    text: sha256:92ef9731bb819179727bee862a1ff677aff50f7f54e2f0a4ae47507335634750
+  - path: src/omnibase_core/models/validation/model_occ_eligibility_input.py
+    rule: reportArgumentType
+    text: sha256:9dffead2bb1dfdebcb068dc2f05fdbb8c34b232dceaa89fba4b2604252e30dba
+  - path: src/omnibase_core/models/validation/model_occ_eligibility_result.py
+    rule: reportArgumentType
+    text: sha256:9dffead2bb1dfdebcb068dc2f05fdbb8c34b232dceaa89fba4b2604252e30dba
+  - path: src/omnibase_core/protocols/runtime/protocol_transport_consumer.py
+    rule: reportReturnType
+    text: sha256:5bcacbb88fad04ebb6fbfb5ed7f4dd84c00537458b660e3fb2dc6376cc9d0fb7
+  - path: src/omnibase_core/services/service_contract_validation_invariant_checker.py
+    rule: reportArgumentType
+    text: sha256:178ad71411ea1073e932180b85abe4f1734f8cfd2522124e09046dd9194bea91
+  - path: src/omnibase_core/validation/checker_agent_skill_codec.py
+    rule: reportArgumentType
+    text: sha256:76ac987aa3e2805e86bbc389b7bf0ca01ea86995cafb2e094d30423f1b098bcd
+  - path: src/omnibase_core/validation/checker_hardcoded_model_tier.py
+    rule: reportArgumentType
+    text: sha256:1eeb40ab07fa43a8befabb4276278bf10ff2a79e149bed10760ef4ebbb25aa54
+  - path: src/omnibase_core/validation/hardcoded_model_config/handler.py
+    rule: reportArgumentType
+    text: sha256:2c1379d83d575338a491081500a4e6e9f20342885a750836c4b45109db971409
+  - path: src/omnibase_core/validation/hardcoded_model_config/handler.py
+    rule: reportArgumentType
+    text: sha256:c11fe1ea1cc27278ac71e76d9659eaa4c45474d3f81bb88150275b26766e0ad9
+  - path: src/omnibase_core/validation/scripts/validate_string_versions.py
+    rule: reportArgumentType
+    text: sha256:d588b25a6a775f0406e694aacb518f2527dc15c57e2a8b3ff37a8a98567e8ac6

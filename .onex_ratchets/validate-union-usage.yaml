@@ -1,0 +1,1281 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the validate-union-usage hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: validate-union-usage
+entries:
+  - path: src/omnibase_core/backends/metrics/backend_metrics_prometheus.py
+    rule: validate-union-usage
+    text: sha256:5520ec9a7276fe62e6d10688154a981be518cd0f84f16767fc21b7c784b3498f
+  - path: src/omnibase_core/cli/cli_demo.py
+    rule: validate-union-usage
+    text: sha256:7168bbc57508a728436407fbfb3b8cdd602d1fa37cbe564e013d5e3d384b50f8
+  - path: src/omnibase_core/decorators/decorator_convert_to_schema.py
+    rule: validate-union-usage
+    text: sha256:bf24f874665ccaa3b7cc2fb6257c07c5e1df67c966e41881b4fbdc1ec6c9e336
+  - path: src/omnibase_core/decorators/decorator_convert_to_schema.py
+    rule: validate-union-usage
+    text: sha256:bf24f874665ccaa3b7cc2fb6257c07c5e1df67c966e41881b4fbdc1ec6c9e336
+  - path: src/omnibase_core/decorators/decorator_convert_to_schema.py
+    rule: validate-union-usage
+    text: sha256:bf24f874665ccaa3b7cc2fb6257c07c5e1df67c966e41881b4fbdc1ec6c9e336
+  - path: src/omnibase_core/decorators/decorator_convert_to_schema.py
+    rule: validate-union-usage
+    text: sha256:f85ae1a7f50412603888474a5ee3c9f8a4d44f87aa3abfb335097830d8e8a804
+  - path: src/omnibase_core/decorators/decorator_convert_to_schema.py
+    rule: validate-union-usage
+    text: sha256:f85ae1a7f50412603888474a5ee3c9f8a4d44f87aa3abfb335097830d8e8a804
+  - path: src/omnibase_core/decorators/decorator_convert_to_schema.py
+    rule: validate-union-usage
+    text: sha256:f85ae1a7f50412603888474a5ee3c9f8a4d44f87aa3abfb335097830d8e8a804
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: validate-union-usage
+    text: sha256:f8336e1b4dbc55f14faa1572afc198531ae19b809bca72369ae46b0e6d9f3cde
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: validate-union-usage
+    text: sha256:f8336e1b4dbc55f14faa1572afc198531ae19b809bca72369ae46b0e6d9f3cde
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: validate-union-usage
+    text: sha256:f8336e1b4dbc55f14faa1572afc198531ae19b809bca72369ae46b0e6d9f3cde
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: validate-union-usage
+    text: sha256:f8336e1b4dbc55f14faa1572afc198531ae19b809bca72369ae46b0e6d9f3cde
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: validate-union-usage
+    text: sha256:f8336e1b4dbc55f14faa1572afc198531ae19b809bca72369ae46b0e6d9f3cde
+  - path: src/omnibase_core/mixins/mixin_workflow_execution.py
+    rule: validate-union-usage
+    text: sha256:7e0c190de3d0cd4963eb2d6c12f7b02c875a30343f4c5b44fc9c8fa163ecd238
+  - path: src/omnibase_core/mixins/mixin_workflow_execution.py
+    rule: validate-union-usage
+    text: sha256:ee37640f37d9058caadc0dd18e2e586b17214bcd100880ea816c8dc459c6957e
+  - path: src/omnibase_core/models/capabilities/model_capability_requirement_set.py
+    rule: validate-union-usage
+    text: sha256:944f4c247f22b04cd778a0ce350c9f758b821497aced5fa61cc08279d51e627a
+  - path: src/omnibase_core/models/capabilities/model_capability_requirement_set.py
+    rule: validate-union-usage
+    text: sha256:944f4c247f22b04cd778a0ce350c9f758b821497aced5fa61cc08279d51e627a
+  - path: src/omnibase_core/models/capabilities/model_capability_requirement_set.py
+    rule: validate-union-usage
+    text: sha256:944f4c247f22b04cd778a0ce350c9f758b821497aced5fa61cc08279d51e627a
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:94abc542d74b3f0188d131b95ecd53894cc2cde6f6a1fde7d5bec6de4b8314e5
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:94abc542d74b3f0188d131b95ecd53894cc2cde6f6a1fde7d5bec6de4b8314e5
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:94abc542d74b3f0188d131b95ecd53894cc2cde6f6a1fde7d5bec6de4b8314e5
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:cb83de655af45ebaca2e4b1d287730d6744125086a36f848e0f93021026af447
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:cb83de655af45ebaca2e4b1d287730d6744125086a36f848e0f93021026af447
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:d04881969c05a4d6708bf95e91a9dadb4242739321221e911141acd062153767
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:d04881969c05a4d6708bf95e91a9dadb4242739321221e911141acd062153767
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:d04881969c05a4d6708bf95e91a9dadb4242739321221e911141acd062153767
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:d04881969c05a4d6708bf95e91a9dadb4242739321221e911141acd062153767
+  - path: src/omnibase_core/models/common/model_config_schema_property.py
+    rule: validate-union-usage
+    text: sha256:d04881969c05a4d6708bf95e91a9dadb4242739321221e911141acd062153767
+  - path: src/omnibase_core/models/common/model_envelope_payload.py
+    rule: validate-union-usage
+    text: sha256:210052cc065e299211a30e1a34ed169d6beb5dea597551e96926b1ce3eeb2955
+  - path: src/omnibase_core/models/common/model_envelope_payload.py
+    rule: validate-union-usage
+    text: sha256:a79b6c94ff76b845e6d1cbea829ea07468c79ffca1adc9ef1952f6d0e7973619
+  - path: src/omnibase_core/models/common/model_envelope_payload.py
+    rule: validate-union-usage
+    text: sha256:dd0aef904601acb016a4d8766ceebc4f62d9f3c7d7e496f42c3731aa85b3d5e6
+  - path: src/omnibase_core/models/common/model_envelope_payload.py
+    rule: validate-union-usage
+    text: sha256:e1b248e04e08486b92b7d0545a50c35fc74959b929a788c94b5a6b13b9022eef
+  - path: src/omnibase_core/models/common/model_numeric_string_value.py
+    rule: validate-union-usage
+    text: sha256:c978574e59417ad9eb34f96e842093e9c9cb07e8fdbf85d50b6acb77d89991bb
+  - path: src/omnibase_core/models/common/model_numeric_string_value.py
+    rule: validate-union-usage
+    text: sha256:eb51d78daf1ba744d1c6141cae9855144464c22a2e689db0836e0ad5675ce5aa
+  - path: src/omnibase_core/models/common/model_query_parameters.py
+    rule: validate-union-usage
+    text: sha256:67900dbbc123046fcd1809348dcd9878bb667270651bc3dc3a3e866dca4a742a
+  - path: src/omnibase_core/models/common/model_query_parameters.py
+    rule: validate-union-usage
+    text: sha256:67900dbbc123046fcd1809348dcd9878bb667270651bc3dc3a3e866dca4a742a
+  - path: src/omnibase_core/models/common/model_query_parameters.py
+    rule: validate-union-usage
+    text: sha256:67900dbbc123046fcd1809348dcd9878bb667270651bc3dc3a3e866dca4a742a
+  - path: src/omnibase_core/models/common/model_query_parameters.py
+    rule: validate-union-usage
+    text: sha256:67900dbbc123046fcd1809348dcd9878bb667270651bc3dc3a3e866dca4a742a
+  - path: src/omnibase_core/models/common/model_validation_metadata.py
+    rule: validate-union-usage
+    text: sha256:732ea38146bf8be2b13b3bcf8589a03f4c357ec5df37662341078d6056823a60
+  - path: src/omnibase_core/models/configuration/model_config_types.py
+    rule: validate-union-usage
+    text: sha256:e18f8368c7ade28a023d2c9451f849297b5633b5dc539a57f7e147457d57e54f
+  - path: src/omnibase_core/models/configuration/model_config_types.py
+    rule: validate-union-usage
+    text: sha256:e18f8368c7ade28a023d2c9451f849297b5633b5dc539a57f7e147457d57e54f
+  - path: src/omnibase_core/models/configuration/model_event_bus_config.py
+    rule: validate-union-usage
+    text: sha256:2323a5068a85bc73f4c3860e61ba9eb4f2a8d4f4eed1ef3eb1a230c667e7d919
+  - path: src/omnibase_core/models/configuration/model_event_bus_config.py
+    rule: validate-union-usage
+    text: sha256:2323a5068a85bc73f4c3860e61ba9eb4f2a8d4f4eed1ef3eb1a230c667e7d919
+  - path: src/omnibase_core/models/configuration/model_event_bus_config.py
+    rule: validate-union-usage
+    text: sha256:2323a5068a85bc73f4c3860e61ba9eb4f2a8d4f4eed1ef3eb1a230c667e7d919
+  - path: src/omnibase_core/models/configuration/model_event_bus_config.py
+    rule: validate-union-usage
+    text: sha256:2323a5068a85bc73f4c3860e61ba9eb4f2a8d4f4eed1ef3eb1a230c667e7d919
+  - path: src/omnibase_core/models/configuration/model_git_hub_workflow_data.py
+    rule: validate-union-usage
+    text: sha256:4153eeefead4c418db1f00a2d8b3caf382ea9ead923bdbc130cb858b4d8bc83f
+  - path: src/omnibase_core/models/configuration/model_git_hub_workflow_data.py
+    rule: validate-union-usage
+    text: sha256:b5bb5db9362e3c52f538326873c96fcf8aee29f0f923d8c6e0ab3a8120f37168
+  - path: src/omnibase_core/models/configuration/model_git_hub_workflow_data.py
+    rule: validate-union-usage
+    text: sha256:c7ded9a7b5f721a98aacabb023c5c756a562b907bd85f9e1112bcab26ffe9ab7
+  - path: src/omnibase_core/models/configuration/model_git_hub_workflow_data.py
+    rule: validate-union-usage
+    text: sha256:c7ded9a7b5f721a98aacabb023c5c756a562b907bd85f9e1112bcab26ffe9ab7
+  - path: src/omnibase_core/models/configuration/model_job.py
+    rule: validate-union-usage
+    text: sha256:4c66672de62b4b9e506ea9372b1278b79dc1cff3c980647bcf88468f46e340bd
+  - path: src/omnibase_core/models/configuration/model_job.py
+    rule: validate-union-usage
+    text: sha256:9c5cab9b6a56c91c8ae3a562afafb1c4a072b43a6e64c4ec450df251db468b1d
+  - path: src/omnibase_core/models/configuration/model_json_data.py
+    rule: validate-union-usage
+    text: sha256:27fa67a1cda6fa09f8fa66a56f2ab6363b9ad063ea09003a777a22adc885c94e
+  - path: src/omnibase_core/models/configuration/model_json_data.py
+    rule: validate-union-usage
+    text: sha256:27fa67a1cda6fa09f8fa66a56f2ab6363b9ad063ea09003a777a22adc885c94e
+  - path: src/omnibase_core/models/configuration/model_json_data.py
+    rule: validate-union-usage
+    text: sha256:27fa67a1cda6fa09f8fa66a56f2ab6363b9ad063ea09003a777a22adc885c94e
+  - path: src/omnibase_core/models/configuration/model_json_field.py
+    rule: validate-union-usage
+    text: sha256:486511515cb4be7f3de767ce4fd12176c01b98d523461c9ec30dc8044f56f516
+  - path: src/omnibase_core/models/configuration/model_json_field.py
+    rule: validate-union-usage
+    text: sha256:486511515cb4be7f3de767ce4fd12176c01b98d523461c9ec30dc8044f56f516
+  - path: src/omnibase_core/models/configuration/model_json_field.py
+    rule: validate-union-usage
+    text: sha256:486511515cb4be7f3de767ce4fd12176c01b98d523461c9ec30dc8044f56f516
+  - path: src/omnibase_core/models/configuration/model_log_filter.py
+    rule: validate-union-usage
+    text: sha256:d80ef3f38f62c8cdcd52dfa55bffe72a637efa256d37118f5d869eaf8b3a7b5a
+  - path: src/omnibase_core/models/configuration/model_log_filter.py
+    rule: validate-union-usage
+    text: sha256:d80ef3f38f62c8cdcd52dfa55bffe72a637efa256d37118f5d869eaf8b3a7b5a
+  - path: src/omnibase_core/models/configuration/model_log_filter.py
+    rule: validate-union-usage
+    text: sha256:d80ef3f38f62c8cdcd52dfa55bffe72a637efa256d37118f5d869eaf8b3a7b5a
+  - path: src/omnibase_core/models/configuration/model_rest_api_connection_config.py
+    rule: validate-union-usage
+    text: sha256:fd4addb29e3f9af71675dce2bcfbd999405aaf38c0a1d69f47d9475167d3e1b4
+  - path: src/omnibase_core/models/connections/model_custom_connection_properties.py
+    rule: validate-union-usage
+    text: sha256:2993654cfc9f7aa1e26ca4666597c6d9c639d8eb033ffed592428e6e4130024d
+  - path: src/omnibase_core/models/container/model_service_health_validation_result.py
+    rule: validate-union-usage
+    text: sha256:3b24045bfe990e32f505eec5712f2e28416de852271afb147bc5459636b0dc58
+  - path: src/omnibase_core/models/container/model_service_health_validation_result.py
+    rule: validate-union-usage
+    text: sha256:3b24045bfe990e32f505eec5712f2e28416de852271afb147bc5459636b0dc58
+  - path: src/omnibase_core/models/container/model_service_health_validation_result.py
+    rule: validate-union-usage
+    text: sha256:3b24045bfe990e32f505eec5712f2e28416de852271afb147bc5459636b0dc58
+  - path: src/omnibase_core/models/context/model_authorization_context.py
+    rule: validate-union-usage
+    text: sha256:0ac357c50717e0530e2373a639e940814df4ca29f914109270a4e712aa8b04dc
+  - path: src/omnibase_core/models/context/model_authorization_context.py
+    rule: validate-union-usage
+    text: sha256:1fc4046d489c498b8f10e04448ad715f3569044fba5eb59f49a7d4ec9e05b8cd
+  - path: src/omnibase_core/models/context/model_authorization_context.py
+    rule: validate-union-usage
+    text: sha256:2cfa720a3c1b2568f263e9541a03fed62f2950a4a2a0bd456f97956f54237ac2
+  - path: src/omnibase_core/models/context/model_checkpoint_metadata.py
+    rule: validate-union-usage
+    text: sha256:54685be96b7710c96e734099e093d1eccabc04a6e351f3215b5060cc327aa171
+  - path: src/omnibase_core/models/context/model_checkpoint_metadata.py
+    rule: validate-union-usage
+    text: sha256:61e7eec0aba40632cae4a710581786d48eeef745861325eab673d0befbc3a400
+  - path: src/omnibase_core/models/context/model_checkpoint_metadata.py
+    rule: validate-union-usage
+    text: sha256:68baa4eb6da9c50176df72783d3bd1bf625424e6f2f53ae02cba69391d4812a6
+  - path: src/omnibase_core/models/context/model_checkpoint_metadata.py
+    rule: validate-union-usage
+    text: sha256:7bcce7c9aea3366ea8b2938837725d7685750e619b8c11a39c5bb1298bfdcc48
+  - path: src/omnibase_core/models/context/model_checkpoint_metadata.py
+    rule: validate-union-usage
+    text: sha256:a619a34d905605d9d4b5d02dd910aefad8d80283e6038997381188e0601fdff3
+  - path: src/omnibase_core/models/context/model_checkpoint_metadata.py
+    rule: validate-union-usage
+    text: sha256:ae26536facb964dc55ba340b93b5c61cfa20842adc3e761b6cb6236dffe5f218
+  - path: src/omnibase_core/models/context/model_checkpoint_metadata.py
+    rule: validate-union-usage
+    text: sha256:fd7a729a4ff1e83f9345a8c26ade590b8585bc9eb96d48ce48f919f3d79eaddf
+  - path: src/omnibase_core/models/context/model_detection_metadata.py
+    rule: validate-union-usage
+    text: sha256:2e51364275761982359aaca8e147bea6a31a902146c50994bb7af904de34d5b2
+  - path: src/omnibase_core/models/context/model_detection_metadata.py
+    rule: validate-union-usage
+    text: sha256:d7cc33b07efacd724692b83c795f0f466ee086ca966a05299030fb4996967203
+  - path: src/omnibase_core/models/context/model_detection_metadata.py
+    rule: validate-union-usage
+    text: sha256:f0c37f75014c202e80b0b0b825714f69267158bdc08bef182369236c612ebf62
+  - path: src/omnibase_core/models/context/model_detection_metadata.py
+    rule: validate-union-usage
+    text: sha256:feb016a82916a1b3d61c46e48dee117dd9ed6a59187e42b41346da236c109bb9
+  - path: src/omnibase_core/models/context/model_detection_metadata.py
+    rule: validate-union-usage
+    text: sha256:feb016a82916a1b3d61c46e48dee117dd9ed6a59187e42b41346da236c109bb9
+  - path: src/omnibase_core/models/context/model_service_discovery_metadata.py
+    rule: validate-union-usage
+    text: sha256:e3813df2fb03038c84aada0ca4335ed9be2d9c898e50e1097342fbaa99c13042
+  - path: src/omnibase_core/models/context/model_service_discovery_metadata.py
+    rule: validate-union-usage
+    text: sha256:feb016a82916a1b3d61c46e48dee117dd9ed6a59187e42b41346da236c109bb9
+  - path: src/omnibase_core/models/context/model_service_discovery_metadata.py
+    rule: validate-union-usage
+    text: sha256:feb016a82916a1b3d61c46e48dee117dd9ed6a59187e42b41346da236c109bb9
+  - path: src/omnibase_core/models/context/model_session_context.py
+    rule: validate-union-usage
+    text: sha256:1abc239343f009a30666b9593087d6f000dea9723bc2a0e149a1001f6c85f330
+  - path: src/omnibase_core/models/context/model_session_context.py
+    rule: validate-union-usage
+    text: sha256:ab442b08dd91e446e29f4af163345b20cbf93babadd2d529efd481ecf2fa95f4
+  - path: src/omnibase_core/models/context/model_session_context.py
+    rule: validate-union-usage
+    text: sha256:c91eaefe0157a6a55b5c57e31a2dcba2d986d16575b1f0bf50791689515cc740
+  - path: src/omnibase_core/models/context/model_session_context.py
+    rule: validate-union-usage
+    text: sha256:fc686d61620c6f5809e5bc3be153afa8b1b93f26be1029e18ba6db05ac00b131
+  - path: src/omnibase_core/models/contracts/model_db_param.py
+    rule: validate-union-usage
+    text: sha256:21941a784b2f5172453959670bdaf5f154183e70868a6ddec6feff958934c0a4
+  - path: src/omnibase_core/models/contracts/model_db_param.py
+    rule: validate-union-usage
+    text: sha256:cc13fc3e638ed6b5bb190d799719ee8c96d61c6233fe31f01b71b4c5d80a75dc
+  - path: src/omnibase_core/models/contracts/model_handler_spec.py
+    rule: validate-union-usage
+    text: sha256:bb475b881115183ed992bb77f63cc4d440cf48a20c85a7c5465cdc5e475befe4
+  - path: src/omnibase_core/models/contracts/model_handler_spec.py
+    rule: validate-union-usage
+    text: sha256:bb475b881115183ed992bb77f63cc4d440cf48a20c85a7c5465cdc5e475befe4
+  - path: src/omnibase_core/models/contracts/model_handler_spec.py
+    rule: validate-union-usage
+    text: sha256:bb475b881115183ed992bb77f63cc4d440cf48a20c85a7c5465cdc5e475befe4
+  - path: src/omnibase_core/models/contracts/model_handler_spec.py
+    rule: validate-union-usage
+    text: sha256:bb475b881115183ed992bb77f63cc4d440cf48a20c85a7c5465cdc5e475befe4
+  - path: src/omnibase_core/models/contracts/subcontracts/model_effect_io_configs.py
+    rule: validate-union-usage
+    text: sha256:cb44ceb12d4ff3fe2d2031de126d02a9a9b37bff052d58a375b07c47f134ded6
+  - path: src/omnibase_core/models/contracts/subcontracts/model_effect_io_configs.py
+    rule: validate-union-usage
+    text: sha256:cb44ceb12d4ff3fe2d2031de126d02a9a9b37bff052d58a375b07c47f134ded6
+  - path: src/omnibase_core/models/contracts/subcontracts/model_effect_resolved_context.py
+    rule: validate-union-usage
+    text: sha256:28efd7a6859190d75b5f7e50b59f6251d2672d38c621f124a175e71b7ae003e2
+  - path: src/omnibase_core/models/contracts/subcontracts/model_effect_resolved_context.py
+    rule: validate-union-usage
+    text: sha256:28efd7a6859190d75b5f7e50b59f6251d2672d38c621f124a175e71b7ae003e2
+  - path: src/omnibase_core/models/contracts/subcontracts/model_event_mapping_rule.py
+    rule: validate-union-usage
+    text: sha256:d91d0827a87db2d4c0b6f743410e6f66fcc3e8ea7e9c6b00ca1538b7b956c42a
+  - path: src/omnibase_core/models/contracts/subcontracts/model_event_mapping_rule.py
+    rule: validate-union-usage
+    text: sha256:d91d0827a87db2d4c0b6f743410e6f66fcc3e8ea7e9c6b00ca1538b7b956c42a
+  - path: src/omnibase_core/models/contracts/subcontracts/model_event_mapping_rule.py
+    rule: validate-union-usage
+    text: sha256:d91d0827a87db2d4c0b6f743410e6f66fcc3e8ea7e9c6b00ca1538b7b956c42a
+  - path: src/omnibase_core/models/contracts/subcontracts/model_resolved_db_context.py
+    rule: validate-union-usage
+    text: sha256:ac96bf8b79fbe9a82da6b4458a15e8c84d626d91e094078098d729fabaa7178d
+  - path: src/omnibase_core/models/contracts/subcontracts/model_resolved_db_context.py
+    rule: validate-union-usage
+    text: sha256:ac96bf8b79fbe9a82da6b4458a15e8c84d626d91e094078098d729fabaa7178d
+  - path: src/omnibase_core/models/contracts/subcontracts/model_resolved_db_context.py
+    rule: validate-union-usage
+    text: sha256:ac96bf8b79fbe9a82da6b4458a15e8c84d626d91e094078098d729fabaa7178d
+  - path: src/omnibase_core/models/contracts/subcontracts/model_validator_rule.py
+    rule: validate-union-usage
+    text: sha256:e8d30d7f545d402c9ae62e5df90b57bee7e664f680100033e4949d152e7db450
+  - path: src/omnibase_core/models/contracts/subcontracts/model_validator_rule.py
+    rule: validate-union-usage
+    text: sha256:e8d30d7f545d402c9ae62e5df90b57bee7e664f680100033e4949d152e7db450
+  - path: src/omnibase_core/models/contracts/subcontracts/model_validator_rule.py
+    rule: validate-union-usage
+    text: sha256:e8d30d7f545d402c9ae62e5df90b57bee7e664f680100033e4949d152e7db450
+  - path: src/omnibase_core/models/core/model_action_config_value.py
+    rule: validate-union-usage
+    text: sha256:eca9432360fa626aee5875da527c4287e753bad0aed23f3f9a8c9c1f408213ca
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_action_payload_types.py
+    rule: validate-union-usage
+    text: sha256:a4162a6c132840a04402f6d91f43717a8061f503e9f96b2cc8b7782d3aecb7e4
+  - path: src/omnibase_core/models/core/model_argument_description.py
+    rule: validate-union-usage
+    text: sha256:3ca4a29dc534051302f9dc79c74049af71687d342fcea13872c7d43055dc937f
+  - path: src/omnibase_core/models/core/model_argument_description.py
+    rule: validate-union-usage
+    text: sha256:3ca4a29dc534051302f9dc79c74049af71687d342fcea13872c7d43055dc937f
+  - path: src/omnibase_core/models/core/model_argument_description.py
+    rule: validate-union-usage
+    text: sha256:3ca4a29dc534051302f9dc79c74049af71687d342fcea13872c7d43055dc937f
+  - path: src/omnibase_core/models/core/model_argument_description.py
+    rule: validate-union-usage
+    text: sha256:d91d0827a87db2d4c0b6f743410e6f66fcc3e8ea7e9c6b00ca1538b7b956c42a
+  - path: src/omnibase_core/models/core/model_argument_description.py
+    rule: validate-union-usage
+    text: sha256:d91d0827a87db2d4c0b6f743410e6f66fcc3e8ea7e9c6b00ca1538b7b956c42a
+  - path: src/omnibase_core/models/core/model_argument_description.py
+    rule: validate-union-usage
+    text: sha256:d91d0827a87db2d4c0b6f743410e6f66fcc3e8ea7e9c6b00ca1538b7b956c42a
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:314fc83783c9b684f456c103355a696bb115b727d50f272cf7e9b243022d5c6b
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:314fc83783c9b684f456c103355a696bb115b727d50f272cf7e9b243022d5c6b
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:da26f8aa09e3c94edcff71dfade635834d943f0d8959f198b05d32836dc5feba
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:da26f8aa09e3c94edcff71dfade635834d943f0d8959f198b05d32836dc5feba
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:e2942404ca408c8ac9603ab46b79dbb29bbbd478d948011df45d46b22d75f5ae
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:e2942404ca408c8ac9603ab46b79dbb29bbbd478d948011df45d46b22d75f5ae
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:e2942404ca408c8ac9603ab46b79dbb29bbbd478d948011df45d46b22d75f5ae
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:fbd9ea45dc399db1240f8edb0c825b80898ab73338fad7a61149e72d335d0433
+  - path: src/omnibase_core/models/core/model_contract_content.py
+    rule: validate-union-usage
+    text: sha256:fbd9ea45dc399db1240f8edb0c825b80898ab73338fad7a61149e72d335d0433
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_custom_filters.py
+    rule: validate-union-usage
+    text: sha256:9e1e79a81b8b8f79df14766d1e5acded08adf902a3160b7f765694e20df2a108
+  - path: src/omnibase_core/models/core/model_dynamic_field.py
+    rule: validate-union-usage
+    text: sha256:07833ff878beb227ac47b012697241037c4dee886ad2f56645cc77545edc826c
+  - path: src/omnibase_core/models/core/model_environment.py
+    rule: validate-union-usage
+    text: sha256:b3c3344d9bd7728d901e7a9d6eb40bc11dd8d8bf635a77036e3456174784c732
+  - path: src/omnibase_core/models/core/model_environment.py
+    rule: validate-union-usage
+    text: sha256:b3c3344d9bd7728d901e7a9d6eb40bc11dd8d8bf635a77036e3456174784c732
+  - path: src/omnibase_core/models/core/model_error_details.py
+    rule: validate-union-usage
+    text: sha256:a1c00004ae2a4c2abc7d4246173c0aa693d4c5adde06edfcf9b2cb9692517e9c
+  - path: src/omnibase_core/models/core/model_error_details.py
+    rule: validate-union-usage
+    text: sha256:a1c00004ae2a4c2abc7d4246173c0aa693d4c5adde06edfcf9b2cb9692517e9c
+  - path: src/omnibase_core/models/core/model_error_details.py
+    rule: validate-union-usage
+    text: sha256:a1c00004ae2a4c2abc7d4246173c0aa693d4c5adde06edfcf9b2cb9692517e9c
+  - path: src/omnibase_core/models/core/model_error_details.py
+    rule: validate-union-usage
+    text: sha256:a1c00004ae2a4c2abc7d4246173c0aa693d4c5adde06edfcf9b2cb9692517e9c
+  - path: src/omnibase_core/models/core/model_error_details.py
+    rule: validate-union-usage
+    text: sha256:a1c00004ae2a4c2abc7d4246173c0aa693d4c5adde06edfcf9b2cb9692517e9c
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:80652840ea68c3831f61a59bf541fceacbf8e632df686ed65dc4a0b4c992eafc
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:80652840ea68c3831f61a59bf541fceacbf8e632df686ed65dc4a0b4c992eafc
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:80652840ea68c3831f61a59bf541fceacbf8e632df686ed65dc4a0b4c992eafc
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_event_input_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:1b1a2e376752e427ecb32762a72cee354a0d8364d2f6bccf066eb1dd4842d51e
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:3378f7bb36e34d7d9ad4a401f507c54f48d8644976e0beca76ff5ba1df71b59f
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:3378f7bb36e34d7d9ad4a401f507c54f48d8644976e0beca76ff5ba1df71b59f
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:3378f7bb36e34d7d9ad4a401f507c54f48d8644976e0beca76ff5ba1df71b59f
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_event_output_state.py
+    rule: validate-union-usage
+    text: sha256:cd254714af205c3c327a6f2ec0d13f756a15f6513404e70e6e44953a473a2d29
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:14885af371c6c52d7385f0b4290a0bd8cb3febe15ec6c21149a84d385eedcd5b
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:14885af371c6c52d7385f0b4290a0bd8cb3febe15ec6c21149a84d385eedcd5b
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:14885af371c6c52d7385f0b4290a0bd8cb3febe15ec6c21149a84d385eedcd5b
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:14885af371c6c52d7385f0b4290a0bd8cb3febe15ec6c21149a84d385eedcd5b
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:14885af371c6c52d7385f0b4290a0bd8cb3febe15ec6c21149a84d385eedcd5b
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:9d86cbd1d237e8b6777616e095c44a6a649ff83fd2395da57d1d631b0c9e9289
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:9d86cbd1d237e8b6777616e095c44a6a649ff83fd2395da57d1d631b0c9e9289
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:9d86cbd1d237e8b6777616e095c44a6a649ff83fd2395da57d1d631b0c9e9289
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:9d86cbd1d237e8b6777616e095c44a6a649ff83fd2395da57d1d631b0c9e9289
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: validate-union-usage
+    text: sha256:9d86cbd1d237e8b6777616e095c44a6a649ff83fd2395da57d1d631b0c9e9289
+  - path: src/omnibase_core/models/core/model_filter_operator.py
+    rule: validate-union-usage
+    text: sha256:7aa218d32031147dde65ca246865b41cc57100cfe9921bb25f1f24ce17ad4120
+  - path: src/omnibase_core/models/core/model_filter_operator.py
+    rule: validate-union-usage
+    text: sha256:7aa218d32031147dde65ca246865b41cc57100cfe9921bb25f1f24ce17ad4120
+  - path: src/omnibase_core/models/core/model_filter_operator.py
+    rule: validate-union-usage
+    text: sha256:7aa218d32031147dde65ca246865b41cc57100cfe9921bb25f1f24ce17ad4120
+  - path: src/omnibase_core/models/core/model_filter_operator.py
+    rule: validate-union-usage
+    text: sha256:7aa218d32031147dde65ca246865b41cc57100cfe9921bb25f1f24ce17ad4120
+  - path: src/omnibase_core/models/core/model_filter_operator.py
+    rule: validate-union-usage
+    text: sha256:7aa218d32031147dde65ca246865b41cc57100cfe9921bb25f1f24ce17ad4120
+  - path: src/omnibase_core/models/core/model_json_schema.py
+    rule: validate-union-usage
+    text: sha256:5ad6fc2dd6d9ed4ce629584dc961b5a40f2062e5b64b7468d4004c61454c6d80
+  - path: src/omnibase_core/models/core/model_json_schema.py
+    rule: validate-union-usage
+    text: sha256:95e75a3b8cc4239c48154ed08372da782b3d6e3f26b64fb28bbc0890b0df6d60
+  - path: src/omnibase_core/models/core/model_json_schema.py
+    rule: validate-union-usage
+    text: sha256:d926162727f81d6c8ca7414fda15a8e067b828b19f1b2e0dc76820c625c9ecd8
+  - path: src/omnibase_core/models/core/model_json_schema.py
+    rule: validate-union-usage
+    text: sha256:f0dfccaa94a82d962acedb64f888ae4ef22be1dbc188d0fb005b80ffbcb81125
+  - path: src/omnibase_core/models/core/model_metadata_tool_collection.py
+    rule: validate-union-usage
+    text: sha256:343500480f521765239bffba86e3c9432aa201f258d13ddf15486b7114a10d8d
+  - path: src/omnibase_core/models/core/model_metadata_tool_collection.py
+    rule: validate-union-usage
+    text: sha256:37ec9aa43fe7c9e45badc2719cd729ef86b4e2c7c00c39dd17f0a6b5907505cb
+  - path: src/omnibase_core/models/core/model_mixin_config_field.py
+    rule: validate-union-usage
+    text: sha256:17a16319563223b0840f000ba7f871345c66e90b0ae2397e8b3e75b61ee07561
+  - path: src/omnibase_core/models/core/model_mixin_config_field.py
+    rule: validate-union-usage
+    text: sha256:fc5b0dba600622b5fae3509a86bb5dd19abb79279890baa3704a9375c38929e7
+  - path: src/omnibase_core/models/core/model_node_action_type.py
+    rule: validate-union-usage
+    text: sha256:d38685b8fe4482a0db91d4aaaa45517b034a74f3ecb5c00c3c8ae91b84e128c1
+  - path: src/omnibase_core/models/core/model_node_action_type.py
+    rule: validate-union-usage
+    text: sha256:d38685b8fe4482a0db91d4aaaa45517b034a74f3ecb5c00c3c8ae91b84e128c1
+  - path: src/omnibase_core/models/core/model_node_action_type.py
+    rule: validate-union-usage
+    text: sha256:d38685b8fe4482a0db91d4aaaa45517b034a74f3ecb5c00c3c8ae91b84e128c1
+  - path: src/omnibase_core/models/core/model_node_action_type.py
+    rule: validate-union-usage
+    text: sha256:d38685b8fe4482a0db91d4aaaa45517b034a74f3ecb5c00c3c8ae91b84e128c1
+  - path: src/omnibase_core/models/core/model_node_metadata_block.py
+    rule: validate-union-usage
+    text: sha256:36d9b1559edbdd33c28d6d41b55d588de77661ffcb29920caa57e81d0fd6268b
+  - path: src/omnibase_core/models/core/model_onex_event_metadata.py
+    rule: validate-union-usage
+    text: sha256:f144cb45216394f441a2de4e277de948880a6a13533f3b0dbc4f7fec32ff6c11
+  - path: src/omnibase_core/models/core/model_protocol_metadata.py
+    rule: validate-union-usage
+    text: sha256:58fc9ca4c4848a7ef769c22cb4e4130c97345c424b26178d378fc9b82205e155
+  - path: src/omnibase_core/models/core/model_protocol_metadata.py
+    rule: validate-union-usage
+    text: sha256:58fc9ca4c4848a7ef769c22cb4e4130c97345c424b26178d378fc9b82205e155
+  - path: src/omnibase_core/models/core/model_protocol_metadata.py
+    rule: validate-union-usage
+    text: sha256:58fc9ca4c4848a7ef769c22cb4e4130c97345c424b26178d378fc9b82205e155
+  - path: src/omnibase_core/models/core/model_schema_dict.py
+    rule: validate-union-usage
+    text: sha256:5952c17394e6c3d2bf698a0fce1b3ada2803ef0353f414f38be3f8496fe8efab
+  - path: src/omnibase_core/models/core/model_schema_dict.py
+    rule: validate-union-usage
+    text: sha256:5ad6fc2dd6d9ed4ce629584dc961b5a40f2062e5b64b7468d4004c61454c6d80
+  - path: src/omnibase_core/models/core/model_schema_dict.py
+    rule: validate-union-usage
+    text: sha256:d926162727f81d6c8ca7414fda15a8e067b828b19f1b2e0dc76820c625c9ecd8
+  - path: src/omnibase_core/models/core/model_schema_dict.py
+    rule: validate-union-usage
+    text: sha256:df6fac3d01019a8c744fd51b4285089e39a78cda627082174590b4f63d737186
+  - path: src/omnibase_core/models/core/model_state_contract.py
+    rule: validate-union-usage
+    text: sha256:0d0e3c09e0a65f2d30ba78585b81f41ea0b14635765da786d1dbd9e7d8b073e0
+  - path: src/omnibase_core/models/core/model_state_contract.py
+    rule: validate-union-usage
+    text: sha256:0d0e3c09e0a65f2d30ba78585b81f41ea0b14635765da786d1dbd9e7d8b073e0
+  - path: src/omnibase_core/models/discovery/model_metric_value.py
+    rule: validate-union-usage
+    text: sha256:1164d88c7bbec0865ecbf17b4ffbb5ff47d4d5095572dd4f7ba56fa5c61042ad
+  - path: src/omnibase_core/models/discovery/model_metric_value.py
+    rule: validate-union-usage
+    text: sha256:1164d88c7bbec0865ecbf17b4ffbb5ff47d4d5095572dd4f7ba56fa5c61042ad
+  - path: src/omnibase_core/models/discovery/model_metric_value.py
+    rule: validate-union-usage
+    text: sha256:6277e87d1aed296ac3406154eb03604b332f010d7ca08b300eca7bcdcd91b6bf
+  - path: src/omnibase_core/models/discovery/model_metric_value.py
+    rule: validate-union-usage
+    text: sha256:6277e87d1aed296ac3406154eb03604b332f010d7ca08b300eca7bcdcd91b6bf
+  - path: src/omnibase_core/models/discovery/model_output_metadata.py
+    rule: validate-union-usage
+    text: sha256:6e2888668ab9fd4dcbf669a2332eee3d1cfb6a0167b6c643f01df8ada592c3ee
+  - path: src/omnibase_core/models/discovery/model_output_metadata.py
+    rule: validate-union-usage
+    text: sha256:6e2888668ab9fd4dcbf669a2332eee3d1cfb6a0167b6c643f01df8ada592c3ee
+  - path: src/omnibase_core/models/discovery/model_outputmetadata.py
+    rule: validate-union-usage
+    text: sha256:13490d054ad891b3c296de94d131f01eeb3b1dd92af605bd77e80cc07ec7606c
+  - path: src/omnibase_core/models/discovery/model_outputmetadata.py
+    rule: validate-union-usage
+    text: sha256:13490d054ad891b3c296de94d131f01eeb3b1dd92af605bd77e80cc07ec7606c
+  - path: src/omnibase_core/models/discovery/model_outputmetadata.py
+    rule: validate-union-usage
+    text: sha256:b41632259c4f645954d8de9e59cdf2a53ea11083253f26428444c51039489b42
+  - path: src/omnibase_core/models/discovery/model_outputmetadata.py
+    rule: validate-union-usage
+    text: sha256:b41632259c4f645954d8de9e59cdf2a53ea11083253f26428444c51039489b42
+  - path: src/omnibase_core/models/discovery/model_tool_invocation_event.py
+    rule: validate-union-usage
+    text: sha256:5c1817b4111e8c41b5c03a54eefd8cdeda18f3f3a5bfd23b309221614bc5d746
+  - path: src/omnibase_core/models/discovery/model_tool_invocation_event.py
+    rule: validate-union-usage
+    text: sha256:5c1817b4111e8c41b5c03a54eefd8cdeda18f3f3a5bfd23b309221614bc5d746
+  - path: src/omnibase_core/models/discovery/model_tool_parameters.py
+    rule: validate-union-usage
+    text: sha256:db6a645b51ccef93f750292132ed29581b2b2c9bdad0dcf2b5338f1d3d96fdd2
+  - path: src/omnibase_core/models/discovery/model_tool_parameters.py
+    rule: validate-union-usage
+    text: sha256:db6a645b51ccef93f750292132ed29581b2b2c9bdad0dcf2b5338f1d3d96fdd2
+  - path: src/omnibase_core/models/discovery/model_tool_parameters.py
+    rule: validate-union-usage
+    text: sha256:db6a645b51ccef93f750292132ed29581b2b2c9bdad0dcf2b5338f1d3d96fdd2
+  - path: src/omnibase_core/models/discovery/model_tool_parameters.py
+    rule: validate-union-usage
+    text: sha256:db6a645b51ccef93f750292132ed29581b2b2c9bdad0dcf2b5338f1d3d96fdd2
+  - path: src/omnibase_core/models/dispatch/model_handler_metrics.py
+    rule: validate-union-usage
+    text: sha256:12aea2aeff1de76c8e3f760682746cce0f09d3458bc605a7d441f327c3f8461e
+  - path: src/omnibase_core/models/dispatch/model_handler_metrics.py
+    rule: validate-union-usage
+    text: sha256:12aea2aeff1de76c8e3f760682746cce0f09d3458bc605a7d441f327c3f8461e
+  - path: src/omnibase_core/models/docker/model_compose_service_definition.py
+    rule: validate-union-usage
+    text: sha256:37c23fbe06f15bb3ba92588ba6985d2bd02603d2806d118069134ffb4b5ba4c7
+  - path: src/omnibase_core/models/docker/model_compose_service_dict.py
+    rule: validate-union-usage
+    text: sha256:9564a063f7aa42594a03b3d0c0c7fb94b9195d3ed7b4b7b0d225b3d1d873671a
+  - path: src/omnibase_core/models/docker/model_compose_service_dict.py
+    rule: validate-union-usage
+    text: sha256:bd71c8608328da141d01a3b76c6cd36234520836b6b1e5a2f32b07d84a5e4222
+  - path: src/omnibase_core/models/docker/model_compose_service_dict.py
+    rule: validate-union-usage
+    text: sha256:f46435e54797366f2fffcd01818709044a3c0c6f3866808d54689cbfbefaeaaf
+  - path: src/omnibase_core/models/docker/model_docker_service.py
+    rule: validate-union-usage
+    text: sha256:bd71c8608328da141d01a3b76c6cd36234520836b6b1e5a2f32b07d84a5e4222
+  - path: src/omnibase_core/models/event_bus/model_event_bus_input_state.py
+    rule: validate-union-usage
+    text: sha256:e96008dcf1793b935d4b2044ef8feae348a2003f54f0c4b7904cb397879c6a2e
+  - path: src/omnibase_core/models/event_bus/model_event_bus_input_state.py
+    rule: validate-union-usage
+    text: sha256:e96008dcf1793b935d4b2044ef8feae348a2003f54f0c4b7904cb397879c6a2e
+  - path: src/omnibase_core/models/event_bus/model_producer_health_status.py
+    rule: validate-union-usage
+    text: sha256:11b863fe5a0c34dfc3291d80a28539686e7e36521da66ae08fc6a96ef119d0d1
+  - path: src/omnibase_core/models/event_bus/model_producer_health_status.py
+    rule: validate-union-usage
+    text: sha256:11b863fe5a0c34dfc3291d80a28539686e7e36521da66ae08fc6a96ef119d0d1
+  - path: src/omnibase_core/models/event_bus/model_producer_health_status.py
+    rule: validate-union-usage
+    text: sha256:11b863fe5a0c34dfc3291d80a28539686e7e36521da66ae08fc6a96ef119d0d1
+  - path: src/omnibase_core/models/events/model_episode_event.py
+    rule: validate-union-usage
+    text: sha256:46dc4756ed6b2ab25be1e1a78befba1b1cf263e8731ffdf8e689d3b83b291b2d
+  - path: src/omnibase_core/models/events/model_episode_event.py
+    rule: validate-union-usage
+    text: sha256:a346488ebfcadb340f42feca06231288a495dedbff3e37f15c2a94ce4962b0d3
+  - path: src/omnibase_core/models/events/model_episode_event.py
+    rule: validate-union-usage
+    text: sha256:a346488ebfcadb340f42feca06231288a495dedbff3e37f15c2a94ce4962b0d3
+  - path: src/omnibase_core/models/events/model_episode_event.py
+    rule: validate-union-usage
+    text: sha256:a346488ebfcadb340f42feca06231288a495dedbff3e37f15c2a94ce4962b0d3
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:7681b497dcc4d5904d9801e92396964bdc1ffafb8ccf4dddf077bc16b74901f2
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:7681b497dcc4d5904d9801e92396964bdc1ffafb8ccf4dddf077bc16b74901f2
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:7681b497dcc4d5904d9801e92396964bdc1ffafb8ccf4dddf077bc16b74901f2
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:7681b497dcc4d5904d9801e92396964bdc1ffafb8ccf4dddf077bc16b74901f2
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:7681b497dcc4d5904d9801e92396964bdc1ffafb8ccf4dddf077bc16b74901f2
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:7681b497dcc4d5904d9801e92396964bdc1ffafb8ccf4dddf077bc16b74901f2
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:7681b497dcc4d5904d9801e92396964bdc1ffafb8ccf4dddf077bc16b74901f2
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:f05caf59a6ae8ee1b9e94d98f7e5b7e11bb61295376df6da310a38297a3d035b
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:f05caf59a6ae8ee1b9e94d98f7e5b7e11bb61295376df6da310a38297a3d035b
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:f05caf59a6ae8ee1b9e94d98f7e5b7e11bb61295376df6da310a38297a3d035b
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:f05caf59a6ae8ee1b9e94d98f7e5b7e11bb61295376df6da310a38297a3d035b
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:f05caf59a6ae8ee1b9e94d98f7e5b7e11bb61295376df6da310a38297a3d035b
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:f05caf59a6ae8ee1b9e94d98f7e5b7e11bb61295376df6da310a38297a3d035b
+  - path: src/omnibase_core/models/events/payloads/model_event_payload_union.py
+    rule: validate-union-usage
+    text: sha256:f05caf59a6ae8ee1b9e94d98f7e5b7e11bb61295376df6da310a38297a3d035b
+  - path: src/omnibase_core/models/events/validation/model_validation_run_started_event.py
+    rule: validate-union-usage
+    text: sha256:e72317881373103ad8dc5e50b95e9b81f86a9bd8e3421bc1a14bba645d5c8f31
+  - path: src/omnibase_core/models/execution/model_execution_plan.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/execution/model_execution_plan.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/execution/model_execution_plan.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/execution/model_phase_step.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/execution/model_phase_step.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/execution/model_phase_step.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:32e4ab1eab0e4aac8cc65cb03f1dc70e820b6085dd827571893dee03a30e3f7d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:32e4ab1eab0e4aac8cc65cb03f1dc70e820b6085dd827571893dee03a30e3f7d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:32e4ab1eab0e4aac8cc65cb03f1dc70e820b6085dd827571893dee03a30e3f7d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:32e4ab1eab0e4aac8cc65cb03f1dc70e820b6085dd827571893dee03a30e3f7d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:7b4bca33bca159c7e7909ea0d23264e44862e05db456bbc8114605931d89eba2
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:7b4bca33bca159c7e7909ea0d23264e44862e05db456bbc8114605931d89eba2
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:7b4bca33bca159c7e7909ea0d23264e44862e05db456bbc8114605931d89eba2
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:7b4bca33bca159c7e7909ea0d23264e44862e05db456bbc8114605931d89eba2
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:bfd7917cfc376eef32c675fc4806e11fec4fc09bae3476c58f88a3f1d2bab225
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:bfd7917cfc376eef32c675fc4806e11fec4fc09bae3476c58f88a3f1d2bab225
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:bfd7917cfc376eef32c675fc4806e11fec4fc09bae3476c58f88a3f1d2bab225
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:bfd7917cfc376eef32c675fc4806e11fec4fc09bae3476c58f88a3f1d2bab225
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:bfd7917cfc376eef32c675fc4806e11fec4fc09bae3476c58f88a3f1d2bab225
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:d10f9745f42af3969a8e6b7c1fedc01b44c350bfcc3e74aa181ca9c763ac543d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:d10f9745f42af3969a8e6b7c1fedc01b44c350bfcc3e74aa181ca9c763ac543d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:d10f9745f42af3969a8e6b7c1fedc01b44c350bfcc3e74aa181ca9c763ac543d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: validate-union-usage
+    text: sha256:d10f9745f42af3969a8e6b7c1fedc01b44c350bfcc3e74aa181ca9c763ac543d
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_result.py
+    rule: validate-union-usage
+    text: sha256:754017764a85ead21044e331809001dbb18b3ddecaba2957c2a7c3479081770c
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_result.py
+    rule: validate-union-usage
+    text: sha256:9501986c63c3371a9dc164e3fe9c696299ded6fb32dad6b734889f1ba764a04b
+  - path: src/omnibase_core/models/gate/model_omnigate_validator_ref.py
+    rule: validate-union-usage
+    text: sha256:3081e806f986d26b172abb867c7618c056ae400c9c3081612ec9f827380f6a6e
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:4512f9ecd28fc0975276e52bd550e7dcc1085fa9ef8843944c5d4d3a28711907
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:4512f9ecd28fc0975276e52bd550e7dcc1085fa9ef8843944c5d4d3a28711907
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:4512f9ecd28fc0975276e52bd550e7dcc1085fa9ef8843944c5d4d3a28711907
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:4512f9ecd28fc0975276e52bd550e7dcc1085fa9ef8843944c5d4d3a28711907
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:4512f9ecd28fc0975276e52bd550e7dcc1085fa9ef8843944c5d4d3a28711907
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:71290bf85772db832cd0a41672f1c3a1d4ba2b98f186bbca30a69e36886f67bf
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:71290bf85772db832cd0a41672f1c3a1d4ba2b98f186bbca30a69e36886f67bf
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:71290bf85772db832cd0a41672f1c3a1d4ba2b98f186bbca30a69e36886f67bf
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:71290bf85772db832cd0a41672f1c3a1d4ba2b98f186bbca30a69e36886f67bf
+  - path: src/omnibase_core/models/governance/model_field_change.py
+    rule: validate-union-usage
+    text: sha256:71290bf85772db832cd0a41672f1c3a1d4ba2b98f186bbca30a69e36886f67bf
+  - path: src/omnibase_core/models/infrastructure/model_node_workflow_result.py
+    rule: validate-union-usage
+    text: sha256:a02838a4ab27d08c0adf01e92113beb0e729724c2a743aa84807ffd19150bb61
+  - path: src/omnibase_core/models/infrastructure/model_transaction_operation.py
+    rule: validate-union-usage
+    text: sha256:44071af6f9e0aaed5ac2a0e9380b206ead3bab6465266425fdad1190d6a7030f
+  - path: src/omnibase_core/models/invariant/model_custom_invariant_config.py
+    rule: validate-union-usage
+    text: sha256:a87c7cce99df142f1bdf79b573365cbb98e00fc7ad76b128dd2c8c09db72514b
+  - path: src/omnibase_core/models/invariant/model_custom_invariant_config.py
+    rule: validate-union-usage
+    text: sha256:a87c7cce99df142f1bdf79b573365cbb98e00fc7ad76b128dd2c8c09db72514b
+  - path: src/omnibase_core/models/invariant/model_custom_invariant_config.py
+    rule: validate-union-usage
+    text: sha256:a87c7cce99df142f1bdf79b573365cbb98e00fc7ad76b128dd2c8c09db72514b
+  - path: src/omnibase_core/models/invariant/model_invariant_definition.py
+    rule: validate-union-usage
+    text: sha256:13cd88d2b790d7568907d8d4649d630d68f36b3f323e659836b33560a1207634
+  - path: src/omnibase_core/models/invariant/model_invariant_definition.py
+    rule: validate-union-usage
+    text: sha256:13cd88d2b790d7568907d8d4649d630d68f36b3f323e659836b33560a1207634
+  - path: src/omnibase_core/models/invariant/model_invariant_definition.py
+    rule: validate-union-usage
+    text: sha256:13cd88d2b790d7568907d8d4649d630d68f36b3f323e659836b33560a1207634
+  - path: src/omnibase_core/models/invariant/model_invariant_definition.py
+    rule: validate-union-usage
+    text: sha256:13cd88d2b790d7568907d8d4649d630d68f36b3f323e659836b33560a1207634
+  - path: src/omnibase_core/models/invariant/model_invariant_definition.py
+    rule: validate-union-usage
+    text: sha256:13cd88d2b790d7568907d8d4649d630d68f36b3f323e659836b33560a1207634
+  - path: src/omnibase_core/models/invariant/model_invariant_violation_report.py
+    rule: validate-union-usage
+    text: sha256:3ef805b4b53c8fe1677971d3c50f9dc31684cc1dfc5a404517f168af4f94fcae
+  - path: src/omnibase_core/models/invariant/model_invariant_violation_report.py
+    rule: validate-union-usage
+    text: sha256:3ef805b4b53c8fe1677971d3c50f9dc31684cc1dfc5a404517f168af4f94fcae
+  - path: src/omnibase_core/models/manifest/model_capability_activation.py
+    rule: validate-union-usage
+    text: sha256:2f52fefd0c1852617d81e3117762015913c5b990fc6e19ae8e72628649b58ea1
+  - path: src/omnibase_core/models/manifest/model_capability_activation.py
+    rule: validate-union-usage
+    text: sha256:2f52fefd0c1852617d81e3117762015913c5b990fc6e19ae8e72628649b58ea1
+  - path: src/omnibase_core/models/manifest/model_capability_activation.py
+    rule: validate-union-usage
+    text: sha256:2f52fefd0c1852617d81e3117762015913c5b990fc6e19ae8e72628649b58ea1
+  - path: src/omnibase_core/models/manifest/model_hook_trace.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/manifest/model_hook_trace.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/manifest/model_hook_trace.py
+    rule: validate-union-usage
+    text: sha256:588498aa87ed88d91378dc49c8266b77d1cf145a4986b2813237a8017d853fd7
+  - path: src/omnibase_core/models/mcp/model_mcp_invocation_response.py
+    rule: validate-union-usage
+    text: sha256:3d0b3a619c3e7ee4fc2d15dc2a8b7579823499b86b78498cb5084531caec0440
+  - path: src/omnibase_core/models/mcp/model_mcp_invocation_response.py
+    rule: validate-union-usage
+    text: sha256:da2e01014c64259bbaccf7362380e30b403f3570a08ae5eca22d5fe9f8f5a2c0
+  - path: src/omnibase_core/models/operations/model_effect_operation_config.py
+    rule: validate-union-usage
+    text: sha256:dd8dd3ee9be6610760dfbbd39726888fbce3a01c11635ca31ad01647519037b0
+  - path: src/omnibase_core/models/overseer/model_context_bundle.py
+    rule: validate-union-usage
+    text: sha256:3ab6efc5adb8b07b9def754a32464942b46519f8a2287e17e09794d1ffa5cc3d
+  - path: src/omnibase_core/models/overseer/model_context_bundle.py
+    rule: validate-union-usage
+    text: sha256:3ab6efc5adb8b07b9def754a32464942b46519f8a2287e17e09794d1ffa5cc3d
+  - path: src/omnibase_core/models/overseer/model_context_bundle.py
+    rule: validate-union-usage
+    text: sha256:3ab6efc5adb8b07b9def754a32464942b46519f8a2287e17e09794d1ffa5cc3d
+  - path: src/omnibase_core/models/pipeline/model_phase_record.py
+    rule: validate-union-usage
+    text: sha256:0c0b9720b0c3572b898f43d30d786cf45c18011fb9578769aab6d0e62f0fac98
+  - path: src/omnibase_core/models/pipeline/model_phase_record.py
+    rule: validate-union-usage
+    text: sha256:0c0b9720b0c3572b898f43d30d786cf45c18011fb9578769aab6d0e62f0fac98
+  - path: src/omnibase_core/models/pipeline/model_phase_record.py
+    rule: validate-union-usage
+    text: sha256:0c0b9720b0c3572b898f43d30d786cf45c18011fb9578769aab6d0e62f0fac98
+  - path: src/omnibase_core/models/pipeline/model_pipeline_result.py
+    rule: validate-union-usage
+    text: sha256:6f36590bd01bcc24708b65a732daa7fc0d1f3ce9bbefe4449cccbde8d161487f
+  - path: src/omnibase_core/models/pipeline/model_pipeline_result.py
+    rule: validate-union-usage
+    text: sha256:8fcd25eef72a72874e2d31c6669be493e879fceed9ba6e7f789298e6c12d467a
+  - path: src/omnibase_core/models/primitives/model_semver.py
+    rule: validate-union-usage
+    text: sha256:56c31c6a7598b9166a0130b9f19473898b691d277d2aac4b34bf8ef0f9e365e7
+  - path: src/omnibase_core/models/primitives/model_semver.py
+    rule: validate-union-usage
+    text: sha256:6294ac3cdc151d563925ba3f19ba3580f3582d94d2d6e96245b73d4ae5941c05
+  - path: src/omnibase_core/models/projectors/model_projector_behavior.py
+    rule: validate-union-usage
+    text: sha256:c7c5da00e568a07ee99a39e514d6f74a491db6e65d88366aa6431b7f935ed1f1
+  - path: src/omnibase_core/models/reducer/payloads/model_payload_http.py
+    rule: validate-union-usage
+    text: sha256:73f800fb94d5e009f7839a811a3847f43459fe503f617db3b0b3a2d5329ebbb2
+  - path: src/omnibase_core/models/security/model_permission_evaluation_context.py
+    rule: validate-union-usage
+    text: sha256:9d6789892afa0ed1d9085b368b94eb82de1080b866294e47c5c7584b865727e6
+  - path: src/omnibase_core/models/security/model_permission_evaluation_context.py
+    rule: validate-union-usage
+    text: sha256:9d6789892afa0ed1d9085b368b94eb82de1080b866294e47c5c7584b865727e6
+  - path: src/omnibase_core/models/security/model_permission_evaluation_context.py
+    rule: validate-union-usage
+    text: sha256:dbff58c5692ff46628bbf57c8082602e0d4da3abafb30307871e2352964df9e9
+  - path: src/omnibase_core/models/security/model_permission_evaluation_context.py
+    rule: validate-union-usage
+    text: sha256:dbff58c5692ff46628bbf57c8082602e0d4da3abafb30307871e2352964df9e9
+  - path: src/omnibase_core/models/security/model_security_context.py
+    rule: validate-union-usage
+    text: sha256:9041199febebf42e1610f6b1066dfc21059680c2a0e63ae4af21db30115f8cea
+  - path: src/omnibase_core/models/security/model_security_context.py
+    rule: validate-union-usage
+    text: sha256:9041199febebf42e1610f6b1066dfc21059680c2a0e63ae4af21db30115f8cea
+  - path: src/omnibase_core/models/security/model_signature_chain.py
+    rule: validate-union-usage
+    text: sha256:4df84e787714d40edf62a094f3185e3a206039509bd2fcd10ccf27f0725f2ef3
+  - path: src/omnibase_core/models/security/model_signature_chain.py
+    rule: validate-union-usage
+    text: sha256:d2a1911fd6bec96741cfca1438196e2ee21e5d5118a12753603ccd5c57e3c4f2
+  - path: src/omnibase_core/models/security/model_signature_chain.py
+    rule: validate-union-usage
+    text: sha256:d2a1911fd6bec96741cfca1438196e2ee21e5d5118a12753603ccd5c57e3c4f2
+  - path: src/omnibase_core/models/security/model_signature_chain.py
+    rule: validate-union-usage
+    text: sha256:d2a1911fd6bec96741cfca1438196e2ee21e5d5118a12753603ccd5c57e3c4f2
+  - path: src/omnibase_core/models/services/model_external_service_config.py
+    rule: validate-union-usage
+    text: sha256:928c401b87dc08c30b93f79727f7187d2922f24f3157464e62b359bd388a9da5
+  - path: src/omnibase_core/models/services/model_masked_config.py
+    rule: validate-union-usage
+    text: sha256:3fda58dfc7d5d3e79631b8ceeafeff5bd3d9a85c1233d3b0a5fb55183a83d35d
+  - path: src/omnibase_core/models/ticket/model_golden_path_assertion.py
+    rule: validate-union-usage
+    text: sha256:bd5bbf84f2ce6b177d92e207bb40f4354df2f40d7dd50e1445543f262b5d827d
+  - path: src/omnibase_core/models/ticket/model_golden_path_assertion.py
+    rule: validate-union-usage
+    text: sha256:bd5bbf84f2ce6b177d92e207bb40f4354df2f40d7dd50e1445543f262b5d827d
+  - path: src/omnibase_core/models/ticket/model_golden_path_assertion.py
+    rule: validate-union-usage
+    text: sha256:bd5bbf84f2ce6b177d92e207bb40f4354df2f40d7dd50e1445543f262b5d827d
+  - path: src/omnibase_core/models/ticket/model_golden_path_assertion.py
+    rule: validate-union-usage
+    text: sha256:bd5bbf84f2ce6b177d92e207bb40f4354df2f40d7dd50e1445543f262b5d827d
+  - path: src/omnibase_core/models/ticket/model_golden_path_assertion.py
+    rule: validate-union-usage
+    text: sha256:bd5bbf84f2ce6b177d92e207bb40f4354df2f40d7dd50e1445543f262b5d827d
+  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
+    rule: validate-union-usage
+    text: sha256:4fb4f3c3796778f7751e0c4daae62e398ac92d187278435da297802cc3638fde
+  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
+    rule: validate-union-usage
+    text: sha256:d6ad01a01917df880cfcd59e9fec7b2dcfe5a7fdfa86f46623f9614ad54fe0fd
+  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
+    rule: validate-union-usage
+    text: sha256:d6ad01a01917df880cfcd59e9fec7b2dcfe5a7fdfa86f46623f9614ad54fe0fd
+  - path: src/omnibase_core/models/tools/model_tool_input_data_class.py
+    rule: validate-union-usage
+    text: sha256:672702b2d51dc6cd4a04568b896c6f76a6d5157e69a6baf59438b7bdf3b945f8
+  - path: src/omnibase_core/models/tools/model_tool_input_data_class.py
+    rule: validate-union-usage
+    text: sha256:672702b2d51dc6cd4a04568b896c6f76a6d5157e69a6baf59438b7bdf3b945f8
+  - path: src/omnibase_core/models/tools/model_tool_input_data_class.py
+    rule: validate-union-usage
+    text: sha256:c25b8f49e7b8b5f60b589c436c815cb22ada8c673bb8c3e119b791dfdae67fa2
+  - path: src/omnibase_core/models/tools/model_tool_input_data_class.py
+    rule: validate-union-usage
+    text: sha256:c25b8f49e7b8b5f60b589c436c815cb22ada8c673bb8c3e119b791dfdae67fa2
+  - path: src/omnibase_core/models/types/model_json_serializable.py
+    rule: validate-union-usage
+    text: sha256:8c25cb3686462e9a86d2883c5688a22fe738b0bbc85f458d2d2b5f3f667c6d5a
+  - path: src/omnibase_core/models/types/model_json_serializable.py
+    rule: validate-union-usage
+    text: sha256:8c25cb3686462e9a86d2883c5688a22fe738b0bbc85f458d2d2b5f3f667c6d5a
+  - path: src/omnibase_core/models/types/model_json_serializable.py
+    rule: validate-union-usage
+    text: sha256:8c25cb3686462e9a86d2883c5688a22fe738b0bbc85f458d2d2b5f3f667c6d5a
+  - path: src/omnibase_core/models/validation/model_cross_repo_validation_orchestrator_result.py
+    rule: validate-union-usage
+    text: sha256:295c4f645f6bb1450e96eab7a9e45c010a4176016c9cb814fb4135ba744f036e
+  - path: src/omnibase_core/models/validation/model_validation_finding.py
+    rule: validate-union-usage
+    text: sha256:7ec83e3355925a123ffd1f59687efa1162dbe287c5cee8322f818e615ca8e631
+  - path: src/omnibase_core/models/validation/model_validation_finding.py
+    rule: validate-union-usage
+    text: sha256:7ec83e3355925a123ffd1f59687efa1162dbe287c5cee8322f818e615ca8e631
+  - path: src/omnibase_core/models/validation/model_validation_finding.py
+    rule: validate-union-usage
+    text: sha256:7ec83e3355925a123ffd1f59687efa1162dbe287c5cee8322f818e615ca8e631
+  - path: src/omnibase_core/models/validation/model_validation_report.py
+    rule: validate-union-usage
+    text: sha256:7ec83e3355925a123ffd1f59687efa1162dbe287c5cee8322f818e615ca8e631
+  - path: src/omnibase_core/models/validation/model_validation_report.py
+    rule: validate-union-usage
+    text: sha256:7ec83e3355925a123ffd1f59687efa1162dbe287c5cee8322f818e615ca8e631
+  - path: src/omnibase_core/models/validation/model_validation_report.py
+    rule: validate-union-usage
+    text: sha256:7ec83e3355925a123ffd1f59687efa1162dbe287c5cee8322f818e615ca8e631
+  - path: src/omnibase_core/navigation/model_backward_chaining.py
+    rule: validate-union-usage
+    text: sha256:9408a71cf7f48f767a21ffc04313c01a952b0c16bcb4a05ed3f74f397bfe7321
+  - path: src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/visitor_io.py
+    rule: validate-union-usage
+    text: sha256:ebd999df56a31eb20a8489da13cfc977745c73202b01fb41b1a9fc3cb6da997d
+  - path: src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/visitor_io.py
+    rule: validate-union-usage
+    text: sha256:ebd999df56a31eb20a8489da13cfc977745c73202b01fb41b1a9fc3cb6da997d
+  - path: src/omnibase_core/nodes/node_no_io_outside_effects_check_compute/visitor_io.py
+    rule: validate-union-usage
+    text: sha256:ebd999df56a31eb20a8489da13cfc977745c73202b01fb41b1a9fc3cb6da997d
+  - path: src/omnibase_core/nodes/node_validation_orchestrator/node_cross_repo_validation_orchestrator.py
+    rule: validate-union-usage
+    text: sha256:295c4f645f6bb1450e96eab7a9e45c010a4176016c9cb814fb4135ba744f036e
+  - path: src/omnibase_core/normalization/contract_normalizer.py
+    rule: validate-union-usage
+    text: sha256:063a1cf249ee6d8932d3558d4c6c4c770a1c1f379a1c25f1ebc101c964c9d1f5
+  - path: src/omnibase_core/normalization/contract_normalizer.py
+    rule: validate-union-usage
+    text: sha256:f5a09073e24f7a2bcb2e9f30b794370dd5c9a9d4da9b8ef46909ad92bc109032
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: validate-union-usage
+    text: sha256:aa840071e52d6a412d0cd99da24e805525c6a5f3206625d1d1033dcca28ddaf0
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: validate-union-usage
+    text: sha256:aa840071e52d6a412d0cd99da24e805525c6a5f3206625d1d1033dcca28ddaf0
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: validate-union-usage
+    text: sha256:aa840071e52d6a412d0cd99da24e805525c6a5f3206625d1d1033dcca28ddaf0
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: validate-union-usage
+    text: sha256:d2f004c7e0256d21378b111d0ce4dfb5e6328403625695ec72838acd2e7482ee
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: validate-union-usage
+    text: sha256:d2f004c7e0256d21378b111d0ce4dfb5e6328403625695ec72838acd2e7482ee
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: validate-union-usage
+    text: sha256:d2f004c7e0256d21378b111d0ce4dfb5e6328403625695ec72838acd2e7482ee
+  - path: src/omnibase_core/runtime/golden_chain/recorder.py
+    rule: validate-union-usage
+    text: sha256:98540b6322cb4edfa91d4d300ec027d04cdc8954f78ae2b46865d81e2bca6327
+  - path: src/omnibase_core/runtime/golden_chain/recorder.py
+    rule: validate-union-usage
+    text: sha256:caaf52aa0e7d82f1ca0a569c2f1475128ce5e8aab7ad0c821f114de4dd0246fa
+  - path: src/omnibase_core/runtime/golden_chain/recorder.py
+    rule: validate-union-usage
+    text: sha256:ffb66199c0106d043f7c534624c1c62bea3c585fc0128845b3bfd8ad363fab5b
+  - path: src/omnibase_core/services/service_contract_validation_event_emitter.py
+    rule: validate-union-usage
+    text: sha256:9be71ac17cda02a9a4acbc244e2aaa5e6d87f8d0cd5154a3ac62505f3e539d21
+  - path: src/omnibase_core/services/service_contract_validation_event_emitter.py
+    rule: validate-union-usage
+    text: sha256:e69669654485e5fe9fcb7bbd5bdeee41d0a1049ee70bad06d25f61d25428d03f
+  - path: src/omnibase_core/services/service_contract_validation_event_emitter.py
+    rule: validate-union-usage
+    text: sha256:f31feed62a71183d553ebc57d282288aa3f49e9451696fb0831c5a234ba8db4f
+  - path: src/omnibase_core/tools/mypy_plugins/tool_dict_any_checker.py
+    rule: validate-union-usage
+    text: sha256:c1bedb6caa4ad1513c0d2d4714491a2927d6b70d75321719fb1b3c6a2b5363da
+  - path: src/omnibase_core/types/type_effect_result.py
+    rule: validate-union-usage
+    text: sha256:cbae0e7c1da747276535dcd5fbdeb86ea17a9434ebce1009edf5e7dc9dd8deaa
+  - path: src/omnibase_core/types/type_effect_result.py
+    rule: validate-union-usage
+    text: sha256:cbae0e7c1da747276535dcd5fbdeb86ea17a9434ebce1009edf5e7dc9dd8deaa
+  - path: src/omnibase_core/types/type_effect_result.py
+    rule: validate-union-usage
+    text: sha256:cbae0e7c1da747276535dcd5fbdeb86ea17a9434ebce1009edf5e7dc9dd8deaa
+  - path: src/omnibase_core/types/type_effect_result.py
+    rule: validate-union-usage
+    text: sha256:cedee6a8e940e0d37b5e149caec49fe5b16e6eea842b49d3e1a1cd6306495bc1
+  - path: src/omnibase_core/types/type_effect_result.py
+    rule: validate-union-usage
+    text: sha256:cedee6a8e940e0d37b5e149caec49fe5b16e6eea842b49d3e1a1cd6306495bc1
+  - path: src/omnibase_core/types/type_effect_result.py
+    rule: validate-union-usage
+    text: sha256:cedee6a8e940e0d37b5e149caec49fe5b16e6eea842b49d3e1a1cd6306495bc1
+  - path: src/omnibase_core/types/type_effect_result.py
+    rule: validate-union-usage
+    text: sha256:cedee6a8e940e0d37b5e149caec49fe5b16e6eea842b49d3e1a1cd6306495bc1
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:27a22a9b0996df103648edb15be6058037097598abc202a2ad20a1c4b60c8dd2
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:27a22a9b0996df103648edb15be6058037097598abc202a2ad20a1c4b60c8dd2
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:3a4ea5473c2c6c450df7312821bb02c2b21482151ce5b8ffde58c2f558209ded
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:5fe22c642b7574bfd4ab956672af1ae0ce3dbc3836efea56c28a61d70155fe0c
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:a4465fa94c01d8bb7961141b647352219ac875efc9606a12ddd5aa4de5654704
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:a4465fa94c01d8bb7961141b647352219ac875efc9606a12ddd5aa4de5654704
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:a4465fa94c01d8bb7961141b647352219ac875efc9606a12ddd5aa4de5654704
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:ad06d984973bc962f4a934c8661f92cb97a34ed51c7a0429db7dfaf8753f7e78
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:cc26cacf44b859ae2159887f590d734ff815f874f0aeb27c03d89b644e79ef2c
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:cc26cacf44b859ae2159887f590d734ff815f874f0aeb27c03d89b644e79ef2c
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:cc26cacf44b859ae2159887f590d734ff815f874f0aeb27c03d89b644e79ef2c
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:cc26cacf44b859ae2159887f590d734ff815f874f0aeb27c03d89b644e79ef2c
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:d3ee67438f635516152455327a5dbbcff92e43c1987cf438513b1a41e32efe7b
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:d3ee67438f635516152455327a5dbbcff92e43c1987cf438513b1a41e32efe7b
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:d3ee67438f635516152455327a5dbbcff92e43c1987cf438513b1a41e32efe7b
+  - path: src/omnibase_core/types/type_json.py
+    rule: validate-union-usage
+    text: sha256:d3ee67438f635516152455327a5dbbcff92e43c1987cf438513b1a41e32efe7b
+  - path: src/omnibase_core/types/typed_dict_workflow_outputs.py
+    rule: validate-union-usage
+    text: sha256:3f650504b0f1a7cae1ebc7341d148d07d495ca865f43dcfd7dbebcab2829774e
+  - path: src/omnibase_core/types/typed_dict_workflow_outputs.py
+    rule: validate-union-usage
+    text: sha256:3f650504b0f1a7cae1ebc7341d148d07d495ca865f43dcfd7dbebcab2829774e
+  - path: src/omnibase_core/types/typed_dict_workflow_outputs.py
+    rule: validate-union-usage
+    text: sha256:3f650504b0f1a7cae1ebc7341d148d07d495ca865f43dcfd7dbebcab2829774e
+  - path: src/omnibase_core/types/typed_dict_workflow_outputs.py
+    rule: validate-union-usage
+    text: sha256:3f650504b0f1a7cae1ebc7341d148d07d495ca865f43dcfd7dbebcab2829774e
+  - path: src/omnibase_core/types/typed_dict_workflow_outputs.py
+    rule: validate-union-usage
+    text: sha256:3f650504b0f1a7cae1ebc7341d148d07d495ca865f43dcfd7dbebcab2829774e
+  - path: src/omnibase_core/utils/util_enum_normalizer.py
+    rule: validate-union-usage
+    text: sha256:3a19f9cdc4c862789b365be424c0a0d1e331ffa90dcd0f0eb4eb254572168337
+  - path: src/omnibase_core/utils/util_enum_normalizer.py
+    rule: validate-union-usage
+    text: sha256:3a19f9cdc4c862789b365be424c0a0d1e331ffa90dcd0f0eb4eb254572168337
+  - path: src/omnibase_core/utils/util_enum_normalizer.py
+    rule: validate-union-usage
+    text: sha256:e4479a8814496729a57ce3fc7f9f78b02251201f3828ab50b7f5a369317e8703
+  - path: src/omnibase_core/utils/util_enum_normalizer.py
+    rule: validate-union-usage
+    text: sha256:e4479a8814496729a57ce3fc7f9f78b02251201f3828ab50b7f5a369317e8703
+  - path: src/omnibase_core/utils/util_uuid_service.py
+    rule: validate-union-usage
+    text: sha256:1ab6e7623615093f656ec6cb2910a7192a5ed3117c2ddce2aa90e8c7e559ce73
+  - path: src/omnibase_core/validation/checker_enum_governance.py
+    rule: validate-union-usage
+    text: sha256:bfdbeeaf5e4e67413029664ef26392148776d0a99f2b880717edf3326a6201a0
+  - path: src/omnibase_core/validation/checker_enum_governance.py
+    rule: validate-union-usage
+    text: sha256:bfdbeeaf5e4e67413029664ef26392148776d0a99f2b880717edf3326a6201a0
+  - path: src/omnibase_core/validation/checker_enum_governance.py
+    rule: validate-union-usage
+    text: sha256:bfdbeeaf5e4e67413029664ef26392148776d0a99f2b880717edf3326a6201a0
+  - path: src/omnibase_core/validation/validator_contract_linter.py
+    rule: validate-union-usage
+    text: sha256:b47f7f14d886d5cfa093bd50622665ccb938d0833a3a0331278f14d9dc6b9d65
+  - path: src/omnibase_core/validation/validator_contract_linter.py
+    rule: validate-union-usage
+    text: sha256:b47f7f14d886d5cfa093bd50622665ccb938d0833a3a0331278f14d9dc6b9d65

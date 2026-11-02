@@ -1,0 +1,2 @@
+def value() -> str:
+    return 1

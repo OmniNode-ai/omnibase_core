@@ -1,0 +1,300 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the substrate-silent-except-pass hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: substrate-silent-except-pass
+entries:
+  - path: src/omnibase_core/backends/__init__.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/backends/metrics/__init__.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/cli/cli_commands.py
+    rule: substrate-silent-except-pass
+    text: sha256:5d0e28144af70d8bd0ed57a4701e10334fbb16d523d355815b979ea4fddbf54c
+  - path: src/omnibase_core/cli/cli_contract.py
+    rule: substrate-silent-except-pass
+    text: sha256:4e6d523f491a1cdecf937770e002cc5d89843c88a57defe5ea32d37510626737
+  - path: src/omnibase_core/cli/cli_demo.py
+    rule: substrate-silent-except-pass
+    text: sha256:af7c862e1b1553f22335f5c3cd5b2006f97efe14c649865b91c3d46534900a75
+  - path: src/omnibase_core/cli/cli_demo.py
+    rule: substrate-silent-except-pass
+    text: sha256:c89324374cc4cf389a59aedb1b7d0dec1a75a8e5a449067b43f2e812fa4f1225
+  - path: src/omnibase_core/cli/openclaw_analyzer.py
+    rule: substrate-silent-except-pass
+    text: sha256:d1c669302986dc71f5c3127dd2b9bde9ee9429bfd4d2b6428fa0dd73f6cdffbf
+  - path: src/omnibase_core/contracts/runtime_contracts.py
+    rule: substrate-silent-except-pass
+    text: sha256:a30742f7a9f64239e3a03eda4e1f61b165aa1e720ca67f771274d5f1c3cbbe8f
+  - path: src/omnibase_core/contracts/runtime_contracts.py
+    rule: substrate-silent-except-pass
+    text: sha256:da2a7487e081b906f8a47d550483675c03293485a133fe6deaed4fea16812c29
+  - path: src/omnibase_core/crypto/crypto_file_key_provider.py
+    rule: substrate-silent-except-pass
+    text: sha256:4e6d523f491a1cdecf937770e002cc5d89843c88a57defe5ea32d37510626737
+  - path: src/omnibase_core/crypto/crypto_file_key_provider.py
+    rule: substrate-silent-except-pass
+    text: sha256:4e6d523f491a1cdecf937770e002cc5d89843c88a57defe5ea32d37510626737
+  - path: src/omnibase_core/decorators/decorator_error_handling.py
+    rule: substrate-silent-except-pass
+    text: sha256:8ce355eaa37c1c0037eb1c9de79246da33609607bc2a36f4dfd9067e47ee1541
+  - path: src/omnibase_core/doctor/doctor_registry.py
+    rule: substrate-silent-except-pass
+    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
+  - path: src/omnibase_core/event_bus/event_bus_inmemory.py
+    rule: substrate-silent-except-pass
+    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
+  - path: src/omnibase_core/infrastructure/node_core_base.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/infrastructure/node_core_base.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/logging/logging_core.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/logging/logging_emit.py
+    rule: substrate-silent-except-pass
+    text: sha256:633824d88964feb10fd09907e2fa81d4286224d9348692a4f942870941331e5d
+  - path: src/omnibase_core/logging/logging_emit.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/logging/logging_emit.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/logging/logging_pydantic_encoder.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/mixins/mixin_contract_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:d9e51a6e56c269b21f10e1437c61ab52c997f88a7114b66199d11c68e07ac100
+  - path: src/omnibase_core/mixins/mixin_discovery_responder.py
+    rule: substrate-silent-except-pass
+    text: sha256:5e24fc364642b98dac4cdd7652b2ce2613da8d54733ab37709de22b2f887b051
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: substrate-silent-except-pass
+    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: substrate-silent-except-pass
+    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
+  - path: src/omnibase_core/mixins/mixin_event_bus.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/mixins/mixin_event_bus.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/mixins/mixin_event_bus.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/mixins/mixin_event_driven_node.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/mixins/mixin_event_driven_node.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/mixins/mixin_event_driven_node.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e98f7cd1b459045526f24e9f7857abcd3acb5767e14045a5f3e3acfaaf9578d
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:264b4db2fc301007ac0e180def6d5b5b6699bb8f04de224313afbc2d60bd4702
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:3bdd2c7523f4deb7ea1f62af80a3cbcd33586637392870e891f9685c900a445e
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:5d6a7643f4d252b9e4ecc3e304b2857969f3a37fa169f318fecf39a0cd87c458
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:6fb3c1fcd416b2d82916fa723bf84c9af8b5b9957e346a09b47ee6a346a21bff
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:76123e32f83b3fc47cae6d981dec8a20ee711841b9a03d7b05c288fdc7c069a7
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:98b177e17ba9b3f3f92d81a6211d501e4feb1c017bc57ea60243a37ec2023c74
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/mixins/mixin_introspection_publisher.py
+    rule: substrate-silent-except-pass
+    text: sha256:e6f5245ee34392f5fdc8c5802b7049ef611d506c84a3beacfe6ae96d9cf5ae79
+  - path: src/omnibase_core/mixins/mixin_node_lifecycle.py
+    rule: substrate-silent-except-pass
+    text: sha256:34d9cae15c7f03308f130accb5eb08da990323d535d8b8b95f85f9fc7b4db7a1
+  - path: src/omnibase_core/mixins/mixin_node_service.py
+    rule: substrate-silent-except-pass
+    text: sha256:223a529f25dc68a1b93c0392adadee09d1cddd33165f0d0070099a7dd2b9136c
+  - path: src/omnibase_core/mixins/mixin_node_service.py
+    rule: substrate-silent-except-pass
+    text: sha256:52d13d4ee07b6965dd0b11b5223404c108d4795040cbba4936a02ea48ae19e85
+  - path: src/omnibase_core/mixins/mixin_node_service.py
+    rule: substrate-silent-except-pass
+    text: sha256:52d13d4ee07b6965dd0b11b5223404c108d4795040cbba4936a02ea48ae19e85
+  - path: src/omnibase_core/mixins/mixin_node_service.py
+    rule: substrate-silent-except-pass
+    text: sha256:9b20e125768844ba9a222b88334e5517a5fd15c2c3212540cc866d63200aa1c0
+  - path: src/omnibase_core/mixins/mixin_node_service.py
+    rule: substrate-silent-except-pass
+    text: sha256:da83a3efcd263697174c0e8bf6e264e771f3b61b605b22c75a1ff08ce78f9027
+  - path: src/omnibase_core/models/common/model_envelope.py
+    rule: substrate-silent-except-pass
+    text: sha256:523720b99bce2e8416a174be9e17a02f7dc28e44deaaa11b32124713ed3c3efa
+  - path: src/omnibase_core/models/common/model_schema_value.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/models/core/model_action_registry.py
+    rule: substrate-silent-except-pass
+    text: sha256:ffd32860834e1f911558fa1f428777d20586406b7d262d6959bc35db95110c52
+  - path: src/omnibase_core/models/core/model_argument_map.py
+    rule: substrate-silent-except-pass
+    text: sha256:523720b99bce2e8416a174be9e17a02f7dc28e44deaaa11b32124713ed3c3efa
+  - path: src/omnibase_core/models/core/model_argument_map.py
+    rule: substrate-silent-except-pass
+    text: sha256:523720b99bce2e8416a174be9e17a02f7dc28e44deaaa11b32124713ed3c3efa
+  - path: src/omnibase_core/models/core/model_environment.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/models/core/model_environment_accessor.py
+    rule: substrate-silent-except-pass
+    text: sha256:523720b99bce2e8416a174be9e17a02f7dc28e44deaaa11b32124713ed3c3efa
+  - path: src/omnibase_core/models/core/model_event_type_registry.py
+    rule: substrate-silent-except-pass
+    text: sha256:332323de0a16ea956af1e1475737ac1fc9c33c0aa7c9c495c638df7417f47d58
+  - path: src/omnibase_core/models/core/model_field_accessor.py
+    rule: substrate-silent-except-pass
+    text: sha256:9b20e125768844ba9a222b88334e5517a5fd15c2c3212540cc866d63200aa1c0
+  - path: src/omnibase_core/models/core/model_node_announce_metadata.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/models/core/model_tool_manifest_class.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/models/detection/__init__.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/models/examples/model_environment_properties.py
+    rule: substrate-silent-except-pass
+    text: sha256:34d9cae15c7f03308f130accb5eb08da990323d535d8b8b95f85f9fc7b4db7a1
+  - path: src/omnibase_core/models/examples/model_schema_example.py
+    rule: substrate-silent-except-pass
+    text: sha256:5d0e28144af70d8bd0ed57a4701e10334fbb16d523d355815b979ea4fddbf54c
+  - path: src/omnibase_core/models/examples/model_schema_example.py
+    rule: substrate-silent-except-pass
+    text: sha256:5d0e28144af70d8bd0ed57a4701e10334fbb16d523d355815b979ea4fddbf54c
+  - path: src/omnibase_core/models/examples/model_typed_property.py
+    rule: substrate-silent-except-pass
+    text: sha256:14336f6542fc4e1e06942e86c880a772c137144d1b67ecc772f51534851540ec
+  - path: src/omnibase_core/models/health/__init__.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/models/health/model_health_check_config.py
+    rule: substrate-silent-except-pass
+    text: sha256:f43c2b41e26739ef3cc2a0f85286bdc1dbd0ecb9e00d6b762296012402bb3104
+  - path: src/omnibase_core/models/health/model_health_check_metadata.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/models/health/model_health_status.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/models/invariant/model_invariant_set.py
+    rule: substrate-silent-except-pass
+    text: sha256:7ff6ec3d73727071cc8bdc266e983a3cd6f604871e39280b1a6cc08f2cfb97c9
+  - path: src/omnibase_core/models/orchestrator/model_orchestrator_output.py
+    rule: substrate-silent-except-pass
+    text: sha256:55e3e16cd68af0897ebe226ed08e497327f0bd94982a0c777e84589311998158
+  - path: src/omnibase_core/models/providers/__init__.py
+    rule: substrate-silent-except-pass
+    text: sha256:40590a3164313294537545e07d579bd03b61116ecbf494c74a4db07703e0065a
+  - path: src/omnibase_core/models/requirements/model_requirement_evaluator.py
+    rule: substrate-silent-except-pass
+    text: sha256:523720b99bce2e8416a174be9e17a02f7dc28e44deaaa11b32124713ed3c3efa
+  - path: src/omnibase_core/models/security/model_secret_config.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/models/validation/model_schema_property.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/nodes/node_precommit_rev_time_effect/handler.py
+    rule: substrate-silent-except-pass
+    text: sha256:87c27aef9d5b1231f66671a3b59b417f4ff0a4a7896d97f4753d769053fe3699
+  - path: src/omnibase_core/nodes/node_skip_count_ratchet_check_compute/runtime_skip_count_ratchet_check.py
+    rule: substrate-silent-except-pass
+    text: sha256:5d0e28144af70d8bd0ed57a4701e10334fbb16d523d355815b979ea4fddbf54c
+  - path: src/omnibase_core/resolution/resolver_protocol_dependency.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/resolution/resolver_protocol_dependency.py
+    rule: substrate-silent-except-pass
+    text: sha256:2800f23759c55b35f8f5adeabdccf21a5c66aa664178e4c98a86439c38399d9a
+  - path: src/omnibase_core/runtime/runtime_local.py
+    rule: substrate-silent-except-pass
+    text: sha256:16e896836ce825bec4a20774c600b8a2981e9de21fb62ab1a4be835e070403c9
+  - path: src/omnibase_core/tools/mypy_plugins/tool_dict_any_checker.py
+    rule: substrate-silent-except-pass
+    text: sha256:f8987c229d72e08f0d75ce9c229a8ebfc1f4df5515ea11a5e356dbdaa02b2230
+  - path: src/omnibase_core/tools/mypy_plugins/tool_dict_any_checker.py
+    rule: substrate-silent-except-pass
+    text: sha256:f8987c229d72e08f0d75ce9c229a8ebfc1f4df5515ea11a5e356dbdaa02b2230
+  - path: src/omnibase_core/tools/mypy_plugins/tool_dict_any_checker.py
+    rule: substrate-silent-except-pass
+    text: sha256:f8987c229d72e08f0d75ce9c229a8ebfc1f4df5515ea11a5e356dbdaa02b2230
+  - path: src/omnibase_core/utils/util_bootstrap.py
+    rule: substrate-silent-except-pass
+    text: sha256:bb3aeeb3c9560c33e71ae27577c0b8cf9b5a87a887cf80ae00ac88cfa64d0d9a
+  - path: src/omnibase_core/utils/util_bootstrap.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/utils/util_bootstrap.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/utils/util_bootstrap.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/utils/util_bootstrap.py
+    rule: substrate-silent-except-pass
+    text: sha256:c72cd2eed39a5495db81d990224398c8fc9784d91bfa5cec4228b3c976932aac
+  - path: src/omnibase_core/utils/util_payload_migration.py
+    rule: substrate-silent-except-pass
+    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
+  - path: src/omnibase_core/validation/checker_agent_skill_codec.py
+    rule: substrate-silent-except-pass
+    text: sha256:7e5c3cea9b152053fd909a7b940f71b10284d4a303eca696254ec6ab78b1c93b
+  - path: src/omnibase_core/validation/checker_literal_duplication.py
+    rule: substrate-silent-except-pass
+    text: sha256:f87af20b20a29a6c7530af9eee4b7a3199d6365a3965d4f9d77c90fab3444d57
+  - path: src/omnibase_core/validation/checker_naming_convention.py
+    rule: substrate-silent-except-pass
+    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
+  - path: src/omnibase_core/validation/scripts/validate_string_versions.py
+    rule: substrate-silent-except-pass
+    text: sha256:48344fafcd2b16560124b409ac3898b229bac253c5e209f2ecbbca68d486c13a
+  - path: src/omnibase_core/validation/scripts/validate_string_versions.py
+    rule: substrate-silent-except-pass
+    text: sha256:e60cdbf9f08ea27ec39bc87dec52098b38e9d3a67969311d7cf3f04779e90437
+  - path: src/omnibase_core/validation/validator_architecture.py
+    rule: substrate-silent-except-pass
+    text: sha256:4d9250562a89257503a05481cc7ef2c566a5e949ae91b80c6da0355521788e49
+  - path: src/omnibase_core/validation/validator_contract_linter.py
+    rule: substrate-silent-except-pass
+    text: sha256:55e3e16cd68af0897ebe226ed08e497327f0bd94982a0c777e84589311998158
+  - path: src/omnibase_core/validation/validator_receipt_gate.py
+    rule: substrate-silent-except-pass
+    text: sha256:523720b99bce2e8416a174be9e17a02f7dc28e44deaaa11b32124713ed3c3efa
+  - path: src/omnibase_core/validation/validator_receipt_gate.py
+    rule: substrate-silent-except-pass
+    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
