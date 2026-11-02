@@ -26,6 +26,9 @@ if TYPE_CHECKING:
         ModelAdjacencyMap,
         ModelThresholds,
     )
+    from omnibase_core.models.nodes.test_selector.model_closure_config import (
+        ModelClosureConfig,
+    )
     from omnibase_core.models.nodes.test_selector.model_test_selection import (
         ModelTestSelection,
         ModuleName,
@@ -39,6 +42,7 @@ __all__ = [
     "EnumFullSuiteReason",
     "ModelAdjacencyEntry",
     "ModelAdjacencyMap",
+    "ModelClosureConfig",
     "ModelTestSelection",
     "ModelTestSelectionRequest",
     "ModelThresholds",
@@ -64,6 +68,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelAdjacencyMap": (
         "omnibase_core.models.nodes.test_selector.model_adjacency_map",
         "ModelAdjacencyMap",
+    ),
+    "ModelClosureConfig": (
+        "omnibase_core.models.nodes.test_selector.model_closure_config",
+        "ModelClosureConfig",
     ),
     "ModelThresholds": (
         "omnibase_core.models.nodes.test_selector.model_adjacency_map",

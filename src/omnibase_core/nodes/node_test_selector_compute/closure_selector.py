@@ -58,6 +58,9 @@ from typing import TYPE_CHECKING
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.nodes.test_selector.model_closure_config import (
+    ModelClosureConfig,
+)
 from omnibase_core.models.nodes.test_selector.model_closure_selection import (
     ModelClosureSelection,
 )
@@ -75,6 +78,7 @@ __all__ = [
     "collect_direct_imports",
     "compute_closure_selection",
     "compute_impacted_modules",
+    "compute_policy_closure",
     "graph_staleness_reason",
     "normalize_candidate_roots",
     "refine_candidates",
@@ -539,4 +543,26 @@ def compute_closure_selection(
         selected_files=selected,
         candidate_file_count=len(candidates),
         impacted_module_count=len(impacted),
+    )
+
+
+def compute_policy_closure(
+    changed_files: list[str],
+    repo_root: Path,
+    config: ModelClosureConfig,
+    package_name: str = PACKAGE_NAME,
+) -> ModelClosureSelection:
+    """``compute_closure_selection`` with a repository's policy ``closure:`` block.
+
+    The selector policy YAML (``ModelAdjacencyMap.closure``) is where a
+    repository declares its candidate roots, test-file patterns and ignored
+    prefixes (OMN-14206); this is the one place those values are applied.
+    """
+    return compute_closure_selection(
+        changed_files,
+        repo_root,
+        package_name,
+        candidate_roots=config.candidate_roots,
+        test_file_patterns=config.test_file_patterns,
+        ignored_prefixes=config.ignored_prefixes,
     )
