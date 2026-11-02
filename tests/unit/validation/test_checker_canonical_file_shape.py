@@ -816,6 +816,27 @@ def test_a_test_data_file_named_like_an_exception_list_is_not_one() -> None:
     assert [str(i.file_path) for i in check(facts, RULES)] == ["config/x_baseline.yaml"]
 
 
+def test_a_workflow_named_like_an_exception_list_is_not_one() -> None:
+    """A pipeline definition named *baseline* is not a shrink-only list.
+
+    dev-baseline-publisher.yml publishes a baseline; it does not hold one. A new
+    one is not a "new baseline file", and a step added to an existing one is not
+    "entries N -> M".
+    """
+    workflow = ".github/workflows/dev-baseline-publisher.yml"
+    facts = ModelCanonicalFileShapeFacts.model_validate(
+        {
+            "head_tree": {"files": [workflow, "config/x_baseline.yaml"]},
+            "has_base": True,
+            "changes": [
+                {"status": "A", "path": workflow, "new_text": "name: x\non: push\n"},
+                {"status": "A", "path": "config/x_baseline.yaml", "new_text": "- a\n"},
+            ],
+        }
+    )
+    assert [str(i.file_path) for i in check(facts, RULES)] == ["config/x_baseline.yaml"]
+
+
 def test_baselined_growth_text_names_the_bind_then_edit_path() -> None:
     """The growth message tells the author a bound handler leaves the baseline."""
     findings = _run(_facts("violation_baselined-file-growth.json"), RULES)
