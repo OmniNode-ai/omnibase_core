@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+default_dirs: [src]
+pyright_project: pyrightconfig.json
+rules:
+  - hook: substrate-silent-except-pass
+    module: omnibase_core.cli.substrate_gates.silent_except_pass
+    checker: SilentExceptPassGate
+  - hook: substrate-env-silent-fallback
+    module: omnibase_core.cli.substrate_gates.env_silent_fallback
+    checker: EnvSilentFallbackGate
+  - hook: substrate-identity-field-optionality
+    module: omnibase_core.cli.substrate_gates.identity_field_optionality
+    checker: IdentityFieldOptionalityCheck
+  - hook: substrate-loose-typing-internal
+    module: omnibase_core.cli.substrate_gates.loose_typing_in_internal
+    checker: LooseTypingInInternalGate
+  - hook: substrate-protocol-kwargs-object
+    module: omnibase_core.cli.substrate_gates.protocol_kwargs_object
+    checker: ProtocolKwargsObjectGate
+  - hook: validate-stubbed-functionality
+    module: scripts/validation/validate-stubbed-functionality.py
+    checker: StubbedFunctionalityChecker
+  - hook: validate-model-dump-json-mode
+    module: scripts/validation/validate-model-dump-json-mode.py
+    checker: ModelDumpModeDetector
+    exclude_parts: [tests, archived, archive, __pycache__, .git, .venv]
+  - hook: validate-union-usage
+    module: scripts/validation/validate-union-usage.py
+    checker: UnionUsageChecker
+    exclude_parts: [examples, archived, archive, __pycache__, .git, .venv]
+    exclude_prefixes: [src/omnibase_core/protocols/]
+  - hook: pyright-type-check
+    diagnostic_rules: [reportReturnType, reportArgumentType, reportAssignmentType]

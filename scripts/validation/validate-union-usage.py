@@ -9,64 +9,6 @@ Validates that Union types are used properly according to ONEX standards.
 Uses AST-based legitimacy validation instead of arbitrary counting.
 Ensures unions follow proper typing patterns for strong type safety.
 
-Protocol Type Exclusion Rationale
-=================================
-
-The ``protocols/`` directory is excluded from union validation in .pre-commit-config.yaml
-for the following architectural reasons:
-
-1. **Structural vs Nominal Typing**:
-   Protocol types use structural (duck) typing, not nominal typing. They define
-   interfaces that describe behavior, not concrete runtime types. This fundamental
-   difference means standard union discrimination patterns don't apply.
-
-2. **Not Suitable for Union Discrimination**:
-   Protocol types cannot be used as discriminators in Union types because:
-
-   - They are abstract interface definitions, not instantiable types
-   - They don't have a concrete ``__class__`` to match against at runtime
-   - They cannot be used in Literal discriminator patterns (e.g., ``Literal["MyProtocol"]``)
-   - ``isinstance()`` checks with Protocol require ``@runtime_checkable`` and have limitations
-
-3. **Interface Flexibility by Design**:
-   Protocol definitions intentionally use broader return type unions to accommodate
-   multiple implementations. For example::
-
-       def get_metadata(self) -> dict[str, str | int | bool | float]
-
-   This is not "primitive soup" but rather a deliberate JSON-compatible interface
-   that any implementation can satisfy.
-
-4. **Suppression Comments for Legitimate Cases**:
-   When protocol methods must return union types (e.g., JSON-compatible values),
-   we use ``# union-ok: json_value`` suppression comments to document the rationale.
-   This provides an audit trail without cluttering the codebase with false positives.
-
-What Would Happen Without Exclusion
------------------------------------
-
-If protocols were validated without exclusion, the validator would flag many
-legitimate interface definitions as "primitive_soup" or "overly_broad" because:
-
-- Protocol return types must be general enough to cover all implementations
-- Protocol parameter types may accept multiple input formats
-- JSON-compatible value types (str | int | bool | float) are common in interfaces
-
-When This Exclusion Might Need to Change
-----------------------------------------
-
-Consider removing or modifying this exclusion if:
-
-- Protocol definitions start using genuinely problematic union patterns
-- A new validation category specifically for protocol interfaces is added
-- The codebase adopts a different approach to protocol typing (e.g., generics)
-
-See Also
---------
-
-- ``src/omnibase_core/protocols/types.py`` for examples of legitimate protocol unions
-- ``CLAUDE.md`` section on Protocol-Driven Dependency Injection
-- ``.pre-commit-config.yaml`` for the exclude configuration
 """
 
 from __future__ import annotations
@@ -129,37 +71,7 @@ class UnionLegitimacyValidator:
 
     @staticmethod
     def _safe_str(value: Any) -> str:
-        """Safely convert a value to string for type comparison operations.
-
-        This defensive helper handles edge cases that may arise from AST parsing
-        or malformed input:
-        - None values -> empty string (will be filtered by callers)
-        - Non-string types -> converted via str()
-        - Empty/whitespace strings -> returned as-is (callers decide handling)
-
-        Args:
-            value: Any value to convert to string.
-
-        Returns:
-            String representation of the value, or empty string for None.
-
-        Example:
-            >>> UnionLegitimacyValidator._safe_str(None)
-            ''
-            >>> UnionLegitimacyValidator._safe_str(123)
-            '123'
-            >>> UnionLegitimacyValidator._safe_str("str")
-            'str'
-
-        Note:
-            Currently, non-string types are silently converted via str(). This
-            could potentially hide issues with malformed AST nodes or unexpected
-            input types.
-
-            Unexpected values are normalized through ``str()`` at this boundary;
-            callers that need stricter AST diagnostics must validate their input
-            before invoking this helper.
-        """
+        """Normalize a value for type comparison."""
         if value is None:
             return ""
         if not isinstance(value, str):
@@ -168,26 +80,7 @@ class UnionLegitimacyValidator:
 
     @staticmethod
     def _safe_lower(value: Any) -> str:
-        """Safely lowercase a value for case-insensitive comparison.
-
-        This defensive helper combines safe string conversion with lowercasing,
-        handling edge cases:
-        - None values -> empty string
-        - Non-string types -> converted then lowercased
-        - AttributeError protection for objects without .lower()
-
-        Args:
-            value: Any value to convert and lowercase.
-
-        Returns:
-            Lowercased string representation, or empty string for None.
-
-        Example:
-            >>> UnionLegitimacyValidator._safe_lower(None)
-            ''
-            >>> UnionLegitimacyValidator._safe_lower("SUCCESS")
-            'success'
-        """
+        """Normalize a value for case-insensitive comparison."""
         if value is None:
             return ""
         if not isinstance(value, str):
@@ -793,6 +686,8 @@ class UnionUsageChecker(ast.NodeVisitor):
             file_content: Optional file content for context-aware checks
                 (e.g., detecting suppression comments, discriminator fields).
         """
+        self._type_aliases = {"Optional": "Optional", "Union": "Union"}
+        self._typing_modules = {"typing", "typing_extensions"}
         self.union_count = 0
         self.legitimate_union_count = 0
         self.invalid_union_count = 0
@@ -998,9 +893,53 @@ class UnionUsageChecker(ast.NodeVisitor):
             # This is a style suggestion, not a legitimacy issue
             # We'll handle this in a separate style checker if needed
 
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        if node.module in {"typing", "typing_extensions"}:
+            self._type_aliases.update({a.asname or a.name: a.name for a in node.names})
+
+    def visit_Import(self, node: ast.Import) -> None:
+        self._typing_modules.update(
+            a.asname or a.name
+            for a in node.names
+            if a.name in {"typing", "typing_extensions"}
+        )
+
     def visit_Subscript(self, node: ast.Subscript) -> None:
-        """Visit subscript nodes (e.g., Union[str, int])."""
-        if isinstance(node.value, ast.Name) and node.value.id == "Union":
+        """Reject old nullable syntax, including typing aliases, as one finding."""
+        name = (
+            self._type_aliases.get(node.value.id, "")
+            if isinstance(node.value, ast.Name)
+            else ""
+        )
+        if (
+            isinstance(node.value, ast.Attribute)
+            and isinstance(node.value.value, ast.Name)
+            and node.value.value.id in self._typing_modules
+        ):
+            name = node.value.attr
+        types = (
+            [self._extract_type_name(n) for n in node.slice.elts]
+            if isinstance(node.slice, ast.Tuple)
+            else [self._extract_type_name(node.slice)]
+        )
+        nullable = name == "Optional" or (
+            name == "Union" and len(types) == 2 and "None" in types
+        )
+        if nullable:
+            if not self._has_suppression_comment(node.lineno):
+                pattern = UnionPattern(
+                    types + (["None"] if name == "Optional" else []),
+                    node.lineno,
+                    self.file_path,
+                )
+                self.union_count += 1
+                self.invalid_union_count += 1
+                self.union_patterns.append(pattern)
+                self.invalid_patterns.append(pattern)
+                self.issues.append(
+                    f"Line {node.lineno}: Use T | None instead of nullable {name} syntax"
+                )
+        elif name == "Union":
             self._process_union_types(node, node.slice, node.lineno)
         self.generic_visit(node)
 

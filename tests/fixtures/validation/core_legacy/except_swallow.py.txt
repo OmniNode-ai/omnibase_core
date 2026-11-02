@@ -1,0 +1,6 @@
+import logging
+
+try:
+    int("invalid")
+except Exception:
+    logging.error("operation failed")

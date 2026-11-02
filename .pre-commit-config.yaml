@@ -158,14 +158,14 @@ repos:
       # CI runs both on full codebase for comprehensive coverage.
       - id: pyright-type-check
         name: pyright (type checking - basic)
-        entry: uv run pyright
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook pyright-type-check --baseline .onex_ratchets/pyright-type-check.yaml
         language: system
-        types: [python]
-        files: ^src/omnibase_core/.*\.py$
+        files: ^(src/omnibase_core/.*\.py|pyrightconfig\.json|\.onex_ratchets/pyright-type-check\.yaml)$
         exclude: ^(tests/|src/omnibase_core/examples|archive/|archived/).*\.py$
         pass_filenames: true  # Only check changed files, CI does full scan
         require_serial: true
-        stages: [pre-push]  # ~1-5s for changed files only
+        stages: [pre-commit, pre-push]  # ~1-5s for changed files only
 
       # Evidence-Source SHAPE check (OMN-14682)
       # Local fail-fast companion to the CI receipt-gate: validates that the
@@ -428,17 +428,16 @@ repos:
         stages: [pre-commit]
 
       # Substrate Gate: silent except-pass (OMN-wire-validators)
-      # Baseline: 102 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Per-file shrink-only source-finding baseline (OMN-22012).
       # Annotate justified cases with: # substrate-allow: <reason>
       - id: substrate-silent-except-pass
         name: No silent except-pass (substrate gate)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.silent_except_pass
-          --max-violations 102
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook substrate-silent-except-pass --baseline .onex_ratchets/substrate-silent-except-pass.yaml
         language: system
-        types: [python]
         pass_filenames: true
         require_serial: true
-        files: ^src/.*\.py$
+        files: ^(src/.*\.py|\.onex_ratchets/substrate-silent-except-pass\.yaml)$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
@@ -500,77 +499,73 @@ repos:
         stages: [pre-commit]
 
       # Substrate Gate: env silent fallback (OMN-wire-validators)
-      # Baseline: 38 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Per-file shrink-only source-finding baseline (OMN-22012).
       # Annotate justified bootstrap cases with: # substrate-allow: bootstrap-fallback
       - id: substrate-env-silent-fallback
         name: No env silent fallback (substrate gate)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.env_silent_fallback
-          --max-violations 38
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook substrate-env-silent-fallback --baseline .onex_ratchets/substrate-env-silent-fallback.yaml
         language: system
-        types: [python]
         pass_filenames: true
         require_serial: true
-        files: ^src/.*\.py$
+        files: ^(src/.*\.py|\.onex_ratchets/substrate-env-silent-fallback\.yaml)$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
       # Substrate Gate: identity field optionality (OMN-wire-validators)
-      # Baseline: 122 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Per-file shrink-only source-finding baseline (OMN-22012).
       # Annotate justified cases with: # substrate-allow: <reason>
       - id: substrate-identity-field-optionality
         name: No optional identity fields (substrate gate)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.identity_field_optionality
-          --max-violations 122
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook substrate-identity-field-optionality --baseline .onex_ratchets/substrate-identity-field-optionality.yaml
         language: system
-        types: [python]
         pass_filenames: true
         require_serial: true
-        files: ^src/.*\.py$
+        files: ^(src/.*\.py|\.onex_ratchets/substrate-identity-field-optionality\.yaml)$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
       # Substrate Gate: loose typing in internal (OMN-wire-validators)
-      # Baseline: 345 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Per-file shrink-only source-finding baseline (OMN-22012).
       # Annotate justified cases with: # substrate-allow: <reason>
       - id: substrate-loose-typing-internal
         name: No loose typing in internal (substrate gate)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.loose_typing_in_internal
-          --max-violations 345
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook substrate-loose-typing-internal --baseline .onex_ratchets/substrate-loose-typing-internal.yaml
         language: system
-        types: [python]
         pass_filenames: true
         require_serial: true
-        files: ^src/.*\.py$
+        files: ^(src/.*\.py|\.onex_ratchets/substrate-loose-typing-internal\.yaml)$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
       # Substrate Gate: protocol kwargs object (OMN-wire-validators)
-      # Baseline: 6 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Per-file shrink-only source-finding baseline (OMN-22012).
       # Protocol methods must use explicit typed parameters, not *args/**kwargs: object/Any.
       # Annotate justified cases with: # substrate-allow: <reason>
       - id: substrate-protocol-kwargs-object
         name: No protocol *args/**kwargs loose typing (substrate gate)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.cli.substrate_gates.protocol_kwargs_object
-          --max-violations 6
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook substrate-protocol-kwargs-object --baseline .onex_ratchets/substrate-protocol-kwargs-object.yaml
         language: system
-        types: [python]
         pass_filenames: true
         require_serial: true
-        files: ^src/.*\.py$
+        files: ^(src/.*\.py|\.onex_ratchets/substrate-protocol-kwargs-object\.yaml)$
         exclude: ^(tests/|archived/|archive/)
         stages: [pre-commit]
 
       # validate-stubbed-functionality (OMN-wire-validators)
-      # Baseline: 124 violations on 2026-05-10 — ratchet mode, threshold must decrease over time.
+      # Per-file shrink-only source-finding baseline (OMN-22012).
       # Detects NotImplementedError stubs, pass-only methods, TODO/FIXME in prod code.
       - id: validate-stubbed-functionality
         name: ONEX Stubbed Functionality Detection
-        entry: env -u PYTHONPATH uv run python scripts/validation/validate-stubbed-functionality.py --max-violations
-          124
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook validate-stubbed-functionality --baseline .onex_ratchets/validate-stubbed-functionality.yaml
         language: system
         pass_filenames: true
         require_serial: true
-        files: ^src/.*\.py$
+        files: ^(src/.*\.py|\.onex_ratchets/validate-stubbed-functionality\.yaml)$
         exclude: ^(tests/|archived/|archive/|examples/prototypes/).*\.py$
         stages: [pre-commit]
 
@@ -970,23 +965,16 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
-      # UNION VALIDATION THRESHOLD (whole-tree ratchet, OMN-19515):
-      # The script scans all of src/ in ONE invocation (pass_filenames: false)
-      # and the ceiling is the measured whole-tree invalid-union total. The old
-      # per-file-list cap (160) was applied to each pre-commit xargs batch, and
-      # pre-commit reshuffles every batch whenever any file is added, so an
-      # unrelated PR could trip it (omnibase_core#1761). protocols/ is excluded
-      # by the script's --exclude-regex; `files:`/`exclude:` below only decide
-      # when the hook triggers. Lower the ceiling when you remove an invalid
-      # union: tests/unit/validation/test_validate_union_usage_whole_tree.py
-      # pins it to the measured total. Never raise it. Tracking: OMN-468, OMN-676
+      # Per-file source identities replace the whole-tree union allowance (OMN-22012).
+      # New findings fail in a staged file; resolved entries must be removed.
       - id: validate-union-usage
         name: ONEX Union Usage Validation
-        entry: uv run python scripts/validation/validate-union-usage.py
-        args: ['--allow-invalid', '422', '--exclude-regex', '^src/omnibase_core/protocols/']
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook validate-union-usage --baseline .onex_ratchets/validate-union-usage.yaml
+        require_serial: true
         language: system
-        pass_filenames: false
-        files: ^src/.*\.py$
+        pass_filenames: true
+        files: ^(src/.*\.py|\.onex_ratchets/validate-union-usage\.yaml)$
         exclude: ^(tests/|archived/|archive/|scripts/validation/|src/omnibase_core/protocols/).*\.py$
         stages: [pre-commit]
 
@@ -1306,7 +1294,7 @@ repos:
       # dict[str, Any] Anti-Pattern Detection
       # TECHNICAL DEBT: Current baseline is 842 violations (2025-12-05)
       # In file mode (pre-commit), any new violation fails
-      # In directory mode (CI), compares against --max-violations threshold
+      # Directory mode (CI) also uses the per-file baseline
       - id: validate-dict-any-usage
         name: ONEX dict[str, Any] Anti-Pattern Detection
         entry: uv run python -m omnibase_core.nodes.node_dict_any_check_compute.runtime_dict_any_check
@@ -1323,18 +1311,19 @@ repos:
       # Bare model_dump() Detection (OMN-4912)
       # Prevents bare model_dump() calls that produce non-JSON-safe types at
       # serialization boundaries. Baseline: 314 violations (2026-03-13).
-      # Ratchet rule: any PR reducing violations must lower --max-violations.
+      # Ratchet rule: any PR reducing violations must remove the resolved baseline entries.
       # OMN-14694: the 5 WS8 validator-node handlers (OMN-14656/OMN-14659) plus
       # the no-io-outside-effects handler all serialise JSON-safe findings
       # via model_dump(mode="json"), removing 5 pre-existing bare calls and
       # taking the tree from 314 to 309; ceiling lowered 310 -> 309 to match.
       - id: validate-model-dump-json-mode
         name: Validate model_dump uses mode="json"
-        entry: uv run python scripts/validation/validate-model-dump-json-mode.py --directory src/ --max-violations
-          309
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook validate-model-dump-json-mode --baseline .onex_ratchets/validate-model-dump-json-mode.yaml
+        require_serial: true
         language: system
-        pass_filenames: false
-        files: ^src/.*\.py$
+        pass_filenames: true
+        files: ^(src/.*\.py|\.onex_ratchets/validate-model-dump-json-mode\.yaml)$
         stages: [pre-commit]
 
       - id: no-pydantic-bypass-in-prod

@@ -1,0 +1,230 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22012
+title: 'Core legacy validators: Slice A staged-file refusal'
+summary: Slice A addresses AC2 and AC3 with staged-file refusal, enabled pyright rules and per-file shrink-only
+  baselines. AC1 remains for later slices; the remaining Appendix 1 rows are named in context.remaining_appendix_1_rows.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-core-legacy-slice-a
+    statement: Local validator findings cannot hide below a global allowance.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the canary''s except_swallow, optional_union and type_error defects are refused
+          locally in omnibase_core -- falsifier: pre-commit run --files on the three canary files exits
+          non-zero with one finding each'
+      - id: AC3
+        statement: 'AC3: no ratchet takes --max-violations N and a staged file can fail one commit --
+          falsifier: git grep -n -e ''--max-violations'' in .pre-commit-config.yaml returns nothing, and
+          a canary commit adding one finding to a baselined file is refused'
+evidence_requirements:
+  - kind: tests
+    description: The staged-file canaries and shrink-only baseline regressions pass.
+    command: uv run pytest tests/unit/handlers/test_core_legacy_ratchets.py --no-cov -o addopts='' -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-ac1-deferred-inventory
+    description: AC1 is pending beyond Slice A. This check records the named remaining Appendix 1 rows,
+      and does not assert that their migration is complete.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run python -c "from pathlib import Path; import yaml; c=yaml.safe_load(Path('contracts/OMN-22012.yaml').read_text());
+          assert c['context']['deferred_acceptance']==['AC1']; assert c['context']['remaining_appendix_1_rows']"
+  - id: dod-ac2-canaries
+    description: The three canaries refuse through pre-commit --files with one finding each; clean controls
+      pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_core_legacy_ratchets.py --no-cov -o addopts=''
+          -q -k precommit_files
+  - id: dod-ac3-staged-ratchet
+    description: The configuration has no numeric violation allowance, and the commit-hook invocation
+      refuses one added finding in a staged baselined file.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: '! git grep -n -e ''--max-violations'' -- .pre-commit-config.yaml'
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_core_legacy_ratchets.py --no-cov -o addopts=''
+          -q -k 'commit_hook or new_duplicate or baseline_edits'
+  - id: dod-deploy-validator-runtime
+    description: Validator runtime integration check, runnable on the hosted runner after uv sync installs
+      this revision. No new bus node or service deployment; two-profile testing is not applicable.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_core_legacy_ratchets.py --no-cov -o addopts=''
+          -q -k 'precommit_files or commit_hook'
+context:
+  slice: A
+  deferred_acceptance:
+    - AC1
+  remaining_appendix_1_rows:
+    - row: omnibase_core:74
+      hook: detect-secrets-fan-out
+    - row: omnibase_core:83
+      hook: evidence-verifier-model-invariants
+    - row: omnibase_core:93
+      hook: ruff-format
+    - row: omnibase_core:102
+      hook: ruff-fix
+    - row: omnibase_core:113
+      hook: mypy-type-check
+    - row: omnibase_core:160
+      hook: check-evidence-shape
+    - row: omnibase_core:169
+      hook: receipt-gate-sibling-checkouts
+    - row: omnibase_core:181
+      hook: receipt-gate-writer-pin-only
+    - row: omnibase_core:194
+      hook: call-repo-evidence-gate-verifier-floor
+    - row: omnibase_core:209
+      hook: lint-imports
+    - row: omnibase_core:224
+      hook: import-ratchet
+    - row: omnibase_core:255
+      hook: async-fixture-decorator
+    - row: omnibase_core:294
+      hook: rsd-provenance-stamp
+    - row: omnibase_core:348
+      hook: verify-flip-bundle
+    - row: omnibase_core:369
+      hook: no-env-file
+    - row: omnibase_core:380
+      hook: no-planning-docs
+    - row: omnibase_core:406
+      hook: hook-bits-drift
+    - row: omnibase_core:418
+      hook: check-dep-provenance
+    - row: omnibase_core:444
+      hook: reject-deploy-gate-skip-token
+    - row: omnibase_core:453
+      hook: reject-deploy-gate-skip-token-commit-msg
+    - row: omnibase_core:475
+      hook: reject-required-check-skip-vector
+    - row: omnibase_core:574
+      hook: validate-repository-structure
+    - row: omnibase_core:586
+      hook: no-plugin-daemon-classes
+    - row: omnibase_core:635
+      hook: no-unguarded-git-subprocess
+    - row: omnibase_core:650
+      hook: no-noncanonical-lifecycle-classes
+    - row: omnibase_core:684
+      hook: cascade-provenance-block
+    - row: omnibase_core:713
+      hook: pydantic-extra-forbid
+    - row: omnibase_core:729
+      hook: check-fsm-handler-drift
+    - row: omnibase_core:741
+      hook: operation-match-requires-operation
+    - row: omnibase_core:756
+      hook: dispatched-contract-operation
+    - row: omnibase_core:771
+      hook: command-category-requires-event-model
+    - row: omnibase_core:787
+      hook: generated-node-model-class-exists
+    - row: omnibase_core:808
+      hook: validate-naming-conventions
+    - row: omnibase_core:828
+      hook: validate-file-locations
+    - row: omnibase_core:838
+      hook: validate-no-duplicate-dirs
+    - row: omnibase_core:846
+      hook: validate-no-duplicate-models
+    - row: omnibase_core:854
+      hook: validate-no-empty-directories
+    - row: omnibase_core:877
+      hook: validate-string-versions
+    - row: omnibase_core:887
+      hook: validate-archived-imports
+    - row: omnibase_core:909
+      hook: validate-no-manual-yaml
+    - row: omnibase_core:928
+      hook: validate-pydantic-patterns
+    - row: omnibase_core:975
+      hook: validate-contracts
+    - row: omnibase_core:984
+      hook: audit-optional-usage
+    - row: omnibase_core:1010
+      hook: check-no-fallbacks
+    - row: omnibase_core:1020
+      hook: check-error-raising
+    - row: omnibase_core:1036
+      hook: check-no-print-statements
+    - row: omnibase_core:1065
+      hook: validate-no-enhancement-prefixes
+    - row: omnibase_core:1078
+      hook: contract-config-compliance
+    - row: omnibase_core:1093
+      hook: dispatch-surface-test-required
+    - row: omnibase_core:1106
+      hook: breaking-schema-change
+    - row: omnibase_core:1118
+      hook: validate-gitignore-baseline
+    - row: omnibase_core:1242
+      hook: validate-enum-model-imports
+    - row: omnibase_core:1266
+      hook: validate-typeddict-patterns
+    - row: omnibase_core:1310
+      hook: no-pydantic-bypass-in-prod
+    - row: omnibase_core:1321
+      hook: validate-secrets
+    - row: omnibase_core:1332
+      hook: validate-hardcoded-env-vars
+    - row: omnibase_core:1976
+      hook: validate-exception-handling
+    - row: omnibase_core:1989
+      hook: validate-no-model-primitive-unions
+    - row: omnibase_core:2002
+      hook: validate-no-transport-imports
+    - row: omnibase_core:2016
+      hook: validate-deterministic-skill-routing
+    - row: omnibase_core:2030
+      hook: validate-no-kafka-listener-apis
+    - row: omnibase_core:2044
+      hook: onex-validate-links
+    - row: omnibase_core:2060
+      hook: check-protocol-runtime-checkable
+    - row: omnibase_core:2099
+      hook: pytest-protocol-uuid-enforcement
+    - row: omnibase_core:2177
+      hook: check-node-purity
+    - row: omnibase_core:2188
+      hook: check-forbidden-patterns
+    - row: omnibase_core:2263
+      hook: block-operational-artifacts
+    - row: omnibase_core:2284
+      hook: typed-bootstrap-environment-boundary
+    - row: omnibase_core:2355
+      hook: demo-path-topic-coherence
+    - row: omnibase_core:2371
+      hook: precommit-fail-loud-meta-gate
+    - row: omnibase_core:2379
+      hook: precommit-pin-parity
+    - row: omnibase_core:2484
+      hook: main-target-guard
+    - row: omnibase_core:2446
+      hook: secrets-baseline-wired
+      scope: externally sourced first-party hook
+    - row: omnibase_core:2455
+      hook: deployment-config
+      scope: externally sourced first-party hook
+    - row: omnibase_core:2463
+      hook: anti-growth-baseline
+      scope: externally sourced first-party hook

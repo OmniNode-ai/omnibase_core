@@ -329,6 +329,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 0  # Compare baseline edits with origin/dev, including committed PR edits.
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
@@ -363,7 +365,23 @@ jobs:
           echo "::warning::libatomic1 is not visible and cannot be installed by this runner; continuing so Pyright reports the real failure if the runtime requires it"
 
       - name: Run pyright type checking
-        run: uv run pyright src/omnibase_core
+        run: >-
+          uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check
+          --hook pyright-type-check --baseline .onex_ratchets/pyright-type-check.yaml --dir src/omnibase_core
+
+      - name: Slice A staged-file refusal and baseline regressions (OMN-22012)
+        run: >-
+          uv run pytest tests/unit/handlers/test_core_legacy_ratchets.py
+          tests/unit/handlers/test_baselined_finding_hooks.py
+          tests/unit/validation/test_validate_union_usage_whole_tree.py
+          --no-cov -o addopts='' -q
+
+      - name: Refuse new and stale legacy findings per file (OMN-22012)
+        run: |
+          for hook in substrate-silent-except-pass substrate-env-silent-fallback substrate-identity-field-optionality substrate-loose-typing-internal substrate-protocol-kwargs-object validate-stubbed-functionality validate-model-dump-json-mode validate-union-usage; do
+            uv run python -m omnibase_core.nodes.node_finding_baseline_check_effect.runtime_legacy_ratchet_check \
+              --hook "$hook" --baseline ".onex_ratchets/$hook.yaml" --dir src/omnibase_core || exit "$?"
+          done
 
   # Phase 1 validation job - runs in parallel with lint, pyright
   # Must complete before test-parallel starts (fail-fast optimization)
