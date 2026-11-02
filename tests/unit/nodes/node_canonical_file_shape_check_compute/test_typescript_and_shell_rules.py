@@ -443,11 +443,8 @@ def test_shell_script_refused_python_unchanged(repo: Path) -> None:
     assert [(f.file_path.as_posix(), f.code) for f in findings] == [
         ("scripts/tool.py", "noncanonical-file")
     ]
-    assert findings[0].message == (
-        "scripts/tool.py: new code file outside a canonical location "
-        "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
-        "src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). "
-        "Build it as node node_tool: a contract + node + handler."
+    assert findings[0].message == RULES.parameters.noncanonical_text.format(
+        path="scripts/tool.py", node="node_tool"
     )
 
 
