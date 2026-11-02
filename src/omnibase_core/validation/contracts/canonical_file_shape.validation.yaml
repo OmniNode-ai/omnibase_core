@@ -45,6 +45,30 @@ validation:
           src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). Build it as a contract + node
           + handler."
         shell_text: "shell scripts have no canonical location in any repository (OMN-21332)."
+        # TypeScript/React and shell locations (OMN-21332, plan rules T1-T17).
+        typescript_extensions: [".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"]
+        typescript_src_extensions: [".ts", ".tsx"]
+        typescript_test_dirs: ["tests", "test", "__tests__", "e2e"]
+        typescript_src_dirs: ["components", "pages", "models", "api", "generated", "contracts", "handlers",
+          "store", "theme"]
+        typescript_entrypoints: ["index", "main", "App", "middleware", "proxy", "instrumentation", "instrumentation-client"]
+        typescript_app_dir: "app"
+        typescript_app_names: ["page", "layout", "loading", "error", "not-found", "forbidden", "unauthorized",
+          "route", "template", "default", "global-error", "global-not-found", "sitemap", "robots", "manifest",
+          "icon", "apple-icon", "opengraph-image", "twitter-image"]
+        typescript_hooks_dir: "hooks"
+        typescript_declaration_suffix: ".d.ts"
+        typescript_root_names: ["next-env.d.ts"]
+        typescript_root_dirs: [".storybook"]
+        typescript_config_name_pattern: '^[^/]+\.(config|setup)\.(ts|js|mjs|cjs)$'
+        typescript_test_name_pattern: '\.(test|spec)\.(ts|tsx)$'
+        typescript_hook_name_pattern: '^(use[A-Z][A-Za-z0-9]*|index)\.(ts|tsx)$'
+        typescript_workspace_manifest: "package.json"
+        typescript_packages_dir: "packages"
+        typescript_package_scope_prefix: "@"
+        shell_extensions: [".sh", ".bash", ".zsh"]
+        shell_shebang_pattern: '^#![ \t]*(?:\S*/)?(?:env[ \t]+(?:-S[ \t]+)?(?:\S*/)?)?(?:sh|bash|zsh|dash|ksh)(?:[
+          \t]|$)'
         baseline_path: ".onex_ratchets/canonical_file_shape_baseline.txt"
         node_home_baseline_path: ".onex_ratchets/node_home_baseline.txt"
         baseline_header: |

@@ -8,16 +8,16 @@ from pathlib import Path
 
 import pytest
 
-from omnibase_core.handlers.handler_canonical_location_rules import (
-    HandlerCanonicalLocationRules,
-)
 from omnibase_core.models.validation.model_canonical_file_shape_tree import (
     ModelCanonicalFileShapeTree,
 )
 from omnibase_core.models.validation.model_canonical_location_request import (
     ModelCanonicalLocationRequest,
 )
-from omnibase_core.validation.checker_canonical_file_shape import file_rule_refusals
+from omnibase_core.validation.checker_canonical_file_shape import (
+    canonical_location,
+    file_rule_refusals,
+)
 from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
     BASELINE,
     RULES,
@@ -46,17 +46,14 @@ def repo(tmp_path: Path) -> Path:
     return init_repo(tmp_path)
 
 
-_LOCATION_RULES = HandlerCanonicalLocationRules()
-
-
 def typescript_workspace_roots(files: tuple[str, ...]) -> frozenset[str]:
     request = ModelCanonicalLocationRequest(tracked_files=files)
-    return _LOCATION_RULES.handle(request).workspace_roots
+    return canonical_location(request, RULES.parameters).workspace_roots
 
 
 def is_shell_script(path: str, head_bytes: bytes | None) -> bool:
     request = ModelCanonicalLocationRequest(path=path, head_bytes=head_bytes)
-    return _LOCATION_RULES.handle(request).is_shell_script
+    return canonical_location(request, RULES.parameters).is_shell_script
 
 
 def _is_canonical_location(

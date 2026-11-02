@@ -33,10 +33,6 @@ from pydantic import ValidationError
 from omnibase_core.enums import EnumSeverity
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
-from omnibase_core.handlers.handler_canonical_location_rules import (
-    TYPESCRIPT_EXTENSIONS,
-    HandlerCanonicalLocationRules,
-)
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
     ModelValidatorSubcontract,
@@ -118,6 +114,11 @@ def _regex(pattern: str, multiline: bool = False) -> re.Pattern[str]:
     return re.compile(pattern, re.MULTILINE if multiline else 0)
 
 
+@lru_cache(maxsize=16)
+def _bytes_regex(pattern: str) -> re.Pattern[bytes]:
+    return re.compile(pattern.encode())
+
+
 def _suffix(path: str) -> str:
     return PurePosixPath(path).suffix.lower()
 
@@ -133,7 +134,128 @@ def _is_code(path: str, text: str | None, p: ModelCanonicalFileShapeRules) -> bo
     return suffix == "" and text is not None and text.startswith(p.shebang_prefix)
 
 
-_LOCATION_RULES = HandlerCanonicalLocationRules()
+def _is_shell_script(
+    path: str, head_bytes: bytes | None, p: ModelCanonicalFileShapeRules
+) -> bool:
+    """A shell suffix, or an extensionless file with a shell interpreter shebang."""
+    suffix = _suffix(path)
+    if suffix in p.shell_extensions:
+        return True
+    if suffix or not head_bytes:
+        return False
+    first_line = head_bytes.split(b"\n", 1)[0].rstrip(b"\r")
+    return _bytes_regex(p.shell_shebang_pattern).match(first_line) is not None
+
+
+def _is_typescript_src_location(
+    parts: tuple[str, ...], p: ModelCanonicalFileShapeRules
+) -> bool:
+    """Check a path relative to a workspace's src directory."""
+    name = parts[-1]
+    if _regex(p.typescript_test_name_pattern).search(name):
+        return True
+    stem = PurePosixPath(name).stem
+    if len(parts) == 1:
+        return stem in p.typescript_entrypoints or name.endswith(
+            p.typescript_declaration_suffix
+        )
+    if parts[0] == p.typescript_app_dir:
+        return stem in p.typescript_app_names
+    if parts[0] == p.typescript_hooks_dir:
+        return (
+            len(parts) == 2
+            and _regex(p.typescript_hook_name_pattern).fullmatch(name) is not None
+        )
+    return parts[0] in p.typescript_src_dirs
+
+
+def _typescript_workspace_roots(
+    files: Iterable[str], p: ModelCanonicalFileShapeRules
+) -> frozenset[str]:
+    """Workspace directories with tracked package manifests at permitted depths."""
+    roots = set[str]()
+    scope = p.typescript_package_scope_prefix
+    for path in files:
+        parts = PurePosixPath(path).parts
+        if not parts or parts[-1] != p.typescript_workspace_manifest:
+            continue
+        if (
+            (len(parts) == 2 and parts[0] != p.src_root)
+            or (
+                len(parts) == 3
+                and parts[0] == p.typescript_packages_dir
+                and not parts[1].startswith(scope)
+            )
+            or (
+                len(parts) == 4
+                and parts[0] == p.typescript_packages_dir
+                and parts[1].startswith(scope)
+                and len(parts[1]) > len(scope)
+            )
+        ):
+            roots.add("/".join(parts[:-1]))
+    return frozenset(roots)
+
+
+def _is_typescript_canonical_location(
+    path: str, workspace_roots: frozenset[str], p: ModelCanonicalFileShapeRules
+) -> bool:
+    """TypeScript/React locations, trying each permitted workspace prefix."""
+    parts = PurePosixPath(path).parts
+    if not parts or _suffix(path) not in p.typescript_extensions:
+        return False
+    if parts[0] == p.docs_root or any(
+        part in p.typescript_test_dirs for part in parts[:-1]
+    ):
+        return True
+    prefix_lengths = [0]
+    if parts[0] != p.src_root:
+        prefix_lengths.append(1)
+    if len(parts) >= 3 and parts[0] == p.typescript_packages_dir:
+        scoped = parts[1].startswith(p.typescript_package_scope_prefix)
+        prefix_lengths.append(3 if scoped else 2)
+    for length in prefix_lengths:
+        if length and "/".join(parts[:length]) not in workspace_roots:
+            continue
+        relative = parts[length:]
+        if len(relative) == 1 and (
+            _regex(p.typescript_config_name_pattern).fullmatch(relative[0])
+            or relative[0] in p.typescript_root_names
+        ):
+            return True
+        if len(relative) == 2 and relative[0] in p.typescript_root_dirs:
+            return True
+        if (
+            len(relative) >= 2
+            and relative[0] == p.src_root
+            and _suffix(path) in p.typescript_src_extensions
+            and _is_typescript_src_location(relative[1:], p)
+        ):
+            return True
+    return False
+
+
+def canonical_location(
+    request: ModelCanonicalLocationRequest, p: ModelCanonicalFileShapeRules
+) -> ModelCanonicalLocationVerdict:
+    """Answer the canonical-location questions about one path from the request alone.
+
+    The workspace roots are the request's roots plus those derived from its tracked
+    files; the path, if the request names one, is judged against them.
+    """
+    roots = request.workspace_roots | _typescript_workspace_roots(
+        request.tracked_files, p
+    )
+    path = request.path
+    if path is None:
+        return ModelCanonicalLocationVerdict(workspace_roots=roots)
+    return ModelCanonicalLocationVerdict(
+        workspace_roots=roots,
+        is_shell_script=_is_shell_script(path, request.head_bytes, p),
+        is_typescript_canonical_location=_is_typescript_canonical_location(
+            path, roots, p
+        ),
+    )
 
 
 def _canonical_location(
@@ -141,7 +263,7 @@ def _canonical_location(
     location: ModelCanonicalLocationVerdict,
     p: ModelCanonicalFileShapeRules,
 ) -> bool:
-    if _suffix(path) in TYPESCRIPT_EXTENSIONS:
+    if _suffix(path) in p.typescript_extensions:
         return location.is_typescript_canonical_location
     parts = PurePosixPath(path).parts
     if not parts:
@@ -249,8 +371,8 @@ def file_rule_refusals(
     refusals: dict[str, tuple[str, str]] = {}
     files = frozenset(tree.files)
     heads = _heads(tree)
-    roots = _LOCATION_RULES.handle(
-        ModelCanonicalLocationRequest(tracked_files=tree.files)
+    roots = canonical_location(
+        ModelCanonicalLocationRequest(tracked_files=tree.files), p
     ).workspace_roots
     if RULE_NONCANONICAL in rules.enabled:
         for path in sorted(files):
@@ -258,10 +380,11 @@ def file_rule_refusals(
             text = None if head is None else head.decode(errors="replace")
             if not _is_code(path, text, p):
                 continue
-            location = _LOCATION_RULES.handle(
+            location = canonical_location(
                 ModelCanonicalLocationRequest(
                     path=path, head_bytes=head, workspace_roots=roots
-                )
+                ),
+                p,
             )
             if location.is_shell_script:
                 refusals[path] = (RULE_NONCANONICAL, p.shell_text)

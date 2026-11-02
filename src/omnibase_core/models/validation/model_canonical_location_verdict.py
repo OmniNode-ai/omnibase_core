@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelCanonicalLocationVerdict(BaseModel):
-    """What ``HandlerCanonicalLocationRules.handle`` found.
+    """What ``checker_canonical_file_shape.canonical_location`` found.
 
     ``workspace_roots`` are the workspace directories among the request's tracked
     files. ``is_shell_script`` and ``is_typescript_canonical_location`` answer for

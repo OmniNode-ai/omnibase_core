@@ -32,6 +32,26 @@ class ModelCanonicalFileShapeRules(BaseModel):
     canonical_src_min_parts: int
     noncanonical_text: str
     shell_text: str
+    # noncanonical-file: TypeScript/React and shell locations (OMN-21332)
+    typescript_extensions: tuple[str, ...]
+    typescript_src_extensions: tuple[str, ...]
+    typescript_test_dirs: tuple[str, ...]
+    typescript_src_dirs: tuple[str, ...]
+    typescript_entrypoints: tuple[str, ...]
+    typescript_app_dir: str
+    typescript_app_names: tuple[str, ...]
+    typescript_hooks_dir: str
+    typescript_declaration_suffix: str
+    typescript_root_names: tuple[str, ...]
+    typescript_root_dirs: tuple[str, ...]
+    typescript_config_name_pattern: str
+    typescript_test_name_pattern: str
+    typescript_hook_name_pattern: str
+    typescript_workspace_manifest: str
+    typescript_packages_dir: str
+    typescript_package_scope_prefix: str
+    shell_extensions: tuple[str, ...]
+    shell_shebang_pattern: str
     baseline_path: str
     node_home_baseline_path: str
     baseline_header: str
