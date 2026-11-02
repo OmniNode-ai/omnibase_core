@@ -464,6 +464,17 @@ requirements:
           an entry that is not a repository name. The tests fail at merge base fc6159b98, whose workflow
           has no such input or step. -- falsifier: uv run pytest tests/unit/scripts/ci/test_hook_push_rehearsal_siblings_omn17427.py
           -q -o addopts=''"
+  - id: req-omn17427-workflow-baseline-not-exception
+    statement: The canonical file-shape check does not treat a workflow under the workflows directory
+      as a shrink-only exception list because its name contains baseline, so a pipeline such as dev-baseline-publisher.yml
+      can be added or gain a step.
+    acceptance:
+      - id: AC57
+        statement: "AC57: An added .github/workflows/dev-baseline-publisher.yml raises no canonical file-shape
+          finding while an added config/x_baseline.yaml beside it is still refused. The test fails at
+          merge base c58d677a4, whose checker treats the workflow as a new baseline file. -- falsifier:
+          uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py -q -o addopts='' -k
+          test_a_workflow_named_like_an_exception_list_is_not_one"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -589,6 +600,11 @@ evidence_requirements:
     description: The hook push rehearsal's sibling-repositories input defaults to empty and, on a matching
       pull request, clones each named sibling beside the workspace and exports its path to the push.
     command: uv run pytest tests/unit/scripts/ci/test_hook_push_rehearsal_siblings_omn17427.py -q -o addopts=''
+  - kind: tests
+    description: A workflow named like a baseline is not a shrink-only exception list for the canonical
+      file-shape check, while a config baseline file still is.
+    command: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py -q -o addopts=''
+      -k test_a_workflow_named_like_an_exception_list_is_not_one
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1233,3 +1249,16 @@ dod_evidence:
           -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC56]
+  - id: dod-omn17427-workflow-baseline-not-exception
+    description: The canonical file-shape checker skips files under the workflows directory when it looks
+      for shrink-only exception lists, so an added dev-baseline-publisher.yml raises no finding while
+      an added config/x_baseline.yaml still does. The test fails at merge base c58d677a4, where the workflow
+      is refused as a new baseline file.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py -q -o addopts=''
+          -k test_a_workflow_named_like_an_exception_list_is_not_one
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC57]
