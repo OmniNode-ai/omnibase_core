@@ -75,12 +75,16 @@ dod_evidence:
     binds_ac: [AC2]
   - id: dod-omn22170-ac3-required-context
     description: omnibase_core's Canonical File Shape (OMN-20304) job is a member of the CI Summary gating
-      set. The other repositories are read from the landing controller's required-contexts.json after
-      the rollout, not from this pull request.
+      set, and its node refuses new launchd and cron units that run scripts. The behavior probe fails
+      on the merge-base node that admits those units. The other repositories are read from the landing
+      controller's required-contexts.json after the rollout, not from this pull request.
     source: manual
     checks:
       - check_type: command
-        check_value: grep -q 'Canonical File Shape (OMN-20304)' scripts/ci/ci_summary_gate.py
+        check_value: >-
+          grep -q 'Canonical File Shape (OMN-20304)' scripts/ci/ci_summary_gate.py && env PYTHONDONTWRITEBYTECODE=1
+          uv run pytest tests/unit/validation/test_script_refusal_omn22170.py -q --no-cov -n 0 -k 'script_fixture_matrix
+          and (new_launchd_unit_running_a_script or new_cron_unit_running_a_script)'
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
   - id: dod-omn22170-ac4-lab-proof
