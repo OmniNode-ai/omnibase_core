@@ -11,6 +11,19 @@ description: >
   and edge artifacts.
 input_model: omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_request.ModelBoundaryImportCheckRequest
 output_model: omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_input.ModelBoundaryImportCheckInput
+protocol_dependencies:
+  - name: GitFileListingInterface
+    protocol: omnibase_core.nodes.node_boundary_import_check_effect._git_file_listing_interface:GitFileListingInterface
+    required: true
+    bind_as: listing
+  - name: SourceFileGatherInterface
+    protocol: omnibase_core.nodes.node_boundary_import_check_effect._source_file_gather_interface:SourceFileGatherInterface
+    required: true
+    bind_as: gatherer
+  - name: ValidationReportWriteInterface
+    protocol: omnibase_core.nodes.node_boundary_import_check_effect._validation_report_write_interface:ValidationReportWriteInterface
+    required: true
+    bind_as: writer
 handler_routing:
   version: {major: 1, minor: 0, patch: 0}
   default_handler: handler:NodeBoundaryImportCheckEffect

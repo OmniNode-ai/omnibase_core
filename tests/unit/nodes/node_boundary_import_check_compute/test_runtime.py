@@ -5,19 +5,47 @@
 
 import json
 import subprocess
+from collections.abc import Callable
+from importlib import import_module, resources
 from pathlib import Path
+from types import SimpleNamespace
+from typing import cast
+from unittest.mock import Mock
 
 import pytest
+import yaml
 
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
+from omnibase_core.models.nodes.git_file_listing.model_git_file_listing_output import (
+    ModelGitFileListingOutput,
+)
 from omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_check_request import (
     ModelBoundaryImportCheckRequest,
+)
+from omnibase_core.models.nodes.source_file_gather.model_gathered_source_file import (
+    ModelGatheredSourceFile,
+)
+from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_output import (
+    ModelSourceFileGatherOutput,
+)
+from omnibase_core.models.validation.model_validation_report import (
+    ModelValidationReport,
+    ModelValidationRequestRef,
+)
+from omnibase_core.nodes.node_boundary_import_check_compute import (
+    runtime_node_boundary_import_check as runtime,
 )
 from omnibase_core.nodes.node_boundary_import_check_compute.analyzer import (
     DEFAULT_BASELINE,
     parse_baseline,
     render_baseline,
 )
+from omnibase_core.nodes.node_boundary_import_check_compute.handler import (
+    NodeBoundaryImportCheckCompute,
+)
 from omnibase_core.nodes.node_boundary_import_check_compute.runtime_node_boundary_import_check import (
+    build_container,
     main,
 )
 from omnibase_core.nodes.node_boundary_import_check_effect.handler import (
@@ -208,9 +236,13 @@ def test_tracked_only_and_excluded_paths(repo: Path) -> None:
     assert main(["--root", str(repo)]) == 0
     git(repo, "add", "plugins")
     assert main(["--root", str(repo)]) == 1
-    gathered = NodeBoundaryImportCheckEffect().handle(
-        ModelBoundaryImportCheckRequest(root=str(repo))
-    )
+    container = build_container()
+    try:
+        gathered = container.get_service(NodeBoundaryImportCheckEffect).handle(
+            ModelBoundaryImportCheckRequest(root=str(repo))
+        )
+    finally:
+        container.close()
     assert gathered.repo_packages == ("example",)
     assert "example.nodes.node_x" in gathered.node_packages
 
@@ -503,3 +535,159 @@ def test_empty_base_baseline_cannot_grow(repo: Path, bootstrap: bool) -> None:
     assert rules(repo, *args) == {"baseline-growth"}
     assert rules(repo, "--write-baseline", *args) == {"baseline-growth"}
     assert baseline.read_text() == current
+
+
+def test_effect_requires_container() -> None:
+    with pytest.raises(TypeError, match="container"):
+        cast(
+            "Callable[[], NodeBoundaryImportCheckEffect]", NodeBoundaryImportCheckEffect
+        )()
+
+
+def test_main_uses_supplied_container(repo: Path) -> None:
+    backing = build_container()
+    try:
+        effect = backing.get_service(NodeBoundaryImportCheckEffect)
+        compute = Mock(spec=NodeBoundaryImportCheckCompute)
+        compute.handle.return_value = ModelValidationReport.from_findings(
+            findings=(), request=ModelValidationRequestRef(profile="default")
+        )
+        supplied = Mock(spec=ModelONEXContainer)
+        supplied.get_service.side_effect = lambda token: (
+            effect if token is NodeBoundaryImportCheckEffect else compute
+        )
+        assert main(["--root", str(repo)], container=supplied) == 0
+        compute.handle.assert_called_once()
+        assert {call.args[0] for call in supplied.get_service.call_args_list} == {
+            NodeBoundaryImportCheckEffect,
+            NodeBoundaryImportCheckCompute,
+        }
+        supplied.close.assert_not_called()
+    finally:
+        backing.close()
+
+
+def test_effect_uses_injected_collaborators(repo: Path) -> None:
+    source_path = "src/example/client.py"
+    baseline = write(repo, DEFAULT_BASELINE, render_baseline(()))
+    listing, gatherer, writer = Mock(), Mock(), Mock()
+    listing.handle.return_value = ModelGitFileListingOutput(paths=[source_path])
+    gatherer.handle.side_effect = [
+        ModelSourceFileGatherOutput(
+            root=str(repo),
+            files=[
+                ModelGatheredSourceFile(
+                    path=str(repo / source_path),
+                    size_bytes=0,
+                    source="injected = True\n",
+                )
+            ],
+        ),
+        ModelSourceFileGatherOutput(
+            root=str(repo),
+            files=[
+                ModelGatheredSourceFile(
+                    path=str(baseline), size_bytes=0, source=render_baseline(())
+                )
+            ],
+        ),
+    ]
+    services = {
+        "GitFileListingInterface": listing,
+        "SourceFileGatherInterface": gatherer,
+        "ValidationReportWriteInterface": writer,
+    }
+    container = Mock(spec=ModelONEXContainer)
+    container.get_service.side_effect = lambda token: services[token.__name__]
+    effect = NodeBoundaryImportCheckEffect(cast(ModelONEXContainer, container))
+    result = effect.handle(ModelBoundaryImportCheckRequest(root=str(repo)))
+    assert [(file.path, file.source) for file in result.files] == [
+        (source_path, "injected = True\n")
+    ]
+    assert result.baseline_present and result.baseline_edges == ()
+    assert listing.handle.call_count == 1
+    assert gatherer.handle.call_count == 2
+    assert gatherer.handle.call_args_list[0].args[0].explicit_paths == [
+        str(repo / source_path)
+    ]
+    assert gatherer.handle.call_args_list[1].args[0].explicit_paths == [str(baseline)]
+    report = ModelValidationReport.from_findings(
+        findings=(), request=ModelValidationRequestRef(profile="default")
+    )
+    effect.write_report(str(repo / "injected-report.json"), report)
+    written = writer.handle.call_args.args[0]
+    assert written.report is report
+    assert written.report_path == str(repo / "injected-report.json")
+    assert {
+        call.args[0].__name__ for call in container.get_service.call_args_list
+    } == set(services)
+
+
+@pytest.mark.parametrize(
+    "missing",
+    [
+        "GitFileListingInterface",
+        "SourceFileGatherInterface",
+        "ValidationReportWriteInterface",
+    ],
+)
+def test_effect_refuses_unbound_dependency(missing: str) -> None:
+    container = Mock(spec=ModelONEXContainer)
+
+    def resolve(token: type[object]) -> Mock:
+        if token.__name__ == missing:
+            raise LookupError("dependency unbound")
+        return Mock()
+
+    container.get_service.side_effect = resolve
+    with pytest.raises(LookupError, match="dependency unbound"):
+        NodeBoundaryImportCheckEffect(cast(ModelONEXContainer, container))
+
+
+def test_effect_contract_dependencies_are_bound() -> None:
+    contract = resources.files(
+        "omnibase_core.nodes.node_boundary_import_check_effect"
+    ).joinpath("contract.yaml")
+    dependencies = yaml.safe_load(contract.read_text())["protocol_dependencies"]
+    assert {dep["name"] for dep in dependencies} == {
+        "GitFileListingInterface",
+        "SourceFileGatherInterface",
+        "ValidationReportWriteInterface",
+    }
+    container = build_container()
+    try:
+        for dependency in dependencies:
+            assert dependency["required"] is True
+            module, name = dependency["protocol"].split(":")
+            protocol = getattr(import_module(module), name)
+            assert isinstance(container.get_service(protocol), protocol)
+        assert isinstance(
+            container.get_service(NodeBoundaryImportCheckEffect),
+            NodeBoundaryImportCheckEffect,
+        )
+    finally:
+        container.close()
+
+
+@pytest.mark.parametrize("change", ["unbound", "missing", "malformed"])
+def test_container_reads_contract_dependencies(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, change: str
+) -> None:
+    original = resources.files(
+        "omnibase_core.nodes.node_boundary_import_check_effect"
+    ).joinpath("contract.yaml")
+    document = yaml.safe_load(original.read_text())
+    if change == "unbound":
+        document["protocol_dependencies"][0]["protocol"] = (
+            "example.ports:ProtocolUnbound"
+        )
+    elif change == "missing":
+        document["protocol_dependencies"].pop()
+    else:
+        document["protocol_dependencies"] = {"unexpected": "mapping"}
+    (tmp_path / "contract.yaml").write_text(yaml.safe_dump(document))
+    monkeypatch.setattr(
+        runtime, "resources", SimpleNamespace(files=lambda package: tmp_path)
+    )
+    with pytest.raises(ModelOnexError):
+        build_container()

@@ -14,12 +14,17 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
+from typing import cast
 
 import yaml
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.container.model_onex_container import ModelONEXContainer
 from omnibase_core.models.nodes.git_file_listing.model_git_file_listing_input import (
     ModelGitFileListingInput,
+)
+from omnibase_core.models.nodes.git_file_listing.model_git_file_listing_output import (
+    ModelGitFileListingOutput,
 )
 from omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import_artifact_write_input import (
     ModelBoundaryImportArtifactWriteInput,
@@ -36,8 +41,14 @@ from omnibase_core.models.nodes.node_boundary_import_check.model_boundary_import
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
     ModelSourceFileGatherInput,
 )
+from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_output import (
+    ModelSourceFileGatherOutput,
+)
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
     ModelValidationReportWriteInput,
+)
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_output import (
+    ModelValidationReportWriteOutput,
 )
 from omnibase_core.models.validation.model_validation_report import (
     ModelValidationReport,
@@ -48,31 +59,47 @@ from omnibase_core.nodes.node_boundary_import_check_compute.analyzer import (
     node_directories,
     parse_baseline,
 )
-from omnibase_core.nodes.node_git_file_listing_effect.handler import (
-    NodeGitFileListingEffect,
+from omnibase_core.nodes.node_boundary_import_check_effect._git_file_listing_interface import (
+    GitFileListingInterface,
 )
-from omnibase_core.nodes.node_source_file_gather_effect.handler import (
-    NodeSourceFileGatherEffect,
+from omnibase_core.nodes.node_boundary_import_check_effect._source_file_gather_interface import (
+    SourceFileGatherInterface,
 )
-from omnibase_core.nodes.node_validation_report_write_effect.handler import (
-    NodeValidationReportWriteEffect,
+from omnibase_core.nodes.node_boundary_import_check_effect._validation_report_write_interface import (
+    ValidationReportWriteInterface,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
+
+_LISTING_TOKEN = cast(
+    "type[GitFileListingInterface[ModelGitFileListingInput, ModelGitFileListingOutput]]",
+    GitFileListingInterface,
+)
+_GATHER_TOKEN = cast(
+    "type[SourceFileGatherInterface[ModelSourceFileGatherInput, ModelSourceFileGatherOutput]]",
+    SourceFileGatherInterface,
+)
+_WRITER_TOKEN = cast(
+    "type[ValidationReportWriteInterface[ModelValidationReportWriteInput, ModelValidationReportWriteOutput]]",
+    ValidationReportWriteInterface,
+)
 
 
 class NodeBoundaryImportCheckEffect:
     """Gather a repo into the typed COMPUTE request and persist CLI artifacts."""
+
+    def __init__(self, container: ModelONEXContainer) -> None:
+        self._listing = container.get_service(_LISTING_TOKEN)
+        self._gatherer = container.get_service(_GATHER_TOKEN)
+        self._writer = container.get_service(_WRITER_TOKEN)
 
     def handle(
         self, request: ModelBoundaryImportCheckRequest
     ) -> ModelBoundaryImportCheckInput:
         """Read only tracked eligible importers; inspect local package directories."""
         root = Path(request.root).resolve()
-        paths = (
-            NodeGitFileListingEffect()
-            .handle(ModelGitFileListingInput(root=root, scope="tracked"))
-            .paths
-        )
+        paths = self._listing.handle(
+            ModelGitFileListingInput(root=root, scope="tracked")
+        ).paths
         source_root = root / "src"
         packages = (
             tuple(
@@ -103,7 +130,7 @@ class NodeBoundaryImportCheckEffect:
         files: tuple[ModelBoundaryImportSourceFile, ...] = ()
         read_errors: tuple[str, ...] = ()
         if selected:
-            gathered = NodeSourceFileGatherEffect().handle(
+            gathered = self._gatherer.handle(
                 ModelSourceFileGatherInput(
                     root=str(root),
                     explicit_paths=[str(root / path) for path in selected],
@@ -125,7 +152,7 @@ class NodeBoundaryImportCheckEffect:
         baseline: tuple[str, ...] = ()
         baseline_error: str | None = None
         if present:
-            gathered_baseline = NodeSourceFileGatherEffect().handle(
+            gathered_baseline = self._gatherer.handle(
                 ModelSourceFileGatherInput(
                     root=str(root),
                     explicit_paths=[str(baseline_path)],
@@ -229,6 +256,6 @@ class NodeBoundaryImportCheckEffect:
 
     def write_report(self, path: str, report: ModelValidationReport) -> None:
         """Delegate canonical report persistence to its existing EFFECT node."""
-        NodeValidationReportWriteEffect().handle(
+        self._writer.handle(
             ModelValidationReportWriteInput(report_path=path, report=report)
         )
