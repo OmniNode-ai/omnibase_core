@@ -464,6 +464,14 @@ requirements:
           an entry that is not a repository name. The tests fail at merge base fc6159b98, whose workflow
           has no such input or step. -- falsifier: uv run pytest tests/unit/scripts/ci/test_hook_push_rehearsal_siblings_omn17427.py
           -q -o addopts=''"
+  - id: req-omn17427-closure-config-literalstring
+    statement: The closure-config validation error passes its text to PydanticCustomError as a template
+      argument, so pyright accepts model_closure_config.py and dev's pyright step is green again.
+    acceptance:
+      - id: AC58
+        statement: "AC58: pyright reports no error on src/omnibase_core/models/nodes/test_selector/model_closure_config.py.
+          The check fails at merge base 3f994354e, where a str is passed as the LiteralString message_template
+          (reportArgumentType). -- falsifier: uv run pyright src/omnibase_core/models/nodes/test_selector/model_closure_config.py"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -589,6 +597,10 @@ evidence_requirements:
     description: The hook push rehearsal's sibling-repositories input defaults to empty and, on a matching
       pull request, clones each named sibling beside the workspace and exports its path to the push.
     command: uv run pytest tests/unit/scripts/ci/test_hook_push_rehearsal_siblings_omn17427.py -q -o addopts=''
+  - kind: ci
+    description: pyright accepts the closure-config module, whose error text is a template argument rather
+      than a non-literal message_template.
+    command: uv run pyright src/omnibase_core/models/nodes/test_selector/model_closure_config.py
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1233,3 +1245,14 @@ dod_evidence:
           -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC56]
+  - id: dod-omn17427-closure-config-literalstring
+    description: _invalid in model_closure_config.py passes the error text as the msg context of a constant
+      "{msg}" template, so pyright reports no reportArgumentType error. The check fails at merge base
+      3f994354e, where the str message is passed as the LiteralString message_template.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pyright src/omnibase_core/models/nodes/test_selector/model_closure_config.py
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC58]
