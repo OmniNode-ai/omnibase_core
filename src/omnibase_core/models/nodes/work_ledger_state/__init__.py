@@ -35,6 +35,9 @@ if TYPE_CHECKING:
     from omnibase_core.models.nodes.work_ledger_state.model_ruling_state import (
         ModelRulingState,
     )
+    from omnibase_core.models.nodes.work_ledger_state.model_stale_hold import (
+        ModelStaleHold,
+    )
     from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input import (
         ModelWorkLedgerFoldInput,
     )
@@ -67,6 +70,7 @@ __all__ = [
     "ModelWorkLedgerProjectionSnapshot",
     "ModelQuestionState",
     "ModelRulingState",
+    "ModelStaleHold",
     "ModelWorkLedgerFoldInput",
     "ModelWorkLedgerHealth",
     "ModelWorkLedgerLink",
@@ -108,6 +112,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelRulingState": (
         "omnibase_core.models.nodes.work_ledger_state.model_ruling_state",
         "ModelRulingState",
+    ),
+    "ModelStaleHold": (
+        "omnibase_core.models.nodes.work_ledger_state.model_stale_hold",
+        "ModelStaleHold",
     ),
     "ModelWorkLedgerFoldInput": (
         "omnibase_core.models.nodes.work_ledger_state.model_work_ledger_fold_input",

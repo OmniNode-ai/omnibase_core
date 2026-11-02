@@ -1,0 +1,40 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21947
+title: Adjudicate the work ledger verb disagreement between file and database and import the history with
+  legacy_ordinal and the line-citation table
+summary: The pure work-ledger state queries gain the settled stale-hold rule (an until=open hold with
+  no release older than 14 days is stale and listed apart, with its age), an as_of clock on the hold and
+  inbox queries, and a stale_holds field on the verdict. The history import and the citation table are
+  in omnimarket; this change is the lower layer they read.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21947-core-classes
+    statement: The stale-hold rule runs first and has one test per class of hold.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: each differing hold and claim of M8 is classified as file-window truncation,
+          database fold difference or before the first database row, with one test per class -- falsifier:
+          uv run pytest tests -k "hold_class or claim_class" -q in omnimarket and in omnibase_core'
+evidence_requirements:
+  - kind: tests
+    description: The work-ledger state compute suite, including the stale-hold class tests.
+    command: uv run pytest tests/unit/nodes/node_work_ledger_state_compute -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21947-core-ac1
+    description: AC1 in omnibase_core runs the stale-hold class tests (stale, fresh, released, scoped
+      release, age) of the state compute queries.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_work_ledger_state_compute -k "hold_class or claim_class"
+          -q --no-cov --tb=line
+        cwd: .

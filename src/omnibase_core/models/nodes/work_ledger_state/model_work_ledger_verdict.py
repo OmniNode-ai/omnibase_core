@@ -22,6 +22,9 @@ from omnibase_core.models.nodes.work_ledger_state.model_hold_in_force import (
 from omnibase_core.models.nodes.work_ledger_state.model_question_state import (
     ModelQuestionState,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_stale_hold import (
+    ModelStaleHold,
+)
 
 __all__ = ["ModelWorkLedgerVerdict"]
 
@@ -43,6 +46,13 @@ class ModelWorkLedgerVerdict(BaseModel):
     )
     questions: tuple[ModelQuestionState, ...] = Field(
         default=(), description="Questions that match the question asked of the ledger."
+    )
+    stale_holds: tuple[ModelStaleHold, ...] = Field(
+        default=(),
+        description=(
+            "Open-ended holds with no release older than 14 days that match the "
+            "question. Listed apart with their age; never part of an HELD answer."
+        ),
     )
     undecided_reasons: tuple[str, ...] = Field(
         default=(), description="Why the answer is UNDECIDED, when it is."
