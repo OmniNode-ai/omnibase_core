@@ -14,9 +14,11 @@ Exit code 0 = clean. Exit code 1 = violations found, or a named file unreadable.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from collections.abc import Sequence
-from typing import cast
+from pathlib import Path
+from typing import Final, cast
 
 from omnibase_core.enums.enum_injection_scope import EnumInjectionScope
 from omnibase_core.enums.enum_service_lifecycle import EnumServiceLifecycle
@@ -31,11 +33,28 @@ from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSo
 from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
     ModelSourceFileGatherInput,
 )
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
+    ModelValidationReportWriteInput,
+)
+from omnibase_core.models.validation.model_validation_report import (
+    ModelValidationFindingEmbed,
+    ModelValidationReport,
+    ModelValidationRequestRef,
+)
 from omnibase_core.nodes.node_no_hardcoded_topics_check_compute.handler_no_hardcoded_topics import (
     HandlerNoHardcodedTopics,
 )
 from omnibase_core.nodes.node_source_file_gather_effect.handler import (
     NodeSourceFileGatherEffect,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler import (
+    NodeValidationReportWriteEffect,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
+    HandlerValidatorRuntimeOverlay,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run import (
+    build_validator_container,
 )
 from omnibase_core.utils.util_run_coro_sync import run_coro_sync
 from omnibase_core.validation.validator_no_hardcoded_topics import (
@@ -45,6 +64,8 @@ from omnibase_core.validation.validator_no_hardcoded_topics import (
 
 __all__ = ["main"]
 
+VALIDATOR_ID: Final[str] = "no-hardcoded-topics"
+
 
 _NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN = cast(
     "type[NodeSourceFileGatherEffect]", NodeSourceFileGatherEffect
@@ -52,6 +73,40 @@ _NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN = cast(
 _HANDLER_NO_HARDCODED_TOPICS_TOKEN = cast(
     "type[HandlerNoHardcodedTopics]", HandlerNoHardcodedTopics
 )
+
+
+def _write_report(
+    report_path: str | None,
+    overlay_path: Path | None,
+    findings: tuple[ModelValidationFindingEmbed, ...] = (),
+    *,
+    runtime_errors: tuple[str, ...] = (),
+) -> None:
+    """Persist every verdict and publish its events using the configured overlay."""
+    handler = HandlerValidatorRuntimeOverlay()
+    settings = handler.settings()
+    overlay = handler.load(overlay_path or handler.default_overlay_path())
+    report = (
+        ModelValidationReport.from_runtime_errors(VALIDATOR_ID, runtime_errors)
+        if runtime_errors
+        else ModelValidationReport.from_findings(
+            findings=findings,
+            request=ModelValidationRequestRef(profile=overlay.profile),
+            validators_run=(VALIDATOR_ID,),
+        )
+    )
+    container = build_validator_container(overlay)
+    try:
+        container.get_service(NodeValidationReportWriteEffect).handle(
+            ModelValidationReportWriteInput(
+                report_path=report_path
+                or settings.default_report_path.format(validator_id=VALIDATOR_ID),
+                report=report,
+                repository=settings.default_repository,
+            )
+        )
+    finally:
+        container.close()
 
 
 def build_container() -> ModelONEXContainer:
@@ -93,8 +148,25 @@ def main(
 
 def _run(argv: Sequence[str] | None, container: ModelONEXContainer) -> int:
     """Run the exported hook on the given files, or command-line arguments."""
-    paths = list(sys.argv[1:] if argv is None else argv)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("paths", nargs="*")
+    parser.add_argument(
+        "--report-json",
+        default=None,
+        metavar="PATH",
+        help="Report path; the runtime settings' default when omitted",
+    )
+    parser.add_argument(
+        "--overlay",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Validator-runtime overlay; the settings' default when omitted",
+    )
+    parsed = parser.parse_args(argv)
+    paths = parsed.paths
     if not paths:
+        _write_report(parsed.report_json, parsed.overlay)
         return 0
     gathered = container.get_service(_NODE_SOURCE_FILE_GATHER_EFFECT_TOKEN).handle(
         ModelSourceFileGatherInput(
@@ -105,6 +177,13 @@ def _run(argv: Sequence[str] | None, container: ModelONEXContainer) -> int:
         )
     )
     if gathered.skipped:
+        _write_report(
+            parsed.report_json,
+            parsed.overlay,
+            runtime_errors=tuple(
+                f"{skipped.path}: {skipped.reason}" for skipped in gathered.skipped
+            ),
+        )
         for skipped in gathered.skipped:
             sys.stdout.write(f"ERROR: {skipped.path}: {skipped.reason}\n")
         return 1
@@ -116,6 +195,20 @@ def _run(argv: Sequence[str] | None, container: ModelONEXContainer) -> int:
             ],
             rules=rules,
         )
+    )
+    _write_report(
+        parsed.report_json,
+        parsed.overlay,
+        tuple(
+            ModelValidationFindingEmbed(
+                validator_id=VALIDATOR_ID,
+                severity="FAIL",
+                location=finding.location,
+                rule_id=finding.rule_id,
+                message=finding.message,
+            )
+            for finding in report.findings
+        ),
     )
     if report.findings:
         for finding in report.findings:

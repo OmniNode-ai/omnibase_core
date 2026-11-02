@@ -19,8 +19,11 @@ Related ticket: OMN-9115 (consumer), OMN-9051 (spec), parent OMN-9048.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_validator_requirement_emits import (
+    EnumValidatorRequirementEmits,
+)
 from omnibase_core.enums.enum_validator_requirement_scope import (
     EnumValidatorRequirementScope,
 )
@@ -91,9 +94,33 @@ class ModelValidatorRequirementEntry(BaseModel):
             "exclusion is allowed."
         ),
     )
+    emits: EnumValidatorRequirementEmits = Field(
+        description=(
+            "REQUIRED means a wired pre-commit entry must be a core-format "
+            "runtime that writes its verdict through the report writer; "
+            "EXEMPT is for a tool that is by nature not a core validator and "
+            "needs emits_exempt_reason. There is no default: an entry that "
+            "omits it is rejected on load."
+        )
+    )
+    emits_exempt_reason: str | None = Field(
+        default=None,
+        description="Why the entry is exempt; required with EXEMPT, forbidden with REQUIRED.",
+    )
     applies_to_repos: list[str] | str = Field(
         description=(
             "Either the literal string 'all' (every repo) or a list of repo "
             "names. Unknown names are a spec typo, caught by the shape tests."
         )
     )
+
+    @model_validator(mode="after")
+    def _emits_reason_matches_emits(self) -> ModelValidatorRequirementEntry:
+        has_reason = bool(self.emits_exempt_reason and self.emits_exempt_reason.strip())
+        if self.emits is EnumValidatorRequirementEmits.EXEMPT and not has_reason:
+            raise ValueError("emits: exempt needs a non-empty emits_exempt_reason")
+        if self.emits is EnumValidatorRequirementEmits.REQUIRED and (
+            self.emits_exempt_reason is not None
+        ):
+            raise ValueError("emits: required takes no emits_exempt_reason")
+        return self

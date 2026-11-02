@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ModelRequirementsConsumerCheckInput(BaseModel):
@@ -15,3 +15,7 @@ class ModelRequirementsConsumerCheckInput(BaseModel):
     repo: str
     repo_root: str
     spec_path: str | None = None
+    check_emits: bool = Field(
+        default=False,
+        description="Also judge each wired pre-commit entry of an emits-required validator (OMN-22003).",
+    )

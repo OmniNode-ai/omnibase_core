@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: single_class_per_file
+  validator_name: Single Class Per File Validator
+  validator_description: Refuses multiple module-level classes unless all are enums. Preserves the legacy
+    script's path exemptions and scope tracking (OMN-22003). All exemptions, thresholds, enum base markers
+    and message texts are the rule rows of this file.
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns: []
+  rules:
+    - rule_id: multiple_classes
+      description: Each module contains at most one class, unless every class is an enum.
+      severity: error
+      enabled: true
+      parameters:
+        path_pattern: '\.py$'
+        exempt_path_markers:
+          - /tests/
+          - /test_
+          - /archived/
+          - /archive/
+          - /scripts/validation/
+        exempt_names:
+          - __init__.py
+          - singleton_holders.py
+          - model_security_summaries.py
+          - model_database_secure_config.py
+          - model_service_registry_config.py
+          - model_epic_state.py
+          - model_orchestrator_intents.py
+          - model_routing_config.py
+          - model_quality_gate.py
+          - model_bifrost_delegation_config.py
+          - model_golden_chain_fixture.py
+          - validator_architecture.py
+          - validator_patterns.py
+          - typed_dict_k8s_resources.py
+          - typed_dict_migration_report.py
+          - typed_dict_policy_value_data.py
+        exempt_repository_paths:
+          - src/omnibase_core/models/delegation/wire/model_delegation_terminal_v2.py
+          - src/omnibase_core/validators/pydantic_extra_forbid.py
+        scoped_exempt_name: models.py
+        scoped_exempt_path_marker: /validation/
+        enum_base_name_fragment: Enum
+        max_classes: 1
+        message: Found {non_enum_count} non-enum class(es) and {enum_count} enum(s) in same file
+        remediation: Split files with multiple non-enum classes into separate files. Each class should
+          have its own file with matching name. Multiple enums in one file are acceptable (enum collections).
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

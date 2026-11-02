@@ -41,6 +41,7 @@ Exit codes:
 
 from __future__ import annotations
 
+import importlib.util
 import re
 from collections.abc import Iterable
 from pathlib import Path
@@ -49,11 +50,19 @@ from typing import Final
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.enums.enum_validator_requirement_emits import (
+    EnumValidatorRequirementEmits,
+)
 from omnibase_core.enums.enum_validator_requirement_gap_kind import (
     EnumValidatorRequirementGapKind,
 )
 from omnibase_core.enums.enum_validator_requirement_scope import (
     EnumValidatorRequirementScope,
+)
+from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models.validation.model_validator_requirement_emits_check import (
+    ModelValidatorRequirementEmitsCheck,
 )
 from omnibase_core.models.validation.model_validator_requirement_entry import (
     ModelValidatorRequirementEntry,
@@ -101,9 +110,11 @@ class ValidatorRequirementsConsumer:
         self,
         validators: dict[str, ModelValidatorRequirementEntry],
         known_repos: frozenset[str] = frozenset(),
+        emits_check: ModelValidatorRequirementEmitsCheck | None = None,
     ) -> None:
         self.validators = validators
         self._known_repos = known_repos
+        self._emits_check = emits_check
 
     # ---------------------------------------------------------------
     # Constructors
@@ -153,7 +164,19 @@ class ValidatorRequirementsConsumer:
             known = frozenset(raw_known)
         else:
             known = frozenset()
-        return cls(validators=typed, known_repos=known)
+        emits_check: ModelValidatorRequirementEmitsCheck | None = None
+        raw_emits_check = raw.get("emits_check")
+        if raw_emits_check is not None:
+            try:
+                emits_check = ModelValidatorRequirementEmitsCheck.model_validate(
+                    raw_emits_check
+                )
+            except ValidationError as exc:
+                raise ModelOnexError(
+                    message=f"spec.emits_check is malformed: {exc}",
+                    error_code=EnumCoreErrorCode.INVALID_INPUT,
+                ) from exc
+        return cls(validators=typed, known_repos=known, emits_check=emits_check)
 
     # ---------------------------------------------------------------
     # Scan entry point
@@ -164,8 +187,14 @@ class ValidatorRequirementsConsumer:
         *,
         repo_name: str,
         repo_root: Path,
+        check_emits: bool = False,
     ) -> list[ModelValidatorRequirementGap]:
         """Scan a target repo's pre-commit and CI configuration.
+
+        With ``check_emits`` every wired pre-commit entry of an emits-required
+        validator is also judged for being a core-format runtime that writes
+        through the report writer (OMN-22003); the spec must then carry its
+        ``emits_check`` block.
 
         Raises:
             ValueError: If ``repo_name`` is not listed in the spec's
@@ -178,6 +207,12 @@ class ValidatorRequirementsConsumer:
                 f"{sorted(self._known_repos)}"
             )
 
+        if check_emits and self._emits_check is None:
+            raise ModelOnexError(
+                message="emits check requested but the spec has no emits_check block",
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+            )
+        emits_check = self._emits_check if check_emits else None
         pre_commit_hooks = self._load_pre_commit_hooks(repo_root)
         ci_haystack = self._load_ci_haystack(repo_root)
 
@@ -192,6 +227,8 @@ class ValidatorRequirementsConsumer:
                     entry=entry,
                     pre_commit_hooks=pre_commit_hooks,
                     ci_haystack=ci_haystack,
+                    emits_check=emits_check,
+                    repo_root=repo_root,
                 )
             )
         return gaps
@@ -250,6 +287,8 @@ def _check_validator(
     entry: ModelValidatorRequirementEntry,
     pre_commit_hooks: list[_PreCommitHook],
     ci_haystack: str,
+    emits_check: ModelValidatorRequirementEmitsCheck | None = None,
+    repo_root: Path | None = None,
 ) -> Iterable[ModelValidatorRequirementGap]:
     hook_ids = entry.pre_commit_hook_ids
     ci_keywords = entry.ci_workflow_keywords
@@ -279,6 +318,22 @@ def _check_validator(
             )
 
     if (
+        emits_check is not None
+        and repo_root is not None
+        and entry.emits is EnumValidatorRequirementEmits.REQUIRED
+    ):
+        for hook_id, hook_entry in matched_hooks:
+            reason = _non_emitting_reason(hook_entry, emits_check, repo_root)
+            if reason is not None:
+                yield ModelValidatorRequirementGap(
+                    repo=repo_name,
+                    validator=validator_name,
+                    kind=EnumValidatorRequirementGapKind.NON_EMITTING_ENTRY,
+                    detail=f"pre-commit hook {hook_id!r} {reason}: {hook_entry!r}",
+                    hook_id=hook_id,
+                )
+
+    if (
         entry.ci_workflow is EnumValidatorRequirementScope.REQUIRED
         and not _any_substring(ci_haystack, ci_keywords)
     ):
@@ -288,6 +343,44 @@ def _check_validator(
             kind=EnumValidatorRequirementGapKind.MISSING_CI_WORKFLOW,
             detail=f"no .github/workflows/*.yml referenced any of {ci_keywords}",
         )
+
+
+def _module_source(module: str, core_package: str, repo_root: Path) -> str | None:
+    """Source text of ``module``: the scanned tree's ``src/`` first, then the installed package."""
+    relative = Path(*module.split("."))
+    candidates = [repo_root / "src" / relative]
+    package_spec = importlib.util.find_spec(core_package)
+    if package_spec is not None and package_spec.submodule_search_locations:
+        parts = module.split(".")[1:]
+        candidates.extend(
+            Path(location).joinpath(*parts)
+            for location in package_spec.submodule_search_locations
+        )
+    for base in candidates:
+        path = base.with_suffix(".py")
+        if path.is_file():
+            return path.read_text(encoding="utf-8")
+    return None
+
+
+def _non_emitting_reason(
+    hook_entry: str,
+    emits_check: ModelValidatorRequirementEmitsCheck,
+    repo_root: Path,
+) -> str | None:
+    """Why ``hook_entry`` is not a core-format runtime writing through the writer, or None."""
+    match = re.search(emits_check.module_pattern, hook_entry)
+    if match is None:
+        return "does not run a module of the core package (bare script or command)"
+    module = match.group(1)
+    if module.split(".")[0] != emits_check.core_package:
+        return f"runs {module!r}, which is not in {emits_check.core_package!r}"
+    source = _module_source(module, emits_check.core_package, repo_root)
+    if source is None:
+        return f"runs {module!r}, whose source cannot be read"
+    if emits_check.writer_marker not in source:
+        return f"runs {module!r}, whose source does not name the report writer"
+    return None
 
 
 def _any_substring(haystack: str, needles: list[str]) -> bool:

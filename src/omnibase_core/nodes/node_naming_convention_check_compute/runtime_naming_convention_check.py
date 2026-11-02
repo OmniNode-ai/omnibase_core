@@ -13,10 +13,78 @@ import argparse
 import logging
 import sys
 from pathlib import Path
+from typing import Final
 
+from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
+    ModelValidationReportWriteInput,
+)
+from omnibase_core.models.validation.model_validation_report import (
+    ModelValidationFindingEmbed,
+    ModelValidationReport,
+    ModelValidationRequestRef,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler import (
+    NodeValidationReportWriteEffect,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.handler_validator_runtime_overlay import (
+    HandlerValidatorRuntimeOverlay,
+)
+from omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run import (
+    build_validator_container,
+)
 from omnibase_core.validation.checker_naming_convention import validate_directory
 
 logger = logging.getLogger(__name__)
+
+VALIDATOR_ID: Final[str] = "naming-conventions"
+
+
+def _write_report(
+    report_path: str | None,
+    overlay_path: Path | None,
+    errors: list[str],
+    *,
+    runtime_error: str | None = None,
+) -> None:
+    """Persist every verdict and its events through the overlay's report writer."""
+    handler = HandlerValidatorRuntimeOverlay()
+    settings = handler.settings()
+    overlay = handler.load(overlay_path or handler.default_overlay_path())
+    report = (
+        ModelValidationReport.from_runtime_errors(VALIDATOR_ID, (runtime_error,))
+        if runtime_error is not None
+        else ModelValidationReport.from_findings(
+            findings=tuple(
+                ModelValidationFindingEmbed(
+                    validator_id=VALIDATOR_ID,
+                    severity="FAIL",
+                    location=error.partition(": ")[0],
+                    message=error.partition(": ")[2],
+                )
+                for error in errors
+            ),
+            request=ModelValidationRequestRef(profile=overlay.profile),
+            validators_run=(VALIDATOR_ID,),
+        )
+    )
+    # Container and bus lifecycle logs must not change the hook's CLI output.
+    previous_disable = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        container = build_validator_container(overlay)
+        try:
+            container.get_service(NodeValidationReportWriteEffect).handle(
+                ModelValidationReportWriteInput(
+                    report_path=report_path
+                    or settings.default_report_path.format(validator_id=VALIDATOR_ID),
+                    report=report,
+                    repository=settings.default_repository,
+                )
+            )
+        finally:
+            container.close()
+    finally:
+        logging.disable(previous_disable)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -82,6 +150,19 @@ Examples:
         action="store_true",
         help="Report naming violations without failing the process.",
     )
+    parser.add_argument(
+        "--report-json",
+        default=None,
+        metavar="PATH",
+        help="Report path; the node contract's default when omitted",
+    )
+    parser.add_argument(
+        "--overlay",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help="Validator-runtime overlay; the node contract's default when omitted",
+    )
 
     args = parser.parse_args(argv)
 
@@ -100,6 +181,12 @@ Examples:
         ]  # Go up from node dir and nodes/ to omnibase_core/
 
     if not target_dir.exists():
+        _write_report(
+            args.report_json,
+            args.overlay,
+            [],
+            runtime_error=f"Directory not found: {target_dir}",
+        )
         logger.error("Directory not found: %s", target_dir)
         return 1
 
@@ -107,6 +194,7 @@ Examples:
     logger.info("-" * 60)
 
     errors = validate_directory(target_dir, verbose=args.verbose)
+    _write_report(args.report_json, args.overlay, errors)
 
     if errors:
         logger.warning("Found %d naming convention violation(s):", len(errors))

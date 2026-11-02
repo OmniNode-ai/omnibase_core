@@ -1,0 +1,111 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22003
+title: A validator requirement that emits no run event is refused - the handshake spec declares emits
+  and the consumer reports a non-writing entry
+summary: validator-requirements.yaml (schema 1.5.0) declares emits (required, or exempt with a reason)
+  on all 26 entries and carries the emits_check match rules; an entry without emits is rejected on load.
+  The requirements consumer gains the NON_EMITTING_ENTRY gap kind, reported per pre-commit hook for an
+  emits-required validator whose wired entry is not a core-format runtime naming the report writer, and
+  writes its verdict through NodeValidationReportWriteEffect with --report-json and --overlay. The consumer
+  judges only when asked (--emits). AC3 is not met - see its statement.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22003-emits-declaration
+    statement: Every spec entry declares emits and an entry that omits it is rejected on load.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: ModelValidatorRequirementEntry carries an emits field with two values, required
+          and exempt (exempt carries a reason string), every entry in validator-requirements.yaml declares
+          it, and an entry that omits it is rejected on load -- falsifier: uv run pytest tests/unit/validation
+          -k "validator_requirements and emits" -q fails when one spec entry is stripped of the field'
+  - id: req-omn22003-consumer-gap-kind
+    statement: The consumer reports a non-writing wired entry of an emits-required validator.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the requirements consumer reports a new gap kind for an emits-required validator
+          whose wired pre-commit or CI entry is not a core-format runtime writing through the report writer,
+          and reports none for a core-format runtime -- falsifier: uv run pytest tests/unit/nodes/node_requirements_consumer_check_compute
+          -q -k emits fails on a fixture repository config holding one bare-script hook beside one core-format
+          hook. This PR judges pre-commit entries; CI entries are matched by keyword only and are not
+          judged.'
+  - id: req-omn22003-own-tree
+    statement: omnibase_core's own tree passes the consumer with the emits check enforced, with no baseline
+      growth and no list of any kind.
+    acceptance:
+      - id: AC3
+        statement: 'AC3 (NOT MET in this PR): the hook validate-validator-requirements runs the emits
+          check on omnibase_core''s own tree and refuses a canary commit that adds one bare-script hook
+          for an emits-required validator. Not met because six pre-commit hooks of the tree are still
+          not core-format runtimes writing through the report writer (five bare scripts and one module
+          runtime); enforcing the check on the tree would fail it, and the rule forbids a baseline or
+          exception file for them, so the hook does not pass --emits yet. The follow-up ticket named in
+          the PR report converts them and then turns the flag on.'
+  - id: req-omn22003-no-literals
+    statement: The check judges entries and names no literal host, port, topic or model name.
+    acceptance:
+      - id: AC4
+        statement: 'AC4: the check judges entries and emits no literal host, port, topic or model name
+          in its source -- falsifier: the hardcoded-topic and hardcoded-model-config validators report
+          a finding on the changed source'
+  - id: req-omn22003-report-and-bus
+    statement: The gap kind is visible in the consumer's report written through the report writer.
+    acceptance:
+      - id: AC5
+        statement: 'AC5: the gap kind is visible in the consumer''s report written through the report
+          writer, with the run event and one triggered event on the in-memory bus listener -- falsifier:
+          uv run pytest tests/unit/nodes/node_requirements_consumer_check_compute -q -k "bus and emits"
+          fails'
+evidence_requirements:
+  - kind: tests
+    description: The emits tests pass at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/validation/test_validator_requirements_emits_omn22003.py
+      tests/unit/nodes/node_requirements_consumer_check_compute -n 0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22003-ac1-emits-declaration
+    description: The model requires emits, exempt needs a reason, every spec entry declares it, and a
+      spec with one entry stripped of the field fails to load.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation -k "validator_requirements and emits"
+          -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22003-ac2-gap-kind
+    description: One bare-script hook beside one core-format hook yields exactly one NON_EMITTING_ENTRY
+      gap, for the bare script, and none for the core-format hook.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_requirements_consumer_check_compute
+          -k emits -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22003-ac4-no-literals
+    description: The hardcoded-topic validator reports no finding on the changed source.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_requirements_emits_omn22003.py
+          -k emits -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22003-ac5-report-and-bus
+    description: The gap is a finding in the report written through the report writer; the run event and
+      one triggered event are observed on the in-memory bus listener.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_requirements_consumer_check_compute
+          -k "bus and emits" -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
