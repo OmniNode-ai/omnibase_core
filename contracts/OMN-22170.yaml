@@ -1,0 +1,103 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22170
+title: CI refuses new or growing scripts in every repo
+summary: Operator request 2026-11-02 (RULING 2026-11-02T19:07:08Z) is that CI refuses a new or growing
+  script in every code repository and that the check is required there. The core canonical-file-shape
+  node already refused a new script file, shell anywhere, a growing baselined file and a baseline line
+  added. It admitted a new launchd or cron unit that runs a script, and its refusals did not name the
+  node the file should become. This change refuses a new scheduled unit that runs a script (rule script-unit-new)
+  and names the file and the node in every script refusal, with every path, pattern and name read from
+  the validator contract.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22170-script-refusals
+    statement: The canonical-file-shape node refuses a new script of every kind and a growing baselined
+      script, and each refusal names the file and the node it should become.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a measured table, from fixtures run through the core node in each repository's
+          own configuration, states for each of a new scripts/*.py, a new .sh anywhere, a new skills/*/scripts/.py,
+          a new launchd or cron unit running a script, and line growth in a baselined script whether it
+          is refused today, and lists every repository whose required CI does not run the check -- falsifier:
+          the fixture table in the first PR body and an OMN-21331 comment, reproducible with uv run pytest
+          -k script_fixture_matrix in omnibase_core"
+      - id: AC2
+        statement: "AC2: the core node refuses a new script file outside a node home, refuses line growth
+          in a baselined script counted from the baseline at the base revision, and refuses an added baseline
+          line, each refusal naming the file and the node it should become, with paths and names read
+          from contract and overlay data -- falsifier: uv run pytest tests/unit/validation -k script_refusal
+          in omnibase_core fails on the old node and passes on the new"
+      - id: AC3
+        statement: "AC3: the check is a required context on the landing branch of every code repository
+          that lacks it, through each repository's existing CI wiring and the controller required-contexts
+          cache -- falsifier: python3 read of the landing controller required-contexts.json after rollout
+          lists the check for each repository"
+      - id: AC4
+        statement: "AC4: on the lab, installed from the branch, each fixture is refused, a node-home file
+          is admitted, and the dev head of every repository still passes -- falsifier: the installed=
+          and observed= lines in each PR body, plus onex scm pr-checks showing the required context green
+          on each repository dev head"
+evidence_requirements:
+  - kind: tests
+    description: The script_refusal and script_fixture_matrix tests fail on the node at the merge base
+      (no unit rule, no node named) and pass at the head.
+    command: uv run pytest tests/unit/validation -k "script_refusal or script_fixture_matrix" -q --no-cov
+      -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22170-ac1-fixture-matrix
+    description: The fixture matrix runs each script kind through the node handler and states refused
+      or admitted, with a control for a canonical location, a unit that runs a node and a shrinking baselined
+      script.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_script_refusal_omn22170.py -q --no-cov -n
+          0 -k script_fixture_matrix
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn22170-ac2-script-refusal
+    description: A new script file, a new launchd or cron unit that runs a script, line growth in a baselined
+      script and an added baseline line are refused, each refusal naming the file and the node, with the
+      texts, directories, extensions and patterns declared in the validator contract.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_script_refusal_omn22170.py tests/unit/validation/test_checker_canonical_file_shape.py
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn22170-ac3-required-context
+    description: omnibase_core's Canonical File Shape (OMN-20304) job is a member of the CI Summary gating
+      set. The other repositories are read from the landing controller's required-contexts.json after
+      the rollout, not from this pull request.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -q 'Canonical File Shape (OMN-20304)' scripts/ci/ci_summary_gate.py
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn22170-ac4-lab-proof
+    description: The node runs from this branch and refuses each fixture; the lab line in the pull request
+      body records the host, the revision and what ran.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: grep -q 'script-unit-new' src/omnibase_core/validation/contracts/canonical_file_shape.validation.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn22170-deploy-hosted-node
+    description: Hosted deploy probe for the script refusals of the packaged canonical-file-shape node.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validation -k "script_refusal or script_fixture_matrix"
+          -q --no-cov -n 0
+        cwd: ${OMNI_HOME}/omnibase_core

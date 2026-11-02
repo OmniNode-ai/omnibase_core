@@ -1,0 +1,22 @@
+{
+  "changes": [
+    {
+      "new_text": "<?xml version=\"1.0\"?>\n<plist version=\"1.0\"><dict><key>ProgramArguments</key><array><string>/bin/sh</string><string>scripts/job.sh</string></array></dict></plist>\n",
+      "old_path": null,
+      "old_text": null,
+      "path": "launchd/ai.example.job.plist",
+      "status": "A"
+    }
+  ],
+  "has_base": true,
+  "head_tree": {
+    "argparse_main_paths": [],
+    "contract_texts": [],
+    "files": [
+      "launchd/ai.example.job.plist"
+    ],
+    "handler_class_paths": [],
+    "pyproject_text": null,
+    "shebang_lines": []
+  }
+}

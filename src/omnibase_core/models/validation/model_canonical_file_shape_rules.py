@@ -32,6 +32,9 @@ class ModelCanonicalFileShapeRules(BaseModel):
     canonical_src_min_parts: int
     noncanonical_text: str
     shell_text: str
+    node_name_template: str
+    node_stem_separator_pattern: str
+    node_stem_separator: str
     # noncanonical-file: TypeScript/React and shell locations (OMN-21332)
     typescript_extensions: tuple[str, ...]
     typescript_src_extensions: tuple[str, ...]
@@ -55,6 +58,12 @@ class ModelCanonicalFileShapeRules(BaseModel):
     baseline_path: str
     node_home_baseline_path: str
     baseline_header: str
+    # script-unit-new
+    unit_extensions: tuple[str, ...]
+    unit_dirs: tuple[str, ...]
+    unit_added_statuses: tuple[str, ...]
+    unit_script_pattern: str
+    script_unit_text: str
     # baseline-stale, baseline-growth, baselined-file-growth
     baseline_stale_text: str
     baseline_growth_text: str

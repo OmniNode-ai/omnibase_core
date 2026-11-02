@@ -540,6 +540,29 @@ SCENARIOS: dict[str, Callable[[], ModelCanonicalFileShapeFacts]] = {
         )
     ),
     "shell": lambda: _inline(head_tree=_tree(["tools/a.sh"])),
+    "unit_new": lambda: _facts("violation_script-unit-new.json"),
+    "unit_ext": lambda: _inline(
+        head_tree=_tree(["misc/ai.zz.job.plist"]),
+        has_base=True,
+        changes=[
+            {
+                "status": "A",
+                "path": "misc/ai.zz.job.plist",
+                "new_text": "<string>scripts/job.sh</string>\n",
+            }
+        ],
+    ),
+    "unit_dir": lambda: _inline(
+        head_tree=_tree(["cron/zz_job"]),
+        has_base=True,
+        changes=[
+            {
+                "status": "A",
+                "path": "cron/zz_job",
+                "new_text": "* * * * * scripts/job.sh\n",
+            }
+        ],
+    ),
     "node_home_baseline": lambda: _inline(
         head_tree=_tree([".onex_ratchets/node_home_baseline.txt"]),
         has_base=True,
@@ -653,6 +676,14 @@ MUTATIONS: dict[str, tuple[str, object]] = {
     "canonical_src_min_parts": ("canonical_nodes", 99),
     "noncanonical_text": ("noncanonical", INERT_STR),
     "shell_text": ("shell", INERT_STR),
+    "node_name_template": ("noncanonical", INERT_STR),
+    "node_stem_separator_pattern": ("unit_new", INERT_STR),
+    "node_stem_separator": ("unit_new", "-"),
+    "unit_extensions": ("unit_ext", ()),
+    "unit_dirs": ("unit_dir", ()),
+    "unit_added_statuses": ("unit_new", ()),
+    "unit_script_pattern": ("unit_new", INERT_STR),
+    "script_unit_text": ("unit_new", INERT_STR),
     "baseline_path": ("baseline_stale", INERT_STR),
     "node_home_baseline_path": ("node_home_baseline", INERT_STR),
     "baseline_stale_text": ("baseline_stale", INERT_STR),
@@ -791,8 +822,8 @@ def test_baselined_growth_text_names_the_bind_then_edit_path() -> None:
     assert len(findings) == 1
     assert findings[0].code == "baselined-file-growth"
     assert findings[0].message == (
-        "code lines 5 -> 7; a baselined file only shrinks. "
-        "Put the new behaviour in a contract + node + handler "
+        "scripts/old.py: code lines 5 -> 7; a baselined file only shrinks. "
+        "Put the new behaviour in node node_old, a contract + node + handler "
         "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z). "
         "A handler file that a node contract binds leaves the baseline in the "
         "same commit and may then change freely."

@@ -17,6 +17,7 @@ from omnibase_core.models.validation.model_canonical_location_request import (
 from omnibase_core.validation.checker_canonical_file_shape import (
     canonical_location,
     file_rule_refusals,
+    node_name,
 )
 from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
     BASELINE,
@@ -125,7 +126,10 @@ def test_typescript_shape_planted_outside_refused_and_admitted_in_location(
         (refused, "noncanonical-file") for refused, _ in pairs
     }
     for finding in findings:
-        assert finding.message == RULES.parameters.noncanonical_text
+        path = finding.file_path.as_posix()
+        assert finding.message == RULES.parameters.noncanonical_text.format(
+            path=path, node=node_name(path, RULES.parameters)
+        )
 
 
 @pytest.mark.parametrize(
@@ -440,10 +444,10 @@ def test_shell_script_refused_python_unchanged(repo: Path) -> None:
         ("scripts/tool.py", "noncanonical-file")
     ]
     assert findings[0].message == (
-        "new code file outside a canonical location "
+        "scripts/tool.py: new code file outside a canonical location "
         "(src/<pkg>/{nodes,handlers,models,protocols,contracts,enums}/, "
         "src/<pkg>/validation/{checker_*,validator_*}.py, tests/, docs/). "
-        "Build it as a contract + node + handler."
+        "Build it as node node_tool: a contract + node + handler."
     )
 
 
@@ -473,9 +477,10 @@ def test_baselined_file_growth_any_surface_refused(repo: Path, path: str) -> Non
     assert _rules(repo) == ["baselined-file-growth"]
     finding = issues(repo)[0]
     assert finding.file_path == Path(path)
+    stem = Path(path).stem
     assert finding.message == (
-        "code lines 3 -> 4; a baselined file only shrinks. "
-        "Put the new behaviour in a contract + node + handler "
+        f"{path}: code lines 3 -> 4; a baselined file only shrinks. "
+        f"Put the new behaviour in node node_{stem}, a contract + node + handler "
         "(rulings 2026-10-01T12:36:54Z, 2026-10-15T08:14:15Z). "
         "A handler file that a node contract binds leaves the baseline in the "
         "same commit and may then change freely."
