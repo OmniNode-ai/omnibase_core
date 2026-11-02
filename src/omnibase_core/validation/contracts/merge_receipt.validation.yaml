@@ -1,0 +1,119 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-21926: every path class, receipt source, cause text and pattern is rule data. Report-only.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: merge_receipt
+  validator_name: Merge-side Receipt Validator
+  validator_description: >-
+    Operator scope addition 2026-11-01 (OMN-21887 AC-1): a runtime-affecting pull request needs a machine-written
+    receipt from a branch deployment on real dependencies at the pull request's exact head; a Lab line
+    typed in the body does not count. This validator is REPORT-ONLY: its cause rows are warnings, fail_on_error
+    and fail_on_warning are false, and the pure checker's exit code is zero. It reports which open pull
+    requests it would refuse and why; making it required is a separate step that belongs to the operator.
+    A consumer gathers the facts (head sha, body, changed paths and the receipts read from the watcher
+    state and the slot descriptors) and calls this validator; it holds no copy of the rule.
+  target_patterns: ["**/*.merge-receipt-facts.json"]
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: runtime_paths
+      description: >-
+        Which pull requests are runtime-affecting. This row quotes the push-side definition of omnimarket#4793
+        (HandlerIntegrationProof): paths under src/, docker/ or deploy/, or a Dockerfile, outside tests
+        and docs. A changed path that matches an exempt pattern never counts; a pull request is runtime-affecting
+        when any other changed path matches a runtime pattern.
+      severity: info
+      enabled: true
+      parameters:
+        message: "{repo}#{number} changes runtime paths"
+        source_pattern: '.*'
+        runtime_path_patterns:
+          - '^src/'
+          - '^docker/'
+          - '^deploy/'
+          - '(^|/)Dockerfile[^/]*$'
+        exempt_path_patterns:
+          - '(^|/)tests?/'
+          - '^docs/'
+          - '\.md$'
+
+    - rule_id: receipt_sources
+      description: >-
+        Which receipts are machine-written. machine_sources names the writers that count: the lab-proof-receipt
+        check run that the pr-head lane (omnibase_infra lab_pass_receipt.py, OMN-19566) posts on the proven
+        head, and the slot descriptor (onex.prepr.slot-descriptor.v1) that prepr_verify_lane.sh writes
+        with the target repo, branch and commit. watcher_check_names names the check runs a consumer reads
+        from the pull request watcher state as a receipt at the sha that state reports.
+      severity: info
+      enabled: true
+      parameters:
+        message: "{repo}#{number} receipt sources"
+        source_pattern: '.*'
+        machine_sources:
+          - lab-proof-receipt
+          - onex.prepr.slot-descriptor.v1
+        watcher_check_names:
+          - lab-proof-receipt
+
+    - rule_id: slot_time
+      description: >-
+        How long a pre-PR slot proof takes. A slot proof is one HOLD row and the RELEASE row whose re=
+        cell names the HOLD's id= cell, on a surface matching surface_pattern (HOLD or RELEASE carries
+        the surface cell). The run reports the median and p90 seconds between the two and says so when
+        fewer than min_pairs pairs back them.
+      severity: info
+      enabled: true
+      parameters:
+        message: "slot proof seconds from {detail} HOLD/RELEASE pairs"
+        source_pattern: '.*'
+        surface_pattern: '^prepr-[0-9]+-201$'
+        min_pairs: '5'
+
+    - rule_id: receipt_missing
+      description: A runtime-affecting pull request with no machine-written receipt at its exact head.
+      severity: warning
+      enabled: true
+      parameters:
+        message: "would refuse {repo}#{number}: no machine-written receipt names head {head}"
+        source_pattern: '.*'
+
+    - rule_id: receipt_stale_head
+      description: A machine-written receipt of the same pull request names an earlier head; it is not
+        counted.
+      severity: warning
+      enabled: true
+      parameters:
+        message: "{repo}#{number}: a receipt names an earlier head ({detail}), not head {head}; it is
+          not counted"
+        source_pattern: '.*'
+
+    - rule_id: lab_line_not_receipt
+      description: A Lab line typed in the pull request body is not a receipt and is never counted.
+      severity: warning
+      enabled: true
+      parameters:
+        message: "{repo}#{number}: the body carries a typed Lab line; a typed line is not a receipt and
+          is not counted"
+        source_pattern: '.*'
+        lab_line_pattern: '(?im)^\s*Lab:'
+
+  suppression_comments: []
+  fail_on_error: false
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: warning
+  parallel_execution: true
