@@ -612,6 +612,11 @@ def _is_exception_file(
         return False
     if any(part in p.test_dirs for part in PurePosixPath(path).parts[:-1]):
         return False
+    if PurePosixPath(path).is_relative_to(PurePosixPath(p.workflows_dir)):
+        # A workflow is a pipeline definition, not an exception list: a name such
+        # as dev-baseline-publisher.yml says what the job does. Treating it as a
+        # shrink-only list refused every added step as "entries N -> M".
+        return False
     suffix = _suffix(path)
     if suffix in p.code_extensions or suffix in p.prose_extensions:
         return False
