@@ -1,0 +1,10 @@
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+def run(work):
+    try:
+        work()
+    except Exception:
+        logger.warning("swallowed")

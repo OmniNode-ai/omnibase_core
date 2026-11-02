@@ -1,0 +1,29 @@
+# except_swallow baseline. Shrink-only, target zero.
+# Each line is a file that held a broad except that logs and does not re-raise before the except_swallow refusal existed, and the number it holds.
+# They are burn-down entries: fix the finding and lower the entry (delete it at zero) in the same
+# change. A file may not hold more than its entry, an entry must equal what the file holds, and an
+# entry the base revision lacks or holds higher fails.
+# Burn-down ticket: OMN-22005. Zero target: 2026-11-16.
+# Do not add a line; do not raise a count.
+---
+scripts/cleanup.py: 2
+scripts/run_cross_repo_validation.py: 2
+scripts/validation/validate-archived-imports.py: 3
+scripts/validation/validate-import-patterns.py: 3
+src/omnibase_core/backends/cache/backend_cache_redis.py: 3
+src/omnibase_core/backends/metrics/backend_metrics_prometheus.py: 1
+src/omnibase_core/discovery/discovery_external_nodes.py: 1
+src/omnibase_core/event_bus/event_bus_inmemory.py: 1
+src/omnibase_core/mixins/mixin_caching.py: 1
+src/omnibase_core/mixins/mixin_contract_publisher.py: 1
+src/omnibase_core/mixins/mixin_request_response_introspection.py: 2
+src/omnibase_core/mixins/mixin_service_registry.py: 2
+src/omnibase_core/models/core/model_event_type_registry.py: 1
+src/omnibase_core/runtime/runtime_dispatch.py: 2
+src/omnibase_core/runtime/runtime_local.py: 2
+src/omnibase_core/runtime/runtime_local_adapter.py: 4
+src/omnibase_core/services/replay/service_corpus_replay_orchestrator.py: 2
+src/omnibase_core/services/service_tiered_resolver.py: 1
+src/omnibase_core/utils/util_compute_executor.py: 1
+src/omnibase_core/utils/util_workflow_executor.py: 1
+src/omnibase_core/validation/validator_contract_pipeline.py: 2

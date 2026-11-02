@@ -1,0 +1,6 @@
+def run(work, logger):
+    try:
+        work()
+    except Exception:
+        logger.warning("failed")
+        raise

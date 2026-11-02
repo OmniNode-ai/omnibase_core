@@ -1,0 +1,3 @@
+def run(client):
+    if client is not None:
+        client.publish("topic")

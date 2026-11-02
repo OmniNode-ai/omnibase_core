@@ -1,0 +1,3 @@
+def run(event_bus):
+    if event_bus is not None:  # none-guard-ok: the bus is optional in unit scope
+        event_bus.publish("topic")

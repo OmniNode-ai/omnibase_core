@@ -1,0 +1,5 @@
+def run(work, logger):
+    try:
+        work()
+    except (ValueError, BaseException) as exc:
+        logger.exception("swallowed %s", exc)

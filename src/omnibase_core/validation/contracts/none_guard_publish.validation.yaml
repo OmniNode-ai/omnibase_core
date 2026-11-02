@@ -1,0 +1,65 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: none_guard_publish
+  validator_name: None Guard Publish Validator
+  validator_description: Refuses an event-bus none-guard around a publish call. The scope, the names,
+    the annotation marker and the remediation text are the rule rows of this file (OMN-22005, plan task
+    T2.4; the report-mode script it replaces was OMN-10818).
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: none_guard_publish
+      description: A none-guard on the event bus around a publish call skips the publication when the
+        bus is absent, so an optional bus leaves silent gaps.
+      severity: error
+      enabled: true
+      parameters:
+        bus_names: [_event_bus, event_bus, _bus, bus]
+        publish_methods: [publish, emit, send, dispatch]
+        comment_prefix: '# '
+        annotation_marker: 'none-guard-ok'
+        reason: an optional event bus guards a publish call
+        remediation: >-
+          Require the event bus through the container and drop the guard, or annotate the if line with
+          the none-guard-ok comment and a reason.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/none_guard_publish_baseline.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

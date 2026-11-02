@@ -1,0 +1,10 @@
+# none_guard_publish baseline. Shrink-only, target zero.
+# Each line is a file that held an event-bus none-guard around a publish call before the none_guard_publish refusal existed, and the number it holds.
+# They are burn-down entries: fix the finding and lower the entry (delete it at zero) in the same
+# change. A file may not hold more than its entry, an entry must equal what the file holds, and an
+# entry the base revision lacks or holds higher fails.
+# Burn-down ticket: OMN-22005. Zero target: 2026-11-16.
+# Do not add a line; do not raise a count.
+---
+src/omnibase_core/mixins/mixin_node_executor.py: 2
+src/omnibase_core/mixins/mixin_node_service.py: 2
