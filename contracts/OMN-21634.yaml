@@ -1,0 +1,76 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21634
+title: 'Wave 1 core models, first slice: the retrospective crossing models, in models/experiment, with
+  the thirteen reason codes'
+summary: >
+  The first slice of the core models of the orchestration alignment plan. One frozen, extra-forbidding
+  model per crossing of the weekly retrospective graph (run open, collect request, skill run result, evidence
+  record, success contract, evidence snapshot, experiment verdict and verdict set, run state, run projected,
+  digest request, digest and experiment card), the verdict, reason code, slot, disposition, approval state,
+  run phase, unit outcome and subject kind enums, placed in models/experiment and enums. The reason codes
+  are the thirteen of the operator ruling. This slice is evidence toward the carrier epic's wave gates
+  and passes none of them: the gate rows of the epic stay unproven until their own checks run.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21634-core-models
+    statement: Every crossing of the retrospective graph has a frozen, extra-forbidding typed model in
+      models/experiment, and the verdict model refuses an unexplained result.
+    acceptance:
+      - id: AC26
+        statement: 'AC26: omnibase_core holds the typed retrospective crossing models in models/experiment,
+          each frozen and refusing an unknown field -- falsifier: uv run pytest tests/unit/models/experiment/test_retrospective_models.py
+          -k "round_trips or unknown_field or frozen"'
+      - id: AC27
+        statement: 'AC27: The reason-code enum has thirteen codes with CONTRACT_UNRESOLVED among them
+          and no latency code, and the subject-kind enum keeps delegation_workflow and lane_process beside
+          the five added values -- falsifier: uv run pytest tests/unit/models/experiment/test_retrospective_models.py
+          -k "thirteen or subject_kinds"'
+      - id: AC28
+        statement: 'AC28: A PASS carries no reason code, a FAIL or INSUFFICIENT_EVIDENCE carries at least
+          one, an unset success contract names every unresolved value, and a verdict has no field that
+          grants anything -- falsifier: uv run pytest tests/unit/models/experiment/test_retrospective_models.py
+          -k "pass_with or non_pass or unresolved or authorizes_nothing"'
+evidence_requirements:
+  - kind: tests
+    description: Every crossing round-trips through JSON, is frozen and refuses an unknown field; each
+      invariant has a planted violation beside a control.
+    command: uv run pytest tests/unit/models/experiment -n 0 -q --no-cov -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21634-ac26
+    description: AC26 falsifier tests pass. They fail at the merge base, which has no retrospective models.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC26
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/experiment/test_retrospective_models.py -q --no-cov
+          -o addopts='' -k "round_trips or unknown_field or frozen"
+  - id: dod-omn21634-ac27
+    description: AC27 falsifier tests pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC27
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/experiment/test_retrospective_models.py -q --no-cov
+          -o addopts='' -k "thirteen or subject_kinds"
+  - id: dod-omn21634-ac28
+    description: AC28 falsifier tests pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC28
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/experiment/test_retrospective_models.py -q --no-cov
+          -o addopts='' -k "pass_with or non_pass or unresolved or authorizes_nothing"
