@@ -1,0 +1,119 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21926
+title: A merge-side integration check reports, report-only, the open runtime pull requests that have no
+  machine-written branch-deployment receipt at their head, with the refusal count and slot time
+summary: A report-only validator in the generic omnibase_core validator format reads a pull request head
+  sha, its body, its changed paths and the machine-written deployment receipts, and reports a runtime-affecting
+  pull request with no receipt at that exact head as would-refuse, with the cause (no receipt, a receipt
+  of an earlier head, or a typed Lab line that is not counted). It never fails a pull request and is not
+  a required context. One run over the open runtime-affecting pull requests of omnimarket and omnibase_infra
+  prints the would-refuse count and the median and p90 pre-PR slot seconds.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21926-merge-side-report
+    statement: The merge-side receipt check is report-only, counts only machine-written receipts at the
+      exact head, and adds no required context.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a validator in the generic omnibase_core validator format, with its rules declared
+          in data and none hard-coded, reads an open pull request head sha and the machine-written deployment
+          receipts and reports a runtime-affecting pull request with no receipt at that exact head as
+          would-refuse, while the check itself never fails (report-only) -- falsifier: uv run pytest -q
+          -k report_only_never_fails in the validator test directory"
+      - id: AC2
+        statement: "AC2: a Lab line typed in the pull request body is not counted as a receipt -- falsifier:
+          uv run pytest -q -k hand_typed_line_not_counted"
+      - id: AC3
+        statement: "AC3: a receipt whose sha is an earlier head of the same pull request is not counted
+          -- falsifier: uv run pytest -q -k stale_head_receipt"
+      - id: AC4
+        statement: "AC4: one run over the open runtime-affecting pull requests of omnimarket and omnibase_infra
+          prints a line would-refuse=N of M examined=M and a second line with the median and p90 seconds
+          of a pre-PR slot proof measured from the prepr slot HOLD and RELEASE rows on the rolling ledger,
+          and both lines are repeated in the pull request body -- falsifier: the pull request body lacks
+          either line, or the slot seconds are computed from fewer than five HOLD and RELEASE pairs without
+          saying so"
+      - id: AC5
+        statement: "AC5: no required context is added or widened by the change -- falsifier: uv run pytest
+          -q -k no_required_context_changed compares the required-context list before and after"
+      - id: AC6
+        statement: "AC6: the suite passes on a lab host through the bus placement -- falsifier: lab-run
+          receipt with exit code 0 for the validator test directory"
+evidence_requirements:
+  - kind: tests
+    description: The merge-receipt tests pass at the head.
+    command: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21926-ac1-report-only
+    description: A planted runtime pull request with no receipt at its head is reported as would-refuse
+      with every issue a warning, the exit code zero and fail_on_error false.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n
+          0 -k report_only_never_fails
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn21926-ac2-typed-line
+    description: A Lab line typed in the body is named as a cause and never counted as a receipt.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n
+          0 -k hand_typed_line_not_counted
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
+  - id: dod-omn21926-ac3-stale-head
+    description: A receipt of an earlier head of the same pull request is named as a cause and not counted.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n
+          0 -k stale_head_receipt
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]
+  - id: dod-omn21926-ac4-lines
+    description: The fact gathering that backs the two report lines is tested, the slot seconds pair a
+      HOLD with the RELEASE that names its id on a declared surface, and the run prints both lines.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n
+          0 -k "slot or percentile or watcher_facts"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC4]
+  - id: dod-omn21926-ac5-no-required-context
+    description: Neither the required-check manifest nor any workflow or hook names the report-only check.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n
+          0 -k no_required_context_changed
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC5]
+  - id: dod-omn21926-ac6-suite
+    description: The whole merge-receipt test module passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n
+          0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC6]
+  - id: dod-omn21926-deploy-hosted-report-only
+    description: Hosted deploy probe for the packaged validator. The report-only tests pass on the hosted
+      runner.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: uv run pytest tests/unit/validation/test_checker_merge_receipt.py -q --no-cov -n
+          0 -k report_only_never_fails
+        cwd: ${OMNI_HOME}/omnibase_core

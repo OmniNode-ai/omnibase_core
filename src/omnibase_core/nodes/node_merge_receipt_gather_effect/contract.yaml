@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_merge_receipt_gather_effect
+node_id: node_merge_receipt_gather_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Reads the PR watcher state, the rolling ledger and the canonical clones (OMN-21926) and returns the
+  open pull requests as typed facts for node_merge_receipt_check_compute, plus the seconds of each pre-PR
+  slot HOLD and RELEASE pair. Which check runs are receipts and which ledger surface is a slot are request
+  values taken from the merge_receipt validation contract.
+input_model: omnibase_core.models.merge_receipt.model_merge_receipt_gather_input.ModelMergeReceiptGatherInput
+output_model: omnibase_core.models.merge_receipt.model_merge_receipt_gather_output.ModelMergeReceiptGatherOutput
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeMergeReceiptGatherEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 300000

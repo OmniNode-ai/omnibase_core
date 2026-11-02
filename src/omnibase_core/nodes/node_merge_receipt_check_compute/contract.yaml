@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_merge_receipt_check_compute
+node_id: node_merge_receipt_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Report-only merge-side integration check (OMN-21926): given the open pull requests' heads, bodies, changed
+  paths and the machine-written deployment receipts, report each runtime-affecting pull request that has
+  no receipt at its exact head as would-refuse, with its cause. The rules are the rows of validation/contracts/merge_receipt.validation.yaml;
+  the node never fails a pull request.
+input_model: omnibase_core.models.merge_receipt.model_merge_receipt_check_input.ModelMergeReceiptCheckInput
+output_model: omnibase_core.models.merge_receipt.model_merge_receipt_check_result.ModelMergeReceiptCheckResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeMergeReceiptCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
