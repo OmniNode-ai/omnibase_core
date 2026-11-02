@@ -713,6 +713,14 @@ MUTATIONS: dict[str, tuple[str, object]] = {
     "scripts_key_path": ("cli_script_only", INERT_STR),
     "cli_entry_outside_node_text": ("cli", INERT_STR),
 }
+# The TypeScript and shell location keys feed canonical_location(); each is mutated
+# against a path it controls in test_typescript_and_shell_rules.py.
+LOCATION_KEYS = frozenset(
+    key
+    for key in ModelCanonicalFileShapeRules.model_fields
+    if key.startswith("typescript_")
+    or key in {"shell_extensions", "shell_shebang_pattern"}
+)
 # Read from the repository by the node runtime (git facts), not by the checker; the
 # runtime test mutates these through a fixture repository. The node-home keys and
 # the git-reader ceiling are mutated in test_node_home_admission.py; the landing ref
@@ -736,7 +744,7 @@ READER_KEYS = frozenset(
 
 def test_every_parameter_key_is_mutated_by_a_table_row() -> None:
     declared = set(ModelCanonicalFileShapeRules.model_fields)
-    assert declared == set(MUTATIONS) | READER_KEYS
+    assert declared == set(MUTATIONS) | READER_KEYS | LOCATION_KEYS
     in_contract = {key for rule in CONTRACT.rules for key in (rule.parameters or {})}
     assert in_contract == declared
 
