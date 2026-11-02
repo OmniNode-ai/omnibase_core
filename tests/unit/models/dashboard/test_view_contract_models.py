@@ -11,16 +11,16 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
+
+from omnibase_core.enums.enum_empty_state_reason import EnumEmptyStateReason
+from omnibase_core.enums.enum_widget_type import EnumWidgetType
 from omnibase_core.models.dashboard.model_view_contract import ModelViewContract
 from omnibase_core.models.dashboard.model_view_field_map import ModelViewFieldMap
 from omnibase_core.models.dashboard.model_view_manifest import ModelViewManifest
 from omnibase_core.models.dashboard.model_view_section_contract import (
     ModelViewSectionContract,
 )
-from pydantic import ValidationError
-
-from omnibase_core.enums.enum_empty_state_reason import EnumEmptyStateReason
-from omnibase_core.enums.enum_widget_type import EnumWidgetType
 from tests.unit.models.dashboard.view_builders import VERSION
 
 

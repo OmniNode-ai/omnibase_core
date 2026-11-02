@@ -8,6 +8,9 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
+from pydantic import ValidationError
+
+from omnibase_core.enums.enum_empty_state_reason import EnumEmptyStateReason
 from omnibase_core.models.dashboard.model_view_document import ModelViewDocument
 from omnibase_core.models.dashboard.model_view_empty_state import ModelViewEmptyState
 from omnibase_core.models.dashboard.model_view_section_line_card import (
@@ -16,9 +19,6 @@ from omnibase_core.models.dashboard.model_view_section_line_card import (
 from omnibase_core.models.dashboard.model_view_section_stop import (
     ModelViewSectionStop,
 )
-from pydantic import ValidationError
-
-from omnibase_core.enums.enum_empty_state_reason import EnumEmptyStateReason
 from tests.unit.models.dashboard.view_builders import (
     CONFIG_BUILDERS,
     NEW_KINDS,
