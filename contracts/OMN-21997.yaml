@@ -1,0 +1,151 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21997
+title: omnibase_core defines the eight view kinds, the view contract, the field map, the view document
+  and manifest, the document digest and the row counter
+summary: >-
+  Adds the seven row-driven view kinds to EnumWidgetType with a config and a row model each, ModelViewContract,
+  ModelViewFieldMap, ModelViewManifest, ModelViewDocument with sections discriminated by kind, the document
+  digest, count_view_document and JSON Schema emission through scripts/emit_ts_types.py. Library models
+  and tests only; no container, image, topic or consumer changes.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21997-ac1
+    statement: "EnumWidgetType gains the kinds line_card, machine_bay, stage_progress, stop, freshness,
+      trend and drawer_detail beside the existing metric_card and chart, each with a frozen extra=forbid
+      config in the ModelWidgetConfig union and a row model, so ModelComponentContract and ModelWidgetEnvelope
+      accept them unchanged"
+    acceptance:
+      - id: AC1
+        statement: 'AC1: EnumWidgetType gains the kinds line_card, machine_bay, stage_progress, stop,
+          freshness, trend and drawer_detail beside the existing metric_card and chart, each with a frozen
+          extra=forbid config in the ModelWidgetConfig union and a row model, so ModelComponentContract
+          and ModelWidgetEnvelope accept them unchanged -- falsifier: uv run pytest tests/unit/models/dashboard
+          -k view_kind -q'
+  - id: req-omn21997-ac2
+    statement: "ModelViewContract, ModelViewFieldMap (typed row selection, column names, constants and
+      references only, no expressions) and ModelViewManifest exist as frozen extra=forbid models and refuse
+      an expression, an unknown kind and a view id that is not a slug"
+    acceptance:
+      - id: AC2
+        statement: 'AC2: ModelViewContract, ModelViewFieldMap (typed row selection, column names, constants
+          and references only, no expressions) and ModelViewManifest exist as frozen extra=forbid models
+          and refuse an expression, an unknown kind and a view id that is not a slug -- falsifier: uv
+          run pytest tests/unit/models/dashboard -k "view_contract or field_map or view_manifest" -q'
+  - id: req-omn21997-ac3
+    statement: "ModelViewDocument holds sections as a union discriminated by kind, each section fixing
+      its envelope, a body that is a row tuple or a typed empty state and never both, and a section whose
+      envelope, config and rows disagree on kind fails the model and the emitted schema"
+    acceptance:
+      - id: AC3
+        statement: 'AC3: ModelViewDocument holds sections as a union discriminated by kind, each section
+          fixing its envelope, a body that is a row tuple or a typed empty state and never both, and a
+          section whose envelope, config and rows disagree on kind fails the model and the emitted schema
+          -- falsifier: uv run pytest tests/unit/models/dashboard -k view_document_kind -q'
+  - id: req-omn21997-ac4
+    statement: "a document digest function beside compute_widget_envelope_digest covers rows, so a changed
+      row fails the document digest and a changed config fails the envelope seal, and the same inputs
+      give the same digest twice"
+    acceptance:
+      - id: AC4
+        statement: 'AC4: a document digest function beside compute_widget_envelope_digest covers rows,
+          so a changed row fails the document digest and a changed config fails the envelope seal, and
+          the same inputs give the same digest twice -- falsifier: uv run pytest tests/unit/models/dashboard
+          -k view_document_digest -q'
+  - id: req-omn21997-ac5
+    statement: "count_view_document returns the section ids and row ids of a document by disposition,
+      tested with one fixture per kind"
+    acceptance:
+      - id: AC5
+        statement: 'AC5: count_view_document returns the section ids and row ids of a document by disposition,
+          tested with one fixture per kind -- falsifier: uv run pytest tests/unit/models/dashboard -k
+          count_view_document -q'
+  - id: req-omn21997-ac6
+    statement: "scripts/emit_ts_types.py emits the JSON Schema for the view document and each of the seven
+      new section variants validates against it after sealing and serialising, with a cross-kind section
+      refused by the model and the schema"
+    acceptance:
+      - id: AC6
+        statement: 'AC6: scripts/emit_ts_types.py emits the JSON Schema for the view document and each
+          of the seven new section variants validates against it after sealing and serialising, with a
+          cross-kind section refused by the model and the schema -- falsifier: uv run pytest tests/unit/models/dashboard
+          -k view_schema_roundtrip -q'
+evidence_requirements:
+  - kind: tests
+    description: The dashboard, enum and script model tests pass at the checkout; no live service is required.
+    command: uv run --frozen pytest tests/unit/models/dashboard tests/unit/enums tests/unit/scripts/test_emit_ts_types.py
+      -n 0 -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21997-ac1
+    description: 'AC1 falsifier command passes'
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k view_kind -q -n 0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21997-ac2
+    description: 'AC2 falsifier command passes'
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: 'uv run --frozen pytest tests/unit/models/dashboard -k "view_contract or field_map
+          or view_manifest" -q -n 0 --no-cov'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21997-ac3
+    description: 'AC3 falsifier command passes'
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k view_document_kind -q -n 0
+          --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21997-ac4
+    description: 'AC4 falsifier command passes'
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k view_document_digest -q -n
+          0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21997-ac5
+    description: 'AC5 falsifier command passes'
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k count_view_document -q -n 0
+          --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21997-ac6
+    description: 'AC6 falsifier command passes'
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/dashboard -k view_schema_roundtrip -q -n
+          0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21997-deploy-checkout-test
+    description: Hosted-runner run of the dashboard model tests at the checkout; they need no container
+      daemon, network or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2, AC3, AC4, AC5, AC6]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/models/dashboard
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core

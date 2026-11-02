@@ -72,6 +72,7 @@ from omnibase_core.utils.util_widget_envelope import (
     seal_widget_envelope,
     verify_widget_envelope,
 )
+from tests.unit.models.dashboard.view_builders import CONFIG_BUILDERS
 
 _REPO_ROOT = Path(__file__).resolve().parents[4]
 _VERSION = ModelSemVer(major=1, minor=0, patch=0)
@@ -129,6 +130,8 @@ _CONFIG_BUILDERS: dict[str, Any] = {
     "event_feed": lambda: ModelWidgetConfigEventFeed(
         event_filter=ModelEventFilter(event_types=("error",))
     ),
+    # the seven view kinds (OMN-21997)
+    **CONFIG_BUILDERS,
 }
 
 

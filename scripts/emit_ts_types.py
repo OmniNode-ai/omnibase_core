@@ -40,9 +40,8 @@ from omnibase_core.models.dashboard import (
     ModelThemeCatalog,
     ModelThemeCatalogEntry,
     ModelThemeInstance,
-    ModelWidgetEnvelope,
-    ModelWidgetProvenance,
 )
+from omnibase_core.models.dashboard.model_view_schema_models import VIEW_SCHEMA_MODELS
 from omnibase_core.models.notifications import ModelStateTransitionNotification
 from omnibase_core.models.projectors import (
     ModelDashboardHint,
@@ -71,17 +70,14 @@ MODELS: dict[str, type[BaseModel]] = {
     "ModelPermissionContract": ModelPermissionContract,
     "ModelEvidenceRequirementContract": ModelEvidenceRequirementContract,
     "ModelRendererCapabilityContract": ModelRendererCapabilityContract,
-    # Versioned design-token contract (OMN-13389) + the instance/catalog
-    # layer that gives a token VALUE somewhere to live (OMN-16882, Phase C1)
+    # Design-token contract (OMN-13389) + instance/catalog layer (OMN-16882)
     "ModelRendererThemeContract": ModelRendererThemeContract,
     "ModelThemeInstance": ModelThemeInstance,
     "ModelThemeCatalogEntry": ModelThemeCatalogEntry,
     "ModelThemeCatalog": ModelThemeCatalog,
     "ModelThemeActivation": ModelThemeActivation,
-    # One versioned widget envelope — the unit Plane 1 distributes; carries the
-    # config half ModelComponentContract never had (OMN-16883, Phase C2)
-    "ModelWidgetEnvelope": ModelWidgetEnvelope,
-    "ModelWidgetProvenance": ModelWidgetProvenance,
+    # Widget envelope (OMN-16883) and the view models (OMN-21997)
+    **VIEW_SCHEMA_MODELS,
     # Review Packet + OmniStudio Evidence Bundle (OMN-13387)
     "ModelReviewPacket": ModelReviewPacket,
     "ModelOmniStudioEvidenceBundle": ModelOmniStudioEvidenceBundle,

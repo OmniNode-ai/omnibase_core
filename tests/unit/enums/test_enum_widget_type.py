@@ -24,7 +24,7 @@ class TestEnumWidgetType:
 
     def test_value_count(self) -> None:
         """Test expected number of widget types."""
-        assert len(EnumWidgetType) == 5
+        assert len(EnumWidgetType) == 12
 
     def test_enum_inheritance(self) -> None:
         """Test that enum inherits from str and Enum."""
@@ -95,7 +95,7 @@ class TestEnumWidgetType:
     def test_enum_iteration(self) -> None:
         """Test that we can iterate over enum values."""
         values = list(EnumWidgetType)
-        assert len(values) == 5
+        assert len(values) == 12
         assert EnumWidgetType.CHART in values
         assert EnumWidgetType.TABLE in values
         assert EnumWidgetType.METRIC_CARD in values
@@ -122,7 +122,20 @@ class TestEnumWidgetType:
 
     def test_all_expected_values(self) -> None:
         """Test that all expected values are present."""
-        expected_values = {"chart", "table", "metric_card", "status_grid", "event_feed"}
+        expected_values = {
+            "chart",
+            "table",
+            "metric_card",
+            "status_grid",
+            "event_feed",
+            "line_card",
+            "machine_bay",
+            "stage_progress",
+            "stop",
+            "freshness",
+            "trend",
+            "drawer_detail",
+        }
         actual_values = {member.value for member in EnumWidgetType.__members__.values()}
         assert actual_values == expected_values
 
