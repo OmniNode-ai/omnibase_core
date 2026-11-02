@@ -30,6 +30,10 @@ Semantic status:
 Borders:
   color_border_default / strong
 
+Board (OMN-21998, view-centric plan S2):
+  color_tint_ok / warn / stop, color_neutral_idle, color_focus_ring,
+  font_family_display / mono, motion_duration / easing
+
 Spacing scale (CSS rem strings):
   spacing_xs / sm / md / lg / xl
 
@@ -184,6 +188,43 @@ class ModelRendererThemeContract(BaseModel):
     )
 
     # ------------------------------------------------------------------
+    # Board tokens: state tints, idle, focus ring (OMN-21998)
+    # ------------------------------------------------------------------
+
+    color_tint_ok: str = Field(
+        ...,
+        description=(
+            "Low-opacity fill behind an ok state; a tint of color_status_success "
+            "(an 8-digit hex colour: the status colour plus an alpha byte)"
+        ),
+        min_length=1,
+    )
+    color_tint_warn: str = Field(
+        ...,
+        description=(
+            "Low-opacity fill behind a warn state; a tint of color_status_warning"
+        ),
+        min_length=1,
+    )
+    color_tint_stop: str = Field(
+        ...,
+        description=(
+            "Low-opacity fill behind a stop state; a tint of color_status_error"
+        ),
+        min_length=1,
+    )
+    color_neutral_idle: str = Field(
+        ...,
+        description="Neutral colour for an idle state (no signal, not a fault)",
+        min_length=1,
+    )
+    color_focus_ring: str = Field(
+        ...,
+        description="Keyboard focus ring colour",
+        min_length=1,
+    )
+
+    # ------------------------------------------------------------------
     # Spacing scale (CSS rem strings)
     # ------------------------------------------------------------------
 
@@ -220,6 +261,16 @@ class ModelRendererThemeContract(BaseModel):
     font_family_base: str = Field(
         ...,
         description="Base / body font-family stack (e.g. \"'Inter', system-ui, sans-serif\")",
+        min_length=1,
+    )
+    font_family_display: str = Field(
+        ...,
+        description="Display / heading font-family stack",
+        min_length=1,
+    )
+    font_family_mono: str = Field(
+        ...,
+        description="Monospace font-family stack for ids, digests and figures",
         min_length=1,
     )
     font_size_sm: str = Field(
@@ -265,6 +316,21 @@ class ModelRendererThemeContract(BaseModel):
     border_radius_lg: str = Field(
         ...,
         description="Large border radius (e.g. '1rem')",
+        min_length=1,
+    )
+
+    # ------------------------------------------------------------------
+    # Motion tokens
+    # ------------------------------------------------------------------
+
+    motion_duration: str = Field(
+        ...,
+        description="Transition duration (e.g. '150ms')",
+        min_length=1,
+    )
+    motion_easing: str = Field(
+        ...,
+        description="Transition easing function (e.g. 'cubic-bezier(0.2, 0, 0, 1)')",
         min_length=1,
     )
 
