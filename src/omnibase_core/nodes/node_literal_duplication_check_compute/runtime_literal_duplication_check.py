@@ -14,6 +14,7 @@ import logging
 import sys
 from pathlib import Path
 
+from omnibase_core.models.logging.model_cli_logging import cli_logging
 from omnibase_core.validation.checker_literal_duplication import (
     KNOWN_ENUM_NAMES,
     find_enums_directory,
@@ -99,58 +100,57 @@ Use:
 
     # Configure logging for CLI usage
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s", force=True)
+    with cli_logging(log_level):
+        # Determine target paths
+        if args.paths:
+            target_paths = args.paths
+        else:
+            # Find omnibase_core relative to this file
+            this_file = Path(__file__)
+            # Go up from node dir and nodes/ to omnibase_core/
+            target_dir = this_file.parents[2]
+            target_paths = [target_dir]
 
-    # Determine target paths
-    if args.paths:
-        target_paths = args.paths
-    else:
-        # Find omnibase_core relative to this file
-        this_file = Path(__file__)
-        # Go up from node dir and nodes/ to omnibase_core/
-        target_dir = this_file.parents[2]
-        target_paths = [target_dir]
+        # Validate paths exist
+        for path in target_paths:
+            if not path.exists():
+                logger.error("Path not found: %s", path)
+                return 1
 
-    # Validate paths exist
-    for path in target_paths:
-        if not path.exists():
-            logger.error("Path not found: %s", path)
+        # Find enum names from the enums directory
+        enums_dir = find_enums_directory()
+        if enums_dir:
+            known_enums = get_enum_names_from_directory(enums_dir)
+            logger.debug("Loaded %d enum names from %s", len(known_enums), enums_dir)
+        else:
+            known_enums = KNOWN_ENUM_NAMES
+            logger.debug("Using built-in enum names (%d)", len(known_enums))
+
+        logger.info("Checking for Literal type alias duplication...")
+        if args.verbose:
+            logger.info("Paths: %s", [str(p) for p in target_paths])
+        logger.info("-" * 60)
+
+        errors = validate_paths(
+            target_paths,
+            known_enums,
+            exclude_patterns=args.exclude,
+            verbose=args.verbose,
+        )
+
+        if errors:
+            logger.warning("Found %d Literal duplication(s):", len(errors))
+            for error in sorted(errors):
+                logger.warning("  %s", error)
+            logger.info("")
+            logger.info("Action: Replace Literal aliases with enum imports.")
+            logger.info("Example:")
+            logger.info("  - LiteralValidationLevel = Literal[...]")
+            logger.info("  + from omnibase_core.enums import EnumValidationLevel")
             return 1
 
-    # Find enum names from the enums directory
-    enums_dir = find_enums_directory()
-    if enums_dir:
-        known_enums = get_enum_names_from_directory(enums_dir)
-        logger.debug("Loaded %d enum names from %s", len(known_enums), enums_dir)
-    else:
-        known_enums = KNOWN_ENUM_NAMES
-        logger.debug("Using built-in enum names (%d)", len(known_enums))
-
-    logger.info("Checking for Literal type alias duplication...")
-    if args.verbose:
-        logger.info("Paths: %s", [str(p) for p in target_paths])
-    logger.info("-" * 60)
-
-    errors = validate_paths(
-        target_paths,
-        known_enums,
-        exclude_patterns=args.exclude,
-        verbose=args.verbose,
-    )
-
-    if errors:
-        logger.warning("Found %d Literal duplication(s):", len(errors))
-        for error in sorted(errors):
-            logger.warning("  %s", error)
-        logger.info("")
-        logger.info("Action: Replace Literal aliases with enum imports.")
-        logger.info("Example:")
-        logger.info("  - LiteralValidationLevel = Literal[...]")
-        logger.info("  + from omnibase_core.enums import EnumValidationLevel")
-        return 1
-
-    logger.info("No Literal duplications found!")
-    return 0
+        logger.info("No Literal duplications found!")
+        return 0
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 from typing import Final
 
+from omnibase_core.models.logging.model_cli_logging import cli_logging
 from omnibase_core.models.nodes.validation_report_write.model_validation_report_write_input import (
     ModelValidationReportWriteInput,
 )
@@ -168,45 +169,44 @@ Examples:
 
     # Configure logging for CLI usage
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s", force=True)
+    with cli_logging(log_level):
+        # Determine target directory
+        if args.directory:
+            target_dir = args.directory
+        else:
+            # Find omnibase_core relative to this file
+            this_file = Path(__file__)
+            target_dir = this_file.parents[
+                2
+            ]  # Go up from node dir and nodes/ to omnibase_core/
 
-    # Determine target directory
-    if args.directory:
-        target_dir = args.directory
-    else:
-        # Find omnibase_core relative to this file
-        this_file = Path(__file__)
-        target_dir = this_file.parents[
-            2
-        ]  # Go up from node dir and nodes/ to omnibase_core/
+        if not target_dir.exists():
+            _write_report(
+                args.report_json,
+                args.overlay,
+                [],
+                runtime_error=f"Directory not found: {target_dir}",
+            )
+            logger.error("Directory not found: %s", target_dir)
+            return 1
 
-    if not target_dir.exists():
-        _write_report(
-            args.report_json,
-            args.overlay,
-            [],
-            runtime_error=f"Directory not found: {target_dir}",
-        )
-        logger.error("Directory not found: %s", target_dir)
-        return 1
+        logger.info("Checking naming conventions in: %s", target_dir)
+        logger.info("-" * 60)
 
-    logger.info("Checking naming conventions in: %s", target_dir)
-    logger.info("-" * 60)
+        errors = validate_directory(target_dir, verbose=args.verbose)
+        _write_report(args.report_json, args.overlay, errors)
 
-    errors = validate_directory(target_dir, verbose=args.verbose)
-    _write_report(args.report_json, args.overlay, errors)
+        if errors:
+            logger.warning("Found %d naming convention violation(s):", len(errors))
+            for error in sorted(errors):
+                logger.warning("  %s", error)
+            if args.warning_mode:
+                logger.warning("Warning mode enabled; not failing on violations.")
+                return 0
+            return 1
 
-    if errors:
-        logger.warning("Found %d naming convention violation(s):", len(errors))
-        for error in sorted(errors):
-            logger.warning("  %s", error)
-        if args.warning_mode:
-            logger.warning("Warning mode enabled; not failing on violations.")
-            return 0
-        return 1
-
-    logger.info("All files conform to naming conventions!")
-    return 0
+        logger.info("All files conform to naming conventions!")
+        return 0
 
 
 if __name__ == "__main__":
