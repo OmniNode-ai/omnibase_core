@@ -21,7 +21,6 @@ from omnibase_core.models.dashboard.model_view_threshold_policy import (
     ModelViewThresholdPolicy,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.utils.util_view_threshold_evaluator import evaluate_view_threshold
 
 
 def band(
@@ -73,20 +72,20 @@ class TestViewThresholdEvaluator:
     def test_view_threshold_evaluator_returns_declared_band_at_boundaries(
         self, value: float, severity: EnumStatusSeverity
     ) -> None:
-        result = evaluate_view_threshold(POLICY, value)
+        result = POLICY.evaluate(value)
         assert isinstance(result, ModelSeverityVerdict)
         assert result.severity is severity
 
     def test_view_threshold_evaluator_verdict_carries_policy_identity(self) -> None:
-        result = evaluate_view_threshold(POLICY, 5.0)
+        result = POLICY.evaluate(5.0)
         assert isinstance(result, ModelSeverityVerdict)
         assert result.policy_id == "consumer-lag"
         assert result.policy_version == ModelSemVer(major=2, minor=1, patch=0)
         assert result.policy_digest == POLICY.compute_digest()
 
     def test_view_threshold_evaluator_status_value_is_label_else_severity(self) -> None:
-        labelled = evaluate_view_threshold(POLICY, 5.0)
-        unlabelled = evaluate_view_threshold(POLICY, 30.0)
+        labelled = POLICY.evaluate(5.0)
+        unlabelled = POLICY.evaluate(30.0)
         assert isinstance(labelled, ModelSeverityVerdict)
         assert isinstance(unlabelled, ModelSeverityVerdict)
         assert labelled.status_value == "Fine"
@@ -96,7 +95,7 @@ class TestViewThresholdEvaluator:
     def test_view_threshold_evaluator_value_in_no_band_is_out_of_band(
         self, value: float
     ) -> None:
-        result = evaluate_view_threshold(POLICY, value)
+        result = POLICY.evaluate(value)
         assert isinstance(result, ModelViewThresholdOutOfBand)
         assert result.value == value
         assert result.policy_id == "consumer-lag"
@@ -113,34 +112,28 @@ class TestViewThresholdEvaluator:
             mapped_field="x",
             bands=(band(0, 10, EnumStatusSeverity.NOMINAL, "color_status_success"),),
         )
-        assert isinstance(
-            evaluate_view_threshold(bounded, 10.0), ModelViewThresholdOutOfBand
-        )
-        assert isinstance(evaluate_view_threshold(bounded, 9.0), ModelSeverityVerdict)
+        assert isinstance(bounded.evaluate(10.0), ModelViewThresholdOutOfBand)
+        assert isinstance(bounded.evaluate(9.0), ModelSeverityVerdict)
 
     def test_view_threshold_evaluator_nan_is_out_of_band_never_a_band(self) -> None:
-        result = evaluate_view_threshold(POLICY, math.nan)
+        result = POLICY.evaluate(math.nan)
         assert isinstance(result, ModelViewThresholdOutOfBand)
 
     def test_view_threshold_evaluator_infinity_follows_declared_bounds(self) -> None:
-        assert isinstance(
-            evaluate_view_threshold(POLICY, math.inf), ModelSeverityVerdict
-        )
-        assert isinstance(
-            evaluate_view_threshold(POLICY, -math.inf), ModelViewThresholdOutOfBand
-        )
+        assert isinstance(POLICY.evaluate(math.inf), ModelSeverityVerdict)
+        assert isinstance(POLICY.evaluate(-math.inf), ModelViewThresholdOutOfBand)
 
     def test_view_threshold_evaluator_is_pure_and_repeatable(self) -> None:
         before = POLICY.model_dump(mode="json")
-        first = evaluate_view_threshold(POLICY, 42.0)
-        second = evaluate_view_threshold(POLICY, 42.0)
+        first = POLICY.evaluate(42.0)
+        second = POLICY.evaluate(42.0)
         assert first == second
         assert POLICY.model_dump(mode="json") == before
 
     def test_view_threshold_evaluator_out_of_band_validates_against_json_schema(
         self,
     ) -> None:
-        result = evaluate_view_threshold(POLICY, 75.0)
+        result = POLICY.evaluate(75.0)
         assert isinstance(result, ModelViewThresholdOutOfBand)
         jsonschema.validate(
             result.model_dump(mode="json"),
