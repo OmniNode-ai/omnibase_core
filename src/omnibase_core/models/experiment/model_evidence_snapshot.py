@@ -7,6 +7,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
+from omnibase_core.models.experiment.model_evidence_cost import ModelEvidenceCost
 from omnibase_core.models.experiment.model_experiment_evidence_record import (
     ModelExperimentEvidenceRecord,
 )
@@ -29,6 +30,7 @@ class ModelEvidenceSnapshot(BaseModel):
         input_hash: SHA-256 of the canonical snapshot content (64 lowercase hex).
         contracts: The frozen success contract of every experiment in the run.
         records: Every deduplicated evidence record inside the window.
+        cost: Cost of the run: measured, or unknown, plus a labelled estimate.
     """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -40,3 +42,4 @@ class ModelEvidenceSnapshot(BaseModel):
     input_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     contracts: tuple[ModelSuccessContract, ...] = ()
     records: tuple[ModelExperimentEvidenceRecord, ...] = ()
+    cost: ModelEvidenceCost = Field(default_factory=ModelEvidenceCost)

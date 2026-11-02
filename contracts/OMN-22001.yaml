@@ -1,0 +1,75 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22001
+title: 'W1.1 Core models, remaining proposal fields: manifest with rule_sha, cost fields, judgment record,
+  refusal and decision enums, run state, evaluator section'
+summary: >
+  The second slice of the core models of the orchestration alignment plan (Task 13). Adds to models/experiment
+  and enums: the experiment manifest carrying the success-contract fields of plan section 4 and rule_sha,
+  the evidence snapshot cost fields (measured amount, source, unit, unknown flag, separately labelled
+  estimate with its price date), the judgment record and the disagreement row, the operational refusal
+  enum with RULE_HASH_MISMATCH, the champion decision, the estimator and lifecycle state enums, the experiment
+  run state and the evaluator-section input model of the retrospective render. Every model is frozen,
+  refuses an unknown field and carries no untyped dict and no Any. This slice passes none of the wave
+  gates.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn22001-core-models
+    statement: Every remaining field of the proposal exists as a typed field of a frozen, extra-forbidding
+      model, and an unresolved manifest value blocks resolution.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: every field the proposal lists exists as a typed field with no untyped dict,
+          and mypy strict reports no Any -- falsifier: uv run pytest of the field-by-field check test
+          in tests/unit/models/experiment and uv run mypy src/omnibase_core/models/experiment'
+      - id: AC2
+        statement: 'AC2: the models are frozen and reject unknown fields, and the verdict model has no
+          field that grants adoption or a permission -- falsifier: uv run pytest unit tests that mutate
+          an instance and pass an extra key and assert it raises'
+      - id: AC3
+        statement: 'AC3: an unresolved contract value is representable and offers no path that treats
+          it as resolved -- falsifier: uv run pytest unit test that builds a manifest with an unresolved
+          required value'
+evidence_requirements:
+  - kind: tests
+    description: The field-by-field check, the frozen and extra-forbid checks and the unresolved-value
+      checks pass; each invariant has a planted violation beside a control.
+    command: uv run pytest tests/unit/models/experiment -n 0 -q --no-cov -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22001-ac1
+    description: AC1 falsifier tests pass. They fail at the merge base, which has no manifest model.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/experiment/test_remaining_proposal_models.py -q --no-cov
+          -o addopts='' -k "every_proposal_field or no_untyped_dict or carries_no_field"
+  - id: dod-omn22001-ac2
+    description: AC2 falsifier tests pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/experiment/test_remaining_proposal_models.py -q --no-cov
+          -o addopts='' -k "is_frozen or unknown_field or authorize_nothing"
+  - id: dod-omn22001-ac3
+    description: AC3 falsifier tests pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/experiment/test_remaining_proposal_models.py -q --no-cov
+          -o addopts='' -k "unresolved or resolved or optional_manifest_field"
