@@ -111,9 +111,10 @@ dod_evidence:
           -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21726-vocabulary-deploy-console-smoke
-    description: The console entry resolves a vocabulary with its environment override unset and emits
-      one refusal line when the required vocabulary is absent. This smoke runs on hosted runners without
-      a daemon, external vocabulary or credentials.
+    description: The regression exercises injected reader and planner collaborators without replacement
+      construction. Console tests resolve a vocabulary with its environment override unset and emit one
+      refusal line when required vocabulary is absent. Both run on hosted runners without daemon, external
+      vocabulary or credentials.
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
@@ -121,5 +122,6 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/nodes/node_source_file_gather_effect/test_runtime_private_vocabulary.py
+          tests/unit/handlers/test_handler_private_vocabulary.py::test_injected_collaborators_are_used_without_constructing_replacements
           -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
