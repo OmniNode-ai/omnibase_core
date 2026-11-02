@@ -1,0 +1,378 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the substrate-identity-field-optionality hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: substrate-identity-field-optionality
+entries:
+  - path: src/omnibase_core/errors/error_contract_validation.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/error_event_bus.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/error_handler_execution.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/error_invalid_operation.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/error_runtime_host.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/exception_adapter_binding_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/exception_compute_pipeline_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/exception_node_execution_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/exception_node_execution_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:fb1ce4055e792ed8ad1f880ad2fbb01ea4746097a5abad6f426c3595ac86aefc
+  - path: src/omnibase_core/errors/exception_purity_violation_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/exception_purity_violation_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:fb1ce4055e792ed8ad1f880ad2fbb01ea4746097a5abad6f426c3595ac86aefc
+  - path: src/omnibase_core/errors/exception_unsupported_capability_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/errors/model_onex_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/infrastructure/node_base.py
+    rule: substrate-identity-field-optionality
+    text: sha256:0e7bb8773b82d96bcdf001f7a84bb0a71a113b7baaaf3e1a21b28a440f17d09e
+  - path: src/omnibase_core/infrastructure/node_base.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9538a833c6bf178613b60d2e808625300c493ea47d887477685b5efe32353614
+  - path: src/omnibase_core/logging/logging_emit.py
+    rule: substrate-identity-field-optionality
+    text: sha256:da3071aecb6c8050191e6932851d4201cb9c7274dafecdb1a4cb3fb953a3631e
+  - path: src/omnibase_core/logging/logging_emit.py
+    rule: substrate-identity-field-optionality
+    text: sha256:da3071aecb6c8050191e6932851d4201cb9c7274dafecdb1a4cb3fb953a3631e
+  - path: src/omnibase_core/logging/logging_emit.py
+    rule: substrate-identity-field-optionality
+    text: sha256:da3071aecb6c8050191e6932851d4201cb9c7274dafecdb1a4cb3fb953a3631e
+  - path: src/omnibase_core/logging/logging_emit.py
+    rule: substrate-identity-field-optionality
+    text: sha256:da3071aecb6c8050191e6932851d4201cb9c7274dafecdb1a4cb3fb953a3631e
+  - path: src/omnibase_core/merge/contract_merge_engine.py
+    rule: substrate-identity-field-optionality
+    text: sha256:8d14dd1107a6377a6efa21f543257169ad7c7479058963925a121c7ef4545b36
+  - path: src/omnibase_core/merge/contract_merge_engine.py
+    rule: substrate-identity-field-optionality
+    text: sha256:8d14dd1107a6377a6efa21f543257169ad7c7479058963925a121c7ef4545b36
+  - path: src/omnibase_core/merge/contract_merge_engine.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_compute_execution.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_contract_publisher.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_contract_publisher.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_event_bus.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_node_lifecycle.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_node_lifecycle.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_node_lifecycle.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/mixins/mixin_trace_capture.py
+    rule: substrate-identity-field-optionality
+    text: sha256:8d14dd1107a6377a6efa21f543257169ad7c7479058963925a121c7ef4545b36
+  - path: src/omnibase_core/mixins/mixin_trace_capture.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/cli/model_cli_execution_resources.py
+    rule: substrate-identity-field-optionality
+    text: sha256:2cd37ef65ed5893220e4873fec9d878ebc8e9261e10fc31085ac8f4207f70853
+  - path: src/omnibase_core/models/compute/model_compute_execution_context.py
+    rule: substrate-identity-field-optionality
+    text: sha256:5f1d4d55f998f37c6715c8ab3dcda5693c6d416f7e2f4f75b04fd74bdf2d149d
+  - path: src/omnibase_core/models/compute/model_compute_execution_context.py
+    rule: substrate-identity-field-optionality
+    text: sha256:a3f346d477ec9169a2de0e61a0e0dd6f6ec27ff8846fad1d6ad25236b6dbbfe7
+  - path: src/omnibase_core/models/configuration/model_circuit_breaker.py
+    rule: substrate-identity-field-optionality
+    text: sha256:82d1a1af5b8f4ab4fd6699a06de56ba5ad4efc77b5eb62fa81ab49f907b8a46d
+  - path: src/omnibase_core/models/configuration/model_rate_limit_policy.py
+    rule: substrate-identity-field-optionality
+    text: sha256:895f034b0eeff48ac492e9710f0996b6f89f575e77df346b91f212bc4d33dce0
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/core/model_log_context.py
+    rule: substrate-identity-field-optionality
+    text: sha256:5f1d4d55f998f37c6715c8ab3dcda5693c6d416f7e2f4f75b04fd74bdf2d149d
+  - path: src/omnibase_core/models/core/model_log_context.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c79b2015cfea7a550e8293aeb7fba57ba19414950bb700f11d3f45ce7a2b9ba
+  - path: src/omnibase_core/models/core/model_onex_base_state.py
+    rule: substrate-identity-field-optionality
+    text: sha256:5f1d4d55f998f37c6715c8ab3dcda5693c6d416f7e2f4f75b04fd74bdf2d149d
+  - path: src/omnibase_core/models/core/model_onex_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/core/model_onex_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/core/model_onex_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/core/model_onex_internal_processing_context.py
+    rule: substrate-identity-field-optionality
+    text: sha256:0e7bb8773b82d96bcdf001f7a84bb0a71a113b7baaaf3e1a21b28a440f17d09e
+  - path: src/omnibase_core/models/core/model_onex_internal_processing_context.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/core/model_onex_output_state.py
+    rule: substrate-identity-field-optionality
+    text: sha256:5f1d4d55f998f37c6715c8ab3dcda5693c6d416f7e2f4f75b04fd74bdf2d149d
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: substrate-identity-field-optionality
+    text: sha256:e406e1b57111c4040498582624d0dd6d72406a21e2577e1612f8fc8f4c61538a
+  - path: src/omnibase_core/models/core/model_unified_run_metadata.py
+    rule: substrate-identity-field-optionality
+    text: sha256:686c5f63f99f37e32fa36396585eebf7da0b862885ed1cc6847179738304abcb
+  - path: src/omnibase_core/models/discovery/model_discovery_error.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/discovery/model_request_introspection_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9538a833c6bf178613b60d2e808625300c493ea47d887477685b5efe32353614
+  - path: src/omnibase_core/models/discovery/model_request_introspection_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9538a833c6bf178613b60d2e808625300c493ea47d887477685b5efe32353614
+  - path: src/omnibase_core/models/discovery/model_request_introspection_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9538a833c6bf178613b60d2e808625300c493ea47d887477685b5efe32353614
+  - path: src/omnibase_core/models/discovery/model_tooldiscoveryrequest.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/discovery/model_tooldiscoveryrequest.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/dispatch/model_dispatch_metrics.py
+    rule: substrate-identity-field-optionality
+    text: sha256:66727f45ec49c6450031bc0f0ed69a21ffbb72fcd90b2c9f8dd050b995fad787
+  - path: src/omnibase_core/models/envelope/model_message_envelope.py
+    rule: substrate-identity-field-optionality
+    text: sha256:074b4a23a950cb11108ab4d40a3dd4ee0f79904bde34f93fce7a1982e2433f02
+  - path: src/omnibase_core/models/envelope/model_message_envelope.py
+    rule: substrate-identity-field-optionality
+    text: sha256:074b4a23a950cb11108ab4d40a3dd4ee0f79904bde34f93fce7a1982e2433f02
+  - path: src/omnibase_core/models/envelope/model_message_envelope.py
+    rule: substrate-identity-field-optionality
+    text: sha256:dce8f8712d6f7009e1a147b7d8538a77605e30310d74ab481855b87cea2a0fc8
+  - path: src/omnibase_core/models/events/contract_resolve/model_contract_resolve_completed_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/contract_resolve/model_contract_resolve_requested_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/contract_validation/model_contract_merge_completed_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/contract_validation/model_contract_merge_started_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/contract_validation/model_contract_validation_failed_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/contract_validation/model_contract_validation_passed_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/contract_validation/model_contract_validation_started_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_event_envelope.py
+    rule: substrate-identity-field-optionality
+    text: sha256:64bff3209c4c031349e3ef518ca4d2e5528d0f7cfeb15b8bf870b03a722df0ba
+  - path: src/omnibase_core/models/events/model_event_envelope.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_event_envelope.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_query_requested_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_query_requested_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_query_requested_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_query_response_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_query_response_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_query_response_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_query_response_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_stored_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_intent_stored_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_node_graph_ready_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_node_registered_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_node_unregistered_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_runtime_ready_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:08c5d7f90d6fdb580cd7f25934ce7690345f7535e643c03c1fc4a03dfb9d84c6
+  - path: src/omnibase_core/models/events/model_runtime_ready_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_subscription_created_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_subscription_failed_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_subscription_removed_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_wiring_error_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/model_wiring_result_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/validation/model_validation_run_completed_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/validation/model_validation_run_started_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/events/validation/model_validation_violations_batch_event.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/execution_graph_replay/model_execution_graph_endpoint.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c79b2015cfea7a550e8293aeb7fba57ba19414950bb700f11d3f45ce7a2b9ba
+  - path: src/omnibase_core/models/execution_graph_replay/model_execution_graph_endpoint.py
+    rule: substrate-identity-field-optionality
+    text: sha256:cfcd20715dd868b9a0897ff1bd5f22f9d75343d7c0afccd407fdf29a6919926b
+  - path: src/omnibase_core/models/intelligence/model_tool_execution_content.py
+    rule: substrate-identity-field-optionality
+    text: sha256:38633002bf3f9e10c72a2bd7b2114a90dd2d977df4001af9780bbca1cadabcb1
+  - path: src/omnibase_core/models/intelligence/model_tool_execution_content.py
+    rule: substrate-identity-field-optionality
+    text: sha256:5a70762954d947124dd4abcfc05733816e2760ddc01382be4d07ecdd6af2eda7
+  - path: src/omnibase_core/models/mcp/model_mcp_invocation_response.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/mcp/model_mcp_invocation_response.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/mcp/model_mcp_invocation_response.py
+    rule: substrate-identity-field-optionality
+    text: sha256:e406e1b57111c4040498582624d0dd6d72406a21e2577e1612f8fc8f4c61538a
+  - path: src/omnibase_core/models/mcp/model_mcp_invocation_response.py
+    rule: substrate-identity-field-optionality
+    text: sha256:e406e1b57111c4040498582624d0dd6d72406a21e2577e1612f8fc8f4c61538a
+  - path: src/omnibase_core/models/nodes/compliance_evidence/model_evidence_report_state.py
+    rule: substrate-identity-field-optionality
+    text: sha256:694c6666a346e74afa4e858a0c418ad4d67922cdac1ee2fbe0f00bbadbcebdb7
+  - path: src/omnibase_core/models/nodes/compliance_report/model_compliance_report_state.py
+    rule: substrate-identity-field-optionality
+    text: sha256:686c5f63f99f37e32fa36396585eebf7da0b862885ed1cc6847179738304abcb
+  - path: src/omnibase_core/models/operations/model_change_proposal.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/operations/model_change_proposal.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/models/results/model_onex_result.py
+    rule: substrate-identity-field-optionality
+    text: sha256:686c5f63f99f37e32fa36396585eebf7da0b862885ed1cc6847179738304abcb
+  - path: src/omnibase_core/models/validation/model_validation_report.py
+    rule: substrate-identity-field-optionality
+    text: sha256:252206142c308b32b82f93c7aa943817c1d60a777f3a477ebe03a242f34e50d3
+  - path: src/omnibase_core/nodes/node_contract_resolve_compute/handler.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/nodes/node_validation_orchestrator/node_cross_repo_validation_orchestrator.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: substrate-identity-field-optionality
+    text: sha256:66727f45ec49c6450031bc0f0ed69a21ffbb72fcd90b2c9f8dd050b995fad787
+  - path: src/omnibase_core/pipeline/manifest_generator.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/pipeline/manifest_observer.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/protocols/compute/protocol_circuit_breaker.py
+    rule: substrate-identity-field-optionality
+    text: sha256:54663e48d7c5a7f5d4fe66ccecf84bb5333aaefcd1b534eee134cb00bbe0fbe8
+  - path: src/omnibase_core/protocols/compute/protocol_circuit_breaker.py
+    rule: substrate-identity-field-optionality
+    text: sha256:82d1a1af5b8f4ab4fd6699a06de56ba5ad4efc77b5eb62fa81ab49f907b8a46d
+  - path: src/omnibase_core/protocols/storage/protocol_state_store.py
+    rule: substrate-identity-field-optionality
+    text: sha256:367e7b7d2d7ef01ed1d9277a73d89ec01d9eee2d31e7fad04158c8cc27df5aaf
+  - path: src/omnibase_core/resolution/resolver_protocol_dependency.py
+    rule: substrate-identity-field-optionality
+    text: sha256:fb1ce4055e792ed8ad1f880ad2fbb01ea4746097a5abad6f426c3595ac86aefc
+  - path: src/omnibase_core/runtime/harness/harness_cli.py
+    rule: substrate-identity-field-optionality
+    text: sha256:38633002bf3f9e10c72a2bd7b2114a90dd2d977df4001af9780bbca1cadabcb1
+  - path: src/omnibase_core/runtime/runtime_local.py
+    rule: substrate-identity-field-optionality
+    text: sha256:0845923c89a19254fe4390835d3c468c0a04dc334fe468085250fb34bbfeab9d
+  - path: src/omnibase_core/runtime/runtime_local.py
+    rule: substrate-identity-field-optionality
+    text: sha256:38633002bf3f9e10c72a2bd7b2114a90dd2d977df4001af9780bbca1cadabcb1
+  - path: src/omnibase_core/services/replay/service_audit_trail.py
+    rule: substrate-identity-field-optionality
+    text: sha256:7ba1f2140897f814874e9ecde6f9589109d22fe9d0e4bff84cdd383b48f85ee6
+  - path: src/omnibase_core/services/service_contract_validation_event_emitter.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/services/state/service_state_disk.py
+    rule: substrate-identity-field-optionality
+    text: sha256:dd52da5bce8d1eb7a74ed164801915fd35516e9ce7eefb1671f9f1d340da0304
+  - path: src/omnibase_core/utils/util_fsm_executor.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b
+  - path: src/omnibase_core/validation/validator_contract_pipeline.py
+    rule: substrate-identity-field-optionality
+    text: sha256:9c044d6bbc79d6215797825bb0fc349ed6d4ed72e5140e1308b26cc5d04c854b

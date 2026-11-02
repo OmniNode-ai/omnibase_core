@@ -16,9 +16,9 @@
   "reportPossiblyUnboundVariable": "warning",
   "reportIncompatibleMethodOverride": "warning",
 
-  "reportReturnType": false,
-  "reportArgumentType": false,
-  "reportAssignmentType": false,
+  "reportReturnType": "error",
+  "reportArgumentType": "error",
+  "reportAssignmentType": "error",
 
 
   "reportGeneralTypeIssues": false,

@@ -25,7 +25,9 @@ a stale entry, a refused write or an unreadable input.
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
+from collections import Counter
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Final
@@ -54,6 +56,7 @@ from omnibase_core.nodes.node_finding_baseline_check_effect.handler_finding_base
     HandlerFindingBaseline,
 )
 from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
+from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 __all__ = ["run_baselined_hook"]
 
@@ -161,6 +164,50 @@ def _load_baseline(path: Path, hook_id: str) -> ModelFindingBaseline | None:
     return baseline
 
 
+def _baseline_growth(path: Path, baseline: ModelFindingBaseline | None) -> list[str]:
+    """Reject hand-edited additions as well as maintenance-command growth.
+
+    HEAD protects local staged edits. origin/dev protects a PR whose baseline
+    edits have already been committed. A first installation has neither copy.
+    """
+    errors: list[str] = []
+    for ref in ("HEAD", "origin/dev"):
+        try:
+            shown = subprocess.run(
+                ["git", "show", f"{ref}:{_label(path)}"],
+                cwd=Path.cwd(),
+                env=scrub_git_location_env(),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+        except OSError as exc:
+            return [f"Cannot check baseline against git: {exc}"]
+        if shown.returncode:
+            continue
+        if baseline is None:
+            errors.append(
+                f"{path}: baseline present at {ref} was removed; retain the baseline even when empty"
+            )
+            continue
+        try:
+            previous = load_yaml_content_as_model(shown.stdout, ModelFindingBaseline)
+        except (ValueError, ModelOnexError) as exc:
+            errors.append(f"Cannot read {ref}:{path}: {exc}")
+            continue
+        if previous.hook != baseline.hook:
+            errors.append(f"{path}: baseline hook changed against {ref}")
+            continue
+        added = Counter(e.key() for e in baseline.entries) - Counter(
+            e.key() for e in previous.entries
+        )
+        errors.extend(
+            f"{path}: baseline only shrinks against {ref}: added {key!r}"
+            for key in sorted(added)
+        )
+    return errors
+
+
 def run_baselined_hook(
     argv: Sequence[str] | None,
     *,
@@ -200,7 +247,7 @@ def run_baselined_hook(
     if parsed.write_baseline and parsed.baseline is None:
         parser.error("--write-baseline needs --baseline FILE")
 
-    files: list[str] = list(parsed.files)
+    files: list[str] = [f for f in parsed.files if f != parsed.baseline]
     dirs: list[str] = list(parsed.directories)
     if not files and not dirs:
         if not default_dirs:
@@ -234,6 +281,13 @@ def run_baselined_hook(
     except (OSError, ValueError, ModelOnexError) as exc:
         _out(f"ERROR: cannot read baseline {parsed.baseline}: {exc}")
         return 1
+
+    if baseline_path is not None:
+        growth = _baseline_growth(baseline_path, baseline)
+        if growth:
+            for message in growth:
+                _out(f"FAIL: {message}")
+            return 1
 
     if parsed.write_baseline and baseline_path is not None:
         return _write_baseline(
@@ -293,7 +347,14 @@ def _write_baseline(
         _out(f"{path} was not written; a baseline only shrinks")
         return 1
     shrunk = baseline.model_copy(update={"entries": shrink.kept})
-    path.write_text(handler.render(shrunk), encoding="utf-8")
+    rendered = handler.render(shrunk)
+    # Retain a baseline's burn-down owner and target date during maintenance.
+    header, separator, _ = path.read_text(encoding="utf-8").partition("---\n")
+    if separator and all(
+        not line or line.startswith("#") for line in header.splitlines()
+    ):
+        rendered = header + separator + rendered.partition("---\n")[2]
+    path.write_text(rendered, encoding="utf-8")
     _out(
         f"WROTE: {path} shrunk from {len(baseline.entries)} to "
         f"{len(shrunk.entries)} entries"

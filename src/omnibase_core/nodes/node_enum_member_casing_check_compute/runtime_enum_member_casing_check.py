@@ -14,6 +14,7 @@ import logging
 import sys
 from pathlib import Path
 
+from omnibase_core.models.logging.model_cli_logging import cli_logging
 from omnibase_core.validation.checker_enum_member_casing import (
     validate_directory,
     validate_file,
@@ -88,60 +89,59 @@ Invalid member names:
 
     # Configure logging for CLI usage
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    logging.basicConfig(level=log_level, format="%(message)s", force=True)
+    with cli_logging(log_level):
+        all_issues: list[str] = []
 
-    all_issues: list[str] = []
+        # Determine what to check
+        if args.files:
+            # Check specific files (pre-commit mode)
+            for file_path in args.files:
+                if not file_path.exists():
+                    logger.error("File not found: %s", file_path)
+                    continue
 
-    # Determine what to check
-    if args.files:
-        # Check specific files (pre-commit mode)
-        for file_path in args.files:
-            if not file_path.exists():
-                logger.error("File not found: %s", file_path)
-                continue
+                if file_path.suffix != ".py":
+                    if args.verbose:
+                        logger.debug("Skipping non-Python file: %s", file_path)
+                    continue
 
-            if file_path.suffix != ".py":
-                if args.verbose:
-                    logger.debug("Skipping non-Python file: %s", file_path)
-                continue
+                issues = validate_file(file_path)
+                all_issues.extend(issues)
 
-            issues = validate_file(file_path)
-            all_issues.extend(issues)
+        elif args.directory:
+            # Check specified directory
+            if not args.directory.exists():
+                logger.error("Directory not found: %s", args.directory)
+                return 1
 
-    elif args.directory:
-        # Check specified directory
-        if not args.directory.exists():
-            logger.error("Directory not found: %s", args.directory)
+            logger.info("Checking enum member casing in: %s", args.directory)
+            logger.info("-" * 60)
+            all_issues = validate_directory(args.directory, verbose=args.verbose)
+
+        else:
+            # Default: check src/omnibase_core
+            this_file = Path(__file__)
+            target_dir = this_file.parents[
+                2
+            ]  # Go up from node dir and nodes/ to omnibase_core/
+
+            if not target_dir.exists():
+                logger.error("Directory not found: %s", target_dir)
+                return 1
+
+            logger.info("Checking enum member casing in: %s", target_dir)
+            logger.info("-" * 60)
+            all_issues = validate_directory(target_dir, verbose=args.verbose)
+
+        if all_issues:
+            logger.warning("Found %d enum member casing violation(s):", len(all_issues))
+            for issue in sorted(all_issues):
+                logger.warning("  %s", issue)
             return 1
 
-        logger.info("Checking enum member casing in: %s", args.directory)
-        logger.info("-" * 60)
-        all_issues = validate_directory(args.directory, verbose=args.verbose)
-
-    else:
-        # Default: check src/omnibase_core
-        this_file = Path(__file__)
-        target_dir = this_file.parents[
-            2
-        ]  # Go up from node dir and nodes/ to omnibase_core/
-
-        if not target_dir.exists():
-            logger.error("Directory not found: %s", target_dir)
-            return 1
-
-        logger.info("Checking enum member casing in: %s", target_dir)
-        logger.info("-" * 60)
-        all_issues = validate_directory(target_dir, verbose=args.verbose)
-
-    if all_issues:
-        logger.warning("Found %d enum member casing violation(s):", len(all_issues))
-        for issue in sorted(all_issues):
-            logger.warning("  %s", issue)
-        return 1
-
-    if not args.files:  # Only print success message in directory mode
-        logger.info("All enum members conform to UPPER_SNAKE_CASE!")
-    return 0
+        if not args.files:  # Only print success message in directory mode
+            logger.info("All enum members conform to UPPER_SNAKE_CASE!")
+        return 0
 
 
 if __name__ == "__main__":

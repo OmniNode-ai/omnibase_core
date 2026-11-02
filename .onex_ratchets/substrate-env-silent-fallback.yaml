@@ -1,0 +1,138 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the substrate-env-silent-fallback hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: substrate-env-silent-fallback
+entries:
+  - path: src/omnibase_core/cli/cli_run_node.py
+    rule: substrate-env-silent-fallback
+    text: sha256:5acc28347c9bb0558864db77223971aade6a1ea491c676c544cc428e250c8a3b
+  - path: src/omnibase_core/cli/cli_run_node.py
+    rule: substrate-env-silent-fallback
+    text: sha256:69c82aba92c7017f11a9cb7072885cca089b840df5b12e4a8ad5a85030cc4a3c
+  - path: src/omnibase_core/cli/cli_run_node.py
+    rule: substrate-env-silent-fallback
+    text: sha256:6b2ab6003a7ca9add67c87fb45c44a718855060a45790b5e235f6430ef30cf1c
+  - path: src/omnibase_core/cli/cli_runtime_host.py
+    rule: substrate-env-silent-fallback
+    text: sha256:0a593fcf5c2298ff670fde3a74fa246c50394dd0dbf0a832c40ac0fb7a7c4e0f
+  - path: src/omnibase_core/constants/constants_effect.py
+    rule: substrate-env-silent-fallback
+    text: sha256:89e6f0115105580ce561438afcfc7313171c40255f3445f5dcb78af36fed038c
+  - path: src/omnibase_core/doctor/checks/check_linear.py
+    rule: substrate-env-silent-fallback
+    text: sha256:6a4c80acc3df7c37054440f003287ab4d2a5a9f356359f5da11724fd031c21b4
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:1eed82cd09e70aabcc970b24d436b8bee9a77a571d7f863d34ac81af0ee0aa79
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:2a57399aa604ec006d894d08e3664311779a6b4eef605d56a79f37828a92f1b9
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:3bba4891904f18f4fbe9de3eccf049273b451d2cd50afefd2100d73070814e71
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:46d6e901c037c0da0408a897292299255fe4e4f1b0a276b40237ef928dfbabb8
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:b757cdf2a1041ad00a027f9005485265b67e483dddec89205f9eece849e8336a
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:c975fea89aa9592b3165e773e4b6a1d98da3fd45fa77de6bd7c65f2207c2f7df
+  - path: src/omnibase_core/models/configuration/model_event_bus_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:378b94ab311f8dce4349daf39f6b500e04edea22b01be64fa943c35b14d116bd
+  - path: src/omnibase_core/models/configuration/model_event_bus_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:388df1b940e31547c9245b9015e02d3467560de66e6ed43c76344b5d396fa954
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-env-silent-fallback
+    text: sha256:5ab60599092a3c07119b9957d0f556eada8e3bc10af48a103147b67bec26b711
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-env-silent-fallback
+    text: sha256:72b70675e9e52f328eef207d51093eea33dd1a662e0171fbf06f1b0d3ac05258
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-env-silent-fallback
+    text: sha256:aa5c4a051cbb07bc29f67286f0c4213b698af2038b49d0115e8545dfdafeb897
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-env-silent-fallback
+    text: sha256:be9ead90bcd6912edd7b93f5fbbbcbe33151190d6e4ccf46c83efc5268a19fe9
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-env-silent-fallback
+    text: sha256:f3a66d2dad4e8e7887690c914554818cb1865bb19a0c50599a3eedb05cdbfb3e
+  - path: src/omnibase_core/models/container/model_onex_container.py
+    rule: substrate-env-silent-fallback
+    text: sha256:f3f39b24240e052abe28e16a0a8981238d886a1258a12082974aea52d24d4e8e
+  - path: src/omnibase_core/models/event_bus/model_event_bus_input_state.py
+    rule: substrate-env-silent-fallback
+    text: sha256:3612a6b3b0424beb6e4a797e9453e76153cb2e9b49bd00167f602055f69a1f23
+  - path: src/omnibase_core/models/event_bus/model_event_bus_input_state.py
+    rule: substrate-env-silent-fallback
+    text: sha256:bc01d9b091dbbcb10fa88e8517d647ba4ad6ee1f9f08fd8ad3e075cc629a6350
+  - path: src/omnibase_core/models/plan/model_plan_contract.py
+    rule: substrate-env-silent-fallback
+    text: sha256:610ea3a09e9d929c6e5b69881dbc92efc81b5bf1ffce21d12a3b25d7ebada26c
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:19c3cae96500d0fff11c9e10d919b47d06454b7ed67defa6e73817412113d494
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:39f36cdfb6a3b420939528a76d3443205479d1b61fe9bfe09496f2008385d0b3
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:3bb12ca2c6872bee4e2c149255e44dfcae83cb30c71fe85bd312899f0d848e9a
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:58a737cd99b06679e33f36d83c5a906478569cc527b51e03dae1151e61fdfdac
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:5aa3c5dd6a251e0fedcddefe1f23f38ffbed358adbe375a53d92745e13d69ffe
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:6b9c975e1506d84a317e51a1b67ac743509a58b885349a6b52257bcf5865e527
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:71dc7494086bbea140968de763f983b9881b78c53d279f63647f3ad0820db6c8
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:743b70401c2b22e00a9fc7c023eac22ab8164546036d24b9464741d55af8d0d5
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:998178ebc3c4bea9939850b1ba3d16839cda33a9a501dd952903cffdc1f9fc27
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:e76c7f944acad66b975c401843517899d41e446ec6a4259694071259bf92e24e
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:f1079508b60af8630a379f390fd492c664b0aef8d288f626bdbb45238f6f7fe6
+  - path: src/omnibase_core/models/services/model_node_service_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:f32af575950cd7881cd10877e938b6d770c5ddd472a97359a3be524204870104
+  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
+    rule: substrate-env-silent-fallback
+    text: sha256:95d3e46dd59e45c4e9385907f8ec4957bdf6e6bf1e1712fa552a2793166eaecf
+  - path: src/omnibase_core/models/validation/model_envelope_validation_config.py
+    rule: substrate-env-silent-fallback
+    text: sha256:26627ad13b1d3c513054055dbac2dc6916f5e6467dab76663d4d0547d0a8d48f
+  - path: src/omnibase_core/models/workflow/execution/model_workflow_state_snapshot.py
+    rule: substrate-env-silent-fallback
+    text: sha256:7192646fafb264f6ddf6fd05a69faf08804072ddba6ffcb2ea8f88c38adfac71
+  - path: src/omnibase_core/models/workflow/execution/model_workflow_state_snapshot.py
+    rule: substrate-env-silent-fallback
+    text: sha256:f02831ed3c75b6d69408297620a45051a56f69e7416e135834da645b7e6e5b1f
+  - path: src/omnibase_core/overlays/contract_env_ref.py
+    rule: substrate-env-silent-fallback
+    text: sha256:36da64be822bda0de5dc9ca6c552c02a7677f84251a27a12500a2b92bbefbd26
+  - path: src/omnibase_core/runtime/runtime_local_adapter.py
+    rule: substrate-env-silent-fallback
+    text: sha256:bb7206dc801c59aa220d32747778f44b0ea11a3e7b64236c0dbde2880c2c2648

@@ -17,9 +17,10 @@ from __future__ import annotations
 
 from collections import Counter
 from collections.abc import Sequence
+from io import StringIO
 from typing import Final, Literal
 
-import yaml
+from ruamel.yaml import YAML
 
 from omnibase_core.models.finding_baseline.model_finding_baseline import (
     ModelFindingBaseline,
@@ -178,13 +179,14 @@ class HandlerFindingBaseline:
             "hook": baseline.hook,
             "entries": [entry.model_dump(mode="json") for entry in ordered],
         }
-        body = yaml.safe_dump(
-            document,
-            sort_keys=False,
-            allow_unicode=True,
-            default_flow_style=False,
-            width=10_000,
-        )
+        output = StringIO()
+        formatter = YAML(typ="rt")
+        formatter.default_flow_style = False
+        formatter.allow_unicode = True
+        formatter.width = 100
+        formatter.indent(mapping=2, sequence=4, offset=2)
+        formatter.dump(document, output)
+        body = output.getvalue()
         header = (
             f"# Shrink-only baseline for the {baseline.hook} hook (OMN-21501).\n"
             "# One entry per tolerated finding: file path, rule id and the normalized offending\n"

@@ -1,0 +1,942 @@
+# Burn-down ticket: OMN-22012. Zero target: 2026-11-16.
+# Source identities are SHA-256 hashes of whitespace-normalized offending source.
+# Shrink-only baseline for the validate-model-dump-json-mode hook (OMN-22012).
+# One entry per tolerated finding: file path, rule id and the normalized offending
+# source text (never a line number). Entries are counted: two identical findings in
+# one file need two identical entries.
+#
+# RULE: entries only leave. A finding not listed here fails. An entry whose finding
+# is gone fails until it is removed. --write-baseline creates this file when absent
+# and afterwards only shrinks it; it refuses, with a nonzero exit, any write that
+# would add an entry.
+---
+schema_version: 1
+hook: validate-model-dump-json-mode
+entries:
+  - path: src/omnibase_core/cli/cli_demo.py
+    rule: bare_model_dump
+    text: sha256:10b918b720fe30bc311fc22d0f464069bfa731d4d980da46790fdcdc3a2fa65d
+  - path: src/omnibase_core/cli/cli_demo.py
+    rule: bare_model_dump
+    text: sha256:b17f2450633ad6d2734bb5d32e252ac87e797d1c9653153b7bdad41cc80016a9
+  - path: src/omnibase_core/container/container_service_registry.py
+    rule: bare_model_dump
+    text: sha256:139853956e7047172c599d047b59ee058eb79012df326cde211581f09437105a
+  - path: src/omnibase_core/contracts/contract_diff_computer.py
+    rule: bare_model_dump
+    text: sha256:07dac01fb3c0d353a671f08b08ec617a21f73a2361c6eaa8dc8e7941cd63f2de
+  - path: src/omnibase_core/contracts/contract_diff_computer.py
+    rule: bare_model_dump
+    text: sha256:76fa539804c8c4d5ad29c4c9beb5344d1ad93cbfda6ad55eeb71982f30b26a27
+  - path: src/omnibase_core/errors/model_onex_error.py
+    rule: bare_model_dump
+    text: sha256:f70d5e525d02cdda7c851b060862cfd63e1cedfba31be7ceb3917f8a19fe8285
+  - path: src/omnibase_core/logging/logging_pydantic_encoder.py
+    rule: bare_model_dump
+    text: sha256:cc327d8bff875e965321db9538a6a39c4cc9ae988874e3e03a68f09cf8469dbb
+  - path: src/omnibase_core/mixins/mixin_cli_handler.py
+    rule: bare_model_dump
+    text: sha256:5364ba0f0616a8c8bd076239a68cc172150965c3f683106c0a9ded73b57ed2aa
+  - path: src/omnibase_core/mixins/mixin_cli_handler.py
+    rule: bare_model_dump
+    text: sha256:6be12b6d8e66833b5b16d62036482f7f0b94601b0ed8f0751c8c84d662a3baff
+  - path: src/omnibase_core/mixins/mixin_contract_metadata.py
+    rule: bare_model_dump
+    text: sha256:5364ba0f0616a8c8bd076239a68cc172150965c3f683106c0a9ded73b57ed2aa
+  - path: src/omnibase_core/mixins/mixin_contract_metadata.py
+    rule: bare_model_dump
+    text: sha256:b51654e4d505295f6806ad713a591f5d55883fd9f9683fb649bebb1dea8598ef
+  - path: src/omnibase_core/mixins/mixin_contract_state_reducer.py
+    rule: bare_model_dump
+    text: sha256:3dce291e432534607e3be365ef2b0be6ab59dca065f952f095dbde44e1b714e7
+  - path: src/omnibase_core/mixins/mixin_discovery_responder.py
+    rule: bare_model_dump
+    text: sha256:c7e310bc766013f61833e9dfb1fbdb5a17e18e13db52d3f79585c99fd62959df
+  - path: src/omnibase_core/mixins/mixin_discovery_responder.py
+    rule: bare_model_dump
+    text: sha256:ed37f5b129c561ba9539549de98ac6987a361830986db4f47ba0f4929000d15d
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: bare_model_dump
+    text: sha256:19671de033a4c116642cb0ae8c3f98e9aaa534d8ee6d3f21ca940f283b0f8b6e
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: bare_model_dump
+    text: sha256:250b5da1b0c2107936ac736493bd9f170112f372b8a0f47bf911969f5e025ec4
+  - path: src/omnibase_core/mixins/mixin_effect_execution.py
+    rule: bare_model_dump
+    text: sha256:388eea058159d34073b599fc8c81710805b8fc45c8252280ac8e720656046319
+  - path: src/omnibase_core/mixins/mixin_event_driven_node.py
+    rule: bare_model_dump
+    text: sha256:8ec9a1d69b206ed3830793acb0f43a25163bf1e07baeeb3d69367bfc3d4c4028
+  - path: src/omnibase_core/mixins/mixin_event_handler.py
+    rule: bare_model_dump
+    text: sha256:04e711ff47002a2177d150ccf1e4d1cab2ba8b238c7616d10c20cafe93fa37b3
+  - path: src/omnibase_core/mixins/mixin_introspect_from_contract.py
+    rule: bare_model_dump
+    text: sha256:38d0a27c04b8e83980860d7e929af876606b6e2f83fbedc4385ed6d07eeb0bc3
+  - path: src/omnibase_core/mixins/mixin_lazy_evaluation.py
+    rule: bare_model_dump
+    text: sha256:35b11830979e0457c5ec1d512ec59a4b9ad8ee5f310658f4c3d906f713a7ad66
+  - path: src/omnibase_core/mixins/mixin_lazy_evaluation.py
+    rule: bare_model_dump
+    text: sha256:bcd2f7dad8b59b6b8d01b411ad973918eea65f5293c26befd2ebf383d9ac2509
+  - path: src/omnibase_core/mixins/mixin_lazy_evaluation.py
+    rule: bare_model_dump
+    text: sha256:e8030f8008699b3c0d1a73841397d694adcbbc65972537e624ae88b53c2c527e
+  - path: src/omnibase_core/mixins/mixin_node_executor.py
+    rule: bare_model_dump
+    text: sha256:0c9fef50d4ab5c65387f8f1cd20153a4abd9b284dc1871c0be709d76e654d2e4
+  - path: src/omnibase_core/mixins/mixin_node_id_from_contract.py
+    rule: bare_model_dump
+    text: sha256:e234c6dd9daab0e49dc92e678dfe291164630a8ed38aa0dd9a138f77af51da58
+  - path: src/omnibase_core/mixins/mixin_redaction.py
+    rule: bare_model_dump
+    text: sha256:b8884a8b8623e72992cb1eac13b54434c9ba22497de59ebbb645218e26f8856a
+  - path: src/omnibase_core/mixins/mixin_tool_execution.py
+    rule: bare_model_dump
+    text: sha256:feefb699d276e672bcfc1581b3f314c45a6a1c781c7271a6bcf69fa67915c813
+  - path: src/omnibase_core/mixins/mixin_workflow_execution.py
+    rule: bare_model_dump
+    text: sha256:3cfaefe8d2598cb1eda9e0ccdc89aed7021e20675129aac34ccdae1839b5793c
+  - path: src/omnibase_core/models/cli/model_cli_action.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_action.py
+    rule: bare_model_dump
+    text: sha256:4f76954e180912e92a19099bb4dcb2fb3f6bf7e96d54aa0cd64e025fb5e0eceb
+  - path: src/omnibase_core/models/cli/model_cli_advanced_params.py
+    rule: bare_model_dump
+    text: sha256:0a2f11adf62cba5a53e1a82340d595e28d1cdbd3730f812caa7841d8a1f89eac
+  - path: src/omnibase_core/models/cli/model_cli_command_option.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_debug_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_execution.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_execution_config.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_execution_context.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_execution_core.py
+    rule: bare_model_dump
+    text: sha256:0a2f11adf62cba5a53e1a82340d595e28d1cdbd3730f812caa7841d8a1f89eac
+  - path: src/omnibase_core/models/cli/model_cli_execution_input_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_execution_metadata.py
+    rule: bare_model_dump
+    text: sha256:0a2f11adf62cba5a53e1a82340d595e28d1cdbd3730f812caa7841d8a1f89eac
+  - path: src/omnibase_core/models/cli/model_cli_execution_resources.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_execution_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_output_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_performance_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_result.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_cli_result_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_output_format_options.py
+    rule: bare_model_dump
+    text: sha256:0a2f11adf62cba5a53e1a82340d595e28d1cdbd3730f812caa7841d8a1f89eac
+  - path: src/omnibase_core/models/cli/model_result_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/cli/model_trace_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/common/model_error_context.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/common/model_flexible_value.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/common/model_schema_value.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/configuration/model_database_connection_config.py
+    rule: bare_model_dump
+    text: sha256:f320652564b128ebded4201394e40b4a6b81e52a4b3eeb9a7e97518f0c0e2786
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: bare_model_dump
+    text: sha256:04178eb74337c67658f8a1952eddebb04785e69090dd08f9e37d788078be4d08
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: bare_model_dump
+    text: sha256:30c28ef7fa3bdfd67bfc90385ba12c242bb60c54391fa604f591cefd83b5e349
+  - path: src/omnibase_core/models/configuration/model_database_secure_config.py
+    rule: bare_model_dump
+    text: sha256:66a568a73407a58d2f4f079b2d495c032452e178ccbf25c183b6a97456b21fd7
+  - path: src/omnibase_core/models/configuration/model_event_bus_config.py
+    rule: bare_model_dump
+    text: sha256:f320652564b128ebded4201394e40b4a6b81e52a4b3eeb9a7e97518f0c0e2786
+  - path: src/omnibase_core/models/configuration/model_git_hub_actions_workflow.py
+    rule: bare_model_dump
+    text: sha256:57ef2881ddc12aad60f81df2e2ce86010a39de9cf4a3492dc06313f34552419b
+  - path: src/omnibase_core/models/configuration/model_git_hub_release_event.py
+    rule: bare_model_dump
+    text: sha256:0cf401baa121a01898b1fb96cbdaa0af6f4dad9f290939d1b898411f13f9a05e
+  - path: src/omnibase_core/models/configuration/model_log_formatting.py
+    rule: bare_model_dump
+    text: sha256:f91bc04d5519d7d51dd4e09885870258f034f6ec41a956370a09f54109a021cb
+  - path: src/omnibase_core/models/configuration/model_priority_metadata.py
+    rule: bare_model_dump
+    text: sha256:b8205ce19897bb9cba7f10957000144b901f59347cd5bf9400b7ff9adcbcc4fa
+  - path: src/omnibase_core/models/configuration/model_request_config.py
+    rule: bare_model_dump
+    text: sha256:b106ba574edc2f48ea141e7b043c44c19922147756a520dc4bbc03569bf7248b
+  - path: src/omnibase_core/models/configuration/model_rest_api_connection_config.py
+    rule: bare_model_dump
+    text: sha256:f320652564b128ebded4201394e40b4a6b81e52a4b3eeb9a7e97518f0c0e2786
+  - path: src/omnibase_core/models/connections/model_cloud_service_properties.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_connection_auth.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_connection_endpoint.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_connection_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_connection_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_connection_pool.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_connection_security.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_custom_connection_properties.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_database_properties.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_message_queue_properties.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/connections/model_performance_properties.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/contracts/model_cli_contribution.py
+    rule: bare_model_dump
+    text: sha256:fc12c1e3cc8d3cdf6c4ee8bf6e297a183e66ebeaf203be66280f1a052312d514
+  - path: src/omnibase_core/models/contracts/model_contract_base.py
+    rule: bare_model_dump
+    text: sha256:3028511226462a553c859e0792e259ef8de78e4570e1778c9957de86ced27021
+  - path: src/omnibase_core/models/contracts/model_contract_base.py
+    rule: bare_model_dump
+    text: sha256:c12d4df0551c4774ea42a3b75fe08c8593a852e577e872181f479bdf9a2f2cdd
+  - path: src/omnibase_core/models/contracts/model_contract_compute.py
+    rule: bare_model_dump
+    text: sha256:d0e61b99429b6c1d9fd102d25421c0deeae752837d8cd6b8b2b5e9b4ac28f39b
+  - path: src/omnibase_core/models/contracts/model_contract_effect.py
+    rule: bare_model_dump
+    text: sha256:d0e61b99429b6c1d9fd102d25421c0deeae752837d8cd6b8b2b5e9b4ac28f39b
+  - path: src/omnibase_core/models/contracts/model_contract_reducer.py
+    rule: bare_model_dump
+    text: sha256:5b59407e476ba5c96f59dd4ea75c04cb806fad183f1d622787dffa2567503ff8
+  - path: src/omnibase_core/models/contracts/subcontracts/model_workflow_definition.py
+    rule: bare_model_dump
+    text: sha256:65fae8004edaeefaf2bd4cc463c5468a3467159d578001763489d7278182b350
+  - path: src/omnibase_core/models/core/model_action_registry.py
+    rule: bare_model_dump
+    text: sha256:e234c6dd9daab0e49dc92e678dfe291164630a8ed38aa0dd9a138f77af51da58
+  - path: src/omnibase_core/models/core/model_base_result.py
+    rule: bare_model_dump
+    text: sha256:5756d0d5eadd76844a1021ed90b9dae64d870a619cec4ba3384b138e15ef380e
+  - path: src/omnibase_core/models/core/model_base_result.py
+    rule: bare_model_dump
+    text: sha256:aca6f4b7b109be5c72ca5e0c7f29b64974a52bc6e18767fa9a685b74bec55c6e
+  - path: src/omnibase_core/models/core/model_base_result.py
+    rule: bare_model_dump
+    text: sha256:b15e63af475379d89e4893e3029f9d4d9614504c6705eaaa8d9dd1e44d7fa1bd
+  - path: src/omnibase_core/models/core/model_cli_command_registry.py
+    rule: bare_model_dump
+    text: sha256:cf6d333fffcdecaf70c78c2efd79ff0baeb725bd67e8ed6f5dbc8e0fcd5021b3
+  - path: src/omnibase_core/models/core/model_configuration_base.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/core/model_container.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/core/model_custom_fields_accessor.py
+    rule: bare_model_dump
+    text: sha256:e95a0b8b95269e8ed9d95983c4483a607dcd0d40f6c8d7145d520bd04c403792
+  - path: src/omnibase_core/models/core/model_custom_filter_base.py
+    rule: bare_model_dump
+    text: sha256:8452727784096180c47a5c2e04d3de81757cd8b0f015747cbd127a43c476543e
+  - path: src/omnibase_core/models/core/model_custom_properties.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/core/model_custom_properties.py
+    rule: bare_model_dump
+    text: sha256:201a6f242a6eca63eaf06e316aa5db84124c8b848431d324599ef284c95d1bd8
+  - path: src/omnibase_core/models/core/model_event_type_registry.py
+    rule: bare_model_dump
+    text: sha256:7844992d30b523f0aa1dfdac14431395ee1d6c90a356151aede6c6342cdced15
+  - path: src/omnibase_core/models/core/model_examples_collection.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/core/model_examples_collection.py
+    rule: bare_model_dump
+    text: sha256:4eb4de37c49351ebbadc4838360fb237ec706b4f1a13661a1504ab1ac1d4a38b
+  - path: src/omnibase_core/models/core/model_examples_collection.py
+    rule: bare_model_dump
+    text: sha256:57ee769b894c1e326f31eae91beb5736713d9b0613847db661b430e47c09ba0e
+  - path: src/omnibase_core/models/core/model_execution_context.py
+    rule: bare_model_dump
+    text: sha256:3fdcdf62f17b1efef757d300dc7acf4846337f01e1da23538cca74f0e4280af9
+  - path: src/omnibase_core/models/core/model_field_accessor.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/core/model_filter_criteria.py
+    rule: bare_model_dump
+    text: sha256:553fce3af10f9f9de001d978c12fbe858ebbfa7a496fc87638e0588e887517c4
+  - path: src/omnibase_core/models/core/model_generic_collection_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/core/model_item_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/core/model_list_filter.py
+    rule: bare_model_dump
+    text: sha256:32752298e9ebb7539e5a31b625ca61a06625fb0edea2588a028b7bebf814807a
+  - path: src/omnibase_core/models/core/model_metadata_tool_collection.py
+    rule: bare_model_dump
+    text: sha256:83ccd83553639b44d396744b7795ea40d42503b62cb6dd76e25b80e08e1ae87e
+  - path: src/omnibase_core/models/core/model_metadata_tool_collection.py
+    rule: bare_model_dump
+    text: sha256:ce653266d687142cd62be64bffd6fbf4762e6501ea8b5676650bde0869f1cefb
+  - path: src/omnibase_core/models/core/model_metadata_tool_collection.py
+    rule: bare_model_dump
+    text: sha256:ebfa732e41f906b04b56f40159a0d5d7e10828119eb5ff2c39e422ae772af5f3
+  - path: src/omnibase_core/models/core/model_metadata_tool_collection.py
+    rule: bare_model_dump
+    text: sha256:ebfa732e41f906b04b56f40159a0d5d7e10828119eb5ff2c39e422ae772af5f3
+  - path: src/omnibase_core/models/core/model_metadata_tool_collection.py
+    rule: bare_model_dump
+    text: sha256:ecc66390d853b4419195b9a14b1258bae6c5ea998d8d0773a800ade569b7506a
+  - path: src/omnibase_core/models/core/model_node_action_validator.py
+    rule: bare_model_dump
+    text: sha256:021d7b194c23902d0c31d3a10072593a033accc169d9517dc41c9fe7c1fe67c0
+  - path: src/omnibase_core/models/core/model_node_metadata_block.py
+    rule: bare_model_dump
+    text: sha256:14fb8844d6df04b899e4f7989ae2e7c1074574ca387000369a2e6cde6d1412d1
+  - path: src/omnibase_core/models/core/model_onex_event_metadata.py
+    rule: bare_model_dump
+    text: sha256:3823330e3762d9581240a4297e06644495b5fbf6a4d8eaf764d46c263cf59535
+  - path: src/omnibase_core/models/core/model_onex_performance_metrics.py
+    rule: bare_model_dump
+    text: sha256:8452727784096180c47a5c2e04d3de81757cd8b0f015747cbd127a43c476543e
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: bare_model_dump
+    text: sha256:28e832f45661d5c4f0d4af0376beee012820ffe5712bf0089745b6a4b2f1de10
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: bare_model_dump
+    text: sha256:3b7a00fab4f016509e62e6a4b97aad020fe638b6df577160da383799fe01751e
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: bare_model_dump
+    text: sha256:4bac7c2bbef4d0393026ad4b0bb6b21b80358ea0fe3c15e7284656e79ee0dda0
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: bare_model_dump
+    text: sha256:58ae4feec66b7e1c62c97006999253c92c16b829dd82459e9de19612e8ded526
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: bare_model_dump
+    text: sha256:ada5003b5506e852552717442b0d0b9515d8b10db3fba28207dad2b9143f3f8f
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: bare_model_dump
+    text: sha256:bbd9df0931ddc7d29398d12b623f1c940f9b3cb91f38f3853cb9dd1fca9832fd
+  - path: src/omnibase_core/models/core/model_onex_reply_class.py
+    rule: bare_model_dump
+    text: sha256:e9956727290391892be173569370c6ef69250f9b26891ede32add1c877f31b31
+  - path: src/omnibase_core/models/core/model_project_metadata.py
+    rule: bare_model_dump
+    text: sha256:5364ba0f0616a8c8bd076239a68cc172150965c3f683106c0a9ded73b57ed2aa
+  - path: src/omnibase_core/models/core/model_project_metadata.py
+    rule: bare_model_dump
+    text: sha256:5364ba0f0616a8c8bd076239a68cc172150965c3f683106c0a9ded73b57ed2aa
+  - path: src/omnibase_core/models/core/model_project_metadata_block.py
+    rule: bare_model_dump
+    text: sha256:7e9c5fe23bc5ef7258bc99cbc2719011b8dedb0edd9d899d84c79809f0fcd68d
+  - path: src/omnibase_core/models/core/model_state_contract.py
+    rule: bare_model_dump
+    text: sha256:553fce3af10f9f9de001d978c12fbe858ebbfa7a496fc87638e0588e887517c4
+  - path: src/omnibase_core/models/core/model_tool_dependency.py
+    rule: bare_model_dump
+    text: sha256:0e9593392413ab3f425986a6bf653532c9279e460ccfc7bec04cfd735bed71ae
+  - path: src/omnibase_core/models/core/model_typed_configuration.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/docker/model_docker_compose_manifest.py
+    rule: bare_model_dump
+    text: sha256:12bcfb9ec030dfa12d85be5ec03390eed5e6eb8d59141295a7535345e7ca3500
+  - path: src/omnibase_core/models/docker/model_docker_compose_manifest.py
+    rule: bare_model_dump
+    text: sha256:2c8a9fd6870961a5f965dadb991ee05c4409f1babde09f9ab8cfc0bd83acc17e
+  - path: src/omnibase_core/models/docker/model_docker_compose_manifest.py
+    rule: bare_model_dump
+    text: sha256:2e8d972fc0f447683b42ad7760e9565297244690be09fdd7f9354a5f8cdbe825
+  - path: src/omnibase_core/models/docker/model_docker_compose_manifest.py
+    rule: bare_model_dump
+    text: sha256:3ee73856357472c3f67e4aa0b31401eb3100c91001d8b36755e006f4c9423d1d
+  - path: src/omnibase_core/models/docker/model_docker_compose_manifest.py
+    rule: bare_model_dump
+    text: sha256:402bd0105dfdba110c61d39b75cded7c5b8944c8dd67901da79690856637c6cf
+  - path: src/omnibase_core/models/docker/model_docker_compose_manifest.py
+    rule: bare_model_dump
+    text: sha256:b06f1e3e2042c433f0b57b17aef2b49287a0e45982de1fec82d4787196897bde
+  - path: src/omnibase_core/models/docker/model_docker_compose_manifest.py
+    rule: bare_model_dump
+    text: sha256:f2121829feb6eb9cdecf7d140c0b8a56a5e2c719043c41a07eaa02bd6f1584e1
+  - path: src/omnibase_core/models/events/model_event_envelope.py
+    rule: bare_model_dump
+    text: sha256:98e5a4b2569ab7a8fa6774f6b845ba79c6649e523d134d601c8837101d897a80
+  - path: src/omnibase_core/models/events/model_event_envelope.py
+    rule: bare_model_dump
+    text: sha256:cd4f968b8af588e69057b4c20ff916face16dd76956a2ac68e6c7939cfae5162
+  - path: src/omnibase_core/models/examples/model_artifact_type_config.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_data_handling_declaration.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_environment_properties.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_environment_properties_collection.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_example.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_example_context_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_example_input_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_example_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_example_metadata_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_example_output_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_example_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_examples_collection_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_fallback_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_fallback_strategy.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_namespace_config.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_property_collection.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_property_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_property_value.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_schema_example.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_typed_property.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/examples/model_uri.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/fsm/model_fsm_data_primary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/fsm/model_fsm_operation.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/fsm/model_fsm_state.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/fsm/model_fsm_transition.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_action.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_condition.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/fsm/model_fsm_transition_result.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_cli_result_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_duration.py
+    rule: bare_model_dump
+    text: sha256:afc78759f5eb32e4cf60a3aa3a56ee8b3fc4a04582b42131ef805a1596c877a7
+  - path: src/omnibase_core/models/infrastructure/model_environment_variables.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_error_value.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_execution_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_metric.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_metrics_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_progress.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_regex_flags.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_result.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_result_dict.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_retry_advanced.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_retry_conditions.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_retry_execution.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_retry_failure_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_retry_policy.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_test_result.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_test_results.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_time_based.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_timeout.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_timeout.py
+    rule: bare_model_dump
+    text: sha256:3cc0c96471502ee3a0a93b230993b97d02deec1b21227b4f99e0a293fd010e9e
+  - path: src/omnibase_core/models/infrastructure/model_timeout_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/model_value.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/progress/model_progress_core.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/progress/model_progress_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/progress/model_progress_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/progress/model_progress_milestones.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/infrastructure/progress/model_progress_timing.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/analytics/model_analytics_core.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/analytics/model_analytics_error_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/analytics/model_analytics_error_tracking.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/analytics/model_analytics_performance_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/analytics/model_analytics_performance_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/analytics/model_analytics_quality_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_field_identity.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_field_validation_rules.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_function_node_data.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_generic_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_input_state_class.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_metadata_analytics_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_metadata_field_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_metadata_node_collection.py
+    rule: bare_model_dump
+    text: sha256:5bcb279bb8b92f3c33a07cfdabb637e25501848d5bbd3bdc9fcf6f2f601a2e15
+  - path: src/omnibase_core/models/metadata/model_metadata_node_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_metadata_value.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_metadatanodeanalytics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_metadatausagemetrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_nested_configuration.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_node_info_summary.py
+    rule: bare_model_dump
+    text: sha256:0befb58ebe5d66f938f190fd3017f955890e8eb93ace123417b21f76c15c1231
+  - path: src/omnibase_core/models/metadata/model_node_info_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_node_info_summary.py
+    rule: bare_model_dump
+    text: sha256:b1482c1068da0221444a97af3c01879eaded073693f8701b0e7ba7492f24af0d
+  - path: src/omnibase_core/models/metadata/model_node_union.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_structured_description.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_structured_display_name.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_structured_tags.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/model_typed_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_categorization.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_core.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_performance_metrics.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_performance_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_quality_indicators.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_quality_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/metadata/node_info/model_node_timestamps.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/mixins/model_completion_data.py
+    rule: bare_model_dump
+    text: sha256:27fdf76b700c8aa9792b96682d644e0a6bbc8441b47512ab84480705bab9d098
+  - path: src/omnibase_core/models/node_metadata/model_function_deprecation_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_function_documentation.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_function_node.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_function_node_core.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_function_node_metadata_class.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_function_node_performance.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_function_node_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_function_relationships.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_capabilities_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_capabilities_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_capability.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_configuration.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_configuration_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_connection_settings.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_core_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_core_info_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_core_metadata_class.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_execution_settings.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_feature_flags.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_information.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_information_summary.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_metadata_info.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_organization_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_resource_limits.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/node_metadata/model_node_type.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_computation_output_data_class.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_effect_operation_config.py
+    rule: bare_model_dump
+    text: sha256:2324abf38b4f382b41b6e54ced8332e73f0d89bb81057d5f40c98a44b2843948
+  - path: src/omnibase_core/models/operations/model_effect_operation_config.py
+    rule: bare_model_dump
+    text: sha256:8046c9d7849244f71bb952287cf84d73417c06d3b29ec77baf98669489246dc0
+  - path: src/omnibase_core/models/operations/model_effect_parameters.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_event_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_event_payload.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_execution_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_message_payload.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_operation_payload.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_operationparameters.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_system_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_workflow_instance_metadata.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_workflow_parameters.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/operations/model_workflow_payload.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/security/model_secret_management.py
+    rule: bare_model_dump
+    text: sha256:9ad4b78515341e210dea1a94b86b0b64c98a41762008e0ad97097fcf85e58ef8
+  - path: src/omnibase_core/models/security/model_secret_management.py
+    rule: bare_model_dump
+    text: sha256:b0f851507d13cfe34f9c88a7290bf79898089ce1f8aece0f1a0aaf6d8642be0f
+  - path: src/omnibase_core/models/security/model_secret_manager.py
+    rule: bare_model_dump
+    text: sha256:1aae3f2f19d3e8089c5bb26b3ac69a9bd620ca6c2d8c7f1a7e2b3b2ebfa9e1bd
+  - path: src/omnibase_core/models/security/model_secret_manager.py
+    rule: bare_model_dump
+    text: sha256:9f8b15262614e25fa8b3bf12a7595c45a93e8b9c5f1fc943093c29c5d0c775c5
+  - path: src/omnibase_core/models/security/model_secret_manager.py
+    rule: bare_model_dump
+    text: sha256:a2ead7571d88142a77acc91578f4d321b5b26ff7102d09b81f974f6c0e5bb3f4
+  - path: src/omnibase_core/models/security/model_secure_credentials.py
+    rule: bare_model_dump
+    text: sha256:3fdcdf62f17b1efef757d300dc7acf4846337f01e1da23538cca74f0e4280af9
+  - path: src/omnibase_core/models/security/model_secure_event_envelope_class.py
+    rule: bare_model_dump
+    text: sha256:5c05f60722ed3ad285a1754ccb9570285a103f81979edbead427c8b363920961
+  - path: src/omnibase_core/models/security/model_secure_event_envelope_class.py
+    rule: bare_model_dump
+    text: sha256:72cd0e5c7ffa90ef00f7769f287ac1337eb2b679798ad7bfafe70406c9fbf460
+  - path: src/omnibase_core/models/security/model_secure_event_envelope_class.py
+    rule: bare_model_dump
+    text: sha256:98e5a4b2569ab7a8fa6774f6b845ba79c6649e523d134d601c8837101d897a80
+  - path: src/omnibase_core/models/security/model_secure_event_envelope_class.py
+    rule: bare_model_dump
+    text: sha256:c86372b948b646047c8f5b8f42cbbe01b319ad1f072e002bcded8aa37be02904
+  - path: src/omnibase_core/models/security/model_security_policy.py
+    rule: bare_model_dump
+    text: sha256:b9f4a4f0741cbbfffdc1ceafa9a941ef736c8ba675835c94ff7d8825c5aad087
+  - path: src/omnibase_core/models/security/model_security_summary_class.py
+    rule: bare_model_dump
+    text: sha256:0cab44f52c2277fa01b02f7d138ecf9af06651816eec6eaa4e5c4f5947911578
+  - path: src/omnibase_core/models/security/model_security_summary_class.py
+    rule: bare_model_dump
+    text: sha256:510f917cf5df2ce9c3e364e3fa537789dbf697abfee32be73bca2b97e0de27e3
+  - path: src/omnibase_core/models/security/model_security_summary_class.py
+    rule: bare_model_dump
+    text: sha256:70a8d8e9b98bbcdd96cc3a9a564c75d328857f1ad6b61efba6322da0fb7a6991
+  - path: src/omnibase_core/models/security/model_security_summary_class.py
+    rule: bare_model_dump
+    text: sha256:739b0f39685db977f871c068df6cd70b3401c76bfc40d5ca5bcb596ef9f916e1
+  - path: src/omnibase_core/models/security/model_security_summary_class.py
+    rule: bare_model_dump
+    text: sha256:9d3f47bd0bdeb9a8a2e58daf7c613e915e8fee1b6e9b6926ef60e6124510a938
+  - path: src/omnibase_core/models/services/model_external_service_config.py
+    rule: bare_model_dump
+    text: sha256:d6794591c9edb3acf1e61ff73d99716df12b465b5c34317862e1c6890d28785a
+  - path: src/omnibase_core/models/services/model_external_service_config.py
+    rule: bare_model_dump
+    text: sha256:f7ed145416274dde5b80caf270979c4d66bb02b30a4c09ebd6c7c0e1c571a2d9
+  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
+    rule: bare_model_dump
+    text: sha256:ac435f3a785ef062d03bad771b70183adee50c7ea9d0d5b3f00d4abf8be81fb5
+  - path: src/omnibase_core/models/utils/model_yaml_dump_options.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/utils/model_yaml_option.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/utils/model_yaml_value.py
+    rule: bare_model_dump
+    text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
+  - path: src/omnibase_core/models/validation/model_validation_base.py
+    rule: bare_model_dump
+    text: sha256:222156db96ec5369385e5d3eccfd2f9355636483d0961f8cc51c0f776ba0e972
+  - path: src/omnibase_core/models/validation/model_validation_base.py
+    rule: bare_model_dump
+    text: sha256:31e09c7088d902ac423a8f043f2b6a5951c963e4b5ba78459c3a394d65865037
+  - path: src/omnibase_core/models/validation/model_validation_base.py
+    rule: bare_model_dump
+    text: sha256:f37cea5a396e633a641b3c447522277b49a3592407d96d186991d167f97d9d63
+  - path: src/omnibase_core/models/validation/model_validation_container.py
+    rule: bare_model_dump
+    text: sha256:f37cea5a396e633a641b3c447522277b49a3592407d96d186991d167f97d9d63
+  - path: src/omnibase_core/models/validation/model_validation_error.py
+    rule: bare_model_dump
+    text: sha256:f37cea5a396e633a641b3c447522277b49a3592407d96d186991d167f97d9d63
+  - path: src/omnibase_core/models/validation/model_validation_value.py
+    rule: bare_model_dump
+    text: sha256:f37cea5a396e633a641b3c447522277b49a3592407d96d186991d167f97d9d63
+  - path: src/omnibase_core/models/workflow/api/model_workflow_outputs.py
+    rule: bare_model_dump
+    text: sha256:3ea1e2a6b65443e2f1e9954e88f1a686faf937f83ec192e958b83d545e27d317
+  - path: src/omnibase_core/models/workflow/api/model_workflow_outputs.py
+    rule: bare_model_dump
+    text: sha256:762abf76ad297d4f9fb4b78450e843bfd4cf699a104913f20a15f55d5a424585
+  - path: src/omnibase_core/nodes/node_backend_secret_discipline_compute/runtime_backend_secret_discipline.py
+    rule: bare_model_dump
+    text: sha256:6225d70afa962f5cd81c7b147147edbb7a5a5d128faa7079171bfeb4937fa1dd
+  - path: src/omnibase_core/nodes/node_backend_secret_discipline_compute/runtime_backend_secret_discipline.py
+    rule: bare_model_dump
+    text: sha256:ca91626e9742eff7b8f631b5f15ce9b5beeb91cc10a2684fddf1da4f39e903c7
+  - path: src/omnibase_core/nodes/node_effect.py
+    rule: bare_model_dump
+    text: sha256:119e08912517871e950c55261b57882105f73600f95b3fa5e26a5b7692b6be65
+  - path: src/omnibase_core/nodes/node_effect.py
+    rule: bare_model_dump
+    text: sha256:1a94030caaf6a223cc6128fe1291b1d53f9b5a75762dbe8bdb0d80f8e9077cd8
+  - path: src/omnibase_core/nodes/node_effect.py
+    rule: bare_model_dump
+    text: sha256:56c1c063a2fb851d02d73a9e94d513384f611776a51b6fb694313f63c883c773
+  - path: src/omnibase_core/nodes/node_effect.py
+    rule: bare_model_dump
+    text: sha256:5ed80bf595f947aa4ff0ec1f78bc0ca9b5be0073e56f0653a04c1068bab16b98
+  - path: src/omnibase_core/nodes/node_effect.py
+    rule: bare_model_dump
+    text: sha256:7e286075fb5166f8a8160e98544b669c7cdb113b2c860f7a4632929e6983f380
+  - path: src/omnibase_core/nodes/node_effect.py
+    rule: bare_model_dump
+    text: sha256:abf811d1d6cf69c2fb615ea3efdb8a1acad08e7a5cc7abfb5b83f89a0cd474d4
+  - path: src/omnibase_core/nodes/node_reducer.py
+    rule: bare_model_dump
+    text: sha256:62c663f1803f509baee1ea672d73963d8348eb6ef788a54427b15753d3669063
+  - path: src/omnibase_core/nodes/node_routing_authority_check_compute/runtime_routing_authority_check.py
+    rule: bare_model_dump
+    text: sha256:4a2fa4691facad45909dae84ee7b16edab78aa2494082be438ad08a347bbaff2
+  - path: src/omnibase_core/nodes/node_routing_authority_check_compute/runtime_routing_authority_check.py
+    rule: bare_model_dump
+    text: sha256:7f5700bc2d1cea26183834f1298aa6e7b66d6a707ff151cafe1667a443693bc1
+  - path: src/omnibase_core/services/replay/service_config_override_injector.py
+    rule: bare_model_dump
+    text: sha256:5b780808b27c19d85983b311e2e1c0e50b3c9eab5aabf9bbc3b930624ea0c7d7
+  - path: src/omnibase_core/services/service_contract_validation_event_emitter.py
+    rule: bare_model_dump
+    text: sha256:fc1b7a45ef3d5d952618f1bef1938fecaf632765f69e3a3cb7010b6da1750191
+  - path: src/omnibase_core/utils/util_contract_loader.py
+    rule: bare_model_dump
+    text: sha256:177682a564390a5c8708b1c46d9c221e7ddbfa0f4c2e06950d8e67a2ac7b7600
+  - path: src/omnibase_core/utils/util_workflow_executor.py
+    rule: bare_model_dump
+    text: sha256:c3b6620b63a6b2db9bf9f26d9ec32868e4a3973208867c74e6d2731ff2d34d91
+  - path: src/omnibase_core/validation/antipattern_registry_loader.py
+    rule: bare_model_dump
+    text: sha256:494ade1e8f6e83d31aa9a1db8ce743da3376b031488eda2036d83f3a070999cb
+  - path: src/omnibase_core/validation/scripts/validate_string_versions.py
+    rule: bare_model_dump
+    text: sha256:5d5296cd0e42dcdb6761c69d6e8173c071ef8e182ac0af70d5fe4c8c1fad5a6a
