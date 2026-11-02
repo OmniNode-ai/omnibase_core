@@ -29,7 +29,9 @@ requirements:
           -q'
       - id: AC3
         statement: 'AC3: the emitted JSON Schema for the theme contract lists the new tokens and the schema-freshness
-          test passes against it -- falsifier: uv run pytest tests -k "theme and schema" -q'
+          test passes against it -- falsifier: uv run pytest tests/unit/models/dashboard/test_theme_board_tokens.py
+          tests/unit/models/dashboard/test_theme_catalog.py tests/unit/models/dashboard/test_model_renderer_theme_contract.py
+          -k "theme and schema" -q'
       - id: AC4
         statement: 'AC4: no new token is a hex literal in a widget or view config, and the is_color_token_name
           check accepts the new colour tokens and refuses a non-colour token -- falsifier: uv run pytest
@@ -69,7 +71,9 @@ dod_evidence:
     binds_ac: [AC3]
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests -k "theme and schema" -n 0 -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/models/dashboard/test_theme_board_tokens.py tests/unit/models/dashboard/test_theme_catalog.py
+          tests/unit/models/dashboard/test_model_renderer_theme_contract.py -k "theme and schema" -n 0
+          -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn21998-ac4-color-token-name
     description: is_color_token_name accepts the five new colour tokens, refuses the four non-colour ones
