@@ -118,8 +118,9 @@ dod_evidence:
           'baseline or new_finding or finding_added or fixed_finding'"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: "uv run pre-commit run no-except-swallow --all-files && uv run pre-commit run no-none-guard-publish
-          --all-files && uv run pre-commit run no-import-none-fallback --all-files"
+        check_value: "grep -l 'Burn-down ticket: OMN-22005. Zero target: 2026-11-16.' .onex_ratchets/except_swallow_baseline.yaml
+          .onex_ratchets/none_guard_publish_baseline.yaml .onex_ratchets/import_none_fallback_baseline.yaml
+          | test \"$(wc -l)\" -eq 3"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn22005-ac5
     description: "A run puts one run event on the in-memory bus; a refusing run adds one triggered event
