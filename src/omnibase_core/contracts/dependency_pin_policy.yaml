@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Pin policy overlay of the cross-repository dependency-pin check (OMN-22360,
+# operator ruling 2026-11-03T14:21:07Z: "We need validation logic that keeps the
+# dependency pinning straight ... We need a validator.").
+#
+# Data, not code: the check reads this file and contracts/repo_layers.yaml (the
+# declared layer order) and nothing else to decide. A caller may hand the check a
+# different file or an in-memory document of the same shape; the reusable
+# workflow reads the copy at the omnibase_core revision the caller pinned, so a
+# caller cannot widen it.
+#
+# What the check refuses, per first-party edge of the checked repository:
+#   layer order  a declared edge to a repository at the same or a higher layer
+#   cycle        any cycle among first-party distributions in the declared edges
+#                plus the locked graph (uv.lock), whichever repository declares it
+#   release      a pinned version more than max_releases_behind releases behind
+#                the newest release tag, or a specifier the newest release does not
+#                satisfy
+#   pin style    an exact pin where the style is range, or the reverse
+#   hook rev     a .pre-commit-config.yaml revision of a hook repository below
+#                with more than hook_rev_max_releases_behind release tags newer
+#                than it
+# The pinned version is the version uv.lock resolves for the edge; with no lock
+# entry it is the lowest version the specifier admits.
+#
+# The two release bounds are counts of release tags, measured 2026-11-03: omnibase_core
+# cuts about one release a day and omnibase_spi releases in bursts (three in three
+# days), so 3 lets a consumer's next bump land after a burst and 14 keeps every hook
+# revision inside about two weeks of core. Tighten them here; the check reads
+# nothing else.
+
+# Every table whose first-party entries are dependency edges.
+edge_tables: [project, optional, group, uv_dev, override]
+
+# First-party edges keep a version range (the uv source carries the dev-merge tag);
+# an exact pin freezes a consumer below every later release.
+pin_style: range
+pin_style_overrides: []
+
+release_tag_pattern: '^v(?P<version>[0-9]+(?:\.[0-9]+)*)$'
+tag_inventory_url: 'https://github.com/{org}/{repo}.git'
+
+max_releases_behind: 3
+specifier_must_admit_newest_release: true
+
+hook_repos:
+  - url: https://github.com/OmniNode-ai/omnibase_core
+    repo: omnibase_core
+hook_rev_max_releases_behind: 14

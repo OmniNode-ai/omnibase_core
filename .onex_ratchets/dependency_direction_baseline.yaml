@@ -14,10 +14,6 @@ violations:
     channel: workflow
     target: omniclaude
     ticket: OMN-19998
-  - path: .github/workflows/dependency-cascade.yml
-    channel: workflow
-    target: omnibase_infra
-    ticket: OMN-19998
   - path: .github/workflows/handshake-policy-gate.yml
     channel: workflow
     target: omnimarket
@@ -34,19 +30,11 @@ violations:
     channel: workflow
     target: omnibase_spi
     ticket: OMN-19998
-  - path: pyproject.toml
-    channel: pyproject
-    target: omnibase_spi
-    ticket: OMN-19998
   - path: scripts/validation/validate-downstream.py
     channel: python_import
     target: omnibase_spi
     ticket: OMN-19998
   - path: scripts/validation/validate-imports.py
-    channel: python_import
-    target: omnibase_spi
-    ticket: OMN-19998
-  - path: src/omnibase_core/services/service_protocol_auditor.py
     channel: python_import
     target: omnibase_spi
     ticket: OMN-19998

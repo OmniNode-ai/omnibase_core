@@ -95,6 +95,7 @@ check-imperative-contracts = "omnibase_core.nodes.node_imperative_contract_guard
 # the declared order, through any channel; every repository runs it via
 # .github/workflows/dependency-direction.yml and the pre-commit hook.
 check-dependency-direction = "omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check:main"
+check-dependency-pins = "omnibase_core.nodes.node_dependency_pins_check_effect.runtime_dependency_pins_check:main"
 # OMN-21494: resolve operator-private vocabularies through the shared core node.
 resolve-private-vocabulary = "omnibase_core.nodes.node_source_file_gather_effect.runtime_private_vocabulary:main"
 # OMN-21501: dict[str, Any] and backward-compatibility detection in the generic validator
@@ -211,7 +212,6 @@ node_required_context_producer_check_compute = "omnibase_core.nodes.node_require
 node_required_context_producer_gather_effect = "omnibase_core.nodes.node_required_context_producer_gather_effect"
 
 [project.optional-dependencies]
-spi = ["omnibase-spi>=0.20.2"]
 cli = ["psutil>=7.2.1"]
 kafka = ["aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0"]
 cache = ["redis>=5.0.0,<9.0.0"]
@@ -229,7 +229,7 @@ testing = ["pytest>=8.4.0", "pytest-asyncio>=1.4,<2"]
 # whole-tree sentinel). Its own extra so omnibase_infra / omnimarket can consume
 # the packaged selector with `omnibase-core[test-selection]` instead of a copy.
 test-selection = ["grimp>=3.15,<4.0.0"]
-full = ["omnibase-spi>=0.20.2", "psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0", "pytest>=8.4.0", "pytest-asyncio>=1.4,<2"]
+full = ["psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.0.0", "redis>=5.0.0,<9.0.0", "prometheus-client>=0.21.0,<1.0.0", "sqlglot>=26.0.0,<31.0.0", "pytest>=8.4.0", "pytest-asyncio>=1.4,<2"]
 
 [dependency-groups]
 dev = [
@@ -609,6 +609,3 @@ exclude_lines = [
     "@abstractmethod",
     "@abc.abstractmethod"
 ]
-
-[tool.uv.sources]
-omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", tag = "dev-20261101025141-38465d47118c" }

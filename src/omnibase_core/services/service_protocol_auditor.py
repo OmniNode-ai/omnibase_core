@@ -15,7 +15,6 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.errors.exception_base import (
@@ -26,6 +25,7 @@ from omnibase_core.models.validation.model_audit_result import ModelAuditResult
 from omnibase_core.models.validation.model_duplication_report import (
     ModelDuplicationReport,
 )
+from omnibase_core.types.type_json import JsonType
 from omnibase_core.validation.validator_utils import (
     ModelDuplicationInfo,
     ModelProtocolInfo,
@@ -33,20 +33,6 @@ from omnibase_core.validation.validator_utils import (
     extract_protocols_from_directory,
     validate_directory_path,
 )
-
-if TYPE_CHECKING:
-    from omnibase_spi.protocols.types.protocol_base_types import ProtocolContextValue
-    from omnibase_spi.protocols.validation.protocol_quality_validator import (
-        ProtocolQualityIssue,
-        ProtocolQualityMetrics,
-        ProtocolQualityReport,
-        ProtocolQualityStandards,
-    )
-    from omnibase_spi.protocols.validation.protocol_validation import (
-        ProtocolValidationError,
-        ProtocolValidationResult,
-    )
-
 
 # =============================================================================
 # Concrete implementations satisfying SPI protocol interfaces
@@ -117,13 +103,13 @@ class _QualityReport:
     """Concrete implementation of ProtocolQualityReport."""
 
     file_path: str = ""
-    metrics: ProtocolQualityMetrics = field(default_factory=_QualityMetrics)
-    issues: list[ProtocolQualityIssue] = field(default_factory=list)
+    metrics: _QualityMetrics = field(default_factory=_QualityMetrics)
+    issues: list[_QualityIssue] = field(default_factory=list)
     standards_compliance: bool = True
     overall_score: float = 100.0
     recommendations: list[str] = field(default_factory=list)
 
-    async def get_critical_issues(self) -> list[ProtocolQualityIssue]:
+    async def get_critical_issues(self) -> list[_QualityIssue]:
         """Return only critical-severity issues."""
         return [i for i in self.issues if i.severity == "critical"]
 
@@ -134,7 +120,7 @@ class _ConcreteValidationError:
 
     error_type: str
     message: str
-    context: dict[str, ProtocolContextValue] = field(default_factory=dict)
+    context: dict[str, JsonType] = field(default_factory=dict)
     severity: str = "error"
 
     def __str__(self) -> str:
@@ -149,14 +135,14 @@ class _ValidationResult:
     is_valid: bool = True
     protocol_name: str = "ProtocolQualityValidator"
     implementation_name: str = "ServiceProtocolAuditor"
-    errors: list[ProtocolValidationError] = field(default_factory=list)
-    warnings: list[ProtocolValidationError] = field(default_factory=list)
+    errors: list[_ConcreteValidationError] = field(default_factory=list)
+    warnings: list[_ConcreteValidationError] = field(default_factory=list)
 
     def add_error(
         self,
         error_type: str,
         message: str,
-        context: dict[str, ProtocolContextValue] | None = None,
+        context: dict[str, JsonType] | None = None,
         severity: str | None = None,
     ) -> None:
         """Add an error to the result."""
@@ -174,7 +160,7 @@ class _ValidationResult:
         self,
         error_type: str,
         message: str,
-        context: dict[str, ProtocolContextValue] | None = None,
+        context: dict[str, JsonType] | None = None,
     ) -> None:
         """Add a warning to the result."""
         self.warnings.append(
@@ -225,7 +211,7 @@ class ServiceProtocolAuditor:
     def __init__(
         self,
         repository_path: str = ".",
-        standards: ProtocolQualityStandards | None = None,
+        standards: object | None = None,
         enable_complexity_analysis: bool = True,
         enable_duplication_detection: bool = True,
         enable_style_checking: bool = True,
@@ -625,7 +611,7 @@ class ServiceProtocolAuditor:
 
     async def validate_file_quality(
         self, file_path: str, content: str | None = None
-    ) -> ProtocolQualityReport:
+    ) -> _QualityReport:
         """
         Validate file quality metrics.
 
@@ -641,7 +627,7 @@ class ServiceProtocolAuditor:
         """
         source = self._read_file_content(file_path, content)
         metrics = self.calculate_quality_metrics(file_path, source)
-        issues: list[ProtocolQualityIssue] = []
+        issues: list[_QualityIssue] = []
 
         # Gather all issue types
         if self.enable_complexity_analysis:
@@ -690,7 +676,7 @@ class ServiceProtocolAuditor:
 
     async def validate_directory_quality(
         self, directory_path: str, file_patterns: list[str] | None = None
-    ) -> list[ProtocolQualityReport]:
+    ) -> list[_QualityReport]:
         """
         Validate directory quality by scanning all matching Python files.
 
@@ -710,7 +696,7 @@ class ServiceProtocolAuditor:
         for pattern in patterns:
             files.extend(dir_path.rglob(pattern))
 
-        reports: list[ProtocolQualityReport] = []
+        reports: list[_QualityReport] = []
         for f in sorted(set(files)):
             if f.is_file():
                 report = await self.validate_file_quality(str(f))
@@ -719,7 +705,7 @@ class ServiceProtocolAuditor:
 
     def calculate_quality_metrics(
         self, file_path: str, content: str | None = None
-    ) -> ProtocolQualityMetrics:
+    ) -> _QualityMetrics:
         """
         Calculate quality metrics for a file using AST analysis.
 
@@ -761,7 +747,7 @@ class ServiceProtocolAuditor:
 
     def detect_code_smells(
         self, file_path: str, content: str | None = None
-    ) -> list[ProtocolQualityIssue]:
+    ) -> list[_QualityIssue]:
         """
         Detect code smells in a Python file.
 
@@ -793,7 +779,7 @@ class ServiceProtocolAuditor:
                 ),
             ]
 
-        issues: list[ProtocolQualityIssue] = []
+        issues: list[_QualityIssue] = []
 
         for node in ast.walk(tree):
             # Long functions
@@ -882,7 +868,7 @@ class ServiceProtocolAuditor:
 
     async def check_naming_conventions(
         self, file_path: str, content: str | None = None
-    ) -> list[ProtocolQualityIssue]:
+    ) -> list[_QualityIssue]:
         """
         Check naming convention compliance against ONEX standards.
 
@@ -905,7 +891,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[ProtocolQualityIssue] = []
+        issues: list[_QualityIssue] = []
         path = Path(file_path)
 
         for node in ast.walk(tree):
@@ -973,7 +959,7 @@ class ServiceProtocolAuditor:
 
     async def analyze_complexity(
         self, file_path: str, content: str | None = None
-    ) -> list[ProtocolQualityIssue]:
+    ) -> list[_QualityIssue]:
         """
         Analyze code complexity at the function level.
 
@@ -995,7 +981,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[ProtocolQualityIssue] = []
+        issues: list[_QualityIssue] = []
         max_complexity = _DEFAULT_MAX_COMPLEXITY
         if self.standards is not None:
             max_complexity = getattr(
@@ -1030,7 +1016,7 @@ class ServiceProtocolAuditor:
 
     async def validate_documentation(
         self, file_path: str, content: str | None = None
-    ) -> list[ProtocolQualityIssue]:
+    ) -> list[_QualityIssue]:
         """
         Validate documentation quality.
 
@@ -1053,7 +1039,7 @@ class ServiceProtocolAuditor:
         except SyntaxError:
             return []
 
-        issues: list[ProtocolQualityIssue] = []
+        issues: list[_QualityIssue] = []
 
         # Check module docstring
         if not ast.get_docstring(tree):
@@ -1175,7 +1161,7 @@ class ServiceProtocolAuditor:
 
         return suggestions
 
-    def configure_standards(self, standards: ProtocolQualityStandards) -> None:
+    def configure_standards(self, standards: object) -> None:
         """
         Configure quality standards.
 
@@ -1185,8 +1171,8 @@ class ServiceProtocolAuditor:
         self.standards = standards
 
     async def get_validation_summary(
-        self, reports: list[ProtocolQualityReport]
-    ) -> ProtocolValidationResult:
+        self, reports: list[_QualityReport]
+    ) -> _ValidationResult:
         """
         Get validation summary from quality reports.
 
