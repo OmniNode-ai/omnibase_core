@@ -1,0 +1,200 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: precommit_fail_loud
+  validator_name: Pre-commit fail-loud meta check
+  validator_description: Refuses a pre-commit hook that swallows its failure, a gate script that exits
+    zero on a missing prerequisite or a bypass variable, and a hook stage the config never installs. The
+    scan set, patterns, windows, stages and remediation text are the rule rows of this file (OMN-22357).
+  target_patterns:
+    - .pre-commit-config.yaml
+    - .pre-commit-hooks.yaml
+  exclude_patterns:
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/__pycache__/**'
+  rules:
+    - rule_id: precommit_fail_loud_hook_count_floor
+      description: A hook file that yields no hooks is refused, so a scan that reads nothing is never
+        a pass.
+      severity: error
+      enabled: true
+      parameters:
+        kind: hook_count_floor
+        min_hooks: 1
+        reason: a scan that reads nothing is an error, never a pass
+        remediation: Point the hook at a pre-commit file that declares hooks, or remove the file from
+          the hook's scan set.
+    - rule_id: precommit_fail_loud_script_reference
+      description: How an entry token resolves to a gate script the scopes that read scripts also scan.
+      severity: error
+      enabled: true
+      parameters:
+        kind: script_reference
+        languages:
+          - system
+          - script
+        prefixes:
+          - scripts/
+          - .pre-commit-hooks/
+        suffixes:
+          - .sh
+          - .py
+    - rule_id: precommit_fail_loud_swallow_or_true
+      description: A hook entry ending a command with '|| true' swallows that command's failure.
+      severity: error
+      enabled: true
+      parameters:
+        kind: line_signal
+        read_scripts: false
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        pattern: \|\|\s*(?:/(?:usr/)?bin/)?true(?![\w-])
+        reason: '''|| true'' swallows the failure of the command before it'
+        remediation: 'Let the failure surface: remove the masking so the hook exits non-zero when its
+          check fails, or fix the cause. A gate that fails must be indistinguishable from a failing gate,
+          never from a passing one.'
+    - rule_id: precommit_fail_loud_swallow_semicolon_true
+      description: A hook entry running 'true' after a command with ';' discards that command's exit code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: line_signal
+        read_scripts: false
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        pattern: ;\s*(?:/(?:usr/)?bin/)?true\s*(?:$|[;&|)'\"])
+        reason: '''; true'' discards the exit code of the command before it'
+        remediation: 'Let the failure surface: remove the masking so the hook exits non-zero when its
+          check fails, or fix the cause. A gate that fails must be indistinguishable from a failing gate,
+          never from a passing one.'
+    - rule_id: precommit_fail_loud_swallow_or_noop
+      description: A hook entry that follows a command with '|| :' or '|| exit 0' masks its exit code.
+      severity: error
+      enabled: true
+      parameters:
+        kind: line_signal
+        read_scripts: false
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        pattern: \|\|\s*(?::|exit\s+0)(?![\w-])
+        reason: '''|| :'' and ''|| exit 0'' mask the exit code of the command before them'
+        remediation: 'Let the failure surface: remove the masking so the hook exits non-zero when its
+          check fails, or fix the cause. A gate that fails must be indistinguishable from a failing gate,
+          never from a passing one.'
+    - rule_id: precommit_fail_loud_swallow_set_plus_e
+      description: A hook entry that runs 'set +e' stops the shell from exiting on a failed command.
+      severity: error
+      enabled: true
+      parameters:
+        kind: line_signal
+        read_scripts: false
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        pattern: (?<![\w-])set\s+\+e(?![\w-])
+        reason: '''set +e'' lets a failed command pass'
+        remediation: 'Let the failure surface: remove the masking so the hook exits non-zero when its
+          check fails, or fix the cause. A gate that fails must be indistinguishable from a failing gate,
+          never from a passing one.'
+    - rule_id: precommit_fail_loud_swallow_continue_on_error
+      description: A hook entry carrying continue-on-error wraps its command so a failure does not fail
+        the run.
+      severity: error
+      enabled: true
+      parameters:
+        kind: line_signal
+        read_scripts: false
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        pattern: continue-on-error
+        reason: a continue-on-error wrapper lets a failed command pass
+        remediation: 'Let the failure surface: remove the masking so the hook exits non-zero when its
+          check fails, or fix the cause. A gate that fails must be indistinguishable from a failing gate,
+          never from a passing one.'
+    - rule_id: precommit_fail_loud_swallow_pass_banner
+      description: A hook entry that prints a PASS banner after ';' or '||' prints it whether or not the
+        check ran.
+      severity: error
+      enabled: true
+      parameters:
+        kind: line_signal
+        read_scripts: false
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        pattern: (?i)(?:\|\||;)\s*(?:echo|printf)\s+[\"']?(?:PASS|OK|passed)\b
+        reason: a PASS banner printed after ';' or '||' is printed whatever the check did
+        remediation: 'Let the failure surface: remove the masking so the hook exits non-zero when its
+          check fails, or fix the cause. A gate that fails must be indistinguishable from a failing gate,
+          never from a passing one.'
+    - rule_id: precommit_fail_loud_exit_zero_on_missing
+      description: An 'exit 0' within a few lines of a 'not found' line is a gate that cannot run reporting
+        success.
+      severity: error
+      enabled: true
+      parameters:
+        kind: windowed_exit
+        read_scripts: true
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        window: 6
+        exit_pattern: \bexit\s+0\b
+        signal_pattern: (?i)not\s+found
+        reason: '''exit 0'' near a not-found signal: a gate that cannot run passes silently'
+        remediation: 'A gate that cannot run must fail loud (exit 1), not silently pass. Suppress a reviewed
+          false positive with a ''fail-loud-ok: <reason>'' comment on the flagged line.'
+    - rule_id: precommit_fail_loud_exit_zero_on_bypass_env
+      description: An 'exit 0' guarded by a SKIP- or BYPASS-named environment variable is an undocumented
+        gate bypass.
+      severity: error
+      enabled: true
+      parameters:
+        kind: windowed_exit
+        read_scripts: true
+        languages:
+          - system
+          - script
+        suppression_marker: fail-loud-ok
+        window: 6
+        exit_pattern: \bexit\s+0\b
+        signal_pattern: (?i)\$\{?\b\w*(?:SKIP|BYPASS)\w*(?<!PATTERN)(?<!REGEX)\b
+        guard_pattern: if|&&
+        reason: '''exit 0'' conditioned on a SKIP/BYPASS-shaped environment variable: an undocumented
+          bypass'
+        remediation: 'Remove the bypass: a gate that must let something through gets a reviewed ''fail-loud-ok:
+          <reason>'' comment on the flagged line, never an environment-variable toggle.'
+    - rule_id: precommit_fail_loud_stage_not_installed
+      description: Every stage a hook uses must be installed by default_install_hook_types, else the hook
+        never runs locally.
+      severity: error
+      enabled: true
+      parameters:
+        kind: stage_coverage
+        allowed_uninstalled:
+          - manual
+        default_when_absent:
+          - pre-commit
+        reason: '`pre-commit install` never wires up those hook types, so the hook silently never runs
+          locally; the manual stage is opt-in and never installed'
+        remediation: Add the stage to default_install_hook_types, or remove the hook's use of that stage.

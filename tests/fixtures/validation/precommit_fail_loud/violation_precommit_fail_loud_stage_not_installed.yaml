@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+default_install_hook_types: [pre-commit]
+repos:
+  - repo: local
+    hooks:
+      - id: gate
+        name: gate
+        entry: uv run python -m checker
+        language: system
+        stages: [pre-push]

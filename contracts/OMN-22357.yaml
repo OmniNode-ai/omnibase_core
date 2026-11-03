@@ -1,0 +1,92 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22357
+title: Pre-commit fail-loud meta gate in the generic core format (core half)
+summary: The fail-loud meta-gate existed as six divergent copies of one script. omnibase_core now holds
+  one check in the generic validator format - a ValidatorBase subclass over a pure checker, with every
+  pattern, window, stage and remediation text in the rule rows of precommit_fail_loud.validation.yaml
+  - registered as a hook id in .pre-commit-hooks.yaml. The core script is deleted and core's own config
+  runs the same hook id through the module. This PR proves the core half only; each other repository consumes
+  the hook id in its own pull request after this one is on dev.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22357-core-check
+    statement: One fail-loud pre-commit meta check lives in omnibase_core in the generic validator format
+      and is registered as a hook id, with its rules in a contract.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: omnibase_core has one fail-loud pre-commit meta check, a ValidatorBase subclass
+          with a ModelValidatorSubcontract, registered as a hook id in .pre-commit-hooks.yaml, whose rules
+          come from the rule rows of its validation contract and not from the code -- falsifier: cd omnibase_core
+          && uv run pytest tests -k precommit_fail_loud -q'
+      - id: AC2
+        statement: 'AC2: The check refuses a fixture hook config with a swallowed failure (an entry ending
+          in || true) and passes a clean fixture, and a canary defect for it exists in the validator-canary
+          harness -- falsifier: cd omnibase_core && uv run pytest tests -k precommit_fail_loud_canary
+          -q'
+      - id: AC3
+        statement: 'AC3 (core half, stage 1 of 2): omnibase_core''s own copy of the script is deleted
+          in this PR and its own config runs the hook id through the core module; the five consumer repositories
+          are stage 2 and are not bound here -- falsifier: git grep -l "validate_precommit_[f]ail_loud"
+          HEAD returns nothing in omnibase_core and the registration test passes'
+evidence_requirements:
+  - kind: tests
+    description: The fail-loud check tests and the canary tests pass at the checkout; no live service
+      is required.
+    command: uv run --frozen pytest tests/unit/validation/test_validator_precommit_fail_loud.py -n 0 -q
+      --no-cov
+  - kind: ci
+    description: Hosted-runner run of the same tests at the checkout.
+    command: uv run --frozen pytest tests/unit/validation/test_validator_precommit_fail_loud.py -n 0 -q
+      --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22357-ac1-check-and-contract
+    description: The check in the generic format passes its planted-violation, clean, disabled-row, rule-data
+      and invalid-contract tests over the contract it loads.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests -k precommit_fail_loud -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22357-ac2-canary
+    description: The canary swallowed failure is refused through the hook entry with its rule id, the
+      converged config passes, and the canary named off-pattern is an error and never a pass.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests -k precommit_fail_loud_canary -n 0 -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22357-ac3-core-copy-deleted
+    description: No tracked file of omnibase_core names the deleted script, and the registration test
+      proves the hook id is exported and run by core's own config.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: command
+        check_value: bash -c '! git grep -q -e "validate_precommit_[f]ail_loud" HEAD'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_validator_precommit_fail_loud.py
+          -n 0 -q --no-cov -k "registered_and_the_local_script_is_gone"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22357-deploy-checkout-test
+    description: Hosted-runner run of the fail-loud tests at the checkout. The fixtures, rule rows, container
+      resolution and report checks need no container daemon or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2, AC3]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/validation/test_validator_precommit_fail_loud.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
