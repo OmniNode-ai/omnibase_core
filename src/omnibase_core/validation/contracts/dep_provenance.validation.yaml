@@ -24,6 +24,7 @@ validation:
     - '**/.venv/**'
     - '**/node_modules/**'
     - '**/__pycache__/**'
+    - '**/tests/fixtures/**'
   rules:
     - rule_id: source_vocabulary
       description: The names, patterns and package table every finding rule reads.

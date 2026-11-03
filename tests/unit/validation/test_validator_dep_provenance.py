@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -31,6 +32,7 @@ from omnibase_core.validation.validator_first_party_ref import (
     ValidatorFirstPartyRef,
     dev_tag_pattern,
 )
+from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 pytestmark = pytest.mark.unit
 
@@ -367,3 +369,34 @@ def test_canary_is_refused_with_its_rule_id_and_clean_control_passes(
     assert [f["rule_id"] for f in findings] == ["source_shape_not_admitted"]
     good = _staged("clean_sibling_dev_tag", tmp_path)
     assert main_for_reference([entry, str(good)]) == 0
+
+
+# ---- the tracked tree -------------------------------------------------------------
+
+
+def _tracked_pyprojects() -> list[Path]:
+    listed = subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "pyproject.toml", "*/pyproject.toml"],
+        capture_output=True,
+        text=True,
+        check=True,
+        env=scrub_git_location_env(),
+    ).stdout.split()
+    return [ROOT / name for name in listed]
+
+
+def test_every_tracked_pyproject_passes_and_planted_fixtures_are_not_scanned() -> None:
+    """`pre-commit run --all-files` hands the hook every tracked pyproject, planted fixtures included."""
+    tracked = _tracked_pyprojects()
+    assert ROOT / "pyproject.toml" in tracked
+    planted = [path for path in tracked if "/tests/fixtures/" in path.as_posix()]
+    assert planted, "positive control: a planted pyproject fixture is tracked"
+    result = _validator().validate(tracked)
+    assert [str(issue.file_path) for issue in result.issues] == []
+    assert result.metadata is not None
+    assert result.metadata.files_processed == len(tracked) - len(planted)
+    unscoped = _contract().model_copy(update={"exclude_patterns": []})
+    refused = _validator(unscoped).validate(tracked)
+    assert refused.issues, (
+        "positive control: without the exclusion the planted fixture is refused"
+    )
