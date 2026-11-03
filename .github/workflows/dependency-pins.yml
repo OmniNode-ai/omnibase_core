@@ -1,0 +1,130 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable cross-repository dependency-pin check for OmniNode repositories
+# (OMN-22360, operator ruling 2026-11-03T14:21:07Z: "We need validation logic
+# that keeps the dependency pinning straight ... We need a validator.").
+#
+# Runs the core check (src/omnibase_core/validation/checker_dependency_pins.py)
+# from this repository's own checkout against the CALLER's pyproject.toml,
+# uv.lock and .pre-commit-config.yaml, and refuses:
+#
+#   layer_order                        a first-party edge to the same or a higher layer
+#   dependency_cycle                   any cycle in the declared plus locked graph
+#   release_behind                     a pin past the policy's release bound
+#   specifier_excludes_newest_release  a specifier the newest release does not satisfy
+#   pin_style                          an exact pin where the policy wants a range, or the reverse
+#   hook_rev_behind / _unresolved      a core hook rev past the bound, or not in core's history
+#
+# The layer order (src/omnibase_core/contracts/repo_layers.yaml) and the pin
+# policy (src/omnibase_core/contracts/dependency_pin_policy.yaml) are read from
+# the pinned checkout, so a caller cannot widen them. There is no baseline: a
+# violation is fixed, never recorded.
+#
+# Usage in a caller repo (a job its CI Summary or branch protection requires):
+#
+#   jobs:
+#     dependency-pins:
+#       name: dependency-pins
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/dependency-pins.yml@<dev-merge-tag>
+#
+# The validator version is the caller's pin: omnibase-core-ref defaults to
+# github.job_workflow_sha, the sha of this file as the caller pinned it.
+
+name: Dependency Pins
+
+on:
+  workflow_call:
+    inputs:
+      repo:
+        description: >-
+          The caller's repository name as declared in contracts/repo_layers.yaml, used when
+          its pyproject.toml names no declared distribution. Empty means the repository the
+          workflow runs in.
+        required: false
+        type: string
+        default: ""
+      python-version:
+        description: Python version for the validator runtime.
+        required: false
+        type: string
+        default: "3.12"
+      uv-version:
+        description: uv version for the validator runtime.
+        required: false
+        type: string
+        default: "0.8.3"
+      target-ref:
+        description: Caller repository ref to check out.
+        required: false
+        type: string
+        default: ""
+      omnibase-core-ref:
+        description: >-
+          omnibase_core ref containing the validator. Empty means the sha this
+          workflow file was called at.
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-pins:
+    name: Dependency Pins
+    runs-on: ${{ github.event.repository.private && ( (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]') || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]')) ) || 'ubuntu-latest' }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout target repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: target
+          ref: ${{ inputs['target-ref'] || github.ref }}
+          persist-credentials: false
+
+      # Full history with tags: the hook-revision bound reads the commit times of the
+      # caller's pinned core revisions and of core's release tags from this clone.
+      - name: Checkout omnibase_core validator and history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ inputs['omnibase-core-ref'] || github.job_workflow_sha }}
+          path: omnibase_core
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: ${{ inputs['python-version'] }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
+        with:
+          version: ${{ inputs['uv-version'] }}
+
+      - name: Run dependency-pin check
+        working-directory: omnibase_core
+        env:
+          UV_SYNC_ATTEMPTS: "3"
+          UV_SYNC_RETRY_DELAY_SECONDS: "10"
+          TARGET_REPO: ${{ inputs.repo || github.event.repository.name }}
+        run: |
+          git config --global http.version HTTP/1.1
+          attempt=1
+          until uv sync --locked --no-dev; do
+            status=$?
+            if [ "$attempt" -ge "$UV_SYNC_ATTEMPTS" ]; then
+              echo "::error::uv sync failed after ${attempt} attempt(s)"
+              exit "$status"
+            fi
+            sleep_seconds=$((UV_SYNC_RETRY_DELAY_SECONDS * attempt))
+            echo "::warning::uv sync attempt ${attempt}/${UV_SYNC_ATTEMPTS} failed with exit ${status}; retrying in ${sleep_seconds}s"
+            sleep "$sleep_seconds"
+            attempt=$((attempt + 1))
+          done
+          uv run --no-sync check-dependency-pins "$GITHUB_WORKSPACE/target" \
+            --repo "$TARGET_REPO" \
+            --hook-history "$GITHUB_WORKSPACE/omnibase_core" \
+            --report-json "$GITHUB_WORKSPACE/dependency-pins-report.json"

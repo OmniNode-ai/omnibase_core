@@ -1,0 +1,152 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Cross-repository dependency-pin rules (OMN-22360): the message texts and the file
+# format keys. The layer order is contracts/repo_layers.yaml and every bound is
+# contracts/dependency_pin_policy.yaml; this contract holds no repository name and
+# no bound.
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: dependency_pins
+  validator_name: Dependency pins
+  validator_description: >-
+    A repository's first-party dependency pins follow the declared layer order, form no cycle, trail the
+    newest release by no more than the policy bound, keep the policy's pin style, and its pre-commit hook
+    revisions of a bounded hook repository trail no more release tags than the bound.
+  target_patterns:
+    - "**/pyproject.toml"
+    - "**/uv.lock"
+    - "**/.pre-commit-config.yaml"
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/.git/**"
+    - "**/.venv/**"
+    - "**/node_modules/**"
+  rules:
+    - rule_id: manifest_unreadable
+      description: The manifest, the lock file or the pre-commit config cannot be parsed.
+      severity: error
+      enabled: true
+      parameters:
+        manifest_file_name: pyproject.toml
+        lock_file_name: uv.lock
+        precommit_file_name: .pre-commit-config.yaml
+        project_key: project
+        name_key: name
+        dependencies_key: dependencies
+        optional_key: optional-dependencies
+        groups_key: dependency-groups
+        tool_key: tool
+        uv_key: uv
+        uv_dev_key: dev-dependencies
+        override_key: override-dependencies
+        lock_package_key: package
+        lock_version_key: version
+        lock_dependencies_key: dependencies
+        lock_optional_key: optional-dependencies
+        lock_dev_key: dev-dependencies
+        name_separator_pattern: '[-_.]+'
+        label_project: project
+        label_optional: "extra:{name}"
+        label_group: "group:{name}"
+        label_uv_dev: uv-dev
+        label_override: override
+        message: "{path}: cannot be read: {reason}"
+    - rule_id: repo_not_in_layer_map
+      description: The checked repository must be declared in the layer order.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          {path}: the repository (distribution {distribution!r}) is not declared in the layer order; declare
+          it in omnibase_core contracts/repo_layers.yaml
+    - rule_id: layer_order
+      description: A declared first-party edge must point to a strictly lower layer.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          {path}:{line}: {repo} (layer {own_layer}) declares {target} (repository {target_repo}, layer
+          {target_layer}) in {table}; a repository may depend only on a strictly lower layer. Remove the
+          edge or move the code down; never record it in a baseline
+    - rule_id: dependency_cycle
+      description: No cycle among first-party distributions, declared or locked.
+      severity: error
+      enabled: true
+      parameters:
+        separator: " -> "
+        message: >-
+          {path}: first-party dependency cycle {cycle} (declared edges of this repository plus the locked
+          graph of {lock}); remove the edge that points up the layer order
+    - rule_id: release_behind
+      description: A pinned version trails the newest release by more than the policy bound.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          {path}:{line}: {target} is pinned at {pinned} ({source}) in {table}, {behind} release(s) behind
+          the newest release {newest}; the policy allows {bound}. Move the pin to the newest release or
+          dev-merge tag
+    - rule_id: specifier_excludes_newest_release
+      description: The declared specifier must admit the newest release.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          {path}:{line}: {target}{specifier} in {table} does not admit the newest release {newest}; widen
+          the range to admit it
+    - rule_id: pin_style
+      description: First-party pins keep the policy's style.
+      severity: error
+      enabled: true
+      parameters:
+        exact_operators: ["==", "==="]
+        range_wanted_message: >-
+          {path}:{line}: {target}{specifier} in {table} is an exact pin; the policy wants a version range
+          for {target}
+        exact_wanted_message: >-
+          {path}:{line}: {target}{specifier} in {table} is not an exact pin; the policy wants an exact
+          pin for {target}
+    - rule_id: release_inventory_unreadable
+      description: A dependency's release tags could not be read; the release bound fails closed.
+      severity: error
+      enabled: true
+      parameters:
+        not_read_reason: no inventory was read for it
+        message: >-
+          {path}: the release tags of {repo} could not be read ({reason}); the release bound cannot be
+          judged
+    - rule_id: hook_rev_behind
+      description: A bounded hook repository revision trails too many release tags.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          {path}:{line}: {url} rev {rev} (hooks {hooks}) has {behind} release tag(s) of {repo} newer than
+          it; the policy allows {bound}. Move the rev to the newest dev-merge tag
+    - rule_id: hook_rev_unresolved
+      description: A bounded hook revision whose commit time cannot be read fails closed.
+      severity: error
+      enabled: true
+      parameters:
+        no_history_reason: no history of the hook repository was read
+        not_in_history_reason: the revision is not in the hook repository history
+        message: >-
+          {path}:{line}: {url} rev {rev} (hooks {hooks}) cannot be resolved in the history of {repo} ({reason});
+          pin a dev-merge tag of that repository
+    - rule_id: facts_lookup
+      description: Configuration of the effect that reads release tags and hook history.
+      severity: error
+      enabled: true
+      parameters:
+        git_timeout_seconds: 120
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

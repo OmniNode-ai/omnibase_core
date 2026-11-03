@@ -1845,6 +1845,20 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # Cross-repository dependency pins (OMN-22360, operator ruling 2026-11-03T14:21:07Z).
+      # Refuses a first-party pin against the declared layer order, a cycle in the declared
+      # and locked graph, a pin past the release bound, the wrong pin style, and a hook rev
+      # past the bound, with every value read from contracts/repo_layers.yaml and
+      # contracts/dependency_pin_policy.yaml. CI runs the same check in the dependency-pins job.
+      - id: check-dependency-pins
+        name: Cross-repository dependency pins (OMN-22360)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_dependency_pins_check_effect.runtime_dependency_pins_check
+        language: system
+        files: (^|/)(pyproject\.toml|uv\.lock|\.pre-commit-config\.yaml)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # Version drift at source (OMN-19998). Refuses a pyproject.toml floor raise
       # on a sibling registry package while a registry consumer is not ready for
       # it, and a workflow job the merge queue runs that pull request CI skips

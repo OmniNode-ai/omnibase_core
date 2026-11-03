@@ -1231,6 +1231,22 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-dependency-pins
+  name: Cross-repository dependency pins (OMN-22360)
+  description: >
+    Refuse a first-party dependency pin that goes against the declared layer order (omnibase_core src/omnibase_core/contracts/repo_layers.yaml),
+    closes a cycle among first-party distributions in the declared and locked graph, trails the newest
+    release tag by more than the pin policy's bound, or has the wrong pin style, and a .pre-commit-config.yaml
+    revision of a bounded hook repository that trails more release tags than the bound (src/omnibase_core/contracts/dependency_pin_policy.yaml).
+    No baseline: a violation is fixed, never recorded. Release tags are read with git ls-remote and hook
+    history with a tree-less clone, so the hook needs network. CI runs it through .github/workflows/dependency-pins.yml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_dependency_pins_check_effect.runtime_dependency_pins_check
+  files: (^|/)(pyproject\.toml|uv\.lock|\.pre-commit-config\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-version-floor-consumers
   name: No floor raise ahead of registry consumers (OMN-19998)
   description: >
