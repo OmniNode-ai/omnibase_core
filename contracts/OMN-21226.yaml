@@ -1,0 +1,44 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21226
+title: 'Contract hot loading H1: records, hash, topics, snapshot, chain fixtures and the failing-first
+  test (core records)'
+summary: The frozen, extra-forbidden record family of contract hot loading (request, registry state, replies,
+  prune, registry records, runtime events, runtime state) in omnibase_core, each with its category's required
+  fields and the canonical content hash pattern. The topic declarations, topic enum, fixtures and the
+  strict xfail end-to-end test live in omnimarket and omnibase_infra and are separate pull requests.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn21226-records
+    statement: Each hot-loading record refuses an unknown field and a missing field of its category's
+      required set.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: each model refuses an unknown field and a missing field of its category''s required
+          set -- falsifier: `uv run pytest tests/unit/models/events/test_contract_hotload_models.py -q`
+          in core passes with one required field made optional'
+evidence_requirements:
+  - kind: tests
+    description: The hot-loading record tests pass.
+    command: uv run pytest tests/unit/models/events/test_contract_hotload_models.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21226-ac1-records
+    description: Every record refuses an unknown field and each missing required field of its category;
+      the required set of each model equals the one spelled in the test, so one required field made optional
+      fails two cases.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/test_contract_hotload_models.py -q --no-cov
+          -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
