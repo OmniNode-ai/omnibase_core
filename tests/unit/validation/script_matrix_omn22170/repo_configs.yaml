@@ -1,0 +1,228 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# OMN-22170 AC1: what each registered repository's own CI configuration refuses today.
+# Repository rows were read from the checked-in CI files at the base revisions named in base_sha;
+# required contexts come from the PR watcher's settings read of 2026-11-03T02:47Z.
+measured_by: lane script-ci-22170-matrix-1103 on lab host h106, 2026-11-03; fixtures run as real commits
+  in a scratch git repository through the module and flags each repository's checked-in CI file runs,
+  at the omnibase_core revision that file pins
+reproduce: git archive the pinned omnibase_core revision into a scratch directory, commit the fixture
+  base and head in a scratch git repository, and run python -m <module> <flags> --base <base> --head HEAD
+  there with PYTHONPATH set to the archived src; exit 1 is a refusal
+pins:
+  this_change:
+    core: omnibase_core with this change, compared with the live node by the test
+    module: omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+    flags:
+      - --rules
+      - file-shape
+    refused:
+      - baseline_gains_a_line
+      - baselined_script_grows
+      - baselined_skill_script_grows
+      - new_cron_unit_running_a_script
+      - new_launchd_unit_running_a_script
+      - new_plugin_skill_script
+      - new_scripts_py
+      - new_shell_anywhere
+    names_node:
+      - baseline_gains_a_line
+      - baselined_script_grows
+      - baselined_skill_script_grows
+      - new_cron_unit_running_a_script
+      - new_launchd_unit_running_a_script
+      - new_plugin_skill_script
+      - new_scripts_py
+      - new_shell_anywhere
+  tag_20261101:
+    core: omnibase_core tag dev-20261101023710-a66b5ff79cc0
+    module: omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+    flags:
+      - --rules
+      - file-shape
+    refused:
+      - baseline_gains_a_line
+      - baselined_script_grows
+      - baselined_skill_script_grows
+      - new_plugin_skill_script
+      - new_scripts_py
+      - new_shell_anywhere
+    names_node: []
+  tag_20261029:
+    core: omnibase_core tag dev-20261029151319-6e0a5eee541a
+    module: omnibase_core.nodes.node_canonical_file_shape_check_compute.runtime_canonical_file_shape_check
+    flags:
+      - --rules
+      - file-shape
+    refused:
+      - baseline_gains_a_line
+      - baselined_script_grows
+      - baselined_skill_script_grows
+      - new_plugin_skill_script
+      - new_scripts_py
+      - new_shell_anywhere
+    names_node: []
+  commit_f50d00f:
+    core: omnibase_core commit f50d00fc7918d0b12ccd0d3497160325e32e7ac5
+    module: omnibase_core.validators.canonical_file_shape
+    flags: []
+    refused:
+      - baseline_gains_a_line
+      - new_plugin_skill_script
+      - new_scripts_py
+      - new_shell_anywhere
+    names_node: []
+  commit_d7ed23f:
+    core: omnibase_core commit d7ed23f1e89b8b6ce6079d303f8599c661c7f191
+    module: omnibase_core.validators.canonical_file_shape
+    flags: []
+    refused:
+      - baseline_gains_a_line
+      - baselined_skill_script_grows
+      - new_plugin_skill_script
+      - new_scripts_py
+      - new_shell_anywhere
+    names_node: []
+  commit_7595085:
+    core: omnibase_core commit 759508560875f1a6e4c5c3c41ac6b2254d5ef0f7
+    module: omnibase_core.validators.canonical_file_shape
+    flags: []
+    refused:
+      - baseline_gains_a_line
+      - baselined_skill_script_grows
+      - new_plugin_skill_script
+      - new_scripts_py
+      - new_shell_anywhere
+    names_node: []
+repositories:
+  - name: omnibase_core
+    landing_branch: dev
+    base_sha: rev b45ff5e
+    config_read: 'yes'
+    workflow: .github/workflows/ci.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: this_change
+    required_ci_runs_check: 'yes'
+    required_via: 'CI Summary: job listed in scripts/ci/ci_summary_gate.py, the job set the required CI
+      Summary context gates'
+  - name: omnibase_infra
+    landing_branch: dev
+    base_sha: rev f2b065a
+    config_read: 'yes'
+    workflow: .github/workflows/ci.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: tag_20261101
+    required_ci_runs_check: 'yes'
+    required_via: 'CI Summary: job listed in scripts/ci/ci_summary_gate.py, the job set the required CI
+      Summary context gates'
+  - name: omnibase_spi
+    landing_branch: dev
+    base_sha: rev 1dc6e8f
+    config_read: 'yes'
+    workflow: .github/workflows/ci.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: tag_20261029
+    required_ci_runs_check: 'yes'
+    required_via: 'CI Summary: job is in the needs list of ci-summary'
+  - name: omnibase_compat
+    landing_branch: dev
+    base_sha: rev 384428a
+    config_read: 'yes'
+    workflow: .github/workflows/ci.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: commit_f50d00f
+    required_ci_runs_check: 'yes'
+    required_via: 'CI Summary: job is in the needs list of ci-summary'
+  - name: omniclaude
+    landing_branch: dev
+    base_sha: rev ea35e6f
+    config_read: 'yes'
+    workflow: .github/workflows/ci.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: tag_20261029
+    required_ci_runs_check: 'yes'
+    required_via: 'CI Summary: job listed in scripts/ci/ci_summary_gate.py, the job set the required CI
+      Summary context gates'
+  - name: omnimarket
+    landing_branch: dev
+    base_sha: rev 7b42a4c
+    config_read: 'yes'
+    workflow: .github/workflows/ci.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: tag_20261029
+    required_ci_runs_check: 'yes'
+    required_via: 'CI Summary: job listed in scripts/ci/ci_summary_gate.py, the job set the required CI
+      Summary context gates'
+  - name: omniclaude-internal
+    landing_branch: main
+    base_sha: rev 60e15bb
+    config_read: 'yes'
+    workflow: .github/workflows/canonical-file-shape.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: commit_d7ed23f
+    required_ci_runs_check: 'no'
+    required_via: separate workflow; the only required context on main is validate-plugin
+  - name: omnibase_internal
+    landing_branch: main
+    base_sha: rev 0b8653b
+    config_read: 'yes'
+    workflow: .github/workflows/canonical-file-shape.yml
+    job: Canonical File Shape (OMN-20304)
+    pin: commit_7595085
+    required_ci_runs_check: 'no'
+    required_via: separate workflow; the branch rule requires only the ci context
+  - name: omniintelligence
+    landing_branch: dev
+    base_sha: null
+    config_read: 'no'
+    workflow: null
+    job: null
+    pin: null
+    required_ci_runs_check: unread
+    required_via: no clone on h106; CI Summary is required, its job set is unread
+  - name: omnimemory
+    landing_branch: dev
+    base_sha: null
+    config_read: 'no'
+    workflow: null
+    job: null
+    pin: null
+    required_ci_runs_check: unread
+    required_via: no clone on h106; CI Summary is required, its job set is unread
+  - name: omnidash
+    landing_branch: dev
+    base_sha: null
+    config_read: 'no'
+    workflow: null
+    job: null
+    pin: null
+    required_ci_runs_check: unread
+    required_via: no clone on h106; CI Summary is required, its job set is unread
+  - name: omniweb
+    landing_branch: dev
+    base_sha: null
+    config_read: 'no'
+    workflow: null
+    job: null
+    pin: null
+    required_ci_runs_check: unread
+    required_via: no clone on h106; CI Summary is required, its job set is unread
+  - name: omninode_infra
+    landing_branch: dev
+    base_sha: null
+    config_read: 'no'
+    workflow: null
+    job: null
+    pin: null
+    required_ci_runs_check: unread
+    required_via: no clone on h106; CI Summary is required, its job set is unread
+  - name: omnistream
+    landing_branch: dev
+    base_sha: null
+    config_read: 'no'
+    workflow: null
+    job: null
+    pin: null
+    required_ci_runs_check: unread
+    required_via: no clone on h106; CI Summary is required, its job set is unread

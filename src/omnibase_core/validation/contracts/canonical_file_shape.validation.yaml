@@ -115,9 +115,10 @@ validation:
       severity: error
       enabled: true
       parameters:
-        baseline_growth_text: "entry '{path}' is new; the baseline only shrinks"
+        baseline_growth_text: "entry '{path}' is new; the baseline only shrinks. Build it as node {node}:
+          a contract + node + handler, not a baseline line."
         burndown_growth_text: "burn-down entry '{path}' is new; once installed the burn-down baseline
-          only shrinks"
+          only shrinks. Build it as node {node}: a contract + node + handler, not a baseline line."
 
     - rule_id: baselined-file-growth
       description: A baselined code file with more code lines than at base.
