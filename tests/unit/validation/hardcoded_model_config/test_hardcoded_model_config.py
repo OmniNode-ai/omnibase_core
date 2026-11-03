@@ -369,6 +369,7 @@ def test_hardcoded_model_config_new_line_refused(
     assert runtime.main([*args, path]) == 1
     output = capsys.readouterr().out
     assert f"{path}:{len(after.splitlines()) + 1}: [E-LAN" in output
+    assert "1 new finding(s)" in output
 
 
 @pytest.mark.unit
