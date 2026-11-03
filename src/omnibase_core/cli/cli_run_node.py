@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""``onex run-node`` — dispatch a packaged node over Kafka using its contract."""
+"""``onex run-node`` — dispatch a packaged node on the bus its contract overlay declares (OMN-22362)."""
 
 from __future__ import annotations
 
 import importlib
 import json
-import os
 import sys
+import tempfile
 import time
 import uuid
 from pathlib import Path
@@ -24,6 +24,12 @@ from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.event_bus.model_consumer_group_scope import (
     ModelConsumerGroupScope,
+)
+from omnibase_core.models.event_bus.model_node_broker_binding import (
+    ModelNodeBrokerBinding,
+)
+from omnibase_core.models.event_bus.model_node_broker_resolution_error import (
+    ModelNodeBrokerResolutionError,
 )
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
 from omnibase_core.utils.util_safe_yaml_loader import load_and_validate_yaml_model
@@ -74,77 +80,49 @@ def _emit_error(node_id: str, message: str, **extra: str | int) -> NoReturn:
     sys.exit(1)
 
 
-def _resolve_bootstrap_servers(node_id: str) -> str:
-    """Return the Kafka bootstrap servers for ``run-node``, or fail fast clearly.
+def _resolve_binding(node_id: str) -> ModelNodeBrokerBinding:
+    """The broker ``node_id`` is reached on, from its contract overlay alone (OMN-22362).
 
-    ``onex run-node`` dispatches over Kafka, so it needs a reachable broker.
-    Before OMN-13857 an unset ``KAFKA_BOOTSTRAP_SERVERS`` raised a bare
-    ``KeyError`` traceback and an empty value produced an opaque
-    ``_TRANSPORT`` failure. Both now emit a single actionable SkillRoutingError:
-    point the variable at a reachable lane broker, or run the node locally
-    (bus-less) with ``onex run <node>``.
+    No environment variable, flag or default selects it; a refusal names the overlay path.
     """
-    bootstrap = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "").strip()
-    if not bootstrap:
-        _emit_error(
-            node_id,
-            "KAFKA_BOOTSTRAP_SERVERS is not set. `onex run-node` dispatches over "
-            "Kafka and needs a reachable broker — export "
-            "KAFKA_BOOTSTRAP_SERVERS=<host:port> for your lane. To execute this "
-            f"node locally without a bus, use `onex run {node_id}` instead.",
+    try:
+        return ModelNodeBrokerBinding.for_node(node_id)
+    except ModelNodeBrokerResolutionError as exc:
+        extra: dict[str, str | int] = {"cause": "ModelNodeBrokerResolutionError"}
+        if exc.overlay_path is not None:
+            extra["overlay_path"] = exc.overlay_path
+        _emit_error(node_id, exc.message, **extra)
+
+
+def run_node_in_process(
+    node_id: str, contract_path: Path, payload: dict[str, object], timeout: int
+) -> dict[str, object]:
+    """Host the node here on the in-memory bus (overlay ``type: inmemory``, OMN-22362)."""
+    from pydantic import BaseModel
+
+    from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
+    from omnibase_core.runtime.runtime_local import RuntimeLocal
+
+    with tempfile.TemporaryDirectory(prefix="onex-run-node-") as scratch:
+        input_path = Path(scratch) / "input.json"
+        input_path.write_text(json.dumps(payload), encoding="utf-8")
+        runtime = RuntimeLocal(
+            workflow_path=contract_path,
+            state_root=Path(scratch) / "state",
+            input_path=input_path,
+            timeout=timeout,
         )
-    return bootstrap
-
-
-#: The standard client-security environment every lane container already
-#: carries, mapped to the librdkafka keys it configures (OMN-17427).
-_SECURITY_ENV_TO_LIBRDKAFKA: tuple[tuple[str, str], ...] = (
-    ("KAFKA_SECURITY_PROTOCOL", "security.protocol"),
-    ("KAFKA_SASL_MECHANISM", "sasl.mechanism"),
-    ("KAFKA_SASL_USERNAME", "sasl.username"),
-    ("KAFKA_SASL_PASSWORD", "sasl.password"),
-)
-_SASL_CREDENTIAL_ENV = ("KAFKA_SASL_USERNAME", "KAFKA_SASL_PASSWORD")
-
-
-def _resolve_client_security_config(node_id: str) -> dict[str, str]:
-    """Return the librdkafka security settings for ``run-node``'s clients.
-
-    A lane broker that declares SASL (the .201 dev lane listens with
-    SASL_PLAINTEXT and SCRAM-SHA-256) closes an unauthenticated connection,
-    which librdkafka reports as a ``_TRANSPORT`` failure. Before OMN-17427 this
-    command built its clients from ``bootstrap.servers`` alone, so it could not
-    reach such a broker even inside a container holding the credential. The
-    settings come from the same ``KAFKA_SECURITY_PROTOCOL`` / ``KAFKA_SASL_*``
-    environment the lane's runtimes are configured with; an unset variable adds
-    nothing, so a plaintext lane behaves exactly as before.
-
-    A ``SASL_*`` protocol with no username or password fails fast, naming the
-    missing variable and never a value, instead of offering an anonymous
-    handshake the listener refuses.
-    """
-    config: dict[str, str] = {}
-    for env_name, librdkafka_key in _SECURITY_ENV_TO_LIBRDKAFKA:
-        value = os.environ.get(env_name, "").strip()
-        if value:
-            config[librdkafka_key] = value
-    protocol = config.get("security.protocol", "").upper()
-    mechanism = config.get("sasl.mechanism", "").upper()
-    if protocol.startswith("SASL_") and mechanism != "OAUTHBEARER":
-        missing = [
-            env_name
-            for env_name in _SASL_CREDENTIAL_ENV
-            if not os.environ.get(env_name, "").strip()
-        ]
-        if missing:
-            _emit_error(
-                node_id,
-                f"KAFKA_SECURITY_PROTOCOL is {protocol} but {', '.join(missing)} "
-                "is not set. `onex run-node` authenticates with the lane's "
-                "KAFKA_SASL_* environment; set it, or run the command inside a "
-                "lane container that carries it.",
-            )
-    return config
+        result = runtime.run()
+    if result is not EnumWorkflowResult.COMPLETED:
+        raise ModelOnexError(
+            error_code=EnumCoreErrorCode.RUNTIME_ERROR,
+            message=f"Node '{node_id}' hosted in process ended {result.value}: "
+            f"{runtime.last_error or 'no error recorded'}",
+        )
+    produced = runtime.handler_result
+    if isinstance(produced, BaseModel):
+        return produced.model_dump(mode="json")
+    return dict(produced) if isinstance(produced, dict) else {"result": produced}
 
 
 def _coerce_contract_metadata(
@@ -320,18 +298,17 @@ def publish_and_poll(
             auth_hint = (
                 f" The client connected with security.protocol={protocol}."
                 if protocol
-                else " No KAFKA_SECURITY_PROTOCOL is set: a lane broker that "
-                "requires SASL closes an unauthenticated connection with this "
-                "same error, so set KAFKA_SECURITY_PROTOCOL and KAFKA_SASL_* "
-                "for that lane."
+                else " The lane declares no security protocol, so the client "
+                "connected in plaintext; a lane broker that requires SASL closes "
+                "an unauthenticated connection with this same error."
             )
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.RUNTIME_ERROR,
                 message=(
                     f"Kafka broker unreachable at {bootstrap_servers!r}: {exc}. "
-                    "Verify KAFKA_BOOTSTRAP_SERVERS points at a reachable lane "
-                    f"broker, or run the node locally (bus-less) with `onex run "
-                    f"{node_id}`.{auth_hint}"
+                    "Verify the lane named in the node's contract overlay is "
+                    "reachable from this host, or run the node locally (bus-less) "
+                    f"with `onex run {node_id}`.{auth_hint}"
                 ),
             ) from exc
         topic_metadata = metadata.topics.get(response_topic)
@@ -412,42 +389,49 @@ def publish_and_poll(
     help="Max seconds to wait for a response.",
 )
 def run_node(node_id: str, input_json: str, timeout: int) -> None:
-    """Execute a remote ONEX node via Kafka.
+    """Execute a packaged ONEX node on the bus its contract overlay declares.
 
-    Remote counterpart of `onex run` (which runs a workflow locally, in-process with
-    no infrastructure): this command requires a reachable Kafka broker and a runtime
-    consuming the node's topics.
-
-    Resolves NODE_ID via the packaged contract.yaml, publishes a command envelope
-    to the node's primary subscribe topic, and polls its declared terminal_event.
-    Exits non-zero on failure or timeout, emitting a SkillRoutingError JSON
-    envelope.
+    ``type: kafka`` publishes to the lane's runtime and polls the node's terminal_event;
+    ``type: inmemory`` hosts the node in this process. No environment variable, flag or
+    default selects the broker; a node with no overlay is refused naming the overlay path.
+    Counterpart of `onex run`. Exits non-zero emitting a SkillRoutingError JSON envelope.
     """
     try:
         payload = json.loads(input_json)
     except json.JSONDecodeError as exc:
         _emit_error(node_id, f"Invalid JSON input: {exc}")
 
-    bootstrap_servers = _resolve_bootstrap_servers(node_id)
-    client_security = _resolve_client_security_config(node_id)
+    binding = _resolve_binding(node_id)
 
     try:
         (
-            _contract_path,
+            contract_path,
             command_topic,
             response_topic,
             inject_payload_correlation_id,
         ) = _resolve_node_topics(node_id)
-        response = publish_and_poll(
-            node_id=node_id,
-            payload=payload,
-            timeout=timeout,
-            bootstrap_servers=bootstrap_servers,
-            command_topic=command_topic,
-            response_topic=response_topic,
-            inject_payload_correlation_id=inject_payload_correlation_id,
-            client_security=client_security,
-        )
+        if binding.bus_type.requires_broker:
+            response = publish_and_poll(
+                node_id=node_id,
+                payload=payload,
+                timeout=timeout,
+                bootstrap_servers=binding.bootstrap_servers or "",
+                command_topic=command_topic,
+                response_topic=response_topic,
+                inject_payload_correlation_id=inject_payload_correlation_id,
+                client_security=binding.client_security(),
+            )
+        else:
+            response = {
+                "payload": run_node_in_process(
+                    node_id,
+                    contract_path,
+                    _normalize_payload(
+                        payload, uuid.uuid4(), inject_payload_correlation_id
+                    ),
+                    timeout,
+                )
+            }
     except (ConnectionError, OSError, ImportError, ModelOnexError) as exc:
         _emit_error(node_id, str(exc))
 
