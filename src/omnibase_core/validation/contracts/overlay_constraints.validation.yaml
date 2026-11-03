@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-22185: every operator, term syntax and diagnostic is rule data.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: overlay_constraints
+  validator_name: Overlay Constraints Validator
+  validator_description: >-
+    A contract may declare an overlay_constraints block: derived names (sums of overlay keys or numbers)
+    and relations between overlay keys. An overlay that leaves a named key absent or non-numeric, or that
+    violates a relation, is refused with a diagnostic naming the relation. A contract file that carries
+    both the block and an overlay_values mapping (overlay name to key to value) is judged whole; a file
+    with no block is not judged. The pure checker takes the same declaration and a values mapping, so
+    a node can refuse at load with the same diagnostics.
+  target_patterns:
+    - "**/contract.yaml"
+    - "**/*.overlay_constraints.yaml"
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: relation_violated
+      description: A relation between overlay keys does not hold for the overlay's values.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source}: overlay relation {relation} ({expression}) is violated: {left} {operator}
+          {right} does not hold"
+        source_pattern: '.'
+    - rule_id: key_absent
+      description: A relation names an overlay key the overlay does not carry; it is refused, never assumed
+        zero.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source}: overlay relation {relation} ({expression}) names key {key}, which the overlay
+          does not carry"
+        source_pattern: '.'
+    - rule_id: value_not_numeric
+      description: A relation names an overlay key whose value is not a number.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source}: overlay relation {relation} ({expression}) names key {key}, whose value is
+          not a number"
+        source_pattern: '.'
+    - rule_id: relation_malformed
+      description: A relation, or a derived name it uses, is not two sums joined by one comparison operator.
+        This row holds the relation syntax.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source}: overlay relation {relation} ({expression}) is not well formed: {reason}"
+        source_pattern: '.'
+        identifier_pattern: '^[A-Za-z_][A-Za-z0-9_]*$'
+        number_pattern: '^[0-9]+(\.[0-9]+)?$'
+        sum_separator: "+"
+        operators:
+          - "<="
+          - ">="
+          - "=="
+          - "<"
+          - ">"
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

@@ -1,0 +1,42 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22185
+title: Generic overlay_constraints validator in omnibase_core (R1 and R2 of the lane lander)
+summary: Pure overlay-constraints checker and generic file validator in omnibase_core. A contract declares
+  derived names and relations between overlay keys; an overlay that violates a relation, leaves a named
+  key absent or non-numeric, or declares a malformed relation is refused with a diagnostic naming the
+  relation. Operators, term syntax and diagnostics are parameters of overlay_constraints.validation.yaml.
+  The omnibase_spi protocols merged earlier; append_if_absent on the ledger append node is a later slice.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22185-overlay-constraints
+    statement: An overlay that violates a declared relation between its keys is refused by a generic omnibase_core
+      validator, naming the relation.
+    acceptance:
+      - id: AC2
+        statement: "AC2: a mutated overlay violating R1 or R2 is refused naming the relation, and the
+          unmutated overlay passes"
+evidence_requirements:
+  - kind: tests
+    description: R1 and R2 violations refused naming the relation, the unmutated overlay admitted as a
+      positive control, absent and non-numeric keys, malformed relations, fail-closed contracts, purity
+      and the runtime entry.
+    command: uv run pytest tests/unit/validation/test_checker_overlay_constraints.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22185-ac2-mutated-overlay-refused
+    description: A mutated overlay violating R1 or R2 is refused naming the relation; the unmutated overlay
+      passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_overlay_constraints.py -q -o addopts=''
+          -k "admits_the_unmutated or refuses_r1 or refuses_r2 or reports_every_violated or runtime_entry"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
