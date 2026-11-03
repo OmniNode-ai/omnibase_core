@@ -197,14 +197,14 @@ def test_consumer_rejects_unknown_entry_field(tmp_path: Path) -> None:
 def test_scan_reports_missing_pre_commit_registration(tmp_path: Path) -> None:
     """If a required validator is missing from .pre-commit-config.yaml, the
     consumer must emit a MISSING_PRE_COMMIT gap."""
-    # Simulate omnibase_compat with only ruff + spdx wired; missing detect-secrets.
+    # Simulate omnibase_spi with only ruff + spdx wired; missing detect-secrets.
     _write_precommit(
         tmp_path, ["ruff-format", "validate-spdx-headers", "check-ai-slop"]
     )
     _write_workflow(tmp_path, "ci.yml", ["ruff", "spdx", "aislop"])
 
     consumer = ValidatorRequirementsConsumer.from_spec_path(SPEC_PATH)
-    gaps = consumer.scan_repo(repo_name="omnibase_compat", repo_root=tmp_path)
+    gaps = consumer.scan_repo(repo_name="omnibase_spi", repo_root=tmp_path)
 
     kinds = {(g.validator, g.kind) for g in gaps}
     assert (
@@ -230,7 +230,7 @@ def test_scan_reports_missing_ci_workflow(tmp_path: Path) -> None:
     _write_workflow(tmp_path, "ci.yml", ["ruff"])
 
     consumer = ValidatorRequirementsConsumer.from_spec_path(SPEC_PATH)
-    gaps = consumer.scan_repo(repo_name="omnibase_compat", repo_root=tmp_path)
+    gaps = consumer.scan_repo(repo_name="omnibase_spi", repo_root=tmp_path)
 
     kinds = {(g.validator, g.kind) for g in gaps}
     assert (
@@ -254,7 +254,7 @@ def test_scan_flags_warning_mode_wrapper(tmp_path: Path) -> None:
     )
 
     consumer = ValidatorRequirementsConsumer.from_spec_path(SPEC_PATH)
-    gaps = consumer.scan_repo(repo_name="omnibase_compat", repo_root=tmp_path)
+    gaps = consumer.scan_repo(repo_name="omnibase_spi", repo_root=tmp_path)
 
     kinds = {(g.validator, g.kind) for g in gaps}
     assert (
@@ -507,7 +507,7 @@ def test_scan_gap_model_is_frozen() -> None:
     conventions) — gaps are facts about a point-in-time scan and must not be
     mutated post-construction."""
     gap = ModelValidatorRequirementGap(
-        repo="omnibase_compat",
+        repo="omnibase_spi",
         validator="detect-secrets",
         kind=EnumValidatorRequirementGapKind.MISSING_PRE_COMMIT,
         detail="missing hook id",

@@ -68,6 +68,7 @@ __all__ = [
     "RULE_LAYER",
     "RULE_PIN_STYLE",
     "RULE_RELEASE",
+    "RULE_RETIRED",
     "RULE_SPECIFIER",
     "RULE_UNDECLARED",
     "RULE_UNREADABLE",
@@ -83,6 +84,7 @@ __all__ = [
 RULE_UNREADABLE = "manifest_unreadable"
 RULE_UNDECLARED = "repo_not_in_layer_map"
 RULE_LAYER = "layer_order"
+RULE_RETIRED = "retired_repository"
 RULE_CYCLE = "dependency_cycle"
 RULE_RELEASE = "release_behind"
 RULE_SPECIFIER = "specifier_excludes_newest_release"
@@ -109,6 +111,7 @@ def validate_rules(rules: Mapping[str, ModelValidatorRule]) -> None:
         RULE_UNREADABLE,
         RULE_UNDECLARED,
         RULE_LAYER,
+        RULE_RETIRED,
         RULE_CYCLE,
         RULE_RELEASE,
         RULE_SPECIFIER,
@@ -247,6 +250,67 @@ def _declarations(
         _table(manifest, tool, uv, _fmt(rules, "override_key"))
     ):
         yield "override", _fmt(rules, "label_override"), requirement
+
+
+def _retired_declarations(
+    manifest: Mapping[str, object], rules: Mapping[str, ModelValidatorRule]
+) -> Iterable[tuple[str, str]]:
+    """(table label, requirement or source name) of every table that can name a distribution."""
+    tool, uv = _fmt(rules, "tool_key"), _fmt(rules, "uv_key")
+    for _table_key, label, raw in _declarations(manifest, rules):
+        yield label, raw
+    for requirement in _strings(
+        _table(manifest, tool, uv, _fmt(rules, "constraint_key"))
+    ):
+        yield _fmt(rules, "label_constraint"), requirement
+    sources = _table(manifest, tool, uv, _fmt(rules, "sources_key"))
+    if isinstance(sources, Mapping):
+        for name in sources:
+            yield _fmt(rules, "label_source"), str(name)
+    for requirement in _strings(
+        _table(manifest, _fmt(rules, "build_system_key"), _fmt(rules, "requires_key"))
+    ):
+        yield _fmt(rules, "label_build_system"), requirement
+
+
+def _retired_issues(
+    request: ModelDependencyPinsInput,
+    rules: Mapping[str, ModelValidatorRule],
+    manifest: Mapping[str, object],
+    repo: str,
+) -> list[ModelValidationIssue]:
+    """One issue per manifest declaration of a retired distribution, in every table."""
+    retired = {
+        _normalize(dist, rules): entry
+        for entry in request.layer_map.retired
+        for dist in entry.distributions
+    }
+    if not retired:
+        return []
+    separator = _fmt(rules, "name_separator_pattern")
+    issues: list[ModelValidationIssue] = []
+    for label, raw in _retired_declarations(manifest, rules):
+        try:
+            name = Requirement(raw).name
+        except InvalidRequirement:
+            name = raw.strip()
+        entry = retired.get(re.sub(separator, "-", name).lower())
+        if entry is None:
+            continue
+        issues.extend(
+            _report(
+                rules,
+                RULE_RETIRED,
+                request.manifest_path,
+                line=_line_of(request.manifest_text, raw),
+                repo=repo,
+                target=entry.distributions[0] if entry.distributions else entry.repo,
+                target_repo=entry.repo,
+                retired_by=entry.retired_by,
+                table=label,
+            )
+        )
+    return issues
 
 
 def declared_edges(
@@ -466,6 +530,11 @@ def check_dependency_pins(
     if own is None and request.repo is not None:
         own = request.layer_map.get(request.repo)
     issues: list[ModelValidationIssue] = []
+    issues.extend(
+        _retired_issues(
+            request, rules, manifest, own.repo if own else (distribution or "")
+        )
+    )
     if own is None:
         issues.extend(
             _report(rules, RULE_UNDECLARED, path, distribution=distribution or "")

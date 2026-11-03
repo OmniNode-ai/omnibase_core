@@ -15,7 +15,8 @@ Channels and what counts as a reference:
   ``fixtures`` directory are test data and are not read.
 * ``pyproject`` -- a requirement in ``[project].dependencies``, any
   ``[project.optional-dependencies]`` extra, any ``[dependency-groups]`` group,
-  ``[tool.uv].dev-dependencies``, ``[build-system].requires``, or a
+  ``[tool.uv].dev-dependencies`` / ``override-dependencies`` /
+  ``constraint-dependencies``, ``[build-system].requires``, or a
   ``[tool.uv.sources]`` key, naming another repository's distribution.
 * ``requirements`` -- a requirements or constraints line naming a distribution
   or ``<org>/<repo>``.
@@ -48,8 +49,14 @@ from omnibase_core.enums.enum_dependency_channel import EnumDependencyChannel
 from omnibase_core.models.dependency_direction.model_dependency_direction_rules import (
     ModelDependencyDirectionRules,
 )
+from omnibase_core.models.dependency_direction.model_repo_layer import (
+    ModelRepoLayer,
+)
 from omnibase_core.models.dependency_direction.model_repo_layer_map import (
     ModelRepoLayerMap,
+)
+from omnibase_core.models.dependency_direction.model_retired_repo import (
+    ModelRetiredRepo,
 )
 
 __all__ = [
@@ -126,7 +133,11 @@ class _Names:
         self.modules: dict[str, str] = {}
         self.dists: dict[str, str] = {}
         self.slugs: dict[str, str] = {}
-        for entry in layer_map.repos:
+        entries: list[ModelRepoLayer | ModelRetiredRepo] = [
+            *layer_map.repos,
+            *layer_map.retired,
+        ]
+        for entry in entries:
             if entry.repo == own_repo:
                 continue
             for module in entry.python_modules:
@@ -287,6 +298,10 @@ def _requirement_strings(document: dict[str, object]) -> Iterator[tuple[str, str
     if isinstance(uv, dict):
         for req in strings(uv.get("dev-dependencies")):
             yield "tool.uv.dev-dependencies", req
+        for req in strings(uv.get("override-dependencies")):
+            yield "tool.uv.override-dependencies", req
+        for req in strings(uv.get("constraint-dependencies")):
+            yield "tool.uv.constraint-dependencies", req
         sources = uv.get("sources")
         if isinstance(sources, dict):
             for name in sources:

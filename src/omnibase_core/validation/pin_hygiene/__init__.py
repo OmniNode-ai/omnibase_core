@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: MIT
 """Sibling-pin-hygiene validator — canonical COMPUTE node (OMN-13509).
 
-Blocks any sibling dependency pin (``omnibase-core`` / ``omnibase-spi`` /
-``omnibase-compat`` git rev or ``branch=`` in ``pyproject.toml`` / ``uv.lock``)
+Blocks any sibling dependency pin (``omnibase-core`` / ``omnibase-spi``
+git rev or ``branch=`` in ``pyproject.toml`` / ``uv.lock``)
 whose pinned commit is NOT an ancestor of that sibling's ``dev`` HEAD — the real
 recurrence fix for the #2071 / OMN-13507 diverged-pin saga. The scanning logic
 (sibling detection, the four git-pin syntaxes, the ancestry-verdict reading) was

@@ -44,6 +44,10 @@ validation:
         uv_key: uv
         uv_dev_key: dev-dependencies
         override_key: override-dependencies
+        constraint_key: constraint-dependencies
+        sources_key: sources
+        build_system_key: build-system
+        requires_key: requires
         lock_package_key: package
         lock_version_key: version
         lock_dependencies_key: dependencies
@@ -55,6 +59,9 @@ validation:
         label_group: "group:{name}"
         label_uv_dev: uv-dev
         label_override: override
+        label_constraint: constraint
+        label_source: uv-source
+        label_build_system: build-system
         message: "{path}: cannot be read: {reason}"
     - rule_id: repo_not_in_layer_map
       description: The checked repository must be declared in the layer order.
@@ -64,6 +71,14 @@ validation:
         message: >-
           {path}: the repository (distribution {distribution!r}) is not declared in the layer order; declare
           it in omnibase_core contracts/repo_layers.yaml
+    - rule_id: retired_repository
+      description: No manifest table may name a repository the layer order lists as retired.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          {path}:{line}: {repo} names {target} in {table}; {target_repo} is retired ({retired_by}) and
+          may not be depended on through any manifest table. Delete the line; never record it in a baseline
     - rule_id: layer_order
       description: A declared first-party edge must point to a strictly lower layer.
       severity: error
