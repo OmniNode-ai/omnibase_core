@@ -1,0 +1,65 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22011
+title: "Dependency provenance check in the generic core format (stage 1 of 2: the core half)"
+summary: Plan task T2.3 for the dependency provenance script. The check that eight repositories carry
+  as eight different scripts becomes one validator in the generic contract-driven format in omnibase_core,
+  published as the hook id check-dep-provenance. This contract proves the core half only. The consumer
+  half (each of the seven other repositories deletes its script and consumes the hook id) is stage 2,
+  in one pull request per repository after this one is on dev, and nothing below binds it.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22011-dep-provenance
+    statement: A governed first-party package is sourced from the registry, a workspace or the dev-merge
+      tag of its own repository, and a pure checker whose rule data is a validation contract refuses everything
+      else, with a planted and a clean fixture per rule.
+    acceptance:
+      - id: AC3
+        statement: "AC3: one defect per rule is refused by its core rule -- falsifier: uv run pytest tests/unit/validation
+          on the per-rule fixtures, each expecting exactly one issue with that rule id"
+evidence_requirements:
+  - kind: tests
+    description: The dependency provenance validator tests pass at the head
+    command: uv run pytest tests/unit/validation/test_validator_dep_provenance.py -n 0 -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn22011-ac3-one-defect-one-rule
+    description: Every finding rule of the dependency provenance contract has a planted fixture that earns
+      exactly one issue carrying that rule id (a revision, a branch, a release tag, a malformed dev-merge
+      tag, a tag with a revision, a path source, a subtable and a list-of-sources override, a dev-merge
+      tag read from a foreign repository, a git source for an ungoverned package, a comment that claims
+      an exemption, and an unparsable pyproject), and every admitted shape has a clean fixture that earns
+      none. This binds the core half for the dependency provenance rule only; the other rules the ticket
+      names, and the consumer half, are not claimed.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_dep_provenance.py -n 0 -q -o addopts=''
+          -k "test_one_defect_is_one_issue_with_its_rule_id or test_clean_shape_passes or test_every_finding_rule_has_a_planted_fixture"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn22011-ac3-rule-data-and-hook
+    description: The governed packages, the admitted shapes per package, the organisation, the git keys,
+      the exempt packages and the message text are rule data (a mutation changes the verdict), an invalid
+      contract fails to load, the checker is pure, the hook id is exported, core consumes it instead of
+      the removed script, and the canary through the hook entry is refused with its rule id while the
+      clean control passes.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_dep_provenance.py -n 0 -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test ! -e scripts/check_dep_provenance.py
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: test -f src/omnibase_core/validation/contracts/dep_provenance.validation.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
