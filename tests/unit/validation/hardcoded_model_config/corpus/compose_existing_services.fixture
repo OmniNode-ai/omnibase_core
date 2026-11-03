@@ -1,0 +1,10 @@
+services:
+  retained-service:
+    image: fixture-image
+    environment:
+      LAB_HOST: "192.168.86.202"
+      PEER_HOST: "192.168.86.201"
+  removed-service:
+    image: fixture-image
+    environment:
+      LAB_HOST: "192.168.86.202"
