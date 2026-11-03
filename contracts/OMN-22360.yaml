@@ -1,0 +1,112 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22360
+title: 'Core validator: cross-repository dependency pins follow the declared layer order, form no cycle,
+  and stay at the newest release'
+summary: >-
+  Operator ruling 2026-11-03T14:21:07Z. One omnibase_core validator in the generic format refuses a first-party
+  pin against the declared layer order, a cycle in the declared plus locked graph, a pin past the release
+  bound, a specifier that excludes the newest release, the wrong pin style and a core hook revision past
+  the bound. The layer order is contracts/repo_layers.yaml and every bound is contracts/dependency_pin_policy.yaml.
+  This pull request also removes core's own declared omnibase-spi edge (the core and spi cycle).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22360-dependency-pins
+    statement: A registry repository's first-party pins are refused by one omnibase_core validator when
+      they break the declared layer order, form a cycle, trail the newest release past the policy bound,
+      have the wrong style, or pin a core hook revision past the bound.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the validator refuses a first-party dependency edge against the declared layer
+          order and passes an edge that follows it, with the order read from an overlay passed in memory
+          and from a file"
+      - id: AC2
+        statement: "AC2: the validator refuses any cycle among first-party distributions in the declared
+          and locked dependency graph and passes an acyclic graph"
+      - id: AC3
+        statement: "AC3: the validator refuses a pin whose version trails the newest release tag by more
+          than the policy bound, and a specifier that excludes the newest release, and passes a pin inside
+          the bound"
+      - id: AC4
+        statement: "AC4: the validator refuses an exact pin where the policy wants a range and a range
+          where the policy wants an exact pin"
+      - id: AC5
+        statement: "AC5: the validator refuses a pre-commit hook revision of the policy's hook repository
+          that is outside the policy bound and passes one inside it"
+      - id: AC6
+        statement: "AC6: no rule value is a literal in the validator code: a test swaps the layer order
+          and the policy through the overlay and the verdicts follow the overlay"
+evidence_requirements:
+  - kind: tests
+    description: Every rule fires and passes with the overlays given in memory and from files; overlay
+      swaps flip the verdicts.
+    command: uv run pytest tests/unit/validation/dependency_pins -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22360-ac1-layer-order
+    description: "the validator refuses a first-party dependency edge against the declared layer order
+      and passes an edge that follows it, with the order read from an overlay passed in memory and from
+      a file"
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k layer_order
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+  - id: dod-omn22360-ac2-cycle
+    description: "the validator refuses any cycle among first-party distributions in the declared and
+      locked dependency graph and passes an acyclic graph"
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k cycle
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC2
+  - id: dod-omn22360-ac3-release-bound
+    description: "the validator refuses a pin whose version trails the newest release tag by more than
+      the policy bound, and a specifier that excludes the newest release, and passes a pin inside the
+      bound"
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k release_bound
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC3
+  - id: dod-omn22360-ac4-pin-style
+    description: "the validator refuses an exact pin where the policy wants a range and a range where
+      the policy wants an exact pin"
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k pin_style
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC4
+  - id: dod-omn22360-ac5-precommit-rev
+    description: "the validator refuses a pre-commit hook revision of the policy's hook repository that
+      is outside the policy bound and passes one inside it"
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k precommit_rev
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC5
+  - id: dod-omn22360-ac6-overlay-swap
+    description: "no rule value is a literal in the validator code: a test swaps the layer order and the
+      policy through the overlay and the verdicts follow the overlay"
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k overlay_swap
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC6

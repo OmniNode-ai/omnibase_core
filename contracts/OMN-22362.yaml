@@ -1,0 +1,60 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22362
+title: onex run-node resolves its broker from the node's contract overlay through a resolver protocol
+summary: Operator request 2026-11-03 is that the default broker is in the contract overlay. onex run-node
+  read KAFKA_BOOTSTRAP_SERVERS and the KAFKA_SASL_* variables from the environment, which is config in
+  code and env. Core cannot read the lab lane declaration, so it now consumes a node broker resolver protocol
+  that the package able to read the declaration registers under the onex.node_broker_resolvers entry-point
+  group. run-node dials the broker the overlay names (type kafka with a lane), hosts the node in process
+  for type inmemory, and refuses a node with no overlay with a typed error that names the overlay path.
+  No environment variable, flag or default selects the broker.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+  - protocols
+requirements:
+  - id: req-omn22362-overlay-broker
+    statement: onex run-node selects its broker from the node's contract overlay and from nothing else.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a Redpanda overlay (type kafka, lane dev) dials the lane's broker and client
+          security with KAFKA_BOOTSTRAP_SERVERS set to a different value, and an in-memory overlay hosts
+          the node in process and dials no broker -- falsifier: uv run pytest tests/unit/cli/test_cli_run_node_broker_overlay.py
+          -q --no-cov -k 'redpanda or inmemory'"
+      - id: AC2
+        statement: "AC2: a node with no overlay is refused with a SkillRoutingError naming the overlay
+          path and nothing is published, even with the old environment variable set -- falsifier: uv run
+          pytest tests/unit/cli/test_cli_run_node_broker_overlay.py -q --no-cov -k missing_overlay"
+evidence_requirements:
+  - kind: tests
+    description: The overlay falsifiers and the reshaped run-node tests pass; at the merge base the broker
+      is the environment variable, so they fail.
+    command: uv run pytest tests/unit/cli -q --no-cov -k "run_node or broker_overlay or bootstrap"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22362-ac1
+    description: AC1 the Redpanda overlay selects the lane broker with the environment variable set to
+      another value, and the in-memory overlay hosts the node in process.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_run_node_broker_overlay.py -q --no-cov --tb=line
+          -k "redpanda or inmemory"
+        cwd: .
+  - id: dod-omn22362-ac2
+    description: AC2 a missing overlay is refused naming the overlay path.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_run_node_broker_overlay.py -q --no-cov --tb=line
+          -k missing_overlay
+        cwd: .

@@ -1,16 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""OMN-17427: ``onex run-node`` authenticates to a SASL lane broker.
+"""OMN-17427, reshaped by OMN-22362: ``onex run-node`` authenticates to a SASL lane broker.
 
-The .201 dev lane's broker requires SASL_PLAINTEXT with SCRAM-SHA-256. Every
-container on that lane carries the standard ``KAFKA_SECURITY_PROTOCOL`` /
-``KAFKA_SASL_*`` environment, but ``onex run-node`` built its consumer and
-producer from ``bootstrap.servers`` alone. The broker closed the
-unauthenticated connection and the command reported
-``Kafka broker unreachable`` even inside a container that held the
-credential. These tests pin the client security configuration to that
-environment and keep the credential out of every error message.
+The .201 dev lane's broker requires SASL_PLAINTEXT with SCRAM-SHA-256. The client
+security configuration used to come from ``KAFKA_SECURITY_PROTOCOL`` /
+``KAFKA_SASL_*``; since OMN-22362 it comes from the resolved binding that the
+node's contract overlay names, and no environment variable reaches the dispatch.
+These tests pin the binding to the clients and keep the credential out of every
+error message.
 """
 
 from __future__ import annotations
@@ -20,33 +18,17 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
+from tests.unit.cli.node_broker_fixtures import (
+    RESOLVER_PATCH_TARGET,
+    kafka_binding,
+)
+
 pytestmark = pytest.mark.unit
 
 _PATCH_PRODUCER = "confluent_kafka.Producer"
 _PATCH_CONSUMER = "confluent_kafka.Consumer"
 _PATCH_TOPIC_PARTITION = "confluent_kafka.TopicPartition"
 _CREDENTIAL_MARKER = "credential-marker-never-printed"
-
-_SECURITY_ENV = (
-    "KAFKA_SECURITY_PROTOCOL",
-    "KAFKA_SASL_MECHANISM",
-    "KAFKA_SASL_USERNAME",
-    "KAFKA_SASL_PASSWORD",
-)
-
-
-@pytest.fixture
-def clean_security_env(monkeypatch: pytest.MonkeyPatch) -> pytest.MonkeyPatch:
-    for name in _SECURITY_ENV:
-        monkeypatch.delenv(name, raising=False)
-    return monkeypatch
-
-
-def _set_scram_env(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("KAFKA_SECURITY_PROTOCOL", "SASL_PLAINTEXT")
-    monkeypatch.setenv("KAFKA_SASL_MECHANISM", "SCRAM-SHA-256")
-    monkeypatch.setenv("KAFKA_SASL_USERNAME", "dev-principal")
-    monkeypatch.setenv("KAFKA_SASL_PASSWORD", _CREDENTIAL_MARKER)
 
 
 class _FakeTopicPartition:
@@ -56,62 +38,54 @@ class _FakeTopicPartition:
         self.offset = offset
 
 
-class TestResolveClientSecurityConfig:
-    def test_no_security_env_adds_nothing(
-        self, clean_security_env: pytest.MonkeyPatch
-    ) -> None:
-        from omnibase_core.cli.cli_run_node import _resolve_client_security_config
+class TestBindingClientSecurity:
+    """The resolved binding, not the environment, carries the lane's client security."""
 
-        assert _resolve_client_security_config("node_x") == {}
+    def test_plaintext_lane_carries_only_its_declared_protocol(self) -> None:
+        assert kafka_binding().client_security() == {"security.protocol": "PLAINTEXT"}
 
-    def test_scram_env_maps_to_librdkafka_keys(
-        self, clean_security_env: pytest.MonkeyPatch
-    ) -> None:
-        from omnibase_core.cli.cli_run_node import _resolve_client_security_config
-
-        _set_scram_env(clean_security_env)
-        assert _resolve_client_security_config("node_x") == {
+    def test_scram_lane_carries_the_full_config(self) -> None:
+        assert kafka_binding(sasl_password=_CREDENTIAL_MARKER).client_security() == {
             "security.protocol": "SASL_PLAINTEXT",
             "sasl.mechanism": "SCRAM-SHA-256",
             "sasl.username": "dev-principal",
             "sasl.password": _CREDENTIAL_MARKER,
         }
 
-    def test_plaintext_protocol_is_stated_without_sasl_keys(
-        self, clean_security_env: pytest.MonkeyPatch
-    ) -> None:
-        from omnibase_core.cli.cli_run_node import _resolve_client_security_config
+    def test_binding_never_prints_the_password(self) -> None:
+        binding = kafka_binding(sasl_password=_CREDENTIAL_MARKER)
+        assert _CREDENTIAL_MARKER not in repr(binding)
+        assert _CREDENTIAL_MARKER not in binding.model_dump_json()
 
-        clean_security_env.setenv("KAFKA_SECURITY_PROTOCOL", "PLAINTEXT")
-        assert _resolve_client_security_config("node_x") == {
-            "security.protocol": "PLAINTEXT"
-        }
-
-    @pytest.mark.parametrize("missing", ["KAFKA_SASL_USERNAME", "KAFKA_SASL_PASSWORD"])
-    def test_sasl_protocol_without_credential_fails_fast(
-        self, clean_security_env: pytest.MonkeyPatch, missing: str
+    def test_ambient_sasl_env_does_not_reach_the_dispatch(
+        self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         from omnibase_core.cli.cli_run_node import run_node
 
-        _set_scram_env(clean_security_env)
-        clean_security_env.delenv(missing)
-        clean_security_env.setenv("KAFKA_BOOTSTRAP_SERVERS", "lane-host:19092")
-        result = CliRunner().invoke(run_node, ["node_dod_verify", "--input", "{}"])
-        assert result.exit_code == 1
-        assert missing in result.output
-        assert _CREDENTIAL_MARKER not in result.output
+        monkeypatch.setenv("KAFKA_SECURITY_PROTOCOL", "SASL_PLAINTEXT")
+        monkeypatch.setenv("KAFKA_SASL_PASSWORD", _CREDENTIAL_MARKER)
+        with (
+            patch(RESOLVER_PATCH_TARGET, return_value=kafka_binding()),
+            patch(
+                "omnibase_core.cli.cli_run_node._resolve_node_topics",
+                return_value=("/tmp/c.yaml", "cmd.v1", "evt.v1", False),
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.publish_and_poll",
+                return_value={"payload": {}},
+            ) as dial,
+        ):
+            result = CliRunner().invoke(run_node, ["node_x", "--input", "{}"])
+        assert result.exit_code == 0
+        assert dial.call_args.kwargs["client_security"] == {
+            "security.protocol": "PLAINTEXT"
+        }
 
 
 class TestRunNodeAuthenticates:
-    def test_consumer_and_producer_carry_the_sasl_config(
-        self, clean_security_env: pytest.MonkeyPatch
-    ) -> None:
-        from omnibase_core.cli.cli_run_node import (
-            _resolve_client_security_config,
-            publish_and_poll,
-        )
+    def test_consumer_and_producer_carry_the_sasl_config(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
 
-        _set_scram_env(clean_security_env)
         consumer = MagicMock()
         partition_meta = MagicMock()
         partition_meta.error = None
@@ -136,7 +110,9 @@ class TestRunNodeAuthenticates:
                     bootstrap_servers="redpanda:9092",
                     command_topic="onex.cmd.test.command.v1",
                     response_topic="onex.evt.test.completed.v1",
-                    client_security=_resolve_client_security_config("node_dod_verify"),
+                    client_security=kafka_binding(
+                        sasl_password=_CREDENTIAL_MARKER
+                    ).client_security(),
                 )
                 is None
             )
@@ -149,8 +125,8 @@ class TestRunNodeAuthenticates:
             assert conf["sasl.username"] == "dev-principal"
             assert conf["sasl.password"] == _CREDENTIAL_MARKER
 
-    def test_unauthenticated_transport_failure_names_the_sasl_env(
-        self, clean_security_env: pytest.MonkeyPatch
+    def test_unauthenticated_transport_failure_says_the_lane_declared_no_security(
+        self,
     ) -> None:
         from omnibase_core.cli.cli_run_node import publish_and_poll
         from omnibase_core.errors import OnexError
@@ -173,18 +149,12 @@ class TestRunNodeAuthenticates:
                     command_topic="onex.cmd.test.command.v1",
                     response_topic="onex.evt.test.completed.v1",
                 )
-        assert "KAFKA_SECURITY_PROTOCOL" in str(exc_info.value)
+        assert "declares no security protocol" in str(exc_info.value)
 
-    def test_transport_failure_with_sasl_never_prints_the_password(
-        self, clean_security_env: pytest.MonkeyPatch
-    ) -> None:
-        from omnibase_core.cli.cli_run_node import (
-            _resolve_client_security_config,
-            publish_and_poll,
-        )
+    def test_transport_failure_with_sasl_never_prints_the_password(self) -> None:
+        from omnibase_core.cli.cli_run_node import publish_and_poll
         from omnibase_core.errors import OnexError
 
-        _set_scram_env(clean_security_env)
         consumer = MagicMock()
         consumer.list_topics.side_effect = RuntimeError("_TRANSPORT")
         with (
@@ -200,7 +170,9 @@ class TestRunNodeAuthenticates:
                     bootstrap_servers="redpanda:9092",
                     command_topic="onex.cmd.test.command.v1",
                     response_topic="onex.evt.test.completed.v1",
-                    client_security=_resolve_client_security_config("node_dod_verify"),
+                    client_security=kafka_binding(
+                        sasl_password=_CREDENTIAL_MARKER
+                    ).client_security(),
                 )
         message = str(exc_info.value)
         assert "security.protocol=SASL_PLAINTEXT" in message

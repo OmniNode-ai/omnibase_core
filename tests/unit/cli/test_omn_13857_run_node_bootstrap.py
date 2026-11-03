@@ -3,11 +3,10 @@
 
 """OMN-13857: ``onex run-node`` fails fast with an actionable message.
 
-Before this fix, an unset ``KAFKA_BOOTSTRAP_SERVERS`` raised a bare ``KeyError``
-traceback and an unreachable broker surfaced an opaque
-``confluent_kafka.KafkaException`` (``_TRANSPORT``). Both now emit a single
-actionable error that points the operator at the reachable-lane env var or the
-bus-less ``onex run <node>`` fallback.
+Before this fix an unreachable broker surfaced an opaque
+``confluent_kafka.KafkaException`` (``_TRANSPORT``). It now emits a single
+actionable error that points the operator at the bus-less ``onex run <node>``
+fallback. The broker itself is no longer an environment variable (OMN-22362).
 """
 
 from __future__ import annotations
@@ -16,6 +15,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
+
+from tests.unit.cli.node_broker_fixtures import RESOLVER_PATCH_TARGET, kafka_binding
 
 pytestmark = pytest.mark.unit
 
@@ -31,33 +32,41 @@ class _FakeTopicPartition:
         self.offset = offset
 
 
-class TestResolveBootstrapServers:
-    def test_returns_value_when_set(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        from omnibase_core.cli.cli_run_node import _resolve_bootstrap_servers
+class TestBrokerComesFromTheOverlayOnly:
+    """OMN-22362 supersedes the env-var form of OMN-13857: no variable names the broker."""
 
-        monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "lane-host:39092")
-        assert _resolve_bootstrap_servers("node_x") == "lane-host:39092"
-
-    def test_unset_exits_with_actionable_error(
+    def test_binding_broker_is_dialed_and_env_is_ignored(
         self, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         from omnibase_core.cli.cli_run_node import run_node
 
-        monkeypatch.delenv("KAFKA_BOOTSTRAP_SERVERS", raising=False)
-        result = CliRunner().invoke(run_node, ["node_dod_verify", "--input", "{}"])
-        assert result.exit_code == 1
-        assert "KAFKA_BOOTSTRAP_SERVERS is not set" in result.output
-        assert "onex run node_dod_verify" in result.output
+        monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "ambient-env:1")
+        with (
+            patch(RESOLVER_PATCH_TARGET, return_value=kafka_binding("lane-host:39092")),
+            patch(
+                "omnibase_core.cli.cli_run_node._resolve_node_topics",
+                return_value=("/tmp/c.yaml", "cmd.v1", "evt.v1", False),
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.publish_and_poll",
+                return_value={"payload": {"ok": True}},
+            ) as dial,
+        ):
+            result = CliRunner().invoke(run_node, ["node_x", "--input", "{}"])
+        assert result.exit_code == 0
+        assert dial.call_args.kwargs["bootstrap_servers"] == "lane-host:39092"
 
-    def test_empty_exits_with_actionable_error(
-        self, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_no_resolver_installed_exits_with_actionable_error(self) -> None:
         from omnibase_core.cli.cli_run_node import run_node
 
-        monkeypatch.setenv("KAFKA_BOOTSTRAP_SERVERS", "   ")
-        result = CliRunner().invoke(run_node, ["node_dod_verify", "--input", "{}"])
+        with patch(
+            "omnibase_core.models.event_bus.model_node_broker_binding.entry_points",
+            return_value=[],
+        ):
+            result = CliRunner().invoke(run_node, ["node_dod_verify", "--input", "{}"])
         assert result.exit_code == 1
-        assert "KAFKA_BOOTSTRAP_SERVERS is not set" in result.output
+        assert "onex.node_broker_resolvers" in result.output
+        assert "KAFKA_BOOTSTRAP_SERVERS" not in result.output
 
 
 class TestUnreachableBrokerWrapped:

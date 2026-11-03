@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.15'",
@@ -1123,7 +1123,6 @@ cli = [
 full = [
     { name = "aiokafka" },
     { name = "confluent-kafka" },
-    { name = "omnibase-spi" },
     { name = "prometheus-client" },
     { name = "psutil" },
     { name = "pytest" },
@@ -1137,9 +1136,6 @@ kafka = [
 ]
 metrics = [
     { name = "prometheus-client" },
-]
-spi = [
-    { name = "omnibase-spi" },
 ]
 sql-parser = [
     { name = "sqlglot" },
@@ -1194,8 +1190,6 @@ requires-dist = [
     { name = "grimp", marker = "extra == 'test-selection'", specifier = ">=3.15,<4.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
     { name = "jsonschema", specifier = ">=4.25.1,<5.0.0" },
-    { name = "omnibase-spi", marker = "extra == 'full'", git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261101025141-38465d47118c" },
-    { name = "omnibase-spi", marker = "extra == 'spi'", git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261101025141-38465d47118c" },
     { name = "packaging", specifier = ">=26.0,<27.0" },
     { name = "pathspec", specifier = ">=0.12.1" },
     { name = "prometheus-client", marker = "extra == 'full'", specifier = ">=0.21.0,<1.0.0" },
@@ -1217,7 +1211,7 @@ requires-dist = [
     { name = "tree-sitter", specifier = ">=0.25.2,<0.27" },
     { name = "tree-sitter-python", specifier = ">=0.25.0,<0.26" },
 ]
-provides-extras = ["spi", "cli", "kafka", "cache", "metrics", "sql-parser", "testing", "test-selection", "full"]
+provides-extras = ["cli", "kafka", "cache", "metrics", "sql-parser", "testing", "test-selection", "full"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1245,16 +1239,6 @@ dev = [
     { name = "types-psutil", specifier = ">=7.2.1.20260116" },
     { name = "types-pyyaml", specifier = ">=6.0.12.20250822" },
     { name = "types-requests", specifier = ">=2.32.4.20250913" },
-]
-
-[[package]]
-name = "omnibase-spi"
-version = "0.23.9"
-source = { git = "https://github.com/OmniNode-ai/omnibase_spi.git?tag=dev-20261101025141-38465d47118c#38465d47118c1bde35821dab36e29e07c6cc217b" }
-dependencies = [
-    { name = "omnibase-core" },
-    { name = "pydantic" },
-    { name = "typing-extensions" },
 ]
 
 [[package]]

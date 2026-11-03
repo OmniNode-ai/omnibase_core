@@ -52,7 +52,6 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "src/omnibase_core/artifacts/artifact_store.py",
         "src/omnibase_core/cli/cli_commands.py",
         "src/omnibase_core/cli/cli_hooks.py",
-        "src/omnibase_core/cli/cli_run_node.py",
         "src/omnibase_core/cli/cli_runtime_host.py",
         "src/omnibase_core/constants/constants_effect.py",
         "src/omnibase_core/contracts/runtime_contracts.py",

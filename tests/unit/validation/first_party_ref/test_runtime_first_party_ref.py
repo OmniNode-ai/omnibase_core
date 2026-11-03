@@ -118,9 +118,14 @@ def test_repository_tracked_files_have_zero_issues():
     ).split("\0")
     # Removed legacy code may still be in the index until the lane stages it.
     paths = [ROOT / name for name in files if name and (ROOT / name).is_file()]
-    sources = tomllib.loads((ROOT / "pyproject.toml").read_text())["tool"]["uv"][
-        "sources"
-    ]
+    # omnibase_core declares no first-party uv source since OMN-22360 removed the
+    # omnibase-spi pin; the inventory then holds no pinned tag.
+    sources = (
+        tomllib.loads((ROOT / "pyproject.toml").read_text())
+        .get("tool", {})
+        .get("uv", {})
+        .get("sources", {})
+    )
     pins = tuple(
         source["tag"] for source in sources.values() if isinstance(source, dict)
     )

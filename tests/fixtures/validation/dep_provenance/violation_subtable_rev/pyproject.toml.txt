@@ -1,0 +1,8 @@
+[project]
+name = "fixture"
+version = "0.0.0"
+dependencies = ["omnibase-core>=0.1", "omnibase-spi>=0.1"]
+
+[tool.uv.sources.omnibase-core]
+git = "https://github.com/OmniNode-ai/omnibase_core.git"
+rev = "abc"

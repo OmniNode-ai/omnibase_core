@@ -3116,6 +3116,14 @@ jobs:
           git fetch --quiet origin "${BASE}" || true
           uv run python -m omnibase_core.nodes.node_release_identity_check_compute.runtime_release_identity_check --base "origin/${BASE}"
 
+  # OMN-22360 (operator ruling 2026-11-03T14:21:07Z): this repository's own
+  # first-party pins through the same reusable workflow every registry
+  # repository calls, at this run's sha. A failure here turns CI Summary red.
+  dependency-pins:
+    uses: ./.github/workflows/dependency-pins.yml
+    permissions:
+      contents: read
+
   # OMN-19037: protect base required contexts against deleted workflows, jobs, and manifest rows.
   required-context-producer-validator:
     name: Required Context Producer Validator

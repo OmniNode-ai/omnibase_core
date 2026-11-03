@@ -12,6 +12,8 @@ from unittest.mock import MagicMock, patch
 import pytest
 from click.testing import CliRunner
 
+from tests.unit.cli.node_broker_fixtures import RESOLVER_PATCH_TARGET, kafka_binding
+
 pytestmark = pytest.mark.unit
 
 # Producer and Consumer are imported inside publish_and_poll (lazy import), so
@@ -444,7 +446,7 @@ class TestRunNodeCommand:
 
         runner = CliRunner()
         with (
-            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(RESOLVER_PATCH_TARGET, return_value=kafka_binding()),
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
@@ -479,7 +481,7 @@ class TestRunNodeCommand:
         _monotonic_values = iter([1000.0, 1050.0])
 
         with (
-            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(RESOLVER_PATCH_TARGET, return_value=kafka_binding()),
             patch(
                 "omnibase_core.cli.cli_run_node.time.monotonic",
                 side_effect=_monotonic_values,

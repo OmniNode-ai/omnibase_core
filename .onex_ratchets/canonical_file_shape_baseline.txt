@@ -30,7 +30,6 @@ examples/validation_usage_example.py
 scripts/analysis/co_change_dark_matter.py
 scripts/analysis/semantic_diff.py
 scripts/check_db_ownership.py
-scripts/check_dep_provenance.py
 scripts/check_forbidden_patterns.sh
 scripts/check_hook_bits_drift.py
 scripts/check_no_env_files.sh

@@ -1231,6 +1231,22 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-dependency-pins
+  name: Cross-repository dependency pins (OMN-22360)
+  description: >
+    Refuse a first-party dependency pin that goes against the declared layer order (omnibase_core src/omnibase_core/contracts/repo_layers.yaml),
+    closes a cycle among first-party distributions in the declared and locked graph, trails the newest
+    release tag by more than the pin policy's bound, or has the wrong pin style, and a .pre-commit-config.yaml
+    revision of a bounded hook repository that trails more release tags than the bound (src/omnibase_core/contracts/dependency_pin_policy.yaml).
+    No baseline: a violation is fixed, never recorded. Release tags are read with git ls-remote and hook
+    history with a tree-less clone, so the hook needs network. CI runs it through .github/workflows/dependency-pins.yml.
+  language: python
+  entry: python -m omnibase_core.nodes.node_dependency_pins_check_effect.runtime_dependency_pins_check
+  files: (^|/)(pyproject\.toml|uv\.lock|\.pre-commit-config\.yaml)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-version-floor-consumers
   name: No floor raise ahead of registry consumers (OMN-19998)
   description: >
@@ -1732,6 +1748,22 @@
   language: python
   entry: python -m omnibase_core.nodes.node_dev_tag_lineage_effect.runtime_dev_tag_lineage
   files: '(^|/)(pyproject\.toml|uv\.lock)$'
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: check-dep-provenance
+  name: Dependency provenance of first-party packages (OMN-22011, T2.3)
+  description: >
+    A governed first-party package is sourced from the registry, a workspace, or the dev-merge tag of
+    its own repository, and from nothing else; a revision, a branch, a release tag, a path, a foreign
+    repository and a git source for an ungoverned package are refused, no comment exempts a line, and
+    a pyproject that cannot be parsed is refused. The governed packages, the admitted shapes per package
+    and the messages are the rule rows of dep_provenance.validation.yaml. Tag identity (existence, suffix,
+    branch, version, lock) is the check-dev-tag-lineage hook.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_dep_provenance:ValidatorDepProvenance
+  files: '(^|/)pyproject\.toml$'
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
