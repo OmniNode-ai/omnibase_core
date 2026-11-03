@@ -1,0 +1,88 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21924
+title: 'Image commands and console scripts in the stack-shape validator (omnibase_core half)'
+summary: The stack-shape validator gains an image-command rule. A stack-shape data file may declare image_commands
+  (allowed start commands, each with a reason) and a console_scripts_file with allowed and developer_only
+  lists. A runtime service whose entrypoint or command is outside the list is refused by service name
+  and command, and a console script of the named file that is on neither list is refused by name. The
+  format is generic and carries no rule value in code; the extension lives in T1's checker, validator,
+  model and contract with no second validator. The omnibase_infra half (its data) waits on the release
+  of this change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21924-image-commands
+    statement: A runtime compose service whose start command is outside the declared list, and a console
+      script outside the declared lists, are each refused with the offender named.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a compose service whose command is outside the declared allowed list is refused
+          by the stack-shape check naming the service and the command, and the list lives in data and
+          not in code -- falsifier: `uv run pytest tests/unit/validation/test_checker_stack_shape.py -q
+          -k runtime_command` fails with one planted `python -m` service'
+      - id: AC2
+        statement: 'AC2: a console script that is on neither the allowed list nor the developer-only list
+          is refused by name -- falsifier: `uv run pytest tests/unit/validation/test_checker_stack_shape.py
+          -q -k console_script` fails'
+      - id: AC3
+        statement: 'AC3: the check extends T1''s validator and adds no second validator -- falsifier:
+          `git diff --name-only origin/dev` lists a new validator file beside T1''s'
+evidence_requirements:
+  - kind: tests
+    description: Stack-shape checker and validator tests pass.
+    command: uv run pytest tests/unit/validation/test_checker_stack_shape.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21924-ac1-image-command
+    description: A planted `python -m` runtime service (string, list and entrypoint forms) is refused
+      by service name and command; listed commands, with and without arguments, pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_stack_shape.py -q --no-cov -o addopts=''
+          -k runtime_command
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21924-ac2-console-script
+    description: A planted console script outside the allowed and developer-only lists is refused by name;
+      listed scripts pass.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_stack_shape.py -q --no-cov -o addopts=''
+          -k console_script
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21924-ac3-no-second-validator
+    description: The existing ValidatorStackShape refuses planted runtime commands and console scripts;
+      no new validator or checker file is added. The behavior probe fails before the extension exists.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: test -z "$(git diff --name-only --diff-filter=A origin/dev -- 'src/omnibase_core/validation/validator_*.py'
+          'src/omnibase_core/validation/checker_*.py')" && env PYTHONDONTWRITEBYTECODE=1 uv run pytest
+          tests/unit/validation/test_checker_stack_shape.py -q --no-cov -o addopts='' -k 'planted_runtime_command_is_refused
+          or planted_console_script_is_refused'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21924-deploy-hosted-library-only
+    description: Hosted deploy probe for the packaged stack-shape validator. The existing validator accepts
+      listed image commands and console scripts through its data-file entry point.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/validation/test_checker_stack_shape.py
+          -q --no-cov -o addopts='' -k all_commands_and_console_scripts_listed_pass
+        cwd: ${OMNI_HOME}/omnibase_core

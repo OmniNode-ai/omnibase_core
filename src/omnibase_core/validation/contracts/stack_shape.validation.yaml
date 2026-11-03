@@ -14,6 +14,8 @@ validation:
     one-shot or a baselined entry, and the runtime service runs one replica (OMN-21891,
     one-runtime plan task T1). The allowlist, the per-lane compose file sets and the baseline are
     data the caller passes; this contract holds only the message texts and the file format keys.
+    When declared in the data file, the runtime image's start command and the console scripts
+    must appear in their allowed lists; console scripts may also be declared developer-only.
 
     The baseline is shrink-only: an entry whose service no longer exists fails, and once the data
     file exists on the base revision an entry absent from it fails. A baseline entry follows its
@@ -107,6 +109,38 @@ validation:
         growth_message: >-
           baseline entry {entry} is not on the base revision: the baseline only shrinks; fold the service
           into the runtime or declare it as a dependency instead of baselining it.
+    - rule_id: image_command_not_allowed
+      description: >-
+        A runtime service's explicit start command must be allowed by the image command list.
+      severity: error
+      enabled: true
+      parameters:
+        command_keys:
+          - 'entrypoint'
+          - 'command'
+        message: >-
+          service {service} in {path} (lane {lanes}) starts with {key} {command}, which is outside the
+          declared image commands.
+    - rule_id: console_script_not_allowed
+      description: >-
+        Console scripts must be allowed or declared developer-only in the stack-shape data file.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          console script {script} targeting {target} in {path} is outside the allowed and developer-only
+          lists.
+    - rule_id: console_scripts_unreadable
+      description: >-
+        The declared console scripts file must be readable TOML holding a scripts table when present.
+      severity: error
+      enabled: true
+      parameters:
+        table_path:
+          - 'project'
+          - 'scripts'
+        message: >-
+          console scripts file {path} cannot be read: {reason}.
   suppression_comments:
     - 'stack-shape-ok:'
 

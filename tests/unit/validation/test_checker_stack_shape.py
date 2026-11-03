@@ -59,13 +59,16 @@ def _clean_compose() -> dict[str, Any]:
     )
 
 
-def _data(baseline: list[dict[str, str]] | None = None) -> dict[str, Any]:
+def _data(
+    baseline: list[dict[str, str]] | None = None, **optional: Any
+) -> dict[str, Any]:
     return {
         "runtime": {"services": ["runtime"], "max_replicas": 1},
         "dependencies": ["postgres"],
         "one_shots": ["migrate"],
         "lanes": {lane: {"compose_files": [_lane_file(lane)]} for lane in LANES},
         "baseline": baseline or [],
+        **optional,
     }
 
 
@@ -112,6 +115,268 @@ def _codes(root: Path, base_ref: str | None = None) -> list[str]:
 def test_clean_stack_passes(tmp_path: Path) -> None:
     _stack(tmp_path)
     assert _issues(tmp_path) == []
+
+
+@pytest.mark.parametrize("lane", LANES[:3])
+@pytest.mark.parametrize(
+    "form",
+    [
+        {"command": "python -m something"},
+        {"command": ["python", "-m", "something"]},
+        {"entrypoint": "python -m something", "command": "onex-runtime"},
+        {"entrypoint": ["python", "-m", "something"]},
+    ],
+)
+def test_planted_runtime_command_is_refused(
+    tmp_path: Path, lane: str, form: dict[str, Any]
+) -> None:
+    _stack(
+        tmp_path,
+        data=_data(image_commands=[{"command": "onex-runtime", "reason": "runtime"}]),
+        overrides={lane: _compose(runtime=form)},
+    )
+    issues = _issues(tmp_path)
+    assert len(issues) == 1
+    assert issues[0][0] == checker.RULE_IMAGE_COMMAND
+    assert "runtime" in issues[0][1]
+    assert "python -m something" in issues[0][1]
+    assert _lane_file(lane) in issues[0][1]
+    assert lane in issues[0][1]
+
+
+@pytest.mark.parametrize(
+    "form",
+    [
+        {"command": "onex-runtime --verbose"},
+        {"command": ["onex-runtime", "--verbose", 1]},
+        {"entrypoint": "onex-runtime", "command": "--verbose"},
+        {"entrypoint": ["onex-runtime"], "command": ["--verbose"]},
+        {"command": "'onex-runtime' --verbose"},
+        {"entrypoint": [], "command": "onex-runtime"},
+        {"entrypoint": None, "command": "onex-runtime"},
+    ],
+)
+def test_allowed_runtime_command_passes(tmp_path: Path, form: dict[str, Any]) -> None:
+    _stack(
+        tmp_path,
+        data=_data(image_commands=[{"command": "onex-runtime", "reason": "runtime"}]),
+        overrides={"dev": _compose(runtime=form)},
+    )
+    assert _issues(tmp_path) == []
+
+
+def test_all_commands_and_console_scripts_listed_pass(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        data=_data(
+            image_commands=[{"command": "onex-runtime", "reason": "runtime"}],
+            console_scripts_file="pyproject.toml",
+            console_scripts_allowed=[{"name": "onex-runtime", "reason": "runtime"}],
+            developer_only=[{"name": "onex-dev", "reason": "development"}],
+        ),
+        overrides={
+            lane: _compose(runtime={"command": "onex-runtime --verbose"})
+            for lane in LANES
+        },
+    )
+    (tmp_path / "pyproject.toml").write_text(
+        '[project.scripts]\nonex-runtime = "pkg:main"\nonex-dev = "pkg:dev"\n',
+        encoding="utf-8",
+    )
+    assert _issues(tmp_path) == []
+
+
+def test_non_runtime_commands_are_not_refused(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        data=_data([_entry("dev", "legacy")], image_commands=[]),
+        overrides={
+            "dev": _compose(
+                runtime={},
+                postgres={"command": "python -m something"},
+                migrate={"command": "python -m something"},
+                legacy={"command": "python -m something"},
+            )
+        },
+    )
+    assert _issues(tmp_path) == []
+
+
+def test_absent_image_commands_does_not_check_commands(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        overrides={"dev": _compose(runtime={"command": "python -m something"})},
+    )
+    assert _issues(tmp_path) == []
+
+
+def test_empty_image_commands_refuses_every_command(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        data=_data(image_commands=[]),
+        overrides={"dev": _compose(runtime={"command": "onex-runtime"})},
+    )
+    codes = _codes(tmp_path)
+    assert len(codes) == 1
+    assert codes == [checker.RULE_IMAGE_COMMAND]
+
+
+@pytest.mark.parametrize(
+    "form", [{}, {"command": None}, {"command": []}, {"command": ""}]
+)
+def test_image_default_is_not_checked(tmp_path: Path, form: dict[str, Any]) -> None:
+    _stack(
+        tmp_path,
+        data=_data(image_commands=[]),
+        overrides={"dev": _compose(runtime=form)},
+    )
+    assert _issues(tmp_path) == []
+
+
+def test_unbalanced_command_quotes_fall_back_to_whitespace(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        data=_data(image_commands=[]),
+        overrides={"dev": _compose(runtime={"command": 'python -m "something'})},
+    )
+    issues = _issues(tmp_path)
+    assert len(issues) == 1
+    assert issues[0][0] == checker.RULE_IMAGE_COMMAND
+    assert 'python -m "something' in issues[0][1]
+
+
+def test_planted_console_script_is_refused(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        data=_data(console_scripts_file="pyproject.toml", console_scripts_allowed=[]),
+    )
+    (tmp_path / "pyproject.toml").write_text(
+        '[project.scripts]\nplanted-script = "pkg:main"\n', encoding="utf-8"
+    )
+    issues = _issues(tmp_path)
+    assert len(issues) == 1
+    assert issues[0][0] == checker.RULE_CONSOLE_SCRIPT
+    assert "planted-script" in issues[0][1]
+
+
+@pytest.mark.parametrize("text", ['[project]\nname = "pkg"\n', ""])
+def test_no_console_scripts_table_passes(tmp_path: Path, text: str) -> None:
+    _stack(
+        tmp_path,
+        data=_data(console_scripts_file="pyproject.toml", console_scripts_allowed=[]),
+    )
+    (tmp_path / "pyproject.toml").write_text(text, encoding="utf-8")
+    assert _issues(tmp_path) == []
+
+
+@pytest.mark.parametrize(
+    "text", [None, "[project.scripts", '[project]\nscripts = "bad"']
+)
+def test_missing_or_unreadable_console_scripts_fail(
+    tmp_path: Path, text: str | None
+) -> None:
+    _stack(
+        tmp_path,
+        data=_data(console_scripts_file="pyproject.toml", console_scripts_allowed=[]),
+    )
+    if text is not None:
+        (tmp_path / "pyproject.toml").write_text(text, encoding="utf-8")
+    issues = _issues(tmp_path)
+    assert len(issues) == 1
+    assert issues[0][0] == checker.RULE_CONSOLE_SCRIPTS_UNREADABLE
+    assert "pyproject.toml" in issues[0][1]
+
+
+def test_console_scripts_target_judges_the_whole_stack(tmp_path: Path) -> None:
+    _stack(
+        tmp_path,
+        data=_data(console_scripts_file="pyproject.toml", console_scripts_allowed=[]),
+        overrides={"stability": _compose(runtime={}, intruder={})},
+    )
+    target = tmp_path / "pyproject.toml"
+    target.write_text("", encoding="utf-8")
+    result = ValidatorStackShape(root=tmp_path).validate([target])
+    assert [i.code for i in result.issues] == [checker.RULE_NOT_ALLOWED]
+
+
+@pytest.mark.parametrize(
+    ("optional", "malformed"),
+    [
+        ({"image_commands": [{"command": "onex-runtime"}]}, "reason"),
+        ({"image_commands": [{"command": "onex-runtime", "reason": " "}]}, "reason"),
+        ({"image_commands": [{"command": "", "reason": "runtime"}]}, "command"),
+        ({"image_commands": [{"command": 1, "reason": "runtime"}]}, "command"),
+        ({"image_commands": ["onex-runtime"]}, "image_commands"),
+        ({"image_commands": None}, "image_commands"),
+        ({"image_commands": {}}, "image_commands"),
+        ({"image_commands": [{"command": "x", "reason": "r"}] * 2}, "duplicate"),
+        ({"console_scripts_file": "pyproject.toml"}, "console_scripts_allowed"),
+        ({"console_scripts_allowed": []}, "console_scripts_file"),
+        ({"developer_only": []}, "console_scripts_file"),
+        (
+            {"console_scripts_file": "", "console_scripts_allowed": []},
+            "console_scripts_file",
+        ),
+        (
+            {"console_scripts_file": None, "console_scripts_allowed": []},
+            "console_scripts_file",
+        ),
+        (
+            {"console_scripts_file": 1, "console_scripts_allowed": []},
+            "console_scripts_file",
+        ),
+        (
+            {"console_scripts_file": "pyproject.toml", "console_scripts_allowed": None},
+            "console_scripts_allowed",
+        ),
+        (
+            {
+                "console_scripts_file": "pyproject.toml",
+                "console_scripts_allowed": [{"name": "x"}],
+            },
+            "reason",
+        ),
+        (
+            {
+                "console_scripts_file": "pyproject.toml",
+                "console_scripts_allowed": [{"name": "x", "reason": "r"}] * 2,
+            },
+            "duplicate",
+        ),
+        (
+            {
+                "console_scripts_file": "pyproject.toml",
+                "console_scripts_allowed": [{"name": "x", "reason": "r"}],
+                "developer_only": [{"name": "x", "reason": "r"}],
+            },
+            "developer_only",
+        ),
+        (
+            {
+                "console_scripts_file": "pyproject.toml",
+                "console_scripts_allowed": [],
+                "developer_only": [{"name": "x", "reason": " "}],
+            },
+            "reason",
+        ),
+        (
+            {
+                "console_scripts_file": "pyproject.toml",
+                "console_scripts_allowed": [],
+                "developer_only": [{"name": "x", "reason": "r"}] * 2,
+            },
+            "duplicate",
+        ),
+    ],
+)
+def test_malformed_command_and_script_data_fail(
+    tmp_path: Path, optional: dict[str, Any], malformed: str
+) -> None:
+    data = _data(**optional)
+    with pytest.raises(ModelOnexError, match=malformed):
+        checker.parse_stack_shape_data(yaml.safe_dump(data))
+    _stack(tmp_path, data=data)
+    assert _codes(tmp_path) == [checker.RULE_DATA_INVALID]
 
 
 @pytest.mark.parametrize("planted", PLANTED)
@@ -398,7 +663,14 @@ def test_no_rule_value_lives_in_code_or_contract() -> None:
         (VALIDATION / name).read_text(encoding="utf-8")
         for name in ("checker_stack_shape.py", "validator_stack_shape.py")
     )
-    for name in (*PLANTED, "onex-runtime", "postgres", "redpanda"):
+    for name in (
+        *PLANTED,
+        "onex-runtime",
+        "postgres",
+        "redpanda",
+        "planted-script",
+        "onex-dev",
+    ):
         assert name not in code
         assert name not in contract
 
@@ -413,12 +685,144 @@ def _contract() -> ModelValidatorSubcontract:
     return ValidatorStackShape(root=ROOT).contract
 
 
+def test_data_parser_preserves_reasons_and_positional_defaults() -> None:
+    data = checker.parse_stack_shape_data(
+        yaml.safe_dump(
+            _data(
+                image_commands=[{"command": "onex-runtime", "reason": "runtime"}],
+                console_scripts_file="pyproject.toml",
+                console_scripts_allowed=[{"name": "onex-runtime", "reason": "runtime"}],
+                developer_only=[{"name": "onex-dev", "reason": "development"}],
+            )
+        )
+    )
+    assert data.image_commands == {"onex-runtime": "runtime"}
+    assert data.console_scripts_file == "pyproject.toml"
+    assert data.console_scripts_allowed == {"onex-runtime": "runtime"}
+    assert data.developer_only == {"onex-dev": "development"}
+    legacy = type(data)(
+        data.runtime_services,
+        data.max_replicas,
+        data.dependencies,
+        data.one_shots,
+        data.lanes,
+        data.baseline,
+    )
+    other = checker.parse_stack_shape_data(yaml.safe_dump(_data()))
+    assert legacy.image_commands is None
+    assert legacy.console_scripts_file is None
+    assert legacy.console_scripts_allowed == legacy.developer_only == {}
+    assert legacy.console_scripts_allowed is not other.console_scripts_allowed
+    assert legacy.developer_only is not other.developer_only
+
+
+@pytest.mark.parametrize(
+    "rule_id",
+    [
+        checker.RULE_IMAGE_COMMAND,
+        checker.RULE_CONSOLE_SCRIPT,
+        checker.RULE_CONSOLE_SCRIPTS_UNREADABLE,
+    ],
+)
+def test_new_rules_can_be_disabled(tmp_path: Path, rule_id: str) -> None:
+    _stack(
+        tmp_path,
+        data=_data(
+            image_commands=[],
+            console_scripts_file="pyproject.toml",
+            console_scripts_allowed=[],
+        ),
+        overrides={"dev": _compose(runtime={"command": "python -m something"})},
+    )
+    if rule_id != checker.RULE_CONSOLE_SCRIPTS_UNREADABLE:
+        (tmp_path / "pyproject.toml").write_text(
+            '[project.scripts]\nplanted-script = "pkg:main"\n', encoding="utf-8"
+        )
+    contract = _contract()
+    rows = [
+        row.model_copy(update={"enabled": False}) if row.rule_id == rule_id else row
+        for row in contract.rules
+    ]
+    result = ValidatorStackShape(
+        contract.model_copy(update={"rules": rows}), root=tmp_path
+    ).validate([tmp_path / DATA_PATH])
+    codes = [i.code for i in result.issues]
+    assert rule_id not in codes
+    expected = (
+        checker.RULE_CONSOLE_SCRIPT
+        if rule_id == checker.RULE_IMAGE_COMMAND
+        else checker.RULE_IMAGE_COMMAND
+    )
+    assert codes == [expected]
+
+
+def test_command_keys_and_message_come_from_the_contract() -> None:
+    rules = {row.rule_id: row for row in _contract().rules}
+    row = rules[checker.RULE_IMAGE_COMMAND]
+    rules[row.rule_id] = row.model_copy(
+        update={
+            "parameters": {
+                "command_keys": ["launch"],
+                "message": "{service}|{path}|{lanes}|{key}|{command}",
+            }
+        }
+    )
+    data = checker.parse_stack_shape_data(yaml.safe_dump(_data(image_commands=[])))
+    services = {
+        "runtime": {"launch": ["python", "-m", "something"], "command": "ignored"}
+    }
+    issues = checker.check_compose(data, "stack.yml", services, ["custom"], rules)
+    assert [i.message for i in issues] == [
+        "runtime|stack.yml|custom|launch|python -m something"
+    ]
+
+
+def test_script_table_path_targets_messages_and_order_come_from_the_contract() -> None:
+    rules = {row.rule_id: row for row in _contract().rules}
+    unreadable = rules[checker.RULE_CONSOLE_SCRIPTS_UNREADABLE]
+    rules[unreadable.rule_id] = unreadable.model_copy(
+        update={
+            "parameters": {
+                **(unreadable.parameters or {}),
+                "table_path": ["custom", "entries"],
+            }
+        }
+    )
+    row = rules[checker.RULE_CONSOLE_SCRIPT]
+    rules[row.rule_id] = row.model_copy(
+        update={"parameters": {"message": "{script}|{target}|{path}"}}
+    )
+    scripts = checker.console_scripts(
+        '[custom.entries]\nz = 1\na = "pkg:main"\n', rules
+    )
+    assert scripts == {"z": "1", "a": "pkg:main"}
+    data = checker.parse_stack_shape_data(
+        yaml.safe_dump(
+            _data(console_scripts_file="scripts.toml", console_scripts_allowed=[])
+        )
+    )
+    issues = checker.check_console_scripts(data, "scripts.toml", scripts, rules)
+    assert [i.message for i in issues] == [
+        "a|pkg:main|scripts.toml",
+        "z|1|scripts.toml",
+    ]
+    legacy = checker.parse_stack_shape_data(yaml.safe_dump(_data()))
+    assert checker.check_console_scripts(legacy, "scripts.toml", scripts, rules) == ()
+    with pytest.raises(ModelOnexError, match=r"custom\.entries"):
+        checker.console_scripts('custom = "bad"', rules)
+
+
 @pytest.mark.parametrize(
     ("rule_id", "key"),
     [
         (checker.RULE_NOT_ALLOWED, "message"),
         (checker.RULE_REPLICAS, "message"),
         (checker.RULE_BASELINE, "growth_message"),
+        (checker.RULE_IMAGE_COMMAND, "message"),
+        (checker.RULE_IMAGE_COMMAND, "command_keys"),
+        (checker.RULE_CONSOLE_SCRIPT, "message"),
+        (checker.RULE_CONSOLE_SCRIPTS_UNREADABLE, "message"),
+        (checker.RULE_CONSOLE_SCRIPTS_UNREADABLE, "table_path"),
     ],
 )
 def test_a_missing_contract_parameter_fails_at_load(rule_id: str, key: str) -> None:

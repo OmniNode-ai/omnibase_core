@@ -5,9 +5,9 @@
 
 ``ValidatorBase`` entry over :mod:`omnibase_core.validation.checker_stack_shape`. The caller's data
 file (``baseline_ratchet.data_path`` of the contract, or the ``data_path`` argument) names the
-runtime, the allowed dependencies, the one-shots, each lane's compose file set and the baseline.
-Handing the validator the data file or any compose file of a lane judges the whole stack once;
-a file outside every lane is not judged.
+runtime, the allowed dependencies, the one-shots, each lane's compose file set, the baseline,
+and optional image command and console script lists. Handing the validator the data file, any
+compose file of a lane or the console scripts file judges the whole stack once.
 
 The baseline is held to the revision ``base_ref`` (the merge base in CI): once the data file exists
 there, an entry absent from it fails, following its compose file when git records a move.
@@ -35,6 +35,7 @@ from omnibase_core.validation.checker_baseline_moves import parse_name_status_mo
 from omnibase_core.validation.checker_rule_parameters import rule_int, rule_string
 from omnibase_core.validation.checker_stack_shape import (
     RULE_BASELINE,
+    RULE_CONSOLE_SCRIPTS_UNREADABLE,
     RULE_DATA_INVALID,
     RULE_FILE_MISSING,
     RULE_FILE_UNREADABLE,
@@ -42,7 +43,9 @@ from omnibase_core.validation.checker_stack_shape import (
     baseline_keys,
     check_baseline,
     check_compose,
+    check_console_scripts,
     compose_services,
+    console_scripts,
     lane_files,
     parse_stack_shape_data,
     report,
@@ -91,7 +94,10 @@ class ValidatorStackShape(ValidatorBase):
             data = parse_stack_shape_data(data_file.read_text(encoding="utf-8"))
         except ModelOnexError:
             return set()
-        return {(self._root / f).resolve() for f in lane_files(data)}
+        paths = {(self._root / f).resolve() for f in lane_files(data)}
+        if data.console_scripts_file is not None:
+            paths.add((self._root / data.console_scripts_file).resolve())
+        return paths
 
     def _validate_file(
         self,
@@ -129,6 +135,19 @@ class ValidatorStackShape(ValidatorBase):
                 continue
             found[file] = list(services)
             issues.extend(check_compose(data, file, services, lanes, rules))
+        if data.console_scripts_file is not None:
+            file = data.console_scripts_file
+            try:
+                scripts = console_scripts(
+                    (self._root / file).read_text(encoding="utf-8"), rules
+                )
+            except (OSError, UnicodeError, ModelOnexError) as exc:
+                reason = exc.message if isinstance(exc, ModelOnexError) else str(exc)
+                issues.extend(
+                    report(rules, RULE_CONSOLE_SCRIPTS_UNREADABLE, file, reason=reason)
+                )
+            else:
+                issues.extend(check_console_scripts(data, file, scripts, rules))
         issues.extend(check_baseline(data, found, rules))
         issues.extend(self._growth(data, rules))
         return tuple(issues)
