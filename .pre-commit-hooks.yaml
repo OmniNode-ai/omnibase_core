@@ -136,10 +136,11 @@
     hosts, retired lab values, and example overlay files loaded by code. Path classes (historical, example,
     named vendor-default files, model-server launch files, docs, tests, source) and the families that
     apply to each live in omnibase_core.validation.hardcoded_model_config/policy.yaml; that file is the
-    whole allowlist and no inline suppression marker is honoured. Pre-existing findings are tolerated
-    only through the repository's config/hardcoded_model_config_baseline.yaml, generated with `--all --write-baseline`.
-    It may only shrink: a finding not in it fails, an entry that no longer matches fails, `--base <ref>`
-    refuses an added entry, and retired lab values can never be baselined.
+    whole allowlist and no inline suppression marker is honoured. In staged-files mode, unchanged findings
+    are printed as existing; only added or changed lines can introduce a refusal. Whole-tree mode judges
+    every finding against config/hardcoded_model_config_baseline.yaml, generated with `--all --write-baseline`.
+    The baseline may only shrink: a new finding not in it fails, an entry that no longer matches fails,
+    `--base <ref>` refuses an added entry, and retired lab values can never be baselined.
   language: python
   entry: python -m omnibase_core.validation.hardcoded_model_config.runtime_hardcoded_model_config
   args: [--baseline, config/hardcoded_model_config_baseline.yaml]

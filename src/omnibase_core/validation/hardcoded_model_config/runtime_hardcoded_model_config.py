@@ -8,12 +8,14 @@ baseline as it stood at a git ref. The verdict is computed by the handler.
 
 Modes:
 
-* ``paths...`` (pre-commit passes the staged files): scan those files.
+* ``paths...`` (pre-commit passes the staged files): scan those files, reporting
+  unchanged index lines as existing and refusing new findings on added lines.
 * ``--all``: scan every tracked file (``git ls-files``).
 
 Ratchet contract, with ``--baseline <file>``:
 
-* a finding that the baseline does not cover fails the run;
+* a finding that the baseline does not cover fails the run when its line is
+  added/changed in pre-commit mode; ``--all`` judges every finding;
 * a baseline entry that no longer matches a scanned (or deleted) file fails the
   run and is named, so the baseline shrinks as the values are removed;
 * a retired lab value (family R) can never be baselined, on write or on read;
@@ -57,9 +59,7 @@ from omnibase_core.validation.hardcoded_model_config.handler import (
 from omnibase_core.validation.hardcoded_model_config.models import (
     ModelHardcodedModelConfigBaseline,
     ModelHardcodedModelConfigBaselineEntry,
-    ModelHardcodedModelConfigFinding,
     ModelHardcodedModelConfigPolicy,
-    ModelHardcodedModelConfigScanInput,
 )
 from omnibase_core.validation.validator_hardcoded_model_scan import (
     InputError as _InputError,
@@ -69,9 +69,13 @@ from omnibase_core.validation.validator_hardcoded_model_scan import (
     load_literal_rule_set,
     read_baseline_at_ref,
     read_file_at_ref,
+    scan_files,
     split_growth,
     tracked_files,
     unjudged_families,
+)
+from omnibase_core.validation.validator_hardcoded_model_scan import (
+    print_finding as _print_finding,
 )
 
 __all__ = [
@@ -174,13 +178,6 @@ def _write_baseline(
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _print_finding(finding: ModelHardcodedModelConfigFinding) -> None:
-    print(
-        f"{finding.path}:{finding.line}: [{finding.family} in {finding.path_class}] "
-        f"{finding.matched_text!r}"
-    )
-
-
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="check-hardcoded-model-config-compute",
@@ -224,16 +221,9 @@ def _run(args: argparse.Namespace) -> int:
     files = sorted({p.replace("\\", "/").removeprefix("./") for p in candidates})
     files = [p for p in files if is_scanned(p, policy) and Path(p).is_file()]
 
-    findings: list[ModelHardcodedModelConfigFinding] = []
-    for rel in files:
-        try:
-            text = Path(rel).read_text(encoding="utf-8", errors="replace")
-        except OSError as exc:
-            raise _InputError(f"{rel}: unreadable: {exc}") from exc
-        result = handler.handle(
-            ModelHardcodedModelConfigScanInput(path=rel, content=text)
-        )
-        findings.extend(result.findings)
+    findings, existing, changed = scan_files(
+        files, handler, changed_only=not (args.all or args.write_baseline)
+    )
 
     if args.write_baseline:
         if not args.baseline:
@@ -270,12 +260,15 @@ def _run(args: argparse.Namespace) -> int:
 
     missing = frozenset(e.path for e in baseline if not Path(e.path).is_file())
     new, stale = compare_with_baseline(
-        findings,
+        # Allocate baseline occurrences to unchanged lines before added copies.
+        [*existing, *changed],
         baseline,
         frozenset(files),
         missing,
         unjudged_families=unjudged_families(policy, literals),
     )
+    existing_keys = {(f.path, f.line, f.family) for f in existing}
+    new = [f for f in new if (f.path, f.line, f.family) not in existing_keys]
 
     grown: list[ModelHardcodedModelConfigBaselineEntry] = []
     if args.base:
@@ -302,6 +295,9 @@ def _run(args: argparse.Namespace) -> int:
                     f"at {args.base}; a tightened policy reports it now."
                 )
 
+    for finding in existing:
+        print("existing: ", end="")
+        _print_finding(finding)
     for finding in new:
         _print_finding(finding)
     for entry in stale:
@@ -329,7 +325,8 @@ def _run(args: argparse.Namespace) -> int:
         return 1
     print(
         f"hardcoded-model-config: {len(files)} file(s) scanned, "
-        f"{len(findings)} finding(s), all covered by {len(baseline)} baseline entries."
+        f"{len(findings)} finding(s), {len(existing)} existing finding(s), "
+        f"0 new finding(s), {len(baseline)} baseline entries."
     )
     return 0
 

@@ -10,11 +10,14 @@ written through the container's report writer.
 
 from __future__ import annotations
 
+import re
 import subprocess
+import sys
 from collections import Counter
 from collections.abc import Callable
 from importlib import resources
 from importlib.resources.abc import Traversable
+from pathlib import Path
 
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.dependency_direction.model_repo_layer_map import (
@@ -27,10 +30,15 @@ from omnibase_core.utils.util_safe_yaml_loader import load_yaml_content_as_model
 from omnibase_core.validation.checker_hardcoded_model_literals import load_rule_set
 from omnibase_core.validation.checker_hardcoded_model_views import file_suffix
 from omnibase_core.validation.checker_rule_parameters import rule_string
-from omnibase_core.validation.hardcoded_model_config.handler import content_sha1
+from omnibase_core.validation.hardcoded_model_config.handler import (
+    HandlerHardcodedModelConfigCompute,
+    content_sha1,
+)
 from omnibase_core.validation.hardcoded_model_config.models import (
     ModelHardcodedModelConfigBaselineEntry,
+    ModelHardcodedModelConfigFinding,
     ModelHardcodedModelConfigPolicy,
+    ModelHardcodedModelConfigScanInput,
 )
 from omnibase_core.validation.validator_hardcoded_model_literals import (
     ValidatorHardcodedModelLiterals,
@@ -40,9 +48,12 @@ __all__ = [
     "InputError",
     "is_scanned",
     "load_literal_rule_set",
+    "print_finding",
     "read_baseline_at_ref",
     "read_file_at_ref",
+    "scan_files",
     "split_growth",
+    "staged_added_lines",
     "tracked_files",
     "unjudged_families",
 ]
@@ -140,6 +151,96 @@ def tracked_files() -> list[str]:
     if result.returncode != 0:
         raise InputError(f"git ls-files failed: {result.stderr.strip()}")
     return [p for p in result.stdout.split("\0") if p]
+
+
+def staged_added_lines(path: str, content: str) -> frozenset[int] | None:
+    """Added/changed index lines, or None when a full scan is needed.
+
+    Only apply index coordinates to the exact text held in the index. Untracked
+    files, non-git inputs and unstaged text keep the full-file refusal behavior.
+    Zero-context hunks count additions at their new line numbers; pure deletions
+    add no lines. Renames are deletions/additions so a new path is fully judged.
+    """
+    indexed = subprocess.run(
+        ["git", "show", f":./{path}"],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if indexed.returncode != 0 or indexed.stdout != content:
+        return None
+    diff = subprocess.run(
+        [
+            "git",
+            "--literal-pathspecs",
+            "diff",
+            "--cached",
+            "--no-ext-diff",
+            "--no-textconv",
+            "--no-color",
+            "--no-renames",
+            "--text",
+            "--unified=0",
+            "--inter-hunk-context=0",
+            "--",
+            path,
+        ],
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if diff.returncode != 0:
+        raise InputError(f"git diff --cached failed for {path}: {diff.stderr.strip()}")
+    added: set[int] = set()
+    for line in diff.stdout.splitlines():
+        hunk = re.match(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@", line)
+        if hunk:
+            start = int(hunk[1])
+            count = int(hunk[2]) if hunk[2] is not None else 1
+            added.update(range(start, start + count))
+    return frozenset(added)
+
+
+def scan_files(
+    paths: list[str],
+    handler: HandlerHardcodedModelConfigCompute,
+    *,
+    changed_only: bool,
+) -> tuple[
+    list[ModelHardcodedModelConfigFinding],
+    list[ModelHardcodedModelConfigFinding],
+    list[ModelHardcodedModelConfigFinding],
+]:
+    """Read scan inputs and split findings into all, existing and changed lines."""
+    findings: list[ModelHardcodedModelConfigFinding] = []
+    existing: list[ModelHardcodedModelConfigFinding] = []
+    changed: list[ModelHardcodedModelConfigFinding] = []
+    for path in paths:
+        try:
+            text = Path(path).read_text(encoding="utf-8", errors="replace")
+        except OSError as exc:
+            raise InputError(f"{path}: unreadable: {exc}") from exc
+        result = handler.handle(
+            ModelHardcodedModelConfigScanInput(path=path, content=text)
+        )
+        findings.extend(result.findings)
+        added = staged_added_lines(path, text) if changed_only else None
+        for finding in result.findings:
+            if added is not None and finding.line not in added:
+                existing.append(finding)
+            else:
+                changed.append(finding)
+    return findings, existing, changed
+
+
+def print_finding(finding: ModelHardcodedModelConfigFinding) -> None:
+    """Print one finding at the scan's reporting boundary."""
+    sys.stdout.write(
+        f"{finding.path}:{finding.line}: [{finding.family} in {finding.path_class}] "
+        f"{finding.matched_text!r}\n"
+    )
 
 
 def read_baseline_at_ref(ref: str, path: str) -> str | None:

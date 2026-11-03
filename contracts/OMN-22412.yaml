@@ -1,0 +1,78 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22412
+title: Hardcoded model configuration checks judge added or changed staged lines
+summary: In changed-files mode the existing hook reports unchanged findings as existing and refuses uncovered
+  findings on added or changed staged lines. Whole-tree scans, rule families and baseline shrink checks
+  retain their behavior.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22412-staged-line-ratchet
+    statement: The hardcoded model configuration hook distinguishes existing lines from added or changed
+      staged lines without changing its baseline ratchet.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a regression test built from the recorded docker-compose.stability-test.yml case
+          (a file with pre-existing lab address lines, a diff that removes one service) fails on the current
+          checker and passes after the fix -- falsifier: uv run pytest tests -q -k hardcoded_model_config_preexisting_lines'
+      - id: AC2
+        statement: 'AC2: a diff that adds a new hard-coded value to the same file is still refused --
+          falsifier: uv run pytest tests -q -k hardcoded_model_config_new_line_refused'
+      - id: AC3
+        statement: 'AC3: the shrink-only baseline check is unchanged and its tests stay green on a lab
+          host -- falsifier: onex lab-run receipt exit=0 for uv run pytest tests -q -k hardcoded_model_config'
+evidence_requirements:
+  - kind: tests
+    description: Compose service deletion, added values and baseline cases at the checkout.
+    command: uv run --frozen pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+      -q -n 0 --no-cov
+  - kind: ci
+    description: Hosted-runner checkout tests need no private runtime or container daemon.
+    command: uv run --frozen pytest tests/unit/validation/hardcoded_model_config -q -n 0 --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22412-ac1-preexisting-lines
+    description: A staged service deletion leaves unchanged address findings existing, with or without
+      a consumer baseline and with shifted line numbers.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -n 0 --no-cov -k hardcoded_model_config_preexisting_lines
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22412-ac2-new-line
+    description: A newly added hardcoded address in the same compose file is refused.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -n 0 --no-cov -k hardcoded_model_config_new_line_refused
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22412-ac3-baseline
+    description: Existing baseline tests and staged-line regressions pass together.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/hardcoded_model_config -q -n 0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22412-deploy-checkout-hook
+    description: Exercise the installed hook module with service deletion and a newly added value at the
+      checkout; requires no container daemon or private runtime.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2, AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q -n 0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

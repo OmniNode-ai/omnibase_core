@@ -16,6 +16,8 @@ base.
 from __future__ import annotations
 
 import re
+import subprocess
+import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -40,6 +42,7 @@ from omnibase_core.validation.hardcoded_model_config.models import (
     ModelHardcodedModelConfigPolicy,
     ModelHardcodedModelConfigScanInput,
 )
+from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
 
 CORPUS_DIR = Path(__file__).parent / "corpus"
 MANIFEST = yaml.safe_load((CORPUS_DIR / "manifest.yaml").read_text(encoding="utf-8"))
@@ -288,6 +291,230 @@ def _baseline(root: Path, entries: list[dict[str, str]]) -> str:
     rel = "config/hardcoded_model_config_baseline.yaml"
     _write(root, rel, yaml.safe_dump({"schema_version": 1, "entries": entries}))
     return rel
+
+
+def _compose_index(
+    root: Path, monkeypatch: pytest.MonkeyPatch, *, removed_first: bool = False
+) -> tuple[str, str]:
+    """A staged service deletion with older address lines still in the file."""
+    monkeypatch.chdir(root)
+    path = "docker-compose.stability-test.yml"
+    before = (CORPUS_DIR / "compose_existing_services.fixture").read_text(
+        encoding="utf-8"
+    )
+    after, removed = before.split("  removed-service:", maxsplit=1)
+    if removed_first:
+        before = (
+            "services:\n  removed-service:"
+            + removed
+            + after.removeprefix("services:\n")
+        )
+    _write(root, path, before)
+    subprocess.run(["git", "init", "--quiet"], env=scrub_git_location_env(), check=True)
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Fixture",
+            "-c",
+            "user.email=fixture@example.test",
+            "commit",
+            "--quiet",
+            "-m",
+            "fixture",
+        ],
+        env=scrub_git_location_env(),
+        check=True,
+    )
+    return path, after
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("with_baseline", [False, True])
+@pytest.mark.parametrize("removed_first", [False, True])
+def test_hardcoded_model_config_preexisting_lines(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    with_baseline: bool,
+    removed_first: bool,
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch, removed_first=removed_first)
+    _write(tmp_path, path, after)
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    args = ["--baseline", _baseline(tmp_path, [])] if with_baseline else []
+    assert runtime.main([*args, path]) == 0
+    output = capsys.readouterr().out
+    assert "existing" in output
+    assert "E-LAN" in output
+    assert "0 new finding(s)" in output
+    if with_baseline:
+        assert yaml.safe_load(Path(args[1]).read_text())["entries"] == []
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("with_baseline", [False, True])
+def test_hardcoded_model_config_new_line_refused(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    with_baseline: bool,
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch)
+    added = f'      NEW_HOST: "{LAB_HOST}"\n'
+    _write(tmp_path, path, after + added)
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    args = ["--baseline", _baseline(tmp_path, [])] if with_baseline else []
+    assert runtime.main([*args, path]) == 1
+    output = capsys.readouterr().out
+    assert f"{path}:{len(after.splitlines()) + 1}: [E-LAN" in output
+    assert "1 new finding(s)" in output
+
+
+@pytest.mark.unit
+def test_hardcoded_model_config_all_still_refuses_existing_lines(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch)
+    _write(tmp_path, path, after)
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    assert runtime.main(["--all"]) == 1
+    assert "2 new finding(s)" in capsys.readouterr().out
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("staged", [False, True])
+def test_hardcoded_model_config_new_file_refused(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    staged: bool,
+) -> None:
+    _compose_index(tmp_path, monkeypatch)
+    path = "new-config.yaml"
+    _write(tmp_path, path, f'host: "{LAB_HOST}"\n')
+    if staged:
+        subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    assert runtime.main([path]) == 1
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("staged", [False, True])
+def test_hardcoded_model_config_changed_address_refused(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    staged: bool,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch)
+    _write(tmp_path, path, after.replace("202", "203"))
+    if staged:
+        subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    assert runtime.main([path]) == 1
+    assert f"{path}:5: [E-LAN" in capsys.readouterr().out
+
+
+@pytest.mark.unit
+def test_hardcoded_model_config_added_copy_cannot_borrow_baseline(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch)
+    line = after.splitlines()[4]
+    _write(tmp_path, path, after.replace(line + "\n", (line + "\n") * 2))
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    rel = _baseline(
+        tmp_path,
+        [
+            {"path": path, "family": "E-LAN", "content_sha1": _sha1(line)},
+        ],
+    )
+    before = (tmp_path / rel).read_bytes()
+    assert runtime.main(["--baseline", rel, path]) == 1
+    assert "1 new finding(s)" in capsys.readouterr().out
+    assert (tmp_path / rel).read_bytes() == before
+
+
+@pytest.mark.unit
+def test_hardcoded_model_config_deleted_value_still_makes_baseline_stale(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch)
+    line = after.splitlines()[4]
+    entry = {"path": path, "family": "E-LAN", "content_sha1": _sha1(line)}
+    rel = _baseline(tmp_path, [entry, entry])
+    before = (tmp_path / rel).read_bytes()
+    _write(tmp_path, path, after)
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    assert runtime.main(["--baseline", rel, path]) == 1
+    assert "0 new finding(s), 1 stale baseline" in capsys.readouterr().out
+    assert (tmp_path / rel).read_bytes() == before
+
+
+@pytest.mark.unit
+def test_hardcoded_model_config_binary_diff_cannot_hide_new_line(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch)
+    _write(tmp_path, path, after + f'      HOST: "{LAB_HOST}"\n# \0\n')
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    assert runtime.main([path]) == 1
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("add_value", [False, True])
+def test_hardcoded_model_config_hook_entrypoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    add_value: bool,
+) -> None:
+    """Exercise the installed module the exported pre-commit hook invokes."""
+    path, after = _compose_index(tmp_path, monkeypatch)
+    if add_value:
+        after += f'      NEW_HOST: "{LAB_HOST}"\n'
+    _write(tmp_path, path, after)
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    result = subprocess.run(
+        [sys.executable, "-m", runtime.__name__, path],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == int(add_value), result.stdout + result.stderr
+    assert "existing:" in result.stdout
+    assert f"{int(add_value)} new finding(s)" in result.stdout
+
+
+@pytest.mark.unit
+def test_hardcoded_model_config_renamed_path_is_fully_judged(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path, _ = _compose_index(tmp_path, monkeypatch)
+    renamed = "renamed-config.yaml"
+    subprocess.run(
+        ["git", "mv", path, renamed], env=scrub_git_location_env(), check=True
+    )
+    assert runtime.main([renamed]) == 1
+
+
+@pytest.mark.unit
+def test_hardcoded_model_config_non_utf8_new_line_refused(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    path, after = _compose_index(tmp_path, monkeypatch)
+    Path(path).write_bytes(
+        after.encode() + f'      HOST: "{LAB_HOST}"\n'.encode() + b"# \xff\n"
+    )
+    subprocess.run(["git", "add", path], env=scrub_git_location_env(), check=True)
+    assert runtime.main([path]) == 1
 
 
 @pytest.mark.unit
