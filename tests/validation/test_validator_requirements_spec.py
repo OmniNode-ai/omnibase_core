@@ -67,7 +67,6 @@ VALID_SCOPE_VALUES = {"required", "optional"}
 # omni_home/CLAUDE.md repository registry.
 KNOWN_REPOS = {
     "omniclaude",
-    "omnibase_compat",
     "omnibase_core",
     "omnibase_spi",
     "omnibase_infra",

@@ -21,6 +21,9 @@ from omnibase_core.models.dependency_direction.model_repo_layer import (
 from omnibase_core.models.dependency_direction.model_repo_layer_map import (
     ModelRepoLayerMap,
 )
+from omnibase_core.models.dependency_direction.model_retired_repo import (
+    ModelRetiredRepo,
+)
 
 __all__ = [
     "ModelDependencyDirectionBaseline",
@@ -29,4 +32,5 @@ __all__ = [
     "ModelDependencyDirectionRules",
     "ModelRepoLayer",
     "ModelRepoLayerMap",
+    "ModelRetiredRepo",
 ]

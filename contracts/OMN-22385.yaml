@@ -1,0 +1,46 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22385
+title: "Retire omnibase_compat: remove every running reference, then archive the repository"
+summary: RULING 2026-11-03T18:02:39Z restates the retirement of omnibase_compat. This change is omnibase_core's
+  part. The layer contract lists omnibase_compat as a retired repository, and the dependency-direction
+  check and the dependency-pin check refuse a reference to it through every channel. Core's own running
+  references (propagation targets, CI sibling checkouts, the first-party lists of pin hygiene, boundary
+  imports and dependency provenance, the validator requirements) are removed.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - omnibase_core.models.dependency_direction.model_retired_repo
+  - omnibase_core.models.dependency_direction.model_repo_layer_map
+  - omnibase_core.validation.checker_dependency_direction
+  - omnibase_core.validation.checker_dependency_pins
+requirements:
+  - id: req-omn22385-core-refuses-compat
+    statement: The layer contract lists omnibase_compat as retired, and both the dependency-direction
+      check and the dependency-pin check refuse a new reference to it, naming the retirement.
+    acceptance:
+      - id: AC3
+        statement: "AC3: core's layer contract and pin validator refuse a new omnibase-compat dependency,
+          red test first -- falsifier: uv run pytest of the new core test over a fixture pyproject.toml
+          declaring omnibase-compat, run on the lab through lab-run"
+evidence_requirements:
+  - kind: tests
+    description: The retired-repository tests pass in omnibase_core; they were red at the merge base.
+    command: uv run pytest tests/unit/handlers/test_handler_dependency_direction_retired.py tests/unit/validation/dependency_pins/test_checker_dependency_pins_retired.py
+      -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22385-ac3-retired-refused
+    description: A fixture repository declaring omnibase-compat (dependency, extra, group, override, uv
+      source), importing it, installing or cloning it, or checking it out in a workflow is refused by
+      the dependency-direction check and the dependency-pin check.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_dependency_direction_retired.py tests/unit/validation/dependency_pins/test_checker_dependency_pins_retired.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC3]

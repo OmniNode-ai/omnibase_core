@@ -33,10 +33,8 @@ class EnumPinSibling(StrEnum):
 
     OMNIBASE_CORE = "omnibase-core"
     OMNIBASE_SPI = "omnibase-spi"
-    OMNIBASE_COMPAT = "omnibase-compat"
     OMNIBASE_CORE_REPO = "omnibase_core"
     OMNIBASE_SPI_REPO = "omnibase_spi"
-    OMNIBASE_COMPAT_REPO = "omnibase_compat"
 
 
 class EnumPinType(StrEnum):

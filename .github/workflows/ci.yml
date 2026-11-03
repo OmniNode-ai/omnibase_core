@@ -3012,8 +3012,8 @@ jobs:
           uv run python -m omnibase_core.validators.operation_match_requires_operation src/omnibase_core
 
   # Migrated from validator-pin-hygiene.yml (OMN-14877, OMN-14430 fast-follow).
-  # Needs sibling clones (omnibase_compat / omnibase_spi) to resolve pin ancestry;
-  # each is checked out under $OMNI_HOME (= github.workspace).
+  # Needs a sibling clone (omnibase_spi) to resolve pin ancestry;
+  # it is checked out under $OMNI_HOME (= github.workspace).
   pin-hygiene-validator:
     name: Pin Hygiene Validator
     runs-on: ubuntu-latest
@@ -3024,15 +3024,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           path: omnibase_core
-
-      - name: Checkout omnibase_compat (sibling)
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          repository: OmniNode-ai/omnibase_compat
-          path: omnibase_compat
-          # OMN-20001: release tag v0.5.7, not live dev
-          ref: 65aed95fa710748654e37d5c15c5446e779fdf52
-          fetch-depth: 0
 
       - name: Checkout omnibase_spi (sibling)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1

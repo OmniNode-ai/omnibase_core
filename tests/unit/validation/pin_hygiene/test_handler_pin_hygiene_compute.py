@@ -44,7 +44,6 @@ from omnibase_core.validation.pin_hygiene.models import ModelPinHygieneScanInput
 _VIOLATION_FIXTURES: tuple[str, ...] = (
     'omnibase-core = { git = "https://github.com/OmniNode-ai/omnibase_core.git", rev = "def4560000000000000000000000000000000000" }  # pin-ancestry: orphan',  # v-base-pyproject-rev
     'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", rev = "1111111111111111111111111111111111111111" }  # pin-ancestry: orphan',  # v-base-spi-rev
-    'omnibase-compat = { git = "https://github.com/OmniNode-ai/omnibase_compat.git", rev = "2222222222222222222222222222222222222222" }  # pin-ancestry: orphan',  # v-base-compat-rev
     '    "omnibase-core @ git+https://github.com/OmniNode-ai/omnibase_core.git@def4560000000000000000000000000000000000",  # pin-ancestry: orphan',  # v-mut-pep508-at-rev
     '    { name = "omnibase-core", git = "https://github.com/OmniNode-ai/omnibase_core.git?rev=def4560000000000000000000000000000000000" },  # pin-ancestry: orphan',  # v-mut-uvlock-qrev
     'omnibase-spi = { git = "https://github.com/OmniNode-ai/omnibase_spi.git", branch = "main" }  # pin-ancestry: orphan',  # v-mut-branch-main-diverged
@@ -109,9 +108,9 @@ def test_sibling_git_pin_without_annotation_fails_closed() -> None:
 
 @pytest.mark.unit
 def test_uvlock_branch_url_form_is_flagged() -> None:
-    # HARDENING: uv.lock expresses a branch pin as `...omnibase_compat.git?branch=main`
+    # HARDENING: uv.lock expresses a branch pin as `...omnibase_spi.git?branch=main`
     # (URL form), not the TOML `branch = "main"` form. The seed missed it.
-    src = '    { name = "omnibase-compat", git = "https://github.com/OmniNode-ai/omnibase_compat.git?branch=main" },  # pin-ancestry: orphan'
+    src = '    { name = "omnibase-spi", git = "https://github.com/OmniNode-ai/omnibase_spi.git?branch=main" },  # pin-ancestry: orphan'
     result = scan_source(src)
     assert result.flagged is True
     assert result.findings[0].pin_type == "branch"
@@ -362,13 +361,13 @@ def test_pyproject_suppression_propagates_to_uvlock() -> None:
     )
 
     pyproject = (
-        'omnibase-compat = { git = "x", branch = "main" }  '
+        'omnibase-spi = { git = "x", branch = "main" }  '
         "# onex-allow-pin-hygiene OMN-13522"
     )
     suppressed = _suppressed_siblings(pyproject)
-    assert suppressed == {"omnibase_compat"}
+    assert suppressed == {"omnibase_spi"}
 
-    uvlock = 'source = { git = "https://github.com/OmniNode-ai/omnibase_compat.git?branch=main#abc" }'
+    uvlock = 'source = { git = "https://github.com/OmniNode-ai/omnibase_spi.git?branch=main#abc" }'
     propagated = _propagate_suppression(uvlock, suppressed)
     assert "onex-allow-pin-hygiene" in propagated
     assert scan_source(propagated).flagged is False
@@ -387,13 +386,13 @@ def test_uvlock_suppression_uses_nearest_pyproject_scope(tmp_path: Path) -> None
     project_a = tmp_path / "project-a"
     project_b = tmp_path / "project-b"
     suppressed_by_root = {
-        project_a: {"omnibase_compat"},
+        project_a: {"omnibase_spi"},
         project_b: {"omnibase_core"},
     }
 
     assert _suppressed_siblings_for_uvlock(
         project_a / "uv.lock", suppressed_by_root
-    ) == {"omnibase_compat"}
+    ) == {"omnibase_spi"}
     assert _suppressed_siblings_for_uvlock(
         project_b / "nested" / "uv.lock", suppressed_by_root
     ) == {"omnibase_core"}
@@ -416,3 +415,11 @@ def test_ancestor_pin_passes_end_to_end(tmp_path: Path) -> None:
     annotated = annotate_ancestry(pin, tmp_path)
     assert "# pin-ancestry: ancestor" in annotated
     assert scan_source(annotated).flagged is False
+
+
+@pytest.mark.unit
+def test_a_retired_repository_is_not_a_governed_sibling() -> None:
+    # omnibase-compat is retired (OMN-22385): the retired-repository rule of the layer
+    # contract refuses it; pin hygiene no longer treats it as a legal sibling pin.
+    src = 'omnibase-compat = { git = "https://github.com/OmniNode-ai/omnibase_compat.git", rev = "2222222222222222222222222222222222222222" }  # pin-ancestry: orphan'
+    assert scan_source(src).flagged is False

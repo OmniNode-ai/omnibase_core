@@ -38,7 +38,6 @@ from omnibase_core.utils.util_safe_yaml_loader import load_yaml_mapping_no_dupli
 VALIDATOR_ID: Final = "node-boundary-imports"
 DEFAULT_BASELINE: Final = ".onex_ratchets/node_boundary_import_baseline.yaml"
 REGISTRY_PACKAGES: Final = (
-    "omnibase_compat",
     "omnibase_core",
     "omnibase_spi",
     "omnibase_infra",

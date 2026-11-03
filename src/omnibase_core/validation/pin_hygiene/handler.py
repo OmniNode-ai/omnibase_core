@@ -40,8 +40,8 @@ I/O. Resolving each pin's git ancestry (``git merge-base --is-ancestor <rev>
 (``runtime_pin_hygiene``), never the handler's — that is what preserves COMPUTE
 purity.
 
-The invariant — "a sibling dependency pin (``omnibase-core`` / ``omnibase-spi`` /
-``omnibase-compat`` git rev or ``branch=`` in ``pyproject.toml`` / ``uv.lock``)
+The invariant — "a sibling dependency pin (``omnibase-core`` / ``omnibase-spi``
+git rev or ``branch=`` in ``pyproject.toml`` / ``uv.lock``)
 whose pinned commit is NOT an ancestor of that sibling's ``dev`` HEAD is a
 divergence bug" — turns the #2071 / OMN-13507 recurrence into a BLOCKING gate.
 The ``onex-allow-pin-hygiene`` suppression marker is the per-line escape hatch.
@@ -82,16 +82,14 @@ _FINDING_VERDICTS: Final[set[str]] = {
 # artifact (verbatim where correct). Each pattern recognises one pin syntax or the
 # ancestry annotation. ===
 
-# The three guarded sibling distributions, in both the hyphenated distribution
+# The two guarded sibling distributions, in both the hyphenated distribution
 # name (pyproject/lock package key) and the underscore repo name (inside the git
 # URL). Only these are in scope.
 _SIBLINGS: Final[tuple[str, ...]] = (
     "omnibase-core",
     "omnibase-spi",
-    "omnibase-compat",
     "omnibase_core",
     "omnibase_spi",
-    "omnibase_compat",
 )
 
 # Sibling name appearing as a delimited token on the line (not a substring of a

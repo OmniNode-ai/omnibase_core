@@ -108,10 +108,8 @@ _SKIP_DIRS: Final[frozenset[str]] = frozenset(
 _SIBLING_REPO: Final[dict[str, str]] = {
     "omnibase-core": "omnibase_core",
     "omnibase-spi": "omnibase_spi",
-    "omnibase-compat": "omnibase_compat",
     "omnibase_core": "omnibase_core",
     "omnibase_spi": "omnibase_spi",
-    "omnibase_compat": "omnibase_compat",
 }
 
 # Sibling name as a delimited token (mirrors the handler's HARDENED
