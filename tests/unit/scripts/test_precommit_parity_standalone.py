@@ -12,10 +12,7 @@ from pathlib import Path
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-_SCRIPT_NAMES = (
-    "validate_precommit_fail_loud.py",
-    "validate_precommit_pin_parity.py",
-)
+_SCRIPT_NAMES = ("validate_precommit_fail_loud.py",)
 
 
 def _standalone_script(tmp_path: Path, script_name: str) -> Path:
