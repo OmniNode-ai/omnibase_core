@@ -22,6 +22,7 @@ import pytest
 from click.testing import CliRunner
 
 from omnibase_core.cli.cli_commands import cli
+from tests.unit.cli.node_broker_fixtures import RESOLVER_PATCH_TARGET, kafka_binding
 
 pytestmark = pytest.mark.unit
 
@@ -98,7 +99,7 @@ class TestRunNodeCommand:
         runner = CliRunner()
         mock_response = {"status": "completed", "result": {"key": "value"}}
         with (
-            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(RESOLVER_PATCH_TARGET, return_value=kafka_binding()),
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
@@ -124,7 +125,7 @@ class TestRunNodeCommand:
     def test_run_node_timeout_returns_skill_routing_error(self) -> None:
         runner = CliRunner()
         with (
-            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(RESOLVER_PATCH_TARGET, return_value=kafka_binding()),
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
@@ -158,7 +159,7 @@ class TestRunNodeCommand:
     def test_run_node_kafka_connection_failure(self) -> None:
         runner = CliRunner()
         with (
-            patch.dict("os.environ", {"KAFKA_BOOTSTRAP_SERVERS": "testhost:19092"}),
+            patch(RESOLVER_PATCH_TARGET, return_value=kafka_binding()),
             patch(
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=(
