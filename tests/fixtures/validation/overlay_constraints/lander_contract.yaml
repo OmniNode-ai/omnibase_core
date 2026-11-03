@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Fixture for the overlay_constraints validator (OMN-22185): a contract that declares the two
+# lander relations and carries a consistent overlay. The values are test data, not deployed settings.
+overlay_constraints:
+  derived:
+    hold_s: call_timeout_s + start_s + run_s + drain_s + push_s
+  relations:
+    - relation_name: R1
+      expression: hold_s <= lease_seconds
+    - relation_name: R2a
+      expression: permit_min_ladder_steps >= 1
+    - relation_name: R2b
+      expression: permit_min_head_dispatches >= 1
+overlay_values:
+  lander_lease:
+    call_timeout_s: 30
+    start_s: 60
+    run_s: 600
+    drain_s: 60
+    push_s: 60
+    ttl_s: 3600
+    kept_grace_s: 900
+    max_kept_trees_per_host: 8
+    permit_min_ladder_steps: 1
+    permit_min_head_dispatches: 1
+  landing_controller:
+    lease_seconds: 900

@@ -1653,6 +1653,19 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-overlay-constraints
+  name: Overlay constraints (OMN-22185)
+  description: >
+    Refuse a contract whose overlay values violate a relation its overlay_constraints block declares,
+    leave a key a relation names absent or non-numeric, or declare a relation that is not two sums joined
+    by one comparison operator. Operators, term syntax and diagnostics are contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_overlay_constraints:ValidatorOverlayConstraints
+  files: (^|/)contract\.yaml$|\.overlay_constraints\.yaml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-event-registry-drift
   name: Event-registry drift (OMN-21416)
   description: >
