@@ -386,15 +386,6 @@ entries:
   - path: scripts/validation/validate_precommit_fail_loud.py
     family: F
     content_sha1: dda2717507560049d66c1093afa4949c63d962e0
-  - path: scripts/validation/validate_precommit_pin_parity.py
-    family: F
-    content_sha1: dda2717507560049d66c1093afa4949c63d962e0
-  - path: scripts/validation/validate_precommit_pin_parity.py
-    family: G
-    content_sha1: 1671a035b0dca0c7159ac53734054fa04a3ea70b
-  - path: scripts/validation/validate_precommit_pin_parity.py
-    family: G
-    content_sha1: c24134146ed363a2cd4bf963e5840bce8c92990b
   - path: scripts/validation/validate_structure.py
     family: P
     content_sha1: cab4acd46145d5f4edb1cab814eecd1ba95c07f7

@@ -1,0 +1,42 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-21516
+title: 'T2.2: pin-parity copy in omnibase_core deleted, core node consumed'
+summary: This slice covers one of the repository copies named by OMN-21516, the pin-parity script. The
+  script and its old hook entry are deleted and the pre-commit config runs the core node through the check-precommit-pin-parity
+  hook id. The other copies named by the ticket are not part of this change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-pin-parity-single-source
+    statement: The pin-parity check has one home, the core node, in omnibase_core.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: git grep finds none of the 12 scripts on dev in those repositories, and each
+          hook id resolves to repo https://github.com/OmniNode-ai/omnibase_core -- falsifier: git grep
+          for the 12 script names on each repository''s dev returning nothing, plus a pytest case parsing
+          each .pre-commit-config.yaml for the 12 hook ids'
+evidence_requirements:
+  - kind: tests
+    description: The script is gone and the config runs the node through the single hook id.
+    command: uv run pytest tests/unit/validation/test_precommit_pin_parity_single_source_omn21516.py --no-cov
+      -o addopts='' -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-pin-parity-copy-gone-in-core
+    description: Scope is the pin-parity script in omnibase_core only. The script file is absent, the
+      old hook id is absent, and check-precommit-pin-parity runs the core node module.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_precommit_pin_parity_single_source_omn21516.py
+          --no-cov -o addopts='' -q
+      - check_type: command
+        check_value: '! git ls-files --error-unmatch scripts/validation/validate_precommit_pin_parity.py'

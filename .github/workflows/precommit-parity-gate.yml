@@ -35,7 +35,7 @@
 #     and cannot be false-greened by the summary aggregator.
 #
 # Enforcement, not detection (CLAUDE.md Rule #5): wired as the CI counterpart of
-# the precommit-fail-loud-meta-gate + precommit-pin-parity pre-commit hooks
+# the precommit-fail-loud-meta-gate pre-commit hook (pin parity runs as the check-precommit-pin-parity hook, OMN-21516)
 # added in the SAME PR, so the checks it encodes cannot regress silently.
 
 name: Precommit Parity Gate
@@ -83,13 +83,3 @@ jobs:
         run: |
           uv run --no-project --with pyyaml --with pydantic \
             python3 scripts/validation/validate_precommit_fail_loud.py
-
-      - name: Pin-parity self-test (comparator liveness)
-        run: |
-          uv run --no-project --with pyyaml --with pydantic \
-            python3 scripts/validation/validate_precommit_pin_parity.py --self-test
-
-      - name: Pin-parity check (pre-commit rev vs CI-pinned SHA)
-        run: |
-          uv run --no-project --with pyyaml --with pydantic \
-            python3 scripts/validation/validate_precommit_pin_parity.py
