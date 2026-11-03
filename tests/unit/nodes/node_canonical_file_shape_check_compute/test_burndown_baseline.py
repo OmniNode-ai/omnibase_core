@@ -259,9 +259,9 @@ def test_planted_growth_after_install_is_baseline_growth(installed: Path) -> Non
     assert _locations(installed) == [("baseline-growth", BURNDOWN)]
     [issue] = issues(installed)
     assert "scripts/c.py" in issue.message
-    assert RULES.parameters.burndown_growth_text.format(path="scripts/c.py") == (
-        issue.message
-    )
+    assert RULES.parameters.burndown_growth_text.format(
+        path="scripts/c.py", node="node_c"
+    ) == (issue.message)
 
 
 def test_deleting_an_entry_after_install_shrinks_cleanly(installed: Path) -> None:

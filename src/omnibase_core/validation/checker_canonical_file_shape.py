@@ -983,7 +983,7 @@ def check(
                         rules,
                         location,
                         RULE_BASELINE_GROWTH,
-                        growth_text.format(path=path),
+                        _refusal_text(growth_text, path, p),
                     )
                 )
     if (
