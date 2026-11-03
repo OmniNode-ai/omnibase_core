@@ -44,6 +44,9 @@ class ModelDependencyDirectionRules(BaseModel):
         direction_same: ``direction`` of a target on the same layer.
         direction_above: ``direction`` of a target on a higher layer.
         baselined_message: Finding text of a recorded violation; fields ticket, message.
+        retired_remediation: The remediation text of a finding on a retired repository.
+        retired_message: Finding text of a reference to a retired repository; fields path, line,
+            repo, target, retired_by, channel, evidence.
         undeclared_repo_message: Runtime error when the repository is not in the layer map; field repo.
         stale_message: Finding text of a baseline entry no file produces; fields ticket, path,
             target, channel.
@@ -85,6 +88,8 @@ class ModelDependencyDirectionRules(BaseModel):
     direction_same: str = Field(min_length=1)
     direction_above: str = Field(min_length=1)
     baselined_message: str = Field(min_length=1)
+    retired_remediation: str = Field(min_length=1)
+    retired_message: str = Field(min_length=1)
     undeclared_repo_message: str = Field(min_length=1)
     stale_message: str = Field(min_length=1)
     ratchet_ref_missing_message: str = Field(min_length=1)

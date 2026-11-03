@@ -10,6 +10,9 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from omnibase_core.models.dependency_direction.model_repo_layer import (
     ModelRepoLayer,
 )
+from omnibase_core.models.dependency_direction.model_retired_repo import (
+    ModelRetiredRepo,
+)
 
 __all__ = ["ModelRepoLayerMap"]
 
@@ -21,17 +24,25 @@ class ModelRepoLayerMap(BaseModel):
         github_org: The organisation that owns every repository in ``repos``;
             a workflow or clone reference is matched as ``<github_org>/<repo>``.
         repos: One entry per repository; repository names are unique.
+        retired: Repositories that are retired. They have no layer and no
+            repository may reference them through any channel; their names
+            are unique across ``repos`` and ``retired``.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
 
     github_org: str = Field(min_length=1)
     repos: tuple[ModelRepoLayer, ...] = Field(min_length=1)
+    retired: tuple[ModelRetiredRepo, ...] = Field(default=())
 
     @model_validator(mode="after")
     def _unique_names(self) -> ModelRepoLayerMap:
         seen: set[str] = set()
-        for entry in self.repos:
+        entries: list[ModelRepoLayer | ModelRetiredRepo] = [
+            *self.repos,
+            *self.retired,
+        ]
+        for entry in entries:
             names = {
                 n.lower().replace("_", "-")
                 for n in (entry.repo, *entry.python_modules, *entry.distributions)
@@ -47,6 +58,13 @@ class ModelRepoLayerMap(BaseModel):
     def get(self, repo: str) -> ModelRepoLayer | None:
         """The entry for ``repo``, or None when the map does not declare it."""
         for entry in self.repos:
+            if entry.repo == repo:
+                return entry
+        return None
+
+    def get_retired(self, repo: str) -> ModelRetiredRepo | None:
+        """The retirement entry for ``repo``, or None when it is not retired."""
+        for entry in self.retired:
             if entry.repo == repo:
                 return entry
         return None

@@ -12,7 +12,8 @@
 # repositories on the same layer may not depend on each other.
 #
 # Provenance of the order:
-#   layers 0-3  registry Operating Rule 7, "compat -> core -> spi -> infra".
+#   layers 1-3  registry Operating Rule 7, "core -> spi -> infra" (the base layer, omnibase_compat,
+#     is retired: see `retired` below).
 #   omnimarket above omnibase_infra  operator ruling 2026-10-15T21:52:44Z
 #     ("Market depends on infra, not the other way around").
 #   the rest    each repository's declared [project] dependencies at origin/dev
@@ -24,11 +25,17 @@
 
 github_org: OmniNode-ai
 
-repos:
+# Retired repositories have no layer. No repository may reference one through any channel
+# above (import, dependency, extra, group, uv source, override, lock source, Dockerfile install
+# or clone, workflow checkout, script clone); both checks refuse it and name the retirement, and
+# a baseline cannot absorb the finding.
+retired:
   - repo: omnibase_compat
-    layer: 0
+    retired_by: "RULING 2026-10-22T21:43:04Z, restated 2026-11-03T18:02:39Z (OMN-22385)"
     python_modules: [omnibase_compat]
     distributions: [omnibase-compat]
+
+repos:
   - repo: omnibase_core
     layer: 1
     python_modules: [omnibase_core]

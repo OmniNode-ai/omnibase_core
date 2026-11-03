@@ -30,6 +30,7 @@ from omnibase_core.models.dependency_direction import (
     ModelDependencyDirectionRules,
     ModelRepoLayer,
     ModelRepoLayerMap,
+    ModelRetiredRepo,
 )
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import (
     ModelSourceFile,
@@ -82,6 +83,14 @@ LAYERS = ModelRepoLayerMap(
             layer=5,
             python_modules=("omnimarket",),
             distributions=("omnimarket",),
+        ),
+    ),
+    retired=(
+        ModelRetiredRepo(
+            repo="gone_repo",
+            retired_by="OMN-1",
+            python_modules=("gone_repo",),
+            distributions=("gone-repo",),
         ),
     ),
 )
@@ -209,6 +218,7 @@ _UP = "omnimarket"
 _INSTALL = f'RUN uv pip install --no-deps "{_UP} @ file:///workspace/{_UP}"\n'
 _WORKFLOW = f"jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v4\n        with:\n          repository: {_ORG}/{_UP}\n"
 _UPWARD = {"src/a.py": f"import {_UP}\n"}
+_RETIRED = {"src/a.py": "import gone_repo\n"}
 _SAME = {"src/a.py": "import onex_change_control\n"}
 _BASELINED = (
     ModelDependencyDirectionBaselineEntry(
@@ -343,6 +353,13 @@ CASES: list[tuple[str, str, object, Probe]] = [
         _refs("docker/Dockerfile", f"# pip install {_UP}\n"),
     ),
     ("reference_channels", "evidence_limit", 10, _refs("docker/Dockerfile", _INSTALL)),
+    ("retired_repository", "retired_remediation", _MARK, _check(_RETIRED)),
+    (
+        "retired_repository",
+        "retired_message",
+        f"{_MARK} {{target}} {{retired_by}}",
+        _check(_RETIRED),
+    ),
     ("upward_dependency", "remediation", _MARK, _check(_UPWARD)),
     ("upward_dependency", "violation_message", f"{_MARK} {{path}}", _check(_UPWARD)),
     ("upward_dependency", "direction_same", _MARK, _check(_SAME, repo="omnibase_spi")),

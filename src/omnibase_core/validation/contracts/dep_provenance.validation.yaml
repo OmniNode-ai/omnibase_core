@@ -55,7 +55,6 @@ validation:
         packages:
           - omnibase-core|omnibase_core|registry,sibling_dev_tag
           - omnibase-spi|omnibase_spi|registry,sibling_dev_tag
-          - omnibase-compat|omnibase_compat|registry,sibling_dev_tag
           - omnibase-infra|omnibase_infra|registry,sibling_dev_tag
           - omninode-memory|omnimemory|registry,workspace,sibling_dev_tag
           - omnimarket|omnimarket|registry,sibling_dev_tag

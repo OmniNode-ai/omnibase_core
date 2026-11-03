@@ -44,6 +44,7 @@ from omnibase_core.validation.checker_rule_parameters import (
 
 RULE_CHANNELS = "reference_channels"
 RULE_UPWARD = "upward_dependency"
+RULE_RETIRED = "retired_repository"
 RULE_UNDECLARED = "repo_not_in_layer_map"
 RULE_STALE = "stale_baseline_entry"
 RULE_RATCHET = "baseline_ratchet"
@@ -52,6 +53,7 @@ RULE_SUMMARY = "run_summary"
 __all__ = [
     "RULE_CHANNELS",
     "RULE_RATCHET",
+    "RULE_RETIRED",
     "RULE_STALE",
     "RULE_SUMMARY",
     "RULE_UNDECLARED",
@@ -89,6 +91,7 @@ def rules_from_rows(
     """The typed rules from ``{rule_id: row}``; a missing row or parameter raises."""
     channels = _row(rows, RULE_CHANNELS)
     upward = _row(rows, RULE_UPWARD)
+    retired = _row(rows, RULE_RETIRED)
     undeclared = _row(rows, RULE_UNDECLARED)
     stale = _row(rows, RULE_STALE)
     ratchet = _row(rows, RULE_RATCHET)
@@ -121,6 +124,8 @@ def rules_from_rows(
         direction_same=rule_string(upward, "direction_same"),
         direction_above=rule_string(upward, "direction_above"),
         baselined_message=rule_string(upward, "baselined_message"),
+        retired_remediation=rule_string(retired, "retired_remediation"),
+        retired_message=rule_string(retired, "retired_message"),
         undeclared_repo_message=rule_string(undeclared, "undeclared_repo_message"),
         stale_message=rule_string(stale, "stale_message"),
         ratchet_ref_missing_message=rule_string(ratchet, "ratchet_ref_missing_message"),

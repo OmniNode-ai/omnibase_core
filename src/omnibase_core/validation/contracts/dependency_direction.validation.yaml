@@ -58,6 +58,17 @@ rules:
       direction_same: "same layer as"
       direction_above: "above"
       baselined_message: "baselined ({ticket}): {message}"
+  - rule_id: retired_repository
+    description: A reference to a repository the layer map lists as retired.
+    severity: error
+    enabled: true
+    parameters:
+      retired_remediation: >-
+        The target repository is retired (omnibase_core contracts/repo_layers.yaml, `retired`) and may
+        not be referenced through any channel. Delete the reference; never add it to the baseline.
+      retired_message: >-
+        {path}:{line}: {repo} references {target}, a retired repository ({retired_by}), via {channel}:
+        {evidence}
   - rule_id: repo_not_in_layer_map
     description: The scanned repository must be declared in the layer map.
     severity: error

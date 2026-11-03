@@ -284,8 +284,7 @@ def test_packaged_layer_map_keeps_rule_7_and_the_market_ruling() -> None:
     layer_map = load_layer_map()
     layer = {entry.repo: entry.layer for entry in layer_map.repos}
     assert (
-        layer["omnibase_compat"]
-        < layer["omnibase_core"]
+        layer["omnibase_core"]
         < layer["omnibase_spi"]
         < layer["omnibase_infra"]
         < layer["omnimarket"]

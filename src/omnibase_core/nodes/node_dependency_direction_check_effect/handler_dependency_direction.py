@@ -10,7 +10,8 @@ takes the scanned repository's name, the layer map, explicit
 canonical ``ModelValidationReport``:
 
 * FAIL -- a reference to a repository at the same or a higher layer that the
-  baseline does not record.
+  baseline does not record, and any reference to a retired repository (the
+  baseline never absorbs it).
 * WARN -- a recorded (baselined) violation that still exists, and, on a
   full-tree scan, a baseline entry no file produces any more (remove it).
 * ERROR -- the scanned repository is not declared in the layer map.
@@ -64,6 +65,27 @@ class HandlerDependencyDirection:
             for channel, target, line, evidence in extract_references(
                 file.path, file.source, request.layer_map, request.repo, rules
             ):
+                retired = request.layer_map.get_retired(target)
+                if retired is not None:
+                    # A retired repository has no layer and no baseline can absorb it.
+                    findings.append(
+                        ModelValidationFindingEmbed(
+                            validator_id=VALIDATOR_ID,
+                            severity="FAIL",
+                            location=f"{file.path}:{line}",
+                            message=rules.retired_message.format(
+                                path=file.path,
+                                line=line,
+                                repo=request.repo,
+                                target=target,
+                                retired_by=retired.retired_by,
+                                channel=channel.value,
+                                evidence=evidence,
+                            ),
+                            remediation=rules.retired_remediation,
+                        )
+                    )
+                    continue
                 target_layer = layers[target]
                 if target_layer < own.layer:
                     continue
