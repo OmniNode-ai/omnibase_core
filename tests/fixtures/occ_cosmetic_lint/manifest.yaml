@@ -6,6 +6,7 @@ source_rev: 8d7e85bc00e7f1b1306d1cb40949be1ab6e7e91a
 source_command: cosmetic-lint check
 spec_sha256: adda181e8b62c73f2ad0ac832e7fb2a8c249c629f7e1e1fef012905b0178cf28
 verbatim_source: omnibase_spi 9c145fb2836636598c0088aaff38f653cc4ac0c5 (origin/dev)
+# One script path in the pre-commit fixture is renamed (OMN-22357): the check it named moved into this repository.
 cases:
   - id: spi-tree-pass
     description: Verbatim omnibase_spi pyproject, pre-commit config, README, four python files and the

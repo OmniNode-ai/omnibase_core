@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+default_install_hook_types: [pre-commit]
+repos:
+  - repo: local
+    hooks:
+      - id: gate
+        name: gate
+        entry: |
+          bash -c '
+          if [ ! -f gate.sh ]; then
+            echo "gate.sh not found"
+            exit 1
+          fi
+          ./gate.sh
+          '
+        language: system

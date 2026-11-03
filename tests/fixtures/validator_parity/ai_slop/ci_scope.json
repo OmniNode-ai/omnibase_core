@@ -143,7 +143,6 @@
   "scripts/validation/validate-union-usage.py",
   "scripts/validation/validate_naming.py",
   "scripts/validation/validate_optimization.py",
-  "scripts/validation/validate_precommit_fail_loud.py",
   "scripts/validation/validate_protocol_syntax.py",
   "scripts/validation/validate_structure.py",
   "scripts/validation/yaml_contract_validator.py",
