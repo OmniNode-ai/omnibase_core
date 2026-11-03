@@ -439,7 +439,6 @@ ignore = [
 "scripts/ci/equivalence_producer.py" = ["BLE001"]  # fail-closed catches around untrusted-shaped handler replay execution (OMN-14905)
 "scripts/ci/product_readiness.py" = ["T201"]  # CLI output for Product Readiness classifier (OMN-14705 Phase 3 shadow)
 "scripts/ci/product_reason_graph.py" = ["T201"]  # CLI output for Product Readiness reason-graph emitter (OMN-14705 Phase 3 shadow)
-"scripts/validation/validate_precommit_fail_loud.py" = ["T201"]  # CLI output for WS7 pre-commit fail-loud meta-gate (OMN-14671)
 "src/omnibase_core/validation/validator_contracts.py" = ["T201"]
 "src/omnibase_core/validation/delegation/validator_delegation_profile.py" = ["T201"]  # CLI output for delegation-profile hook (OMN-13306)
 "src/omnibase_core/validation/hardcoded_model_config/runtime_hardcoded_model_config.py" = ["T201"]  # OMN-19252: CLI verdict to stdout

@@ -383,9 +383,6 @@ entries:
   - path: scripts/validation/validate-string-versions.py
     family: O
     content_sha1: d2d016427589d665376f291c641434c884167767
-  - path: scripts/validation/validate_precommit_fail_loud.py
-    family: F
-    content_sha1: dda2717507560049d66c1093afa4949c63d962e0
   - path: scripts/validation/validate_structure.py
     family: P
     content_sha1: cab4acd46145d5f4edb1cab814eecd1ba95c07f7
