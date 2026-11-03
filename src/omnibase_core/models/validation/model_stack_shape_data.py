@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,3 +22,7 @@ class ModelStackShapeData:
     one_shots: frozenset[str]
     lanes: dict[str, tuple[str, ...]]
     baseline: tuple[tuple[str, str, str], ...]
+    image_commands: dict[str, str] | None = None
+    console_scripts_file: str | None = None
+    console_scripts_allowed: dict[str, str] = field(default_factory=dict)
+    developer_only: dict[str, str] = field(default_factory=dict)

@@ -12,6 +12,8 @@ limit and the baseline are the caller's data file; every message, key list and p
 from __future__ import annotations
 
 import re
+import shlex
+import tomllib
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
@@ -40,6 +42,9 @@ RULE_FILE_MISSING = "compose_file_missing"
 RULE_FILE_UNREADABLE = "compose_file_unreadable"
 RULE_DATA_INVALID = "stack_shape_data_invalid"
 RULE_BASELINE = "baseline_ratchet"
+RULE_IMAGE_COMMAND = "image_command_not_allowed"
+RULE_CONSOLE_SCRIPT = "console_script_not_allowed"
+RULE_CONSOLE_SCRIPTS_UNREADABLE = "console_scripts_unreadable"
 
 
 def _invalid(reason: str) -> ModelOnexError:
@@ -78,7 +83,13 @@ def _active(rules: Mapping[str, ModelValidatorRule], rule_id: str) -> bool:
 
 def validate_rules(rules: Mapping[str, ModelValidatorRule]) -> None:
     """Read every parameter of every enabled row once, so a broken contract fails at load."""
-    for required in (RULE_BASELINE, RULE_FILE_UNREADABLE):
+    for required in (
+        RULE_BASELINE,
+        RULE_FILE_UNREADABLE,
+        RULE_IMAGE_COMMAND,
+        RULE_CONSOLE_SCRIPT,
+        RULE_CONSOLE_SCRIPTS_UNREADABLE,
+    ):
         if required not in rules:
             raise _invalid(f"the contract has no {required} rule row")
     for rule_id, row in rules.items():
@@ -95,6 +106,10 @@ def validate_rules(rules: Mapping[str, ModelValidatorRule]) -> None:
             rule_string(row, "removal_marker")
             re.compile(rule_string(row, "removal_pattern"))
             re.compile(rule_string(row, "directive_pattern"))
+        elif rule_id == RULE_IMAGE_COMMAND:
+            rule_strings(row, "command_keys")
+        elif rule_id == RULE_CONSOLE_SCRIPTS_UNREADABLE:
+            rule_strings(row, "table_path")
         elif rule_id == RULE_BASELINE:
             rule_string(row, "data_path")
             rule_string(row, "base_ref")
@@ -137,6 +152,37 @@ def parse_stack_shape_data(text: str) -> ModelStackShapeData:
         if not isinstance(file, str) or not isinstance(service, str):
             raise _invalid("every baseline entry needs a file and a service")
         baseline.append((file, service, str(entry.get("ticket") or "")))
+    image_commands = (
+        _reasoned_entries(document["image_commands"], "command", "image_commands")
+        if "image_commands" in document
+        else None
+    )
+    scripts_file: str | None = None
+    if "console_scripts_file" in document:
+        scripts_file_raw = document["console_scripts_file"]
+        if not isinstance(scripts_file_raw, str) or not scripts_file_raw.strip():
+            raise _invalid("console_scripts_file must be a non-blank string")
+        scripts_file = scripts_file_raw
+        if "console_scripts_allowed" not in document:
+            raise _invalid(
+                "console_scripts_file requires a console_scripts_allowed list"
+            )
+    elif "console_scripts_allowed" in document or "developer_only" in document:
+        raise _invalid(
+            "console_scripts_allowed and developer_only require console_scripts_file"
+        )
+    scripts_allowed = _reasoned_entries(
+        document.get("console_scripts_allowed", []), "name", "console_scripts_allowed"
+    )
+    developer_only = _reasoned_entries(
+        document.get("developer_only", []), "name", "developer_only"
+    )
+    overlap = scripts_allowed.keys() & developer_only.keys()
+    if overlap:
+        raise _invalid(
+            "console_scripts_allowed and developer_only overlap: "
+            + ", ".join(sorted(overlap))
+        )
     return ModelStackShapeData(
         runtime_services=frozenset(
             _strings(runtime.get("services"), "runtime.services")
@@ -148,6 +194,10 @@ def parse_stack_shape_data(text: str) -> ModelStackShapeData:
         one_shots=frozenset(_strings(document.get("one_shots", []), "one_shots")),
         lanes=lanes,
         baseline=tuple(baseline),
+        image_commands=image_commands,
+        console_scripts_file=scripts_file,
+        console_scripts_allowed=scripts_allowed,
+        developer_only=developer_only,
     )
 
 
@@ -155,6 +205,25 @@ def _strings(value: object, where: str) -> tuple[str, ...]:
     if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
         raise _invalid(f"{where} must be a list of strings")
     return tuple(value)
+
+
+def _reasoned_entries(value: object, key: str, where: str) -> dict[str, str]:
+    if not isinstance(value, list):
+        raise _invalid(f"{where} must be a list")
+    entries: dict[str, str] = {}
+    for index, entry in enumerate(value):
+        location = f"{where}[{index}]"
+        if not isinstance(entry, dict):
+            raise _invalid(f"{location} must be a mapping")
+        name, reason = entry.get(key), entry.get("reason")
+        if not isinstance(name, str) or not name.strip():
+            raise _invalid(f"{location}.{key} must be a non-blank string")
+        if not isinstance(reason, str) or not reason.strip():
+            raise _invalid(f"{location}.reason must be a non-blank string")
+        if name in entries:
+            raise _invalid(f"{location}.{key} is a duplicate: {name}")
+        entries[name] = reason
+    return entries
 
 
 def baseline_key(
@@ -209,6 +278,57 @@ def compose_services(
     }
 
 
+def console_scripts(
+    text: str, rules: Mapping[str, ModelValidatorRule]
+) -> dict[str, str]:
+    """Script name -> entry point target from the contract's TOML table path."""
+    table_path = rule_strings(rules[RULE_CONSOLE_SCRIPTS_UNREADABLE], "table_path")
+    try:
+        table: object = tomllib.loads(text)
+    except tomllib.TOMLDecodeError as exc:
+        raise _invalid(str(exc)) from exc
+    for key in table_path:
+        if not isinstance(table, Mapping):
+            raise _invalid(f"{'.'.join(table_path)} must be a mapping")
+        if key not in table:
+            return {}
+        table = table[key]
+    if not isinstance(table, Mapping):
+        raise _invalid(f"{'.'.join(table_path)} must be a mapping")
+    return {str(name): str(target) for name, target in table.items()}
+
+
+def check_console_scripts(
+    data: ModelStackShapeData,
+    path: str,
+    scripts: Mapping[str, str],
+    rules: Mapping[str, ModelValidatorRule],
+) -> tuple[ModelValidationIssue, ...]:
+    """Issues for scripts outside the allowed and developer-only lists."""
+    if data.console_scripts_file is None:
+        return ()
+    return tuple(
+        issue
+        for script, target in sorted(scripts.items())
+        if script not in data.console_scripts_allowed
+        and script not in data.developer_only
+        for issue in report(
+            rules, RULE_CONSOLE_SCRIPT, path, script=script, target=target
+        )
+    )
+
+
+def _command_tokens(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(token) for token in value]
+    if isinstance(value, str):
+        try:
+            return shlex.split(value)
+        except ValueError:
+            return value.split()
+    return []
+
+
 def _replica_values(
     body: Mapping[object, object], row: ModelValidatorRule
 ) -> list[object]:
@@ -261,6 +381,28 @@ def check_compose(
                     rule_string(row, "message").format(**values),
                 )
             )
+        if (
+            data.image_commands is not None
+            and _active(rules, RULE_IMAGE_COMMAND)
+            and name in data.runtime_services
+        ):
+            for key in rule_strings(rules[RULE_IMAGE_COMMAND], "command_keys"):
+                tokens = _command_tokens(services[name].get(key))
+                if not tokens:
+                    continue
+                if tokens[0] not in data.image_commands:
+                    issues.extend(
+                        report(
+                            rules,
+                            RULE_IMAGE_COMMAND,
+                            path,
+                            service=name,
+                            lanes=lane_text,
+                            key=key,
+                            command=" ".join(tokens),
+                        )
+                    )
+                break
         if not _active(rules, RULE_REPLICAS) or name not in data.runtime_services:
             continue
         row = rules[RULE_REPLICAS]
@@ -361,9 +503,12 @@ def baseline_growth(
 
 __all__ = [
     "RULE_BASELINE",
+    "RULE_CONSOLE_SCRIPT",
+    "RULE_CONSOLE_SCRIPTS_UNREADABLE",
     "RULE_DATA_INVALID",
     "RULE_FILE_MISSING",
     "RULE_FILE_UNREADABLE",
+    "RULE_IMAGE_COMMAND",
     "RULE_NOT_ALLOWED",
     "RULE_REPLICAS",
     "baseline_growth",
@@ -371,7 +516,9 @@ __all__ = [
     "baseline_keys",
     "check_baseline",
     "check_compose",
+    "check_console_scripts",
     "compose_services",
+    "console_scripts",
     "key_moves",
     "lane_files",
     "parse_stack_shape_data",
