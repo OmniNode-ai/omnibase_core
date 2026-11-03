@@ -48,6 +48,9 @@ from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_locat
 
 pytestmark = pytest.mark.unit
 
+# Commit times are BASE plus a small offset, so git reads them as epoch seconds.
+BASE = 1_700_000_000
+
 
 class _FixedFacts(NodeDependencyPinsCheckEffect):
     """An in-memory facts effect: every requested repository has releases 1.0.0 and 1.1.0."""
@@ -133,8 +136,8 @@ def _git(*args: str, cwd: Path, when: int | None = None) -> str:
         "GIT_COMMITTER_EMAIL": "t@example.invalid",
     }
     if when is not None:
-        identity["GIT_COMMITTER_DATE"] = f"{when} +0000"
-        identity["GIT_AUTHOR_DATE"] = f"{when} +0000"
+        identity["GIT_COMMITTER_DATE"] = f"@{BASE + when} +0000"
+        identity["GIT_AUTHOR_DATE"] = f"@{BASE + when} +0000"
     git = shutil.which("git")
     assert git is not None
     return subprocess.run(
@@ -195,10 +198,10 @@ def test_effect_reads_release_tags_and_hook_history(tmp_path: Path) -> None:
     (history,) = result.hook_histories
     assert history.error is None
     assert {t.rev: t.committed_at for t in history.rev_times} == {
-        old: 1000,
-        "dev-x": 4000,
+        old: BASE + 1000,
+        "dev-x": BASE + 4000,
     }
-    assert history.release_times == (2000, 3000)
+    assert history.release_times == (BASE + 2000, BASE + 3000)
 
 
 def test_effect_clones_the_hook_history_when_none_is_given(tmp_path: Path) -> None:
@@ -207,7 +210,7 @@ def test_effect_clones_the_hook_history_when_none_is_given(tmp_path: Path) -> No
     (history,) = NodeDependencyPinsCheckEffect().handle(request).hook_histories
     assert history.error is None
     assert [t.rev for t in history.rev_times] == [old]
-    assert history.release_times == (2000, 3000)
+    assert history.release_times == (BASE + 2000, BASE + 3000)
 
 
 def test_effect_reports_a_failed_clone_as_an_error(tmp_path: Path) -> None:
