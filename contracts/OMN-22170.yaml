@@ -73,6 +73,29 @@ dod_evidence:
           -q --no-cov -n 0
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC2]
+  - id: dod-omn22170-ac1-per-repository-table
+    description: The per-repository fixture table records, for each repository's own CI configuration
+      and pinned omnibase_core revision, whether each script fixture is refused or admitted, and names
+      the repositories whose required CI does not run the check. The current-node row is compared with
+      the live node.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_script_refusal_omn22170.py -q --no-cov -n
+          0 -k script_fixture_matrix_table
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn22170-ac2-baseline-line-names-node
+    description: A line added to a baseline or to a burn-down baseline is refused with a text that names
+      the file and the node it should become. The tests fail on the node at the merge base, whose refusal
+      names no node.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_script_refusal_omn22170.py -q --no-cov -n
+          0 -k "added_baseline_line or added_burndown_line"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
   - id: dod-omn22170-ac3-required-context
     description: omnibase_core's Canonical File Shape (OMN-20304) job is a member of the CI Summary gating
       set, and its node refuses new launchd and cron units that run scripts. The behavior probe fails
