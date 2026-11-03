@@ -12,8 +12,8 @@ summary: Operator request 2026-11-03 is that the default broker is in the contra
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
-  - onex run-node broker selection
-  - onex.node_broker_resolvers entry-point group
+  - public_api
+  - protocols
 requirements:
   - id: req-omn22362-overlay-broker
     statement: onex run-node selects its broker from the node's contract overlay and from nothing else.
