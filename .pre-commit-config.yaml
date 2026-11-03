@@ -415,16 +415,18 @@ repos:
         files: ^(src/omnibase_core/enums/enum_hook_bit\.py|scripts/gen_hook_bits\.py|scripts/check_hook_bits_drift\.py)$
         stages: [pre-commit]
 
-      # Dep-provenance gate (OMN-13873)
-      # Forbid first-party git-source overrides (omnibase-core / omnibase-spi /
-      # omnibase-compat) in [tool.uv.sources]. onex-change-control is exempt
-      # (immutable-main pin model). Fires only when pyproject.toml changes.
+      # Dependency provenance (OMN-13873, moved into the generic validator format by OMN-22011).
+      # Core runs its own exported hook id check-dep-provenance: the rules are the rows of
+      # dep_provenance.validation.yaml, tag identity is check-dev-tag-lineage. Fires only when a
+      # pyproject.toml changes.
       - id: check-dep-provenance
-        name: Forbid first-party git-source overrides (OMN-13873)
-        entry: uv run --frozen python scripts/check_dep_provenance.py
+        name: Dependency provenance of first-party packages (OMN-22011)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_dep_provenance:ValidatorDepProvenance
         language: system
-        files: ^pyproject\.toml$
-        pass_filenames: false
+        files: (^|/)pyproject\.toml$
+        pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # Substrate Gate: silent except-pass (OMN-wire-validators)

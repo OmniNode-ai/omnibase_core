@@ -1735,3 +1735,19 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-dep-provenance
+  name: Dependency provenance of first-party packages (OMN-22011, T2.3)
+  description: >
+    A governed first-party package is sourced from the registry, a workspace, or the dev-merge tag of
+    its own repository, and from nothing else; a revision, a branch, a release tag, a path, a foreign
+    repository and a git source for an ungoverned package are refused, no comment exempts a line, and
+    a pyproject that cannot be parsed is refused. The governed packages, the admitted shapes per package
+    and the messages are the rule rows of dep_provenance.validation.yaml. Tag identity (existence, suffix,
+    branch, version, lock) is the check-dev-tag-lineage hook.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_dep_provenance:ValidatorDepProvenance
+  files: '(^|/)pyproject\.toml$'
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]

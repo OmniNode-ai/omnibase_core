@@ -1,0 +1,108 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: dep_provenance
+  validator_name: Dependency Provenance
+  validator_description: >-
+    A governed first-party package is sourced from the registry, a workspace, or the dev-merge tag of
+    its own repository, and from nothing else (OMN-22011, plan task T2.3; RULING 2026-10-29T01:50:26Z,
+    first-party dependencies iterate on dev-merge tags). Which packages are governed, which shapes each
+    admits, the exempt packages and every message are the rule rows of this file. The identity of a tag
+    (it exists, its suffix names its commit, it is on the branch, the declared version and the lock agree)
+    is the dev_tag_lineage validator; its hook id is named in the vocabulary row.
+  target_patterns:
+    - pyproject.toml
+    - '**/pyproject.toml'
+  exclude_patterns:
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/node_modules/**'
+    - '**/__pycache__/**'
+    - '**/tests/fixtures/**'
+  rules:
+    - rule_id: source_vocabulary
+      description: The names, patterns and package table every finding rule reads.
+      severity: error
+      enabled: true
+      parameters:
+        sources_table:
+          - tool
+          - uv
+          - sources
+        table_header_pattern: '^\s*\[\s*([^\[\]]+?)\s*\]\s*(?:#.*)?$'
+        key_pattern: '^\s*("[^"]+"|''[^'']+''|[^\s="''#\[]+)\s*='
+        git_keys:
+          - git
+          - rev
+          - branch
+          - tag
+        git_key: git
+        tag_key: tag
+        local_keys:
+          - path
+          - url
+        workspace_key: workspace
+        github_org: OmniNode-ai
+        repository_urls:
+          - https://github.com/{org}/{repo}
+          - https://github.com/{org}/{repo}.git
+        packages:
+          - omnibase-core|omnibase_core|registry,sibling_dev_tag
+          - omnibase-spi|omnibase_spi|registry,sibling_dev_tag
+          - omnibase-compat|omnibase_compat|registry,sibling_dev_tag
+          - omnibase-infra|omnibase_infra|registry,sibling_dev_tag
+          - omninode-memory|omnimemory|registry,workspace,sibling_dev_tag
+          - omnimarket|omnimarket|registry,sibling_dev_tag
+          - omninode-intelligence|omniintelligence|registry,sibling_dev_tag
+        package_row_pattern: ^(?P<package>[^|]+)\|(?P<repository>[^|]+)\|(?P<shapes>.+)$
+        shape_separator: ','
+        exempt_packages:
+          - onex-change-control
+        normalize_pattern: '[-_.]+'
+        normalize_replacement: '-'
+        lineage_hook: check-dev-tag-lineage
+    - rule_id: source_shape_not_admitted
+      description: A governed package has a source that is none of its admitted shapes.
+      severity: error
+      enabled: true
+      parameters:
+        message: '{package}: source ({keys}) is not an admitted shape; admitted: {admitted} (line {line})'
+        remediation: >-
+          Resolve the package from the registry or pin the dev-merge tag of its own repository with git
+          and tag alone; a revision, a branch, a release tag, a path or a url source is refused. No comment
+          exempts a line.
+    - rule_id: dev_tag_foreign_repository
+      description: A dev-merge tag is read from a repository that is not the package's own.
+      severity: error
+      enabled: true
+      parameters:
+        message: '{package}: dev-merge tag {tag!r} is read from {git!r}, not the package''s own repository
+          {expected} (line {line})'
+        remediation: Read the dev-merge tag from the package's own repository under the configured organisation.
+    - rule_id: foreign_git_source
+      description: A package outside the governed set has a git source and is not exempt.
+      severity: error
+      enabled: true
+      parameters:
+        message: '{package}: git source ({keys}) for a package outside the governed set (line {line})'
+        remediation: Resolve the package from the registry, or list it as exempt in the vocabulary row
+          with the reason; do not leave a git source unaccounted for.
+    - rule_id: invalid_pyproject
+      description: The file is not valid TOML, so no source can be read from it.
+      severity: error
+      enabled: true
+      parameters:
+        message: 'pyproject cannot be parsed: {detail}'
+        remediation: Fix the TOML syntax; an unparsable file is refused, never passed.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: true
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false
