@@ -8,12 +8,9 @@ summary: RULING 2026-11-03T18:02:39Z restates the retirement of omnibase_compat.
   references (propagation targets, CI sibling checkouts, the first-party lists of pin hygiene, boundary
   imports and dependency provenance, the validator requirements) are removed.
 is_seam_ticket: false
-interface_change: true
-interfaces_touched:
-  - omnibase_core.models.dependency_direction.model_retired_repo
-  - omnibase_core.models.dependency_direction.model_repo_layer_map
-  - omnibase_core.validation.checker_dependency_direction
-  - omnibase_core.validation.checker_dependency_pins
+# Internal validator implementation changes do not change a governed interface surface.
+interface_change: false
+interfaces_touched: []
 requirements:
   - id: req-omn22385-core-refuses-compat
     statement: The layer contract lists omnibase_compat as retired, and both the dependency-direction
@@ -44,3 +41,12 @@ dod_evidence:
           -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC3]
+  - id: dod-omn22385-deploy-hosted-validators
+    description: Hosted deploy probe loads the packaged retired-repository layer map and verifies that
+      the installed dependency-pin validator refuses retired distributions across manifest tables.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_dependency_direction_retired.py tests/unit/validation/dependency_pins/test_checker_dependency_pins_retired.py
+          -q --no-cov -o addopts='' -k 'packaged_layer_map or retired_distribution'
