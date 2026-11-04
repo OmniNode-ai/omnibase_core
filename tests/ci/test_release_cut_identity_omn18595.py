@@ -185,3 +185,15 @@ def test_release_changelog_retains_version_0_47_62_in_root_readme() -> None:
     assert "### Included Since v0.47.61" in readme
     assert "- feat: add report-only merge receipt validation check (#2229)" in readme
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
+
+
+def test_release_changelog_retains_version_0_47_66_in_root_readme() -> None:
+    """Keep the 0.47.66 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.66 (2026-11-04)" in readme
+    assert "### Included Since v0.47.62" in readme
+    assert (
+        "- fix: a ticket-cited advisory annotation is not suppression growth (#2257)"
+        in readme
+    )
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()
