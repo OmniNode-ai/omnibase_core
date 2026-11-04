@@ -22,9 +22,7 @@ class ProtocolNodeContractOverlayResolver(Protocol[OverlayT_co]):
     overlay path when the overlay cannot be read or is malformed.
     """
 
-    def resolve_contract_overlay(self, node_id: str) -> OverlayT_co:
-        """Return the node's contract overlay."""
-        ...
+    def resolve_contract_overlay(self, node_id: str) -> OverlayT_co: ...
 
 
 __all__ = ["OverlayT_co", "ProtocolNodeContractOverlayResolver"]
