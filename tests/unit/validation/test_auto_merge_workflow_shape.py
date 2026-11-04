@@ -88,6 +88,9 @@ def gh_resolver_stub_dir(tmp_path: Path) -> Path:
                 fi
                 printf '%s\\n' "${STUB_BASE_REF}"
                 ;;
+              "pr view "*" --repo "*" --json isDraft "*)
+                printf '%s\\n' "${STUB_IS_DRAFT:-false}"
+                ;;
               "repo view "*" --json defaultBranchRef "*)
                 printf '%s\\n' "${STUB_DEFAULT_BRANCH}"
                 ;;
@@ -127,6 +130,7 @@ def _run_live_pre_check(
     default_branch: str = "dev",
     check_suite_prs: str = "[]",
     unreadable_base: bool = False,
+    is_draft: bool = False,
 ) -> tuple[subprocess.CompletedProcess[str], str]:
     """Execute the deployed resolver Bash against deterministic metadata."""
     step = _pre_check_step()
@@ -147,6 +151,7 @@ def _run_live_pre_check(
         "STUB_BASE_REF": base_ref,
         "STUB_DEFAULT_BRANCH": default_branch,
         "STUB_UNREADABLE_BASE": str(unreadable_base).lower(),
+        "STUB_IS_DRAFT": str(is_draft).lower(),
     }
     result = subprocess.run(
         ["bash", "-c", script],
@@ -186,6 +191,41 @@ class TestAutoMergeResolverBaseGuard:
 
         assert result.returncode == 0, result.stderr
         assert output == "pr=18163\nactor=jonahgabriel\nskip=false\n"
+
+    @pytest.mark.parametrize(
+        "event_name", ["pull_request", "pull_request_review", "workflow_dispatch"]
+    )
+    def test_draft_pr_is_a_successful_no_enrollment(
+        self, gh_resolver_stub_dir: Path, event_name: str
+    ) -> None:
+        # OMN-17427: a draft is the deliberate durable pause (OMN-18179), and
+        # `gh pr merge --auto` on one fails with "Pull request is a draft".
+        # check_suite runs execute at the default branch's sha, so that failure
+        # painted dev red ("Enable Auto-Merge", run 41903329942, PR #2262).
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name=event_name,
+            base_ref="dev",
+            is_draft=True,
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert "is a draft; skipping auto-merge enrollment" in result.stdout
+        assert output == "pr=18163\nactor=jonahgabriel\nskip=true\n"
+
+    def test_check_suite_for_draft_pr_is_a_safe_noop(
+        self, gh_resolver_stub_dir: Path
+    ) -> None:
+        result, output = _run_live_pre_check(
+            gh_resolver_stub_dir=gh_resolver_stub_dir,
+            event_name="check_suite",
+            base_ref="dev",
+            check_suite_prs='[{"number":18163}]',
+            is_draft=True,
+        )
+
+        assert result.returncode == 0, result.stderr
+        assert output == "pr=18163\nactor=jonahgabriel\nskip=true\n"
 
     def test_dispatch_uses_the_same_feature_base_guard(
         self, gh_resolver_stub_dir: Path
