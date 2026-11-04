@@ -1,0 +1,41 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-19050
+title: A FAIL supersede receipt latches forever, so a PR cannot clear OCC preflight by fixing the test that failed
+summary: The omnibase_core merge-eligibility reader lets a prior FAIL supersede record be cleared only
+  by a PASS that the receipt runner produced, identified by a runner identity enum. A hand-authored PASS
+  over a FAIL does not make the pull request eligible.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn19050-runner-provenance
+    statement: The omnibase_core reader must refuse a record no runner produced when it would clear a
+      prior FAIL.
+    acceptance:
+      - id: AC6
+        statement: "AC6: the omnibase_core reader refuses a record no runner produced -- falsifier: a
+          validator test feeding a hand-authored PASS record with no runner provenance asserts eligible=true"
+evidence_requirements:
+  - kind: tests
+    description: The runner-provenance tests for the supersession reader pass.
+    command: uv run pytest tests/unit/validation/test_receipt_supersession_runner_provenance_omn_19050.py
+      -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn19050-ac6-runner-provenance
+    description: A hand-authored PASS over a runner FAIL leaves the pull request ineligible, a runner-produced
+      PASS over the same FAIL makes it eligible, and a hand-authored PASS with no prior FAIL resolves
+      as before.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_receipt_supersession_runner_provenance_omn_19050.py
+          -q -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
