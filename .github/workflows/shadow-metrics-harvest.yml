@@ -103,19 +103,65 @@ jobs:
             )
           fi
 
-          python3 "$APPEND_SCRIPT" \
-            --records-dir "$RECORDS_DIR" \
-            --ndjson "$PWD/_metrics/${NDJSON_PATH}"
-
+          METRICS_DIR="$PWD/_metrics"
           cd _metrics
           git config user.name "onexbot-occ-writer[bot]"
           git config user.email "307849072+onexbot-occ-writer[bot]@users.noreply.github.com"
-          git add "${NDJSON_PATH}" README.md
-          if git diff --cached --quiet; then
+
+          # Append the records and commit them. Idempotent: the append dedups by
+          # repo+head_sha+pr_number, so running it again on a freshly synced tree
+          # adds only what the remote does not already hold. Called as a plain
+          # command, never inside `if`, so `set -e` still stops on a real error.
+          COMMITTED=no
+          commit_records() {
+            python3 "$APPEND_SCRIPT" \
+              --records-dir "$RECORDS_DIR" \
+              --ndjson "$METRICS_DIR/${NDJSON_PATH}"
+            git add "${NDJSON_PATH}" README.md
+            if git diff --cached --quiet; then
+              COMMITTED=no
+              return 0
+            fi
+            git commit -m "chore(OMN-14342): harvest shadow test-selection record(s)" \
+              --trailer "Onex-Workflow: ${GITHUB_WORKFLOW}" \
+              --trailer "Onex-Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            COMMITTED=yes
+          }
+
+          commit_records
+          if [ "$COMMITTED" = no ]; then
             echo "No new records to commit."
             exit 0
           fi
-          git commit -m "chore(OMN-14342): harvest shadow test-selection record(s)" \
-            --trailer "Onex-Workflow: ${GITHUB_WORKFLOW}" \
-            --trailer "Onex-Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
-          git push "$AUTH" ci-shadow-metrics
+
+          # OMN-19998: the push is the one step that talks to GitHub's ref store,
+          # and it can be rejected on GitHub's side ("remote: fatal error in
+          # commit_refs", "[remote rejected] ... (failure)") with nothing wrong in
+          # the repository. This job is workflow_run-triggered, so its check lands
+          # on the default branch tip and one such rejection read as a red dev.
+          # Re-sync to the remote branch and push again, a bounded number of times;
+          # every attempt rejected still fails the job.
+          max_attempts=4
+          delay="${HARVEST_PUSH_RETRY_DELAY:-15}"
+          attempt=1
+          while true; do
+            if git push "$AUTH" ci-shadow-metrics; then
+              exit 0
+            fi
+            if [ "$attempt" -ge "$max_attempts" ]; then
+              echo "::error::push to ci-shadow-metrics rejected on all ${max_attempts} attempts"
+              exit 1
+            fi
+            echo "push to ci-shadow-metrics rejected (attempt ${attempt}/${max_attempts}); re-syncing and retrying"
+            sleep "$((delay * attempt))"
+            attempt=$((attempt + 1))
+            if git ls-remote --exit-code --heads "$AUTH" ci-shadow-metrics >/dev/null 2>&1; then
+              git fetch "$AUTH" ci-shadow-metrics
+              git reset --hard FETCH_HEAD
+              commit_records
+              if [ "$COMMITTED" = no ]; then
+                echo "Remote already holds these records."
+                exit 0
+              fi
+            fi
+          done
