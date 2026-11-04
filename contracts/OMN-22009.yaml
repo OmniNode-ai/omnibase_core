@@ -1,0 +1,52 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22009
+title: T1.2 Apply it everywhere, including the frozen repositories
+summary: The canonical-file-shape and shape-gate-independence entries of the validator requirements
+  spec apply to every governed repository instead of omnibase_core alone, so the handshake consumer
+  requires the canonical-file-shape hook and CI job in each of them.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22009-shape-gates-everywhere
+    statement: The handshake verifier requires the canonical-file-shape hook and CI job in every governed
+      repository, the frozen ones included.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the handshake verifier fails a repository that lacks the canonical-file-shape
+          hook -- falsifier: uv run pytest on the handshake verifier test with a fixture repository missing
+          the hook, expecting a refusal naming the repository"
+evidence_requirements:
+  - kind: tests
+    description: The handshake consumer refuses a repository missing the canonical-file-shape hook and
+      the spec applies both shape gates to all repositories.
+    command: uv run pytest tests/validation/test_validator_requirements_consumer.py tests/validation/test_validator_requirements_spec.py
+      -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22009-ac1-handshake-refusal
+    description: A fixture repository with no canonical-file-shape hook and no CI job is refused with
+      a gap naming that repository, for every known repository, and the same repository with both wired
+      carries no gap.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/validation/test_validator_requirements_consumer.py -q -o addopts=''
+          -k 'canonical_file_shape'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22009-shape-gates-apply-to-all
+    description: The spec declares applies_to_repos all for canonical-file-shape and shape-gate-independence.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/validation/test_validator_requirements_spec.py -q -o addopts=''
+          -k 'test_shape_gates_apply_to_all_repos'
+        cwd: ${OMNI_HOME}/omnibase_core
