@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version: {major: 1, minor: 0, patch: 0}
+  validator_id: error_rule_table
+  validator_name: Error Rule Table
+  validator_description: Section 4 error-rule table schema and action-contract hard stops.
+  target_patterns:
+    - '**/error_rules/overlay.yaml'
+    - '**/error_rules.yaml'
+    - '**/*.error_rules.yaml'
+  exclude_patterns: ['**/.git/**', '**/.venv/**']
+  rules:
+    - rule_id: error_rule_table_invalid
+      description: Refuse malformed or unsafe table rows with a field diagnostic.
+      severity: error
+      enabled: true
+      parameters:
+        registered_actions: [install-branch, landing-intent, fill-backlog-item, operator-question, wait]
+        forbidden_capabilities: [release, production-target, check-widening, hook-bypass]
+        allowed_targets: [dev, stability, local]
+        scope_marker: [dev, stability]
+        modes: [shadow, hint, dispatch]
+        trigger_kinds: [text, state, repeat]
+        break_classes: [A, B, C, other]
+        subject_kinds: [pr, host, ticket, global]
+        source_pattern: '^(ticket:OMN-[0-9]+|ledger:[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z)$'
+        source_pointer_pattern: '^memory:[a-zA-Z0-9][a-zA-Z0-9_/-]*$'
+        terminal_kind: none
+        shadow_mode: shadow
+        dispatch_mode: dispatch
+        needs_source: needs-source
+        state_trigger: state
+        backlog_action: fill-backlog-item
+        pr_subject: pr
+        measurement_writer: node_error_rule_measurement_compute
+        registry_env: ONEX_ERROR_RULE_ACTION_REGISTRY
+        sources_env: ONEX_LEDGER_PATH
+        measurements_env: ONEX_ERROR_RULE_MEASUREMENTS
+        modes_env: ONEX_ERROR_RULE_AUTHORIZED_MODES
+        source_record_types: [RULING, OPERATOR-CONSENT]
+        terminal_prefix: NONE-RULED
+        message: '{field}: {reason}'
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error

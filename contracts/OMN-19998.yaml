@@ -228,6 +228,14 @@ requirements:
           exactly four attempts and leaves the remote branch without the shadow record. -- falsifier:
           uv run pytest tests/ci/test_shadow_metrics_harvest_push_retry_omn19998.py -q -o addopts= --no-cov
           -k test_the_job_still_fails_when_every_attempt_is_rejected"
+  - id: req-omn19998-error-rule-table-schema
+    statement: Section 4 error-rule rows and their static action-contract closure are validated in core.
+    acceptance:
+      - id: AC28
+        statement: "Error-rule rows refuse unsafe actions, unresolved sources, missing negative fixtures,
+          duplicate keys, unmeasured dispatch, transitive hard stops and edited action contracts; a sourced
+          none row yields a non-executable terminal result."
+
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -667,3 +675,12 @@ dod_evidence:
           --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC26, AC27]
+  - id: dod-omn19998-error-rule-table-schema
+    description: Focused row, contract-closure and terminal-none falsifiers run through the core validator.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_error_rule_table.py -q -n0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC28]

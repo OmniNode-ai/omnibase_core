@@ -1,0 +1,160 @@
+{
+  "$defs": {
+    "ModelErrorActionContract": {
+      "additionalProperties": false,
+      "description": "One registered action or a node in its declared static call closure.",
+      "oneOf": [
+        {
+          "properties": {
+            "node": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "lane_kind": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "node"
+          ]
+        },
+        {
+          "properties": {
+            "lane_kind": {
+              "minLength": 1,
+              "type": "string"
+            },
+            "node": {
+              "type": "null"
+            }
+          },
+          "required": [
+            "lane_kind"
+          ]
+        }
+      ],
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "node": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Node"
+        },
+        "lane_kind": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Lane Kind"
+        },
+        "capabilities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Capabilities",
+          "type": "array"
+        },
+        "targets": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Targets",
+          "type": "array"
+        },
+        "scope_marker": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Scope Marker",
+          "type": "array"
+        },
+        "receivers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Receivers",
+          "type": "array"
+        },
+        "idempotent_by": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Idempotent By",
+          "type": "array"
+        },
+        "calls": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Calls",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "capabilities",
+        "targets",
+        "scope_marker",
+        "receivers",
+        "idempotent_by",
+        "calls"
+      ],
+      "title": "ModelErrorActionContract",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Static node contracts, registered state checks and permanently retired row ids.",
+  "properties": {
+    "contracts": {
+      "additionalProperties": {
+        "$ref": "#/$defs/ModelErrorActionContract"
+      },
+      "title": "Contracts",
+      "type": "object"
+    },
+    "state_checks": {
+      "items": {
+        "type": "string"
+      },
+      "title": "State Checks",
+      "type": "array"
+    },
+    "retired_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Retired Ids",
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "contracts",
+    "state_checks"
+  ],
+  "title": "ModelErrorActionRegistry",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

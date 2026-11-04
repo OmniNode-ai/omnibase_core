@@ -1,0 +1,435 @@
+{
+  "$defs": {
+    "ModelErrorRuleAction": {
+      "additionalProperties": false,
+      "description": "A closed registry reference or an explicitly reasoned terminal action.",
+      "properties": {
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string",
+          "enum": [
+            "install-branch",
+            "landing-intent",
+            "fill-backlog-item",
+            "operator-question",
+            "wait",
+            "none"
+          ]
+        },
+        "contract": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Contract"
+        },
+        "digest": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Digest"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "ModelErrorRuleAction",
+      "type": "object"
+    },
+    "ModelErrorRuleConditions": {
+      "additionalProperties": false,
+      "description": "An empty dimension matches all values in that dimension.",
+      "properties": {
+        "host_roles": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Host Roles",
+          "type": "array"
+        },
+        "repositories": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Repositories",
+          "type": "array"
+        },
+        "ticket_states": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Ticket States",
+          "type": "array"
+        }
+      },
+      "title": "ModelErrorRuleConditions",
+      "type": "object"
+    },
+    "ModelErrorRuleFixtures": {
+      "additionalProperties": false,
+      "description": "Every rule has a positive and a negative record.",
+      "properties": {
+        "positive": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Positive",
+          "type": "array"
+        },
+        "negative": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Negative",
+          "type": "array"
+        }
+      },
+      "required": [
+        "positive",
+        "negative"
+      ],
+      "title": "ModelErrorRuleFixtures",
+      "type": "object"
+    },
+    "ModelErrorRuleMeasurement": {
+      "additionalProperties": false,
+      "description": "The measured replay corpus and interval, with the measurement node identity.",
+      "properties": {
+        "corpus_digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Corpus Digest",
+          "type": "string"
+        },
+        "hits": {
+          "minimum": 0,
+          "title": "Hits",
+          "type": "integer"
+        },
+        "false_matches": {
+          "minimum": 0,
+          "title": "False Matches",
+          "type": "integer"
+        },
+        "interval_start": {
+          "format": "date-time",
+          "title": "Interval Start",
+          "type": "string"
+        },
+        "interval_end": {
+          "format": "date-time",
+          "title": "Interval End",
+          "type": "string"
+        },
+        "written_by": {
+          "minLength": 1,
+          "title": "Written By",
+          "type": "string"
+        }
+      },
+      "required": [
+        "corpus_digest",
+        "hits",
+        "false_matches",
+        "interval_start",
+        "interval_end",
+        "written_by"
+      ],
+      "title": "ModelErrorRuleMeasurement",
+      "type": "object"
+    },
+    "ModelErrorRuleReadBack": {
+      "additionalProperties": false,
+      "description": "Read-back state check; no expression or command can be supplied.",
+      "properties": {
+        "state_check": {
+          "minLength": 1,
+          "title": "State Check",
+          "type": "string"
+        },
+        "timeout_s": {
+          "exclusiveMinimum": 0,
+          "title": "Timeout S",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "state_check",
+        "timeout_s"
+      ],
+      "title": "ModelErrorRuleReadBack",
+      "type": "object"
+    },
+    "ModelErrorRuleTrigger": {
+      "additionalProperties": false,
+      "description": "State triggers name a registered state check; other triggers match keys.",
+      "properties": {
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "state_check": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "State Check"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "ModelErrorRuleTrigger",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "One stable rule id and the exact versioned normalizer keys it covers.",
+  "properties": {
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "class_keys": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Class Keys",
+      "type": "array"
+    },
+    "key_version": {
+      "exclusiveMinimum": 0,
+      "title": "Key Version",
+      "type": "integer"
+    },
+    "trigger": {
+      "$ref": "#/$defs/ModelErrorRuleTrigger"
+    },
+    "break_class": {
+      "title": "Break Class",
+      "type": "string"
+    },
+    "sources": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Sources",
+      "type": "array"
+    },
+    "source_state": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Source State"
+    },
+    "applies_if": {
+      "$ref": "#/$defs/ModelErrorRuleConditions"
+    },
+    "action": {
+      "$ref": "#/$defs/ModelErrorRuleAction"
+    },
+    "read_back": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelErrorRuleReadBack"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "subject_kind": {
+      "title": "Subject Kind",
+      "type": "string"
+    },
+    "budget": {
+      "exclusiveMinimum": 0,
+      "title": "Budget",
+      "type": "integer"
+    },
+    "lease_s": {
+      "exclusiveMinimum": 0,
+      "title": "Lease S",
+      "type": "integer"
+    },
+    "lane_kinds": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Lane Kinds",
+      "type": "array"
+    },
+    "mode": {
+      "title": "Mode",
+      "type": "string"
+    },
+    "fixtures": {
+      "$ref": "#/$defs/ModelErrorRuleFixtures"
+    },
+    "measured": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ModelErrorRuleMeasurement"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "removal_ticket": {
+      "minLength": 1,
+      "title": "Removal Ticket",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "class_keys",
+    "key_version",
+    "trigger",
+    "break_class",
+    "applies_if",
+    "action",
+    "subject_kind",
+    "budget",
+    "lease_s",
+    "lane_kinds",
+    "mode",
+    "fixtures",
+    "removal_ticket"
+  ],
+  "title": "ModelErrorRuleRow",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "action": {
+            "properties": {
+              "kind": {
+                "const": "none"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "sources": {
+            "minItems": 1
+          },
+          "read_back": {
+            "type": "null"
+          },
+          "action": {
+            "type": "object",
+            "required": [
+              "kind",
+              "reason"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "kind": {
+                "const": "none"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              }
+            }
+          }
+        }
+      },
+      "else": {
+        "required": [
+          "read_back"
+        ],
+        "properties": {
+          "action": {
+            "required": [
+              "kind",
+              "contract",
+              "digest"
+            ],
+            "properties": {
+              "kind": {
+                "enum": [
+                  "install-branch",
+                  "landing-intent",
+                  "fill-backlog-item",
+                  "operator-question",
+                  "wait"
+                ]
+              },
+              "contract": {
+                "enum": [
+                  "install-branch",
+                  "landing-intent",
+                  "fill-backlog-item",
+                  "operator-question",
+                  "wait"
+                ]
+              },
+              "digest": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            }
+          },
+          "read_back": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  ]
+}
