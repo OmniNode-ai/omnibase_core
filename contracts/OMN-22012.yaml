@@ -80,8 +80,21 @@ dod_evidence:
         check_value: uv run pytest tests/unit/validation/test_runtime_cli_logging.py tests/unit/validation/test_checker_naming_convention.py::TestMainFunction::test_main_logs_success
           tests/unit/validation/test_runtime_duplicate_config_ids_emits_omn22003.py tests/unit/validation/test_runtime_no_hardcoded_topics_emits_omn22003.py
           --no-cov -o addopts='' -q
+  - id: dod-slice-b-staged-path-policy
+    description: Slice B moves the hooks no-env-file and no-planning-docs, a shell script and an inline
+      bash command, onto ValidatorStagedPathPolicy with the rule table staged_path_policy.validation.yaml.
+      Both hook ids are unchanged and both rows leave context.remaining_appendix_1_rows.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_staged_path_policy.py --no-cov
+          -o addopts='' -q
 context:
   slice: A
+  slice_b_migrated_hooks:
+    - no-env-file
+    - no-planning-docs
   deferred_acceptance:
     - AC1
   remaining_appendix_1_rows:
@@ -113,10 +126,6 @@ context:
       hook: rsd-provenance-stamp
     - row: omnibase_core:348
       hook: verify-flip-bundle
-    - row: omnibase_core:369
-      hook: no-env-file
-    - row: omnibase_core:380
-      hook: no-planning-docs
     - row: omnibase_core:406
       hook: hook-bits-drift
     - row: omnibase_core:418

@@ -368,26 +368,30 @@ repos:
 
       # Security: Prevent .env file commits
       # Enforces use of ~/.omnibase/.env as the single source of truth
-      # Blocks commits of .env files (except .env.example)
+      # Blocks commits of .env files (except .env.example). Rule row env_file_staged of
+      # validation/contracts/staged_path_policy.validation.yaml (OMN-22012); the file is never read.
       - id: no-env-file
         name: Reject committed .env files (except .env.example)
-        entry: scripts/check_no_env_files.sh
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_staged_path_policy:ValidatorStagedPathPolicy
         language: system
-        pass_filenames: false
-        always_run: true
+        files: (^|/)\.env([._-].+)?$
+        pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # Planning Doc Prevention (OMN-3616)
       # Planning documents belong in omni_home/docs/plans/, not in individual repos.
       # This hook prevents accidental commits of docs/plans/ files to this repo.
+      # Rule row planning_doc_staged of validation/contracts/staged_path_policy.validation.yaml (OMN-22012).
       - id: no-planning-docs
         name: Block planning docs (belong in omni_home/docs/plans/)
-        entry: bash -c 'PLAN_FILES=$(git diff --cached --name-only -- "docs/plans/"); if [ -n "$PLAN_FILES"
-          ]; then echo "ERROR - Planning docs must live in omni_home/docs/plans/, not in this repo"; echo
-          "$PLAN_FILES"; echo ""; echo "Move your file to \$OMNI_HOME/docs/plans/"; exit 1; fi'
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_staged_path_policy:ValidatorStagedPathPolicy
         language: system
-        pass_filenames: false
-        always_run: true
+        files: ^docs/plans/
+        pass_filenames: true
+        require_serial: true
         stages: [pre-commit]
 
       # Producer/Consumer Normalization Symmetry (OMN-9333)
