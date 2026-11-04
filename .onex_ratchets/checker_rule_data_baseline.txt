@@ -41,7 +41,6 @@ src/omnibase_core/validation/validator_local_paths.py 2
 src/omnibase_core/validation/validator_naming_convention.py 3
 src/omnibase_core/validation/validator_node_purity.py 7
 src/omnibase_core/validation/validator_no_lane_literal_branching.py 7
-src/omnibase_core/validation/validator_occ_append_only.py 1
 src/omnibase_core/validation/validator_occ_merge_eligibility.py 3
 src/omnibase_core/validation/validator_patterns.py 1
 src/omnibase_core/validation/validator_pull_request_workflow_ratchet.py 3
