@@ -215,6 +215,19 @@ requirements:
           name omnimarket, src/omnimarket/nodes/node_<name>/ and the move; planted Python scripts, shell
           scripts and node directories are refused with that guidance. -- falsifier: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_refusal_names_legal_home.py
           -q -o addopts="
+  - id: req-omn19998-shadow-harvest-push-retry
+    statement: The shadow-metrics harvester retries rejected pushes to ci-shadow-metrics after re-syncing
+      the remote branch, and fails when its bounded retry budget is exhausted.
+    acceptance:
+      - id: AC26
+        statement: "AC26: The workflow's own Bash step succeeds after two rejected pushes and lands exactly
+          one shadow record on the remote branch. -- falsifier: uv run pytest tests/ci/test_shadow_metrics_harvest_push_retry_omn19998.py
+          -q -o addopts= --no-cov -k test_a_rejected_push_is_retried_and_lands_exactly_one_record"
+      - id: AC27
+        statement: "AC27: When every push is rejected, the workflow's own Bash step exits nonzero after
+          exactly four attempts and leaves the remote branch without the shadow record. -- falsifier:
+          uv run pytest tests/ci/test_shadow_metrics_harvest_push_retry_omn19998.py -q -o addopts= --no-cov
+          -k test_the_job_still_fails_when_every_attempt_is_rejected"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -620,3 +633,37 @@ dod_evidence:
           -q -o addopts="
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC25]
+  - id: dod-omn19998-shadow-harvest-push-recovery
+    description: The workflow step runs against a local bare Git repository whose pre-receive hook rejects
+      two pushes. The step must succeed and the remote must contain exactly one shadow record.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_shadow_metrics_harvest_push_retry_omn19998.py -q -o addopts=
+          --no-cov -k test_a_rejected_push_is_retried_and_lands_exactly_one_record
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC26]
+  - id: dod-omn19998-shadow-harvest-push-exhaustion
+    description: A local remote rejects every push. The workflow step must exit nonzero after exactly
+      four rejected attempts and must not publish the shadow record.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_shadow_metrics_harvest_push_retry_omn19998.py -q -o addopts=
+          --no-cov -k test_the_job_still_fails_when_every_attempt_is_rejected
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC27]
+  - id: dod-omn19998-deploy-shadow-harvest-push-retry
+    description: Hosted deploy probe executes the actual workflow Bash against temporary local Git repositories.
+      Syntax, clean push, recovery after rejection and retry exhaustion are checked without GitHub credentials,
+      network access or lab services.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_shadow_metrics_harvest_push_retry_omn19998.py -q -o addopts=
+          --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC26, AC27]
