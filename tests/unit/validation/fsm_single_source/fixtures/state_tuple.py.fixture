@@ -1,0 +1,9 @@
+"""A state-only tuple."""
+
+from omnibase_core.utils.util_fsm_executor import execute_transition
+
+OPEN_STATES = ("drafted", "built")
+
+
+async def fold(fsm, state, trigger, context):
+    return await execute_transition(fsm, state, trigger, context)

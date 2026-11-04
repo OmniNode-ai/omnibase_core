@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: fsm_single_source
+  validator_name: FSM Single Source Validator
+  validator_description: >-
+    Enforces that reducer state machines are declared only in their contracts, and that Python handlers
+    ask core's executor to perform transitions. #magic___^_^___line
+  target_patterns:
+    - "**/contract.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+    - "**/tests/**"
+
+  rules:
+    - rule_id: contract_unreadable
+      description: Reject contract text that cannot be parsed as valid YAML.
+      severity: error
+      enabled: true
+    - rule_id: state_machine_missing
+      description: Require the reducer contract to declare a state machine with state names.
+      severity: error
+      enabled: true
+      parameters:
+        state_machine_key: state_machine
+        state_list_key: states
+        state_name_key: state_name
+        state_scalar_keys: [initial_state]
+        state_list_keys: [terminal_states, error_states]
+        transition_list_key: transitions
+        transition_state_keys: [from_state, to_state]
+        node_type_prefix: REDUCER
+    - rule_id: source_unparseable
+      description: Reject source text that cannot be parsed as valid Python.
+      severity: error
+      enabled: true
+    - rule_id: state_table
+      description: Reject collections or enums holding multiple contract state names as a second table.
+      severity: error
+      enabled: true
+      parameters:
+        collection_nodes: [Dict, Set, List, Tuple]
+        enum_base_suffixes: [Enum, Flag]
+        min_table_states: 2
+    - rule_id: state_branch_chain
+      description: Reject scopes with a chain of branches comparing multiple contract state names.
+      severity: error
+      enabled: true
+      parameters:
+        scope_nodes: [Module, FunctionDef, AsyncFunctionDef]
+        compare_operators: [Eq, NotEq, Is, IsNot, In, NotIn]
+        min_branches: 2
+        min_branch_states: 2
+    - rule_id: execute_transition_missing
+      description: Require a source to call the core executor when running reducer transitions.
+      severity: error
+      enabled: true
+      parameters:
+        executor_name: execute_transition
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

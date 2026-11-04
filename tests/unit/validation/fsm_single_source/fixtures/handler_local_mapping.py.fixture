@@ -1,0 +1,12 @@
+"""Calls the executor and also keeps a function-local mapping."""
+
+from omnibase_core.utils.util_fsm_executor import execute_transition
+
+
+async def fold(fsm, state, trigger, context):
+    shadow = {
+        ("drafted", "build_finished"): "built",
+        ("built", "readback_healthy"): "done",
+    }
+    result = await execute_transition(fsm, state, trigger, context)
+    return shadow.get((state, trigger), result.new_state)

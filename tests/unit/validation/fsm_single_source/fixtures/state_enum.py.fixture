@@ -1,0 +1,14 @@
+"""A state-only enum."""
+
+from enum import StrEnum
+
+from omnibase_core.utils.util_fsm_executor import execute_transition
+
+
+class RecordState(StrEnum):
+    DRAFTED = "drafted"
+    BUILT = "built"
+
+
+async def fold(fsm, state, trigger, context):
+    return await execute_transition(fsm, state, trigger, context)

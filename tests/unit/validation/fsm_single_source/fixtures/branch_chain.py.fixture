@@ -1,0 +1,12 @@
+"""Decides a transition in a chain of branches on state literals."""
+
+from omnibase_core.utils.util_fsm_executor import execute_transition
+
+
+async def fold(fsm, state, trigger, context):
+    await execute_transition(fsm, state, trigger, context)
+    if state == "drafted":
+        return "built"
+    elif state == "built":
+        return "done"
+    return state

@@ -1,0 +1,128 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21513
+title: The single-source check moved to omnibase_core
+summary: The predicate of the merged omnimarket check node_fsm_single_source_check_compute (OMN-21477)
+  is now a pure core handler with a ValidatorBase entry and a fsm_single_source.validation.yaml contract.
+  Its AST collection, scope and comparison kinds, state-name keys, executor name and thresholds are the
+  contract's rule parameters, not module constants. The omnimarket caller is the child ticket of this
+  task and needs the core release adopted first.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21513-single-source-checker
+    statement: One core checker judges a reducer contract and its Python sources for a second copy of
+      the state machine, from rule values the validator contract carries.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: The core checker reproduces the merged check''s verdicts on the merged task''s
+          fixtures, and the omnimarket node returns the checker''s issues unchanged -- falsifier: the
+          merged task''s tests, run against the caller after the move'
+      - id: AC2
+        statement: 'AC2: The omnimarket node holds no predicate and no rule table -- falsifier: T-Q6''s
+          validator over the node''s package counts zero'
+      - id: AC3
+        statement: 'AC3: Configuration: every rule table that was a module constant is the checker''s
+          `.validation.yaml` contract -- falsifier: a fixture contract that removes one entry changes
+          the verdict on the fixture that entry catches'
+      - id: AC4
+        statement: 'AC4: Bindings: pure -- falsifier: byte-identical results in process and through the
+          local in-process entry of the parity harness (T-B2)'
+evidence_requirements:
+  - kind: tests
+    description: The merged task's nine fixtures give the merged verdicts, a contract with one entry removed
+      changes the verdict on the fixture that entry catches, and the checker is pure and byte-stable across
+      calls and through the validator.
+    command: uv run --frozen pytest tests/unit/validation/fsm_single_source/test_handler_fsm_single_source.py
+      -q --no-cov
+  - kind: ci
+    description: Hosted-runner check that runs the same test file against the checkout; no live service
+      is required.
+    command: uv run --frozen pytest tests/unit/validation/fsm_single_source/test_handler_fsm_single_source.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21513-ac1-merged-verdicts
+    description: The core checker gives the merged check's verdict, line and code on each of the merged
+      task's fixtures. The omnimarket caller half of this criterion is bound by the caller ticket after
+      the core release is adopted.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/fsm_single_source/test_handler_fsm_single_source.py
+          -q --no-cov -k "state_trigger or routed_through or function_local or state_only or branch_chain_on
+          or single_state or never_calls or without_state_machine or unparseable or generic_validation_issue
+          or validator"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21513-ac2-no-rule-table
+    description: The checker module holds no module-level tuple, set, list or dict of rule values, so
+      the predicate that the omnimarket node drops carries no table into core either. The omnimarket count
+      of zero is bound by the caller ticket.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/fsm_single_source/test_handler_fsm_single_source.py
+          -q --no-cov -k "holds_no_rule_table"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21513-ac3-configuration
+    description: Removing one entry from the shipped contract's collection nodes, enum suffixes, comparison
+      operators or scope nodes, renaming the executor, disabling a rule or changing its severity changes
+      the verdict on the fixture it catches.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/fsm_single_source/test_handler_fsm_single_source.py
+          -q --no-cov -k "removing_one_contract_entry or renaming_the_executor or disabling_a_rule or
+          rule_severity or unknown_ast"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21513-ac4-bindings-pure
+    description: The checker imports no I/O module and calls no I/O function, and returns byte-identical
+      JSON across calls and the same issues through the ValidatorBase entry. The comparison through the
+      omnimarket local in-process entry is bound by the caller ticket.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/fsm_single_source/test_handler_fsm_single_source.py
+          -q --no-cov -k "imports_no_io or byte_identical"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21513-deploy-handler-surface
+    description: Read the published handler and contract at the checkout commit through the GitHub contents
+      API. Fail when the handler, its rule-parameter loader or the contract's executor_name parameter
+      is absent. Runs on hosted runners without a container daemon.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC3]
+    checks:
+      - check_type: command
+        check_value: |
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/handlers/handler_fsm_single_source.py?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'class HandlerFsmSingleSource:' > /dev/null &&
+          gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/contracts/fsm_single_source.validation.yaml?ref=$(git rev-parse HEAD)" --jq .content |
+            base64 -d | grep -F 'executor_name: execute_transition' > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21513-delegation-join
+    description: The Codex run that drafted the checker, validator, models and contract left a receipt
+      naming its thread and the lane, and the files it drafted are tracked at the head.
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac: [AC1, AC2, AC3, AC4]
+    checks:
+      - check_type: command
+        check_value: |
+          grep -l '01a1851f-6305-7080-b9ea-bc463bbee50a' "${OMNI_HOME}"/.claude_scratch/delegation-receipts/t-g2b-0035/*codex*.json > /dev/null &&
+          git ls-files --error-unmatch src/omnibase_core/handlers/handler_fsm_single_source.py src/omnibase_core/handlers/handler_fsm_single_source_cli.py src/omnibase_core/validation/contracts/fsm_single_source.validation.yaml > /dev/null
+        cwd: ${OMNI_HOME}/omnibase_core
