@@ -84,7 +84,7 @@ dod_evidence:
     description: Slice B moves the hooks no-env-file and no-planning-docs, a shell script and an inline
       bash command, onto ValidatorStagedPathPolicy with the rule table staged_path_policy.validation.yaml.
       Both hook ids are unchanged and both rows leave context.remaining_appendix_1_rows. Bound to AC3
-      for its staged-file half only: a staged .env or docs/plans/ file now fails the commit through the
+      for its staged-file half only, where a staged .env or docs/plans/ file now fails the commit through the
       file pre-commit passes to the validator. AC1 stays deferred.
     source: manual
     execution_scope: hosted_and_local
