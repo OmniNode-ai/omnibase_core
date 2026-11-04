@@ -1242,3 +1242,89 @@ def test_advisory_suppression_counter_ignores_only_the_cited_form() -> None:
     assert _count_suppressions(f"{ADVISORY} reason\n") == 1
     assert _count_suppressions(f"{ADVISORY}\n") == 1
     assert _count_suppressions(f"{ADVISORY} OMN-22448\nnext line\n") == 1
+
+
+# The recorded case: omninode_infra#2013 inserted one step above two grandfathered
+# `continue-on-error` settings; advisory-job-gate job 126018259346 answered by
+# demanding an annotation on each. The fixture directory holds that job's findings
+# and the step lists of the workflow before and after the insertion.
+RECORDED = (
+    Path(__file__).parents[3] / "fixtures/validation/canonical_file_shape/advisory_2013"
+)
+RECORDED_PATH = ".github/workflows/terraform-plan.yml"
+
+
+def _recorded_flagged_steps() -> list[int]:
+    """The step indices advisory-job-gate named in job 126018259346."""
+    log = (RECORDED / "job_126018259346_findings.txt").read_text(encoding="utf-8")
+    return [
+        int(n) for n in re.findall(r"^\s+key: \S+::plan::step\[(\d+)\]$", log, re.M)
+    ]
+
+
+def _annotate_recorded(head: str, steps: list[int], line: str) -> str:
+    """Put ``line`` above the ``continue-on-error`` of each named step of ``head``."""
+    out: list[str] = []
+    step = -1
+    for text in head.splitlines():
+        if text.startswith("      - name:"):
+            step += 1
+        if text.strip() == "continue-on-error: true" and step in steps:
+            out.append(f"        {line}")
+        out.append(text)
+    return "\n".join(out) + "\n"
+
+
+@pytest.fixture
+def recorded_repo(repo: Path) -> Path:
+    _write(
+        repo, RECORDED_PATH, (RECORDED / "terraform-plan.base.yml").read_text("utf-8")
+    )
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "terraform-plan before omninode_infra#2013")
+    return repo
+
+
+def test_advisory_suppression_recorded_2013_findings_name_the_shifted_steps() -> None:
+    assert _recorded_flagged_steps() == [3, 7]
+
+
+def test_advisory_suppression_recorded_2013_annotated_head_not_growth(
+    recorded_repo: Path,
+) -> None:
+    head = (RECORDED / "terraform-plan.head.yml").read_text("utf-8")
+    annotated = _annotate_recorded(
+        head,
+        _recorded_flagged_steps(),
+        f"{ADVISORY} OMN-22448 plan stays informational",
+    )
+    assert annotated.count(ADVISORY) == 2
+    _write(recorded_repo, RECORDED_PATH, annotated)
+    _stage(recorded_repo)
+    assert _rules(recorded_repo) == []
+
+
+def test_advisory_suppression_recorded_2013_unannotated_head_adds_none(
+    recorded_repo: Path,
+) -> None:
+    _write(
+        recorded_repo,
+        RECORDED_PATH,
+        (RECORDED / "terraform-plan.head.yml").read_text("utf-8"),
+    )
+    _stage(recorded_repo)
+    assert _rules(recorded_repo) == []
+
+
+@pytest.mark.parametrize("line", [f"{ADVISORY} plan stays informational", NOQA])
+def test_advisory_suppression_recorded_2013_other_comment_grows(
+    recorded_repo: Path, line: str
+) -> None:
+    head = (RECORDED / "terraform-plan.head.yml").read_text("utf-8")
+    _write(
+        recorded_repo,
+        RECORDED_PATH,
+        _annotate_recorded(head, _recorded_flagged_steps(), line),
+    )
+    _stage(recorded_repo)
+    assert _rules(recorded_repo) == ["suppression-growth"]
