@@ -475,6 +475,17 @@ requirements:
           merge base c58d677a4, whose checker treats the workflow as a new baseline file. -- falsifier:
           uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py -q -o addopts='' -k
           test_a_workflow_named_like_an_exception_list_is_not_one"
+  - id: req-omn17427-auto-merge-skips-draft
+    statement: The auto-merge pre-check reads the pull request's draft state live and ends as a successful
+      no-enrollment for a draft, so a check_suite run at the default branch's sha cannot paint the default
+      branch red by arming auto-merge on a draft.
+    acceptance:
+      - id: AC58
+        statement: "AC58: The auto-merge pre-check step resolves isDraft live and, for a draft pull request
+          on pull_request, pull_request_review, workflow_dispatch and check_suite events, exits 0 with
+          skip=true and enrolls nothing. The tests fail at merge base 98995a40a, whose pre-check has no
+          draft read. -- falsifier: uv run pytest tests/unit/validation/test_auto_merge_workflow_shape.py
+          -q -o addopts='' -k 'test_draft_pr_is_a_successful_no_enrollment or test_check_suite_for_draft_pr_is_a_safe_noop'"
 evidence_requirements:
   - kind: tests
     description: "The caller-evidence job exempts an OCC writer app version bump using the pinned producer
@@ -605,6 +616,11 @@ evidence_requirements:
       file-shape check, while a config baseline file still is.
     command: uv run pytest tests/unit/validation/test_checker_canonical_file_shape.py -q -o addopts=''
       -k test_a_workflow_named_like_an_exception_list_is_not_one
+  - kind: tests
+    description: The auto-merge pre-check skips a draft pull request with skip=true on every event, so
+      arming auto-merge on a draft cannot redden the default branch.
+    command: uv run pytest tests/unit/validation/test_auto_merge_workflow_shape.py -q -o addopts='' -k
+      'test_draft_pr_is_a_successful_no_enrollment or test_check_suite_for_draft_pr_is_a_safe_noop'
 emergency_bypass:
   enabled: false
   justification: ''
@@ -1262,3 +1278,15 @@ dod_evidence:
           -k test_a_workflow_named_like_an_exception_list_is_not_one
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC57]
+  - id: dod-omn17427-auto-merge-skips-draft
+    description: The auto-merge pre-check reads isDraft live and, for a draft pull request, exits 0 with
+      skip=true on pull_request, pull_request_review, workflow_dispatch and check_suite events. The tests
+      fail at merge base 98995a40a, whose pre-check has no draft read.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_auto_merge_workflow_shape.py -q -o addopts=''
+          -k 'test_draft_pr_is_a_successful_no_enrollment or test_check_suite_for_draft_pr_is_a_safe_noop'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC58]
