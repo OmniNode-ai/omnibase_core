@@ -1,0 +1,86 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22448
+title: A ticket-cited advisory annotation is not counted by the suppression-growth rule
+summary: The advisory-job gate asks for a ticket-cited advisory annotation on a continue-on-error setting,
+  and the canonical-file-shape suppression-growth rule counted that same comment as a new suppression.
+  The rule's pattern data in the validator contract now leaves out exactly the annotation form the gate
+  accepts; every other suppression, and an annotation without a ticket id and a reason, still counts.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22448-advisory-annotation-not-growth
+    statement: The suppression-growth pattern for the generic -ok marker skips an advisory annotation
+      that cites an OMN ticket and gives a reason on the same line, and nothing else.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a workflow file that gains one advisory annotation citing a ticket and a reason
+          above a new continue-on-error passes the suppression-growth rule -- falsifier: uv run pytest
+          tests/ -k "advisory and suppression" -q -p no:cacheprovider in omnibase_core'
+      - id: AC2
+        statement: 'AC2: an advisory annotation with no ticket id or no reason, and a noqa, nosec or other
+          -ok marker added to a yml file, still fail suppression-growth -- falsifier: uv run pytest tests/
+          -k "advisory and suppression" -q -p no:cacheprovider in omnibase_core'
+      - id: AC3
+        statement: 'AC3: the recorded case (advisory-job-gate job 126018259346 findings and the omninode_infra#2013
+          terraform-plan step lists, fixtures under tests/fixtures/validation/canonical_file_shape/advisory_2013)
+          fails on the previous validator contract and passes on the fix, showing the annotation no longer
+          growing the file -- falsifier: uv run pytest tests/ -k "advisory and suppression and recorded"
+          -q -p no:cacheprovider in omnibase_core'
+evidence_requirements:
+  - kind: tests
+    description: Advisory annotation and suppression-growth cases, including the recorded omninode_infra#2013
+      case.
+    command: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute tests/unit/validation/test_checker_canonical_file_shape.py
+      -n 0 -q -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22448-ac1-annotation-passes
+    description: A workflow that gains a ticket-cited advisory annotation above a new continue-on-error
+      is not refused by suppression-growth.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -n 0 -q -p no:cacheprovider -k "advisory_ticket_cited_annotation_not_suppression_growth"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22448-ac2-others-still-count
+    description: A malformed annotation, a noqa, a nosec and another -ok marker added to a yml file are
+      still refused.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -n 0 -q -p no:cacheprovider -k "advisory_malformed_or_other_suppression_still_grows or advisory_annotation_does_not_hide
+          or advisory_suppression_counter"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22448-ac3-recorded-case
+    description: The recorded omninode_infra#2013 step lists, annotated as the gate demands, pass; the
+      same lists with a non-ticket comment are refused.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          -n 0 -q -p no:cacheprovider -k "advisory_suppression_recorded_2013"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22448-deploy-validator-contract
+    description: Validator contract data change only; the checker is exercised at the checkout by the
+      tests and requires no container daemon, broker topic or runtime process.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC2, AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_canonical_file_shape_rules.py
+          tests/unit/validation/test_checker_canonical_file_shape.py -k "advisory or checker" -n 0 -q
+          -p no:cacheprovider
+        cwd: ${OMNI_HOME}/omnibase_core
