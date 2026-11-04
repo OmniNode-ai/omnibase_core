@@ -2050,6 +2050,18 @@ repos:
       # binding site, and no setting with a literal value in two node contracts. Binding sites, class
       # lists and the shrink-only baseline (.onex_ratchets/protocol_binding_baseline.txt) are rule
       # data of protocol_binding.validation.yaml. Runs in CI through the precommit-suite job.
+      # OMN-19998: section 4 table validation uses the existing report/event node.
+      # The existing precommit-suite CI job runs the same hook; no gate is widened.
+      - id: check-error-rule-table
+        name: Validate error-rule rows and action-contract closures (OMN-19998)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_error_rule_table:ValidatorErrorRuleTable
+        language: system
+        files: '(^|/)(error_rules/.*\.ya?ml|error_rules\.ya?ml|.*\.error_rules\.ya?ml)$'
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
+
       - id: check-protocol-binding
         name: No protocol bound to its implementation in code (OMN-21533, K5)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run

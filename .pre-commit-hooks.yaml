@@ -1768,3 +1768,17 @@
   pass_filenames: true
   require_serial: true
   stages: [pre-commit]
+
+- id: check-error-rule-table
+  name: Validate error-rule rows and action-contract closures (OMN-19998)
+  description: >
+    The closed action registry, transitive capability and target stops, pinned closure digest, source
+    resolution, negative fixtures, terminal none branch and measurement ownership are checked by the core
+    checker. The existing validation node publishes the verdict. Recheck every table when any file under
+    error_rules changes, including a contract manifest.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_error_rule_table:ValidatorErrorRuleTable
+  files: '(^|/)(error_rules/.*\.ya?ml|error_rules\.ya?ml|.*\.error_rules\.ya?ml)$'
+  pass_filenames: false
+  require_serial: true
+  stages: [pre-commit]
