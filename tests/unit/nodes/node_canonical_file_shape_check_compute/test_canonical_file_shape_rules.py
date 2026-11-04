@@ -1161,3 +1161,84 @@ def test_ci_inheritance_baseline_undeclared_still_refused(repo: Path) -> None:
     _write(repo, CI_INHERITANCE_BASELINE, "entries: []\n")
     _stage(repo)
     assert _rules(repo) == ["new-exception-file"]
+
+
+# --- advisory annotation vs suppression-growth (OMN-22448) -------------------
+# A ticket-cited advisory annotation is the one -ok marker the gate itself
+# demands; every other suppression, and a malformed annotation, still counts.
+
+ADVISORY = "# " + "advisory" + "-ok:"
+WORKFLOW = ".github/workflows/w.yml"
+WORKFLOW_BASE = (
+    "jobs:\n  j:\n    steps:\n      - run: x\n        continue-on-error: true\n"
+)
+WORKFLOW_EXTRA = (
+    "jobs:\n  j:\n    steps:\n      - run: x\n        continue-on-error: true\n"
+    "      - run: y\n{line}\n        continue-on-error: true\n"
+)
+
+
+@pytest.fixture
+def workflow_repo(repo: Path) -> Path:
+    _write(repo, WORKFLOW, WORKFLOW_BASE)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-q", "-m", "workflow")
+    return repo
+
+
+def _with_line(repo: Path, line: str) -> list[str]:
+    _write(repo, WORKFLOW, WORKFLOW_EXTRA.format(line=f"        {line}"))
+    _stage(repo)
+    return _rules(repo)
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        f"{ADVISORY} OMN-22448 plan is informational",
+        "# Advisory" + "-ok: omn-22448 reason",
+        "# Advisory" + "-ok: OMN-22448\treason",
+        f"{ADVISORY} OMN-1 x",
+    ],
+)
+def test_advisory_ticket_cited_annotation_not_suppression_growth(
+    workflow_repo: Path, line: str
+) -> None:
+    assert _with_line(workflow_repo, line) == []
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        f"{ADVISORY} no ticket here",
+        f"{ADVISORY} OMN-22448",
+        f"{ADVISORY} OMN-22448   ",
+        f"{ADVISORY}",
+        f"{ADVISORY} OMN-abc reason",
+        "# raw-prod-bypass" + "-ok: OMN-22448 reason",
+        "# fallback" + "-ok: OMN-22448 reason",
+        "# x-" + ADVISORY[2:] + " OMN-22448 reason",
+        NOQA,
+        "# no" + "sec",
+        "# yamllint " + "disable-line rule:line-length",
+    ],
+)
+def test_advisory_malformed_or_other_suppression_still_grows(
+    workflow_repo: Path, line: str
+) -> None:
+    assert _with_line(workflow_repo, line) == ["suppression-growth"]
+
+
+def test_advisory_annotation_does_not_hide_a_second_suppression(
+    workflow_repo: Path,
+) -> None:
+    two = f"{ADVISORY} OMN-22448 reason\n        {NOQA}"
+    assert _with_line(workflow_repo, two) == ["suppression-growth"]
+
+
+def test_advisory_suppression_counter_ignores_only_the_cited_form() -> None:
+    assert _count_suppressions(f"{ADVISORY} OMN-22448 reason\n") == 0
+    assert _count_suppressions(f"{ADVISORY} OMN-22448\n") == 1
+    assert _count_suppressions(f"{ADVISORY} reason\n") == 1
+    assert _count_suppressions(f"{ADVISORY}\n") == 1
+    assert _count_suppressions(f"{ADVISORY} OMN-22448\nnext line\n") == 1

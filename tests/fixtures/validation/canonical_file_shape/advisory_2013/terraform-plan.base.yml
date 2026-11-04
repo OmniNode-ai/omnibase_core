@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: Terraform Plan
+on:
+  pull_request:
+    paths:
+      - 'aws/**'
+      - '.github/workflows/terraform-plan.yml'
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        run: echo step
+      - name: Assert the matrix root actually contains terraform (OMN-15299)
+        run: echo step
+      - name: Configure AWS credentials (OIDC -> omninode-github-actions-plan-role, read-only plan)
+        continue-on-error: true
+        run: echo step
+      - name: Set up Terraform
+        run: echo step
+      - name: Terraform init
+        run: echo step
+      - name: Terraform validate
+        run: echo step
+      - name: Terraform plan
+        continue-on-error: true
+        run: echo step
+      - name: Render human-readable plan
+        run: echo step
+      - name: Post plan as PR comment
+        run: echo step
+      - name: Fail job if plan errored
+        run: echo step
+      - name: Fail job if AWS credentials could not be assumed (OMN-15299)
+        run: echo step

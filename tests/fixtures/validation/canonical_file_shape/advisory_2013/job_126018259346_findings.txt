@@ -1,0 +1,7 @@
+
+ADVISORY_UNANNOTATED  .github/workflows/terraform-plan.yml:237
+    job `plan`, step[3] Configure AWS credentials (OIDC -> omninode-github-actions-p: a new `continue-on-error: true` with nothing naming it. Add `# advisory-ok: OMN-nnnnn <reason>` on this line or the line above, or remove the setting.
+    key: .github/workflows/terraform-plan.yml::plan::step[3]
+ADVISORY_UNANNOTATED  .github/workflows/terraform-plan.yml:283
+    job `plan`, step[7] Terraform plan: a new `continue-on-error: true` with nothing naming it. Add `# advisory-ok: OMN-nnnnn <reason>` on this line or the line above, or remove the setting.
+    key: .github/workflows/terraform-plan.yml::plan::step[7]

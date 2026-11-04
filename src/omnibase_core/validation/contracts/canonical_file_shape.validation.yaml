@@ -210,8 +210,8 @@ validation:
         suppression_patterns: ['#\s*noqa\b', '#\s*type:\s*ignore\b', '#\s*pyright:\s*ignore\b', '#\s*mypy:\s*ignore-errors\b',
           '#\s*pylint:\s*disable\b', '#\s*ruff:\s*noqa\b', '#\s*pragma:\s*(no\s+cover|allowlist)\b', '#\s*nosec\b',
           '#\s*shellcheck\s+disable\b', '#\s*yamllint\s+disable\b', '#\s*aislop:\s*ignore\b', '#\s*onex-allow',
-          '#\s*[A-Za-z][\w-]*-ok\b', 'ONEX_EXCLUD[E]', 'NOSONA[R]', 'gitleaks:allo[w]', '(//|/\*)\s*eslint-disable',
-          '@ts-(?:ignor[e]|expect-erro[r]|nochec[k])']
+          '#\s*(?!(?i:advisory-ok:\s*OMN-\d+[ \t]+\S))[A-Za-z][\w-]*-ok\b', 'ONEX_EXCLUD[E]', 'NOSONA[R]',
+          'gitleaks:allo[w]', '(//|/\*)\s*eslint-disable', '@ts-(?:ignor[e]|expect-erro[r]|nochec[k])']
         config_extensions: [".yaml", ".yml", ".toml", ".cfg", ".ini"]
         suppression_growth_text: "suppression comments {old} -> {new}; fix the code instead"
 
