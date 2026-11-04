@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22471
+title: omnibase_core declares a node contract overlay resolver protocol and loads the one registered resolver
+summary: omnibase_infra's handler wiring needs a node's contract merged with the contract section of its
+  contract overlay, and neither omnibase_infra nor omnibase_core may import omnimarket, which owns the
+  workspace layout the overlay file lives in. Core now declares ProtocolNodeContractOverlayResolver, a
+  typed refusal naming the overlay path, and ModelNodeContractOverlay, whose for_node loads the one provider
+  registered under the onex.node_contract_overlay_resolvers entry-point group the way ModelNodeBrokerBinding.for_node
+  does, and whose merged_into deep-merges the overlay over the packaged contract with core's merge_dict.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+  - protocols
+requirements:
+  - id: req-omn22471-contract-overlay-seam
+    statement: Core loads exactly one registered node contract overlay resolver, refuses with a typed
+      error otherwise, and merges the overlay's contract section over the packaged contract without changing
+      it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the loader refuses with ModelNodeContractOverlayResolutionError when no resolver
+          is registered, when two are, when the provider has no resolve_contract_overlay, and when it
+          answers a type other than ModelNodeContractOverlay, and returns the provider''s answer otherwise
+          -- falsifier: uv run pytest tests/unit/models/contract_overlay -q -n 0 --no-cov -k "refuse or
+          returns_the_resolver_answer"'
+      - id: AC2
+        statement: 'AC2: merging an overlay over a packaged contract puts the overlay''s value over the
+          packaged one, merges nested mappings key by key, leaves the packaged mapping unchanged, and
+          keeps the contract as it is for a node with no overlay -- falsifier: uv run pytest tests/unit/models/contract_overlay
+          -q -n 0 --no-cov -k "wins or merge or no_overlay"'
+evidence_requirements:
+  - kind: tests
+    description: The loader refusals and the merge cases; at the merge base the module does not exist,
+      so the file cannot be collected and every bound check fails.
+    command: uv run pytest tests/unit/models/contract_overlay -q -n 0 --no-cov -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22471-ac1-loader-refusals
+    description: AC1 the loader refuses no resolver, two resolvers, a provider without the method and
+      a wrong answer type, and returns the provider's answer otherwise.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/contract_overlay -q -n 0 --no-cov -p no:cacheprovider
+          -k "refuse or returns_the_resolver_answer"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22471-ac2-merge
+    description: AC2 the overlay value wins, nested mappings merge key by key, the packaged mapping is
+      left unchanged, and a node with no overlay keeps its contract.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/contract_overlay -q -n 0 --no-cov -p no:cacheprovider
+          -k "wins or merge or no_overlay"
+        cwd: ${OMNI_HOME}/omnibase_core
