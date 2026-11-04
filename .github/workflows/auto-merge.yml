@@ -271,7 +271,7 @@ jobs:
             exit 0
           fi
           # OMN-17427: a draft is the deliberate durable pause (OMN-18179), and
-          # `gh pr merge --auto` on one fails with "Pull request is a draft".
+          # arming auto-merge on one fails with "Pull request is a draft".
           # check_suite runs execute at the default branch's sha, so that
           # failure painted dev red as "Enable Auto-Merge" (run 41903329942,
           # PR #2262). Read isDraft live, not from the payload: a
