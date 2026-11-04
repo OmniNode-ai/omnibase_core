@@ -1,0 +1,60 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22473
+title: omnibase_core's event-registry drift check skips node-owned events and accepts side-channel registrations
+summary: OMN-21416 route 1 moves omnimarket's event-registry drift gate onto this check over omniclaude's
+  exported event_registrations document. The check now skips an emit-registry event marked node_owned
+  true, as omnimarket's gate does (OMN-21112), and accepts an explicit empty topics list for a side-channel
+  event. On lab host .201 the full omniclaude export checks clean against omnimarket's topics.yaml with
+  its existing baseline unchanged.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22473-drift-rules
+    statement: The drift check skips node-owned registry events and matches side-channel registrations,
+      and every other divergence still fails.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: an emit-registry event whose node_owned is the literal boolean true is not compared,
+          a node_owned of false or the string true is still compared, and a node-owned event that a source
+          does declare is still drift -- falsifier: uv run pytest tests/unit/validation/test_validator_event_registry_drift_node_owned_omn21416.py
+          -q -n 0 --no-cov -k node_owned'
+      - id: AC2
+        statement: 'AC2: an event_registrations entry declaring topics: \[\] matches an emit-registry
+          event with fan_out: \[\], is drift against an event that fans out, and an entry with no topics
+          key is still an error -- falsifier: uv run pytest tests/unit/validation/test_validator_event_registry_drift_node_owned_omn21416.py
+          -q -n 0 --no-cov -k side_channel'
+evidence_requirements:
+  - kind: tests
+    description: The two rules and the existing drift cases; at the merge base the node-owned and side-channel
+      cases fail.
+    command: uv run pytest tests/unit/validation/test_validator_event_registry_drift_node_owned_omn21416.py
+      tests/unit/validation/test_validator_event_registry_drift.py -q -n 0 --no-cov -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22473-ac1-node-owned
+    description: AC1 a node-owned registry event is skipped, any other value still compares, and a declared
+      node-owned event is still drift.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_event_registry_drift_node_owned_omn21416.py
+          -q -n 0 --no-cov -p no:cacheprovider -k node_owned
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22473-ac2-side-channel
+    description: AC2 an explicit empty topics list matches an empty fan-out, is drift against a fanning-out
+      event, and a missing topics key is still an error.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_event_registry_drift_node_owned_omn21416.py
+          -q -n 0 --no-cov -p no:cacheprovider -k side_channel
+        cwd: ${OMNI_HOME}/omnibase_core

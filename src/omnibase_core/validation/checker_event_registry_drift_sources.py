@@ -189,9 +189,12 @@ def parse_registration_document(path: str, source: str, topic_prefix: str) -> _P
         entry_errors = [key_error] if key_error else []
         if not isinstance(event_type, str) or not event_type:
             entry_errors.append(f"{where}: event_type is not declared")
-        if not topics or not all(t.startswith(topic_prefix) for t in topics):
+        # An empty list declares a side-channel event with no fan-out (OMN-21416); a missing
+        # or malformed topics value is still an error.
+        if topics is None or not all(t.startswith(topic_prefix) for t in topics):
             entry_errors.append(
-                f"{where}: topics must be a non-empty list of full topic names"
+                f"{where}: topics must be a list of full topic names"
+                " (an empty list declares a side-channel event)"
             )
         if required_fields is None:
             entry_errors.append(
@@ -200,7 +203,11 @@ def parse_registration_document(path: str, source: str, topic_prefix: str) -> _P
         if entry_errors:
             errors.extend(entry_errors)
             continue
-        assert isinstance(event_type, str) and topics and required_fields is not None
+        assert (
+            isinstance(event_type, str)
+            and topics is not None
+            and required_fields is not None
+        )
         registrations.append(
             ModelEventRegistration(
                 event_type=event_type,
@@ -230,6 +237,10 @@ def parse_emit_registry(path: str, source: str, topic_prefix: str) -> _Parsed:
         where = f"{path}: events.{event_type}"
         if not isinstance(event_type, str) or not isinstance(event_def, dict):
             errors.append(f"{where} must be a mapping keyed by event type")
+            continue
+        # A node-owned event is emitted by a node of the consuming repo, never by the producer,
+        # so no producer declares it (OMN-21112, OMN-21416). Only a literal boolean true opts out.
+        if event_def.get("node_owned") is True:
             continue
         fan_out = event_def.get("fan_out", [])
         if not isinstance(fan_out, list) or not all(
