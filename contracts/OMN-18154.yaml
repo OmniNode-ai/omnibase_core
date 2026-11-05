@@ -1,0 +1,81 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-18154
+title: Remove the stale MergeStrategy alias
+summary: Remove the unused MergeStrategy alias from enum_merge_strategy while retaining EnumMergeStrategy,
+  its adapter consumers and its serialized values. This contract covers the alias removal and the import
+  and serialization tests carried by this pull request.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn18154-canonical-merge-strategy
+    statement: The canonical EnumMergeStrategy remains usable after the legacy alias is removed.
+    acceptance:
+      - id: AC1
+        statement: The enum module and adapters expose EnumMergeStrategy without the MergeStrategy alias.
+      - id: AC2
+        statement: Existing merge strategy detector consumers continue to use the canonical enum.
+      - id: AC3
+        statement: The merge_queue and squash_auto values retain JSON and Pydantic round trips, and Pydantic
+          rejects an unknown strategy.
+evidence_requirements:
+  - kind: tests
+    description: Focused import, consumer and serialization tests run against the checkout.
+    command: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/enums/test_enum_merge_strategy.py
+      tests/unit/test_merge_strategy_detector.py -q --no-cov -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn18154-ac1-alias-removal
+    description: The canonical enum imports from the enum module and adapters, and both surfaces lack
+      the legacy alias.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/enums/test_enum_merge_strategy.py
+          -q --no-cov -o addopts='' -k TestEnumMergeStrategyImport
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18154-ac2-consumers
+    description: Existing merge strategy detector tests pass with EnumMergeStrategy after alias removal.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/test_merge_strategy_detector.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/enums/test_enum_merge_strategy.py
+          -q --no-cov -o addopts='' -k TestEnumMergeStrategyConsumers
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18154-ac3-serialization
+    description: Both enum values round trip through JSON and Pydantic, and an unknown value is refused.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/enums/test_enum_merge_strategy.py
+          -q --no-cov -o addopts='' -k TestEnumMergeStrategySerialization
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18154-deploy-hosted-import
+    description: Hosted checkout deploy probe imports the shipped enum and adapters, refuses the removed
+      alias, pins both serialized values and exercises JSON and Pydantic round trips. This library probe
+      runs without a container daemon or a deployed service.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1, AC3]
+    checks:
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/enums/test_enum_merge_strategy.py
+          -q --no-cov -o addopts=''
+        cwd: ${OMNI_HOME}/omnibase_core
