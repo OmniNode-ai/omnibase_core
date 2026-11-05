@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 
@@ -748,3 +748,57 @@ class MyModel(BaseModel):
         result = validator._is_discriminated_union(pattern, file_content)
         # split("[")[0] should give "dict"
         assert result is True, "Should handle malformed bracketed types"
+
+
+@pytest.mark.unit
+class TestUnexpectedInputTypesNoDiagnosticLogging:
+    """Pin the OMN-18155 decision: no diagnostic logging for unexpected types.
+
+    Decision: ``UnionLegitimacyValidator._safe_str`` / ``_safe_lower`` get no
+    debug logging for non-string input. ``UnionPattern`` coerces every type to a non-empty ``str`` before the
+    legitimacy helpers see it, so those helpers never receive a non-string
+    from the validator, and validating such input writes nothing beyond the
+    returned result.
+    """
+
+    def test_union_pattern_hands_only_non_empty_strings_to_validator(
+        self, validate_union_usage_module: ModuleType
+    ) -> None:
+        UnionPattern = validate_union_usage_module.UnionPattern
+
+        raw_types: list[Any] = [None, 123, "  ", "", "str", 4.5]
+        pattern = UnionPattern(
+            raw_types,
+            line=1,
+            file_path="/test/path.py",
+        )
+
+        assert pattern.types == ["123", "4.5", "str"]
+        assert all(isinstance(t, str) and t.strip() for t in pattern.types)
+
+    def test_validating_unexpected_input_emits_no_output_or_log_records(
+        self,
+        validate_union_usage_module: ModuleType,
+        capsys: pytest.CaptureFixture[str],
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        UnionPattern = validate_union_usage_module.UnionPattern
+        UnionLegitimacyValidator = validate_union_usage_module.UnionLegitimacyValidator
+
+        validator = UnionLegitimacyValidator()
+        raw_types: list[Any] = [None, 123, object(), "str"]
+        pattern = UnionPattern(
+            raw_types,
+            line=1,
+            file_path="/test/path.py",
+        )
+
+        with caplog.at_level("DEBUG"):
+            first = validator.validate_union_legitimacy(pattern)
+            second = validator.validate_union_legitimacy(pattern)
+
+        assert first == second
+        assert caplog.records == []
+        captured = capsys.readouterr()
+        assert captured.out == ""
+        assert captured.err == ""
