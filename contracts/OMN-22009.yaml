@@ -2,9 +2,9 @@
 schema_version: "1.0.0"
 ticket_id: OMN-22009
 title: T1.2 Apply it everywhere, including the frozen repositories
-summary: The canonical-file-shape and shape-gate-independence entries of the validator requirements
-  spec apply to every governed repository instead of omnibase_core alone, so the handshake consumer
-  requires the canonical-file-shape hook and CI job in each of them.
+summary: The canonical-file-shape and shape-gate-independence entries of the validator requirements spec
+  apply to every governed repository instead of omnibase_core alone, so the handshake consumer requires
+  the canonical-file-shape hook and CI job in each of them.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
