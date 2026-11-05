@@ -1,0 +1,50 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_fixture_record_effect
+event_bus:
+  subscribe_topics:
+    - onex.cmd.fixture.record.v1
+  publish_topics:
+    - onex.evt.fixture.recorded.v1
+    - onex.evt.fixture.record-failed.v1
+chain_scenarios:
+  schema_version: 1
+  success_topic: onex.evt.fixture.recorded.v1
+  failures:
+    - name: sink_unavailable
+      topic: onex.evt.fixture.record-failed.v1
+  bindings:
+    - name: sink
+      target: CONSTRUCTOR_KWARG
+      attribute: sink
+      in_memory_factory: fixture.doubles:RecordingSink
+      fault_factories:
+        DEPENDENCY_DOWN: fixture.doubles:RaisingSink
+  cases:
+    - case_name: error_sink_is_down
+      kind: ERROR
+      input:
+        topic: onex.cmd.fixture.record.v1
+        payload:
+          row: alpha
+        correlation_field: correlation_id
+      fault:
+        kind: DEPENDENCY_DOWN
+        boundary: sink
+        max_dependency_calls: 1
+      expected_events:
+        - topic: onex.evt.fixture.record-failed.v1
+          fields:
+            reason: sink_unavailable
+      failure: sink_unavailable
+      ledger_failure_row:
+        row_type: FRICTION
+        subject: node_fixture_record_effect
+      reading: NOT_WORKING
+      oracle:
+        basis: STATED_BY_PERSON
+        statement: A down sink ends in the typed failure, never in silence.
+      breaks:
+        - DROP_TERMINAL_PUBLISH
+        - WRONG_CORRELATION_ID
