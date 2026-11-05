@@ -1,7 +1,8 @@
 ---
 schema_version: "1.0.0"
 ticket_id: OMN-19050
-title: A FAIL supersede receipt latches forever, so a PR cannot clear OCC preflight by fixing the test that failed
+title: A FAIL supersede receipt latches forever, so a PR cannot clear OCC preflight by fixing the test
+  that failed
 summary: The omnibase_core merge-eligibility reader lets a prior FAIL supersede record be cleared only
   by a PASS that the receipt runner produced, identified by a runner identity enum. A hand-authored PASS
   over a FAIL does not make the pull request eligible.
