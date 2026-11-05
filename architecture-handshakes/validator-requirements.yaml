@@ -798,8 +798,8 @@ required_validators:
       allowed: []
       forbidden: []
     emits: required
-    applies_to_repos:
-      - omnibase_core
+    # OMN-22009: every governed repository, the frozen ones included.
+    applies_to_repos: all
 
   shape-gate-independence:
     description: |
@@ -824,8 +824,8 @@ required_validators:
       allowed: []
       forbidden: []
     emits: required
-    applies_to_repos:
-      - omnibase_core
+    # OMN-22009: every governed repository, the frozen ones included.
+    applies_to_repos: all
 
 # ---------------------------------------------------------------------------
 # Model B — failing-rollup enforcement (OMN-13574, epic OMN-13573)
