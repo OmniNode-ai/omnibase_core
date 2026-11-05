@@ -75,6 +75,17 @@ these hold:
   The runner's per-commit ``repos/<owner>/<repo>/commits/<sha>`` line is not
   part of the command.
 
+Only the runner clears a FAIL (OMN-19050, AC6):
+
+Once a later PASS could supersede an earlier FAIL, the ticket's own measured
+escape -- hand-authoring a receipt -- would have worked: any PASS record filed
+after a FAIL at different code cleared it. So a PASS supersedes a prior FAIL
+only when the product-repo receipt runner produced it: the record's
+``superseder`` AND its replacement's ``runner`` must both name an
+``EnumReceiptRunnerIdentity`` member. Otherwise the FAIL stands and
+``guard_note`` says why. A PASS with no FAIL anywhere in its chain is not
+affected; that is the OMN-13888 correction flow over a placeholder receipt.
+
 A PASS is refused against ANY earlier FAIL that is the same observation, not
 only the latest one. When a PASS is accepted over a FAIL at the same code
 because the check changed, the resolution records why in ``guard_note``.
@@ -94,6 +105,9 @@ from pathlib import Path
 import yaml
 from pydantic import ValidationError
 
+from omnibase_core.enums.ticket.enum_receipt_runner_identity import (
+    is_receipt_runner_identity,
+)
 from omnibase_core.enums.ticket.enum_receipt_status import EnumReceiptStatus
 from omnibase_core.models.contracts.ticket.model_dod_receipt import ModelDodReceipt
 from omnibase_core.models.contracts.ticket.model_receipt_supersession import (
@@ -274,6 +288,21 @@ def _check_definition_changed(
     )
 
 
+def _runner_produced(record: ModelReceiptSupersession) -> bool:
+    """Whether the receipt runner filed this record and executed its receipt.
+
+    Both identities must name the runner. ``superseder`` alone is the filer's
+    claim about itself; ``runner`` alone is the receipt's claim about who ran
+    it. A hand-authored record that copies one of them is still refused.
+    """
+    replacement = record.replacement
+    return (
+        replacement is not None
+        and is_receipt_runner_identity(record.superseder.strip())
+        and is_receipt_runner_identity(replacement.runner)
+    )
+
+
 def _guarded_winner(
     ordered: list[tuple[Path, ModelReceiptSupersession]],
 ) -> tuple[Path, ModelReceiptSupersession, str | None]:
@@ -308,6 +337,25 @@ def _guarded_winner(
     replacement = winner.replacement
     if replacement is None or replacement.status is not EnumReceiptStatus.PASS:
         return winner_path, winner, None
+
+    prior_fails = [
+        (path, record)
+        for path, record in ordered[:-1]
+        if record.replacement is not None
+        and record.replacement.status is EnumReceiptStatus.FAIL
+    ]
+    if prior_fails and not _runner_produced(winner):
+        fail_path, fail_record = prior_fails[-1]
+        return (
+            fail_path,
+            fail_record,
+            (
+                f"PASS {winner_path.name} refused: it would supersede FAIL "
+                f"{fail_path.name} but no runner produced it (superseder "
+                f"{winner.superseder!r}, runner {replacement.runner!r}); only "
+                "a record the receipt runner files at PR head clears a FAIL"
+            ),
+        )
 
     accepted_note: str | None = None
     for path, record in reversed(ordered[:-1]):

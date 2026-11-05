@@ -51,6 +51,9 @@ import yaml
 from omnibase_core.enums.enum_append_only_violation_kind import (
     EnumAppendOnlyViolationKind,
 )
+from omnibase_core.enums.ticket.enum_receipt_runner_identity import (
+    is_receipt_runner_identity,
+)
 from omnibase_core.models.validation.model_append_only_violation import (
     ModelAppendOnlyViolation,
 )
@@ -68,13 +71,9 @@ from omnibase_core.validation.validator_receipt_gate import (
 
 _APPEND_ONLY_VIOLATION = "APPEND_ONLY_VIOLATION"
 
-# The identity the product-repo receipt runner records as ``runner`` on every
-# receipt it executes and as ``superseder`` on every record it files
-# (omnimarket scripts/ci/occ_receipt_runner.py). A record carrying it is
-# executed evidence, never a placeholder, so a branch may not rewrite it.
-RECEIPT_RUNNER_IDENTITIES: frozenset[str] = frozenset(
-    {"omnimarket-ci occ-receipt-runner"}
-)
+# A record naming an EnumReceiptRunnerIdentity member (as superseder or
+# runner) is executed evidence, never a placeholder, so a branch may not
+# rewrite it.
 
 # One change a branch commit made to a receipt path: the commit, the git
 # status letter(s), the path before the change, the content that path held
@@ -128,7 +127,7 @@ def _names_the_runner(prior_text: str | None) -> bool:
     replacement = record.get("replacement")
     if isinstance(replacement, dict):
         identities.append(replacement.get("runner"))
-    return any(identity in RECEIPT_RUNNER_IDENTITIES for identity in identities)
+    return any(is_receipt_runner_identity(identity) for identity in identities)
 
 
 def _level_without_whole_file_hash(
@@ -405,7 +404,6 @@ def branch_history_from_git(
 
 
 __all__ = [
-    "RECEIPT_RUNNER_IDENTITIES",
     "BranchHistoryChange",
     "ModelOccAppendOnlyResult",
     "branch_history_from_git",
