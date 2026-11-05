@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "node": "node_fixture_record_effect",
+  "receipts": [
+    {
+      "case_name": "golden_record_is_accepted",
+      "case_hash": "35830cf2832c908c88b36b76bb9b577e2ce457fc49ff7e6c941568b5e7cfa9c8",
+      "injected_break": "DROP_TERMINAL_PUBLISH",
+      "outcome": "red",
+      "failed_assertion": "expected_events"
+    },
+    {
+      "case_name": "golden_record_is_accepted",
+      "case_hash": "35830cf2832c908c88b36b76bb9b577e2ce457fc49ff7e6c941568b5e7cfa9c8",
+      "injected_break": "WRONG_CORRELATION_ID",
+      "outcome": "red",
+      "failed_assertion": "expected_events"
+    }
+  ]
+}

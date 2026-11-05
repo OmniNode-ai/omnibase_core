@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "node": "node_fixture_record_effect",
+  "receipts": [
+    {
+      "case_name": "golden_record_is_accepted",
+      "case_hash": "35830cf2832c908c88b36b76bb9b577e2ce457fc49ff7e6c941568b5e7cfa9c8",
+      "injected_break": "DROP_TERMINAL_PUBLISH",
+      "outcome": "red",
+      "failed_assertion": "expected_events"
+    },
+    {
+      "case_name": "golden_record_is_accepted",
+      "case_hash": "35830cf2832c908c88b36b76bb9b577e2ce457fc49ff7e6c941568b5e7cfa9c8",
+      "injected_break": "WRONG_CORRELATION_ID",
+      "outcome": "red",
+      "failed_assertion": "expected_events"
+    },
+    {
+      "case_name": "error_sink_is_down",
+      "case_hash": "e30344913858176816a9fc8f87cd087620145adc465325f44bffb14dec6493fd",
+      "injected_break": "DROP_TERMINAL_PUBLISH",
+      "outcome": "red",
+      "failed_assertion": "expected_events"
+    },
+    {
+      "case_name": "error_sink_is_down",
+      "case_hash": "e30344913858176816a9fc8f87cd087620145adc465325f44bffb14dec6493fd",
+      "injected_break": "WRONG_CORRELATION_ID",
+      "outcome": "red",
+      "failed_assertion": "expected_events"
+    }
+  ]
+}

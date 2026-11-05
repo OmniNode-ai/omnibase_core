@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_fixture_record_effect
+event_bus:
+  subscribe_topics:
+    - onex.cmd.fixture.record.v1
+  publish_topics:
+    - onex.evt.fixture.recorded.v1
+    - onex.evt.fixture.record-failed.v1

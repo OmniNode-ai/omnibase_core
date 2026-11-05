@@ -1,0 +1,129 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: chain_scenario
+  validator_name: Chain Scenario Validator
+  validator_description: Refuses a node's typed chain scenarios that cannot yield a generated golden or
+    error test that fails for real (OMN-22478).
+  target_patterns: ['**/contract.yaml', '**/*.contract.yaml']
+  exclude_patterns:
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/validation/contracts/**'
+  rules:
+    - rule_id: scenario_malformed
+      description: The chain_scenarios block does not parse into the typed subcontract.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: schema
+        remediation: Fix the block so it parses into ModelChainScenarioSubcontract.
+    - rule_id: node_without_scenario_declaration
+      description: A node that consumes events declares neither chain scenarios nor a refusal.
+      severity: warning
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: undeclared_node
+        scope_paths: [event_bus.subscribe_topics]
+        remediation: Declare chain_scenarios with cases, or with refusals that say why no case can be
+          written.
+    - rule_id: scenario_topic_not_in_contract
+      description: A scenario input topic is not subscribed, or a produced topic is not published, by
+        the node.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: topic_closure
+        subscribe_paths: [event_bus.subscribe_topics]
+        publish_paths: [event_bus.publish_topics, event_bus.dlq_topics]
+        remediation: Use only topics the contract's event_bus declares.
+    - rule_id: success_terminal_without_golden_case
+      description: A success terminal has neither a golden case ending in it nor a refusal.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: golden_coverage
+        remediation: Add a golden case whose last expected event is the success terminal, or a refusal
+          that says why.
+    - rule_id: failure_without_error_case
+      description: A declared typed failure has neither an error case nor a refusal.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: error_coverage
+        remediation: Add an error case that injects a fault and ends in the failure, or a refusal that
+          says why.
+    - rule_id: expectation_not_independent
+      description: A case takes its expected result from the handler's own recorded output.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: oracle_basis
+        refused_bases: [RECORDED_FROM_OUTPUT]
+        remediation: State the expected result from a rule a person can read; a recorded output blesses
+          a bug.
+    - rule_id: error_case_not_not_working
+      description: An error case does not expect the NOT_WORKING reading.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: error_reading
+        required_reading: NOT_WORKING
+        remediation: An injected fault must read NOT_WORKING; silence or a bare retry is not an outcome.
+    - rule_id: case_without_named_breaks
+      description: A case does not declare the named breaks it must turn red under.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: required_breaks
+        golden_breaks: [DROP_TERMINAL_PUBLISH, WRONG_CORRELATION_ID]
+        error_breaks: [DROP_TERMINAL_PUBLISH, WRONG_CORRELATION_ID]
+        state_update_breaks: [SKIPPED_REDUCER_UPDATE]
+        remediation: List every break the case must survive in its breaks field.
+    - rule_id: generated_test_cannot_fail
+      description: A named break has no kept red receipt for the current version of the case.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: mutation_receipts
+        receipts_file: chain_scenario_receipts.json
+        red_outcome: red
+        golden_breaks: [DROP_TERMINAL_PUBLISH, WRONG_CORRELATION_ID]
+        error_breaks: [DROP_TERMINAL_PUBLISH, WRONG_CORRELATION_ID]
+        state_update_breaks: [SKIPPED_REDUCER_UPDATE]
+        remediation: Regenerate the receipts; a generated test that stays green under a named break is
+          rejected.
+    - rule_id: refusal_does_not_say_why
+      description: A refusal gives too short a reason or names no ticket that lifts it.
+      severity: error
+      enabled: true
+      parameters:
+        declaration_key: chain_scenarios
+        kind: refusal_complete
+        min_reason_chars: 40
+        ticket_prefix: OMN-
+        remediation: A refusal states the measured reason and the ticket whose change lifts it.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

@@ -1459,6 +1459,17 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-chain-scenarios
+  name: Refuse chain scenarios that cannot yield a test that fails (OMN-22478)
+  description: Refuses a node's typed chain scenarios with a missing golden or error case, a recorded
+    oracle, undeclared named breaks or a stale or green mutation receipt.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_chain_scenario:ValidatorChainScenario
+  files: (^|/)([^/]*contract\.yaml|chain_scenario_receipts\.json)$
+  pass_filenames: false
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-contract-chain-coverage
   name: Report contract chain coverage (OMN-21561)
   description: Reports unbound contract chains and corpus liveness at warning severity.
