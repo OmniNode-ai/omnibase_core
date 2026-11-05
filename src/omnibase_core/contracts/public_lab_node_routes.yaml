@@ -1,0 +1,462 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Typed routes of public-repository jobs off the lab runners (OMN-19998).
+#
+# RULING 2026-11-05T09:10:44Z: it must be impossible for the lab to run public
+# repositories on GitHub Actions runners. check-public-lab-selection refuses a
+# public workflow that selects a lab label or a lab variable unless one route here
+# says what replaces that job. A route is outstanding work, not an excuse.
+#
+# Read from the pinned omnibase_core, so a public repository cannot edit it. Shrink
+# only: rule route_added refuses an entry the base revision does not have, and rule
+# route_stale warns when a route's job has moved so that the entry is removed.
+#
+# Counted against the public clones' default branches on 2026-11-05.
+routes:
+  - repository: omnibase_infra
+    workflow: .github/workflows/application-acl-postgres16-proof.yml
+    job: rebuilt-postgres16-proof
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Proof runs Docker only; its cloud runner group no longer takes public repositories.
+  - repository: omnibase_infra
+    workflow: .github/workflows/arm64-verify-runner-proof.yml
+    job: legs
+    kind: retires_with_runners
+    destination: runner fleet
+    plan_step: R6
+    reason: Tests the runner fleet itself; it has nothing to convert and leaves with the fleet.
+  - repository: omnibase_infra
+    workflow: .github/workflows/arm64-verify-runner-proof.yml
+    job: arm64-verify-proof
+    kind: retires_with_runners
+    destination: runner fleet
+    plan_step: R6
+    reason: Tests the runner fleet itself; it has nothing to convert and leaves with the fleet.
+  - repository: omnibase_infra
+    workflow: .github/workflows/baselines-scheduler.yml
+    job: baselines-compute
+    kind: lab_job_node
+    destination: node_projection_baselines
+    plan_step: R4
+    reason: Reaches the lab broker from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/chain-canary-c11-negative-paths.yml
+    job: c11-negative-paths
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/chain-canary-c12-provider-catalogue.yml
+    job: resolve-lane
+    kind: lab_job_node
+    destination: node_lane_liveness_compute
+    plan_step: R4
+    reason: Probes the dev lane over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/chain-canary-c12-provider-catalogue.yml
+    job: c12-provider-catalogue
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/chain-canary-c16-receipt-identity.yml
+    job: c16-receipt-identity
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/chain-canary-c28-consumer-flow.yml
+    job: resolve-lane
+    kind: lab_job_node
+    destination: node_lane_liveness_compute
+    plan_step: R4
+    reason: Probes the dev lane over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/chain-canary-c28-consumer-flow.yml
+    job: c28-consumer-flow
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/chain-canary.yml
+    job: chain-canary
+    kind: lab_job_node
+    destination: node_chain_canary_effect
+    plan_step: R4
+    reason: Drives the dev-lane chain over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/ci.yml
+    job: lint
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Label set comes from a route job capped by the hosted seam; measured hosted, it moves to a
+      hosted label.
+  - repository: omnibase_infra
+    workflow: .github/workflows/dev-lane-liveness.yml
+    job: resolve-lane
+    kind: lab_job_node
+    destination: node_lane_liveness_compute
+    plan_step: R4
+    reason: Probes the dev lane over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/dev-lane-liveness.yml
+    job: dev-lane-liveness
+    kind: lab_job_node
+    destination: node_lane_liveness_compute
+    plan_step: R4
+    reason: Probes the dev lane over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/dev-lane-liveness.yml
+    job: lab-load-probe
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R5
+    reason: Measures load on a lab host, so it must run on one; a lab node runs it on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/dev-lane-staleness.yml
+    job: resolve-lane
+    kind: lab_job_node
+    destination: node_lane_liveness_compute
+    plan_step: R4
+    reason: Probes the dev lane over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/dev-lane-staleness.yml
+    job: dev-lane-staleness
+    kind: lab_job_node
+    destination: node_lane_liveness_compute
+    plan_step: R4
+    reason: Probes the dev lane over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/dlq-depth-monitor.yml
+    job: dlq-depth-monitor
+    kind: lab_job_node
+    destination: node_dlq_depth_monitor_effect
+    plan_step: R4
+    reason: Reads the lab broker from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/hostile-reviewer.yml
+    job: hostile-review
+    kind: lab_job_node
+    destination: node_agent_review_orchestrator
+    plan_step: R3
+    reason: Voters are lab-network model endpoints; a pull-request event starts the agent review route
+      and its receipt satisfies the check.
+  - repository: omnibase_infra
+    workflow: .github/workflows/lane-census-refresh.yml
+    job: refresh
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/msk-bastion-canary.yml
+    job: bastion-canary
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/onex-api-lab-delivery-reusable.yml
+    job: trigger-delivery
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Publishes the redeploy-start command to the lab broker after a merge; a lab node reads merges
+      instead.
+  - repository: omnibase_infra
+    workflow: .github/workflows/onex-api-lab-delivery-reusable.yml
+    job: verify-onex-api-delivered
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Reads the dev lane over the lab network to verify a redeploy; the redeploy terminal event
+      replaces it.
+  - repository: omnibase_infra
+    workflow: .github/workflows/provider-rung-canary.yml
+    job: resolve-lane
+    kind: lab_job_node
+    destination: node_lane_liveness_compute
+    plan_step: R4
+    reason: Probes the dev lane over the lab network from a schedule.
+  - repository: omnibase_infra
+    workflow: .github/workflows/provider-rung-canary.yml
+    job: provider-rung-canary
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/r1-front-door-probe.yml
+    job: r1-front-door-probe
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Reaches dev-lane services on the lab network from a schedule; a lab node runs the command
+      on a tick.
+  - repository: omnibase_infra
+    workflow: .github/workflows/release-train-lab.yml
+    job: cut-tag
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Pushes the release-train tag from the deploy pool; it moves once the check path is proven
+      on a read-only job.
+  - repository: omnibase_infra
+    workflow: .github/workflows/release-train-lab.yml
+    job: deploy
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R4
+    reason: Delivers a tag to its lab lane.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runner-playwright-canary.yml
+    job: playwright-launch
+    kind: retires_with_runners
+    destination: runner fleet
+    plan_step: R6
+    reason: Tests the runner fleet itself; it has nothing to convert and leaves with the fleet.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runner-route-probe.yml
+    job: consume-inline
+    kind: retires_with_runners
+    destination: runner fleet
+    plan_step: R6
+    reason: Tests the runner fleet itself; it has nothing to convert and leaves with the fleet.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runner-route-probe.yml
+    job: consume-reusable
+    kind: retires_with_runners
+    destination: runner fleet
+    plan_step: R6
+    reason: Tests the runner fleet itself; it has nothing to convert and leaves with the fleet.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runtime-rebuild-trigger-reusable.yml
+    job: trigger-rebuild
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Publishes the redeploy-start command to the lab broker after a merge; a lab node reads merges
+      instead.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runtime-rebuild-trigger-reusable.yml
+    job: verify-sibling-converged
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Reads the dev lane over the lab network to verify a redeploy; the redeploy terminal event
+      replaces it.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runtime-rebuild-trigger.yml
+    job: trigger-rebuild
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Publishes the redeploy-start command to the lab broker after a merge; a lab node reads merges
+      instead.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runtime-rebuild-trigger.yml
+    job: verify-lane-converged
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Reads the dev lane over the lab network to verify a redeploy; the redeploy terminal event
+      replaces it.
+  - repository: omnibase_infra
+    workflow: .github/workflows/runtime-rebuild-trigger.yml
+    job: verify-lab-overlay-converged
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Reads the dev lane over the lab network to verify a redeploy; the redeploy terminal event
+      replaces it.
+  - repository: omnibase_infra
+    workflow: .github/workflows/shared-env-runner-parity.yml
+    job: self-hosted-fleet
+    kind: retires_with_runners
+    destination: runner fleet
+    plan_step: R6
+    reason: Tests the runner fleet itself; it has nothing to convert and leaves with the fleet.
+  - repository: omniclaude
+    workflow: .github/workflows/anti-growth-baseline-reusable.yml
+    job: anti-growth-baseline
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/auto-merge-stale-poller.yml
+    job: dev-head-red-alert
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R5
+    reason: Publishes red dev heads to the lab broker from a schedule.
+  - repository: omniclaude
+    workflow: .github/workflows/branch-claim-check-reusable.yml
+    job: branch-claim-check
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/ci.yml
+    job: env-var-registry
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Label set comes from a route job capped by the hosted seam; measured hosted, it moves to a
+      hosted label.
+  - repository: omniclaude
+    workflow: .github/workflows/deploy-gate-reusable.yml
+    job: deploy-gate
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/doctrine-claim-gate-reusable.yml
+    job: doctrine-claim-gate
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/hostile-reviewer.yml
+    job: hostile-review
+    kind: lab_job_node
+    destination: node_agent_review_orchestrator
+    plan_step: R3
+    reason: Voters are lab-network model endpoints; a pull-request event starts the agent review route
+      and its receipt satisfies the check.
+  - repository: omniclaude
+    workflow: .github/workflows/private-repo-runner-placement-reusable.yml
+    job: private-repo-runner-placement
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/public-repo-hygiene-reusable.yml
+    job: public-repo-hygiene
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/public-repo-hygiene-reusable.yml
+    job: deployment-config
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/route-runner-reusable.yml
+    job: route
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omniclaude
+    workflow: .github/workflows/runner-label-exists-reusable.yml
+    job: runner-label-exists
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Reads the runner listing with a token; nothing from the lab network.
+  - repository: omniclaude
+    workflow: .github/workflows/secrets-baseline-wiring-reusable.yml
+    job: secrets-baseline-wiring
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Dead lab fallback for private callers only; the private-caller guard makes a public caller
+      hosted.
+  - repository: omnimarket
+    workflow: .github/workflows/ci.yml
+    job: js-toolchain-hermetic
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R5
+    reason: Label set comes from a route job capped by the hosted seam; measured hosted, it moves to a
+      hosted label.
+  - repository: omnimarket
+    workflow: .github/workflows/delegation-regression-nightly.yml
+    job: golden-tasks
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R5
+    reason: Live model endpoints, broker and database on the lab network.
+  - repository: omnimarket
+    workflow: .github/workflows/delegation-rung-eval-nightly.yml
+    job: rung-eval
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R5
+    reason: Lab model endpoints; the job refuses a hosted runner.
+  - repository: omnimarket
+    workflow: .github/workflows/delegation-terminal-join-daily.yml
+    job: terminal-join
+    kind: lab_job_node
+    destination: node_lab_work_unit_effect
+    plan_step: R5
+    reason: Reads the lab broker.
+  - repository: omnimarket
+    workflow: .github/workflows/hostile-reviewer.yml
+    job: hostile-review
+    kind: lab_job_node
+    destination: node_agent_review_orchestrator
+    plan_step: R3
+    reason: Voters are lab-network model endpoints; a pull-request event starts the agent review route
+      and its receipt satisfies the check.
+  - repository: omnimarket
+    workflow: .github/workflows/hostile-reviewer.yml
+    job: hostile-review-gate
+    kind: moves_to_hosted
+    destination: ubuntu-latest
+    plan_step: R3
+    reason: Reads the result of the review job only.
+  - repository: omnimarket
+    workflow: .github/workflows/pr-merged-publisher.yml
+    job: publish-pr-merged
+    kind: lab_job_node
+    destination: node_git_query_mirror_effect
+    plan_step: R2
+    reason: Publishes to the lab broker after a merge; a lab node reads merges instead.
+  - repository: omnimarket
+    workflow: .github/workflows/runtime-rebuild-trigger.yml
+    job: trigger-rebuild
+    kind: lab_job_node
+    destination: node_redeploy_orchestrator
+    plan_step: R2
+    reason: Calls the sibling redeploy trigger, which publishes to the lab broker after a merge; a lab
+      node reads merges instead.
+  - repository: RSD
+    workflow: .github/workflows/hostile-reviewer.yml
+    job: hostile-review
+    kind: lab_job_node
+    destination: node_agent_review_orchestrator
+    plan_step: R3
+    reason: Voters are lab-network model endpoints; a pull-request event starts the agent review route
+      and its receipt satisfies the check.

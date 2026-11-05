@@ -236,6 +236,17 @@ requirements:
           duplicate keys, unmeasured dispatch, transitive hard stops and edited action contracts; a sourced
           none row yields a non-executable terminal result."
 
+  - id: req-omn19998-public-lab-selection
+    statement: 'RULING 2026-11-05T09:10:44Z: it must be impossible for the lab to run public repositories.
+      A public workflow may not select a lab label or a lab variable; a job that truly needs the lab has
+      a typed route saying what replaces it, and the routes only shrink.'
+    acceptance:
+      - id: AC29
+        statement: "AC29: A public repository's job selecting a lab label, a variable that is not a declared
+          hosted seam or an unprovable value fails with no typed route; a new caller of a routed reusable
+          workflow fails; a seam variable holding a lab label fails; a route the base revision lacks fails;
+          a route for a moved job warns; a private repository passes. -- falsifier: uv run pytest tests/unit/validation/test_validator_public_lab_selection.py
+          -q -n0 --reruns 0"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -684,3 +695,13 @@ dod_evidence:
         check_value: uv run pytest tests/unit/validation/test_error_rule_table.py -q -n0 --reruns 0
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC28]
+  - id: dod-omn19998-public-lab-selection
+    description: Failing controls for the public lab selection check, its typed routes and its entry point.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_public_lab_selection.py -q -n0
+          --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC29]

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: ci
+on: [pull_request]
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps: [{run: echo ok}]
+  probe:
+    runs-on: [self-hosted, omnibase-ci]
+    steps: [{run: echo ok}]

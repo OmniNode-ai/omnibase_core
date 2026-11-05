@@ -1920,6 +1920,17 @@ repos:
       # job whose runs-on is, or can resolve to, a self-hosted label; there is no
       # baseline (OMN-21280). Mirror the CI step in the lint-imports job and
       # .github/workflows/version-drift.yml.
+      # OMN-19998: a public workflow selects no lab runner. Mirror the CI step in the
+      # lint-imports job and .github/workflows/version-drift.yml.
+      - id: check-public-lab-selection
+        name: A public workflow selects no lab runner (OMN-19998)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_public_lab_selection
+        language: system
+        args: [--repo, omnibase_core]
+        files: ^\.github/workflows/[^/]+\.ya?ml$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
       - id: check-public-runner-placement
         name: Public repositories add no self-hosted CI job (OMN-19998)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.validation.validator_public_runner_placement

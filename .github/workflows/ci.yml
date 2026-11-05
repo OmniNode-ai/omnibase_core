@@ -708,6 +708,27 @@ jobs:
           args=(--repo omnibase_core --visibility "$VISIBILITY")
           uv run python -m omnibase_core.validation.validator_public_runner_placement "${args[@]}"
 
+      # A public workflow selects no lab runner (OMN-19998, RULING 2026-11-05T09:10:44Z)
+      # — blocking. The live seam values come from the vars context, and on a pull
+      # request or merge group a typed route the base revision does not have is refused.
+      - name: Run public-repository lab selection check
+        env:
+          VISIBILITY: ${{ github.event.repository.private && 'private' || 'public' }}
+          LIVE_VARIABLES: ${{ toJSON(vars) }}
+          ROUTES_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          routes=src/omnibase_core/contracts/public_lab_node_routes.yaml
+          args=(--repo omnibase_core --visibility "$VISIBILITY" --variables-json "$LIVE_VARIABLES")
+          if [ -n "$ROUTES_BASE_SHA" ]; then
+            git fetch --no-tags --depth=1 origin "$ROUTES_BASE_SHA"
+            if git show "$ROUTES_BASE_SHA:$routes" > "$RUNNER_TEMP/base-routes.yaml"; then
+              args+=(--base-routes "$RUNNER_TEMP/base-routes.yaml")
+            else
+              echo "::notice::the base revision has no route list yet: growth not compared"
+            fi
+          fi
+          uv run python -m omnibase_core.validation.validator_public_lab_selection "${args[@]}"
+
       # Version drift at source (OMN-19998) — blocking. A floor raise on a
       # sibling registry package fails while a registry consumer is not ready
       # for it (consumers read from their public clones at origin), and a job

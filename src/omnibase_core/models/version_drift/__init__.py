@@ -39,6 +39,15 @@ from omnibase_core.models.version_drift.model_merge_queue_parity_input import (
 from omnibase_core.models.version_drift.model_merge_queue_parity_rules import (
     ModelMergeQueueParityRules,
 )
+from omnibase_core.models.version_drift.model_public_lab_node_route import (
+    ModelPublicLabNodeRoute,
+)
+from omnibase_core.models.version_drift.model_public_lab_node_routes import (
+    ModelPublicLabNodeRoutes,
+)
+from omnibase_core.models.version_drift.model_public_lab_selection_input import (
+    ModelPublicLabSelectionInput,
+)
 from omnibase_core.models.version_drift.model_public_runner_placement_input import (
     ModelPublicRunnerPlacementInput,
 )
@@ -59,6 +68,9 @@ __all__ = [
     "ModelMergeQueueParityBaselineEntry",
     "ModelMergeQueueParityInput",
     "ModelMergeQueueParityRules",
+    "ModelPublicLabNodeRoute",
+    "ModelPublicLabNodeRoutes",
+    "ModelPublicLabSelectionInput",
     "ModelPublicRunnerPlacementInput",
     "ModelVersionFloorCheckInput",
 ]
