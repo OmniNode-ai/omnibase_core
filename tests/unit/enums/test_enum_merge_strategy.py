@@ -47,7 +47,28 @@ class TestEnumMergeStrategyImport:
         assert [m.value for m in EnumMergeStrategy] == ["merge_queue", "squash_auto"]
 
 
+class TestEnumMergeStrategyConsumers:
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "omnibase_core.adapters.merge_strategy_detector",
+            "omnibase_core.adapters.github_merge_queue_adapter",
+        ],
+    )
+    def test_consumer_uses_canonical_enum_only(self, name: str) -> None:
+        module = importlib.import_module(name)
+        assert not hasattr(module, "MergeStrategy")
+        assert getattr(module, "EnumMergeStrategy", EnumMergeStrategy) is (
+            EnumMergeStrategy
+        )
+
+
 class TestEnumMergeStrategySerialization:
+    def test_serialization_surface_has_no_alias(self) -> None:
+        module = importlib.import_module("omnibase_core.enums.enum_merge_strategy")
+        assert not hasattr(module, "MergeStrategy")
+        assert json.dumps(EnumMergeStrategy.MERGE_QUEUE) == '"merge_queue"'
+
     @pytest.mark.parametrize("member", list(EnumMergeStrategy))
     def test_json_round_trip(self, member: EnumMergeStrategy) -> None:
         dumped = json.dumps(member)

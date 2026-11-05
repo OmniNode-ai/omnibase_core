@@ -53,6 +53,10 @@ dod_evidence:
         check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/test_merge_strategy_detector.py
           -q --no-cov -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: env PYTHONDONTWRITEBYTECODE=1 uv run pytest tests/unit/enums/test_enum_merge_strategy.py
+          -q --no-cov -o addopts='' -k TestEnumMergeStrategyConsumers
+        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18154-ac3-serialization
     description: Both enum values round trip through JSON and Pydantic, and an unknown value is refused.
     source: manual
