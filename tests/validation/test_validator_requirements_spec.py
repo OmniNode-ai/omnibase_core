@@ -309,3 +309,15 @@ def test_doc_content_scan_applies_to_all_omn13579_doc_repos(
         f"doc-content-scan must apply to all OMN-13579 doc repos (all have docs/); "
         f"missing: {missing}"
     )
+
+
+@pytest.mark.parametrize(
+    "validator_name", ["canonical-file-shape", "shape-gate-independence"]
+)
+def test_shape_gates_apply_to_all_repos(
+    spec: dict[str, Any], validator_name: str
+) -> None:
+    """OMN-22009: the canonical-file-shape ratchet and the shape-gate
+    independence guard are required in every governed repository."""
+    entry = spec["required_validators"][validator_name]
+    assert entry["applies_to_repos"] == "all"

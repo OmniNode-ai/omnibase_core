@@ -514,3 +514,48 @@ def test_scan_gap_model_is_frozen() -> None:
     )
     with pytest.raises(ValueError):
         gap.detail = "mutated"  # type: ignore[misc]
+
+
+# ---------------------------------------------------------------------------
+# OMN-22009: the canonical-file-shape ratchet applies to every repository
+# ---------------------------------------------------------------------------
+
+_KNOWN_REPOS: list[str] = sorted(
+    yaml.safe_load(SPEC_PATH.read_text(encoding="utf-8"))["known_repos"]
+)
+
+
+@pytest.mark.parametrize("repo_name", _KNOWN_REPOS)
+def test_scan_refuses_repo_missing_canonical_file_shape_hook(
+    tmp_path: Path, repo_name: str
+) -> None:
+    """A repository with no canonical-file-shape hook and no CI job is refused,
+    and the refusal names that repository (OMN-22009 AC1)."""
+    _write_precommit(tmp_path, [])
+    _write_workflow(tmp_path, "ci.yml", [])
+
+    consumer = ValidatorRequirementsConsumer.from_spec_path(SPEC_PATH)
+    gaps = consumer.scan_repo(repo_name=repo_name, repo_root=tmp_path)
+
+    shape_gaps = {
+        (g.repo, g.kind) for g in gaps if g.validator == "canonical-file-shape"
+    }
+    assert shape_gaps == {
+        (repo_name, EnumValidatorRequirementGapKind.MISSING_PRE_COMMIT),
+        (repo_name, EnumValidatorRequirementGapKind.MISSING_CI_WORKFLOW),
+    }
+
+
+@pytest.mark.parametrize("repo_name", _KNOWN_REPOS)
+def test_scan_accepts_repo_wiring_canonical_file_shape(
+    tmp_path: Path, repo_name: str
+) -> None:
+    """Positive control: the same repository with the hook and the CI job wired
+    carries no canonical-file-shape gap (OMN-22009)."""
+    _write_precommit(tmp_path, ["canonical-file-shape"])
+    _write_workflow(tmp_path, "ci.yml", ["canonical-file-shape"])
+
+    consumer = ValidatorRequirementsConsumer.from_spec_path(SPEC_PATH)
+    gaps = consumer.scan_repo(repo_name=repo_name, repo_root=tmp_path)
+
+    assert [g for g in gaps if g.validator == "canonical-file-shape"] == []
