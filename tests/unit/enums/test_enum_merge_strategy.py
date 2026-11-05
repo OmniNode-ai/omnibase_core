@@ -58,9 +58,9 @@ class TestEnumMergeStrategyConsumers:
     def test_consumer_uses_canonical_enum_only(self, name: str) -> None:
         module = importlib.import_module(name)
         assert not hasattr(module, "MergeStrategy")
-        assert getattr(module, "EnumMergeStrategy", EnumMergeStrategy) is (
-            EnumMergeStrategy
-        )
+        assert module.EnumMergeStrategy is EnumMergeStrategy
+        enum_module = importlib.import_module(module.EnumMergeStrategy.__module__)
+        assert not hasattr(enum_module, "MergeStrategy")
 
 
 class TestEnumMergeStrategySerialization:
