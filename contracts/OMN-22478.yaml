@@ -1,0 +1,90 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22478
+title: Typed chain scenario subcontract and validator
+summary: Node contracts declare typed golden and error chain scenarios. The schema rejects invalid cases,
+  and the validator checks coverage, independent expectations, named breaks and current red receipts.
+  Rule parameters and remediation come from the validation contract. Generated tests and real node adoption
+  belong to the downstream omnimarket change after a core release.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched: [public_api]
+requirements:
+  - id: req-omn22478-chain-scenarios
+    statement: Declare typed chain scenarios and reject declarations that cannot yield meaningful golden
+      and error chain tests.
+    acceptance:
+      - id: AC1
+        statement: The clean scenario parses with stable case hashes; malformed golden and error cases,
+          unknown fields, undeclared failures and missing faults are rejected by the schema.
+      - id: AC2
+        statement: Each shipped validation rule reports exactly its planted violation, the clean node
+          reports none, and only a node without a declaration is a warning.
+      - id: AC3
+        statement: Missing rule parameters and unknown break names fail to load; rule disabling, remediation
+          and required break changes follow the validation contract.
+      - id: AC4
+        statement: Missing, green and stale mutation receipts are rejected; reducer state updates require
+          the skipped reducer update break.
+      - id: AC5
+        statement: The validator CLI returns failure for planted violations and success for the clean
+          node using the packaged schema and rule data.
+evidence_requirements:
+  - kind: tests
+    description: Focused schema, rule, mutation receipt and CLI checks with planted failing controls.
+    command: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22478-ac1-schema
+    description: Clean cases parse and invalid scenarios fail schema validation.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
+          -k 'clean_block or breaks_the_schema or without_a_fault'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22478-ac2-rule-verdicts
+    description: Every rule has an isolated planted violation and the clean node passes.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
+          -k 'planted_violation or clean_fixture or planted_set_names or only_the_undeclared'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22478-ac3-rule-data
+    description: Parameter changes control verdicts and malformed rule data fails to load.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
+          -k 'disabling or required_key or remediation or unknown_break or emptying'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22478-ac4-red-receipts
+    description: Missing, green and stale receipts fail and state updates require the reducer break.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
+          -k 'missing_receipts or edited_case or state_update or generated_test_cannot_fail'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22478-ac5-deploy-validator
+    description: Exercise the validator CLI against planted and clean contracts at the checkout. This
+      library validator needs no broker, container or deployed service; the hosted runner can run the
+      same falsifiable CLI test with the packaged rule data.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
+          -k validator_cli
+        cwd: ${OMNI_HOME}/omnibase_core

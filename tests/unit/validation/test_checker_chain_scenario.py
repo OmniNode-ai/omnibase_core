@@ -153,7 +153,8 @@ def test_only_the_undeclared_node_rule_is_a_warning() -> None:
     assert contract.fail_on_error is True
     assert contract.max_violations == 0
     severities = {rule.rule_id: rule.severity for rule in contract.rules}
-    assert severities.pop("node_without_scenario_declaration") == "warning"
+    undeclared_severity = severities.pop("node_without_scenario_declaration")
+    assert undeclared_severity == "warning"
     assert set(severities.values()) == {"error"}
 
 
