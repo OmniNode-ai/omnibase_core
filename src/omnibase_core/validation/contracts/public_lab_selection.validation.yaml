@@ -1,0 +1,105 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: public_lab_selection
+  validator_name: Public Lab Selection
+  validator_description: |
+    A public-repository workflow may not select a lab runner (OMN-19998; RULING
+    2026-11-05T09:10:44Z). A job whose runs-on names a label that is not GitHub-hosted,
+    reads a variable that is not a declared hosted seam, or reads a value the workflow
+    cannot prove hosted is refused unless one typed route in
+    contracts/public_lab_node_routes.yaml says what replaces it. The route list is
+    read from the pinned omnibase_core, so a public repository cannot edit it, and it
+    can only shrink: a route the base revision does not have is refused.
+
+    This is stricter than the public_runner_placement ratchet where a repository
+    still runs one: it adds no baseline, and it covers the callers of a lab-selecting
+    reusable workflow and the live values of the seam variables.
+
+  target_patterns:
+    - ".github/workflows/*.yml"
+    - ".github/workflows/*.yaml"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: lab_selected_in_public
+      description: >-
+        A job of a public repository whose runs-on can select a lab runner, with no typed route.
+      severity: error
+      enabled: true
+      parameters:
+        hosted_label_pattern: '(?i)^(ubuntu|windows|macos)-[\w.\-]+$'
+        hosted_seam_variables:
+          - OMNI_PUBLIC_PR_RUNS_ON_JSON
+          - OMNI_TRUSTED_CI_RUNS_ON_JSON
+          - OMNI_DOCKER_CI_RUNS_ON_JSON
+          - OMNI_SECURITY_SCAN_RUNS_ON_JSON
+          - OMNI_REQUIRED_CI_RUNS_ON_JSON
+        variable_reference_pattern: '\bvars\.([A-Za-z_][A-Za-z0-9_]*)'
+        unprovable_context_pattern: '(?i)\b(?:vars|needs|matrix|inputs|env|secrets|steps)\.'
+        matrix_reference_pattern: '^\$\{\{\s*matrix\.([A-Za-z_][\w\-]*)\s*\}\}$'
+        non_label_call_pattern: '(?is)contains\(\s*fromJSON\(\s*''\[[^\]]*\]''\s*\)\s*,'
+        self_hosted_marker: 'self-hosted'
+        returned_literal_pattern: '(?:&&|\|\||\?|:)\s*''([^''"\[\]]+)'''
+        json_array_literal_pattern: '\[\s*+(?:"[^"]*+"\s*+,?+\s*+)++\]'
+        private_guard_pattern: '^github\.event\.repository\.private\s*&&\s*\('
+        hosted_fallback_pattern: '^\|\|\s*(?:''([^'']+)''|fromJSON\(\s*''(\[[^'']*\])''\s*\))$'
+        remediation: >-
+          Run the job on a GitHub-hosted label (ubuntu-latest). A job that truly needs the lab moves to
+          a lab job node, which posts a check run under the job's name. CI runners are for private repositories
+          only (OMN-19998). A new route for a new job is refused; a route is only removed.
+    - rule_id: lab_reusable_caller
+      description: >-
+        A job of a public repository that calls a reusable workflow a typed route records as selecting
+        the lab.
+      severity: error
+      enabled: true
+      parameters:
+        uses_pattern: '^(?:(?P<owner>[^/]+)/(?P<repo>[^/]+)/|\./)(?P<path>\.github/workflows/[^@]+\.ya?ml)(?:@.+)?$'
+        remediation: >-
+          A public repository may not add a caller of a lab-selecting reusable workflow. Call a hosted
+          one, or wait for the route to end (OMN-19998).
+    - rule_id: seam_value_not_hosted
+      description: A declared hosted seam variable whose live value is not a GitHub-hosted label set.
+      severity: error
+      enabled: true
+      parameters:
+        remediation: >-
+          Set the variable back to a GitHub-hosted label set such as ["ubuntu-latest"]. Every job reading
+          the seam lands wherever the variable says (OMN-19998).
+    - rule_id: route_added
+      description: A typed route the base revision does not have. The list only shrinks.
+      severity: error
+      enabled: true
+      parameters:
+        remediation: >-
+          Do not add a route. Move the job to a GitHub-hosted label or to a lab job node (OMN-19998).
+    - rule_id: route_stale
+      description: A typed route whose job no longer selects the lab. Remove it so the count falls.
+      severity: warning
+      enabled: true
+      parameters:
+        remediation: Remove the route from contracts/public_lab_node_routes.yaml in omnibase_core.
+    - rule_id: workflow_does_not_parse
+      description: A workflow file that is not valid YAML cannot be judged, so the check fails.
+      severity: error
+      enabled: true
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

@@ -1279,6 +1279,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-public-lab-selection
+  name: A public workflow selects no lab runner (OMN-19998)
+  description: >
+    RULING 2026-11-05T09:10:44Z. Refuse a public-repository job whose runs-on names a label that is not
+    GitHub-hosted, reads a variable that is not a declared hosted seam, or reads a value the workflow
+    cannot prove hosted, and a new caller of a lab-selecting reusable workflow, unless a typed route packaged
+    with this omnibase_core says what replaces the job. Routes only shrink. Pass --repo <name> when the
+    checkout directory is not the repository name; a private repository passes --visibility private.
+  language: python
+  entry: python -m omnibase_core.validation.validator_public_lab_selection
+  files: ^\.github/workflows/[^/]+\.ya?ml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-public-runner-placement
   name: Public repositories add no self-hosted CI job (OMN-19998)
   description: >
