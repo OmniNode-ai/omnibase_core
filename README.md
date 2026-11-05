@@ -3,6 +3,21 @@
 omnibase_core provides the contracts, models, validation and execution primitives for the ONEX framework.
 Documentation: [knowledge_base](https://github.com/OmniNode-ai/knowledge_base).
 
+## v0.47.67 (2026-11-05)
+
+### Release
+- Cut omnibase-core from dev at 0.47.67 by the scheduled release train.
+- 6 release-relevant commit(s) merged since v0.47.66.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.66
+- fix: only a runner-produced PASS clears a prior FAIL supersede record (#2265)
+- refactor(omnibase_core): remove stale MergeStrategy alias (#2267)
+- feat: canonical-file-shape and shape-gate-independence apply to every repository (#2263)
+- feat(validation): validate error-rule tables and action closures (#2261)
+- feat: the event-registry drift check skips node-owned events and accepts side-channel registrations (#2260)
+- feat: a node contract overlay resolver protocol and its entry-point loader (#2258)
+
 ## v0.47.66 (2026-11-04)
 
 ### Release
