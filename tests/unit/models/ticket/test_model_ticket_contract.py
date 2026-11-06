@@ -1264,7 +1264,7 @@ class TestListLengthCaps:
     )
     def test_at_cap_is_accepted(self, field_name, item_factory):
         """Exactly _MAX_LIST_ITEMS items is valid — the cap is inclusive."""
-        items = [item_factory() for _ in range(_MAX_LIST_ITEMS)]
+        items = [item_factory(index) for index in range(_MAX_LIST_ITEMS)]
         contract = TicketContract(
             ticket_id="OMN-CAP",
             title="At Cap",
