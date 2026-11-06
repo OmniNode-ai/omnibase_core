@@ -23,6 +23,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from collections import Counter
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
@@ -384,6 +385,28 @@ class ModelTicketContract(BaseModel):
                     f"an item that declares binds_ac may use only {allowed}; "
                     f"rejected: {rendered}"
                 )
+        if violations:
+            raise ValueError("; ".join(violations))
+        return self
+
+    @model_validator(mode="after")
+    def _validate_unique_entry_ids(self) -> ModelTicketContract:
+        """Refuse one id on two entries of a section.
+
+        OMN-22502. A reader that keys a section by id keeps one of the two and silently
+        loses the other, and two pull requests that picked one id merge textually clean
+        when their entries sit apart.
+        """
+        sections = (
+            ("dod_evidence", [item.id for item in self.dod_evidence]),
+            ("requirements", [requirement.id for requirement in self.requirements]),
+        )
+        violations = [
+            f"{name}: id {entry_id!r} is on {count} entries"
+            for name, entry_ids in sections
+            for entry_id, count in Counter(entry_ids).items()
+            if count > 1
+        ]
         if violations:
             raise ValueError("; ".join(violations))
         return self

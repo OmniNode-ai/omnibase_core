@@ -1,0 +1,47 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22502
+title: A ticket contract with one id on two entries is refused
+summary: ModelTicketContract refuses one id on two dod_evidence entries or two requirements, which a reader
+  keying by id would silently lose.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22502-unique-entry-ids
+    statement: One id on two entries of a contract section is refused.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a contract with one id on two dod_evidence entries or two requirements is refused
+          naming the id, and unique ids still validate -- falsifier: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_unique_entry_ids.py
+          -q --no-cov'
+evidence_requirements:
+  - kind: tests
+    description: A duplicate id on each section is refused and unique ids validate.
+    command: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_unique_entry_ids.py -q
+      --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22502-unique-entry-ids
+    description: An injected duplicate id on each section is refused naming it, and unique ids validate.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/ticket/test_model_ticket_contract_unique_entry_ids.py
+          -q --no-cov
+        cwd: .
+  - id: dod-omn22502-integration-proof
+    description: Run the refusal on a lab host at the pushed head. Hosted CI cannot reach the lab, so
+      only the local Done gate runs this unbound check.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: env PYTHONDONTWRITEBYTECODE=1 onex lab-work run --repo OmniNode-ai/omnibase_core
+          --sha "$(git rev-parse HEAD)" --lane dod-integration-proof-22502 --kind test -- env PYTHONDONTWRITEBYTECODE=1
+          uv run pytest tests/unit/models/ticket/test_model_ticket_contract_unique_entry_ids.py -q --no-cov
+        cwd: .
