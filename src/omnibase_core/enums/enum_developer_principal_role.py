@@ -32,5 +32,12 @@ class EnumDeveloperPrincipalRole(StrEnum):
     operator's workstation). Read by the issuer's ``audit-grants --role
     machine``, which fails naming each one that lacks a grant of its profile."""
 
+    READ_ONLY = "read_only"
+    """A principal no mutating step may run under (plan section 11, OMN-22544). The
+    lab issuer's ``grants_for`` reads it and issues the shared grant set less the
+    topics the grant declaration's ``read_only_withholds`` names, so the broker
+    refuses a ledger append from it. Never a grant: the withheld topics are the
+    declaration's, and this value only selects that subtraction."""
+
 
 __all__ = ["EnumDeveloperPrincipalRole"]
