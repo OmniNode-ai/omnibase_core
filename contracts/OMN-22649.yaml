@@ -1,0 +1,55 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22649
+title: A core validator judges each venv surface against the lock it was built from, so a lock-moving
+  commit has a route through the venv skew gate
+summary: The omniclaude venv skew gate read the registry pins of a hook interpreter against the canonical
+  clone's lock and the git sources against the checkout's lock, so no venv could pass both for a lock-moving
+  commit (omniclaude#3188, 2026-11-06). A report-in-the-generic-validator-format check reads each surface's
+  installed versions and commits and the lock that surface was built from, and judges each surface against
+  that lock only. The checkout lock is never an authority for a surface it did not build.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22649-build-lock
+    statement: Each venv surface is judged against the lock it was built from, and a surface with no readable
+      build lock is refused.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a surface built from a checkout lock that moves omnibase-spi and the core tag
+          passes when judged against its own build lock, and the same facts fail under the old judge-against-clone-lock
+          rule (named injected break) -- falsifier: uv run pytest tests/unit/validation/test_checker_venv_build_lock.py
+          -q --no-cov -n 0 -k failing_control"
+      - id: AC2
+        statement: "AC2: an in-place drift on a surface, and a surface with no readable build lock, are
+          refused -- falsifier: uv run pytest tests/unit/validation/test_checker_venv_build_lock.py -q
+          --no-cov -n 0 -k 'drift or unreadable'"
+evidence_requirements:
+  - kind: tests
+    description: The venv build-lock tests pass at the head.
+    command: uv run pytest tests/unit/validation/test_checker_venv_build_lock.py -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22649-ac1-failing-control
+    description: The lock-moving shape passes against its own build lock and is red under the injected
+      clone-lock judgement.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_venv_build_lock.py -q --no-cov -n
+          0 -k failing_control
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn22649-ac2-drift
+    description: Registry drift, git drift and an unreadable build lock are each refused.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_venv_build_lock.py -q --no-cov -n
+          0
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]

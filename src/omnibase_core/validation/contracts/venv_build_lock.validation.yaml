@@ -1,0 +1,74 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-22649: every severity and message is rule data. A venv answers to the lock it was built from.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: venv_build_lock
+  validator_name: Venv Build-Lock Validator
+  validator_description: >-
+    A venv answers to the lock it was built from, never to the lock of a checkout that has not built it.
+    A gate that judged the registry pins of a hook interpreter against one lock and the git sources against
+    another left a lock-moving commit (omniclaude#3188, 2026-11-06) with no venv that could pass. A consumer
+    gathers the facts (each surface's installed versions and commits, and the path of the lock that surface
+    was built from) and calls this validator; it holds no copy of the rule.
+  target_patterns: ["**/*.venv-build-lock-facts.json"]
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/archived/**"
+    - "**/archive/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: surface_registry_pin
+      description: A registry distribution installed in a surface differs from the version its build lock
+        pins.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{label}: {name} {installed} is installed, its build lock {lock} pins {pinned}"
+        source_pattern: '.*'
+
+    - rule_id: surface_git_pin
+      description: A git-sourced distribution installed in a surface is at a commit its build lock does
+        not pin.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{label}: {name} is installed at {installed}, its build lock {lock} pins {pinned}"
+        source_pattern: '.*'
+        min_commit_prefix: '7'
+
+    - rule_id: build_lock_unreadable
+      description: A surface names no readable build lock, so nothing can be judged; the check fails closed.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{label}: its build lock {lock} cannot be read, so the surface is not judged"
+        source_pattern: '.*'
+
+    - rule_id: checkout_lock_not_authority
+      description: >-
+        States, without failing, that the checkout lock differs from the lock a surface was built from.
+        The surface is judged against its own build lock; the difference is the commit's own move.
+      severity: info
+      enabled: true
+      parameters:
+        message: "{label}: the checkout lock moves {installed} pin(s) ({name}) the surface was not built
+          from; judged against {lock}"
+        source_pattern: '.*'
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
