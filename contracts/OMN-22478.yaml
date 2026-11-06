@@ -31,6 +31,16 @@ requirements:
       - id: AC5
         statement: The validator CLI returns failure for planted violations and success for the clean
           node using the packaged schema and rule data.
+  - id: req-omn22478-provider-import-surface
+    statement: A provider pull request cannot remove what consumer source imports. omnibase_infra#5683
+      removed an import path omnimarket's ledger writer loads, every provider test passed, and ledger
+      writes stopped on every venv taking the provider from a moving clone.
+    acceptance:
+      - id: AC7
+        statement: "AC7: An import in consumer source that resolves against the provider at the base and
+          not at the head is refused; a re-export passes; an import broken at the base stays out; a run
+          reading no consumer or an empty provider tree is refused. -- falsifier: uv run pytest tests/unit/validation/test_validator_provider_import_surface.py
+          -q -n0 --reruns 0"
 evidence_requirements:
   - kind: tests
     description: Focused schema, rule, mutation receipt and CLI checks with planted failing controls.
@@ -87,4 +97,15 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
           -k validator_cli
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22478-provider-import-surface
+    description: Failing controls for the provider import surface check and its entry point. This library
+      validator needs no deployed surface; the hosted runner runs the same test.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_provider_import_surface.py -q
+          -n0 --reruns 0
         cwd: ${OMNI_HOME}/omnibase_core

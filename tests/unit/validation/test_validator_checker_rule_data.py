@@ -221,6 +221,8 @@ def test_reports_the_constants_still_held_by_the_gates(
         "validator_public_lab_selection",
         "checker_version_floor_consumers",
         "validator_version_floor_consumers",
+        "checker_provider_import_surface",
+        "validator_provider_import_surface",
     ],
 )
 def test_the_new_checkers_hold_no_rule_table(module: str) -> None:

@@ -1,0 +1,57 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: provider_import_surface
+  validator_name: Provider Import Surface
+  validator_description: |
+    A provider pull request may not remove what a consumer imports (OMN-22478). An
+    import in consumer source that resolves against the provider at the base revision
+    and does not at the head is refused. Imports broken at the base are not this
+    change's doing and are not reported.
+
+  target_patterns:
+    - "**/*.py"
+
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/.venv/**"
+
+  rules:
+    - rule_id: consumer_import_removed
+      description: >-
+        Consumer source imports a module or name the base revision provides and this head removes.
+      severity: error
+      enabled: true
+      parameters:
+        type_checking_guards:
+          - TYPE_CHECKING
+        remediation: >-
+          Keep the old path as a re-export in this pull request, then move the consumer to the new path
+          and remove the re-export once the consumer's installed build imports the new one (OMN-22478).
+    - rule_id: consumer_source_does_not_parse
+      description: A consumer source file that does not parse cannot be judged, so the check fails.
+      severity: error
+      enabled: true
+      parameters:
+        remediation: Fix the consumer checkout. A check that cannot read the consumer has not passed.
+    - rule_id: nothing_read
+      description: A run that read no consumer source, or an empty provider tree, has judged nothing.
+      severity: error
+      enabled: true
+      parameters:
+        remediation: Fix the paths given to the check. A check that read nothing has not passed.
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
