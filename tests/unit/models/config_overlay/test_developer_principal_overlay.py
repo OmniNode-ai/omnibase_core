@@ -263,3 +263,13 @@ def test_the_schema_export_round_trips() -> None:
     assert committed == ModelDeveloperPrincipalOverlay.model_json_schema()
     assert committed["additionalProperties"] is False
     assert script.main(["--check"]) == 0
+
+
+def test_the_committed_schema_lists_the_read_only_role() -> None:
+    script = _schema_script()
+    committed = json.loads(
+        (script.SCHEMA_DIR / "developer_principal.schema.json").read_text("utf-8")
+    )
+    assert "read_only" in json.dumps(
+        committed["$defs"]["EnumDeveloperPrincipalRole"]["enum"]
+    )
