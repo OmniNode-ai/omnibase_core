@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22544
+title: Core's developer principal role vocabulary gains read_only
+summary: A developer.principal overlay row may declare role read_only, the role the lab issuer reads to
+  withhold the declared topics from step 0's read-only principal. The role is never a grant and binds
+  no grant role. The packaged schema lists the new value.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched: [public_api]
+requirements:
+  - id: req-omn22544-read-only-role
+    statement: The closed role vocabulary admits read_only and still refuses anything outside it.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a developer.principal overlay row with role read_only parses and reads EnumDeveloperPrincipalRole.READ_ONLY,
+          a role outside the vocabulary is still refused and a read_only row binding grant_roles is refused
+          -- falsifier: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          -q -o addopts=''"
+      - id: AC2
+        statement: "AC2: the packaged developer_principal schema lists read_only and matches what the
+          generator writes -- falsifier: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          -q -o addopts='' -k schema"
+evidence_requirements:
+  - kind: tests
+    description: The overlay model tests, including the schema round trip, fail at the merge base.
+    command: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py -q -o
+      addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22544-ac1-read-only-row
+    description: A read_only row parses, binds no grant role, and a role outside the vocabulary is refused.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          -q -o addopts='' -k 'read_only or role_outside'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22544-ac2-schema
+    description: The committed schema lists read_only and equals what the generator writes.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/config_overlay/test_developer_principal_overlay.py
+          -q -o addopts='' -k schema
+        cwd: ${OMNI_HOME}/omnibase_core

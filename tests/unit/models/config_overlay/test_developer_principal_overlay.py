@@ -176,7 +176,27 @@ def test_a_row_may_select_the_machine_role() -> None:
     assert doc.principals[1].role is EnumDeveloperPrincipalRole.DEVELOPER
 
 
-@pytest.mark.parametrize("value", ["admin", "Machine", "", "grants"])
+def test_a_row_may_select_the_read_only_role() -> None:
+    # OMN-22544: the lab issuer reads this value and withholds the declared topics
+    body = _body()
+    body["principals"][0]["role"] = "read_only"
+    doc = ModelDeveloperPrincipalOverlay.model_validate(body)
+    assert doc.principals[0].role is EnumDeveloperPrincipalRole.READ_ONLY
+    assert doc.principals[1].role is EnumDeveloperPrincipalRole.DEVELOPER
+
+
+def test_a_read_only_row_binds_no_grant_role() -> None:
+    # a binding adds grants, which is the opposite of what the role is for
+    body = _body()
+    body["principals"][0]["role"] = "read_only"
+    body["principals"][0]["grant_roles"] = ["fleet-member"]
+    with pytest.raises(ValidationError, match="grant_roles binds a machine row only"):
+        ModelDeveloperPrincipalOverlay.model_validate(body)
+
+
+@pytest.mark.parametrize(
+    "value", ["admin", "Machine", "", "grants", "READ_ONLY", "read-only"]
+)
 def test_a_role_outside_the_vocabulary_is_refused(value: str) -> None:
     body = _body()
     body["principals"][0]["role"] = value
