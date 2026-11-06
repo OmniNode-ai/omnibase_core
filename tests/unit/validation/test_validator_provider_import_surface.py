@@ -203,14 +203,10 @@ def test_other_packages_and_relative_imports_are_not_read(
 def test_submodule_imported_from_its_package_resolves(
     tmp_path: Path, validator_rules: dict[str, ModelValidatorRule]
 ) -> None:
-    assert (
-        _issues(tmp_path, validator_rules, TREE, "from prov.models import security\n")
-        == []
-    )
+    consumer = "from prov.models import security\n"
+    assert _issues(tmp_path / "kept", validator_rules, TREE, consumer) == []
     head = _without("prov/models/security.py")
-    assert _issues(
-        tmp_path, validator_rules, head, "from prov.models import security\n"
-    ) == [RULE_REMOVED]
+    assert _issues(tmp_path / "gone", validator_rules, head, consumer) == [RULE_REMOVED]
 
 
 @pytest.mark.parametrize(
