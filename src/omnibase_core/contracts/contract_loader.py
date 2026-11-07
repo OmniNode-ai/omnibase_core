@@ -12,6 +12,10 @@ An optional in-memory cache (ContractLoaderCache) is available for
 high-throughput scenarios where the same contract files are loaded
 repeatedly. Caching is opt-in and disabled by default.
 
+Duplicate keys:
+    Repeated mapping keys are refused, including nested mappings, includes,
+    and YAML merges. Errors name the duplicate key and its line number.
+
 Security:
     - Path traversal attacks are blocked (relative paths only)
     - Absolute paths are rejected
@@ -83,6 +87,9 @@ from omnibase_core.errors.exception_groups import FILE_IO_ERRORS, YAML_PARSING_E
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.types.typed_dict.typed_dict_contract_loader_cache_stats import (
     TypedDictContractLoaderCacheStats,
+)
+from omnibase_core.utils.util_safe_yaml_loader import (
+    UtilDuplicateKeyRejectingSafeLoader,
 )
 
 # Default configuration constants
@@ -396,13 +403,14 @@ def _validate_file_size(
         )
 
 
-class IncludeLoader(yaml.SafeLoader):
+class IncludeLoader(UtilDuplicateKeyRejectingSafeLoader):
     """
     YAML loader with !include tag support for modular contract composition.
 
-    This loader extends SafeLoader to add support for the !include tag,
+    This loader extends a duplicate-rejecting SafeLoader with the !include tag,
     which allows contracts to reference and include content from external
-    YAML files.
+    YAML files. Repeated keys in any mapping, including nested mappings,
+    included files, and YAML merges, are refused with the key and line number.
 
     Security features:
         - Only relative paths within the base directory are allowed
@@ -413,6 +421,7 @@ class IncludeLoader(yaml.SafeLoader):
 
     Attributes:
         base_path: Base directory for resolving relative include paths.
+        source: Source name used in duplicate-key errors.
         include_stack: Stack of currently loading files for cycle detection.
         max_depth: Maximum nesting depth for includes.
         max_file_size: Maximum file size in bytes.
@@ -434,6 +443,7 @@ class IncludeLoader(yaml.SafeLoader):
         stream: str,
         *,
         base_path: Path,
+        source: str = "<contract>",
         include_stack: set[Path] | None = None,
         max_depth: int = DEFAULT_MAX_INCLUDE_DEPTH,
         max_file_size: int = DEFAULT_MAX_FILE_SIZE,
@@ -445,6 +455,7 @@ class IncludeLoader(yaml.SafeLoader):
         Args:
             stream: YAML content string to parse.
             base_path: Base directory for resolving relative includes.
+            source: Source name used in duplicate-key errors.
             include_stack: Set of file paths currently being loaded (for cycle detection).
             max_depth: Maximum include nesting depth.
             max_file_size: Maximum file size in bytes.
@@ -452,6 +463,7 @@ class IncludeLoader(yaml.SafeLoader):
         """
         super().__init__(stream)
         self.base_path = base_path
+        self.source = source
         self.include_stack = include_stack if include_stack is not None else set()
         self.max_depth = max_depth
         self.max_file_size = max_file_size
@@ -575,6 +587,7 @@ def _include_constructor(loader: IncludeLoader, node: yaml.Node) -> object:
         nested_loader = IncludeLoader(
             content,
             base_path=include_path.parent,
+            source=str(include_path),
             include_stack=new_stack,
             max_depth=loader.max_depth,
             max_file_size=loader.max_file_size,
@@ -709,6 +722,7 @@ def load_contract(
         loader = IncludeLoader(
             content,
             base_path=contract_path.parent,
+            source=str(contract_path),
             include_stack=include_stack,
             max_depth=max_depth,
             max_file_size=max_file_size,
