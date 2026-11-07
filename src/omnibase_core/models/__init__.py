@@ -41,6 +41,7 @@ __all__ = [
     "mcp",  # MCP (Model Context Protocol) models (OMN-1286)
     "merge",  # Contract merge and geometric conflict models (OMN-1127, OMN-1853)
     "metadata",
+    "model_swap_validation",
     "nodes",
     "notifications",
     "operations",
