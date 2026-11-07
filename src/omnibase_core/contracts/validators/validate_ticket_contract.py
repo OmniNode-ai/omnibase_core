@@ -26,20 +26,22 @@ from omnibase_core.models.contracts.ticket.model_linear_ticket_contract import (
 # observed against a running system (a live behavior probe, an endpoint, a lab
 # receipt or a deployed-SHA match), as opposed to a test that only reads source.
 INTEGRATION_ITEM_RULE = "DOD_EVIDENCE_INTEGRATION_ITEM_MISSING"
-INTEGRATION_CHECK_TYPES: frozenset[EnumDodCheckType] = frozenset(
-    {
-        EnumDodCheckType.BEHAVIOR_PROVEN,
-        EnumDodCheckType.ENDPOINT,
-        EnumDodCheckType.LAB_RECEIPT,
-        EnumDodCheckType.RUNTIME_SHA_MATCH,
-    }
-)
+
+
+def is_integration_check_type(check_type: EnumDodCheckType) -> bool:
+    """True for a check type observed against a running system."""
+    return (
+        check_type is EnumDodCheckType.BEHAVIOR_PROVEN
+        or check_type is EnumDodCheckType.ENDPOINT
+        or check_type is EnumDodCheckType.LAB_RECEIPT
+        or check_type is EnumDodCheckType.RUNTIME_SHA_MATCH
+    )
 
 
 def has_integration_item(dod_evidence: Sequence[ModelDodEvidenceItem]) -> bool:
     """True when any DoD evidence item carries an integration check."""
     return any(
-        check.check_type in INTEGRATION_CHECK_TYPES
+        is_integration_check_type(check.check_type)
         for item in dod_evidence
         for check in item.checks
     )
@@ -83,7 +85,7 @@ def validate_ticket_contract(
 
 
 __all__ = [
-    "INTEGRATION_CHECK_TYPES",
+    "is_integration_check_type",
     "INTEGRATION_ITEM_RULE",
     "has_integration_item",
     "validate_ticket_contract",
