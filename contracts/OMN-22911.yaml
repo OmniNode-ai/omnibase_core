@@ -1,0 +1,39 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22911
+title: "Piece 4's two-backend rule: every effect the piece's reading names has an in-memory default and
+  a real backend chosen by overlay, and one suite passes on both"
+summary: "A core validator, effect_backends, lists every effect node whose contract does not declare an
+  in-memory default and a real backend chosen by an overlay key. The list is the input of piece 4's reading
+  and of the two-backend suite in omnimarket."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22911-validator
+    statement: "A core validator lists every effect node without an in-memory default; the list is the
+      reading's input."
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a core validator lists every effect node without an in-memory default and the
+          list is the reading''s input -- falsifier: uv run pytest tests/unit/validators/test_effect_backends.py
+          -q'
+evidence_requirements:
+  - kind: tests
+    description: "Validator unit tests, with an injected break that turns five of them red"
+    command: uv run pytest tests/unit/validators/test_effect_backends.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22911-validator
+    description: "The validator lists effects with no in-memory default, effects not on both backends,
+      and ignores non-effect nodes."
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validators/test_effect_backends.py -q
+        cwd: .
