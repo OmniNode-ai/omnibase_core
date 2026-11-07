@@ -1,0 +1,48 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23015
+title: This repository bounds its strict type checker as well as its linter
+summary: "OMN-23012 bounded ruff and pyright and left mypy with no upper bound at all, so the one tool
+  whose verdict the Code Quality job reports last could still be upgraded by a dependency refresh. This
+  contract carries only that bound; the release train's unformatted generated contract is recorded on
+  the ticket and fixed on the branch it appears on."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23015-mypy-bound
+    statement: The mypy requirement is bounded at the next minor, and the lock pins the version this tree
+      passes strict mypy under.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: mypy is declared with an upper bound at the next minor, so no lock refresh can
+          upgrade it -- falsifier: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q
+          fails on a tree where mypy is declared without an upper bound'
+      - id: AC2
+        statement: 'AC2: uv.lock pins mypy 1.19.1, so the Code Quality job runs the strict mypy this tree
+          passes -- falsifier: the same test module, which reads the locked version'
+evidence_requirements:
+  - kind: tests
+    description: The declared bound and the locked version of every tool whose output is a gate verdict.
+    command: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23015-mypy-bound
+    description: "mypy carries an upper bound at the next minor and uv.lock pins the version behind it.
+      Fails at the merge base, where mypy is declared as mypy>=1.19.1 with no upper bound. Measured 2026-11-07:
+      the 0.47.69 release refresh moved mypy 1.19.1 to 2.4.1 inside that open range, and strict mypy 2.4.1
+      then reports two errors on an unchanged tree -- object not callable at src/omnibase_core/cli/cli_bootstrap.py:45
+      and an unreachable statement at src/omnibase_core/models/core/model_enhanced_tool_collection.py:267.
+      With ruff and pyright already restored on that branch, mypy was the one cause left in Code Quality
+      and reason-graph elected it as the single ROOT."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC1
+      - AC2
