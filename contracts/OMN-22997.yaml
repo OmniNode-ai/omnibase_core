@@ -1,0 +1,50 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22997
+title: This repository's Code Quality job runs the ruff its own lock names
+summary: "The required Code Quality job synced and ran ruff with no --frozen, so a pull request whose
+  diff touches uv.lock let uv re-resolve and the formatter that ran was not the one the tree is formatted
+  for. This contract carries only the criterion this repository owns: the job that reports formatting
+  names the versions it reports against. The other unfrozen syncs in these workflows run no formatter
+  and are a separate judgement."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22997-code-quality-frozen
+    statement: Every uv step of the job that reports formatting names --frozen, so the formatter and the
+      type checker it reports with are the ones uv.lock pins, and the shadow pair beside it does the same.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the Code Quality job''s dependency sync and every uv run in it name --frozen,
+          so no step re-resolves past the lock -- falsifier: uv run --frozen pytest tests/ci/test_code_quality_frozen_ruff_omn22997.py
+          -q fails on a tree where that sync omits --frozen'
+      - id: AC2
+        statement: 'AC2: the product-readiness-shadow lint-shadow job''s sync and both ruff runs name
+          --frozen, so the shadow does not redden beside the required job on the same resolve -- falsifier:
+          the same test module, which reads both workflow files'
+evidence_requirements:
+  - kind: tests
+    description: The frozen-resolve assertions over both workflow files.
+    command: uv run --frozen pytest tests/ci/test_code_quality_frozen_ruff_omn22997.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22997-code-quality-frozen
+    description: "Every uv step of the Code Quality job, and of the lint-shadow job beside it, names --frozen.
+      Fails at the merge base, where the job's sync and both ruff runs name nothing: measured on dev at
+      64d60448, the locked ruff 0.14.14 reports 8340 files already formatted while the 0.17.4 that uv
+      resolved on the 0.47.69 release pull request reports 9 files would be reformatted, a red that says
+      nothing about the code. Only a lock-touching diff triggers the re-resolve, which is why it presented
+      as the release pull request being stuck rather than as a repository red, and why this repository
+      merged nothing for 23 hours."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_code_quality_frozen_ruff_omn22997.py -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC1
+      - AC2
