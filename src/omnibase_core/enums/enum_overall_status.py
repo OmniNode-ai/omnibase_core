@@ -17,9 +17,12 @@ indistinguishable from a verified one (OMN-15862).
    Added :attr:`EnumOverallStatus.SKIP` (OMN-15862).
 """
 
+from collections.abc import Iterable
 from enum import Enum
 
-__all__ = ["EnumOverallStatus"]
+from omnibase_core.enums.enum_check_status import EnumCheckStatus
+
+__all__ = ["EnumOverallStatus", "aggregate_overall_status"]
 
 
 class EnumOverallStatus(str, Enum):
@@ -42,3 +45,27 @@ class EnumOverallStatus(str, Enum):
     FAIL = "fail"
     SKIP = "skip"
     ERROR = "error"
+
+
+def aggregate_overall_status(statuses: Iterable[EnumCheckStatus]) -> EnumOverallStatus:
+    """Aggregate per-check results with FAIL > SKIP > PASS precedence.
+
+    A SKIP is an absence of evidence, not evidence of correctness, so it
+    must never be aggregated into a PASS. Before OMN-15862 this rule's
+    inline predecessor treated "no FAIL" as PASS, which reported a run
+    where nothing executed — including the hardcoded tier-2 skip — as a
+    verified package.
+
+    Args:
+        statuses: All per-check statuses produced by this run.
+
+    Returns:
+        ``FAIL`` if any check failed; else ``SKIP`` if any check was
+        skipped; else ``PASS`` (including empty input).
+    """
+    collected = tuple(statuses)
+    if any(status == EnumCheckStatus.FAIL for status in collected):
+        return EnumOverallStatus.FAIL
+    if any(status == EnumCheckStatus.SKIP for status in collected):
+        return EnumOverallStatus.SKIP
+    return EnumOverallStatus.PASS
