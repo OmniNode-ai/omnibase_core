@@ -311,7 +311,7 @@ jobs:
         run: uv run --frozen ruff check src/ tests/
 
       - name: Run mypy type checking (strict)
-        run: uv run mypy src/omnibase_core
+        run: uv run --frozen mypy src/omnibase_core
 
   # Phase 1 validation job - runs in parallel with lint, exports-validation
   # Must complete before test-parallel starts (fail-fast optimization)
