@@ -236,8 +236,16 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.4,<2",
     "mypy>=1.19.1",
-    "pyright>=1.1.408",
-    "ruff>=0.14.13,<0.18.0",
+    "pyright>=1.1.408,<1.1.409",  # see the ruff note above: pyright promotes new diagnostics between patch releases, and 1.1.414 fails this tree on four it did not report (OMN-23012)
+    # Upper bound at the next minor, deliberately: ruff changes both its
+# formatter and its rule set between minors, so a wider range lets a
+# dependency refresh redefine what "clean" means for an unchanged tree.
+# Measured 2026-11-07 on 127140736 (OMN-23012): ruff 0.14.14 reports
+# "All checks passed" and 8350 files already formatted, while the 0.17.4
+# that the 0.47.69 release refresh resolved inside the old range reports
+# 1009 errors and 9 files to reformat. Raising this bound is a tracked
+# upgrade, never a side effect of `uv lock`.
+    "ruff>=0.14.13,<0.15.0",
     "types-pyyaml>=6.0.12.20250822",
     "pre-commit>=4.5.1",
     "types-requests>=2.32.4.20250913",

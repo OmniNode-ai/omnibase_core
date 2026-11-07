@@ -1,0 +1,49 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23012
+title: This repository's linter and type checker cannot be upgraded by a dependency refresh
+summary: "ruff and pyright decide what clean means here, and both were declared in ranges wide enough
+  for uv lock to upgrade them, so a dependency refresh changed this repository's verdict on an unchanged
+  tree. This contract carries only the bound itself; the tool upgrades the bound now defers are tracked
+  work of their own."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23012-dev-tool-bounds
+    statement: The ruff and pyright requirements are bounded at the next release of each, and the lock
+      resolves the version this tree is measured clean under.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: each tool requirement carries the narrow upper bound, so no lock refresh can
+          upgrade it -- falsifier: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q
+          fails on a tree whose ruff bound is <0.18.0'
+      - id: AC2
+        statement: 'AC2: uv.lock pins ruff 0.14.14 and pyright 1.1.408, so the Code Quality job installs
+          the ruff this tree is formatted for -- falsifier: the same test module, which reads each locked
+          version'
+evidence_requirements:
+  - kind: tests
+    description: The declared bounds and the locked versions, read from pyproject.toml and uv.lock.
+    command: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23012-dev-tool-bounds
+    description: "Both tool requirements carry an upper bound at the next release, and uv.lock pins the
+      versions behind it. Fails at the merge base, where ruff is declared <0.18.0 and pyright has no upper
+      bound at all. Measured 2026-11-07 on 127140736, same tree both times: ruff 0.14.14 reports All checks
+      passed and 8350 files already formatted, while the 0.17.4 the 0.47.69 release refresh resolved inside
+      the old range reports 1009 errors and 9 files to reformat; pyright 1.1.408 passes and 1.1.414 fails
+      on four diagnostics it did not previously report. Reformatting for 0.17.4 would commit the tree
+      to 1009 unreviewed findings, so the bound is the fix and each upgrade becomes tracked work."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC1
+      - AC2
