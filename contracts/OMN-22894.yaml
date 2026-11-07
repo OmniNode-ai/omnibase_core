@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22894
+title: omnibase_core's security scan runs TruffleHog and a planted secret turns it red
+summary: security-scan.yml gains a secret-scan job, hosted in the in-repo reusable secret-scan-reusable.yml,
+  on a hosted runner at the action pin the reference security-scan.yml carries, with a planted-control
+  step that reads a declared detector, so a commit adding the control token turns the job red and a head
+  without it reads green.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22894-secret-scan
+    statement: The repository's security scan runs a secret scanner on a hosted runner with a control
+      that can fail.
+    acceptance:
+      - id: AC1
+        statement: security-scan.yml runs TruffleHog on a hosted runner at the same pin as the reference
+          security-scan workflow.
+      - id: AC2
+        statement: A planted control secret on a scratch head turns the scan red and the clean head reads
+          green.
+evidence_requirements:
+  - kind: tests
+    description: Workflow shape test of the secret-scan job and the control detector.
+    command: uv run pytest tests/ci/test_secret_scan_workflow_omn22894.py -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22894-ac1-workflow-shape
+    description: The secret-scan job runs on a hosted runner and every TruffleHog step carries the pinned
+      action.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_secret_scan_workflow_omn22894.py -q -o addopts='' -k
+          'hosted_runner or reference_pin or verified_only'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22894-ac2-planted-control
+    description: The control detector matches the planted token and ignores clean text and its own file.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_secret_scan_workflow_omn22894.py -q -o addopts='' -k
+          'control'
+        cwd: ${OMNI_HOME}/omnibase_core

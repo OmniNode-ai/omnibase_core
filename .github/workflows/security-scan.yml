@@ -39,3 +39,10 @@ jobs:
       actions: read
       contents: read
       security-events: write
+
+  # OMN-22894: secret scanning, hosted in secret-scan-reusable.yml.
+  secret-scan:
+    name: Secret Scanning
+    uses: ./.github/workflows/secret-scan-reusable.yml
+    permissions:
+      contents: read
