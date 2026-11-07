@@ -290,8 +290,14 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      # --frozen, like every other sync in this file: without it a pull request
+      # whose diff touches uv.lock lets uv re-resolve, and the formatter that
+      # then runs is not the one the tree is formatted for. Measured on dev at
+      # 64d60448: the locked ruff 0.14.14 reports 8340 files already formatted,
+      # while the 0.17.4 uv resolved on the 0.47.69 release pull request reports
+      # 9 files would be reformatted -- a red that says nothing about the code.
       - name: Install dependencies
-        run: uv sync --all-extras
+        run: uv sync --frozen --all-extras
 
       # OMN-18785: executed model falsifiers ride Code Quality, which is
       # unconditional and required by Quality Gate and CI Summary.
@@ -299,10 +305,10 @@ jobs:
         run: uv run --frozen pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py -q -n 0 --reruns 0
 
       - name: Check ruff formatting
-        run: uv run ruff format --check src/ tests/
+        run: uv run --frozen ruff format --check src/ tests/
 
       - name: Check ruff linting (includes import sorting)
-        run: uv run ruff check src/ tests/
+        run: uv run --frozen ruff check src/ tests/
 
       - name: Run mypy type checking (strict)
         run: uv run mypy src/omnibase_core
