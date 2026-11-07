@@ -1,0 +1,663 @@
+{
+  "recorded_from": "omniclaude plugins/onex/hooks/lib/ticket_creation_guard.py",
+  "omniclaude_head": "30ebc50dd1b7ccabb81cd515ad3ad61ae9db9110",
+  "ledger_lines": [
+    "row one",
+    "row two",
+    "row three",
+    "row four",
+    "row five"
+  ],
+  "cases": [
+    {
+      "name": "admitted",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "admitted_epic_no_parent",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "issue_class: epic\nGate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "admitted_live_gate_defect_title",
+      "tool_input": {
+        "title": "Cleanup of kb-doc-gate",
+        "description": "Gate: live-gate defect: kb-doc-gate\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "admitted_in_progress_with_probe",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q\nProbe: uv run pytest tests/unit/test_x.py -q => exits 0",
+        "parentId": "OMN-22847",
+        "state": "In Progress"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "admitted_labelled_unfalsifiable_merge_state_ok",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the companion is merged to main -- falsifier: gh pr view 12 => merged",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "admitted_defect_with_pr_diagnosis",
+      "tool_input": {
+        "title": "Fix the crash",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q\nDiagnosis: OmniNode-ai/omniclaude#2836",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "admitted_defect_with_ledger_diagnosis",
+      "tool_input": {
+        "title": "Fix the crash",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q\nDiagnosis: docs/tracking/ROLLING_WORK_LEDGER.md:3",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "refused_missing_parent",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_parent",
+            "parentId"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_project_set",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog",
+        "project": "Sprint 1"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "project_set",
+            "project"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_project_id_set",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog",
+        "projectId": "abc"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "project_set",
+            "project"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_missing_gate_line",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_gate_line",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_gate_unknown_criterion",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C99\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_gate_line",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_residual_title",
+      "tool_input": {
+        "title": "Minor follow-up to the gate",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "residual_title",
+            "title"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_missing_probe_line",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "In Progress"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_probe_line",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_started_state_type",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "started"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_probe_line",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_malformed_probe_line",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q\nProbe: uv run pytest",
+        "parentId": "OMN-22847",
+        "state": "In Progress"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "malformed_probe_line",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unfalsified_criterion",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unfalsified_criterion",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_merge_state_falsifier",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the guard refuses an unfalsified create -- falsifier: gh pr view 12 => merged",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "merge_state_falsifier_on_behaviour_criterion",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_no_criteria_section",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\nNo criteria here.",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_acceptance_criteria",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unlabelled_criteria",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- the check works -- falsifier: uv run pytest tests/x.py",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unlabelled_criteria",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_missing_diagnosis",
+      "tool_input": {
+        "title": "Fix the crash",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_diagnosis",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_defect_label_missing_diagnosis",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog",
+        "labels": [
+          "bug"
+        ]
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_diagnosis",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unresolvable_diagnosis_line",
+      "tool_input": {
+        "title": "Fix the crash",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q\nDiagnosis: docs/tracking/ROLLING_WORK_LEDGER.md:99",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unresolvable_diagnosis",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unresolvable_diagnosis_form",
+      "tool_input": {
+        "title": "Fix the crash",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q\nDiagnosis: it is broken",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unresolvable_diagnosis",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_multi",
+      "tool_input": {
+        "title": "Minor nit",
+        "description": "\n## Acceptance criteria\n- [ ] AC1: a thing",
+        "state": "Backlog",
+        "project": "P"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "missing_parent",
+            "parentId"
+          ],
+          [
+            "project_set",
+            "project"
+          ],
+          [
+            "missing_gate_line",
+            "description"
+          ],
+          [
+            "residual_title",
+            "title"
+          ],
+          [
+            "unfalsified_criterion",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unevaluable_title",
+      "tool_input": {
+        "title": "   ",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unevaluable",
+            "title"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unevaluable_description_type",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": 5,
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unevaluable",
+            "description"
+          ],
+          [
+            "missing_gate_line",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unevaluable_tool_input",
+      "tool_input": [
+        1,
+        2
+      ],
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unevaluable",
+            "tool_input"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "refused_unevaluable_id",
+      "tool_input": {
+        "id": "  ",
+        "state": "Done"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "unevaluable",
+            "id"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "admitted_update_state_only",
+      "tool_input": {
+        "id": "OMN-1",
+        "state": "Done"
+      },
+      "lane": null,
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "lane_admitted",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "created-by-lane: lane-a\nGate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog",
+        "labels": [
+          "lane-created"
+        ]
+      },
+      "lane": "lane-a",
+      "guard": {
+        "exit": 0,
+        "findings": []
+      }
+    },
+    {
+      "name": "lane_refused_identity_missing",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog",
+        "labels": [
+          "lane-created"
+        ]
+      },
+      "lane": "",
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "lane_identity_missing",
+            "lane"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "lane_refused_label_missing",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "created-by-lane: lane-a\nGate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": "lane-a",
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "lane_label_missing",
+            "labels"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "lane_refused_stamp_missing",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog",
+        "labels": [
+          "lane-created"
+        ]
+      },
+      "lane": "lane-a",
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "lane_stamp_missing",
+            "description"
+          ]
+        ]
+      }
+    },
+    {
+      "name": "lane_refused_all_three",
+      "tool_input": {
+        "title": "Mint the floor ticket",
+        "description": "Gate: C7\n\n## Acceptance criteria\n- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q",
+        "parentId": "OMN-22847",
+        "state": "Backlog"
+      },
+      "lane": "",
+      "guard": {
+        "exit": 3,
+        "findings": [
+          [
+            "lane_identity_missing",
+            "lane"
+          ],
+          [
+            "lane_label_missing",
+            "labels"
+          ]
+        ]
+      }
+    }
+  ]
+}

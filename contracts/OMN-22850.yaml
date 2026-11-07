@@ -1,0 +1,52 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22850
+title: A core validator holds the ticket-creation admission gate, so node_create_ticket can call it instead
+  of running the omniclaude guard as a subprocess
+summary: The ticket-creation gate lived only as the omniclaude guard script, run as a subprocess by node_create_ticket.
+  This adds the gate to omnibase_core as a generic-format validator whose rules, vocabulary and texts
+  are rule data, ported rule by rule from the guard and its policy, with a parity test that replays the
+  guard's recorded verdicts on the same payloads. The guard stays where it is.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22850-core-gate
+    statement: A core validator accepts the create payloads the guard accepts and refuses them with the
+      guard's codes and fields.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the validator returns the guard's recorded verdict (admitted, or the same finding
+          codes and fields in order) on every recorded payload -- falsifier: uv run pytest tests/unit/validation/test_ticket_creation_parity.py
+          -q --no-cov -n 0 -k equal_verdict"
+      - id: AC2
+        statement: "AC2: dropping any one rule, or one vocabulary entry, from the contract makes the parity
+          read red -- falsifier: uv run pytest tests/unit/validation/test_ticket_creation_parity.py -q
+          --no-cov -n 0 -k 'dropping'"
+evidence_requirements:
+  - kind: tests
+    description: The ticket-creation parity tests pass at the head.
+    command: uv run pytest tests/unit/validation/test_ticket_creation_parity.py -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22850-ac1-parity
+    description: The validator and the recorded guard verdicts agree on every payload.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ticket_creation_parity.py -q --no-cov -n
+          0 -k equal_verdict
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn22850-ac2-failing-control
+    description: Each dropped rule and a dropped vocabulary entry are a parity mismatch.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ticket_creation_parity.py -q --no-cov -n
+          0 -k dropping
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]
