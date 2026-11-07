@@ -1,0 +1,16 @@
+---
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-22894: the planted control of the secret scan (security-scan.yml, job secret-scan).
+# The scan's two ordinary steps run with --only-verified, so a dummy planted secret never
+# turns them red (a dummy cannot verify). This detector gives the scan a control that can:
+# a commit that adds a token of the shape below turns the control step red, and a head whose
+# history holds no such token reads green. The pattern is a regular expression, so this file
+# does not match its own detector.
+detectors:
+  - name: OnexScanControl
+    keywords:
+      - ONEX_SCAN_CONTROL_
+    regex:
+      token: 'ONEX_SCAN_CONTROL_[A-Za-z0-9]{32}'

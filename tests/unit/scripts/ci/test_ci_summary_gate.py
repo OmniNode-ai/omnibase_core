@@ -970,6 +970,11 @@ EXPLICIT_EXEMPT_JOBS: dict[tuple[str, str], str] = {
         "audit, structurally cannot be a merge gate (same class as "
         "auto-tag-on-merge)."
     ),
+    ("security-scan.yml", "secret-scan"): (
+        "OMN-22894: TruffleHog secret scan landing as an advisory job "
+        "(advisory-ok), not yet a required status check; promote to a "
+        "required context once its hosted run is read green."
+    ),
 }
 
 
