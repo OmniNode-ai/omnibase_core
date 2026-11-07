@@ -57,6 +57,7 @@ import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, date, datetime
+from pathlib import Path
 
 # The poller's own job — excluded to avoid self-deadlock.
 SELF_JOB_NAME = "CI Summary"
@@ -446,42 +447,24 @@ class SweepExclusion:
 
 SWEEP_EXCLUSION_MAX_DAYS: int = 90
 
-# OMN-17427: measured over 15 merged core PR heads on 2026-10-17 using the
-# PR watcher state. These were the only external pull_request-event names
-# non-success by design: handshake-policy-gate skipped on 15/15 heads, and
-# Enable Auto-Merge skipped on 1/8 heads carrying it. Expiry re-arms the sweep.
-EXTERNAL_SWEEP_EXCLUSIONS: dict[str, SweepExclusion] = {
-    "handshake-policy-gate": SweepExclusion(
-        reason="Schedule/workflow_dispatch-only producer leaves a skipped placeholder on PRs.",
-        ticket="OMN-17427",
-        added="2026-10-17",
-        expires="2026-12-20",
-    ),
-    "Enable Auto-Merge": SweepExclusion(
-        reason="Job condition requires a matching PR actor and skips for other actors.",
-        ticket="OMN-17427",
-        added="2026-10-17",
-        expires="2026-12-20",
-    ),
-    # Measured on omnibase_core#2047 (run 39119407826): a PR touching one of
-    # propagate-config.yml's pull_request paths (.pre-commit-hooks.yaml) posts
-    # this unrendered-name row, skipped because the job runs only on release or
-    # workflow_dispatch; its PR-time dry-run is ci.yml's propagate-dry-run.
-    "Propagate ${{ (inputs.propagation_name || 'release-triggered') }}": SweepExclusion(
-        reason="Release/workflow_dispatch-only propagator leaves a skipped placeholder on path-matched PRs.",
-        ticket="OMN-17427",
-        added="2026-10-18",
-        expires="2026-12-20",
-    ),
-    # Measured on CI run 39298561187 (main push of bf1a16372): the workflow_run
-    # harvester posts a skipped row because it runs only for pull_request CI.
-    "Harvest shadow records": SweepExclusion(
-        reason="workflow_run harvester runs only for pull_request CI and leaves a skipped row on pushed heads.",
-        ticket="OMN-17427",
-        added="2026-10-19",
-        expires="2026-12-20",
-    ),
-}
+# The registry is data, in ci_summary_sweep_exclusions.json beside this file
+# (stdlib json: the poller runs with no third-party packages). Each entry names
+# its reason, ticket, added date and expiry; the measurements behind the first
+# four are in contracts/OMN-17427.yaml, and the Tessl Reviewer entry is
+# RULING 2026-11-05T20:27:56Z (OMN-22478): omnibase_core#2280 read red on that
+# neutral row alone (CI Summary job 128484041554). Expiry re-arms the sweep.
+SWEEP_EXCLUSIONS_FILE = Path(__file__).with_name("ci_summary_sweep_exclusions.json")
+
+
+def load_sweep_exclusions(path: Path) -> dict[str, SweepExclusion]:
+    """Read the exclusion registry; a malformed file raises and fails the gate."""
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    return {name: SweepExclusion(**fields) for name, fields in raw.items()}
+
+
+EXTERNAL_SWEEP_EXCLUSIONS: dict[str, SweepExclusion] = load_sweep_exclusions(
+    SWEEP_EXCLUSIONS_FILE
+)
 
 _SWEEP_TICKET_RE = re.compile(r"^OMN-\d+$")
 _SWEEP_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
