@@ -1,0 +1,40 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_effect_backends_check_compute
+node_id: node_effect_backends_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Two-backend rule of rebuild piece 4 (OMN-22911). Lists every effect node whose contract does not declare
+  an in-memory default and a real backend chosen by an overlay key. The list is the input of piece 4's
+  reading and of the two-backend suite in omnimarket. A reading, never a gate: the check refuses nothing.
+input_model: omnibase_core.models.validation.model_effect_backends_request.ModelEffectBackendsRequest
+output_model: omnibase_core.models.validation.model_effect_backends_report.ModelEffectBackendsReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: effect_backends
+      handler:
+        name: HandlerEffectBackends
+        module: omnibase_core.nodes.node_effect_backends_check_compute.handler_effect_backends
+      event_model:
+        name: ModelEffectBackendsRequest
+        module: omnibase_core.models.validation.model_effect_backends_request
+    - operation: load_contracts
+      handler:
+        name: HandlerEffectBackendsLoader
+        module: omnibase_core.nodes.node_effect_backends_check_compute.handler_effect_backends_loader
+      event_model:
+        name: ModelEffectBackendsLoadRequest
+        module: omnibase_core.models.validation.model_effect_backends_load_request
+  default_handler: handler_effect_backends:HandlerEffectBackends
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 60000
+runtime_profiles: [local-dev]
