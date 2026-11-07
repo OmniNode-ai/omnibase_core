@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23034
+title: The layer-5 default-deny sweep admits Tessl Reviewer's advisory neutral, so a bot configured not
+  to block stops blocking every pull request
+summary: >-
+  SWEEP_GOOD_CONCLUSIONS admits success alone, and the tessl-reviewer app reports neutral as its normal
+  successful outcome in advisory mode. That was the single named sweep failure on four of the six non-draft
+  open pull requests (#2281, #2279, #2278, #2273) while the repository merged nothing for 5.4 hours; job
+  128518750571 named it over 53 otherwise green jobs. The context is pull_request-only, so the dev head
+  never carried it and dev stayed green, which is why reading dev could not find this. One EXTERNAL_SWEEP_EXCLUSIONS
+  entry admits that one name, reasoned, ticketed, dated and expiring 2027-01-09. SWEEP_GOOD_CONCLUSIONS
+  is deliberately unchanged: widening it to accept neutral would relax a default-deny control for every
+  swept context at once, which is the ruling OMN-18355 carries, not this fix. Same cause as OMN-23029
+  (omnimarket) and OMN-22478 (omniclaude).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23034-advisory-neutral-admitted
+    statement: >-
+      An external check-run that the repository deliberately runs in advisory mode does not fail the layer-5
+      default-deny sweep, and the admission that lets it through is itself reasoned, attributed, dated
+      and expiring.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a head carrying Tessl Reviewer at neutral beside otherwise green rows resolves
+          SUCCESS and the report no longer names it as a failure -- falsifier: uv run --frozen pytest
+          tests/unit/scripts/ci/test_ci_summary_tessl_advisory_omn23034.py -q -k advisory_neutral_no_longer_fails"
+      - id: AC2
+        statement: "AC2: the admission is a registered SweepExclusion carrying a reason, this ticket,
+          an added date and a later expiry; a malformed reason, ticket or date is still refused; and on
+          its expiry date the name is swept again and the head goes red -- falsifier: uv run --frozen
+          pytest tests/unit/scripts/ci/test_ci_summary_tessl_advisory_omn23034.py -q -k 'registered_reasoned
+          or malformed_version or expires_and_the_sweep_rearms'"
+evidence_requirements:
+  - kind: tests
+    description: >-
+      The advisory-sweep tests of this change, plus the repository's own CI Summary gate suite, which
+      pins the exclusion registry and was updated to pin each entry's SHAPE rather than the literal ticket,
+      added and expires of the four entries OMN-17427 happened to measure.
+    command: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_tessl_advisory_omn23034.py tests/unit/scripts/ci/test_ci_summary_gate.py
+      -q -p no:randomly --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23034-ac1-advisory-passes
+    description: >-
+      A replayed fully-green run whose external rows carry Tessl Reviewer at neutral resolves SUCCESS
+      and reports the name as an applied exclusion. At the merge base it fails, because the sweep admits
+      success only and names the context as a red that nothing else named -- the exact line that failed
+      job 128518750571 on #2278 over 53 green jobs.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_tessl_advisory_omn23034.py
+          -q -p no:randomly --no-cov -k advisory_neutral_no_longer_fails
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23034-ac2-bounded-admission
+    description: >-
+      The entry validates like the other four, a malformed reason, ticket or date is still refused, and
+      on its expiry date the sweep re-arms and the same head goes red. At the merge base all three fail
+      on KeyError, because the entry does not exist.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_tessl_advisory_omn23034.py
+          -q -p no:randomly --no-cov -k 'registered_reasoned or malformed_version or expires_and_the_sweep_rearms'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23034-scope-guard
+    description: >-
+      The admission buys nothing for any other unregistered context, nothing for a swept context at failure,
+      cancelled, timed_out or action_required, and the admitted name is not also an asserted external
+      context that this would silence elsewhere. It binds no AC on purpose: these assertions pass at the
+      merge base too, because they state what the change must NOT do, and dod-verify rightly refuses an
+      always-pass control as evidence of a change.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_tessl_advisory_omn23034.py
+          -q -p no:randomly --no-cov -k 'buys_nothing or not_also_an_asserted_context'
+        cwd: ${OMNI_HOME}/omnibase_core
