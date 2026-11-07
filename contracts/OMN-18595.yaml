@@ -295,8 +295,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          uv run --locked python -c 'from pathlib import Path;
-          notes = Path("README.md").read_text(); assert not Path("CHANGELOG.md").exists();
-          assert "## v0.47.69 (2026-11-07)" in notes; assert "### Included Since v0.47.67" in notes;
-          assert "(#2274)" in notes and "(#2272)" in notes'
+          uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
+          assert not Path("CHANGELOG.md").exists(); assert "## v0.47.69 (2026-11-07)" in notes; assert
+          "### Included Since v0.47.67" in notes; assert "(#2274)" in notes and "(#2272)" in notes'
         cwd: ${OMNI_HOME}/omnibase_core
