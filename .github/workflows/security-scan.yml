@@ -41,6 +41,7 @@ jobs:
       security-events: write
 
   # OMN-22894: secret scanning, hosted in secret-scan-reusable.yml.
+  # advisory-ok: OMN-22894 new secret scanner lands unrequired; promote to a required context once its hosted run is read green
   secret-scan:
     name: Secret Scanning
     uses: ./.github/workflows/secret-scan-reusable.yml
