@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: staged_path_policy
+  validator_name: Staged Path Policy Validator
+  validator_description: Refuses a staged path that must not be committed to this repository, by path
+    alone and without reading the file (OMN-22012). The hooks no-env-file and no-planning-docs run this
+    validator; each rule row is one refused path pattern with its remediation text.
+  target_patterns:
+    - '**/*'
+  exclude_patterns: []
+  rules:
+    - rule_id: env_file_staged
+      description: A .env file is never committed; ~/.omnibase/.env is the single source of truth.
+      severity: error
+      enabled: true
+      parameters:
+        kind: path_refused
+        path_pattern: (^|/)\.env([._-].+)?$
+        exclude_path_pattern: \.env\.example
+        remediation: Unstage the file (git restore --staged <file>) and keep the values in ~/.omnibase/.env.
+          The hook does not read or delete the file.
+    - rule_id: planning_doc_staged
+      description: A planning document lives in omni_home/docs/plans/, not in this repository.
+      severity: error
+      enabled: true
+      parameters:
+        kind: path_refused
+        path_pattern: ^docs/plans/
+        remediation: Unstage the file (git restore --staged <file>) and move it to $OMNI_HOME/docs/plans/.
+          The hook deletes nothing.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false
