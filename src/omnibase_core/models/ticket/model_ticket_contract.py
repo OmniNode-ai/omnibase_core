@@ -72,6 +72,9 @@ from omnibase_core.models.ticket.model_interface_provided import (
     ModelInterfaceProvided,
 )
 from omnibase_core.models.ticket.model_requirement import ModelRequirement
+from omnibase_core.models.ticket.model_ticket_completion_predicate import (
+    is_ticket_complete,
+)
 from omnibase_core.models.ticket.model_verification_step import ModelVerificationStep
 from omnibase_core.utils.util_contract_schema_version import (
     validate_contract_schema_version,
@@ -619,12 +622,12 @@ class ModelTicketContract(BaseModel):
 
         Requires phase is DONE and all completion checks pass.
         """
-        return (
-            self.phase == EnumTicketPhase.DONE
-            and self.is_questions_complete()
-            and self.is_spec_complete()
-            and self.is_verification_complete()
-            and self.is_gates_complete()
+        return is_ticket_complete(
+            phase_done=self.phase == EnumTicketPhase.DONE,
+            questions_complete=self.is_questions_complete(),
+            spec_complete=self.is_spec_complete(),
+            verification_complete=self.is_verification_complete(),
+            gates_complete=self.is_gates_complete(),
         )
 
     def pending_questions(self) -> list[ModelClarifyingQuestion]:
