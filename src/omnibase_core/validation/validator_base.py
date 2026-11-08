@@ -70,6 +70,7 @@ import re
 import sys
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import ClassVar
@@ -95,6 +96,7 @@ from omnibase_core.models.contracts.subcontracts.model_validator_subcontract imp
 from omnibase_core.models.validation.model_antipattern_registry import (
     ModelAntipatternRegistry,
 )
+from omnibase_core.validation.checker_rule_handler import resolve_rule_handler
 
 # Configure logger for this module
 logger = logging.getLogger(__name__)
@@ -201,6 +203,17 @@ class ValidatorBase(ABC):
         # usage, create separate validator instances per thread/worker.
         # See docs/guides/THREADING.md for details.
         self._rule_config_cache: dict[str, tuple[bool, EnumSeverity]] | None = None
+
+    def rule_handler(self, rule_id: str) -> Callable[..., object] | None:
+        """The handler the contract binds to ``rule_id``, or None when the rule is data alone.
+
+        Raises:
+            ModelOnexError: If the rule names a handler that does not resolve.
+        """
+        for rule in self.contract.rules:
+            if rule.rule_id == rule_id:
+                return resolve_rule_handler(rule)
+        return None
 
     @property
     def antipattern_registry(self) -> ModelAntipatternRegistry | None:

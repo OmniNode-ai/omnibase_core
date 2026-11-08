@@ -432,7 +432,7 @@ def file_rule_refusals(
         candidates = {
             path
             for path in files
-            if path.endswith(".py")
+            if path.endswith(p.python_source_suffix)
             and path.split("/", 1)[0] == p.src_root
             and (
                 PurePosixPath(path).name.startswith(p.handler_file_prefix)
@@ -444,7 +444,9 @@ def file_rule_refusals(
                 refusals[path] = (RULE_HANDLER, p.handler_outside_node_text)
     if RULE_CLI_ENTRY in rules.enabled:
         by_module = {
-            _module_of(path, p): path for path in files if path.endswith(".py")
+            _module_of(path, p): path
+            for path in files
+            if path.endswith(p.python_source_suffix)
         }
         entries = set(tree.argparse_main_paths)
         entries.update(
@@ -622,7 +624,7 @@ def declared_paths(
     workflows = PurePosixPath(p.workflows_dir)
     for path, text in texts.items():
         pure = PurePosixPath(path)
-        if pure.parent == workflows and pure.suffix in {".yml", ".yaml"}:
+        if pure.parent == workflows and pure.suffix in p.workflow_suffixes:
             declared |= _declared_guard_allowlists(text, p)
     return frozenset(PurePosixPath(item).as_posix() for item in declared)
 

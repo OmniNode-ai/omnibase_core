@@ -92,7 +92,9 @@ def gather_tree(
     extensionless = [f for f in files if not PurePosixPath(f).suffix]
     contracts = [f for f in files if PurePosixPath(f).name == p.contract_file_name]
     sources = [
-        f for f in files if f.endswith(".py") and f.split("/", 1)[0] == p.src_root
+        f
+        for f in files
+        if f.endswith(p.python_source_suffix) and f.split("/", 1)[0] == p.src_root
     ]
     blobs = repo.read_blobs(
         rev, [*extensionless, *contracts, *sources, "pyproject.toml"]
@@ -174,7 +176,7 @@ def gather_facts(
         f
         for f in head_tree.files
         if PurePosixPath(f).parent.as_posix() == p.workflows_dir
-        and PurePosixPath(f).suffix in {".yml", ".yaml"}
+        and PurePosixPath(f).suffix in p.workflow_suffixes
     ]
     head_blobs = repo.read_blobs(
         head,

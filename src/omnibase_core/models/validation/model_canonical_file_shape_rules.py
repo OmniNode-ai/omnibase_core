@@ -101,6 +101,7 @@ class ModelCanonicalFileShapeRules(BaseModel):
     pre_commit_config_path: str
     hooks_manifest_path: str
     workflows_dir: str
+    workflow_suffixes: tuple[str, ...]
     gate_hook_ids: tuple[str, ...]
     node_boundary_hook_name: str
     node_boundary_baseline: str
@@ -123,6 +124,7 @@ class ModelCanonicalFileShapeRules(BaseModel):
     retired_text: str
     # handler_outside_node
     handler_file_prefix: str
+    python_source_suffix: str
     handler_class_pattern: str
     contract_file_name: str
     binding_handler_key: str

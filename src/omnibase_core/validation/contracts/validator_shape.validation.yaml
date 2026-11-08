@@ -1,0 +1,88 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: validator_shape
+  validator_name: Validator Shape (the canonical validator)
+  validator_description: |
+    Operator direction 2026-11-08: "Validator is just an effect node or a compute node,
+    right? With a custom business logic." The canonical validator is the generic compute
+    node in omnibase_core (ValidatorBase plus ModelValidatorSubcontract). It is pure, so
+    the same input gives the same findings. Its rules are overlay data; a rule that cannot
+    be data is a handler bound through the contract (the rule row's handler key). Reading
+    inputs (repository, diff, GitHub state), emitting bus traces, and failing a check or
+    commenting are separate effect nodes around it, tagged validator_support_node, so a
+    bus outage loses only the trace. A node tagged validator_node is judged here; a node
+    tagged validator_support_node is the effect around it and is not.
+
+    Every tag, key and required value is a rule-row parameter; the checker holds none.
+    The I/O row reports what the no_io_outside_effects checker finds in the node's
+    handler modules (the compute step, compute_step_module_globs), judged as a compute node
+    whatever the contract declares. A runtime_*.py shell beside the handler is the node's
+    input effect, not its compute step: it is not judged here, and the canonical shape moves
+    it into its own effect node.
+
+  target_patterns:
+    - "**/contract.yaml"
+
+  exclude_patterns:
+    - "**/tests/fixtures/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+  rules:
+    - rule_id: validator_node_scope
+      description: >-
+        Which node contracts are validators, and where their shape is read from.
+      severity: error
+      enabled: true
+      parameters:
+        validator_tags: ["validator_node"]
+        contract_filename: "contract.yaml"
+        tags_key: "tags"
+        node_type_key: "node_type"
+        descriptor_key: "descriptor"
+        purity_key: "purity"
+        handler_routing_key: "handler_routing"
+        default_handler_key: "default_handler"
+        handlers_key: "handlers"
+        compute_step_module_globs: ["handler.py", "handler_*.py"]
+
+    - rule_id: validator_node_archetype
+      description: >-
+        A validator is a compute node. A node that reads inputs, emits or fails a check is an effect node
+        around the validator (tag it validator_support_node), never the validator.
+      severity: error
+      enabled: true
+      parameters:
+        required_node_type: "compute"
+
+    - rule_id: validator_node_impure
+      description: >-
+        A validator declares descriptor.purity pure: the same input gives the same findings.
+      severity: error
+      enabled: true
+      parameters:
+        required_purity: "pure"
+
+    - rule_id: validator_handler_unbound
+      description: >-
+        A validator binds its handler through handler_routing in its contract; a handler that no contract
+        binds is not part of a canonical validator.
+      severity: error
+      enabled: true
+
+    - rule_id: validator_compute_step_io
+      description: >-
+        The compute step reads no file, runs no process, opens no connection and reads no clock or environment.
+        Move the read into an input effect node and pass the facts in.
+      severity: error
+      enabled: true

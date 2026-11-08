@@ -239,6 +239,7 @@ validation:
         pre_commit_config_path: ".pre-commit-config.yaml"
         hooks_manifest_path: ".pre-commit-hooks.yaml"
         workflows_dir: ".github/workflows"
+        workflow_suffixes: [".yml", ".yaml"]
         gate_hook_ids: ["check-direct-model-call", "check-node-boundary-imports", "check-hardcoded-model-config-compute",
           "check-dependency-direction", "check-merge-queue-parity", "check-public-runner-placement", "check-ci-inheritance",
           "check-checker-rule-data", "check-protocol-binding", "check-event-chain-walker", "check-contract-chain-coverage",
@@ -301,6 +302,7 @@ validation:
       enabled: true
       parameters:
         handler_file_prefix: "handler_"
+        python_source_suffix: ".py"
         handler_class_pattern: '^class Handler\w*'
         contract_file_name: "contract.yaml"
         binding_handler_key: "handler"

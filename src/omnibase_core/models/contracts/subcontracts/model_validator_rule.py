@@ -19,7 +19,9 @@ across threads without synchronization.
 Strict typing is enforced: No Any types allowed in implementation.
 """
 
-from pydantic import BaseModel, ConfigDict, Field
+import re
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from omnibase_core.enums import EnumSeverity
 
@@ -29,6 +31,11 @@ type RuleParameterValue = str | int | float | bool | list[str]
 
 # Type alias for the parameters dictionary used in validator rules.
 type RuleParameterDict = dict[str, RuleParameterValue]
+
+
+_HANDLER_REFERENCE = re.compile(
+    r"[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*:[A-Za-z_][A-Za-z0-9_]*"
+)
 
 
 class ModelValidatorRule(BaseModel):
@@ -76,8 +83,27 @@ class ModelValidatorRule(BaseModel):
         description="Rule-specific configuration parameters",
     )
 
+    handler: str | None = Field(
+        default=None,
+        description=(
+            "A rule that cannot be data is a handler bound through the contract: "
+            "'<dotted.module>:<callable>'. The generic validator resolves it with "
+            "resolve_rule_handler; a rule with no handler is judged by its parameters alone."
+        ),
+    )
+
+    @field_validator("handler")
+    @classmethod
+    def _handler_is_a_module_callable_reference(cls, value: str | None) -> str | None:
+        if value is not None and not _HANDLER_REFERENCE.fullmatch(value):
+            raise ValueError(
+                f"handler {value!r} is not '<dotted.module>:<callable>' "
+                "(a handler is bound by module path and name, never by file path or expression)"
+            )
+        return value
+
     model_config = ConfigDict(
-        extra="ignore",
+        extra="forbid",
         frozen=True,
         use_enum_values=False,
         from_attributes=True,

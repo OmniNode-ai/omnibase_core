@@ -1436,6 +1436,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-validator-shape
+  name: Canonical validator shape (OMN-21494)
+  description: >
+    A node tagged validator_node is the generic compute node: node_type compute, descriptor purity pure,
+    a handler bound through handler_routing, and no I/O in its handler modules. The effects around it
+    (reading inputs, emitting traces, failing a check or commenting) are separate nodes tagged validator_support_node
+    and are not judged here. Every tag, key and required value is a rule-row parameter of validator_shape.validation.yaml.
+  language: python
+  entry: python -m omnibase_core.validation.validator_validator_shape
+  files: (^|/)contract\.yaml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: canonical-handler-shape-ratchet
   name: Canonical handler-shape check (OMN-21536, K3)
   description: >

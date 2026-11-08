@@ -735,6 +735,8 @@ MUTATIONS: dict[str, tuple[str, object]] = {
     "fix_only_growth_text": ("fix_only_growth", INERT_STR),
     "retired_text": ("retired", INERT_STR),
     "handler_file_prefix": ("handler", INERT_STR),
+    "python_source_suffix": ("handler", INERT_STR),
+    "workflow_suffixes": ("declared_guard", ()),
     "contract_file_name": ("handler_bound", INERT_STR),
     "binding_handler_key": ("handler_bound", INERT_STR),
     "binding_module_key": ("handler_bound", INERT_STR),
