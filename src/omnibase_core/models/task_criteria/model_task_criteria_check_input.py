@@ -28,6 +28,16 @@ class ModelTaskCriteriaCheckInput(BaseModel):
         default_factory=dict,
         description="Lifecycle state by repository name, the data of the lifecycle rule",
     )
+    repository_name: str = Field(
+        default="",
+        description="Name of the checkout directory; a command whose cwd names it runs here",
+    )
+    path_listings: dict[str, tuple[str, ...]] = Field(
+        default_factory=dict,
+        description="File names under each candidate path that exists, or the file's own "
+        "name when the path is a file; a path absent from the map does not exist "
+        "(OMN-23185, the data of the falsifier test-path rule)",
+    )
     contract: ModelValidatorSubcontract = Field(
         description="Task-criteria validation rules"
     )

@@ -49,12 +49,28 @@ _TEXT_KEYS: dict[str, tuple[str, ...]] = {
         "fix_pattern",
         "release_pattern",
     ),
+    "falsifier_test_path": (
+        "command_pattern",
+        "path_pattern",
+        "cwd_pattern",
+        "local_cwd_pattern",
+        "skip_prefix_pattern",
+        "cwd_window_lines",
+        "absent_reason",
+        "empty_reason",
+        "stale_message",
+    ),
 }
 _LIST_KEYS: dict[str, tuple[str, ...]] = {
     "missing_zero_literal_falsifier": ("validator_names",),
     "brief_missing_rule_block": ("accepted_digests",),
     "rule_block_incomplete": ("required_items",),
     "task_in_frozen_repository": ("frozen_states", "fix_permitted_states"),
+    "falsifier_test_path": (
+        "value_flags",
+        "test_file_globs",
+        "baseline_offenders",
+    ),
 }
 
 

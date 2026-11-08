@@ -1,0 +1,16 @@
+requirements:
+- id: req-x
+  acceptance:
+  - id: AC1
+    statement: 'AC1: the reading is refused -- falsifier: uv run pytest tests/unit/test_present.py -q -k alpha'
+dod_evidence:
+- id: dod-dir
+  checks:
+  - check_type: test_passes
+    check_value: uv run pytest tests/unit/present_dir -q --no-cov
+    cwd: "."
+- id: dod-own-checkout
+  checks:
+  - check_type: test_passes
+    check_value: uv run pytest tests/unit/test_present.py::test_one -q
+    cwd: ${OMNI_HOME}/omnimarket
