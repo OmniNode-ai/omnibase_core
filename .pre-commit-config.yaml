@@ -1234,6 +1234,20 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-23189 (gate OMN-21433 AC-4): Rejects an id or key built from a seconds-only strftime stamp with no nonce.
+      # Annotation: the nonce-ok comment with a reason on the assignment line.
+      # This repository holds no finding, so it passes no baseline; a consumer that holds findings hands
+      # the hook --baseline FILE, a per-file shrink-only baseline checked against HEAD.
+      - id: no-id-from-stamp
+        name: No id or key built from a seconds-only stamp without a nonce (OMN-23189)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_id_from_stamp:ValidatorIdFromStamp
+        language: system
+        files: \.py$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>

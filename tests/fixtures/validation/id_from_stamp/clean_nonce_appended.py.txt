@@ -1,0 +1,16 @@
+import secrets
+import uuid
+from datetime import UTC, datetime
+
+
+def main():
+    started = datetime.now(UTC)
+    first = ModelCopyRequest(
+        run_id=f"{started.strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}",
+        started_at=started,
+    )
+    stamp = started.strftime("%Y%m%dT%H%M%SZ")
+    second = ModelCopyRequest(run_id=stamp + "-" + secrets.token_hex(4))
+    nonce = uuid.uuid4().hex[:6]
+    commitment_id = f"commit-{stamp}-{nonce}"
+    return first, second, commitment_id
