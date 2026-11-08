@@ -1,0 +1,80 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: naive_timestamp
+  validator_name: Naive Timestamp Validator
+  validator_description: Refuses a request or reading model field typed with a naive datetime and an unguarded
+    strptime on a request field. The scope, the names, the annotation markers and the remediation texts
+    are the rule rows of this file (OMN-23186).
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: naive_datetime_field
+      description: A request or reading model field typed datetime accepts a naive value that later fails
+        a compare against an aware clock.
+      severity: error
+      enabled: true
+      parameters:
+        class_name_patterns: ['Request$', 'Reading$', 'Fact$']
+        naive_types: [datetime]
+        comment_prefix: '# '
+        annotation_marker: 'naive-datetime-ok'
+        reason: a request or reading model field is typed with a naive datetime
+        remediation: >-
+          Type the field AwareDatetime, or annotate the field line with the naive-datetime-ok comment
+          and a reason.
+    - rule_id: unguarded_strptime
+      description: A strptime on a request field with no handler for the parse error aborts the whole
+        batch on one malformed timestamp.
+      severity: error
+      enabled: true
+      parameters:
+        parse_methods: [strptime]
+        request_roots: [request, req, payload, command]
+        guard_exceptions: [ValueError, Exception]
+        comment_prefix: '# '
+        annotation_marker: 'strptime-guarded-ok'
+        reason: a strptime reads a request field outside a handler for ValueError
+        remediation: >-
+          Parse the field in a model as AwareDatetime, or catch ValueError around the strptime and judge
+          the field unreadable, or annotate the call line with the strptime-guarded-ok comment and a reason.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/naive_timestamp_baseline.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

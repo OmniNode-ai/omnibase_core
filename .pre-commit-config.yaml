@@ -1190,6 +1190,33 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-23186: Rejects int(td.total_seconds()) or a floored age compared to a bound.
+      # The tree holds no finding, so the hook runs without a baseline; a repository that adopts it
+      # with older findings hands the hook its own shrink-only baseline file (--baseline).
+      - id: no-time-bound-truncation
+        name: No duration cut to whole seconds before a limit compare (OMN-23186)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_time_bound_truncation:ValidatorTimeBoundTruncation
+        language: system
+        files: \.py$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
+      # OMN-23186: Rejects a Request/Reading/Fact model field typed datetime and a strptime on a request
+      # field outside a ValueError handler.
+      # The tree holds no finding, so the hook runs without a baseline; a repository that adopts it
+      # with older findings hands the hook its own shrink-only baseline file (--baseline).
+      - id: no-naive-timestamp
+        name: No naive datetime request field, no unguarded strptime on a request field (OMN-23186)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_naive_timestamp:ValidatorNaiveTimestamp
+        language: system
+        files: \.py$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>

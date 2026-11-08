@@ -1,0 +1,27 @@
+def judge_probe(
+    request: ModelDevDeployReadingRequest,
+) -> tuple[list[str], int | None]:
+    """The failures of the newest probe and its age, none when there is no probe to age."""
+    if not request.probes:
+        return ["probe-missing"], None
+    newest: ModelRuntimeProbeFact = max(
+        request.probes, key=lambda p: (p.probed_at, p.probe_id)
+    )
+    age = int((request.now - newest.probed_at).total_seconds())
+    if age < 0:
+        return [f"probe-future-dated:{newest.probe_id}"], None
+    failures: list[str] = []
+    if age > request.probe_max_age_seconds:
+        failures.append(
+            f"probe-stale:{newest.probe_id}:age-{age}s-over-{request.probe_max_age_seconds}s"
+        )
+    if not newest.ok:
+        failures.append(f"probe-failed:{newest.probe_id}")
+    if newest.observed_sha is None:
+        failures.append(f"probe-sha-unobserved:{newest.probe_id}")
+    elif newest.observed_sha != newest.expected_sha:
+        failures.append(
+            f"probe-sha-mismatch:{newest.probe_id}:{_short(newest.expected_sha)}"
+            f"-observed-{_short(newest.observed_sha)}"
+        )
+    return failures, age

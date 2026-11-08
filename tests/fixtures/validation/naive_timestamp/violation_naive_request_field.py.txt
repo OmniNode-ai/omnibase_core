@@ -1,0 +1,8 @@
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class ModelProbeReadingRequest(BaseModel):
+    now: datetime
+    probe_max_age_seconds: int

@@ -1,0 +1,11 @@
+import math
+
+
+def past_deadline(now, deadline):
+    late = math.floor((now - deadline).total_seconds())
+    return late >= 1
+
+
+def too_old(now, seen, limit):
+    age = (now - seen).total_seconds() // 1
+    return age > limit

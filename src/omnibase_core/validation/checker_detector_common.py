@@ -49,6 +49,25 @@ def parse_baseline(text: str | None) -> dict[str, int]:
     }
 
 
+def parent_map(tree: ast.AST) -> dict[ast.AST, ast.AST]:
+    """Node -> its parent, for every node under ``tree``."""
+    return {
+        child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)
+    }
+
+
+def dotted_name(node: ast.expr) -> str:
+    """``a.b.c`` for a Name or an Attribute chain over Names, else an empty string."""
+    parts: list[str] = []
+    while isinstance(node, ast.Attribute):
+        parts.append(node.attr)
+        node = node.value
+    if not isinstance(node, ast.Name):
+        return ""
+    parts.append(node.id)
+    return ".".join(reversed(parts))
+
+
 def source_line(lines: list[str], lineno: int) -> str:
     """Line ``lineno`` (1-based) of the module, or an empty string outside it."""
     return lines[lineno - 1] if 1 <= lineno <= len(lines) else ""
@@ -80,7 +99,9 @@ def detector_issue(
 
 __all__ = [
     "detector_issue",
+    "dotted_name",
     "is_annotated",
+    "parent_map",
     "parse_baseline",
     "parse_module",
     "source_line",

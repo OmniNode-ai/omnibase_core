@@ -8,7 +8,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import AwareDatetime, BaseModel, Field
 
 from omnibase_core.enums.overseer.enum_capability_tier import EnumCapabilityTier
 from omnibase_core.enums.overseer.enum_context_bundle_level import (
@@ -49,7 +49,7 @@ class ModelEscalationRequest(BaseModel, frozen=True, extra="forbid"):
     error_detail: dict[str, Any] = Field(
         default_factory=dict
     )  # ONEX_EXCLUDE: dict_str_any - heterogeneous error context
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    timestamp: AwareDatetime = Field(default_factory=lambda: datetime.now(UTC))
     # string-version-ok: wire type across domain runners and overseer; JSON
     schema_version: str = "1.0"
 

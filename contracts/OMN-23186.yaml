@@ -1,0 +1,75 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23186
+title: "A time bound compared after truncating sub-seconds, and a timestamp field that takes naive or
+  unparsed values, are refused by the generic validator"
+summary: "Two generic-format validators with rule rows as contract data and per-file shrink-only baselines:
+  time_bound_truncation refuses a duration cut to whole seconds and then compared to a limit; naive_timestamp
+  refuses a Request, Reading or Fact model field typed datetime and a strptime on a request field outside
+  a ValueError handler. Each carries pre-commit and CI wiring and a control case the rule admits."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23186-time-boundary-rules
+    statement: "The generic validator refuses the two recurring time-boundary defects, with every name,
+      marker and remediation text in the validators' contracts."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a rule row refuses a function that compares int(td.total_seconds()) or a floored
+          age against a bound, with the narrowed existing sites in a shrink-only baseline -- falsifier:
+          uv run pytest of the added rule test, red on judge_probe as it stood at omnimarket dev 566d7ead09"
+      - id: AC2
+        statement: "AC2: a rule row refuses a request or reading model field typed datetime where AwareDatetime
+          is required, and an unguarded strptime on a request field, with the existing sites in a shrink-only
+          baseline -- falsifier: uv run pytest of the added rule test, red on a model fixture with a naive
+          datetime field"
+      - id: AC3
+        statement: "AC3: both rows carry a passing control case that the rule admits -- falsifier: uv
+          run pytest of the same test files, control green"
+evidence_requirements:
+  - kind: tests
+    description: The checker, baseline and bus tests of the two validators pass.
+    command: "uv run pytest tests/unit/validation/test_checker_time_bound_truncation.py tests/unit/validation/test_checker_naive_timestamp.py
+      -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23186-ac1
+    description: "The probe-age function as it stood at the cited revision is refused, a direct compare
+      and the floor forms are refused, and the baseline for truncation sites equals the tree's findings."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_time_bound_truncation.py -q --no-cov
+          -o addopts='' -n 0 -k 'refuses_the_planted_violation or floor_operator or baseline'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23186-ac2
+    description: "A naive datetime field in a Request, Reading or Fact model and an unguarded strptime
+      on a request field are refused, and the naive-field baseline equals the tree's findings."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_naive_timestamp.py -q --no-cov
+          -o addopts='' -n 0 -k 'refuses_the_planted_violation or baseline'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23186-ac3
+    description: "The aware, guarded, exact-compare and annotated control cases are admitted, and each
+      parameter key changes the verdict or message when mutated."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_time_bound_truncation.py tests/unit/validation/test_checker_naive_timestamp.py
+          -q --no-cov -o addopts='' -n 0 -k 'control_admits or mutating or missing_parameter or every_parameter'"
+        cwd: ${OMNI_HOME}/omnibase_core

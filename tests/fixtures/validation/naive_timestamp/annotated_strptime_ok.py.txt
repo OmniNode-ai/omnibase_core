@@ -1,0 +1,5 @@
+from datetime import datetime
+
+
+def window_start(request):
+    return datetime.strptime(request.window_start, "%Y-%m-%d")  # strptime-guarded-ok: the caller catches ValueError

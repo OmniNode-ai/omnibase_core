@@ -1,0 +1,9 @@
+import datetime as dt
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class ModelRuntimeProbeFact(BaseModel):
+    probed_at: dt.datetime
+    finished_at: datetime | None = None

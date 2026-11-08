@@ -1,0 +1,8 @@
+from datetime import datetime
+
+
+def window_start(request):
+    try:
+        return datetime.strptime(request.window_start, "%Y-%m-%d")
+    except KeyError:
+        return None

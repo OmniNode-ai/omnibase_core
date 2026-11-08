@@ -1,0 +1,3 @@
+def duration_ms(now, started, budget_ms):
+    spent = int((now - started).total_seconds() * 1000)
+    return spent > budget_ms

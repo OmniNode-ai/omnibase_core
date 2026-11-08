@@ -1,0 +1,3 @@
+def describe(now, started):
+    elapsed = int((now - started).total_seconds())
+    return f"running for {elapsed}s"

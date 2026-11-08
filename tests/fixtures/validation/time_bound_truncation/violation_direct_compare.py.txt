@@ -1,0 +1,2 @@
+def expired(now, started, limit):
+    return int((now - started).total_seconds()) > limit

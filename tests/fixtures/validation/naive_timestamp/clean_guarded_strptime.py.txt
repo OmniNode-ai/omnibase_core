@@ -1,0 +1,12 @@
+from datetime import UTC, datetime
+
+
+def window_start(request):
+    try:
+        return datetime.strptime(request.window_start, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
+    except ValueError:
+        return None
+
+
+def parse_literal():
+    return datetime.strptime("2026-11-08", "%Y-%m-%d")
