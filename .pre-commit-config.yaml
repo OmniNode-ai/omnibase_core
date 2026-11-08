@@ -198,10 +198,10 @@ repos:
       - id: receipt-gate-writer-pin-only
         name: Receipt gate writer pin-only verdict tests (OMN-20068)
         entry: uv run --frozen pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py
-          -q -n 0 --no-cov
+          tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py -q -n 0 --no-cov
         language: system
         pass_filenames: false
-        files: ^(\.github/workflows/(receipt-gate|ci)\.yml|tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427\.py|tests/ci/test_receipt_gate_writer_pin_swap_omn20068\.py|tests/ci/test_bot_exempt_writer_app_pin_only_omn20161\.py|tests/ci/test_receipt_gate_writer_workflow_pin_omn20074\.py|\.pre-commit-config\.yaml)$
+        files: ^(\.github/workflows/(receipt-gate|ci)\.yml|tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427\.py|tests/ci/test_receipt_gate_writer_pin_swap_omn20068\.py|tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478\.py|tests/ci/test_bot_exempt_writer_app_pin_only_omn20161\.py|tests/ci/test_receipt_gate_writer_workflow_pin_omn20074\.py|\.pre-commit-config\.yaml)$
 
       # OMN-17427: the hosted repo-evidence / dod-verify context must refuse a
       # partly bound contract (ruling 2026-10-10T11:04:11Z). The refusal comes from

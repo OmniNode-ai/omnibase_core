@@ -1928,7 +1928,7 @@ jobs:
       # gate, and a failure fails the job CI Summary sweeps. Pinned by
       # tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py.
       - name: Writer pin-only verdict tests (OMN-20068)
-        run: uv run --frozen pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py -q -n 0 --no-cov
+        run: uv run --frozen pytest tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py -q -n 0 --no-cov
 
   # Hardcoded model-configuration baseline ratchet (OMN-19252).
   #

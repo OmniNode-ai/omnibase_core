@@ -297,6 +297,7 @@ def test_pin_verdict_hook_runs_both_modules_in_the_precommit_suite() -> None:
     modules = {
         "tests/ci/test_receipt_gate_writer_pin_only_in_job_omn17427.py",
         "tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py",
+        "tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py",
     }
     assert {argument for argument in command if argument.endswith(".py")} == modules
     assert not {"-k", "-m", "--collect-only"}.intersection(command)
@@ -336,5 +337,6 @@ def test_pin_verdict_step_runs_in_the_precommit_suite_job() -> None:
     assert {argument for argument in command if argument.endswith(".py")} == {
         marker,
         "tests/ci/test_receipt_gate_writer_pin_swap_omn20068.py",
+        "tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py",
     }
     assert not {"-k", "-m", "--collect-only"}.intersection(command)
