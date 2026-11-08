@@ -9,7 +9,7 @@ summary: "ModelDelegationBudgetEvidence gains a typed ceiling_source (packaged o
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
-  - omnibase_core.models.delegation.wire.ModelDelegationBudgetEvidence
+  - public_api
 requirements:
   - id: req-omn23215-ceiling-source
     statement: "The budget evidence model carries a typed ceiling_source of packaged or overlay."
