@@ -1,0 +1,478 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-22850: the ticket-creation admission policy as rule data, transcribed from the omniclaude guard's policy and grammar files.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: ticket_creation
+  validator_name: Ticket Creation Admission Validator
+  validator_description: 'A tracker create is admitted only when it is bound to a commitment: a parent
+    or epic line, no project, a binding line in a declared form, a title that is not a residual, an executable
+    probe when it starts In Progress, a falsifier on every acceptance criterion, at least one labelled
+    criterion, a diagnosis citation when it is defect-shaped, and the lane label and stamp when a lane
+    or node files it. Ported rule by rule from the omniclaude ticket-creation guard and its policy; every
+    vocabulary, pattern, threshold and text is a rule row of this contract, so a change of admission policy
+    is a data edit.'
+  target_patterns:
+    - '**/*.ticket-creation-payload.json'
+  exclude_patterns:
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/node_modules/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/archived/**'
+    - '**/archive/**'
+    - '**/tests/fixtures/**'
+  rules:
+    - rule_id: payload_fields
+      description: 'Data row, not a finding: the payload field names the tracker write surface uses.'
+      severity: error
+      enabled: true
+      parameters:
+        id_field: id
+        title_field: title
+        description_field: description
+        parent_field: parentId
+        patch_field: patch
+        project_fields:
+          - project
+          - projectId
+        state_fields:
+          - state
+          - stateId
+          - status
+          - statusType
+        label_fields:
+          - labels
+          - label
+    - rule_id: criteria_parsing
+      description: 'Data row, not a finding: how an acceptance-criteria section is found and split into
+        criteria.'
+      severity: error
+      enabled: true
+      parameters:
+        acceptance_criteria_headings:
+          - acceptance criteria
+          - acceptance criteria (ac)
+          - acceptance criterion
+          - acceptance
+          - ac
+          - acs
+          - definition of done
+          - definition of done (dod)
+          - dod
+        falsifier_markers:
+          - 'falsifier:'
+          - falsified by
+        heading_marker: '#'
+        emphasis_chars: '*_'
+        heading_suffix: ':'
+        falsifier_tail_strip: " \t:-*_"
+        list_item_pattern: ^[ \t]*(?:[-*+]|\d+[.)])[ \t]+(.*)$
+        ac_item_pattern: (?i)^[ \t]*([*_]*)[ \t]*(AC[-_ ]?\d+)(?!\d)[*_]*(.*?)[ \t]*$
+        trailing_emphasis_pattern: '[*_]+$'
+        task_marker_pattern: ^\[[ \t xX]\][ \t]*
+        trailing_qualifier_pattern: \s*\([^)]*\)\s*$
+        heading_enum_pattern: ^\d+[.)]\s*
+        criterion_label_pattern: (?i)^[\s>*_+-]*(?:\*\*)?\s*(AC|DOD)[-_ .]?(\d+)([a-zA-Z]?)\b
+        max_quoted: 160
+        max_named: 8
+    - rule_id: lane_intake
+      description: 'Data row, not a finding: the label and first-line stamp prefix of a lane- or node-created
+        item.'
+      severity: error
+      enabled: true
+      parameters:
+        label: lane-created
+        stamp_prefix: 'created-by-lane:'
+    - rule_id: binding_grammar
+      description: 'Data row, not a finding: the Gate: binding line, its rewrites and every binding form
+        it may take.'
+      severity: error
+      enabled: true
+      parameters:
+        grammar_revision: 1.0.0
+        line_pattern: (?m)^[ \t]*Gate:[ \t]*(?P<binding>.*?)[ \t]*$
+        normalization_patterns:
+          - (?i)<issue\b[^>]*>(?P<text>[^<]*)</issue>
+          - \[(?P<text>[^\]]+)\]\((?:[^)]*)\)
+          - '`'
+          - \s+
+        normalization_replacements:
+          - \g<text>
+          - \g<text>
+          - ''
+          - ' '
+        form_ids:
+          - workflow_run
+          - release_criterion
+          - invariant
+          - parent_criterion
+          - live_gate_defect
+        form_patterns:
+          - (?i)^(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)[ ](?P<workflow>[A-Za-z0-9_.-]+\.ya?ml)$
+          - (?i)^(?P<criterion>C\d+)$
+          - (?i)^(?P<invariant>INV-\d{3,})$
+          - (?i)^(?P<parent>OMN-\d+)[ ]AC-(?P<ordinal>\d+)$
+          - (?i)^live-gate[ ]defect:[ ]*(?P<check>\S.*)$
+        form_examples:
+          - OmniNode-ai/omnibase_infra chain-canary.yml
+          - C7
+          - INV-103
+          - OMN-16729 AC-5
+          - 'live-gate defect: kb-doc-gate'
+        criterion_form_id: release_criterion
+        invariant_form_id: invariant
+        residual_exempting_form_id: live_gate_defect
+        criterion_ids:
+          - C1
+          - C2
+          - C3
+          - C4
+          - C5
+          - C6
+          - C7
+          - C8
+          - C9
+          - C10
+          - C11
+          - C12
+          - C13
+          - C14
+          - C15
+          - C16
+          - C17
+          - C18
+          - C19
+          - C20
+          - C21
+          - C22
+          - C23
+          - C24
+          - C25
+          - C26
+          - C27
+          - C28
+          - C29
+        invariant_ids:
+          - INV-012
+          - INV-020
+          - INV-029
+          - INV-033
+          - INV-037
+          - INV-039
+          - INV-043
+          - INV-044
+          - INV-045
+          - INV-046
+          - INV-047
+          - INV-049
+          - INV-050
+          - INV-051
+          - INV-052
+          - INV-053
+          - INV-060
+          - INV-063
+          - INV-064
+          - INV-065
+          - INV-066
+          - INV-068
+          - INV-069
+          - INV-070
+          - INV-080
+          - INV-081
+          - INV-082
+          - INV-097
+          - INV-098
+          - INV-101
+          - INV-102
+          - INV-103
+          - INV-104
+          - INV-105
+          - INV-106
+          - INV-107
+          - INV-109
+          - INV-110
+          - INV-111
+          - INV-112
+          - INV-113
+          - INV-115
+          - INV-117
+    - rule_id: unevaluable
+      description: A payload the check cannot evaluate is refused, never assumed clean.
+      severity: error
+      enabled: true
+      parameters:
+        message_tool_input: the save_issue call carries no tool_input object, so the check cannot tell
+          a create from an update
+        fix_tool_input: re-issue the call with a well-formed tool_input object
+        message_title: a create needs a title; got {value}, so the check cannot evaluate the residual-title
+          rule
+        fix_title: give the ticket a title that says what it commits to
+        message_description: '''description'' is {value}, not a string, so the binding line cannot be
+          read'
+        fix_description: pass the description as markdown text
+        message_id: '''id'' is present but is {value}, which is neither a usable issue identifier nor
+          an absent field, so the check cannot tell whether this creates a ticket'
+        fix_id: omit 'id' entirely to create an issue, or pass the identifier of the issue being updated
+    - rule_id: missing_parent
+      description: A create names a parent, or declares itself an epic on a line of its own.
+      severity: error
+      enabled: true
+      parameters:
+        epic_markers:
+          - 'issue_class: epic'
+        message: the issue names no parent, so nothing on the board says which commitment it serves
+        fix: pass parentId with the epic or parent issue this belongs to, or, if this genuinely IS an
+          epic, put a line reading exactly '{markers}' in the description
+    - rule_id: project_set
+      description: 'A create names no project: every new ticket is created in the Backlog.'
+      severity: error
+      enabled: true
+      parameters:
+        message: the create sets a project, but every new ticket is created in the Backlog with NO project
+          (operator ruling 2026-09-30T14:30:05Z)
+        fix: remove project and projectId from the create and leave the state at Backlog; moving a ticket
+          into a sprint project is the operator's call, made later with an update
+    - rule_id: missing_gate_line
+      description: A create carries a binding line on a line of its own, in a declared form, citing an
+        id in the pinned vocabulary.
+      severity: error
+      enabled: true
+      parameters:
+        message: the description carries no line binding this ticket to a commitment
+        fix: add a line of its own, unbulleted, reading '{summary}'. The accepted release-criterion ids
+          are {criterion_ids}. The accepted invariant ids are {invariant_ids}
+    - rule_id: residual_title
+      description: A residual-shaped title is refused unless the binding is a live-gate defect.
+      severity: error
+      enabled: true
+      parameters:
+        residual_title_terms:
+          - follow-up
+          - follow up
+          - followup
+          - residual
+          - nit
+          - minor
+          - cleanup
+          - clean-up
+          - noted
+        message: the title reads as a residual ({hits}), and a residual is a comment on its parent, not
+          a new ticket
+        fix: 'comment on the parent ticket instead. If this is a LIVE GATE that is broken, bind it with
+          ''Gate: {exempt_example}'' and the title stands'
+    - rule_id: missing_probe_line
+      description: A create that starts In Progress carries an executable probe line.
+      severity: error
+      enabled: true
+      parameters:
+        in_progress_state_names:
+          - in progress
+          - in-progress
+          - inprogress
+          - started
+        probe_line_pattern: (?m)^[ \t]*Probe:[ \t]*(?P<probe>.*?)[ \t]*$
+        probe_separator: =>
+        probe_grammar: 'Probe: <command> => <observation that settles it>'
+        message: this ticket starts In Progress but declares no executable probe, so nothing that closes
+          tickets mechanically can reach it
+        fix: add a line of its own, unbulleted, reading '{grammar}'
+    - rule_id: malformed_probe_line
+      description: 'A Probe: line carries a command and an observation separated by the probe separator.'
+      severity: error
+      enabled: true
+      parameters:
+        message: 'a Probe: line is present but no line carries BOTH a command and the observation that
+          settles it, separated by ''{separator}'''
+        fix: write it as '{grammar}'
+    - rule_id: unfalsified_criterion
+      description: Every listed acceptance criterion names the check that would settle it.
+      severity: error
+      enabled: true
+      parameters:
+        falsifier_grammar: '<criterion text> -- falsifier: <check name or command shape that would settle
+          it>'
+        message: '{count} of {total} acceptance criteria name no check that would settle them: {quoted}'
+        fix: write each criterion as '{grammar}'
+    - rule_id: merge_state_falsifier_on_behaviour_criterion
+      description: A behaviour-shaped criterion may not name a merge-state read as its falsifier unless
+        it names a test runner.
+      severity: error
+      enabled: true
+      parameters:
+        state_criterion_markers:
+          - \bread[\s-]?back\b
+          - \breadback\b
+          - \b\d+\s+rows?\b
+          - \brows?\s+carrying\b
+          - \b\d+\s+occurrences?\b
+          - \bno\s+occurrences?\b
+          - \bzero\b[^.]{0,80}\boccurrences?\b
+          - \bcheckers?\b[^.]{0,24}\bgreen\b
+          - \bexists\s+on\s+the\b
+          - \bmerged\s+to\s+`?\w
+          - \bHTTP\s+\d{3}\b
+          - \bis\s+(running|ready|healthy|present|absent|enabled|disabled)\b
+          - \breaches\s+(running|ready)\b
+          - \b\d+\s+restarts?\b
+          - \breturns?\b
+          - \bresponds?\b
+          - \bserves?\b
+          - \bcontains?\b
+          - \bdigest\b
+          - \bconfig(uration)?\s+value\b
+          - \bon\s+the\s+(live|running)\b
+          - \b(live|running)\s+(plane|cluster|lane|realm|database|system|repository)\b
+        behaviour_criterion_markers:
+          - \btests?\b
+          - \bred[\s-]first\b
+          - \bfails?\s+today\b
+          - \brefuses?\b
+          - \braises?\b
+          - \bretr(y|ies|ied)\b
+          - \bstops?\s+after\b
+          - \bhandler\b
+          - \bsuite\b
+        merge_state_falsifier_markers:
+          - \bgh\s+pr\b
+          - \bgh\s+run\b
+          - \bgh\s+release\b
+          - \bgh\s+search\b
+          - \bgh\s+api\s+repos/\S+/(pulls|commits|branches)\b
+          - \bgit\s+(log|rev-parse|rev-list|merge-base|show|ls-remote|describe)\b
+          - \bpr\s+(is\s+)?merged\b
+          - \bmerge[ds]?\s+state\b
+          - \bmerge-state\b
+          - \b(pr|ci|checks?|build|pipeline)\s+(is\s+)?green\b
+          - \bgreen\s+(ci|checks?|build)\b
+          - \bsquash(ed)?\s+sha\b
+        behaviour_runner_words:
+          - pytest
+          - py.test
+          - tox
+          - nox
+          - unittest
+          - onex
+          - vitest
+          - jest
+          - mocha
+          - rspec
+          - phpunit
+        message: the criterion "{item}" asks what the code DOES, but its falsifier "{falsifier}" reads
+          merge state
+        fix: 'name a check that EXERCISES the behaviour: a test runner ({runners}, ...) or the onex CLI'
+    - rule_id: missing_acceptance_criteria
+      description: A create lists at least one acceptance criterion under a recognised heading.
+      severity: error
+      enabled: true
+      parameters:
+        min_labelled_criteria: 1
+        exempt_binding_forms:
+          - parent_criterion
+        labelled_grammar: '- [ ] AC<n>: <criterion text> -- falsifier: <check name or command shape that
+          would settle it>'
+        label_forms: AC<n> or DOD<n>
+        message: 'the description lists no acceptance criterion: no recognised criteria heading opens
+          a section here'
+        fix: 'open a section with one of these headings: {headings}, and write each criterion as ''{grammar}'''
+    - rule_id: unlabelled_criteria
+      description: At least the configured number of criteria carry an AC<n> or DOD<n> label.
+      severity: error
+      enabled: true
+      parameters:
+        message: every one of the {total} acceptance criteria listed here parses, and none carries an
+          ordinal label ({forms})
+        fix: prefix at least {minimum} of them with an ordinal ({forms}), giving '{grammar}'
+    - rule_id: missing_diagnosis
+      description: 'A defect-shaped create cites a Diagnosis: line that resolves to a durable artifact.'
+      severity: error
+      enabled: true
+      parameters:
+        defect_title_terms:
+          - bug
+          - defect
+          - regression
+          - broken
+          - crash
+          - crashes
+          - fails
+          - failing
+          - failure
+          - fix
+        defect_label_names:
+          - bug
+          - defect
+          - regression
+        line_pattern: (?m)^[ \t]*Diagnosis:[ \t]*(?P<citation>.*?)[ \t]*$
+        citation_strip_chars: '`'
+        citation_form_ids:
+          - ledger_line
+          - pull_request
+          - file_line
+        citation_patterns:
+          - (?m)^(?P<path>[A-Za-z0-9_./-]*ROLLING_WORK_LEDGER[A-Za-z0-9_.-]*\.md):(?P<line>[1-9][0-9]*)$
+          - (?m)^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$
+          - (?m)^[A-Za-z0-9_./-]+\.[A-Za-z0-9]+:[1-9][0-9]*$
+        citation_examples:
+          - docs/tracking/ROLLING_WORK_LEDGER.md:4120
+          - OmniNode-ai/omniclaude#2836
+          - plugins/onex/hooks/lib/ticket_creation_guard.py:1078
+        citation_resolutions:
+          - ledger
+          - shape
+          - shape
+        message: 'the create reads as a defect ({signals}) and carries no Diagnosis: line'
+        fix: 'diagnose first, then add a line of its own, unbulleted, reading ''Diagnosis: <citation>''
+          where the citation is one of {spellings}'
+    - rule_id: unresolvable_diagnosis
+      description: 'A Diagnosis: citation names an artifact that exists.'
+      severity: error
+      enabled: true
+      parameters:
+        message: 'no Diagnosis: line resolves to a durable artifact; could not resolve {cited}'
+        fix: cite an artifact that exists, spelled as one of {spellings}
+    - rule_id: lane_identity_missing
+      description: A create from a lane or node context declares its lane identity.
+      severity: error
+      enabled: true
+      parameters:
+        message: this create comes from a lane or node context but declares no lane identity, so the item
+          cannot be stamped as lane-opened
+        fix: pass the filing lane's identity
+    - rule_id: lane_label_missing
+      description: A lane- or node-created item carries the lane-intake label.
+      severity: error
+      enabled: true
+      parameters:
+        message: a lane- or node-created item carries the '{label}' label so the weekly intake metric
+          can exclude it
+        fix: pass labels including '{label}'
+    - rule_id: lane_stamp_missing
+      description: A lane- or node-created item's first description line is the lane stamp.
+      severity: error
+      enabled: true
+      parameters:
+        message: the first line of a lane- or node-created item names the lane that opened it; this one
+          opens '{first}'
+        fix: make the description's first line exactly '{stamp}'
+    - rule_id: criterion_text_unreadable
+      description: 'An update that touches the description cannot be judged here (rule 9 is not ported):
+        it is refused, never assumed clean.'
+      severity: error
+      enabled: true
+      parameters:
+        message: this update writes a description or patch, and this check holds no copy of the current
+          body, so it cannot tell whether an acceptance criterion's own line is rewritten
+        fix: send the update through the surface that reads the current body
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true
