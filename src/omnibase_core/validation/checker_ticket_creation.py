@@ -18,8 +18,9 @@ holds none, so it refuses that update rather than assuming it clean.
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Mapping
+from collections.abc import Mapping
 from functools import lru_cache
+from typing import Protocol
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
@@ -43,8 +44,15 @@ from omnibase_core.validation.checker_rule_parameters import (
 
 __all__ = ["LedgerLineLookup", "check_ticket_creation", "rows_of"]
 
-#: Whether a ledger file name has a non-blank line at a line number. ``None`` resolves nothing.
-type LedgerLineLookup = Callable[[str, int], bool]
+
+class LedgerLineLookup(Protocol):
+    """Whether a ledger file name has a non-blank line at a line number.
+
+    ``None`` in place of a lookup resolves nothing.
+    """
+
+    def __call__(self, file_name: str, line_number: int, /) -> bool: ...
+
 
 type _Rows = Mapping[str, ModelValidatorRule]
 type _Unit = tuple[str, str | None, str | None]
