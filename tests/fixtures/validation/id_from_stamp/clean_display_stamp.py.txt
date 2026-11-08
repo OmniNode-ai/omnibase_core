@@ -1,0 +1,8 @@
+from datetime import UTC, datetime
+
+
+def main(run_id):
+    label = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    day_id = datetime.now(UTC).strftime("%Y%m%d")
+    print(f"run {run_id} at {label}")
+    return day_id

@@ -1,0 +1,3 @@
+def record(now):
+    stamp = now.strftime("%Y%m%dT%H%M%SZ")
+    return make(row_key=str(stamp).lower())

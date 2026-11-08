@@ -1,0 +1,7 @@
+from datetime import UTC, datetime
+
+STAMP_FORMAT = "%Y%m%dT%H%M%SZ"
+
+
+def make():
+    return {"id": datetime.now(UTC).strftime(STAMP_FORMAT)}
