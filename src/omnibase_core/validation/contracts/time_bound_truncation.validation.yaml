@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: time_bound_truncation
+  validator_name: Time Bound Truncation Validator
+  validator_description: Refuses a function that cuts a duration to whole seconds and then compares it
+    to a limit. The scope, the names, the annotation marker and the remediation text are the rule rows
+    of this file (OMN-23186).
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: time_bound_truncation
+      description: A duration cut to whole seconds and then compared to a limit moves the boundary by
+        up to a second, so a stale or future-dated reading passes.
+      severity: error
+      enabled: true
+      parameters:
+        truncating_calls: [int, floor, math.floor, trunc, math.trunc]
+        truncating_operators: [FloorDiv]
+        duration_methods: [total_seconds]
+        comment_prefix: '# '
+        annotation_marker: 'truncation-ok'
+        reason: a duration is cut to whole seconds and then compared to a limit
+        remediation: >-
+          Compare the exact duration (a timedelta, or total_seconds() as a float) against the limit and
+          truncate only for display, or annotate the truncation line with the truncation-ok comment and
+          a reason.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/time_bound_truncation_baseline.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

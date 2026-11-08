@@ -1,0 +1,14 @@
+from datetime import datetime
+
+from pydantic import AwareDatetime, BaseModel
+
+
+class ModelProbeReadingRequest(BaseModel):
+    now: AwareDatetime
+    finished_at: AwareDatetime | None = None
+    note: str = ""
+    recorded: int = 0
+
+
+class ModelHelper(BaseModel):
+    created: datetime

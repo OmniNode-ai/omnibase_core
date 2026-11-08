@@ -1566,6 +1566,36 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-time-bound-truncation
+  name: No duration cut to whole seconds before a limit compare (OMN-23186)
+  description: >
+    int(td.total_seconds()) or a floored age that is then compared to a limit moves the boundary by up
+    to a second, so a stale or future-dated reading passes. The truncating calls, the duration methods,
+    the annotation marker and the remediation text are the rule rows of time_bound_truncation.validation.yaml.
+    --baseline FILE admits the findings a repository held when it adopted the hook, per file, and only
+    shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_time_bound_truncation:ValidatorTimeBoundTruncation
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: no-naive-timestamp
+  name: No naive datetime request field, no unguarded strptime on a request field (OMN-23186)
+  description: >
+    A Request, Reading or Fact model field typed datetime accepts a naive value, and a strptime on a request
+    field outside a ValueError handler aborts a batch on one malformed timestamp. The class patterns,
+    type names, annotation markers and remediation texts are the rule rows of naive_timestamp.validation.yaml.
+    --baseline FILE admits the findings a repository held when it adopted the hook, per file, and only
+    shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_naive_timestamp:ValidatorNaiveTimestamp
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-checker-rule-data
   name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
   description: >

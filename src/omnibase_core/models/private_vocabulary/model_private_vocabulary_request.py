@@ -3,10 +3,9 @@
 
 """Explicit inputs to private vocabulary resolution (OMN-21494)."""
 
-from datetime import datetime
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from omnibase_core.models.private_vocabulary.model_private_vocabulary_file_fact import (
     ModelPrivateVocabularyFileFact,
@@ -27,7 +26,7 @@ class ModelPrivateVocabularyRequest(BaseModel):
     environment: dict[str, str] = Field(
         default_factory=dict, description="Captured declared environment values."
     )
-    now: datetime = Field(description="Reference time for cache age calculation.")
+    now: AwareDatetime = Field(description="Reference time for cache age calculation.")
     file_fact: ModelPrivateVocabularyFileFact | None = Field(
         default=None,
         description="What the read effect observed at the planned candidate path.",

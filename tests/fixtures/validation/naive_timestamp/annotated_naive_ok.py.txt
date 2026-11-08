@@ -1,0 +1,7 @@
+from datetime import datetime
+
+from pydantic import BaseModel
+
+
+class ModelLocalReadingRequest(BaseModel):
+    local_clock: datetime  # naive-datetime-ok: wall clock of a host with no zone

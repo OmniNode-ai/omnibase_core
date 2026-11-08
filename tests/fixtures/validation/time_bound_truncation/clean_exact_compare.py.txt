@@ -1,0 +1,9 @@
+def judge_probe(request):
+    newest = max(request.probes, key=lambda p: p.probed_at)
+    age = (request.now - newest.probed_at).total_seconds()
+    if age < 0:
+        return ["probe-future-dated"], None
+    failures = []
+    if age > request.probe_max_age_seconds:
+        failures.append("probe-stale")
+    return failures, int(age)

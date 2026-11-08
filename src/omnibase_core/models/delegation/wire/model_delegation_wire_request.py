@@ -7,11 +7,17 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime
 from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from omnibase_core.models.delegation.wire.model_budget import ModelBudgetLimits
 from omnibase_core.models.delegation.wire.model_delegation_named_tests import (
@@ -201,7 +207,7 @@ class ModelDelegationRequest(BaseModel):
         default=2048,
         description="Maximum tokens for the LLM response.",
     )
-    emitted_at: datetime = Field(
+    emitted_at: AwareDatetime = Field(
         ...,
         description="Timestamp when the request was created.",
     )

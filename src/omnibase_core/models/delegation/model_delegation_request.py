@@ -7,7 +7,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from omnibase_core.enums.enum_redaction_policy import EnumRedactionPolicy
 from omnibase_core.models.primitives.model_semver import ModelSemVer
@@ -35,7 +35,7 @@ class ModelDelegationRequest(BaseModel):
     task_type: str
     input_hash: str
     input_redaction_policy: EnumRedactionPolicy = EnumRedactionPolicy.HASH_ONLY
-    requested_at: datetime = Field(
+    requested_at: AwareDatetime = Field(
         default_factory=lambda: datetime.now(tz=UTC),
     )
     contract_version: ModelSemVer = Field(

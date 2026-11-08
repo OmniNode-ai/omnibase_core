@@ -1,0 +1,3 @@
+def expired(now, started, limit):
+    elapsed = int((now - started).total_seconds())  # truncation-ok: the limit is a whole second
+    return elapsed > limit
