@@ -1,0 +1,5 @@
+from datetime import UTC, datetime
+
+
+def main():
+    return ModelCopyRequest(run_id=datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"))  # nonce-ok: one run per second by the scheduler

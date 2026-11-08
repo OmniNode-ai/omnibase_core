@@ -1,0 +1,7 @@
+import time
+
+
+class Store:
+    def put(self, read):
+        self.record_key = "read-" + time.strftime("%Y%m%d%H%M%S")
+        return {"retention_key": time.strftime("%Y%m%d%H%M%S")}

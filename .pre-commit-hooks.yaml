@@ -1596,6 +1596,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-id-from-stamp
+  name: No id or key built from a seconds-only stamp without a nonce (OMN-23189)
+  description: >
+    An id or key (a name matching the id-name patterns, as an assignment target, a keyword argument or
+    a string dict key) built from a seconds-only strftime stamp with no nonce is shared by two events
+    that start inside one second. The name patterns, the directives, the nonce lists, the annotation marker
+    and the remediation text are the rule rows of id_from_stamp.validation.yaml. --baseline FILE admits
+    the findings a repository held when it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_id_from_stamp:ValidatorIdFromStamp
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-checker-rule-data
   name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
   description: >
