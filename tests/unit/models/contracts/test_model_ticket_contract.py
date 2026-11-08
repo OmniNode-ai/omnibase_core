@@ -17,7 +17,7 @@ from omnibase_core.contracts.validators.validate_ticket_contract import (
 )
 from omnibase_core.contracts.validators.validation_result import ValidationResult
 from omnibase_core.models.contracts.ticket.model_linear_ticket_contract import (
-    ModelTicketContract,
+    ModelLinearTicketContract as ModelTicketContract,
 )
 
 VALID_TICKET = {
