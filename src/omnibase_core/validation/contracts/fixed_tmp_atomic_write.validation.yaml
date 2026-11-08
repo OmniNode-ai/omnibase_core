@@ -1,0 +1,87 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: fixed_tmp_atomic_write
+  validator_name: Fixed temporary file atomic write validator
+  validator_description: Refuses a write-then-rename whose temporary path is the target path plus a fixed
+    suffix, the same path for every writer. The rename calls, the callables a path is derived with, the
+    annotation marker and the remediation text are the rule rows of this file (OMN-23188).
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: fixed_tmp_atomic_write
+      description: A temporary file named only from the target path is shared by every writer of that
+        target, so concurrent writers truncate and rename each other's data.
+      severity: error
+      enabled: true
+      parameters:
+        rename_functions: [os.replace, os.rename, shutil.move]
+        rename_methods: [replace, rename]
+        derived_attributes: [parent, parents, name, stem, suffix]
+        neutral_names: [os, posixpath, pathlib]
+        path_derivations:
+          - Path
+          - PurePath
+          - PurePosixPath
+          - str
+          - fspath
+          - format
+          - join
+          - with_suffix
+          - with_name
+          - with_stem
+          - joinpath
+          - resolve
+          - absolute
+          - expanduser
+          - dirname
+          - abspath
+          - realpath
+          - normpath
+        comment_prefix: '# '
+        annotation_marker: 'fixed-tmp-ok'
+        reason: the temporary file is the target path plus a fixed suffix, the same path for every writer
+        remediation: >-
+          Create the temporary file in the target directory with tempfile.mkstemp (or NamedTemporaryFile(delete=False)),
+          or add a per-writer part (pid, uuid) to its name, then rename it; or annotate the rename line
+          with the fixed-tmp-ok comment and a reason when one writer is guaranteed.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/fixed_tmp_atomic_write_baseline.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

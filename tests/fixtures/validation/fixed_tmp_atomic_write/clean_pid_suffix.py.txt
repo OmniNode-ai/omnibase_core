@@ -1,0 +1,8 @@
+import os
+
+
+def publish(path, data):
+    tmp = f"{path}.{os.getpid()}.tmp"
+    with open(tmp, "w") as handle:
+        handle.write(data)
+    os.replace(tmp, path)

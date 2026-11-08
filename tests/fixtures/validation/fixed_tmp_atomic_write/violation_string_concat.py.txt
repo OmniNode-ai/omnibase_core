@@ -1,0 +1,8 @@
+import json
+import os
+
+
+def publish(path, payload):
+    with open(path + ".tmp", "w") as handle:
+        json.dump(payload, handle)
+    os.replace(path + ".tmp", path)

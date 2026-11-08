@@ -1,0 +1,7 @@
+import uuid
+
+
+def publish(target, data):
+    tmp = target.with_suffix(f".{uuid.uuid4().hex}.tmp")
+    tmp.write_text(data)
+    tmp.replace(target)

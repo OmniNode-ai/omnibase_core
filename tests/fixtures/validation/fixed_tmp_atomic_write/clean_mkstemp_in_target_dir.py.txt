@@ -1,0 +1,9 @@
+import os
+import tempfile
+
+
+def publish(target, data):
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(target), suffix=".tmp")
+    with os.fdopen(fd, "w") as handle:
+        handle.write(data)
+    os.replace(tmp, target)

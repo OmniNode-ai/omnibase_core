@@ -1,0 +1,5 @@
+import os
+
+
+def rotate(path):
+    os.replace(path, path + ".bak")

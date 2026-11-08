@@ -1,0 +1,7 @@
+from pathlib import Path
+
+
+def publish(path, data):
+    tmp = Path(f"{path}.tmp")
+    tmp.write_bytes(data)
+    tmp.replace(path)

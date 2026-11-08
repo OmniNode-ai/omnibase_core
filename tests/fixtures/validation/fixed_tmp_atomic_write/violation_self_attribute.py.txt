@@ -1,0 +1,9 @@
+import os
+
+
+class Store:
+    def save(self, data):
+        tmp = self.path + ".part"
+        with open(tmp, "w") as handle:
+            handle.write(data)
+        os.rename(tmp, self.path)

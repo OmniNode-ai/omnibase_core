@@ -1234,6 +1234,23 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-23188: Rejects a write-then-rename whose temporary path is the target path plus a fixed suffix
+      # (target.tmp), the same file for every writer. Create it with tempfile.mkstemp in the target directory.
+      # Annotation: the fixed-tmp-ok marker and a reason in a comment on the rename line.
+      # The findings that sat in the tree before the refusal are the shrink-only
+      # .onex_ratchets/fixed_tmp_atomic_write_baseline.yaml (burn-down ticket and zero-target date in its
+      # header); handing the baseline file to the hook checks it did not grow against HEAD.
+      - id: no-fixed-tmp-atomic-write
+        name: No fixed temporary file in a write-then-rename (OMN-23188)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_fixed_tmp_atomic_write:ValidatorFixedTmpAtomicWrite
+        language: system
+        args: [--baseline, .onex_ratchets/fixed_tmp_atomic_write_baseline.yaml]
+        files: ^(.*\.py|\.onex_ratchets/fixed_tmp_atomic_write_baseline\.yaml)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>

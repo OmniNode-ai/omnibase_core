@@ -1,0 +1,7 @@
+import shutil
+
+
+def publish(target, data):
+    staged = target.parent / "snapshot.tmp"
+    staged.write_text(data)
+    shutil.move(staged, target)
