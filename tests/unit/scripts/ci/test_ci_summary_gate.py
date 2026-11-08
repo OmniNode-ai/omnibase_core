@@ -1872,6 +1872,11 @@ PROPAGATE_PLACEHOLDER = (
     "Propagate ${{ (inputs.propagation_name || 'release-triggered') }}"
 )
 
+# The check-run name of the automated reviewer app (OMN-22478): it posts a
+# ``neutral`` row on every pull request and the ruling of 2026-11-05T20:27:56Z
+# takes it out of what blocks a merge.
+AUTOMATED_REVIEWER = "Tessl Reviewer"
+
 
 class TestExternalSweepExclusions:
     """OMN-17427: every tolerance is bounded, validated and visible."""
@@ -1889,6 +1894,7 @@ class TestExternalSweepExclusions:
             "Enable Auto-Merge",
             PROPAGATE_PLACEHOLDER,
             "Harvest shadow records",
+            AUTOMATED_REVIEWER,
         }
         assert gate.validate_sweep_exclusions(gate.EXTERNAL_SWEEP_EXCLUSIONS) == []
         active, expired = gate.active_sweep_exclusions(
@@ -1897,10 +1903,14 @@ class TestExternalSweepExclusions:
         assert active == frozenset(gate.EXTERNAL_SWEEP_EXCLUSIONS)
         assert expired == ()
         assert not active.intersection(EXPECTED_EXTERNAL_CONTEXTS)
-        for entry in gate.EXTERNAL_SWEEP_EXCLUSIONS.values():
+        for name, entry in gate.EXTERNAL_SWEEP_EXCLUSIONS.items():
             assert entry.reason.strip()
-            assert entry.ticket == "OMN-17427"
-            assert entry.added in {"2026-10-17", "2026-10-18", "2026-10-19"}
+            if name == AUTOMATED_REVIEWER:
+                assert entry.ticket == "OMN-22478"
+                assert entry.added == "2026-11-07"
+            else:
+                assert entry.ticket == "OMN-17427"
+                assert entry.added in {"2026-10-17", "2026-10-18", "2026-10-19"}
             assert entry.expires == "2026-12-20"
         with pytest.raises(FrozenInstanceError):
             self.ENTRY.reason = "changed"
@@ -1912,6 +1922,7 @@ class TestExternalSweepExclusions:
             "Enable Auto-Merge",
             PROPAGATE_PLACEHOLDER,
             "Harvest shadow records",
+            AUTOMATED_REVIEWER,
         ],
     )
     def test_shipped_exclusions_admit_skips_but_not_unregistered_reds(
@@ -2021,6 +2032,70 @@ class TestExternalSweepExclusions:
         )
         assert code == EXIT_FAILURE, report
         assert f"L4 external contexts not success (coverage gap): {name}" in report
+
+
+class TestAutomatedReviewerDoesNotBlockOmn22478:
+    """RULING 2026-11-05T20:27:56Z: the automated reviewer never blocks a merge.
+
+    The reviewer app posts a ``neutral`` check run named ``Tessl Reviewer`` on
+    every pull request. The default-deny sweep judges only ``success`` as good,
+    so before the exclusion it failed CI Summary on omnibase_core#2280 (CI
+    Summary job 128484041554, ``Tessl Reviewer (neutral)``).
+    """
+
+    NOW = datetime(2026, 11, 7, 18, 8, tzinfo=UTC)
+
+    @pytest.mark.parametrize(
+        ("conclusion", "status"),
+        [
+            ("neutral", "completed"),
+            (None, "in_progress"),
+            ("failure", "completed"),
+            ("skipped", "completed"),
+        ],
+    )
+    def test_reviewer_row_in_any_state_does_not_fail_ci_summary(
+        self, conclusion: str | None, status: str
+    ) -> None:
+        row = _check_run(AUTOMATED_REVIEWER, conclusion, status=status)
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+            now=self.NOW,
+        )
+        assert code == EXIT_SUCCESS, report
+        assert f"exclusions applied: {AUTOMATED_REVIEWER}" in report
+        assert "external sweep failures" not in report
+
+    def test_control_the_same_neutral_row_under_another_name_still_fails(
+        self,
+    ) -> None:
+        row = _check_run("Another Reviewer", "neutral")
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        assert "Another Reviewer (neutral)" in report
+
+    def test_control_without_the_exclusion_the_reviewer_row_fails(self) -> None:
+        row = _check_run(AUTOMATED_REVIEWER, "neutral")
+        code, report = evaluate(
+            _all_good(),
+            external_check_runs=[*_ALL_EXTERNAL_GREEN, row],
+            sweep_exclusions={},
+            now=self.NOW,
+        )
+        assert code == EXIT_FAILURE, report
+        assert f"{AUTOMATED_REVIEWER} (neutral)" in report
+
+    def test_exclusion_is_unexpired_at_the_pinned_read_time(self) -> None:
+        active, expired = gate.active_sweep_exclusions(
+            gate.EXTERNAL_SWEEP_EXCLUSIONS, now=self.NOW
+        )
+        assert AUTOMATED_REVIEWER in active
+        assert expired == ()
 
 
 class TestSweepIsWiredIntoProductionPoller:

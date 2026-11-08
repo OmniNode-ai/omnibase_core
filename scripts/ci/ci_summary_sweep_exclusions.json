@@ -1,0 +1,32 @@
+{
+  "handshake-policy-gate": {
+    "reason": "Schedule/workflow_dispatch-only producer leaves a skipped placeholder on PRs.",
+    "ticket": "OMN-17427",
+    "added": "2026-10-17",
+    "expires": "2026-12-20"
+  },
+  "Enable Auto-Merge": {
+    "reason": "Job condition requires a matching PR actor and skips for other actors.",
+    "ticket": "OMN-17427",
+    "added": "2026-10-17",
+    "expires": "2026-12-20"
+  },
+  "Propagate ${{ (inputs.propagation_name || 'release-triggered') }}": {
+    "reason": "Release/workflow_dispatch-only propagator leaves a skipped placeholder on path-matched PRs.",
+    "ticket": "OMN-17427",
+    "added": "2026-10-18",
+    "expires": "2026-12-20"
+  },
+  "Harvest shadow records": {
+    "reason": "workflow_run harvester runs only for pull_request CI and leaves a skipped row on pushed heads.",
+    "ticket": "OMN-17427",
+    "added": "2026-10-19",
+    "expires": "2026-12-20"
+  },
+  "Tessl Reviewer": {
+    "reason": "Automated reviewer app posts a neutral row on every pull request; the operator ruling takes it out of what blocks a merge.",
+    "ticket": "OMN-22478",
+    "added": "2026-11-07",
+    "expires": "2026-12-20"
+  }
+}

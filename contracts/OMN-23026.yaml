@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23026
+title: Contract state reducer test asserts the log level enum exactly
+summary: The reducer test compared an enum log level with pytest.approx and a relative tolerance, which
+  pytest 9.2.0 rejects. The test now asserts EnumLogLevel.INFO exactly, so it passes on pytest 9.1.1 and
+  9.2.0.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23026-exact-enum-assert
+    statement: The reducer test asserts the enum log level exactly so it runs on pytest 9.2.0.
+    acceptance:
+      - id: AC1
+        statement: The test passes on pytest 9.1.1 and 9.2.0 and fails on 9.2.0 without the fix.
+evidence_requirements:
+  - kind: tests
+    description: The reducer test file on pytest 9.2.0.
+    command: uv run --frozen --with pytest==9.2.0 pytest tests/unit/mixins/test_mixin_contract_state_reducer.py
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23026-ac1-exact-enum
+    description: The reducer test file passes on pytest 9.2.0 with the exact enum assertion.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen --with pytest==9.2.0 pytest tests/unit/mixins/test_mixin_contract_state_reducer.py
+        cwd: ${OMNI_HOME}/omnibase_core
