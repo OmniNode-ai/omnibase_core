@@ -151,6 +151,70 @@ validation:
         release_pattern: '\bRELEASE \d{4}-\d{2}-\d{2}T\S+'
         frozen_states: ["no-code", "fix-only"]
         fix_permitted_states: ["fix-only"]
+    - rule_id: falsifier_test_path
+      description: Refuse a contract whose pytest falsifier names a path that does not exist or holds
+        no test file (OMN-23185); offenders recorded in baseline_offenders may only be removed.
+      severity: error
+      enabled: true
+      parameters:
+        message: "contract {subject}: a pytest falsifier names {path}, which {reason}, so it cannot settle
+          its criterion"
+        source_pattern: '(?:^|/)contracts/OMN-[^/]*\.yaml$'
+        command_pattern: '\bpytest\b([^\n`"'';|&<>]*)'
+        path_pattern: '^[A-Za-z0-9_][A-Za-z0-9_.\-]*(?:/[A-Za-z0-9_.\-]+)+/?$'
+        cwd_pattern: '^\s*cwd:\s*(.*?)\s*$'
+        local_cwd_pattern: '^\.?/?$'
+        skip_prefix_pattern: '\bcd\s+\S+\s*(?:&&|;)'
+        cwd_window_lines: "3"
+        absent_reason: "does not exist"
+        empty_reason: "holds no test file"
+        stale_message: "contract {subject}: baseline entry {entry} no longer matches an offending path;
+          remove it from baseline_offenders"
+        value_flags: ["--ignore", "--ignore-glob", "--deselect", "--cov", "--rootdir", "-c", "--confcutdir",
+          "--basetemp", "--junitxml", "-p", "-k", "-m", "-n", "-o", "-W", "--durations", "--maxfail",
+          "--reruns", "--timeout"]
+        test_file_globs: ["test_*.py", "*_test.py"]
+        baseline_offenders:
+          - "OMN-15390.yaml:9591e86a5c7c54f4"
+          - "OMN-15482.yaml:9591e86a5c7c54f4"
+          - "OMN-15485.yaml:9591e86a5c7c54f4"
+          - "OMN-15544.yaml:9591e86a5c7c54f4"
+          - "OMN-15707.yaml:9591e86a5c7c54f4"
+          - "OMN-15797.yaml:9591e86a5c7c54f4"
+          - "OMN-15852.yaml:9591e86a5c7c54f4"
+          - "OMN-15961.yaml:9591e86a5c7c54f4"
+          - "OMN-16235.yaml:9591e86a5c7c54f4"
+          - "OMN-16417.yaml:9591e86a5c7c54f4"
+          - "OMN-16450.yaml:9591e86a5c7c54f4"
+          - "OMN-18405.yaml:9591e86a5c7c54f4"
+          - "OMN-19010.yaml:efba9f1cea5f0bde"
+          - "OMN-20074.yaml:4b3550ad7218e3da"
+          - "OMN-20412.yaml:41c1c7a887eee2c0"
+          - "OMN-20578.yaml:9811638a0038d3e1"
+          - "OMN-20677.yaml:ab16fb6af66b4a54"
+          - "OMN-20899.yaml:41c1c7a887eee2c0"
+          - "OMN-20917.yaml:39a10ca3061ba888"
+          - "OMN-21013.yaml:87644913149ecc9a"
+          - "OMN-21209.yaml:662e00a6962ea668"
+          - "OMN-21329.yaml:bf89485d67eb7ab7"
+          - "OMN-21373.yaml:629da8241b9fe53d"
+          - "OMN-21373.yaml:d1f98396a6878826"
+          - "OMN-21396.yaml:629da8241b9fe53d"
+          - "OMN-21411.yaml:83e90b1d4cacb60a"
+          - "OMN-21428.yaml:1744065bbf2ecb8d"
+          - "OMN-21428.yaml:83e90b1d4cacb60a"
+          - "OMN-21454.yaml:bf89485d67eb7ab7"
+          - "OMN-21753.yaml:e38abf29c38ab7af"
+          - "OMN-21753.yaml:ef5dbd07e6dad5ea"
+          - "OMN-21910.yaml:8562c5541c57504e"
+          - "OMN-21989.yaml:69c7e02f3fc3c854"
+          - "OMN-21989.yaml:7cb280f01284755e"
+          - "OMN-22658.yaml:1ec3ffa9aa4148f3"
+          - "OMN-22945.yaml:75cf548a73d4f1f2"
+          - "OMN-22958.yaml:45a9114d310f89dd"
+          - "OMN-22967.yaml:c6b09ae21be93606"
+          - "OMN-22977.yaml:22001310464c7b74"
+          - "OMN-22977.yaml:aacd625a6969f307"
 
   suppression_comments: []
   fail_on_error: true

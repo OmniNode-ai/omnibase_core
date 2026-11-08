@@ -1,0 +1,57 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23185
+title: A contract falsifier that names a test path with no tests is refused by the generic validator,
+  as overlay data
+summary: A rule row falsifier_test_path of the task_criteria generic validator refuses a contract whose
+  pytest falsifier names a path that does not exist or holds no test file. The command shapes, option
+  values, test-file globs, messages and the shrink-only baseline of current offenders are rule data; the
+  checker holds none of them and reads no file.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23185-falsifier-test-path
+    statement: A contract whose pytest falsifier cannot run any test is refused, except for the offenders
+      recorded in a baseline that may only shrink.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a rule row in the generic validator overlay refuses a contract whose pytest falsifier
+          path does not exist or holds no test file, with the current offenders in a shrink-only baseline
+          -- falsifier: uv run pytest of the added rule test, red on a corpus holding contracts/OMN-22958.yaml
+          as it stood at omnimarket dev 566d7ead09"
+      - id: AC2
+        statement: "AC2: the same test carries a passing control, a contract whose falsifier names an
+          existing tests path, that the rule admits -- falsifier: uv run pytest of the same file, the
+          control case green and the offender case red when the rule row is removed"
+evidence_requirements:
+  - kind: tests
+    description: The falsifier test-path tests and the task-criteria rule table tests pass at the head.
+    command: uv run pytest tests/unit/validation/test_falsifier_test_path.py tests/unit/validation/test_checker_task_criteria.py
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23185-ac1-offender-red
+    description: The OMN-22958 contract as it stood at omnimarket dev 566d7ead09 is refused when it is
+      not in the baseline, admitted while it is, and a new contract with the same path is refused; the
+      baseline may only shrink.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_falsifier_test_path.py -q --no-cov -n 0
+          -k 'omn22958 or new_contract or shrink or baseline'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC1]
+  - id: dod-omn23185-ac2-control-and-removed-row
+    description: A contract naming an existing tests path is admitted, and the offender case goes red
+      when the rule row is removed; every parameter of the rule row moves a verdict.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_falsifier_test_path.py tests/unit/validation/test_checker_task_criteria.py
+          -q --no-cov -n 0 -k 'control or rule_row or every_parameter'
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC2]

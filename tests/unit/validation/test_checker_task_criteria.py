@@ -91,6 +91,20 @@ RULE_IDS = {
     "brief_missing_rule_block",
     "rule_block_incomplete",
     "task_in_frozen_repository",
+    "falsifier_test_path",
+}
+
+# What the validator reads from the checkout for the falsifier test-path rule (OMN-23185).
+LISTINGS = {
+    "tests/unit/test_present.py": ("test_present.py",),
+    "tests/unit/present_dir": ("helper.py", "test_one.py"),
+}
+# omnimarket contract OMN-22958 as it stood at dev 566d7ead09: its falsifier runs pytest on a
+# source directory that holds no test file; the directory below is what that checkout held.
+OMN_22958 = "contracts/OMN-22958.yaml"
+OMN_22958_LISTINGS = {
+    "src/omnimarket/nodes/node_dev_deploy_reading_compute": ("node.py", "handler.py"),
+    "tests/nodes/node_dev_deploy_reading_compute": ("test_chain.py",),
 }
 
 
@@ -100,6 +114,8 @@ def _source(rule_id: str, name: str = "x") -> str:
         return f"lanes/{name}/job.json"
     if rule_id == "rule_block_incomplete":
         return f"lanes/{name}/rules.md"
+    if rule_id == "falsifier_test_path":
+        return f"contracts/OMN-{name}.yaml"
     return f"beta/plans/{name}.md"
 
 
@@ -113,15 +129,31 @@ def _contract() -> ModelValidatorSubcontract:
 
 
 def _check(
-    rule_id: str, text: str, contract: ModelValidatorSubcontract | None = None
+    rule_id: str,
+    text: str,
+    contract: ModelValidatorSubcontract | None = None,
+    source: str | None = None,
+    listings: dict[str, tuple[str, ...]] | None = None,
 ) -> ModelTaskCriteriaCheckResult:
-    return check_task_criteria(
+    result = check_task_criteria(
         ModelTaskCriteriaCheckInput(
-            source_name=_source(rule_id),
+            source_name=source or _source(rule_id),
             text=text,
             repository_lifecycle=LIFECYCLE,
+            repository_name="omnimarket",
+            path_listings=LISTINGS if listings is None else listings,
             contract=contract or _contract(),
         )
+    )
+    if rule_id != "falsifier_test_path":
+        return result
+    # Every rule judges a contract file; the fixtures of this one are read for its own code.
+    own = tuple(issue for issue in result.issues if issue.code == rule_id)
+    return result.model_copy(
+        update={
+            "issues": own,
+            "exit_code": 1 if own and own[0].severity.is_error_or_above() else 0,
+        }
     )
 
 
@@ -150,6 +182,29 @@ def _all_verdicts(
     extra = (FIXTURES / "mutation_fix_only_permitted.txt").read_text("utf-8")
     result = _check("task_in_frozen_repository", extra, contract)
     verdicts.append(("mutation_fix_only", tuple(i.message for i in result.issues)))
+    corpus = (FIXTURES / "falsifier_test_path" / "OMN-22958.yaml").read_text("utf-8")
+    baselined = _check(
+        "falsifier_test_path",
+        corpus,
+        contract,
+        source=OMN_22958,
+        listings=OMN_22958_LISTINGS,
+    )
+    verdicts.append(("baselined_offender", tuple(i.message for i in baselined.issues)))
+    emptied = _check(
+        "falsifier_test_path",
+        "check_value: uv run pytest tests/unit/empty_dir -q\n",
+        contract,
+        listings={"tests/unit/empty_dir": ("helper.py",)},
+    )
+    verdicts.append(("empty_directory", tuple(i.message for i in emptied.issues)))
+    stale = _check(
+        "falsifier_test_path",
+        "requirements: []\n",
+        contract,
+        source="contracts/OMN-15390.yaml",
+    )
+    verdicts.append(("stale_baseline_entry", tuple(i.message for i in stale.issues)))
     return verdicts
 
 
