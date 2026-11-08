@@ -12,6 +12,9 @@ if TYPE_CHECKING:
     from omnibase_core.enums.enum_delegation_budget_refusal_reason import (
         EnumDelegationBudgetRefusalReason,
     )
+    from omnibase_core.enums.enum_delegation_ceiling_source import (
+        EnumDelegationCeilingSource,
+    )
     from omnibase_core.enums.enum_delegation_content_verdict import (
         EnumDelegationContentVerdict,
     )
@@ -152,6 +155,7 @@ __all__: list[str] = [
     "EnumDelegationOutputShape",
     "EnumDelegationOutputRefusalReason",
     "EnumDelegationBudgetRefusalReason",
+    "EnumDelegationCeilingSource",
     "EnumDelegationContentVerdict",
     "EnumDelegationOperationalOutcome",
     "EnumDelegationTerminalOutcome",
@@ -221,6 +225,10 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "EnumDelegationBudgetRefusalReason": (
         "omnibase_core.enums.enum_delegation_budget_refusal_reason",
         "EnumDelegationBudgetRefusalReason",
+    ),
+    "EnumDelegationCeilingSource": (
+        "omnibase_core.enums.enum_delegation_ceiling_source",
+        "EnumDelegationCeilingSource",
     ),
     "EnumDelegationContentVerdict": (
         "omnibase_core.enums.enum_delegation_content_verdict",
