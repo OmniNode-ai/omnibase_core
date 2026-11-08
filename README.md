@@ -3,6 +3,17 @@
 omnibase_core provides the contracts, models, validation and execution primitives for the ONEX framework.
 Documentation: [knowledge_base](https://github.com/OmniNode-ai/knowledge_base).
 
+## v0.47.69 (2026-11-07)
+
+### Release
+- Cut omnibase-core from dev at 0.47.69 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.67.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.67
+- feat: a core validator judges each venv surface against the lock it was built from (#2274)
+- feat: the developer principal role vocabulary gains read_only (#2272)
+
 ## v0.47.67 (2026-11-05)
 
 ### Release

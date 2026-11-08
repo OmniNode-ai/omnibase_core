@@ -209,3 +209,15 @@ def test_release_changelog_retains_version_0_47_67_in_root_readme() -> None:
         in readme
     )
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
+
+
+def test_release_changelog_retains_version_0_47_69_in_root_readme() -> None:
+    """Keep the 0.47.69 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.69 (2026-11-07)" in readme
+    assert "### Included Since v0.47.67" in readme
+    assert (
+        "- feat: a core validator judges each venv surface against the lock it was built from (#2274)"
+        in readme
+    )
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()

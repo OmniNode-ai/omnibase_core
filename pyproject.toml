@@ -235,7 +235,7 @@ full = ["psutil>=7.2.1", "aiokafka>=0.12.0,<1.0.0", "confluent-kafka>=2.12.0,<3.
 dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.4,<2",
-    "mypy>=1.19.1",
+    "mypy>=1.19.1,<1.20.0",  # see the ruff note below: the 0.47.69 release refresh moved mypy to 2.4.1, and strict mypy 2.x reports two errors on an unchanged tree (OMN-23015)
     "pyright>=1.1.408,<1.1.409",  # see the ruff note above: pyright promotes new diagnostics between patch releases, and 1.1.414 fails this tree on four it did not report (OMN-23012)
     # Upper bound at the next minor, deliberately: ruff changes both its
 # formatter and its rule set between minors, so a wider range lets a

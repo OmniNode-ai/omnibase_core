@@ -18,6 +18,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from omnibase_core.enums.ticket.enum_ticket_workflow_phase import (
     EnumTicketWorkflowPhase,
 )
+from omnibase_core.models.ticket.model_ticket_completion_predicate import (
+    is_ticket_complete,
+)
 from omnibase_core.models.ticket.model_workflow_context import ModelWorkflowContext
 from omnibase_core.models.ticket.model_workflow_gate import ModelWorkflowGate
 from omnibase_core.models.ticket.model_workflow_question import ModelWorkflowQuestion
@@ -87,12 +90,12 @@ class ModelTicketWorkflowState(BaseModel):
 
     def is_done(self) -> bool:
         """Workflow reached DONE and all completion checks pass."""
-        return (
-            self.phase == EnumTicketWorkflowPhase.DONE
-            and self.is_questions_complete()
-            and self.is_spec_complete()
-            and self.is_verification_complete()
-            and self.is_gates_complete()
+        return is_ticket_complete(
+            phase_done=self.phase == EnumTicketWorkflowPhase.DONE,
+            questions_complete=self.is_questions_complete(),
+            spec_complete=self.is_spec_complete(),
+            verification_complete=self.is_verification_complete(),
+            gates_complete=self.is_gates_complete(),
         )
 
 

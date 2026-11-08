@@ -1,0 +1,62 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-22969
+title: One canonical ticket model, one definition-of-done model and one completion predicate live in omnibase_core,
+  with the integration item required in every contract and every caller migrated
+summary: "This contract carries the omnibase_core part of the ticket: an inventory ratchet over the ticket
+  and DoD item models, the second ModelTicketContract renamed out of the way, one completion predicate
+  the two ticket models call, and an integration-item rule in validate_ticket_contract behind a parameter
+  that defaults off. Making the rule the default, merging the duplicate DoD item models, and the caller
+  migrations in other repositories are tracked work that remains."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22969-ticket-model-inventory
+    statement: Every ticket model, DoD item model and completion predicate in core is listed by a scan,
+      a second ModelTicketContract fails the ratchet, and the completion policy has one definition.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a complete inspection lists every ticket creation and closure path with its model
+          and predicate, and a second definition or an obsolete path is flagged -- falsifier: uv run pytest
+          tests/unit/test_ticket_model_inventory.py -q -k every_path_listed'
+      - id: AC2
+        statement: 'AC2: a ticket contract without the integration item is refused by the validator and
+          the completion predicate is one function -- falsifier: uv run pytest tests/unit/validation/test_ticket_contract_integration_item.py
+          -q'
+      - id: AC3
+        statement: 'AC3: a planted second ModelTicketContract definition fails the ratchet -- falsifier:
+          uv run pytest tests/unit/test_ticket_model_inventory.py -q -k second_definition_fails'
+evidence_requirements:
+  - kind: tests
+    description: The inventory scan and the integration-item rule.
+    command: uv run --frozen pytest tests/unit/test_ticket_model_inventory.py tests/unit/validation/test_ticket_contract_integration_item.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22969-inventory
+    description: "The scan lists every ticket model, DoD item model and is_done caller, and the planted
+      second ModelTicketContract is found. Fails at the merge base, where the scan finds models/contracts/ticket/model_linear_ticket_contract.py
+      defining a second ModelTicketContract."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/test_ticket_model_inventory.py -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC1
+      - AC3
+  - id: dod-omn22969-integration-item
+    description: "validate_ticket_contract refuses a ticket with no integration check when asked to, and
+      accepts one that carries it; the default stays off until consumers comply."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_ticket_contract_integration_item.py
+          -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC2

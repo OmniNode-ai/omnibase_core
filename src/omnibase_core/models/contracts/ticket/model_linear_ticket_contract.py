@@ -2,7 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 """
-ModelTicketContract — Pydantic v2 schema for Linear ticket contracts.
+ModelLinearTicketContract — Pydantic v2 schema for the Linear PR-gate ticket dict.
+
+Not the ticket contract: the one canonical ticket model is
+``omnibase_core.models.ticket.model_ticket_contract.ModelTicketContract``
+(OMN-22969). This model validates only the flat dict the PR gate reads from
+Linear.
 
 Validates that every ticket cited in a PR has a complete, non-empty contract
 with dod_evidence, golden_path, and deploy_step when the ticket touches runtime.
@@ -23,8 +28,8 @@ from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
 _TICKET_ID_RE = re.compile(r"^OMN-\d+$")
 
 
-class ModelTicketContract(BaseModel):
-    """Canonical contract for a Linear ticket cited in a PR.
+class ModelLinearTicketContract(BaseModel):
+    """Flat Linear ticket dict cited in a PR, as the PR gate reads it.
 
     Enforces that dod_evidence and golden_path are non-empty, and that
     runtime-touching tickets declare a deploy_step.
@@ -47,10 +52,10 @@ class ModelTicketContract(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def validate_deploy_step_when_runtime_change(self) -> ModelTicketContract:
+    def validate_deploy_step_when_runtime_change(self) -> ModelLinearTicketContract:
         if self.runtime_change and not self.deploy_step:
             raise ValueError("deploy_step is required when runtime_change=True")
         return self
 
 
-__all__ = ["ModelTicketContract"]
+__all__ = ["ModelLinearTicketContract"]

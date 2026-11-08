@@ -81,6 +81,15 @@ repos:
         pass_filenames: false
         require_serial: true
         stages: [pre-commit]
+      - id: ticket-model-inventory
+        name: Ticket model inventory and integration-item ratchet (OMN-22969)
+        entry: uv run --frozen pytest tests/unit/test_ticket_model_inventory.py tests/unit/validation/test_ticket_contract_integration_item.py
+          -q -n 0 --reruns 0
+        language: system
+        files: ^(src/omnibase_core/(models/(ticket|plan|contracts/ticket)/|contracts/validators/validate_ticket_contract\.py)|tests/unit/test_ticket_model_inventory\.py|tests/unit/validation/test_ticket_contract_integration_item\.py|\.pre-commit-config\.yaml$)
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-commit]
       - id: evidence-verifier-model-invariants
         name: Evidence verifier model invariants (OMN-18785)
         entry: uv run --frozen pytest tests/unit/models/evidence_bundle/test_evidence_verifier_result.py

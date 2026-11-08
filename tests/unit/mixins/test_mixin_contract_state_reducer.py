@@ -18,6 +18,7 @@ import pytest
 # Module-level pytest marker for all tests in this file
 pytestmark = pytest.mark.unit
 
+from omnibase_core.enums.enum_log_level import EnumLogLevel
 from omnibase_core.mixins.mixin_contract_state_reducer import MixinContractStateReducer
 
 
@@ -83,7 +84,7 @@ class TestProcessActionWithTransitionsNullHandling:
 
         # Verify unknown_action was used in logging
         mock_emit_log.assert_any_call(
-            pytest.approx(mock_emit_log.call_args_list[0][0][0], rel=0.1),  # LogLevel
+            EnumLogLevel.INFO,
             "Processing action with contract transitions: unknown_action",
             {"tool_name": "test_node", "action": "unknown_action"},
         )
