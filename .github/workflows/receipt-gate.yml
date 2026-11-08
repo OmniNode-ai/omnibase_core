@@ -781,6 +781,24 @@ jobs:
 
               return classify_plugin_manifest_version_only(paths, contents=read_blobs(paths, blobs_dir))
 
+          def classify_hook_rev_train(paths, pyproject_head, pyproject_base, blobs_dir):
+              # OMN-22478: the sibling pin train's dependency pins plus the rev: of
+              # first-party hook blocks in .pre-commit-config.yaml, and nothing
+              # else in that file. Imported here so a verifier without it fails
+              # closed only on this path.
+              try:
+                  from omnimarket.occ_content_probe import classify_precommit_hook_rev_pin_train_only
+              except ImportError:
+                  return False, "the pinned verifier has no classify_precommit_hook_rev_pin_train_only"
+              if ".pre-commit-config.yaml" not in paths:
+                  return False, ".pre-commit-config.yaml is not among the changed files"
+              index = paths.index(".pre-commit-config.yaml")
+              return classify_precommit_hook_rev_pin_train_only(
+                  paths, pyproject_head=pyproject_head, pyproject_base=pyproject_base,
+                  precommit_head=read_optional(blobs_dir / f"{index}.head"),
+                  precommit_base=read_optional(blobs_dir / f"{index}.base"),
+              )
+
           def classify_pin_swap_only(paths, pyproject_head, pyproject_base, blobs_dir):
               if not paths:
                   return False, "pin swap requires changed paths"
@@ -935,6 +953,12 @@ jobs:
                       return {"exempt": True, "kind": "plugin_version_bump", "reason": plugin_reason,
                               "classifier": "classify_plugin_manifest_version_only"}
                   pin_reason = f"{pin_reason}; plugin manifest version: {plugin_reason}"
+              if ".pre-commit-config.yaml" in paths:
+                  hook_train, hook_reason = classify_hook_rev_train(paths, pyproject_head, pyproject_base, blobs_dir)
+                  if hook_train:
+                      return {"exempt": True, "kind": "dependency_pin_only", "reason": hook_reason,
+                              "classifier": "classify_precommit_hook_rev_pin_train_only"}
+                  pin_reason = f"{pin_reason}; hook rev pin train: {hook_reason}"
               pin_swap, reason = classify_pin_swap_only(paths, pyproject_head, pyproject_base, blobs_dir)
               if pin_swap:
                   return {"exempt": True, "kind": "pin_swap_only", "reason": reason,
