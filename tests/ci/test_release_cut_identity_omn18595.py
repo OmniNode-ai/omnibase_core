@@ -221,3 +221,12 @@ def test_release_changelog_retains_version_0_47_69_in_root_readme() -> None:
         in readme
     )
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
+
+
+def test_release_changelog_retains_version_0_47_70_in_root_readme() -> None:
+    """Keep the 0.47.70 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.70 (2026-11-08)" in readme
+    assert "### Included Since v0.47.69" in readme
+    assert "- fix: the stale-pin merge bound is per sibling (#2286)" in readme
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()
