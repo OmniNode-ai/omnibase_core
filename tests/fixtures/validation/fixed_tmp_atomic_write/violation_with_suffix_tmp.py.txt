@@ -1,0 +1,8 @@
+import json
+import os
+
+
+def publish(target, payload):
+    tmp = target.with_suffix(".tmp")
+    tmp.write_text(json.dumps(payload))
+    os.replace(tmp, target)

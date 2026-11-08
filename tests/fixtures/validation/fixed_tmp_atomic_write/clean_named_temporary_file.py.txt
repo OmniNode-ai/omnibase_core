@@ -1,0 +1,8 @@
+import os
+import tempfile
+
+
+def publish(target, data):
+    with tempfile.NamedTemporaryFile("w", dir=target.parent, delete=False) as handle:
+        handle.write(data)
+    os.replace(handle.name, target)

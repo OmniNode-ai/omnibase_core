@@ -1,0 +1,5 @@
+import os
+
+
+def finish(tmp_path, target):
+    os.replace(tmp_path, target)

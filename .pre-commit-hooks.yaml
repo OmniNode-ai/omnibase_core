@@ -1611,6 +1611,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-fixed-tmp-atomic-write
+  name: No fixed temporary file in a write-then-rename (OMN-23188)
+  description: >
+    A write-then-rename whose temporary path is the target path plus a fixed suffix (target.tmp) is the
+    same file for every writer, so concurrent writers corrupt the published file. The rename calls, the
+    callables a path is derived with, the annotation marker and the remediation text are the rule rows
+    of fixed_tmp_atomic_write.validation.yaml. --baseline FILE admits the findings a repository held when
+    it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_fixed_tmp_atomic_write:ValidatorFixedTmpAtomicWrite
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-checker-rule-data
   name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
   description: >

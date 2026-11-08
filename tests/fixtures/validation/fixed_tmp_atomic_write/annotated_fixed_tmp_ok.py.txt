@@ -1,0 +1,8 @@
+import os
+
+
+def publish(path, data):
+    tmp = path + ".tmp"
+    with open(tmp, "w") as handle:
+        handle.write(data)
+    os.replace(tmp, path)  # fixed-tmp-ok: one writer, held by the process lock

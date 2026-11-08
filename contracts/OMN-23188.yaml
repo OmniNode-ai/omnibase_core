@@ -1,0 +1,60 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23188
+title: An atomic write whose temporary file name is the same for every writer is refused by the generic
+  validator
+summary: Adds a generic-format validator to omnibase_core whose one rule row refuses a write-then-rename
+  whose temporary path is the target path plus a fixed suffix. The rename calls, the callables a path
+  is derived with, the annotation marker and the texts are rule data. Existing sites sit in a shrink-only
+  baseline per consuming repository; this repository's one site is baselined here.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23188-fixed-tmp
+    statement: A write-then-rename through a temporary file shared by every writer of a target is refused,
+      and one through a per-writer temporary file is admitted.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a rule row refuses a write-then-rename whose temporary path is the target path
+          plus a fixed suffix, with the measured existing sites in a shrink-only baseline -- falsifier:
+          uv run pytest of the added rule test, red on a fixture handler that writes target.tmp and renames
+          it"
+      - id: AC2
+        statement: "AC2: the test carries a passing control, a handler that creates its temporary file
+          with mkstemp in the target directory, which the rule admits -- falsifier: uv run pytest of the
+          same file, control green"
+evidence_requirements:
+  - kind: tests
+    description: The fixed_tmp_atomic_write checker, baseline and bus tests pass at the head.
+    command: uv run pytest tests/unit/validation/test_checker_fixed_tmp_atomic_write.py -q --no-cov -o
+      addopts='' -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23188-ac1-refuses-fixed-tmp
+    description: Each planted fixed-suffix write-then-rename is refused at its rename line, the baseline
+      holds exactly the tree's findings and only shrinks, and a mutated rule parameter changes the verdict.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_fixed_tmp_atomic_write.py -q --no-cov
+          -o addopts='' -n 0 -k 'refuses_the_planted_violation or mutating or baseline or new_finding'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23188-ac2-mkstemp-control
+    description: The mkstemp-in-target-directory handler is admitted by the checker and the validator,
+      and the same handler with a fixed temporary name is refused.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_fixed_tmp_atomic_write.py -q --no-cov
+          -o addopts='' -n 0 -k 'mkstemp_control or admits_the_annotated_and_clean'"
+        cwd: ${OMNI_HOME}/omnibase_core

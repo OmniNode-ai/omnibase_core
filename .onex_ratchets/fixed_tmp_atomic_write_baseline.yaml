@@ -1,0 +1,9 @@
+# fixed_tmp_atomic_write baseline. Shrink-only, target zero.
+# Each line is a file that held a write-then-rename with a temporary path of the target path plus a fixed suffix before the fixed_tmp_atomic_write refusal existed, and the number it holds.
+# They are burn-down entries: fix the finding and lower the entry (delete it at zero) in the same
+# change. A file may not hold more than its entry, an entry must equal what the file holds, and an
+# entry the base revision lacks or holds higher fails.
+# Burn-down ticket: OMN-23188. Zero target: 2026-11-22.
+# Do not add a line; do not raise a count.
+---
+src/omnibase_core/utils/util_ticket_workflow_persistence.py: 1
