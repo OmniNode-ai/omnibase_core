@@ -17,7 +17,7 @@ from __future__ import annotations
 import argparse
 import importlib
 import sys
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import cast
 
@@ -49,12 +49,12 @@ def dispatch_table(contract_path: Path) -> dict[str, object]:
     contract = load_yaml_mapping_no_duplicates(
         contract_path.read_text(encoding="utf-8"), source=str(contract_path)
     )
-    routing = contract["handler_routing"]
+    routing = cast(Mapping[str, object], contract["handler_routing"])
     table: dict[str, object] = {}
-    for entry in routing["handlers"]:
-        handler = entry["handler"]
+    for raw_entry in cast(Sequence[Mapping[str, object]], routing["handlers"]):
+        handler = cast(Mapping[str, str], raw_entry["handler"])
         cls = getattr(importlib.import_module(handler["module"]), handler["name"])
-        table[entry["operation"]] = cls()
+        table[str(raw_entry["operation"])] = cls()
     return table
 
 
