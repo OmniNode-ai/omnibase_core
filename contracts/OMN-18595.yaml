@@ -310,8 +310,7 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
-          uv run --locked python -c 'from pathlib import Path;
-          notes = Path("README.md").read_text(); assert not Path("CHANGELOG.md").exists();
-          assert "## v0.47.70 (2026-11-08)" in notes; assert "### Included Since v0.47.69" in notes;
-          assert "(#2286)" in notes and "(#2281)" in notes'
+          uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
+          assert not Path("CHANGELOG.md").exists(); assert "## v0.47.70 (2026-11-08)" in notes; assert
+          "### Included Since v0.47.69" in notes; assert "(#2286)" in notes and "(#2281)" in notes'
         cwd: ${OMNI_HOME}/omnibase_core
