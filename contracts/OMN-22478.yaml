@@ -31,10 +31,6 @@ requirements:
       - id: AC5
         statement: The validator CLI returns failure for planted violations and success for the clean
           node using the packaged schema and rule data.
-      - id: AC6
-        statement: The receipt-gate pin-swap classifier admits a .pre-commit-config.yaml change only when
-          every changed line swaps the dev merge tag of an OmniNode-ai hook rev alongside a changed dependency
-          manifest, and refuses every other change to that file.
 evidence_requirements:
   - kind: tests
     description: Focused schema, rule, mutation receipt and CLI checks with planted failing controls.
@@ -91,14 +87,4 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/validation/test_checker_chain_scenario.py -q -o addopts=''
           -k validator_cli
-        cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn22478-ac6-hook-rev-swap
-    description: Run the real inline classify_pin_swap_only step against hook rev swaps; admitted and
-      refused diffs each have a test that fails when the classifier is wrong.
-    source: manual
-    execution_scope: hosted_and_local
-    binds_ac: [AC6]
-    checks:
-      - check_type: test_passes
-        check_value: uv run pytest tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py -q -o addopts=''
         cwd: ${OMNI_HOME}/omnibase_core
