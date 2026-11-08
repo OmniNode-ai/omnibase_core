@@ -1,0 +1,61 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23187
+title: "A declared timeout that never reaches the call it names is refused by the generic validator"
+summary: "A generic-format core validator refuses a handler that makes a blocking subprocess or network
+  call with no timeout while its node's contract or overlay declares one; the existing calls sit in a
+  shrink-only baseline."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23187-declared-timeout
+    statement: "A node whose contract or overlay declares a numeric time limit passes a time limit to
+      every blocking subprocess or network call its handler makes; the call names, the keyword, the declaring-key
+      pattern and the texts are rule parameters in declared_timeout.validation.yaml."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a rule row refuses a handler that makes a blocking subprocess or network call
+          with no timeout while its contract declares one, with the existing calls in a shrink-only baseline
+          -- falsifier: uv run pytest of the added rule test, red on a fixture handler with a declared
+          timeout and a bare subprocess.run"
+      - id: AC2
+        statement: "AC2: the test carries a passing control, a handler that passes the declared timeout
+          to the call, which the rule admits -- falsifier: uv run pytest of the same file, control green"
+evidence_requirements:
+  - kind: tests
+    description: The declared_timeout checker, validator and baseline tests pass.
+    command: "uv run pytest tests/unit/validation/test_checker_declared_timeout.py -q --no-cov -o addopts=''
+      -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23187-ac1
+    description: "A fixture handler with a declared limit and a bare subprocess.run is refused, and the
+      checked-in baseline equals the findings of the tree and only shrinks."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_declared_timeout.py -q --no-cov
+          -o addopts='' -n 0 -k 'refuses_a_call_with_no_limit or validator_refuses or baseline'"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "grep -q 'Burn-down ticket: OMN-23187. Zero target: 2026-11-30.' .onex_ratchets/declared_timeout_baseline.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23187-ac2
+    description: "The control, a handler that passes the declared limit to the call, is admitted by the
+      checker and by the validator."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_declared_timeout.py -q --no-cov
+          -o addopts='' -n 0 -k 'control'"
+        cwd: ${OMNI_HOME}/omnibase_core

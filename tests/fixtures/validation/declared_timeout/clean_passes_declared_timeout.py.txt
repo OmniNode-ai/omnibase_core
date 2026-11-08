@@ -1,0 +1,5 @@
+import subprocess
+
+
+def handle(request, limit):
+    return subprocess.run(["git", "status"], timeout=limit)

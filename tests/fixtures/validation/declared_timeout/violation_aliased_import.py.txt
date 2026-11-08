@@ -1,0 +1,5 @@
+from subprocess import check_output as out
+
+
+def handle(request):
+    return out(["git", "status"])

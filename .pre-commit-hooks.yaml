@@ -1537,6 +1537,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: declared-timeout-reaches-call
+  name: A declared timeout reaches every blocking call (OMN-23187)
+  description: >
+    A node whose contract or overlay declares a numeric time limit must pass a time limit to every blocking
+    subprocess or network call its handler makes; a declared limit that never reaches the call bounds
+    nothing. The call names, the keyword, the declaring-key pattern, the annotation marker and the remediation
+    text are the rule rows of declared_timeout.validation.yaml. --baseline FILE admits the findings a
+    repository held when it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_declared_timeout:ValidatorDeclaredTimeout
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: no-import-none-fallback
   name: No ImportError handler that assigns a symbol to None (OMN-10819)
   description: >
