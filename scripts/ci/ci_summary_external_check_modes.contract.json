@@ -1,0 +1,10 @@
+{
+  "contract": "ci_summary_external_check_modes",
+  "version": 1,
+  "rule": "A swept external check declares its mode in the overlay. A conclusion passes the layer-5 sweep when it is success, or when it is listed under the check's declared mode here. A check the overlay does not declare is denied by default; a missing or malformed contract or overlay refuses the gate.",
+  "modes": {
+    "advisory": ["neutral"],
+    "blocking": []
+  },
+  "entry_fields": ["mode", "reason"]
+}

@@ -22,11 +22,5 @@
     "ticket": "OMN-17427",
     "added": "2026-10-19",
     "expires": "2026-12-20"
-  },
-  "Tessl Reviewer": {
-    "reason": "Automated reviewer app posts a neutral row on every pull request; the operator ruling takes it out of what blocks a merge.",
-    "ticket": "OMN-22478",
-    "added": "2026-11-07",
-    "expires": "2026-12-20"
   }
 }

@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23029
+title: Each external check declares advisory or blocking as overlay data, and the layer-5 sweep admits
+  neutral only for a declared-advisory check
+summary: >-
+  The layer-5 default-deny sweep admitted success alone, so the tessl-reviewer app, which reports neutral
+  as its normal outcome in advisory mode, redded 23 open pull requests while CI Summary's own verdict
+  one line above was SUCCESS. A named, expiring registry entry cleared it for a time. Operator ruling
+  2026-11-08 replaces that exception with a rule held as data: a contract (ci_summary_external_check_modes.contract.json)
+  names each mode and the conclusions it adds to success, an overlay (ci_summary_external_check_modes.json)
+  declares each check's mode. A neutral from a declared-advisory check does not fail and still shows in
+  the report; a blocking check's neutral still fails; an undeclared check is still denied by default;
+  a missing or malformed contract or overlay refuses the gate. Tessl Reviewer is declared advisory in
+  the overlay and its entry is removed from the exclusion registry. SWEEP_GOOD_CONCLUSIONS is unchanged.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23029-advisory-mode-is-overlay-data
+    statement: >-
+      Whether an external check blocks is declared per check in overlay data, and the layer-5 sweep reads
+      that declaration instead of a code exception.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a head with Tessl Reviewer at neutral beside green rows resolves the sweep SUCCESS
+          because the overlay declares it advisory, the report still names the finding, and the exclusion
+          registry no longer carries it -- falsifier: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_check_modes_omn23029.py
+          -q -k 'shipped_overlay or declared_advisory_neutral'"
+      - id: AC2
+        statement: "AC2: an undeclared check at neutral fails, a blocking-declared check at neutral fails,
+          and an advisory-declared check at failure, timed_out, action_required or cancelled still fails
+          and is named -- falsifier: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_check_modes_omn23029.py
+          -q -k 'undeclared_neutral or blocking_neutral or advisory_failure or advisory_neutral_beside'"
+      - id: AC3
+        statement: "AC3: a missing, unparsable or malformed contract or overlay refuses the gate rather
+          than admitting anything -- falsifier: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_check_modes_omn23029.py
+          -q -k 'fails_closed or overlay_does_not_declare'"
+evidence_requirements:
+  - kind: tests
+    description: >-
+      The check-mode tests of this change, plus the repository's own CI Summary gate suite and the contract-items
+      test that copies the gate and its data files.
+    command: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_check_modes_omn23029.py tests/unit/scripts/ci/test_ci_summary_gate.py
+      tests/ci/test_corrected_contract_items_omn21571.py -q -n 0 --no-cov -p no:randomly
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23029-ac1-advisory-passes
+    description: >-
+      A replayed head with Tessl Reviewer at neutral beside a green row resolves SUCCESS and names the
+      advisory finding. Without the shipped overlay declaration the same head fails, because the sweep
+      admits success only for an undeclared check.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_check_modes_omn23029.py
+          -q -n 0 --no-cov -p no:randomly -k 'shipped_overlay or declared_advisory_neutral'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23029-ac2-undeclared-and-blocking-denied
+    description: >-
+      An undeclared neutral and a blocking-declared neutral fail, and an advisory-declared failure is
+      still red and named. At the merge base the check-mode loader does not exist, so every one of these
+      errors.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_check_modes_omn23029.py
+          -q -n 0 --no-cov -p no:randomly -k 'undeclared_neutral or blocking_neutral or advisory_failure
+          or advisory_neutral_beside'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23029-ac3-fails-closed
+    description: >-
+      A missing overlay, a missing contract, an unparsable overlay, a malformed contract and each malformed
+      overlay entry refuse the gate with exit 1.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/scripts/ci/test_ci_summary_check_modes_omn23029.py
+          -q -n 0 --no-cov -p no:randomly -k 'fails_closed or overlay_does_not_declare'
+        cwd: ${OMNI_HOME}/omnibase_core
