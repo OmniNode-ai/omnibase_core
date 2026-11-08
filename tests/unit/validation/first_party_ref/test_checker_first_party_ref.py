@@ -3,6 +3,7 @@
 """First-party reference invariants, including the action-parser bypass corpus."""
 
 import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -334,3 +335,100 @@ def test_dev_merge_tag_passes_while_release_ref_fails():
     assert [i.code for i in judge(f"uses: {ORG}/core@v1.2.3")] == [
         "first_party_not_dev_tag"
     ]
+
+
+# ---------------------------------------------------------------------------
+# OMN-22828: the merge bound is a proxy for age and mis-scales with a sibling's
+# landing rate. omnimarket merges about twenty pull requests an hour, so it
+# passes 50 trailing merges in about two and a half hours -- less time than a
+# consumer's CI run -- and no bump of it could be fresh when it landed. A
+# sibling may now name its own merge bound; the age bound still governs.
+# ---------------------------------------------------------------------------
+
+#: A sibling whose pin is bumped and consumed as a git tag in pyproject.toml.
+_PINS = {
+    "omnimarket": "omnimarket",
+    "omnibase-core": "omnibase_core",
+}
+
+
+def _pyproject(dist: str, pin: str) -> str:
+    return (
+        "[project]\n"
+        'name = "consumer"\n'
+        f'dependencies = ["{dist}>=0.1"]\n'
+        "[tool.uv.sources]\n"
+        f'{dist} = {{git = "https://github.com/{ORG}/{_PINS[dist]}.git",'
+        f' tag = "{pin}"}}\n'
+    )
+
+
+def _tag(stamp: str) -> str:
+    return f"dev-{stamp}-{'b' * 12}"
+
+
+def _burst(dist: str, *, count: int, hours_behind: int):
+    """A pin trailing exactly ``count`` tags, the newest ``hours_behind`` later.
+
+    The trailing tags sit one minute apart after the pin and the newest one is
+    ``hours_behind`` hours after it, so the merge count and the age are set
+    independently. ``hours_behind`` hours must hold more than ``count`` minutes
+    or the newest tag would collide with one of the others and the inventory,
+    being a set of tag names, would carry one fewer merge than asked for.
+    """
+    assert hours_behind * 60 >= count, (count, hours_behind)
+    start = datetime(2026, 11, 1, tzinfo=UTC)
+    pin = _tag(start.strftime("%Y%m%d%H%M%S"))
+    trailing = [
+        _tag((start + timedelta(minutes=i)).strftime("%Y%m%d%H%M%S"))
+        for i in range(1, count)
+    ]
+    newest = _tag((start + timedelta(hours=hours_behind)).strftime("%Y%m%d%H%M%S"))
+    return ModelFirstPartyRefInput.model_validate(
+        {
+            "files": [
+                {"path": "pyproject.toml", "source": _pyproject(dist, pin)},
+            ],
+            "dev_tags": [
+                {"repo": _PINS[dist], "tags": [pin, *trailing, newest]},
+            ],
+        }
+    )
+
+
+def _codes(payload):
+    contract = ValidatorFirstPartyRef().contract
+    return [i.code for i in check_first_party_refs(payload, contract)]
+
+
+def _details(payload):
+    contract = ValidatorFirstPartyRef().contract
+    return [i.message for i in check_first_party_refs(payload, contract)]
+
+
+def test_a_fast_sibling_may_trail_more_merges_than_the_global_bound() -> None:
+    """omnimarket, 60 merges behind inside a day, is admitted by its override."""
+    assert _codes(_burst("omnimarket", count=60, hours_behind=1)) == []
+
+
+def test_the_control_the_same_shape_on_a_sibling_with_no_override_is_refused() -> None:
+    """The failing control: without the override the merge bound still bites."""
+    payload = _burst("omnibase-core", count=60, hours_behind=1)
+    assert _codes(payload) == ["stale_pin"]
+    assert "over: merges 60 > 50" in _details(payload)[0]
+
+
+def test_the_age_bound_still_governs_the_sibling_that_has_an_override() -> None:
+    """An override raises the merge bound and buys no extra age."""
+    payload = _burst("omnimarket", count=2, hours_behind=96)
+    assert _codes(payload) == ["stale_pin"]
+    detail = _details(payload)[0]
+    assert "over: hours 96 > 72" in detail
+    assert "merges" in detail.partition("over:")[0]
+
+
+def test_the_refusal_names_which_bound_tripped() -> None:
+    """Printing both figures and neither limit read as an age refusal."""
+    detail = _details(_burst("omnibase-core", count=60, hours_behind=1))[0]
+    assert "over:" in detail
+    assert "hours" not in detail.partition("over:")[2]
