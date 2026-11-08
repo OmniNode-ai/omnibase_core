@@ -86,4 +86,6 @@ class HandlerEffectBackends:
             not_on_both=not_on_both,
             on_both=tuple(e.node_name for e in listed if e.on_both),
             not_on_both_count=len(not_on_both),
+            inventory_available=not request.root_unavailable,
+            root_unavailable=request.root_unavailable,
         )

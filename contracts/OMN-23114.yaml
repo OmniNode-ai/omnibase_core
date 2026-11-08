@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23114
+title: An unavailable scan root in the contract inventory reads as unavailable, not as an empty inventory
+summary: >-
+  Two Tessl findings on the merged effect-backends validator were left unfixed. The loader returned the
+  same empty inventory for a scan root that does not exist as for a directory with no contracts, so an
+  unavailable root read as an empty inventory (crf-865b5f9169a74e04, Major). The node contract advertises
+  load_contracts, which a local run could not reach (crf-47a8f351673aaeb0, Minor). The loader now reports
+  the reason a root is unavailable and the report carries inventory_available, and a local runtime dispatches
+  every operation of the contract's handler_routing.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23114-unavailable-root-is-not-empty
+    statement: >-
+      A scan root that is unavailable is reported as unavailable and never as an empty inventory, and
+      every operation the node contract advertises is reachable from a local run.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a scan root that is unavailable produces an unavailable result and not an empty
+          inventory, with a test that fails on dev and passes on the branch -- falsifier: uv run pytest
+          of the added test file in omnibase_core on dev and on the branch"
+      - id: AC2
+        statement: "AC2: the contract no longer advertises load_contracts on a path a local run cannot
+          reach, or the local run reaches it -- falsifier: uv run pytest of the contract advertisement
+          test in omnibase_core"
+      - id: AC3
+        statement: "AC3: each fix commit is an ancestor of the pull request head and a Lab comment names
+          the head -- falsifier: git merge-base --is-ancestor of each fix commit and the head read by
+          uv run pytest of the tessl thread reader test"
+evidence_requirements:
+  - kind: tests
+    description: >-
+      The two test files of this change together with the existing effect-backends validator tests.
+    command: uv run --frozen pytest tests/unit/validators/test_effect_backends.py tests/unit/validators/test_effect_backends_unavailable_root.py
+      tests/unit/validators/test_effect_backends_contract_reach.py -q -n 0 --no-cov -p no:randomly
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23114-ac1-unavailable-root
+    description: >-
+      A missing or non-directory scan root yields root_unavailable on the loaded inventory and inventory_available
+      false on the report. On dev the three tests fail because the loader returns the same empty inventory
+      for every root.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_effect_backends_unavailable_root.py
+          -q -n 0 --no-cov -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23114-ac2-load-contracts-reached
+    description: >-
+      The local runtime dispatches every operation of the contract's handler_routing, so a local run takes
+      the load_contracts path. At the merge base the runtime module does not exist and the test file fails
+      on import.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validators/test_effect_backends_contract_reach.py
+          -q -n 0 --no-cov -p no:randomly
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23114-ac3-fix-commits-in-head
+    description: >-
+      Both fix commits are ancestors of the branch head. The Lab comment naming the head is a pull request
+      comment and is read from the watcher, not from this checkout.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: git merge-base --is-ancestor 0f9191293 HEAD && git merge-base --is-ancestor c67e3d1ae
+          HEAD
+        cwd: ${OMNI_HOME}/omnibase_core
