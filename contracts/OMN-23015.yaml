@@ -1,0 +1,74 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23015
+title: This repository bounds its strict type checker as well as its linter
+summary: "OMN-23012 bounded ruff and pyright and left mypy with no upper bound at all, so the one tool
+  whose verdict the Code Quality job reports last could still be upgraded by a dependency refresh. This
+  contract carries only that bound; the release train's unformatted generated contract is recorded on
+  the ticket and fixed on the branch it appears on."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23015-mypy-bound
+    statement: The mypy requirement is bounded at the next minor, the lock pins the version this tree
+      passes strict mypy under, and no source file depends on a click API that a refresh can retype out
+      from under the strict run.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: mypy is declared with an upper bound at the next minor, so no lock refresh can
+          upgrade it -- falsifier: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q
+          fails on a tree where mypy is declared without an upper bound'
+      - id: AC2
+        statement: 'AC2: uv.lock pins mypy 1.19.1, so the Code Quality job runs the strict mypy this tree
+          passes -- falsifier: the same test module, which reads the locked version'
+      - id: AC3
+        statement: 'AC3: no source file reads a stream through click get_text_stream or get_binary_stream,
+          which click 8.5 exposes only through a module getattr annotated as object, so bounding mypy
+          alone does not clear the job -- falsifier: uv run --frozen pytest tests/ci/test_no_deprecated_click_stream_omn23015.py
+          -q fails on a tree where a source file calls either getter'
+evidence_requirements:
+  - kind: tests
+    description: The declared bound and the locked version of every tool whose output is a gate verdict.
+    command: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23015-mypy-bound
+    description: "mypy carries an upper bound at the next minor and uv.lock pins the version behind it.
+      Fails at the merge base, where mypy is declared as mypy>=1.19.1 with no upper bound. Measured 2026-11-07:
+      the 0.47.69 release refresh moved mypy 1.19.1 to 2.4.1 inside that open range, and strict mypy 2.4.1
+      then reports two errors on an unchanged tree -- object not callable at src/omnibase_core/cli/cli_bootstrap.py:45
+      and an unreachable statement at src/omnibase_core/models/core/model_enhanced_tool_collection.py:267.
+      With ruff and pyright already restored on that branch, mypy was the one cause left in Code Quality
+      and reason-graph elected it as the single ROOT. Measured after the bound: the unreachable statement
+      is the mypy bump alone, while cli_bootstrap.py:45 still failed at mypy 1.19.1 on that branch and
+      not on dev at the same mypy, because the same refresh moved click 8.3.1 to 8.5.1 and 8.5 reaches
+      get_text_stream only through a module getattr annotated as object. That one is a source fix, AC3,
+      not a bound."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_dev_tool_bounds_omn23012.py -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC1
+      - AC2
+  - id: dod-omn23015-no-deprecated-click-stream
+    description: "No source file reads a stream through click get_text_stream or get_binary_stream. Fails
+      at the merge base, where src/omnibase_core/cli/cli_bootstrap.py line 45 calls click.get_text_stream
+      stdin read. click 8.5 exposes both names only through its module getattr, annotated as returning
+      object, so strict mypy reports object not callable on the call at any mypy version, and Click 9.0
+      removes the names outright. Measured 2026-11-07 on the 0.47.69 release branch at mypy 1.19.1: one
+      error in cli_bootstrap.py there, none on dev at the same mypy, which is how the click bump was separated
+      from the mypy bump. The replacement is sys.stdin read, which CliRunner input replaces the same way,
+      so the three existing bootstrap apply tests still drive it."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_no_deprecated_click_stream_omn23015.py -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC3

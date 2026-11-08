@@ -35,6 +35,10 @@ LOCK = ROOT / "uv.lock"
 BOUNDED = {
     "ruff": ("<0.15.0", "0.14.14"),
     "pyright": ("<1.1.409", "1.1.408"),
+    # OMN-23015: the same refresh took mypy from 1.19.1 to 2.4.1, and strict
+    # mypy 2.x reports "object" not callable in cli_bootstrap.py and an
+    # unreachable statement in model_enhanced_tool_collection.py.
+    "mypy": ("<1.20.0", "1.19.1"),
 }
 
 

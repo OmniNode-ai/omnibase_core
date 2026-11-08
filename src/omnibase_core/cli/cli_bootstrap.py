@@ -42,7 +42,13 @@ def bootstrap_apply() -> None:
     Example:
         cat config.yaml | onex bootstrap apply
     """
-    content = click.get_text_stream("stdin").read()
+    # sys.stdin, not click's text-stream getter: click 8.5 moved that name
+    # behind a module __getattr__ typed `-> object` and deprecated it for
+    # removal in Click 9.0, so strict mypy reads the call as "object" not
+    # callable as soon as a refresh resolves 8.5 (OMN-23015).
+    # CliRunner(input=...) replaces sys.stdin, so the existing bootstrap
+    # apply tests cover this path unchanged.
+    content = sys.stdin.read()
 
     if not content.strip():
         click.echo("Error: empty input on stdin", err=True)
