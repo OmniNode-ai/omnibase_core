@@ -1,0 +1,42 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23215
+title: "The delegation budget evidence says where a run's time limit came from: a typed ceiling_source
+  of packaged or overlay"
+summary: "ModelDelegationBudgetEvidence gains a typed ceiling_source (packaged or overlay) and a ceiling_overlay_ref,
+  so a receipt says whether a run's time limit came from the packaged contract or the site overlay. An
+  overlay source requires the reference and a packaged source refuses one."
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - omnibase_core.models.delegation.wire.ModelDelegationBudgetEvidence
+requirements:
+  - id: req-omn23215-ceiling-source
+    statement: "The budget evidence model carries a typed ceiling_source of packaged or overlay."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the budget evidence model accepts `ceiling_source` values `packaged` and `overlay`
+          and refuses any other -- falsifier: `uv run pytest tests/unit/models/delegation/wire/test_model_delegation_budget_evidence.py
+          -q -k ceiling_source`"
+evidence_requirements:
+  - kind: tests
+    description: The budget evidence ceiling_source tests pass.
+    command: "uv run pytest tests/unit/models/delegation/wire/test_model_delegation_budget_evidence.py
+      -q --no-cov -o addopts='' -n 0 -k ceiling_source"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23215-ac1
+    description: "ceiling_source accepts packaged and overlay, refuses any other value, and an overlay
+      source requires its overlay reference."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/delegation/wire/test_model_delegation_budget_evidence.py
+          -q --no-cov -o addopts='' -n 0 -k ceiling_source"
+        cwd: ${OMNI_HOME}/omnibase_core
