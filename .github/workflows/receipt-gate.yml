@@ -788,11 +788,14 @@ jobs:
               manifests = []
               pin_paths = []
               digest_paths = []
+              hook_paths = []
               locks = []
               for index, path in enumerate(paths):
                   workflow = path.startswith(".github/workflows/") and path.endswith((".yml", ".yaml"))
                   if workflow or path in pin_files:
                       pin_paths.append((index, path, workflow))
+                  elif path == ".pre-commit-config.yaml":
+                      hook_paths.append((index, path))
                   elif Path(path).name in {"pyproject.toml", "uv.lock"}:
                       manifests.append(path)
                       if Path(path).name == "uv.lock":
@@ -852,7 +855,49 @@ jobs:
                       if not file_swapped:
                           return False, f"{path} has no refreshed uv.lock digest"
                       digest_swapped += 1
-              if not pin_paths and not digest_paths:
+              # OMN-22478: the sibling-pin train moves the first-party hook revs of
+              # .pre-commit-config.yaml with the source pin. Every changed line must
+              # swap the dev merge tag of a rev: line whose owning repo: is a
+              # first-party repository, and the change must ride with a dependency
+              # manifest change.
+              hook_swapped = 0
+              if hook_paths:
+                  if not manifests:
+                      return False, "a hook rev swap requires a changed dependency manifest"
+                  rev_pattern = re.compile(r"^(?P<lead>[ ]*rev:[ ]+)(?P<value>dev-[0-9]{14}-[0-9a-f]{12})(?P<tail>(?:[ ]+#.*)?)$")
+                  repo_pattern = re.compile(r"^[ ]*-[ ]+repo:[ ]+https://github\.com/OmniNode-ai/[A-Za-z0-9_.-]+[ ]*$")
+                  for index, path in hook_paths:
+                      head_file, base_file = blobs_dir / f"{index}.head", blobs_dir / f"{index}.base"
+                      if not head_file.exists() or not base_file.exists():
+                          return False, f"pin swap file is added or deleted: {path}"
+                      head = head_file.read_bytes().decode("utf-8").splitlines(keepends=True)
+                      base = base_file.read_bytes().decode("utf-8").splitlines(keepends=True)
+                      file_swapped = 0
+                      for tag, base_start, base_end, head_start, head_end in difflib.SequenceMatcher(
+                          None, base, head, autojunk=False,
+                      ).get_opcodes():
+                          if tag == "equal":
+                              continue
+                          if tag != "replace" or base_end - base_start != head_end - head_start:
+                              return False, f"{path} adds or removes a line"
+                          for offset, (base_line, head_line) in enumerate(zip(
+                              base[base_start:base_end], head[head_start:head_end],
+                          )):
+                              base_body, head_body = base_line.rstrip("\r\n"), head_line.rstrip("\r\n")
+                              old, new = rev_pattern.fullmatch(base_body), rev_pattern.fullmatch(head_body)
+                              owner = next((line.rstrip("\r\n") for line in reversed(head[:head_start + offset])
+                                            if line.lstrip().startswith("- repo:")), "")
+                              if not (base_line[len(base_body):] == head_line[len(head_body):]
+                                      and old is not None and new is not None
+                                      and old["lead"] == new["lead"] and old["tail"] == new["tail"]
+                                      and old["value"] != new["value"]
+                                      and repo_pattern.fullmatch(owner) is not None):
+                                  return False, f"{path} line {head_start + offset + 1} is not solely a first-party hook rev swap"
+                              file_swapped += 1
+                      if not file_swapped:
+                          return False, f"{path} has no swapped hook rev"
+                      hook_swapped += file_swapped
+              if not pin_paths and not digest_paths and not hook_paths:
                   return False, "pin swap requires a workflow or declared pin file"
               workflow_patterns = [
                   re.compile(r"^(?P<lead>[ ]*(?:-[ ]+)?ref:[ ]+)(?P<value>[0-9a-f]{40})(?P<tail>(?:[ ]+#.*)?)$"),
@@ -903,6 +948,8 @@ jobs:
                   parts.append(f"{swapped} pin value(s) in {len(pin_paths)} file(s)")
               if digest_swapped:
                   parts.append(f"uv.lock digest refreshed in {digest_swapped} file(s)")
+              if hook_swapped:
+                  parts.append(f"{hook_swapped} hook rev(s) in {len(hook_paths)} file(s)")
               reason = "pin swap only: " + "; ".join(parts)
               if manifests:
                   reason += f"; manifests: {manifest_reason}"
