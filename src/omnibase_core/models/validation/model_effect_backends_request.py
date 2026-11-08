@@ -21,3 +21,7 @@ class ModelEffectBackendsRequest(BaseModel):
         default=(),
         description="Paths the loader could not parse; carried to the report",
     )
+    root_unavailable: str = Field(
+        default="",
+        description="Why the scan root could not be read; carried to the report",
+    )

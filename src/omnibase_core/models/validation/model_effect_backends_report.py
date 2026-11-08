@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.validation.model_effect_backend_entry import (
     ModelEffectBackendEntry,
@@ -26,3 +26,11 @@ class ModelEffectBackendsReport(BaseModel):
     not_on_both: tuple[str, ...] = ()
     on_both: tuple[str, ...] = ()
     not_on_both_count: int = 0
+    inventory_available: bool = Field(
+        default=True,
+        description="False when the scan root could not be read; the lists are then not an inventory",
+    )
+    root_unavailable: str = Field(
+        default="",
+        description="Why the scan root could not be read; empty when the inventory was scanned",
+    )
