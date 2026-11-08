@@ -60,3 +60,19 @@ dod_evidence:
         cwd: "."
     binds_ac:
       - AC2
+  - id: dod-omn22969-inventory-completion-scan
+    description: "The inventory scan finds every is_done definition and every class named for a ticket
+      or a DoD item, and refuses a second is_done in one class, an unlisted class and an is_done that
+      discards the completion predicate. Test-side change only: the scan's source is unchanged, so these
+      tests also pass at the merge base."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/test_ticket_model_inventory.py::test_completion_predicate_is_one_function
+          tests/unit/test_ticket_model_inventory.py::test_independent_is_done_in_an_inventoried_file_fails
+          tests/unit/test_ticket_model_inventory.py::test_second_is_done_in_the_same_class_fails tests/unit/test_ticket_model_inventory.py::test_is_done_that_discards_the_predicate_fails
+          tests/unit/test_ticket_model_inventory.py::test_differently_named_ticket_model_fails tests/unit/test_ticket_model_inventory.py::test_shared_is_done_passes_the_completion_scan
+          -q --no-cov
+        cwd: "."
+    binds_ac:
+      - AC1
