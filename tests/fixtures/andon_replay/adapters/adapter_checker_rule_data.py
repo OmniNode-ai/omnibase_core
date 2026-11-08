@@ -23,10 +23,11 @@ _CONTRACTS_DIR = "contracts"
 
 def _names_in(names: Sequence[str], directory: PurePosixPath) -> frozenset[str]:
     """The entries directly inside ``directory``: files and the first part of deeper paths."""
+    prefix = "" if directory == PurePosixPath(".") else f"{directory.as_posix()}/"
     return frozenset(
-        PurePosixPath(name).relative_to(directory).parts[0]
+        name[len(prefix) :].split("/", 1)[0]
         for name in names
-        if directory in PurePosixPath(name).parents
+        if name.startswith(prefix)
     )
 
 

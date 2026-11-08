@@ -125,11 +125,12 @@ def _node_fact(
     if isinstance(output, dict):
         output = output.get("name", "")
     directory = PurePosixPath(path).parent
+    prefix = "" if directory == PurePosixPath(".") else f"{directory.as_posix()}/"
     sources = tuple(
         body
         for name in sorted(names())
-        if PurePosixPath(name).suffix == ".py"
-        and directory in PurePosixPath(name).parents
+        if name.startswith(prefix)
+        and PurePosixPath(name).suffix == ".py"
         and (body := text_of(name)) is not None
     )
     return ModelValidatorHomeContractFact(

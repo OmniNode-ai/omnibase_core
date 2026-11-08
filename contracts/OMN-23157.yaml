@@ -1,0 +1,78 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23157
+title: "A re-audit runs every K checker and the existing checkers over the current heads of the five repositories
+  and every open pull request of the audited wave, and its report names each finding still present"
+summary: Validators plan D.4 stage 3. tests/fixtures/andon_replay/reaudit.py runs every checker the replay
+  corpus has an adapter for over the current head of omnibase_core, omnimarket, omnibase_infra, omniclaude
+  and knowledge_base_internal and over the head of every open pull request of the audited wave, and writes
+  one report. A D.3 finding still reported appears by its rule_id; one no longer reported does not. The
+  report lists the reading-audit remainder (F02, F13, F42's exception call, F43's ticket fit) and no others.
+  Every repository, ref, pull request number, checker scan mode and remainder is tests/fixtures/andon_replay/reaudit.yaml
+  data.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23157-reaudit
+    statement: One run judges the current heads and the open wave pull requests with every checker and
+      reports each D.3 finding still present by its rule_id, plus the reading-audit remainder.
+    acceptance:
+      - id: AC1
+        statement: "AC1: one run executes every K checker and every D.1 checker over the five repository
+          heads and the open pull requests of the wave and writes one report -- falsifier: uv run pytest
+          tests/unit/validation -q -k reaudit_runs_all_checkers"
+      - id: AC2
+        statement: "AC2: a finding of D.3 that is still present appears in the report by its rule_id,
+          and one that is fixed does not -- falsifier: uv run pytest tests/unit/validation -q -k reaudit_reports_by_rule_id"
+      - id: AC3
+        statement: "AC3: the report lists the findings that stay with a reading audit (F02, F13, F42's
+          exception call, F43's ticket fit) and no others -- falsifier: uv run pytest tests/unit/validation
+          -q -k reaudit_reading_audit_remainder"
+evidence_requirements:
+  - kind: tests
+    description: The re-audit runs, reports by rule id and lists the reading-audit remainder, with the
+      planted breaks.
+    command: uv run pytest tests/unit/validation/test_reaudit.py -q -n 0 --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn23157-ac1-runs-all-checkers
+    description: One run reaches every checker of the corpus's adapter table through its adapter (a spy
+      records each call) over each repository head and each open wave pull request, and writes one report
+      naming them; with no clone and no pull request state the run names each head and the state variable
+      as not read, never as clean.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation -q --no-cov -o addopts='' -k reaudit_runs_all_checkers
+        cwd: .
+    binds_ac:
+      - AC1
+  - id: dod-omn23157-ac2-reports-by-rule-id
+    description: A head holding the checker's violation fixture at an asserted path reports the finding
+      by its rule_id; the same head holding the clean fixture does not; a checker that goes quiet hides
+      it (the injected break).
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation -q --no-cov -o addopts='' -k reaudit_reports_by_rule_id
+        cwd: .
+    binds_ac:
+      - AC2
+  - id: dod-omn23157-ac3-reading-audit-remainder
+    description: The report's reading-audit section is F02, F13, F42 (exception call) and F43 (ticket
+      fit) in that order and nothing else; a remainder with a fifth finding or without one of the table's
+      not-mechanical findings is refused.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation -q --no-cov -o addopts='' -k reaudit_reading_audit_remainder
+        cwd: .
+    binds_ac:
+      - AC3
