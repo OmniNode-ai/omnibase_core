@@ -1,0 +1,64 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# Re-audit configuration (OMN-23157, validators plan D.4 stage 3).
+# Data only: reaudit.py holds no repository, ref, pull request number, checker name or finding id.
+schema_version: 1
+corpus: corpus.yaml
+# The current head of each audited repository: a ref read in the repository's clone.
+heads:
+  omnibase_core: origin/dev
+  omnimarket: origin/dev
+  omnibase_infra: origin/dev
+  omniclaude: origin/dev
+  knowledge_base_internal: origin/main
+# The audited wave: the pull requests the corpus audited. A listed pull request is re-audited at its
+# own head while the PR watcher state names it open; the state file is named by the variable below.
+wave:
+  state_env: ONEX_PR_WATCHER_STATE
+  open_state: OPEN
+  prs:
+    omnibase_core: [2105, 2106, 2107, 2108, 2110, 2111, 2112, 2113]
+    omnimarket: [4512, 4515, 4517, 4518, 4519, 4521, 4523, 4529, 4541, 4546, 4547, 4548, 4549, 4551]
+    omnibase_infra: [5425, 5426, 5428]
+    omniclaude: [3019]
+    knowledge_base_internal: [1538, 1547]
+# How each checker with a replay adapter is run over a head.
+#   tree:      the adapter judges every file of the head that the checker's contract scopes
+#              (or the globs below when the checker has no contract).
+#   assertion: the adapter needs a per-input fact bundle (a node contract, a comparison file, the
+#              asserted line) that a bare tree path does not carry, so it runs over the corpus
+#              assertions of that repository, read at the head, and over nothing else.
+checkers:
+  handler_di: {scan: tree}
+  handler_shape: {scan: tree}
+  no_raw_sqlite3: {scan: tree, globs: ["src/**/*.py"]}
+  inline_logic: {scan: tree}
+  hardcoded_model_literals: {scan: tree}
+  validator_home: {scan: tree}
+  checker_rule_data: {scan: tree}
+  canonical_file_shape: {scan: assertion}
+  no_io_outside_effects: {scan: assertion}
+  protocol_binding: {scan: assertion}
+  first_party_ref: {scan: assertion}
+  task_criteria: {scan: assertion}
+# What stays with a reading audit: findings no artifact rule judges. The first two are the table's
+# own not-mechanical findings; the other two are the half of a finding that needs a call or a Linear
+# fact (D.3 rows F42 and F43).
+reading_audit:
+  - finding: F02
+    part: whole
+    why: a status note in a plan, not a violation of an artifact rule
+  - finding: F13
+    part: whole
+    why: prose that contradicts a ruling is not an artifact rule
+  - finding: F42
+    part: exception call
+    why: keeping the formal-tooling runner as an accepted exception is an orchestrator decision
+  - finding: F43
+    part: ticket fit
+    why: whether a pull request cites the right ticket needs Linear facts no checker reads
+# The variable that names the report file a run writes.
+report_env: ONEX_REAUDIT_REPORT
+# Locations listed per rule in the report; the counts are always complete.
+listed_per_rule: 10
