@@ -1,0 +1,73 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: id_from_stamp
+  validator_name: Id From Stamp Validator
+  validator_description: Refuses a run, row or record identity built from a wall-clock stamp that resolves
+    to the second, with no nonce. The id-name patterns, the stamp method and directives, the nonce lists,
+    the annotation marker and the remediation text are the rule rows of this file (OMN-23189, gate OMN-21433
+    AC-4).
+  target_patterns:
+    - '**/*.py'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: id_from_stamp
+      description: Two events that start in one second get one identity when the identity is a seconds-only
+        stamp with no nonce.
+      severity: error
+      enabled: true
+      parameters:
+        id_name_patterns: ['^id$', '_id$', '^key$', '_key$']
+        stamp_method: strftime
+        second_directives: ['%S', '%s']
+        subsecond_directives: ['%f', '%N']
+        nonce_calls: [uuid1, uuid3, uuid4, uuid5, uuid6, uuid7, token_hex, token_bytes, token_urlsafe,
+          urandom, randbits, randbelow, randint, getrandbits, time_ns, monotonic_ns, perf_counter_ns]
+        nonce_name_fragments: [nonce, uuid, token, random, counter, sequence]
+        passthrough_calls: [str, format, join, lower, upper, replace, strip]
+        comment_prefix: '# '
+        annotation_marker: 'nonce-ok'
+        reason: an id or key built from a seconds-only stamp with no nonce is shared by two events in
+          one second
+        remediation: >-
+          Append a nonce (a uuid4 hex slice or a token_hex) to the stamp, use a sub-second directive,
+          or annotate the line with the nonce-ok comment and a reason.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/id_from_stamp_baseline.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

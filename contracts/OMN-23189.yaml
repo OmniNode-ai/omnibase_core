@@ -1,0 +1,58 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23189
+title: "A run or row identity built from a second-resolution wall-clock stamp with no nonce is refused
+  by the generic validator"
+summary: "A generic-format core validator, id_from_stamp, refuses an id or key assigned from a seconds-only
+  strftime with no nonce. Every name pattern, directive, nonce list, marker and remediation text is a
+  parameter of its rule row; the baseline_ratchet row holds a consumer to a per-file shrink-only baseline."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23189-id-from-stamp
+    statement: "An id or key assigned from a seconds-only strftime with no nonce is refused, and the same
+      stamp with a nonce appended is admitted."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a rule row refuses an id or key assigned from a seconds-only strftime with no
+          nonce, with the narrowed existing sites in a shrink-only baseline -- falsifier: uv run pytest
+          of the added rule test, red on the run_id line of runtime_work_ledger_copy.py as it stood at
+          omnimarket dev 566d7ead09"
+      - id: AC2
+        statement: "AC2: the test carries a passing control, an id built from the same stamp plus a nonce,
+          which the rule admits -- falsifier: uv run pytest of the same file, control green"
+evidence_requirements:
+  - kind: tests
+    description: The checker, baseline, parameter-mutation and bus tests of id_from_stamp pass.
+    command: "uv run pytest tests/unit/validation/test_checker_id_from_stamp.py -q --no-cov -o addopts=''
+      -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23189-ac1
+    description: "The run_id line of the work-ledger copy entry point is refused, the planted forms are
+      refused, the tree holds no finding, and a baselined file never grows."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_id_from_stamp.py -q --no-cov -o
+          addopts='' -n 0 -k 'work_ledger_copy_entry or refuses_the_planted_violation or baseline'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23189-ac2
+    description: "The same stamp plus a nonce is admitted, and a nonce list that no longer names the nonce
+      turns the control red."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_id_from_stamp.py -q --no-cov -o
+          addopts='' -n 0 -k 'control_the_same_stamp or mutating_a_nonce_list or admits'"
+        cwd: ${OMNI_HOME}/omnibase_core

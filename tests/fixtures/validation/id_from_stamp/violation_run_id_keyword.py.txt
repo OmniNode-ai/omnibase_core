@@ -1,0 +1,9 @@
+from datetime import UTC, datetime
+
+
+def main():
+    started = datetime.now(UTC)
+    request = ModelCopyRequest(
+        run_id=started.strftime("%Y%m%dT%H%M%SZ"), started_at=started
+    )
+    return request

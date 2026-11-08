@@ -1,0 +1,7 @@
+from datetime import UTC, datetime
+
+
+def record(ask):
+    stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+    commitment_id = f"commit-{stamp}"
+    return commitment_id
