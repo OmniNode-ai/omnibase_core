@@ -1,0 +1,106 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-22828
+title: The stale-pin merge bound is per sibling, so a fast-landing sibling's pin bump can be fresh when
+  it lands
+summary: >-
+  stale_pin refuses a sibling pin that trails the newest dev tag by more than max_trailing_merges (50)
+  OR more than max_trailing_hours (72), either bound alone. The merge count is a proxy for age and mis-scales
+  with landing rate: omnimarket merges about twenty pull requests an hour, so it passes 50 trailing merges
+  in about two and a half hours, which is less time than a consumer's CI run takes. Measured in omniclaude
+  on 2026-11-08, the pin trailed by 127 merges and 33.1 hours, so it failed the merge bound while comfortably
+  passing the 72-hour one, and because the pre-commit hook reads pyproject.toml whatever a commit touches
+  it blocked every local commit to that repository and not only its dependency pull requests. A sibling
+  may now name its own merge bound; every other sibling keeps the 50, and the age bound is unchanged for
+  all of them. The refusal also names which bound tripped, because printing both figures and neither limit
+  read as an age refusal against a 72-hour bound when the merge count was what failed.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn22828-per-sibling-merge-bound
+    statement: >-
+      The stale_pin merge bound is configurable per sibling repository, the age bound still governs every
+      sibling, and the refusal names which bound it tripped.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: a sibling named in max_trailing_merges_by_repo may trail more merges than the global bound,
+          and the same shape on a sibling that is not named is still refused -- falsifier: uv run --frozen
+          pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py -q -p no:randomly
+          --no-cov
+      - id: AC2
+        statement: >-
+          AC2: an override raises the merge bound and buys no extra age, so a pin 96 hours behind is still
+          refused with the hours bound named -- falsifier: the same command as AC1
+      - id: AC3
+        statement: >-
+          AC3: the new parameter is held to the same discipline as every other one, being required and
+          carrying a mutation that flips the verdict -- falsifier: uv run --frozen pytest tests/unit/validation/first_party_ref/
+          -q -p no:randomly --no-cov
+evidence_requirements:
+  - kind: tests
+    description: >-
+      The checker's own suite plus the parameter-discipline harness, which refuses a parameter that is
+      optional or that no mutation can flip.
+    command: uv run --frozen pytest tests/unit/validation/first_party_ref/ -q -p no:randomly --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn22828-override-and-control
+    description: >-
+      A sibling with an override trails 60 merges inside one hour and is admitted; the same shape on a
+      sibling with no override is refused and the refusal reads "over: merges 59 > 50". At the merge base
+      the first of those two is refused, because every sibling shared one bound.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+          -q -p no:randomly --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22828-age-bound-still-governs
+    description: >-
+      The sibling that carries an override is still refused at 96 hours behind, and the refusal names
+      the hours bound rather than the merge one. This is the control that the change raises one bound
+      and not both.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py::test_the_age_bound_still_governs_the_sibling_that_has_an_override
+          -q -p no:randomly --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22828-parameter-discipline
+    description: >-
+      The whole first_party_ref suite, 319 passed at this head. It includes test_missing_parameter_is_rejected
+      and test_every_parameter_changes_its_verdict, which refuse a parameter that is optional or that
+      no mutation can flip; the first version of this change made the parameter optional and both refused
+      it.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/ -q -p no:randomly --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn22828-integration-proof-live-checker
+    description: >-
+      The integration proof: the installed checker, loading the shipped validator contract, is handed
+      omniclaude's real pin shape at the moment it was blocking -- omnimarket@dev-20261106193236-e3fd6f3ad0b3
+      against newest dev-20261108043844-a10bd9b2317a, 127 trailing merges and 33.1 hours -- and returns
+      no issue. The same shape at the merge base returns stale_pin. This is the claim the change is for,
+      read from the product rather than from a fixture.
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: |-
+          uv run --frozen python -c 'from datetime import UTC, datetime, timedelta; from omnibase_core.models.validation.model_first_party_ref_input import ModelFirstPartyRefInput as I; from omnibase_core.validation.checker_first_party_ref import check_first_party_refs as C; from omnibase_core.validation.validator_first_party_ref import ValidatorFirstPartyRef as V; P="dev-20261106193236-e3fd6f3ad0b3"; N="dev-20261108043844-a10bd9b2317a"; s=datetime.strptime("20261106193236","%Y%m%d%H%M%S").replace(tzinfo=UTC); m=["dev-"+(s+timedelta(minutes=i)).strftime("%Y%m%d%H%M%S")+"-cccccccccccc" for i in range(1,127)]; src="[project]\nname = \"c\"\ndependencies = [\"omnimarket>=0.4.0\"]\n[tool.uv.sources]\nomnimarket = {git = \"https://github.com/OmniNode-ai/omnimarket.git\", tag = \""+P+"\"}\n"; d=I.model_validate({"files":[{"path":"pyproject.toml","source":src}],"dev_tags":[{"repo":"omnimarket","tags":[P]+m+[N]}]}); r=C(d, V().contract); assert r==(), [i.message for i in r]; print("INTEGRATION-PROOF-OK")'
+        cwd: ${OMNI_HOME}/omnibase_core

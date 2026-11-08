@@ -138,16 +138,19 @@ dod_evidence:
   - id: dod-omn21478-pin-currency-deploy-source
     description: Read the published handler sources at the checkout commit through the GitHub contents
       API. Fail if either staleness bound or the dependency tag rewrite is absent. This hosted-runner
-      probe needs no container daemon or private runtime.
+      probe needs no container daemon or private runtime. OMN-22828 gave the merge bound a per-sibling
+      override, so the merge comparison now reads 'merges > merge_limit' and the age comparison wraps
+      across lines; the two literals below were repointed at the same two bounds in their new spelling,
+      and the assertion is unchanged -- both staleness bounds are still read from the published source.
     source: manual
     binds_ac: [AC5, AC6]
     checks:
       - check_type: command
         check_value: |
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/checker_first_party_ref.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -F 'merges > policy.max_trailing_merges' > /dev/null &&
+            base64 -d | grep -F 'merges > merge_limit' > /dev/null &&
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/validation/checker_first_party_ref.py?ref=$(git rev-parse HEAD)" --jq .content |
-            base64 -d | grep -F '> timedelta(hours=policy.max_trailing_hours)' > /dev/null &&
+            base64 -d | grep -F 'hours=policy.max_trailing_hours' > /dev/null &&
           gh api "repos/OmniNode-ai/omnibase_core/contents/src/omnibase_core/nodes/node_dependency_pin_bump_effect/handler_dependency_pin_bump.py?ref=$(git rev-parse HEAD)" --jq .content |
             base64 -d | grep -F 'source["tag"] = dependency_tag' > /dev/null
         cwd: ${OMNI_HOME}/omnibase_core
