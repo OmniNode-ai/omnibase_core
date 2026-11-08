@@ -1,0 +1,51 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23050
+title: The evidence check counts the pin train's hook rev bumps in .pre-commit-config.yaml as pin-only
+  changes
+summary: classify_pin_swap_only in receipt-gate.yml gains a hook branch. A writer-app diff that swaps
+  only the dev merge tag on rev lines of first-party hook repos in .pre-commit-config.yaml, together with
+  a changed dependency manifest, is exempt as pin_swap_only. Any other .pre-commit-config.yaml edit is
+  refused. Operator ruling recorded 2026-11-08T00:17:32Z.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23050
+    statement: A pin-train change to hook revs rides on its own CI, and no other hook config edit is exempt.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a pin-train change limited to hook rev: lines passes the evidence check as pin-only,
+          and any other .pre-commit-config.yaml edit still fails -- falsifier: uv run pytest of the evidence
+          gate''s pin classification tests with both controls'
+evidence_requirements:
+  - kind: tests
+    description: The pin-train shape is exempt (positive control).
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py -q -n
+      0 --no-cov -k "test_train_shape_hook_rev_swap_is_exempt or test_two_blocks_moving_to_one_tag_are_exempt"
+  - kind: tests
+    description: Every other hook config edit is refused (failing control).
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py -q -n
+      0 --no-cov -k "fails_closed"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23050-ac1-hook-rev-swap
+    description: The pin-train hook rev swap is exempt as pin_swap_only, and every other hook config edit
+      is refused.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py
+          -q -n 0 --no-cov -k "test_train_shape_hook_rev_swap_is_exempt or test_two_blocks_moving_to_one_tag_are_exempt"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_writer_hook_rev_swap_omn22478.py
+          -q -n 0 --no-cov -k "fails_closed"
+        cwd: ${OMNI_HOME}/omnibase_core
