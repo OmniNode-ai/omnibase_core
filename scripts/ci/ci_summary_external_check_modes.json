@@ -1,0 +1,6 @@
+{
+  "Tessl Reviewer": {
+    "mode": "advisory",
+    "reason": "tessl-reviewer runs in advisory mode here and reports neutral as its success; its findings still show in the CI Summary report. Operator ruling 2026-11-08, OMN-23029."
+  }
+}

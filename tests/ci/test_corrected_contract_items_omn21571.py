@@ -292,6 +292,9 @@ def test_occ_behavior(tmp_path: Path, item_id: str) -> None:
         "scripts/ci/__init__.py",
         "scripts/ci/ci_summary_gate.py",
         "scripts/ci/ci_summary_sweep_exclusions.json",
+        "scripts/ci/ci_summary_external_check_modes.contract.json",
+        "scripts/ci/ci_summary_external_check_modes.json",
+        "scripts/ci/ci_summary_gate_tables.json",
     ):
         _copy(tmp_path, relative)
     command = shlex.join([sys.executable, "-m", "pytest", OCC_TEST]) + PYTEST_FLAGS

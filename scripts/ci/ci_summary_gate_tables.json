@@ -1,0 +1,36 @@
+{
+  "sweep_non_pr_events": [
+    "create",
+    "delete",
+    "deployment",
+    "deployment_status",
+    "fork",
+    "merge_group",
+    "page_build",
+    "public",
+    "push",
+    "registry_package",
+    "release",
+    "repository_dispatch",
+    "schedule",
+    "watch",
+    "workflow_dispatch"
+  ],
+  "spec_validators": [
+    "Code Quality",
+    "Mypy Validation Scripts",
+    "Core-Infra Boundary",
+    "Enum Governance Check",
+    "Naming Conventions",
+    "Pydantic Patterns",
+    "AI Slop Patterns",
+    "Doc-Content Scan",
+    "Typed Bootstrap Environment Boundary (OMN-17744)",
+    "SPDX Headers",
+    "Duplicate Registry Ids",
+    "Hardcoded Topic Validator",
+    "Runtime Identity Validator",
+    "Canonical File Shape (OMN-20304)",
+    "Shape-Gate Independence (OMN-20298)"
+  ]
+}
