@@ -1,0 +1,5 @@
+import requests
+
+
+def handle(request):
+    return requests.get(request.url)
