@@ -56,7 +56,7 @@ RELEASE_WORKFLOW = (
 
 _SYNC_JOB = "sync-main"
 _RELEASE_JOB = "release"
-_CASCADE_JOB = "dependency-cascade"
+_CASCADE_JOB = "dependency-cascade"  # removed by OMN-18594
 _VALIDATE_STEP = "Validate sync tag"
 _MINT_STEP = "Mint onexbot-occ-writer app token"
 _SYNC_STEP = "Sync main to release tag"
@@ -246,9 +246,9 @@ def test_the_validate_script_carries_no_inline_expressions() -> None:
     assert "${{" not in _validate_script()
 
 
-def test_a_skipped_release_job_cannot_fire_the_dependency_cascade() -> None:
-    condition = str(_job(_CASCADE_JOB)["if"])
-    assert "needs.release.result == 'success'" in condition, condition
+def test_a_skipped_release_job_has_no_dependency_cascade_to_fire() -> None:
+    # OMN-18594: the release workflow no longer calls the dependency cascade.
+    assert _CASCADE_JOB not in _workflow()["jobs"], list(_workflow()["jobs"])
 
 
 # --------------------------------------------------------------------------

@@ -3,8 +3,11 @@
 #
 # OMN-9050 / OMN-21478: manifest-driven handshake SHA and dev dependency pin bumps.
 #
-# Trigger: main pushes bump pin_sites; dev pushes bump dependency_pin consumers.
-# Manual replays use handshake mode unless override_tag selects dependency mode.
+# Trigger: workflow_dispatch only (OMN-18594). A dispatch bumps handshake
+# pin_sites to override_sha (default: the dispatched ref's sha); a dispatch with
+# override_tag selects dependency mode for repos opted into dependency_pin.
+# There is no push trigger: downstream pins move only when a downstream needs
+# something new from omnibase_core.
 #
 # For each eligible repo declared in docs/downstream-repos.yaml:
 #   1. Checkout the downstream repo with a minted onexbot-occ-writer App
@@ -30,9 +33,8 @@
 
 name: Publish downstream pin bumps
 
+# RULING 2026-11-09T21:54:25Z lane=orchestrator-31d9 (OMN-18594): downstream pins move only when the downstream needs something new; run by workflow_dispatch
 on:
-  push:
-    branches: [main, dev]
   workflow_dispatch:
     inputs:
       override_sha:

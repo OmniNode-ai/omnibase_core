@@ -1,0 +1,45 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-18594
+title: "omnibase_core stops moving downstream pins on its own"
+summary: "Ruling 2026-11-09T21:54:25Z: pins move only on dispatch, not on release or push."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn18594-dispatch-only
+    statement: "No release or push moves a downstream pin; the bump workflows run only by workflow_dispatch."
+    acceptance:
+      - id: AC1
+        statement: "AC1: release.yml has no dependency-cascade job -- falsifier: test_release_workflow_shape.py"
+      - id: AC2
+        statement: "AC2: pin-bump workflow has only workflow_dispatch -- falsifier: test_publish_downstream_pin_bump_workflow.py"
+evidence_requirements:
+  - kind: tests
+    description: The workflow-shape tests pass against the changed workflows.
+    command: "uv run pytest tests/unit/validation/test_release_workflow_shape.py -q"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn18594-ac1
+    description: "The release workflow has no cascade job and its failure report still alarms on release."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_release_workflow_shape.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18594-ac2
+    description: "The pin-bump workflow has no push trigger."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/scripts/test_publish_downstream_pin_bump_workflow.py -q"
+        cwd: ${OMNI_HOME}/omnibase_core

@@ -63,8 +63,11 @@ def test_title_carries_the_ticket_token(open_pr_script: str) -> None:
 def test_workflow_triggers_and_matrix_object_shape() -> None:
     workflow = yaml.safe_load(WORKFLOW.read_text())
     # PyYAML's YAML 1.1 resolver reads the Actions `on` key as True.
-    assert workflow[True]["push"]["branches"] == ["main", "dev"]
+    # OMN-18594: no automatic trigger; downstream pins move by dispatch only.
+    assert set(workflow[True]) == {"workflow_dispatch"}
+    assert "push" not in workflow[True]
     assert "override_tag" in workflow[True]["workflow_dispatch"]["inputs"]
+    assert "override_sha" in workflow[True]["workflow_dispatch"]["inputs"]
     bump = workflow["jobs"]["bump"]
     assert bump["name"] == "Bump: ${{ matrix.repo }}"
     assert bump["strategy"]["matrix"] == {
