@@ -5,10 +5,11 @@
 
 The job is hosted in secret-scan-reusable.yml and called from security-scan.yml.
 
-The repository is public, so the secret-scan job must run on a hosted runner. Its action pin is
-the one the reference security-scan workflow of this organization carries, spelled here because
-this test cannot read another repository. The control detector must match a planted token and
-must not match clean text or its own file.
+The repository is public, so the secret-scan job must run on a hosted runner. Its scanner is the
+image digest the reference security-scan workflow of this organization carries (OMN-23008), spelled
+here because this test cannot read another repository; the TruffleHog action only wraps a docker run
+of the :latest tag, so the job runs the image by digest. The control detector must match a planted
+token and must not match clean text or its own file.
 """
 
 from __future__ import annotations
@@ -27,12 +28,13 @@ CALLER = REPO_ROOT / ".github" / "workflows" / "security-scan.yml"
 WORKFLOW = REPO_ROOT / ".github" / "workflows" / "secret-scan-reusable.yml"
 CONTROL_CONFIG = REPO_ROOT / ".github" / "trufflehog-control.yml"
 
-TRUFFLEHOG_ACTION = "trufflesecurity/trufflehog"
-# The reference workflow's full pin, held as its first and last characters: a whole 40-character
-# hex literal reads as a secret to the repository's secret hook.
-TRUFFLEHOG_PIN_START = "586f66d7"
-TRUFFLEHOG_PIN_END = "357ab10"
-FULL_SHA = re.compile(r"[0-9a-f]{40}")
+# The reference workflow's scanner image digest, held as its first and last characters: a whole
+# 64-character hex literal reads as a secret to the repository's secret hook.
+TRUFFLEHOG_IMAGE_REPO = "ghcr.io/trufflesecurity/trufflehog"
+TRUFFLEHOG_DIGEST_START = "674b2f18"
+TRUFFLEHOG_DIGEST_END = "46ba4a3a"
+DIGEST = re.compile(r"sha256:[0-9a-f]{64}")
+IMAGE_REF = '"$TRUFFLEHOG_IMAGE"'
 HOSTED_RUNNER = "ubuntu-latest"
 CONTROL_ARGS = (
     "--config=.github/trufflehog-control.yml",
@@ -50,12 +52,15 @@ def _job() -> dict[str, Any]:
     return job
 
 
+def _image() -> str:
+    data = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    image = data["env"]["TRUFFLEHOG_IMAGE"]
+    assert isinstance(image, str)
+    return image
+
+
 def _scanner_steps() -> list[dict[str, Any]]:
-    return [
-        s
-        for s in _job()["steps"]
-        if str(s.get("uses", "")).startswith(TRUFFLEHOG_ACTION + "@")
-    ]
+    return [s for s in _job()["steps"] if IMAGE_REF in str(s.get("run", ""))]
 
 
 def _planted_token() -> str:
@@ -77,14 +82,18 @@ def test_job_runs_on_a_hosted_runner_only() -> None:
     assert "vars." not in str(runs_on)
 
 
-def test_scanner_steps_use_the_reference_pin() -> None:
+def test_scanner_runs_the_reference_image_digest() -> None:
+    repo, _, digest = _image().partition("@")
+    assert repo == TRUFFLEHOG_IMAGE_REPO
+    assert DIGEST.fullmatch(digest)
+    assert digest.startswith("sha256:" + TRUFFLEHOG_DIGEST_START)
+    assert digest.endswith(TRUFFLEHOG_DIGEST_END)
     steps = _scanner_steps()
     assert len(steps) == 3
     for step in steps:
-        _, _, pin = step["uses"].partition("@")
-        assert FULL_SHA.fullmatch(pin)
-        assert pin.startswith(TRUFFLEHOG_PIN_START)
-        assert pin.endswith(TRUFFLEHOG_PIN_END)
+        assert "uses" not in step
+        assert ":latest" not in step["run"]
+        assert "trufflesecurity/trufflehog@" not in step["run"]
 
 
 def test_ordinary_scans_are_verified_only_and_the_history_is_full() -> None:
@@ -92,21 +101,23 @@ def test_ordinary_scans_are_verified_only_and_the_history_is_full() -> None:
     checkout = job["steps"][0]
     assert checkout["uses"].startswith("actions/checkout@")
     assert checkout["with"]["fetch-depth"] == 0
-    ordinary = [
-        s for s in _scanner_steps() if "--only-verified" in s["with"]["extra_args"]
-    ]
+    ordinary = [s for s in _scanner_steps() if "--only-verified" in s["run"]]
     assert {s["name"] for s in ordinary} == {
         "TruffleHog Secret Scanning (push diff)",
         "TruffleHog Secret Scanning (full scan)",
     }
+    for step in ordinary:
+        assert "--fail" in step["run"]
+        assert "--exclude-detectors=lob" in step["run"]
 
 
 def test_control_step_reads_the_declared_detector_unverified() -> None:
     (control,) = [
         s for s in _scanner_steps() if s["name"] == "TruffleHog planted control"
     ]
-    args = control["with"]["extra_args"].split()
+    args = control["run"].replace("\\\n", " ").split()
     assert set(CONTROL_ARGS) <= set(args)
+    assert "--fail" in args
     assert "--only-verified" not in args
     assert "if" not in control
 
