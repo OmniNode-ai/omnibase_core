@@ -15,6 +15,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from omnibase_core.models.dependency_pins.model_dependency_pin_hook_exemption import (
+    ModelDependencyPinHookExemption,
+)
 from omnibase_core.models.dependency_pins.model_dependency_pin_hook_repo import (
     ModelDependencyPinHookRepo,
 )
@@ -45,6 +48,9 @@ class ModelDependencyPinPolicy(BaseModel):
         hook_repos: The pre-commit hook repositories whose pinned revisions are bounded.
         hook_rev_max_releases_behind: How many release tags of the hook repository may be
             newer than a pinned hook revision.
+        hook_rev_exemptions: Hook revisions allowed past that bound until a stated
+            date; each names one revision, the ruling that allows it and the ticket
+            that removes it. Empty by default.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -58,6 +64,7 @@ class ModelDependencyPinPolicy(BaseModel):
     specifier_must_admit_newest_release: bool
     hook_repos: tuple[ModelDependencyPinHookRepo, ...] = ()
     hook_rev_max_releases_behind: int = Field(ge=0)
+    hook_rev_exemptions: tuple[ModelDependencyPinHookExemption, ...] = ()
 
     @field_validator("release_tag_pattern")
     @classmethod

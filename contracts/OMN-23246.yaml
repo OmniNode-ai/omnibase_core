@@ -1,0 +1,59 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23246
+title: "The dependency-pins check honours one dated per-revision hook exemption and fails once it expires"
+summary: "dependency_pin_policy.yaml gains hook_rev_exemptions: each entry names one hook repository revision,
+  a last day, the ruling that allows it and the ticket that removes it. A pinned hook rev with an entry
+  in date is not refused for being past hook_rev_max_releases_behind (it reports a warning); past the
+  date the check fails on the pin. The bound stays 14. The shipped policy holds one entry, the omnibase_infra
+  check-public-runner-placement hook pin 1c9566e2c249fe54257a4b3ef3ff2e71de027b89, expiring 2026-11-16
+  under the operator ruling 2026-11-09T01:57:48Z (migration ticket OMN-22867). No baseline is added."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23246-hook-exemption
+    statement: "One hook revision may sit past the release-count bound until a stated day; an expired
+      or foreign entry never exempts."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a hook rev past the bound with a dated exemption entry in date reports hook_rev_exempted
+          (warning) and passes, the same rev after its date fails with hook_rev_exemption_expired, and
+          a rev with no entry still fails with hook_rev_behind -- falsifier: `uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py`"
+      - id: AC2
+        statement: "AC2: the shipped policy holds exactly the one ruled entry (rev prefix 1c9566e2c249,
+          expires 2026-11-16, ruling stamp 2026-11-09T01:57:48Z, ticket OMN-22867), an entry needs a 12-character
+          rev prefix (the pin itself a full sha), a ruling stamp, a ticket and a date, and the shipped
+          policy exempts no other rev -- falsifier: `uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py
+          -k shipped`"
+evidence_requirements:
+  - kind: tests
+    description: The dependency-pins unit tests pass, including the exemption tests.
+    command: "uv run pytest tests/unit/validation/dependency_pins -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23246-ac1
+    description: "In-date exemption passes with a warning, expired fails, no entry fails."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py -q
+          --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23246-ac2
+    description: "The shipped policy holds only the ruled entry and exempts no other rev."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py -q
+          --no-cov -o addopts='' -n 0 -k shipped"
+        cwd: ${OMNI_HOME}/omnibase_core

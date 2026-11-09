@@ -15,6 +15,7 @@ Usage::
     check-dependency-pins ../omnibase_infra                # another repository
     check-dependency-pins --hook-history ../omnibase_core  # an existing hook clone
     check-dependency-pins --layer-order f.yaml --policy p.yaml --report-json r.json
+    check-dependency-pins --today 2026-11-17               # judge hook rev exemptions as of a day
 
 Exit codes: 0 -- PASS; 1 -- any finding, or the check could not run.
 """
@@ -23,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import date
 from pathlib import Path
 
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
@@ -109,6 +111,9 @@ def run(
     parser.add_argument("--hook-history")
     parser.add_argument("--contract", type=Path)
     parser.add_argument("--report-json")
+    parser.add_argument(
+        "--today", type=date.fromisoformat, help="UTC day (YYYY-MM-DD); default today"
+    )
     args = parser.parse_args(argv)
     owned = container is None
     if container is None:
@@ -122,6 +127,7 @@ def run(
                 policy=load_dependency_pin_policy(args.policy),
                 repo=args.repo,
                 hook_history_dir=args.hook_history,
+                today=args.today,
             )
             targets = [Path(t) for t in args.targets] or [Path()]
             if not validator.manifests(targets):

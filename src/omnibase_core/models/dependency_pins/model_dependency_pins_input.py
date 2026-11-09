@@ -5,6 +5,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 from pydantic import BaseModel, ConfigDict, Field
 
 from omnibase_core.models.dependency_direction.model_repo_layer_map import (
@@ -38,6 +40,9 @@ class ModelDependencyPinsInput(BaseModel):
         policy: The pin policy.
         inventories: Release inventories of the first-party dependencies.
         hook_histories: Histories of the bounded hook repositories.
+        checked_on: The UTC day the check runs, which dates a hook revision exemption;
+            with none, an exempted revision is judged as not exempt and the exemption
+            reads as expired.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid", from_attributes=True)
@@ -53,3 +58,4 @@ class ModelDependencyPinsInput(BaseModel):
     policy: ModelDependencyPinPolicy
     inventories: tuple[ModelDependencyReleaseInventory, ...] = ()
     hook_histories: tuple[ModelDependencyHookHistory, ...] = ()
+    checked_on: date | None = None

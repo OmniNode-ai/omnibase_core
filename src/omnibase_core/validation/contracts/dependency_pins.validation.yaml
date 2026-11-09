@@ -153,6 +153,25 @@ validation:
           {path}:{line}: {url} rev {rev} (hooks {hooks}) has {behind} release tag(s) of {repo} newer than
           it; the policy refuses past {bound} and warns from {margin} below it. Move the rev to the newest
           dev-merge tag before the next release
+    - rule_id: hook_rev_exempted
+      description: A bounded hook revision past the bound has a dated exemption (warning only).
+      severity: warning
+      enabled: true
+      parameters:
+        full_rev_pattern: '^[0-9a-f]{40}$'
+        message: >-
+          {path}:{line}: {url} rev {rev} (hooks {hooks}) has {behind} release tag(s) of {repo} newer than
+          it, past the bound {bound}, and is exempt until {expires} by {ruling}; {ticket} moves it inside
+          the bound and removes the exemption
+    - rule_id: hook_rev_exemption_expired
+      description: A hook revision exemption is past its expiry date, or has no date to judge it by.
+      severity: error
+      enabled: true
+      parameters:
+        message: >-
+          {path}:{line}: the exemption for {url} rev {rev} (hooks {hooks}) expired after {expires} ({ruling},
+          {ticket}); move the rev to the newest dev-merge tag and delete the exemption entry. Never extend
+          the date without a new ruling
     - rule_id: hook_rev_unresolved
       description: A bounded hook revision whose commit time cannot be read fails closed.
       severity: error
