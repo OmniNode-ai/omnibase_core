@@ -772,26 +772,29 @@ def _hook_issues(
             None,
         )
         if exemption is not None:
-            expired = (
-                request.checked_on is None or request.checked_on > exemption.expires
+            rule_id = (
+                RULE_HOOK_EXEMPTION_EXPIRED
+                if request.checked_on is None or request.checked_on > exemption.expires
+                else RULE_HOOK_EXEMPTED
             )
-            fields = {
-                "path": path,
-                "line": pin.line,
-                "url": pin.repo,
-                "rev": pin.rev,
-                "hooks": hooks,
-                "repo": repos[url],
-                "behind": behind,
-                "bound": bound,
-                "expires": exemption.expires.isoformat(),
-                "ruling": exemption.ruling,
-                "ticket": exemption.ticket,
-            }
-            if expired:
-                issues.extend(_report(rules, RULE_HOOK_EXEMPTION_EXPIRED, **fields))
-            else:
-                issues.extend(_report(rules, RULE_HOOK_EXEMPTED, **fields))
+            issues.extend(
+                _report(
+                    rules,
+                    rule_id,
+                    path,
+                    line=pin.line,
+                    url=pin.repo,
+                    rev=pin.rev,
+                    hooks=hooks,
+                    repo=repos[url],
+                    behind=behind,
+                    bound=bound,
+                    expires=exemption.expires.isoformat(),
+                    ruling=exemption.ruling,
+                    ticket=exemption.ticket,
+                )
+            )
+            if rule_id == RULE_HOOK_EXEMPTED:
                 continue
         if bound - near_margin <= behind <= bound and behind > 0:
             issues.extend(
