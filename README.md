@@ -3,6 +3,23 @@
 omnibase_core provides the contracts, models, validation and execution primitives for the ONEX framework.
 Documentation: [knowledge_base](https://github.com/OmniNode-ai/knowledge_base).
 
+## v0.47.72 (2026-11-09)
+
+### Release
+- Cut omnibase-core from dev at 0.47.72 by the scheduled release train.
+- 8 release-relevant commit(s) merged since v0.47.70.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.70
+- : dependency-pins policy gains a dated per-revision hook exemption (#2298)
+- : warn on pinned hook revs nearing the max-releases-behind bound (#2297)
+- : Add ceiling_source and ceiling_overlay_ref to ModelDelegationBudgetEvidence (#2296)
+- : a write-then-rename with a fixed temporary file is refused by a generic core validator (#2290)
+- : an id or key built from a seconds-only stamp with no nonce is refused by the generic validator (#2293)
+- : Refuse a truncated time bound and a naive or unparsed timestamp field in the generic validator (#2294)
+- feat: a pytest falsifier naming a test path with no tests is refused by the task_criteria validator (#2292)
+- : add declared_timeout validator flagging blocking calls with no timeout (#2291)
+
 ## v0.47.70 (2026-11-08)
 
 ### Release
