@@ -15,6 +15,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from omnibase_core.enums.enum_severity import EnumSeverity
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
@@ -424,9 +425,94 @@ def test_precommit_rev_passes_a_revision_inside_the_bound() -> None:
     request = _request(
         _manifest("top-pkg"),
         precommit=_precommit("abc"),
+        policy=_policy(hook_rev_max_releases_behind=14),
         histories=(_history("abc", 160, 50, 150, 200),),
     )
     assert _run(request) == []
+
+
+# --- hook rev near the bound (warning half, no change to the bound) ---------
+
+NEAR_BOUND = 14
+
+
+def _near_request(behind: int, bound: int = NEAR_BOUND) -> ModelDependencyPinsInput:
+    """A hook rev committed at 100 with ``behind`` release tags cut after it."""
+    return _request(
+        _manifest("top-pkg"),
+        precommit=_precommit("abc"),
+        policy=_policy(hook_rev_max_releases_behind=bound),
+        histories=(_history("abc", 100, 50, *range(101, 101 + behind)),),
+    )
+
+
+def test_near_bound_stays_silent_below_the_window() -> None:
+    assert _run(_near_request(11)) == []
+
+
+def test_near_bound_warns_at_the_bound_minus_two() -> None:
+    issues = checker.check_dependency_pins(_near_request(12), RULES)
+    assert _codes(issues) == ["hook_rev_near_bound"]
+    assert issues[0].severity == EnumSeverity.WARNING
+    assert issues[0].line_number is not None
+    assert "12" in issues[0].message
+    assert str(NEAR_BOUND) in issues[0].message
+
+
+def test_near_bound_warns_at_the_bound_and_does_not_refuse() -> None:
+    issues = checker.check_dependency_pins(_near_request(14), RULES)
+    assert _codes(issues) == ["hook_rev_near_bound"]
+    assert issues[0].severity == EnumSeverity.WARNING
+
+
+def test_near_bound_hands_over_to_the_refusal_past_the_bound() -> None:
+    issues = checker.check_dependency_pins(_near_request(15), RULES)
+    assert _codes(issues) == ["hook_rev_behind"]
+    assert issues[0].severity == EnumSeverity.ERROR
+
+
+def test_near_bound_reads_the_bound_from_the_policy() -> None:
+    assert _run(_near_request(2, bound=4)) == ["hook_rev_near_bound"]
+    assert _run(_near_request(1, bound=4)) == []
+    assert _run(_near_request(5, bound=4)) == ["hook_rev_behind"]
+
+
+def test_near_bound_reads_the_margin_from_the_rule_row() -> None:
+    row = RULES["hook_rev_near_bound"]
+    narrow = {
+        **RULES,
+        "hook_rev_near_bound": row.model_copy(
+            update={"parameters": {**(row.parameters or {}), "margin": 0}}
+        ),
+    }
+    assert _codes(checker.check_dependency_pins(_near_request(13), narrow)) == []
+    assert _codes(checker.check_dependency_pins(_near_request(14), narrow)) == [
+        "hook_rev_near_bound"
+    ]
+
+
+def test_near_bound_does_not_flag_a_current_pin_under_a_small_bound() -> None:
+    assert _run(_near_request(0, bound=1)) == []
+
+
+def test_near_bound_warning_does_not_fail_the_validator(tmp_path: Path) -> None:
+    root = _repo(tmp_path, _manifest("top-pkg"))
+    (root / ".pre-commit-config.yaml").write_text(_precommit("abc"), "utf-8")
+
+    def read(_r: ModelDependencyPinFactsRequest) -> ModelDependencyPinFactsResult:
+        return ModelDependencyPinFactsResult(
+            inventories=ALL_RELEASED,
+            hook_histories=(_history("abc", 100, 50, *range(101, 115)),),
+        )
+
+    validator = ValidatorDependencyPins(
+        read,
+        layer_order=_layers(),
+        policy=_policy(hook_rev_max_releases_behind=NEAR_BOUND),
+    )
+    result = validator.validate(root)
+    assert _codes(result.issues) == ["hook_rev_near_bound"]
+    assert result.is_valid
 
 
 def test_precommit_rev_fails_closed_on_an_unresolved_revision() -> None:

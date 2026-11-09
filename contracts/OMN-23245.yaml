@@ -1,0 +1,44 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23245
+title: "The dependency-pins checker reports a non-blocking hook-rev-near-bound finding when a pinned core
+  hook rev is two releases from its bound"
+summary: "check_dependency_pins gains a hook_rev_near_bound warning for a hook rev behind by the bound
+  minus the rule margin up to the bound. The refusal past the bound (hook_rev_behind) and the bound in
+  dependency_pin_policy.yaml are unchanged. The throughput tick half is a separate pull request in another
+  repository."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23245-near-bound
+    statement: "A hook rev near the bound is reported as a warning and the refusal past the bound is unchanged."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the dependency-pins checker reports a non-blocking hook-rev-near-bound finding
+          when a hook rev is behind by the bound minus 2 up to the bound, refuses only past the bound
+          as before, and reads the bound from the policy without changing it -- falsifier: `uv run pytest
+          tests/unit/validation/dependency_pins/test_checker_dependency_pins.py -k near_bound` with recorded
+          pins at 11, 12, 14 and 15 releases behind"
+evidence_requirements:
+  - kind: tests
+    description: The near-bound tests pass at 11, 12, 14 and 15 releases behind.
+    command: "uv run pytest tests/unit/validation/dependency_pins/test_checker_dependency_pins.py -q --no-cov
+      -o addopts='' -n 0 -k near_bound"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23245-ac1
+    description: "11 behind is silent, 12 and 14 behind warn with hook_rev_near_bound, 15 behind is refused
+      with hook_rev_behind only, and the bound in the policy is untouched."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_checker_dependency_pins.py
+          -q --no-cov -o addopts='' -n 0 -k near_bound"
+        cwd: ${OMNI_HOME}/omnibase_core
