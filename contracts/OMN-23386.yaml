@@ -20,7 +20,8 @@ requirements:
   - id: req-omn23386-pin-age-never-fails
     statement: >-
       A sibling pin's age (merges or hours behind the newest dev tag) never fails first_party_ref, while
-      a pin that names a tag absent from the sibling's tag inventory still does.
+      a pin that names a tag absent from the sibling's tag inventory still does (a regression test holds
+      that; it passes at the merge base too, so it binds no criterion).
     acceptance:
       - id: AC1
         statement: >-
@@ -29,12 +30,7 @@ requirements:
           -q -p no:randomly --no-cov -k never_refused_for_its_age
       - id: AC2
         statement: >-
-          AC2: a pin absent from the supplied tag inventory is still refused as unverifiable_pin -- falsifier:
-          uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
-          -q -p no:randomly --no-cov -k still_refused
-      - id: AC3
-        statement: >-
-          AC3: the stale_pin contract row carries no merge or hour bound parameter -- falsifier: uv run
+          AC2: the stale_pin contract row carries no merge or hour bound parameter -- falsifier: uv run
           --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py -q -p
           no:randomly --no-cov -k no_age_bound
 evidence_requirements:
@@ -59,21 +55,11 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
           -q -p no:randomly --no-cov -k never_refused_for_its_age
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn23386-missing-tag-still-refused
-    description: A pin whose tag is absent from the inventory is still refused.
-    source: manual
-    binds_ac:
-      - AC2
-    checks:
-      - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
-          -q -p no:randomly --no-cov -k still_refused
-        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn23386-no-age-parameter
     description: The contract row holds no max_ or timestamp_ parameter.
     source: manual
     binds_ac:
-      - AC3
+      - AC2
     checks:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
