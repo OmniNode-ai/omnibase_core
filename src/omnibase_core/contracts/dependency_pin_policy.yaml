@@ -21,7 +21,8 @@
 #   pin style    an exact pin where the style is range, or the reverse
 #   hook rev     a .pre-commit-config.yaml revision of a hook repository below
 #                with more than hook_rev_max_releases_behind release tags newer
-#                than it
+#                than it, unless hook_rev_exemptions names that revision and
+#                its date has not passed; a passed date fails the check
 # The pinned version is the version uv.lock resolves for the edge; with no lock
 # entry it is the lowest version the specifier admits.
 #
@@ -49,3 +50,18 @@ hook_repos:
   - url: https://github.com/OmniNode-ai/omnibase_core
     repo: omnibase_core
 hook_rev_max_releases_behind: 14
+
+# One dated exemption per revision, never a baseline: each entry names the exact hook
+# revision, the last day it applies, the operator ruling that allows it and the ticket
+# that moves the pin and deletes the entry. An entry for any other revision needs its own
+# ruling line, and tests/unit/validation/dependency_pins/test_hook_rev_exemption.py pins
+# the entry set to the ruled one.
+hook_rev_exemptions:
+  # omnibase_infra's check-public-runner-placement hook stays at the rev that still
+  # enforces the shrink-only placement ratchet while the self-hosted-in-public jobs move
+  # to hosted runners (OMN-22867); that lane then bumps the pin and deletes this entry.
+  - url: https://github.com/OmniNode-ai/omnibase_core
+    rev: 1c9566e2c249
+    expires: 2026-11-16
+    ruling: 'RULING 2026-11-09T01:57:48Z lane=orchestrator-31d9 (OMN-22867, amends 2026-11-09T00:07:37Z)'
+    ticket: OMN-22867

@@ -16,6 +16,7 @@ hands in fixed facts and the runtime hands in the git effect.
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import UTC, date, datetime
 from importlib import resources
 from pathlib import Path
 from typing import ClassVar
@@ -107,6 +108,7 @@ class ValidatorDependencyPins(ValidatorBase):
         policy: ModelDependencyPinPolicy | None = None,
         repo: str | None = None,
         hook_history_dir: str | None = None,
+        today: date | None = None,
     ) -> None:
         super().__init__(contract)
         rules = {r.rule_id: r for r in self.contract.rules}
@@ -116,6 +118,7 @@ class ValidatorDependencyPins(ValidatorBase):
         self._policy = policy or load_dependency_pin_policy()
         self._repo = repo
         self._hook_history_dir = hook_history_dir
+        self._today = today
 
     def manifests(self, targets: list[Path]) -> list[Path]:
         """The repository manifests the targets name; empty when none."""
@@ -166,6 +169,7 @@ class ValidatorDependencyPins(ValidatorBase):
             repo=self._repo,
             layer_map=self._layer_order,
             policy=self._policy,
+            checked_on=self._today or datetime.now(UTC).date(),
         )
         try:
             repos = dependency_repos(request, rules)
