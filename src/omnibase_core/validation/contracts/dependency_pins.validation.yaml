@@ -143,6 +143,16 @@ validation:
         message: >-
           {path}:{line}: {url} rev {rev} (hooks {hooks}) has {behind} release tag(s) of {repo} newer than
           it; the policy allows {bound}. Move the rev to the newest dev-merge tag
+    - rule_id: hook_rev_near_bound
+      description: A bounded hook revision is within the margin of the refusal bound (warning only).
+      severity: warning
+      enabled: true
+      parameters:
+        margin: 2
+        message: >-
+          {path}:{line}: {url} rev {rev} (hooks {hooks}) has {behind} release tag(s) of {repo} newer than
+          it; the policy refuses past {bound} and warns from {margin} below it. Move the rev to the newest
+          dev-merge tag before the next release
     - rule_id: hook_rev_unresolved
       description: A bounded hook revision whose commit time cannot be read fails closed.
       severity: error
