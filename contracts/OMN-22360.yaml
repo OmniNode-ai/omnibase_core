@@ -38,11 +38,21 @@ requirements:
       - id: AC6
         statement: "AC6: no rule value is a literal in the validator code: a test swaps the layer order
           and the policy through the overlay and the verdicts follow the overlay"
+      - id: AC7
+        statement: "AC7: a hook revision the policy declares as a deliberate hold takes that entry's own
+          release-count bound and passes inside it, still fails past it, and an entry naming another revision
+          does not cover the pinned one; the policy refuses an entry that tightens the default, repeats
+          a revision, or omits the ticket or the reason"
 evidence_requirements:
   - kind: tests
     description: Every rule fires and passes with the overlays given in memory and from files; overlay
       swaps flip the verdicts.
     command: uv run pytest tests/unit/validation/dependency_pins -q -o addopts=''
+  - kind: tests
+    description: A declared hold takes its own bound, remains finite, is keyed on the exact revision,
+      and a malformed or tightening entry is refused by the policy itself.
+    command: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k "declared_hold or
+      an_override"
 emergency_bypass:
   enabled: false
   justification: ''
@@ -110,3 +120,17 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC6
+  - id: dod-omn22360-ac7-hook-rev-override
+    description: "a hook revision the policy declares as a deliberate hold takes that entry's own release-count
+      bound and passes inside it, still fails past it, and an entry naming another revision does not cover
+      the pinned one; the policy refuses an entry that tightens the default, repeats a revision, or omits
+      the ticket or the reason. It fails at the merge base, where hook_rev_overrides and hook_rev_bound_for
+      do not exist. It proves no change to any other rule."
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/dependency_pins -q -o addopts='' -k "declared_hold
+          or an_override"
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC7

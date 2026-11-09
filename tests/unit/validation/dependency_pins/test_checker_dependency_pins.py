@@ -35,6 +35,9 @@ from omnibase_core.models.dependency_pins.model_dependency_pin_facts_result impo
 from omnibase_core.models.dependency_pins.model_dependency_pin_hook_repo import (
     ModelDependencyPinHookRepo,
 )
+from omnibase_core.models.dependency_pins.model_dependency_pin_hook_rev_override import (
+    ModelDependencyPinHookRevOverride,
+)
 from omnibase_core.models.dependency_pins.model_dependency_pin_policy import (
     ModelDependencyPinPolicy,
 )
@@ -418,6 +421,110 @@ def test_precommit_rev_refuses_a_revision_past_the_bound() -> None:
     issues = checker.check_dependency_pins(request, RULES)
     assert _codes(issues) == ["hook_rev_behind"]
     assert issues[0].line_number is not None
+
+
+_HELD = "a" * 39 + "b"
+
+
+_HELD_PREFIX = _HELD[:12]
+
+
+_WHY = "the newer revision refuses every job of the consumer until the migration lands"
+
+
+def _override(
+    *,
+    rev_prefix: str = _HELD_PREFIX,
+    max_releases_behind: int = 9,
+    ticket: str = "OMN-22360",
+    justification: str = _WHY,
+) -> ModelDependencyPinHookRevOverride:
+    # Constructed, never model_copy'd: model_copy skips validation, which would make
+    # every malformed-field case below pass for the wrong reason.
+    return ModelDependencyPinHookRevOverride(
+        rev_prefix=rev_prefix,
+        max_releases_behind=max_releases_behind,
+        ticket=ticket,
+        justification=justification,
+    )
+
+
+def test_a_declared_hold_takes_its_own_bound_not_the_default() -> None:
+    """The measured case: the rev is far past the default and the override admits it."""
+    request = _request(
+        _manifest("top-pkg"),
+        precommit=_precommit(_HELD),
+        histories=(_history(_HELD, 100, *range(150, 158)),),
+        policy=_policy(hook_rev_overrides=(_override(),)),
+    )
+    assert _run(request) == []
+
+
+def test_a_declared_hold_still_fails_past_its_own_bound() -> None:
+    """The override is a finite count, not an exemption."""
+    request = _request(
+        _manifest("top-pkg"),
+        precommit=_precommit(_HELD),
+        histories=(_history(_HELD, 100, *range(150, 160)),),
+        policy=_policy(hook_rev_overrides=(_override(),)),
+    )
+    assert _run(request) == ["hook_rev_behind"]
+
+
+def test_an_override_for_another_revision_does_not_cover_this_one() -> None:
+    """Keyed on the held sha's prefix, so it retires itself when the block moves."""
+    moved = "c" * 40
+    request = _request(
+        _manifest("top-pkg"),
+        precommit=_precommit(moved),
+        histories=(_history(moved, 100, *range(150, 158)),),
+        policy=_policy(hook_rev_overrides=(_override(),)),
+    )
+    assert _run(request) == ["hook_rev_behind"]
+
+
+def _revalidated(policy: ModelDependencyPinPolicy) -> ModelDependencyPinPolicy:
+    """Re-run the policy's own validators, which ``_policy``'s model_copy skips."""
+    return ModelDependencyPinPolicy.model_validate(policy.model_dump())
+
+
+def test_an_override_may_not_tighten_the_default() -> None:
+    with pytest.raises(ValueError, match="is below the default"):
+        _revalidated(_policy(hook_rev_overrides=(_override(max_releases_behind=0),)))
+
+
+def test_an_override_names_a_revision_once() -> None:
+    with pytest.raises(ValueError, match="twice"):
+        _revalidated(
+            _policy(hook_rev_overrides=(_override(), _override(max_releases_behind=11)))
+        )
+
+
+@pytest.mark.parametrize(
+    "rev_prefix",
+    [
+        "abc",  # shorter than 12: could name more than one commit
+        _HELD_PREFIX.upper(),  # not lowercase hex
+        _HELD,  # the full 40 reads as a secret and is refused
+        "v0.47.70" + "0" * 8,  # a tag is never an override subject
+        "zzzzzzzzzzzz",  # 12 characters, not hex
+    ],
+)
+def test_an_override_refuses_a_key_that_is_not_a_sha_abbreviation(
+    rev_prefix: str,
+) -> None:
+    with pytest.raises(ValueError):
+        _override(rev_prefix=rev_prefix)
+
+
+def test_an_override_refuses_a_ticket_that_is_not_an_identifier() -> None:
+    with pytest.raises(ValueError):
+        _override(ticket="not-a-ticket")
+
+
+def test_an_override_refuses_a_reason_too_short_to_be_one() -> None:
+    with pytest.raises(ValueError):
+        _override(justification="too short")
 
 
 def test_precommit_rev_passes_a_revision_inside_the_bound() -> None:

@@ -20,6 +20,9 @@ from omnibase_core.models.dependency_pins.model_dependency_pin_facts_result impo
 from omnibase_core.models.dependency_pins.model_dependency_pin_hook_repo import (
     ModelDependencyPinHookRepo,
 )
+from omnibase_core.models.dependency_pins.model_dependency_pin_hook_rev_override import (
+    ModelDependencyPinHookRevOverride,
+)
 from omnibase_core.models.dependency_pins.model_dependency_pin_policy import (
     ModelDependencyPinPolicy,
 )
@@ -39,6 +42,7 @@ __all__ = [
     "ModelDependencyPinFactsRequest",
     "ModelDependencyPinFactsResult",
     "ModelDependencyPinHookRepo",
+    "ModelDependencyPinHookRevOverride",
     "ModelDependencyPinPolicy",
     "ModelDependencyPinStyleOverride",
     "ModelDependencyPinsInput",

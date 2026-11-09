@@ -746,7 +746,11 @@ def _hook_issues(
             continue
         committed = next(t.committed_at for t in history.rev_times if t.rev == pin.rev)
         behind = sum(1 for t in history.release_times if t > committed)
-        if behind > policy.hook_rev_max_releases_behind:
+        # A revision the policy declares as a deliberate hold carries its own bound
+        # (hook_rev_overrides, keyed on the exact sha). Everything else takes the
+        # default, and an override that no longer matches the pinned rev is inert.
+        bound = policy.hook_rev_bound_for(pin.rev)
+        if behind > bound:
             issues.extend(
                 _report(
                     rules,
@@ -754,7 +758,7 @@ def _hook_issues(
                     path,
                     line=pin.line,
                     behind=behind,
-                    bound=policy.hook_rev_max_releases_behind,
+                    bound=bound,
                     url=pin.repo,
                     rev=pin.rev,
                     hooks=hooks,

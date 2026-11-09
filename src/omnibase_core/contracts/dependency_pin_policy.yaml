@@ -49,3 +49,29 @@ hook_repos:
   - url: https://github.com/OmniNode-ai/omnibase_core
     repo: omnibase_core
 hook_rev_max_releases_behind: 14
+
+# A hook block held at an older revision ON PURPOSE, because the newer revision's
+# rule cannot be adopted until separate work lands. Without this the default bound
+# fires on a clock, not on a defect: the consumer's pull requests go red on the day
+# this repository cuts its Nth release, with nothing in the consumer changed.
+# An override is keyed on the held sha's 12-character abbreviation and matched as a
+# prefix, so it retires itself the moment the block moves. It must name the ticket
+# that removes the hold and why the newer revision cannot be taken, and it may only
+# loosen the default: the policy refuses a lower bound.
+# Removing an entry is the hold owner's step, and nothing here is indefinite: each
+# bound is still a finite release count.
+hook_rev_overrides:
+  - rev_prefix: 1c9566e2c249
+    max_releases_behind: 60
+    ticket: OMN-22360
+    justification: >-
+      omnibase_infra holds check-public-runner-placement at this revision. From omnibase_core#2072 (OMN-21280)
+      the check runs with no baseline and refuses any runs-on it cannot prove hosted, including every
+      expression that reads vars, needs, matrix, inputs, env, secrets or steps. omnibase_infra resolves
+      runs-on through the vars.*RUNS_ON_JSON selector in nearly every job, so the newer revision refuses
+      213 jobs across its workflows, measured 2026-11-08 by running validator_public_runner_placement
+      --repo omnibase_infra --visibility public over .github/workflows. Those org variables are in fact
+      set to a GitHub-hosted label, but the validator cannot read an organization variable and so cannot
+      prove it. Adopting the newer revision therefore needs the hosted-runner migration of OMN-22360,
+      which inlines a provable label per job. Until then this revision still enforces the placement ratchet
+      it was pinned for.
