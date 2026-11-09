@@ -13,7 +13,10 @@ from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSo
 from omnibase_core.models.validation.model_first_party_ref_input import (
     ModelFirstPartyRefInput,
 )
-from omnibase_core.validation.checker_first_party_ref import check_first_party_refs
+from omnibase_core.validation.checker_first_party_ref import (
+    check_first_party_refs,
+    load_rule_parameters,
+)
 from omnibase_core.validation.validator_first_party_ref import ValidatorFirstPartyRef
 
 pytestmark = pytest.mark.unit
@@ -406,29 +409,36 @@ def _details(payload):
     return [i.message for i in check_first_party_refs(payload, contract)]
 
 
-def test_a_fast_sibling_may_trail_more_merges_than_the_global_bound() -> None:
-    """omnimarket, 60 merges behind inside a day, is admitted by its override."""
-    assert _codes(_burst("omnimarket", count=60, hours_behind=1)) == []
+@pytest.mark.parametrize("dist", ["omnimarket", "omnibase-core"])
+@pytest.mark.parametrize(("count", "hours"), [(55, 16), (60, 1), (2, 96), (1500, 500)])
+def test_a_pin_is_never_refused_for_its_age(dist, count, hours) -> None:
+    """The failing control (OMN-23386): a pin 55 merges and 16 hours behind passes.
+
+    A change that touches no dependency must not fail because the newest dev tag
+    moved on; the pin moves only when its owner needs something new from the sibling.
+    """
+    assert _codes(_burst(dist, count=count, hours_behind=hours)) == []
 
 
-def test_the_control_the_same_shape_on_a_sibling_with_no_override_is_refused() -> None:
-    """The failing control: without the override the merge bound still bites."""
-    payload = _burst("omnibase-core", count=60, hours_behind=1)
-    assert _codes(payload) == ["stale_pin"]
-    assert "over: merges 60 > 50" in _details(payload)[0]
+def test_a_pin_absent_from_the_tag_inventory_is_still_refused() -> None:
+    """A pin must name a tag that exists: the one rule the age rule's removal keeps."""
+    payload = _burst("omnimarket", count=3, hours_behind=1)
+    missing = payload.model_copy(
+        update={
+            "dev_tags": tuple(
+                inventory.model_copy(update={"tags": inventory.tags[1:]})
+                for inventory in payload.dev_tags
+            )
+        }
+    )
+    assert _codes(missing) == ["stale_pin"]
+    assert "unverifiable_pin" in _details(missing)[0]
 
 
-def test_the_age_bound_still_governs_the_sibling_that_has_an_override() -> None:
-    """An override raises the merge bound and buys no extra age."""
-    payload = _burst("omnimarket", count=2, hours_behind=96)
-    assert _codes(payload) == ["stale_pin"]
-    detail = _details(payload)[0]
-    assert "over: hours 96 > 72" in detail
-    assert "merges" in detail.partition("over:")[0]
-
-
-def test_the_refusal_names_which_bound_tripped() -> None:
-    """Printing both figures and neither limit read as an age refusal."""
-    detail = _details(_burst("omnibase-core", count=60, hours_behind=1))[0]
-    assert "over:" in detail
-    assert "hours" not in detail.partition("over:")[2]
+def test_the_contract_carries_no_age_bound() -> None:
+    parameters = load_rule_parameters(ValidatorFirstPartyRef().contract)["stale_pin"]
+    assert not {
+        key
+        for key in type(parameters).model_fields
+        if key.startswith(("max_", "timestamp_"))
+    }
