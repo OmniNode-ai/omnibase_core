@@ -18,7 +18,7 @@
 #         allowlist-path: imperative-contract-allowlist.yaml   # relative to the caller's root
 #
 # The validator version is the caller's pin: omnibase-core-ref defaults to
-# github.job_workflow_sha, the sha of this file as the caller pinned it.
+# job.workflow_sha, the sha of this file as the caller pinned it.
 
 name: Imperative Contract Guard
 
@@ -81,13 +81,93 @@ jobs:
           ref: ${{ inputs['target-ref'] || github.ref }}
           fetch-depth: 0
 
-      - name: Checkout omnibase_core validator
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          repository: OmniNode-ai/omnibase_core
-          ref: ${{ inputs['omnibase-core-ref'] || github.job_workflow_sha }}
-          path: omnibase_core
-          persist-credentials: false
+      # OMN-23527: the validator ref is ALWAYS explicit. The spelling this step used
+      # before, `github.job_workflow_sha`, is not a context that exists; it evaluated empty,
+      # so actions/checkout made a REST "Determining the default branch" lookup on every run
+      # (spending installation API quota, and fetching omnibase_core's dev tip instead of
+      # the caller's pin). `job.workflow_sha` is the sha of THIS file as the caller pinned
+      # it. An empty ref is refused here, before anything is fetched.
+      - name: Resolve the omnibase_core validator pin
+        id: pin
+        env:
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+          WORKFLOW_REPOSITORY: ${{ job.workflow_repository }}
+          REF_OVERRIDE: ${{ inputs['omnibase-core-ref'] }}
+        run: |
+          set -euo pipefail
+          resolved="${REF_OVERRIDE:-$WORKFLOW_SHA}"
+          if [ -z "$resolved" ]; then
+            echo "::error::imperative contract guard validator ref is empty; refusing the default-branch lookup. THE GATE DID NOT RUN."
+            exit 1
+          fi
+          if [ -z "$REF_OVERRIDE" ]; then
+            if [[ ! "$resolved" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::imperative contract guard pin is not a lowercase 40-hex commit. THE GATE DID NOT RUN."
+              exit 1
+            fi
+            if [ "$WORKFLOW_REPOSITORY" != "OmniNode-ai/omnibase_core" ]; then
+              echo "::error::workflow repository is '$WORKFLOW_REPOSITORY', not OmniNode-ai/omnibase_core. THE GATE DID NOT RUN."
+              exit 1
+            fi
+          fi
+          echo "ref=$resolved" >> "$GITHUB_OUTPUT"
+          echo "imperative contract guard validator pin: $resolved"
+
+      # OMN-23527: a rate-limit or 5xx answer is retried with backoff a bounded number of
+      # times. A fetch that is still refused fails the job AND says so in the job summary:
+      # the guard did not run, so the red is not a finding about the caller's code. This
+      # step never exits 0 unless the validator was fetched, and a failure that is not a
+      # rate limit or a 5xx fails at once without a retry.
+      - name: Fetch the omnibase_core validator (retried on a rate limit or 5xx)
+        id: fetch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VALIDATOR_REF: ${{ steps.pin.outputs.ref }}
+          VALIDATOR_REPOSITORY: OmniNode-ai/omnibase_core
+          VALIDATOR_DEST: omnibase_core
+          FETCH_ATTEMPTS: "5"
+          FETCH_BACKOFF_SECONDS: "15"
+        run: |
+          set -uo pipefail
+          rm -rf "$VALIDATOR_DEST"
+          git init --quiet "$VALIDATOR_DEST"
+          git -C "$VALIDATOR_DEST" remote add origin "${GITHUB_SERVER_URL}/${VALIDATOR_REPOSITORY}"
+          auth="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::${auth}"
+          attempt=1
+          while :; do
+            log="$(mktemp)"
+            if git -C "$VALIDATOR_DEST" -c "http.${GITHUB_SERVER_URL}/.extraheader=AUTHORIZATION: basic ${auth}" fetch --quiet --no-tags --depth 1 origin "$VALIDATOR_REF" >"$log" 2>&1; then
+              git -C "$VALIDATOR_DEST" -c advice.detachedHead=false checkout --quiet --detach FETCH_HEAD
+              got="$(git -C "$VALIDATOR_DEST" rev-parse HEAD)"
+              if [[ "$VALIDATOR_REF" =~ ^[0-9a-f]{40}$ ]] && [ "$got" != "$VALIDATOR_REF" ]; then
+                echo "::error::validator checkout is at $got, expected $VALIDATOR_REF. THE GATE DID NOT RUN."
+                exit 1
+              fi
+              echo "omnibase_core validator checked out at $got"
+              exit 0
+            fi
+            cat "$log"
+            if ! grep -qiE 'rate limit|returned error: (429|5[0-9][0-9])|HTTP/[0-9.]+ (429|5[0-9][0-9])|error: 5[0-9][0-9]' "$log"; then
+              echo "::error::validator fetch failed and it is not a rate limit or server error (see the log above). THE GATE DID NOT RUN."
+              exit 1
+            fi
+            if [ "$attempt" -ge "$FETCH_ATTEMPTS" ]; then
+              break
+            fi
+            wait_seconds=$((FETCH_BACKOFF_SECONDS * 2 ** (attempt - 1)))
+            echo "::warning::validator fetch attempt ${attempt}/${FETCH_ATTEMPTS} was refused (rate limit or server error); retrying in ${wait_seconds}s"
+            sleep "$wait_seconds"
+            attempt=$((attempt + 1))
+          done
+          {
+            echo "### Imperative Contract Guard did not run: GitHub rate limit or server error"
+            echo
+            echo "The validator could not be fetched from ${VALIDATOR_REPOSITORY} after ${attempt} attempts."
+            echo "The guard did not run. This red is NOT a finding about the code in this pull request; rerun the check once GitHub accepts requests again."
+          } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+          echo "::error::validator fetch was still refused by a GitHub rate limit or server error after ${attempt} attempts; the guard did not run (not a finding about the code)."
+          exit 1
 
       - name: Set up Python
         uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0

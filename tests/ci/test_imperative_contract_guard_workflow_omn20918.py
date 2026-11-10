@@ -70,7 +70,11 @@ def test_imperative_contract_guard_workflow_checks_out_no_onex_change_control() 
     text = WORKFLOW_PATH.read_text(encoding="utf-8")
     assert not _references_occ(text)
     repositories = [c.get("with", {}).get("repository") for c in _checkouts(_load())]
-    assert repositories == [None, _CORE_REPOSITORY]
+    # OMN-23527: the omnibase_core validator is fetched by the retried fetch step, not by
+    # actions/checkout, so the only checkout left is the caller's own tree.
+    assert repositories == [None]
+    (fetch,) = [s for s in _steps(_load()) if s.get("id") == "fetch"]
+    assert fetch["env"]["VALIDATOR_REPOSITORY"] == _CORE_REPOSITORY
 
 
 def test_imperative_contract_guard_workflow_occ_reference_check_has_a_positive_control() -> (
@@ -126,7 +130,7 @@ def test_imperative_contract_guard_workflow_ratchets_against_the_pull_request_ba
 def test_imperative_contract_guard_workflow_ratchet_needs_history_in_the_caller_checkout() -> (
     None
 ):
-    target, _ = _checkouts(_load())
+    (target,) = _checkouts(_load())
     assert target["with"]["path"] == "target"
     assert target["with"]["fetch-depth"] == 0
 
@@ -135,9 +139,13 @@ def test_imperative_contract_guard_workflow_runs_the_validator_from_the_core_che
     None
 ):
     data = _load()
-    _, core = _checkouts(data)
-    assert core["with"]["path"] == "omnibase_core"
-    assert "github.job_workflow_sha" in core["with"]["ref"]
+    # OMN-23527: the validator is fetched by the retried fetch step, at the ref the pin
+    # step resolved from job.workflow_sha (github.job_workflow_sha does not exist).
+    (fetch,) = [s for s in _steps(data) if s.get("id") == "fetch"]
+    (pin,) = [s for s in _steps(data) if s.get("id") == "pin"]
+    assert fetch["env"]["VALIDATOR_DEST"] == "omnibase_core"
+    assert fetch["env"]["VALIDATOR_REF"] == "${{ steps.pin.outputs.ref }}"
+    assert pin["env"]["WORKFLOW_SHA"] == "${{ job.workflow_sha }}"
     step = _guard_step(data)
     assert step["working-directory"] == "omnibase_core"
     assert "uv run --no-sync check-imperative-contracts" in step["run"]
