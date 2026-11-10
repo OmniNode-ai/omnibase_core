@@ -4178,7 +4178,22 @@ jobs:
       # contracts with the yamlfmt version pinned in .pre-commit-config.yaml
       # and fails closed when that binary is absent, so its tests need it on
       # PATH. Digests are the v0.21.0 release asset digests.
+      #
+      # OMN-19998: the forty splits restore the binary from a cache and download
+      # only on a miss. Two runs on 2026-11-09 (schedule 42578572957 and release
+      # PR 42578595042) each lost four splits after 102-110 s, the time the retry
+      # window below takes when every attempt fails; a longer window only moves
+      # the line while all forty splits fetch the same release asset at once.
+      # Keep the version in the key equal to the one in the archive name below.
+      - name: Restore pinned yamlfmt
+        id: yamlfmt-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ${{ runner.temp }}/yamlfmt-bin
+          key: yamlfmt-0.21.0-${{ runner.arch }}
+
       - name: Install pinned yamlfmt
+        if: steps.yamlfmt-cache.outputs.cache-hit != 'true'
         run: |
           case "$(uname -m)" in
             x86_64) arch=x86_64; digest=1f300d9257b232bb3b541d7fb1b0e6b3c121bcbab381c86cd38cb8722be8a566 ;;
@@ -4194,8 +4209,11 @@ jobs:
             "https://github.com/google/yamlfmt/releases/download/v0.21.0/$archive"
           echo "$digest  $RUNNER_TEMP/$archive" | sha256sum -c -
           tar -xzf "$RUNNER_TEMP/$archive" -C "$dest" yamlfmt
-          "$dest/yamlfmt" -version
-          echo "$dest" >> "$GITHUB_PATH"
+
+      - name: Put pinned yamlfmt on PATH
+        run: |
+          "$RUNNER_TEMP/yamlfmt-bin/yamlfmt" -version
+          echo "$RUNNER_TEMP/yamlfmt-bin" >> "$GITHUB_PATH"
 
       - name: Run pytest (smart selection)
         if: vars.ENABLE_SMART_TESTS == 'true' && needs.detect-changes.outputs.is_full_suite == 'false'

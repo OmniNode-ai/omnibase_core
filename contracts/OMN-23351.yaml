@@ -1,0 +1,57 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23351
+title: "The core Tests splits restore the pinned yamlfmt from a cache, so a failed download no longer
+  turns them red"
+summary: "The forty Tests (Split N/40) jobs of ci.yml restore the pinned yamlfmt from actions/cache and
+  run the download, digest check and retry flags only on a cache miss. A tests/ci workflow-shape test
+  reads ci.yml and refuses five injected breaks. No check is widened and no bound is changed."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23351-yamlfmt-cache
+    statement: "The Tests splits restore the pinned yamlfmt from cache and download only on a miss."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the Tests splits restore the pinned yamlfmt from cache and download only on a
+          miss, with a test that fails when the download is unreachable and no cache exists -- falsifier:
+          uv run pytest -q -k yamlfmt in omnibase_core"
+      - id: AC2
+        statement: "AC2: omnibase_core dev's scheduled and push runs read every Tests split green after
+          the merge -- falsifier: the required check runs on omnibase_core dev's head through the mirror"
+evidence_requirements:
+  - kind: tests
+    description: "The yamlfmt workflow-shape tests pass at the checkout; no live service is required."
+    command: "uv run pytest tests/ci/test_yamlfmt_install_cache_first_omn19998.py tests/ci/test_yamlfmt_download_retry_window_omn17427.py
+      -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23351-ac1-cache-first
+    description: "The workflow restores yamlfmt from cache, downloads only when cache-hit is not true,
+      and each of the five injected breaks (no cache step, download on every run, key without arch, PATH
+      only on a miss, cache after download) is read as a violation."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci -q --no-cov -o addopts='' -n 0 -k yamlfmt"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23351-ac2-dev-splits-green
+    description: "The workflow shape that the post-merge dev runs execute is the cache-first one; the
+      green read of every Tests split on dev's scheduled and push runs is taken from the PR watcher mirror
+      after the merge and recorded on the ticket."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_yamlfmt_install_cache_first_omn19998.py -q --no-cov
+          -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
