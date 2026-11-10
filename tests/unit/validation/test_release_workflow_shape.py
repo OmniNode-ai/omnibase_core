@@ -29,8 +29,12 @@ The tests below are deliberately split into two kinds:
   unrunnable here and quietly turn these tests into string matching.
 
 ``Report partial release state`` is a **job**, not a step inside ``release``:
-AC4 names the Dependency Cascade among the things that must either run or fail
-loudly, and a step inside ``release`` cannot observe a cascade failure.
+a step inside ``release`` cannot observe the failure of ``release`` itself.
+
+OMN-18594: the reusable Dependency Cascade is no longer called from this
+workflow (downstream pins move only when the downstream needs something new;
+run by workflow_dispatch), so the report watches ``release`` alone. It still
+alarms on a failed or cancelled ``release``.
 """
 
 from __future__ import annotations
@@ -129,9 +133,9 @@ def test_main_sync_app_token_can_write_tagged_workflows() -> None:
 def _partial_state_step() -> dict[object, object]:
     """The partial-state report lives in its own job, not in ``release``.
 
-    A step inside ``release`` cannot observe a ``dependency-cascade`` failure,
+    A step inside ``release`` cannot observe a failure of ``release`` itself,
     which AC4 names explicitly; see
-    ``test_partial_release_state_job_also_covers_a_dependency_cascade_failure``.
+    ``test_partial_release_state_job_alarms_on_a_failed_or_cancelled_release``.
     """
     for step in _job_steps(_job(_PARTIAL_STATE_JOB)):
         if step.get("name") == _PARTIAL_STATE_STEP:
@@ -293,7 +297,6 @@ def _run_partial_state_script(
     index_files: tuple[str, ...] = (),
     curl_fails: bool = False,
     release_result: str = "failure",
-    cascade_result: str = "skipped",
     bind_env: bool = True,
 ) -> _PartialStateRun:
     """Execute the committed partial-state shell with ``curl`` stubbed out.
@@ -304,8 +307,8 @@ def _run_partial_state_script(
     bug unnoticed. Asserting on the ``run:`` string cannot catch that; running
     it can.
 
-    ``bind_env=False`` removes ``RELEASE_TAG`` / ``RELEASE_RESULT`` /
-    ``CASCADE_RESULT`` from the child environment entirely, which is what makes
+    ``bind_env=False`` removes ``RELEASE_TAG`` / ``RELEASE_RESULT`` from the
+    child environment entirely, which is what makes
     the ``${VAR:-}`` guards in the committed shell load-bearing rather than
     decorative -- see
     ``test_partial_release_state_survives_an_entirely_unbound_environment``.
@@ -323,7 +326,7 @@ def _run_partial_state_script(
     # job's declared output, not off a sibling step in the same job.
     assert step_env["RELEASE_TAG"] == "${{ needs.release.outputs.version }}"
     assert step_env["RELEASE_RESULT"] == "${{ needs.release.result }}"
-    assert step_env["CASCADE_RESULT"] == "${{ needs['dependency-cascade'].result }}"
+    assert "CASCADE_RESULT" not in step_env, step_env
 
     script_path = tmp_path / "partial_state_step.sh"
     script_path.write_text(script)
@@ -363,11 +366,10 @@ def _run_partial_state_script(
             {
                 "RELEASE_TAG": release_tag,
                 "RELEASE_RESULT": release_result,
-                "CASCADE_RESULT": cascade_result,
             }
         )
     else:
-        for unbound in ("RELEASE_TAG", "RELEASE_RESULT", "CASCADE_RESULT"):
+        for unbound in ("RELEASE_TAG", "RELEASE_RESULT"):
             env.pop(unbound, None)
 
     proc = subprocess.run(
@@ -559,50 +561,46 @@ def test_dist_artifacts_are_preserved_before_publish() -> None:
     assert with_["if-no-files-found"] == "error"
 
 
-def test_partial_release_state_job_also_covers_a_dependency_cascade_failure() -> None:
-    """AC4 (shape): the report has to be able to observe a cascade failure.
+def test_partial_release_state_job_alarms_on_a_failed_or_cancelled_release() -> None:
+    """AC4 (shape): the report still fires on a failed or cancelled ``release``.
 
-    AC4 names the Dependency Cascade among the things that must "either run, or
-    the run fails loudly naming which artifacts landed". While the report was a
-    step inside ``release`` it could not fire for a cascade failure at all --
-    ``release`` green + a red cascade matrix job produced a red run and total
-    silence about what had landed. It therefore has to be a job that needs
-    both.
+    OMN-18594 removed the ``dependency-cascade`` job; the alarm for ``release``
+    must not be weakened by that removal.
     """
     job = _job(_PARTIAL_STATE_JOB)
 
-    needs = job["needs"]
-    assert isinstance(needs, list), needs
-    assert _RELEASE_JOB in needs, needs
-    assert _CASCADE_JOB in needs, needs
+    assert job["needs"] == [_RELEASE_JOB], job["needs"]
 
     condition = str(job["if"])
     assert "always()" in condition, condition
     for upstream in (
         "needs.release.result == 'failure'",
-        "needs['dependency-cascade'].result == 'failure'",
+        "needs.release.result == 'cancelled'",
     ):
         assert upstream in condition, f"{upstream!r} missing from {condition!r}"
+    assert "dependency-cascade" not in condition, condition
 
 
-def test_partial_release_state_does_not_fire_on_a_skipped_cascade() -> None:
-    """AC4 (shape, negative): an rc release is not a partial release.
+def test_partial_release_state_does_not_fire_on_a_skipped_release() -> None:
+    """AC4 (shape, negative): a skipped ``release`` is not a partial release.
 
-    ``dependency-cascade`` carries ``if: !contains(version, 'rc')``, so it is
-    ``skipped`` by design on every rc tag. A condition written as
-    ``result != 'success'`` -- the obvious way to write this -- would report a
-    perfectly good rc release as INCOMPLETE, every time.
+    A sync-only dispatch skips ``release`` by design. A condition written as
+    ``result != 'success'`` -- the obvious way to write this -- would report
+    that as INCOMPLETE every time.
     """
     condition = str(_job(_PARTIAL_STATE_JOB)["if"])
 
     assert "!= 'success'" not in condition, condition
     assert "'skipped'" not in condition, condition
 
-    cascade = _job(_CASCADE_JOB)
-    assert "rc" in str(cascade["if"]), (
-        "this test's premise is that the cascade is skipped on rc tags; if that "
-        f"stopped being true the assertions above are meaningless: {cascade['if']}"
-    )
+
+def test_dependency_cascade_is_not_called_from_the_release_workflow() -> None:
+    """OMN-18594: downstream pins move only when the downstream needs something
+    new; the release no longer opens pin-bump PRs."""
+    assert _CASCADE_JOB not in _jobs(), list(_jobs())
+    text = WORKFLOW_PATH.read_text()
+    assert "dependency-cascade.yml" not in text
+    assert "needs['dependency-cascade']" not in text
 
 
 def test_partial_release_state_is_not_a_step_in_the_release_job() -> None:
@@ -695,42 +693,23 @@ def test_partial_release_state_reports_unknown_when_the_index_is_unreachable(
     assert "MISSING from PyPI" not in run.stdout
 
 
-def test_partial_release_state_names_a_failed_dependency_cascade(
+def test_partial_release_state_names_a_failed_release_not_a_cascade(
     tmp_path: Path,
 ) -> None:
-    """AC4 (behaviour): the gap this remediation closes, executed.
-
-    ``release`` green, cascade red -- every artifact landed, but the downstream
-    bump PRs were never opened. Before this was a job, that combination
-    produced a red run and no census at all.
-    """
+    """AC4 (behaviour): the report speaks only about ``release`` now."""
     run = _run_partial_state_script(
         tmp_path,
         release_tag="v0.46.8",
-        dist_files=(
-            "omnibase_core-0.46.8-py3-none-any.whl",
-            "omnibase_core-0.46.8.tar.gz",
-        ),
-        index_files=(
-            "omnibase_core-0.46.8-py3-none-any.whl",
-            "omnibase_core-0.46.8.tar.gz",
-        ),
-        release_result="success",
-        cascade_result="failure",
+        dist_files=("omnibase_core-0.46.8-py3-none-any.whl",),
+        index_files=("omnibase_core-0.46.8-py3-none-any.whl",),
+        release_result="failure",
     )
 
     assert run.returncode == 0, run.stderr
     assert "::error::RELEASE INCOMPLETE for v0.46.8" in run.stdout
-    assert "dependency cascade: failure" in run.stdout
-    assert "Dependency Cascade did NOT complete (failure)" in run.stdout
-    # The release job succeeded, so claiming it did not run would be false.
-    assert "GitHub Release and Dependency Cascade did NOT run." not in run.stdout
-    # Both artifacts are on the index -- the census must say so, not guess.
-    assert (
-        "::error::LANDED on PyPI: omnibase_core-0.46.8-py3-none-any.whl" in run.stdout
-    )
-    assert "::error::LANDED on PyPI: omnibase_core-0.46.8.tar.gz" in run.stdout
-    assert "MISSING from PyPI" not in run.stdout
+    assert "release job: failure" in run.stdout
+    assert "GitHub Release did NOT run." in run.stdout
+    assert "ascade" not in run.stdout
 
 
 def test_partial_release_state_survives_an_entirely_unbound_environment(
@@ -758,7 +737,6 @@ def test_partial_release_state_survives_an_entirely_unbound_environment(
     )
     assert "::error::RELEASE INCOMPLETE for <tag unresolved>" in run.stdout
     assert "release job: unknown" in run.stdout
-    assert "dependency cascade: unknown" in run.stdout
     # The census still has to run: dist/ is readable regardless of the env.
     assert "::error::MISSING from PyPI: omnibase_core-0.46.8-py3-none-any.whl" in (
         run.stdout
@@ -766,28 +744,15 @@ def test_partial_release_state_survives_an_entirely_unbound_environment(
     assert "unbound variable" not in run.stderr, run.stderr
 
 
-def test_dependency_cascade_still_runs_off_the_release_output() -> None:
-    """AC4 regression guard: the cascade wiring must survive the reorder."""
-    jobs = _as_mapping(_workflow()["jobs"], "release.yml `jobs:`")
-    cascade = _as_mapping(jobs["dependency-cascade"], "the `dependency-cascade` job")
-
-    assert cascade["needs"] == "release"
-    assert "./.github/workflows/dependency-cascade.yml" in str(cascade["uses"])
-    # OMN-16286: `release` also resolves + exposes the real Evidence-Ticket /
-    # Evidence-Source pair that closed the release's own merged PR, so the
-    # cascade job can thread honest evidence into every downstream bump PR
-    # instead of opening one Receipt-Gate can never pass.
+def test_release_job_outputs_survive_the_cascade_removal() -> None:
+    """OMN-18594 regression guard: dropping the cascade caller keeps the
+    ``release`` job's declared outputs, which the report and the release
+    evidence step still read."""
     assert _release_job()["outputs"] == {
         "version": "${{ steps.tag.outputs.tag }}",
         "ticket": "${{ steps.release_evidence.outputs.ticket }}",
         "evidence_source": "${{ steps.release_evidence.outputs.evidence_source }}",
     }
-    cascade_with = _as_mapping(cascade["with"], "the `dependency-cascade` job `with:`")
-    assert cascade_with["ticket"] == "${{ needs.release.outputs.ticket }}"
-    assert (
-        cascade_with["evidence_source"]
-        == "${{ needs.release.outputs.evidence_source }}"
-    )
 
 
 def test_release_evidence_only_accepts_a_merged_pr() -> None:

@@ -201,8 +201,8 @@ def test_private_source_token_wiring_and_step_order() -> None:
         "steps.git_sources.outputs.repos != ''"
     )
     assert mint["with"] == {
-        "app-id": "${{ secrets.onexbot-occ-app-id }}",
-        "private-key": "${{ secrets.onexbot-occ-private-key }}",
+        "app-id": "${{ secrets.onexbot-occ-app-id || secrets.ONEXBOT_OCC_APP_ID }}",
+        "private-key": "${{ secrets.onexbot-occ-private-key || secrets.ONEXBOT_OCC_PRIVATE_KEY }}",
         "owner": "OmniNode-ai",
         "repositories": "${{ steps.git_sources.outputs.repos }}",
         "permission-contents": "read",
