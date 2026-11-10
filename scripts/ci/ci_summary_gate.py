@@ -527,7 +527,12 @@ def _job_states(
 
     When ``run_attempt`` is provided, only rows from that workflow attempt are
     considered. This prevents stale failed/cancelled rows from an earlier
-    attempt from becoming authoritative for a current rerun.
+    attempt from becoming authoritative for a current rerun. The one exception
+    is a ``success`` row of an earlier attempt for a name the current attempt
+    has no row for: a re-run of only the failed jobs leaves every job that
+    passed on its earlier-attempt row, and that row is the job's answer.
+    Without it a failed-only re-run reads every passed gate as missing and
+    stays PENDING until the poll deadline.
 
     Without ``run_attempt``, only the latest observed attempt for each job name
     is authoritative. Multiple rows for the same job name and same attempt are
@@ -545,7 +550,7 @@ def _job_states(
             attempt = int(raw_attempt) if isinstance(raw_attempt, (int, str)) else 1
         except (TypeError, ValueError):
             attempt = 1
-        if run_attempt is not None and attempt != run_attempt:
+        if run_attempt is not None and attempt > run_attempt:
             continue
         conclusion = raw.get("conclusion")
         states.append(
@@ -557,19 +562,15 @@ def _job_states(
             )
         )
 
-    if run_attempt is not None:
-        return states
-
-    latest_attempt_by_name: dict[str, int] = {}
+    newest: dict[str, int] = {}
     for state in states:
-        latest_attempt_by_name[state.name] = max(
-            latest_attempt_by_name.get(state.name, 0),
-            state.run_attempt,
-        )
+        newest[state.name] = max(newest.get(state.name, 0), state.run_attempt)
+    # A row older than the requested attempt answers only as a completed success.
     return [
         state
         for state in states
-        if state.run_attempt == latest_attempt_by_name[state.name]
+        if state.run_attempt == newest[state.name]
+        and (run_attempt in (None, state.run_attempt) or state.conclusion == "success")
     ]
 
 
@@ -585,10 +586,7 @@ def dedup_latest(
     same-attempt rows remain visible.
     """
 
-    latest: dict[str, JobState] = {}
-    for state in _job_states(jobs, run_attempt=run_attempt):
-        latest[state.name] = state
-    return latest
+    return {s.name: s for s in _job_states(jobs, run_attempt=run_attempt)}
 
 
 def _is_skipped_row(raw: dict[str, object]) -> bool:

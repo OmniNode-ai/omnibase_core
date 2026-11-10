@@ -1,0 +1,46 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23399
+title: "The CI Summary gate carries earlier-attempt successes on a failed-only re-run"
+summary: "scripts/ci/ci_summary_gate.py read only the job rows whose run_attempt equalled the poller's
+  --run-attempt, so after a re-run of only the failed jobs every job that had passed in attempt 1 read
+  as missing and the summary polled to its 130 minute deadline. With --run-attempt N rows of attempts
+  above N are dropped, per job name only the newest remaining attempt counts, and a row of an attempt
+  below N counts only when its conclusion is success. Failed, cancelled or skipped earlier rows never
+  carry. Without --run-attempt the behaviour is unchanged."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23399-partial-rerun
+    statement: "A failed-only re-run whose re-run jobs all pass reads green on CI Summary; any failing
+      re-run job still reads red."
+    acceptance:
+      - id: AC1
+        statement: "AC1: after a failed-only re-run in which every re-run job passes, CI Summary reads
+          green, and it still reads red when any re-run job fails -- falsifier: uv run pytest tests for
+          the CI Summary gate script with a two-attempt fixture fails on the unfixed gate"
+evidence_requirements:
+  - kind: tests
+    description: The partial re-run tests and the existing CI Summary gate tests pass.
+    command: "uv run pytest tests/unit/scripts/ci/test_ci_summary_partial_rerun.py tests/unit/scripts/ci/test_ci_summary_gate.py
+      -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23399-ac1
+    description: "A two-attempt fixture reads PENDING on the unfixed gate and passes on the fixed one;
+      a failing re-run job still reads red."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/scripts/ci/test_ci_summary_partial_rerun.py -q --no-cov
+          -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core

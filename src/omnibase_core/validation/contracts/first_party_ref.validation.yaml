@@ -264,7 +264,7 @@ validation:
           and use its newest dev-merge tag.
         exact_pattern: (?:^|[,\s(])===?\s*[^,;\s*]+(?=\s*(?:[,;)]|$))
     - rule_id: stale_pin
-      description: stale pin
+      description: a pinned dev-merge tag must exist in the sibling's tag inventory; age is never judged
       severity: error
       enabled: true
       parameters:
@@ -278,29 +278,12 @@ validation:
           - omninode-intelligence=omniintelligence
         name_pattern: ^\s*([A-Za-z0-9][A-Za-z0-9._-]*)
         normalize_pattern: '[-_.]+'
-        remediation: Pin the sibling with git and tag in tool.uv.sources, keep a dependency version range,
-          and use its newest dev-merge tag.
+        remediation: Pin a dev-merge tag that exists in the sibling's tag inventory; a pin that is merely
+          old is not a finding.
         tag_pattern: ^dev-[0-9]{14}-[0-9a-f]{12}$
-        max_trailing_merges: 50
-        # OMN-22828: the merge count is a proxy for age and mis-scales with
-        # landing rate. omnimarket merges about twenty pull requests an hour, so
-        # it passes 50 trailing merges in about two and a half hours -- less
-        # time than a consumer's CI run -- and every bump of it was refused for
-        # being 50 merges behind while only hours old. Measured in omniclaude on
-        # 2026-11-08: the pin was 127 merges and 33.1 hours behind, so it failed
-        # the merge bound while passing the 72-hour one, and it blocked every
-        # local commit to that repository, not only its dependency pull
-        # requests. 1500 is two days of omnimarket landing at that rate, which
-        # leaves max_trailing_hours as the bound that governs this sibling.
-        # Siblings absent here keep the 50 above.
-        # <repo>=<limit>, the shape `siblings` above uses: a rule's parameters
-        # are validated against a scalar-or-list union before the typed model,
-        # which refuses a nested mapping.
-        max_trailing_merges_by_repo:
-          - omnimarket=1500
-        max_trailing_hours: 72
-        timestamp_pattern: ^dev-([0-9]{14})-
-        timestamp_format: '%Y%m%d%H%M%S'
+        # OMN-23386 (RULING 2026-11-09T21:54:25Z): a pin's age never fails a change, so
+        # this rule holds no merge or hour bound. It reads the sibling's dev tag
+        # inventory and refuses a pin that names a tag the inventory lacks.
         url_template: https://github.com/{org}/{repo}.git
         github_org: OmniNode-ai
         git_binary: git
