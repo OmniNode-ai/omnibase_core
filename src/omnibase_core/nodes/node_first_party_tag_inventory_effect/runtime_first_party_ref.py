@@ -80,15 +80,11 @@ ZERO_TARGET_NOTE = (
 )
 # Sibling-pin rules report line 1 of pyproject.toml, so their identity is the message.
 _MESSAGE_TEXT_RULES = frozenset({"missing_source", "wrong_repo", "release_pin"})
-_STALE_RULE = "stale_pin"
 
 
 def _finding_text(issue: ModelValidationIssue, root: Path) -> str:
     if issue.code in _MESSAGE_TEXT_RULES:
         return normalize_text(issue.message)
-    if issue.code == _STALE_RULE:
-        # The trailing merge and hour counts move every night; the pin does not.
-        return normalize_text(issue.message.partition(" trails ")[0])
     lines = (root / str(issue.file_path)).read_text(encoding="utf-8").splitlines()
     number = issue.line_number or 0
     return normalize_text(

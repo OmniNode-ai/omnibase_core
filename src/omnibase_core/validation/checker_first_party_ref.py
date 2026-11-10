@@ -11,7 +11,6 @@ from __future__ import annotations
 import re
 import tomllib
 from collections.abc import Iterator, Mapping
-from datetime import UTC, datetime, timedelta
 from fnmatch import fnmatchcase
 from pathlib import Path
 from typing import cast
@@ -313,23 +312,6 @@ def _siblings(policy: ModelSiblingParameters) -> dict[str, str]:
     }
 
 
-def _merge_limits(policy: ModelSiblingStaleParameters) -> dict[str, int]:
-    """Per-repository trailing-merge bounds, from ``<repo>=<limit>`` entries.
-
-    One global merge count cannot serve siblings whose landing rates differ by
-    two orders of magnitude, so a sibling may name its own (OMN-22828).
-    """
-    limits: dict[str, int] = {}
-    for item in policy.max_trailing_merges_by_repo:
-        repo, _, limit = item.partition("=")
-        if not limit.strip().isdigit() or int(limit) <= 0:
-            raise invalid(
-                f"max_trailing_merges_by_repo entry {item!r} is not <repo>=<positive int>"
-            )
-        limits[repo.strip()] = int(limit)
-    return limits
-
-
 def _declared(
     document: Mapping[str, object], policy: ModelSiblingParameters
 ) -> dict[str, list[str]]:
@@ -577,56 +559,17 @@ def _sibling_issues(
                     for pin in pins:
                         if re.fullmatch(policy.tag_pattern, pin) is None:
                             continue
-                        detail = ""
+                        # A pin's age never fails a change (OMN-23386): a repository
+                        # moves its pin on a sibling only when it needs something new
+                        # from it. The one thing checked here is that the tag exists.
                         if pin not in tags:
-                            detail = f"unverifiable_pin: {name}@{pin} absent from supplied tag inventory"
-                        else:
-                            newest = max(tags)
-                            try:
-                                pin_match = re.search(policy.timestamp_pattern, pin)
-                                newest_match = re.search(
-                                    policy.timestamp_pattern, newest
-                                )
-                                if pin_match is None or newest_match is None:
-                                    raise invalid("timestamp pattern did not match")
-                                delta = datetime.strptime(
-                                    newest_match.group(1), policy.timestamp_format
-                                ).replace(tzinfo=UTC) - datetime.strptime(
-                                    pin_match.group(1), policy.timestamp_format
-                                ).replace(tzinfo=UTC)
-                                merges = sum(tag > pin for tag in tags)
-                                merge_limit = _merge_limits(policy).get(
-                                    repo, policy.max_trailing_merges
-                                )
-                                over_merges = merges > merge_limit
-                                over_age = delta > timedelta(
-                                    hours=policy.max_trailing_hours
-                                )
-                                if over_merges or over_age:
-                                    # Name WHICH bound failed. Printing both figures
-                                    # and neither limit made a 33-hour pin read as an
-                                    # age refusal against a 72-hour bound, when it was
-                                    # the merge count that tripped (OMN-22828).
-                                    over = ", ".join(
-                                        bound
-                                        for bound, tripped in (
-                                            (
-                                                f"merges {merges} > {merge_limit}",
-                                                over_merges,
-                                            ),
-                                            (
-                                                f"hours {delta / timedelta(hours=1):g}"
-                                                f" > {policy.max_trailing_hours}",
-                                                over_age,
-                                            ),
-                                        )
-                                        if tripped
-                                    )
-                                    detail = f"{name}@{pin} trails newest dev tag {newest} by {merges} merges and {delta / timedelta(hours=1):g} hours; over: {over}"
-                            except (ValueError, ModelOnexError):
-                                detail = f"unverifiable_pin: cannot parse timestamps for {name}@{pin} and {newest}"
-                        if detail:
-                            yield _issue(rule, policy, file.path, 1, detail)
+                            yield _issue(
+                                rule,
+                                policy,
+                                file.path,
+                                1,
+                                f"unverifiable_pin: {name}@{pin} absent from supplied tag inventory",
+                            )
 
 
 def check_first_party_refs(

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import subprocess
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import patch
 
@@ -182,7 +181,7 @@ def mutation_case(rule, key):
             inventories = [
                 {
                     "repo": "omnibase_core",
-                    "tags": [TAG, "dev-20261023024445-aaaaaaaaaaaa"],
+                    "tags": ["dev-20261023024445-aaaaaaaaaaaa"],
                 }
             ]
             data = facts(source, "pyproject.toml", inventories)
@@ -205,46 +204,6 @@ def mutation_case(rule, key):
         value = "https://github.com/other/{repo}.git"
     elif key == "exact_pattern":
         value = "$^"
-    elif key == "max_trailing_merges":
-        bound = load_rule_parameters(CONTRACT)[rule].max_trailing_merges
-        start = datetime.strptime(TAG.split("-")[1], "%Y%m%d%H%M%S").replace(tzinfo=UTC)
-        tags = [TAG] + [
-            f"dev-{(start + timedelta(seconds=i)).strftime('%Y%m%d%H%M%S')}-aaaaaaaaaaaa"
-            for i in range(1, bound + 2)
-        ]
-        data = fixture(rule, "clean").model_copy(
-            update={
-                "dev_tags": tuple(
-                    type(inventory)(repo=inventory.repo, tags=tuple(tags))
-                    for inventory in fixture(rule, "clean").dev_tags
-                )
-            }
-        )
-        value = bound + 1
-    elif key == "max_trailing_merges_by_repo":
-        # OMN-22828: the contract names a bound only for the one fast sibling,
-        # so the mutation names the fixture's sibling instead and sets a bound
-        # its trailing merges clear. Three trailing merges pass the global 50
-        # and fail a per-repo 1.
-        start = datetime.strptime(TAG.split("-")[1], "%Y%m%d%H%M%S").replace(tzinfo=UTC)
-        tags = [TAG] + [
-            f"dev-{(start + timedelta(minutes=i)).strftime('%Y%m%d%H%M%S')}-aaaaaaaaaaaa"
-            for i in range(1, 4)
-        ]
-        data = fixture(rule, "clean").model_copy(
-            update={
-                "dev_tags": tuple(
-                    type(inventory)(repo=inventory.repo, tags=tuple(tags))
-                    for inventory in fixture(rule, "clean").dev_tags
-                )
-            }
-        )
-        value = ["omnibase_core=1"]
-    elif key == "max_trailing_hours":
-        value = 1000
-    elif key in {"timestamp_pattern", "timestamp_format"}:
-        data = fixture(rule, "clean")
-        value = r"^unknown-(.*)" if key == "timestamp_pattern" else "%Y"
     else:
         raise AssertionError(f"missing mutation fixture for {rule}.{key}")
     return data, contract, value

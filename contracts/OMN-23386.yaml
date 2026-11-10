@@ -1,0 +1,67 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23386
+title: A pin's age alone never fails a change, so a repository moves its pin on a sibling only when it
+  needs something new from it
+summary: >-
+  The first_party_ref stale_pin rule failed any change whose sibling pin trailed the newest dev tag by
+  more than a merge or hour bound. Measured on omniclaude#3242 (a one-file skill): first-party-ref failed
+  with the omnimarket pin 55 merges and 15.95 hours behind. The operator ruled on 2026-11-09T21:54:25Z
+  that a downstream repository moves its pin only when it needs something new, so the age bounds are removed
+  from the rule's contract and checker. The two rules that remain are that a first-party reference names
+  a dev-merge tag and that a pin names a tag that exists in the sibling's tag inventory (the stale_pin
+  rule id stays, so baselines that name it keep reading it).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23386-pin-age-never-fails
+    statement: >-
+      A sibling pin's age (merges or hours behind the newest dev tag) never fails first_party_ref, while
+      a pin that names a tag absent from the sibling's tag inventory still does (a regression test holds
+      that; it passes at the merge base too, so it binds no criterion).
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: a pin 55 merges and 16 hours behind, and one 1500 merges and 500 hours behind, passes for
+          every sibling -- falsifier: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+          -q -p no:randomly --no-cov -k never_refused_for_its_age
+      - id: AC2
+        statement: >-
+          AC2: the stale_pin contract row carries no merge or hour bound parameter -- falsifier: uv run
+          --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py -q -p
+          no:randomly --no-cov -k no_age_bound
+evidence_requirements:
+  - kind: tests
+    description: The first_party_ref suite, file by file.
+    command: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+      -q -p no:randomly --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23386-age-never-fails
+    description: >-
+      The failing control: at the merge base the 55-merge, 16-hour pin returns stale_pin; at this head
+      it returns no issue.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+          -q -p no:randomly --no-cov -k never_refused_for_its_age
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23386-no-age-parameter
+    description: The contract row holds no max_ or timestamp_ parameter.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/first_party_ref/test_checker_first_party_ref.py
+          -q -p no:randomly --no-cov -k no_age_bound
+        cwd: ${OMNI_HOME}/omnibase_core
