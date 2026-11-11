@@ -2,12 +2,12 @@
 # SPDX-License-Identifier: MIT
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [project]
 name = "omnibase_core"
-version = "0.47.75"
+dynamic = ["version"]
 description = "ONEX Core Framework - Base classes and essential implementations"
 authors = [
     {name = "OmniNode.ai", email = "contact@omninode.ai"}
@@ -269,6 +269,23 @@ dev = [
     "sqlglot>=26.0.0,<31.0.0",
     "skills-ref==0.1.1",
 ]
+
+# OMN-23834 (core slice of OMN-18549): the version comes from git at build time,
+# so no change edits a version line. A commit that is exactly a v<N> release tag
+# builds as N; every other commit builds as the next patch's dev version with the
+# commit id as its local part, so two code states never share a version string.
+# The describe command matches release tags only: dev-merge tags are not versions.
+# No fallback version is set on purpose: a build without git metadata fails
+# instead of taking a string shared by every such build (release-identity check).
+[tool.hatch.version]
+source = "vcs"
+
+[tool.hatch.version.raw-options]
+git_describe_command = ["git", "describe", "--dirty", "--tags", "--long", "--match", "v[0-9]*"]
+
+# uv caches the editable build; a new commit or tag is a new version.
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { git = { commit = true, tags = true } }]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/omnibase_core"]

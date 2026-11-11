@@ -67,7 +67,11 @@ def test_project_version_matches_locked_editable_package() -> None:
     packages = [p for p in lock["package"] if p["name"] == "omnibase-core"]
     assert len(packages) == 1
     assert packages[0]["source"] == {"editable": "."}
-    assert packages[0]["version"] == project["project"]["version"]
+    # OMN-23837: the version comes from git at build time, so neither file holds
+    # one; the lock and the project still agree, each saying the version is dynamic.
+    assert "version" not in project["project"]
+    assert project["project"]["dynamic"] == ["version"]
+    assert "version" not in packages[0]
 
 
 def test_release_changelog_retains_version_0_47_50_in_root_readme() -> None:

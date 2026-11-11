@@ -30,3 +30,14 @@ class ModelReleaseIdentityCheckInput(BaseModel):
     files: tuple[ModelSourceFile, ...] = ()
     runtime_errors: tuple[str, ...] = ()
     runtime_exit_code: Literal[1, 2] = 1
+    # OMN-23834: where the tree declares its version. "static" is a hand-written
+    # project.version; "vcs" is a version the build derives from git, so no
+    # change edits a version line and each commit builds under its own string.
+    version_source: Literal["static", "vcs"] = "static"
+    # The source the gate demands. None keeps the legacy rule (a static version
+    # must be ahead of the newest published tag); "vcs" demands a git-derived
+    # version.
+    required_version_source: Literal["static", "vcs"] | None = None
+    # A fallback version configured for the git-derived source. It would name
+    # every code state without git metadata alike (the OMN-13402 aliasing).
+    vcs_fallback_setting: str | None = None

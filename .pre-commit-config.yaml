@@ -2385,7 +2385,7 @@ repos:
       - id: check-release-identity
         name: No code merged onto a published version without a bump (OMN-13411)
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_release_identity_check_compute.runtime_release_identity_check
-          --base origin/dev
+          --base origin/dev --require-version-source vcs
         language: system
         files: ^(src/.*\.py|pyproject\.toml)$
         pass_filenames: false

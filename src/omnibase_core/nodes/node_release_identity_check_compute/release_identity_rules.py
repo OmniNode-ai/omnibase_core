@@ -27,6 +27,38 @@ def version_error(request: ModelReleaseIdentityCheckInput) -> str | None:
     return None
 
 
+def vcs_rule(request: ModelReleaseIdentityCheckInput) -> tuple[str, str, str] | None:
+    """Return (rule_id, message, remediation) when a git-derived version is refused.
+
+    OMN-23834: under a git-derived version two code states cannot share a
+    string because the build names each commit; the gate refuses whatever would
+    re-open that gap: a declared static version (a change editing a version
+    line) or a configured fallback version (a string given to every state that
+    has no git metadata).
+    """
+    if request.version_source == "static":
+        return (
+            "version_not_from_git",
+            "FAIL: pyproject declares a static project.version "
+            f"{request.pyproject_version_raw!r}; this repository takes its "
+            "version from git at build time and a change must not declare one "
+            "(OMN-23834).",
+            'Remove project.version, declare dynamic = ["version"] and keep '
+            '[tool.hatch.version] source = "vcs".',
+        )
+    if request.vcs_fallback_setting is not None:
+        return (
+            "aliasing_fallback_version",
+            "FAIL: the git-derived version has a fallback version "
+            f"{request.vcs_fallback_setting!r}: every build without git metadata "
+            "would ship under that one string, aliasing two code states "
+            "(OMN-13402).",
+            "Remove the fallback version so a build without git metadata fails "
+            "instead of taking a shared version string.",
+        )
+    return None
+
+
 def latest_published_version(tags: tuple[str, ...]) -> Version | None:
     """Skip non-version tags and choose the maximum PEP 440 version."""
     best: Version | None = None
@@ -49,6 +81,11 @@ def packaged_source_changed(paths: tuple[str, ...] | None) -> bool:
 
 def success_message(request: ModelReleaseIdentityCheckInput) -> str:
     """Render an already validated PASS using the original core text."""
+    if request.required_version_source == "vcs":
+        return (
+            "OK: the version comes from git at build time; every commit builds "
+            "under its own version string (OMN-23834)."
+        )
     latest = latest_published_version(request.published_tags)
     if latest is None:
         return "OK: no published tag yet — release-identity bump not required."

@@ -164,7 +164,13 @@ def test_live_invocation(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    document = (REPO / "pyproject.toml").read_text()
+    # OMN-23834: the live file now takes its version from git. This test keeps
+    # exercising the legacy static-version rule against the real document by
+    # putting a static version where the git-derived declaration stands.
+    declaration = 'dynamic = ["version"]'
+    live = (REPO / "pyproject.toml").read_text()
+    assert declaration in live
+    document = live.replace(declaration, 'version = "0.47.75"', 1)
     version = str(tomllib.loads(document)["project"]["version"])
     root = repository(tmp_path, version, (tag,))
     (root / "pyproject.toml").write_text(document)

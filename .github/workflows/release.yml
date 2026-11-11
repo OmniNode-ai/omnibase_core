@@ -72,7 +72,7 @@ jobs:
       # dispatch supplies `sync_main_to_tag` instead and skips this job whole.
       # A dispatch that supplies NEITHER would otherwise fall back to
       # `github.ref` and die several steps later on a confusing
-      # "tag v does not match pyproject.toml version" message. Fail here, in
+      # "tag v does not match the version the build derives from git" message. Fail here, in
       # the language of the mistake that was actually made.
       - name: Require a release tag on workflow_dispatch
         if: ${{ github.event_name == 'workflow_dispatch' }}
@@ -102,15 +102,14 @@ jobs:
             TAG="${GITHUB_REF_NAME}"
           fi
           TAG="${TAG#v}"
-          PKG_VERSION=$(python3 -c "
-          import tomllib, sys
-          with open('pyproject.toml', 'rb') as f:
-              d = tomllib.load(f)
-          v = d.get('project', {}).get('version')
-          if not v:
-              raise SystemExit('ERROR: missing [project].version in pyproject.toml')
-          print(v)
-          ")
+          # OMN-23834: the version comes from git at build time; the tag's own
+          # commit builds as exactly the tag. Read what the build backend
+          # derives for this checkout and require it to equal the tag.
+          PKG_VERSION=$(uvx --with hatch-vcs hatchling version)
+          if [ -z "$PKG_VERSION" ]; then
+            echo "ERROR: the build backend derived no version for this checkout"
+            exit 1
+          fi
           if [ "$TAG" != "$PKG_VERSION" ]; then
             echo "ERROR: tag v${TAG} does not match pyproject.toml version $PKG_VERSION"
             exit 1

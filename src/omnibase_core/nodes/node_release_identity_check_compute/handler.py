@@ -22,6 +22,7 @@ from omnibase_core.nodes.node_release_identity_check_compute.release_identity_ru
     VALIDATOR_ID,
     latest_published_version,
     packaged_source_changed,
+    vcs_rule,
     version_error,
 )
 
@@ -33,7 +34,16 @@ class NodeReleaseIdentityCheckCompute:
         """Preserve configuration, exemption and bump decision order."""
         findings: list[ModelValidationFinding] = []
         error = version_error(request)
-        if error is not None:
+        if request.required_version_source == "vcs":
+            # OMN-23834: a git-derived version is true by construction; the
+            # legacy tag comparison applies only to a hand-written version.
+            refusal = vcs_rule(request)
+            if refusal is not None:
+                rule, message, remediation = refusal
+                findings.append(
+                    self._finding(request, "FAIL", rule, message, remediation)
+                )
+        elif error is not None:
             rule = (
                 "no_pyproject_version"
                 if not request.pyproject_version_raw
