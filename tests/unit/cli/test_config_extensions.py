@@ -13,7 +13,6 @@ import importlib
 import importlib.metadata
 from collections.abc import Iterator
 from contextlib import contextmanager
-from importlib.metadata import EntryPoint
 from types import ModuleType
 from unittest.mock import patch
 
@@ -34,7 +33,7 @@ def future_config() -> None:
 
 
 @contextmanager
-def _configured(points: list[EntryPoint]) -> Iterator[ModuleType]:
+def _configured(points: list[importlib.metadata.EntryPoint]) -> Iterator[ModuleType]:
     original = importlib.metadata.entry_points
 
     def discover(**kwargs: str) -> object:
@@ -49,8 +48,10 @@ def _configured(points: list[EntryPoint]) -> Iterator[ModuleType]:
         importlib.reload(cli_config)
 
 
-def _point(name: str, target: str = "future_config") -> EntryPoint:
-    return EntryPoint(name=name, value=f"{__name__}:{target}", group="onex.config")
+def _point(name: str, target: str = "future_config") -> importlib.metadata.EntryPoint:
+    return importlib.metadata.EntryPoint(
+        name=name, value=f"{__name__}:{target}", group="onex.config"
+    )
 
 
 def test_unknown_config_command_loads_from_installed_metadata() -> None:
