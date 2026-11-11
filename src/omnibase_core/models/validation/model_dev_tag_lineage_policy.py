@@ -32,3 +32,8 @@ class ModelDevTagLineagePolicy(BaseModel):
     shallow_arguments: tuple[str, ...] = Field(min_length=1)
     ancestor_arguments: tuple[str, ...] = Field(min_length=1)
     show_arguments: tuple[str, ...] = Field(min_length=1)
+    derived_version_table: str = Field(min_length=1)
+    derived_version_source: str = Field(min_length=1)
+    describe_arguments: tuple[str, ...] = Field(min_length=1)
+    describe_pattern: str
+    derived_lock_pattern: str

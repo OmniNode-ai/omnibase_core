@@ -13,5 +13,6 @@ class ModelDevTagLineageFacts(BaseModel):
     tag_exists: bool | None = None
     commit: str | None = None
     version: str | None = None
+    version_derived: bool = False
     on_branch: bool | None = None
     detail: str

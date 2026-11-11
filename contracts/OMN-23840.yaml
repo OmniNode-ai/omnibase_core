@@ -1,0 +1,70 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23840
+title: omnibase_core - the dev-tag lineage check reads a git-derived version
+summary: The check that validates the dev tags other repositories pin works out the version at the tag
+  commit the way the build does when the package takes its version from git, and still refuses a lock
+  entry whose commit, distance or commit id does not match.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - dev-tag lineage policy model (five new fields) and facts model (one new field), both carried by the
+    validator contract's lineage_unresolved rule parameters
+requirements:
+  - id: req-omn23840-derived-version-lineage
+    statement: A pin to a dev tag cut after core took its version from git passes the lineage check, and
+      a tag whose commit, derived version or lock entry does not match is still refused.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the dev-tag lineage check resolves a version for a tag whose pyproject declares
+          a git-derived version, and still refuses a lock entry whose commit or version does not match
+          -- falsifier: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect/test_dev_tag_lineage_derived_version.py
+          -q fails at the base commit and passes at the head'
+      - id: AC2
+        statement: 'AC2: the declared-range check admits a development version of the next patch for a
+          range that admits the next release -- falsifier: the derived-version range test reports lineage_unresolved
+          or declared_version_mismatch for a range such as >=2.3.3,<2.4'
+      - id: AC3
+        statement: 'AC3: integrated: a downstream repository dependency pin check passes for a pin to
+          a development tag cut after the version-from-git change, read in that repository CI on the exact
+          head -- falsifier: that check is red on the pin'
+evidence_requirements:
+  - kind: tests
+    description: The lineage effect, checker and provenance validator tests pass.
+    command: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect tests/unit/validation/test_dev_tag_lineage.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23840-ac1
+    description: The derived-version lineage tests, real git and checker only.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect/test_dev_tag_lineage_derived_version.py
+          -q
+        cwd: .
+  - id: dod-omn23840-ac2
+    description: The range admission for a derived development version.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect/test_dev_tag_lineage_derived_version.py
+          -q -k range_that_does_not_admit
+        cwd: .
+  - id: dod-omn23840-ac3
+    description: The related lineage tests still pass; the downstream CI read is taken after merge.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect tests/unit/validation/test_dev_tag_lineage.py
+          -q
+        cwd: .

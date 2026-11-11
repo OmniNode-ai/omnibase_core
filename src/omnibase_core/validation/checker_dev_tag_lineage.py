@@ -206,6 +206,30 @@ def parse_lock(
     return tuple(result)
 
 
+def _lock_version_matches(
+    locked: str, facts: ModelDevTagLineageFacts, policy: ModelDevTagLineagePolicy
+) -> bool:
+    """Exact version equality, except that a git-derived version carries a commit id.
+
+    The abbreviation length of that id follows the repository the lock was made in,
+    so a derived version matches when its public part is equal and its locked commit
+    id is a prefix of the verified commit; the lock's commit fragment is still
+    compared with the full verified commit elsewhere.
+    """
+    if facts.version is None:
+        return False
+    if not facts.version_derived or "+" not in facts.version:
+        return locked == facts.version
+    wanted = facts.version.split("+", 1)[0]
+    match = re.fullmatch(policy.derived_lock_pattern, locked)
+    return (
+        match is not None
+        and match["public"] == wanted
+        and facts.commit is not None
+        and facts.commit.startswith(match["node"])
+    )
+
+
 def check_dev_tag_lineage(
     path: Path,
     candidate: ModelDevTagLineageCandidate,
@@ -259,7 +283,10 @@ def check_dev_tag_lineage(
                 tag_values, fragment = None, ""
             if (
                 tag_values != [candidate.tag]
-                or (facts.version is not None and entry.version != facts.version)
+                or (
+                    facts.version is not None
+                    and not _lock_version_matches(entry.version, facts, policy)
+                )
                 or (facts.commit is not None and fragment != facts.commit)
             ):
                 failures.add("lock_mismatch")
