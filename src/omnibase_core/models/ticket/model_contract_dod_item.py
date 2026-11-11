@@ -76,6 +76,25 @@ BINDS_AC_CHECK_TYPES: frozenset[EnumDodCheckType] = frozenset(
     }
 )
 
+# OMN-22969, OMN-23758. The integration item rule: a DoD evidence item with at
+# least one check observed against a running system (a live behavior probe, an
+# endpoint, a lab receipt or a deployed-SHA match), as opposed to a test that
+# only reads source.
+INTEGRATION_ITEM_RULE = "DOD_EVIDENCE_INTEGRATION_ITEM_MISSING"
+INTEGRATION_CHECK_TYPES: frozenset[EnumDodCheckType] = frozenset(
+    {
+        EnumDodCheckType.BEHAVIOR_PROVEN,
+        EnumDodCheckType.ENDPOINT,
+        EnumDodCheckType.LAB_RECEIPT,
+        EnumDodCheckType.RUNTIME_SHA_MATCH,
+    }
+)
+
+
+def is_integration_check_type(check_type: EnumDodCheckType) -> bool:
+    """True for a check type observed against a running system."""
+    return check_type in INTEGRATION_CHECK_TYPES
+
 
 class ModelContractDodItem(BaseModel):
     """A single DoD evidence item for ticket contract governance.
@@ -194,6 +213,9 @@ class ModelContractDodItem(BaseModel):
 
 __all__ = [
     "BINDS_AC_CHECK_TYPES",
+    "INTEGRATION_CHECK_TYPES",
+    "INTEGRATION_ITEM_RULE",
+    "is_integration_check_type",
     "BINDS_AC_CHECK_TYPE_RULE",
     "BINDS_AC_LABEL_RE",
     "BINDS_AC_LABEL_RULE",

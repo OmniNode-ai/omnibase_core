@@ -9,42 +9,16 @@ OMN-8916
 
 from __future__ import annotations
 
-from collections.abc import Sequence
-
 from pydantic import ValidationError
 
 from omnibase_core.contracts.validators.validation_result import ValidationResult
-from omnibase_core.enums.ticket.enum_dod_check_type import EnumDodCheckType
-from omnibase_core.models.contracts.ticket.model_dod_evidence_item import (
-    ModelDodEvidenceItem,
-)
 from omnibase_core.models.contracts.ticket.model_linear_ticket_contract import (
     ModelLinearTicketContract,
 )
-
-# OMN-22969. The integration item: a DoD evidence item with at least one check
-# observed against a running system (a live behavior probe, an endpoint, a lab
-# receipt or a deployed-SHA match), as opposed to a test that only reads source.
-INTEGRATION_ITEM_RULE = "DOD_EVIDENCE_INTEGRATION_ITEM_MISSING"
-
-
-def is_integration_check_type(check_type: EnumDodCheckType) -> bool:
-    """True for a check type observed against a running system."""
-    return (
-        check_type is EnumDodCheckType.BEHAVIOR_PROVEN
-        or check_type is EnumDodCheckType.ENDPOINT
-        or check_type is EnumDodCheckType.LAB_RECEIPT
-        or check_type is EnumDodCheckType.RUNTIME_SHA_MATCH
-    )
-
-
-def has_integration_item(dod_evidence: Sequence[ModelDodEvidenceItem]) -> bool:
-    """True when any DoD evidence item carries an integration check."""
-    return any(
-        is_integration_check_type(check.check_type)
-        for item in dod_evidence
-        for check in item.checks
-    )
+from omnibase_core.models.ticket.model_contract_dod_item import (
+    INTEGRATION_ITEM_RULE,
+    is_integration_check_type,
+)
 
 
 def validate_ticket_contract(
@@ -64,7 +38,12 @@ def validate_ticket_contract(
     """
     try:
         contract = ModelLinearTicketContract.model_validate(ticket)
-        if require_integration_item and not has_integration_item(contract.dod_evidence):
+        has_integration_item = any(
+            is_integration_check_type(check.check_type)
+            for item in contract.dod_evidence
+            for check in item.checks
+        )
+        if require_integration_item and not has_integration_item:
             return ValidationResult(
                 valid=False,
                 errors=[
@@ -85,8 +64,6 @@ def validate_ticket_contract(
 
 
 __all__ = [
-    "is_integration_check_type",
     "INTEGRATION_ITEM_RULE",
-    "has_integration_item",
     "validate_ticket_contract",
 ]

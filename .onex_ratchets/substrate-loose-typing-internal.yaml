@@ -994,12 +994,6 @@ entries:
   - path: src/omnibase_core/models/ticket/model_requirement.py
     rule: substrate-loose-typing-internal
     text: sha256:ac00bf7663cc27e7d8c4114e31918d099e9a8b008a8ac755bde61bed6d053713
-  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
-    rule: substrate-loose-typing-internal
-    text: sha256:400cda35246a5be048cd9b186324bee1ed76010d5856acc09f5249a7c244a8a4
-  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
-    rule: substrate-loose-typing-internal
-    text: sha256:9437e6fb0cea126763bc23852f2822457d065ab8650ba2e79ae05c7f0ee36f66
   - path: src/omnibase_core/models/utils/model_validation_rules_input_value.py
     rule: substrate-loose-typing-internal
     text: sha256:b8da4b78f5d9a87aaf233c75a952e3837a9a557ad428df05ad251828faea558f

@@ -51,6 +51,18 @@ INVENTORY_CLASSES: dict[tuple[str, str], str] = {
         "ModelTicketWorkflowState",
     ): "workflow FSM state, distinct from the contract",
     (
+        "models/ticket/model_ticket_business_brief.py",
+        "ModelTicketBusinessBrief",
+    ): "the five-heading business brief embedded in the canonical ticket model",
+    (
+        "models/ticket/model_ticket_standard_form_fields.py",
+        "ModelTicketStandardFormFields",
+    ): "the schema 1.1.0 fields the canonical ticket model inherits",
+    (
+        "models/ticket/model_ticket_draft.py",
+        "ModelTicketDraft",
+    ): "the canonical ticket model before the tracker assigns an id (from_draft)",
+    (
         "models/ticket/model_contract_dod_item.py",
         "ModelContractDodItem",
     ): "DoD item embedded in the canonical ticket model",

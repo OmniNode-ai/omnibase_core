@@ -13,6 +13,7 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.models.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.ticket.model_ticket_contract import ModelTicketContract
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -64,3 +65,24 @@ def test_migrated_contract_loads_with_evidence(
         for check in item.checks:
             assert isinstance(check.check_value, str)
             assert check.check_value.strip()
+
+
+# Two files carry interfaces_touched values the enum has never held; both were
+# refused before schema 1.1.0 and are not rewritten (merged work). The set only
+# shrinks: a file outside it that stops validating fails the test below.
+_REFUSED_BEFORE_SCHEMA_1_1_0 = frozenset({"OMN-14108.yaml", "OMN-18531.yaml"})
+
+
+def test_every_core_contract_file_validates() -> None:
+    """OMN-23758 AC3: schema 1.1.0 leaves every 1.0.0 contract file validating."""
+    paths = sorted((REPO_ROOT / "contracts").glob("*.yaml"))
+    assert len(paths) >= 252
+    refused = set()
+    for path in paths:
+        try:
+            ModelTicketContract.from_yaml(path.read_text(encoding="utf-8"))
+        except ModelOnexError:
+            refused.add(path.name)
+    assert refused <= _REFUSED_BEFORE_SCHEMA_1_1_0, sorted(
+        refused - _REFUSED_BEFORE_SCHEMA_1_1_0
+    )

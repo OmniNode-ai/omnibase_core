@@ -84,6 +84,9 @@ if TYPE_CHECKING:
         ModelRequirement,
         Requirement,
     )
+    from omnibase_core.models.ticket.model_ticket_business_brief import (
+        ModelTicketBusinessBrief,
+    )
     from omnibase_core.models.ticket.model_ticket_context_bundle import (
         ModelTCBAssumption,
         ModelTCBConstraint,
@@ -100,6 +103,7 @@ if TYPE_CHECKING:
         ModelTicketContract,
         TicketContract,
     )
+    from omnibase_core.models.ticket.model_ticket_draft import ModelTicketDraft
     from omnibase_core.models.ticket.model_ticket_workflow_state import (
         ModelTicketWorkflowState,
     )
@@ -151,6 +155,8 @@ __all__ = [
     "Gate",
     # Main contract (canonical name)
     "ModelTicketContract",
+    "ModelTicketBusinessBrief",
+    "ModelTicketDraft",
     # Alias for cleaner API
     "TicketContract",
     # Constants
@@ -322,6 +328,14 @@ _LAZY_IMPORTS: dict[str, tuple[str, str | None]] = {
     "ModelTicketContract": (
         "omnibase_core.models.ticket.model_ticket_contract",
         "ModelTicketContract",
+    ),
+    "ModelTicketBusinessBrief": (
+        "omnibase_core.models.ticket.model_ticket_business_brief",
+        "ModelTicketBusinessBrief",
+    ),
+    "ModelTicketDraft": (
+        "omnibase_core.models.ticket.model_ticket_draft",
+        "ModelTicketDraft",
     ),
     "TicketContract": (
         "omnibase_core.models.ticket.model_ticket_contract",

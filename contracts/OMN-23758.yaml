@@ -1,0 +1,139 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23758
+title: "The core ticket contract model becomes the one standard ticket form at schema 1.1.0, with its
+  fingerprint a plain hash of the contract"
+summary: "ModelTicketContract at schema 1.1.0 carries the business brief (five headings), the parent ticket
+  and criterion, the start probe, the diagnosis and the repository, with a falsifier and an integrated
+  mark on each criterion. A new ModelTicketDraft and from_draft build the contract before the tracker
+  gives it an id. compute_fingerprint() is a plain hash that leaves out the two timestamps. 1.0.0 files
+  validate unchanged."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23758-standard-form
+    statement: "A 1.1.0 ticket contract is refused unless it carries the standard form, and its fingerprint
+      is a plain hash of the contract."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a 1.1.0 contract without business_brief is refused"
+      - id: AC2
+        statement: "AC2: a 1.1.0 non-code-only contract with no integrated criterion bound to an integration
+          check is refused"
+      - id: AC4
+        statement: "AC4: ModelTicketContract.from_draft(draft, ticket_id) returns a contract that validates
+          and carries the given id and every draft field"
+      - id: AC5
+        statement: "AC5: every field and rule in the plan's section 1a kept column is enforced"
+      - id: AC6
+        statement: "AC6: after update_fingerprint(), compute_fingerprint() equals contract_fingerprint"
+      - id: AC7
+        statement: "AC7: two contracts equal in every field except created_at and updated_at have the
+          same fingerprint, and changing any other field changes it"
+      - id: AC3
+        statement: "AC3: all 252 core contract files still validate"
+      - id: AC8
+        statement: "AC8: integrated: the omnibase_core installed from the merged revision on the dev lane
+          validates one 1.1.0 fixture through onex contract validation"
+evidence_requirements:
+  - kind: tests
+    description: "The standard-form tests and the 252-file validation pass at the checkout."
+    command: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
+      -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23758-ac1-brief-required
+    description: "a 1.1.0 contract without business_brief is refused"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -o addopts='' -n 0 -k brief_required"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23758-ac2-integration-item-required
+    description: "a 1.1.0 non-code-only contract with no integrated criterion bound to an integration
+      check is refused"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -o addopts='' -n 0 -k integration_item_required"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23758-ac4-from-draft
+    description: "ModelTicketContract.from_draft(draft, ticket_id) returns a contract that validates and
+      carries the given id and every draft field"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -o addopts='' -n 0 -k from_draft"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23758-ac5-section-1a-kept
+    description: "every field and rule in the plan's section 1a kept column is enforced"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -o addopts='' -n 0 -k section_1a_kept"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23758-ac6-fingerprint-recomputes
+    description: "after update_fingerprint(), compute_fingerprint() equals contract_fingerprint"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -o addopts='' -n 0 -k fingerprint_recomputes"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23758-ac7-fingerprint-is-contract-hash
+    description: "two contracts equal in every field except created_at and updated_at have the same fingerprint,
+      and changing any other field changes it"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -o addopts='' -n 0 -k fingerprint_is_contract_hash"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23758-ac3-all-contract-files-validate
+    description: "All 252 core contract files still validate through ModelTicketContract."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
+          -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23758-ac8-dev-lane-validates-fixture
+    description: "The omnibase_core installed from the merged revision on the dev lane validates one 1.1.0
+      fixture through onex contract validation; the output is pasted in the pull request."
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac:
+      - AC8
+    checks:
+      - check_type: behavior_proven
+        check_value: "onex contract validation of the 1.1.0 fixture on the dev lane, the output pasted
+          in the pull request"
