@@ -8,8 +8,7 @@ summary: Core's slice of the dynamic versioning program. The version is derived 
 is_seam_ticket: true
 interface_change: true
 interfaces_touched:
-  - release identity check input model (three new fields) and the check's command line flag
-  - release cut tag step and release build tag check
+  - public_api
 requirements:
   - id: req-omn23837-version-from-git
     statement: Two code states never ship under one version string, and no change edits a version line.

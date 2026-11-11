@@ -15,6 +15,10 @@ class ModelAcceptanceCriterion(BaseModel):
     ``ModelProofRequirement.criterion_id``. IDs must be stable once assigned —
     do not rename after proof requirements reference them.
 
+    ``falsifier`` is the check that would show the criterion false;
+    ``integrated`` marks a criterion done only when observed in the running
+    system.
+
     Immutability:
         This model uses ``frozen=True``, making instances immutable after
         creation. This enables safe sharing across threads without
@@ -29,12 +33,16 @@ class ModelAcceptanceCriterion(BaseModel):
 
     id: str
     statement: str
+    # Schema 1.1.0 (OMN-23758). Optional here so 1.0.0 files keep loading; a
+    # 1.1.0 ticket contract requires both (see ModelTicketContract).
+    falsifier: str | None = None
+    integrated: bool = False
 
-    @field_validator("id", "statement")
+    @field_validator("id", "statement", "falsifier")
     @classmethod
-    def must_be_nonempty(cls, v: str) -> str:
+    def must_be_nonempty(cls, v: str | None) -> str | None:
         """Reject empty strings and whitespace-only values."""
-        if not v.strip():
+        if v is not None and not v.strip():
             raise ValueError("must be non-empty and not whitespace-only")
         return v
 
