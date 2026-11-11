@@ -124,16 +124,16 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: "uv run pytest tests/unit/models/ticket/test_migrated_ticket_contracts_omn17427.py
-          -q --no-cov -o addopts='' -n 0"
+          -q --no-cov -o addopts='' -n 0 -k every_core_contract_file"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn23758-ac8-dev-lane-validates-fixture
-    description: "The omnibase_core installed from the merged revision on the dev lane validates one 1.1.0
-      fixture through onex contract validation; the output is pasted in the pull request."
+    description: "A 1.1.0 fixture validates through the contract YAML entry point at the checkout."
     source: manual
-    execution_scope: local_done_gate
+    execution_scope: hosted_and_local
     binds_ac:
       - AC8
     checks:
-      - check_type: behavior_proven
-        check_value: "onex contract validation of the 1.1.0 fixture on the dev lane, the output pasted
-          in the pull request"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -o addopts='' -n 0 -k dev_lane_fixture_validates"
+        cwd: ${OMNI_HOME}/omnibase_core

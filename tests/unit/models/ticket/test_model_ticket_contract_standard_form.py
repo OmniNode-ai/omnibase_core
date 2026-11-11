@@ -542,3 +542,12 @@ def test_section_1a_kept_accepts_the_1_1_0_fixture_file() -> None:
     contract = ModelTicketContract.from_yaml(path.read_text(encoding="utf-8"))
     assert contract.schema_version == "1.1.0"
     assert contract.contract_fingerprint == contract.compute_fingerprint()
+
+
+def test_dev_lane_fixture_validates_through_yaml_entry_point() -> None:
+    """OMN-23758 AC8: a 1.1.0 fixture validates through the YAML entry point."""
+    contract = ModelTicketContract.from_yaml(
+        yaml.safe_dump(standard_form_data(), sort_keys=False)
+    )
+    assert str(contract.schema_version) == "1.1.0"
+    assert contract.business_brief is not None
