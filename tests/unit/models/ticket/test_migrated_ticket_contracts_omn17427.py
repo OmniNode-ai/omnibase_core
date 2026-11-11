@@ -74,7 +74,11 @@ _REFUSED_BEFORE_SCHEMA_1_1_0 = frozenset({"OMN-14108.yaml", "OMN-18531.yaml"})
 
 
 def test_every_core_contract_file_validates() -> None:
-    """OMN-23758 AC3: schema 1.1.0 leaves every 1.0.0 contract file validating."""
+    """OMN-23758 AC3: every 1.0.0 contract file validates beside a 1.1.0 file.
+
+    The 1.1.0 fixture is part of the control: the 1.0.0 files alone also
+    validate at the merge base, so a test of only those cannot fail there.
+    """
     paths = sorted((REPO_ROOT / "contracts").glob("*.yaml"))
     assert len(paths) >= 252
     refused = set()
@@ -86,3 +90,8 @@ def test_every_core_contract_file_validates() -> None:
     assert refused <= _REFUSED_BEFORE_SCHEMA_1_1_0, sorted(
         refused - _REFUSED_BEFORE_SCHEMA_1_1_0
     )
+    fixture = (
+        REPO_ROOT / "tests/fixtures/ticket_standard_form/ticket_contract_1_1_0.yaml"
+    )
+    standard = ModelTicketContract.from_yaml(fixture.read_text(encoding="utf-8"))
+    assert str(standard.schema_version) == "1.1.0"
