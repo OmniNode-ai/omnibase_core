@@ -1,0 +1,50 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23755
+title: Shared records for the code engine order answer
+summary: Adds the request, rung and answer models and the refusal and rung-kind enums that the routing
+  order node and the lane delegation step both import, so a change to either side's shape fails a test.
+  New records only; no existing model changes.
+is_seam_ticket: true
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23755-order-models
+    statement: The routing order question, answer and rung are one definition in the shared library.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the request, rung and answer models reject a malformed record -- falsifier: uv
+          run pytest tests/unit/models/delegation/test_model_delegation_routing_order.py -q'
+      - id: AC2
+        statement: 'AC2: the enums carry the stable values and each model forbids extra fields and is
+          frozen -- falsifier: uv run pytest tests/unit/models/delegation/test_model_delegation_routing_order.py
+          -q -k "extra or frozen"'
+evidence_requirements:
+  - kind: tests
+    description: The routing order model tests pass.
+    command: uv run pytest tests/unit/models/delegation/test_model_delegation_routing_order.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23755-ac1
+    description: Malformed rungs and answers are rejected.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/test_model_delegation_routing_order.py
+          -q
+        cwd: .
+  - id: dod-omn23755-ac2
+    description: Extra fields are forbidden and the models are frozen.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/test_model_delegation_routing_order.py
+          -q -k "extra or frozen"
+        cwd: .
