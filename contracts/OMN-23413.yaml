@@ -1,0 +1,61 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23413
+title: "Capability packages extend onex config through the lazy command registry"
+summary: "omnibase_core part of the unified ONEX CLI. The core config group loads package-declared configuration
+  commands through the same lazy registry and collision checks as the top-level CLI, so omnimarket's validate,
+  export, import, profiles and effective commands appear under onex config while the built-in init and
+  get keep their behaviour."
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn23413-ac9-config-extensions
+    statement: "Package configuration commands reach onex config without replacing the core group."
+    acceptance:
+      - id: AC9
+        statement: "AC9 (core part): onex config loads a package-declared command from installed metadata
+          through the lazy registry, refuses a duplicate name before loading anything, fails a broken
+          target only when it is run, and keeps the built-in commands when no package adds any -- falsifier:
+          uv run pytest tests/unit/cli/test_config_extensions.py, absent at the merge base"
+  - id: req-omn23413-ac16-bare-onex-tui
+    statement: "onex with no arguments opens the terminal UI only in a terminal."
+    acceptance:
+      - id: AC16
+        statement: "AC16: in a terminal, onex alone opens the command a package registers as tui; without
+          a terminal it prints the same help as onex --help; in a terminal with no tui registered it prints
+          help -- falsifier: uv run pytest tests/unit/cli/test_bare_onex_opens_tui.py, absent at the merge
+          base"
+evidence_requirements:
+  - kind: tests
+    description: The config extension tests pass.
+    command: "uv run pytest tests/unit/cli/test_config_extensions.py -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23413-ac9-config-extensions
+    description: "A package-declared config command loads under onex config, a duplicate name is refused
+      before any load, a broken target fails only when resolved, and built-ins stay without extensions.
+      The test file does not exist at the merge base."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC9
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_config_extensions.py -q --no-cov -o addopts=''
+          -n 0"
+  - id: dod-omn23413-ac16-bare-onex-tui
+    description: "onex alone opens a registered tui only when stdin and stdout are a terminal, and otherwise
+      prints exactly the onex --help text. The test file does not exist at the merge base."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC16
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_bare_onex_opens_tui.py -q --no-cov -o addopts=''
+          -n 0"
