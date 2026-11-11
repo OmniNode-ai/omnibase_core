@@ -56,12 +56,14 @@ dod_evidence:
         check_value: uv run pytest tests/unit/nodes/node_release_identity_check_compute -q
         cwd: .
   - id: dod-omn23837-ac3
-    description: The built version carries a dev part and the commit id, so it equals no release tag.
+    description: The project declares no static version, it takes its version from git, and the built
+      version carries a commit id, so it equals no release tag.
     source: manual
     binds_ac:
       - AC3
     checks:
       - check_type: command
-        check_value: uv run python -c "import importlib.metadata as m; v = m.version('omnibase_core');
-          assert 'dev' in v or '+' in v or v.count('.') == 2, v"
+        check_value: uv run python -c "import tomllib, importlib.metadata as m; p = tomllib.load(open('pyproject.toml',
+          'rb'))['project']; assert 'version' not in p and 'version' in p['dynamic'], 'static version
+          declared'; assert '+' in m.version('omnibase_core')"
         cwd: .
