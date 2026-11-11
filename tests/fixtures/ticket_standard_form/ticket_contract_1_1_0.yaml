@@ -1,0 +1,82 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: 1.1.0
+summary: s
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements: []
+emergency_bypass: null
+golden_path: null
+dod_evidence:
+  - id: dod-001
+    description: unit
+    source: generated
+    binds_ac:
+      - AC1
+    ac_bindings: []
+    supersedes_ac_binding: []
+    linear_dod_text: null
+    checks:
+      - check_type: test_passes
+        check_value: tests/x.py
+        cwd: null
+    execution_scope: hosted_and_local
+    status: pending
+    evidence_artifact: null
+  - id: dod-002
+    description: running
+    source: generated
+    binds_ac:
+      - AC2
+    ac_bindings: []
+    supersedes_ac_binding: []
+    linear_dod_text: null
+    checks:
+      - check_type: endpoint
+        check_value: http://host/health
+        cwd: null
+    execution_scope: hosted_and_local
+    status: pending
+    evidence_artifact: null
+contract_completeness: STUB
+proof_class: deployed
+business_brief:
+  what_this_is: a
+  why_it_matters: b
+  done_looks_like: c
+  risk: d
+  depends_on: e
+parent_ticket_id: OMN-90000
+parent_ac_label: AC1
+start_probe: null
+diagnosis: null
+repository: omnibase_core
+ticket_id: OMN-90001
+title: A standard ticket
+description: ''
+phase: intake
+context: {}
+questions: []
+requirements:
+  - id: REQ-1
+    statement: r
+    rationale: null
+    acceptance:
+      - id: AC1
+        statement: unit
+        falsifier: uv run pytest tests/x.py
+        integrated: false
+      - id: AC2
+        statement: running
+        falsifier: onex validate on the dev lane
+        integrated: true
+    proof_requirements: []
+verification_steps: []
+gates: []
+interfaces_provided: []
+interfaces_consumed: []
+contract_fingerprint: ff78212babb3737f
+created_at: '2026-11-11T14:41:31.490420Z'
+updated_at: '2026-11-11T14:41:31.490529Z'

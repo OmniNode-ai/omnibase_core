@@ -23,12 +23,12 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from datetime import UTC, datetime
 from typing import Any, ClassVar
 
 import yaml
 from pydantic import (
-    BaseModel,
     ConfigDict,
     Field,
     ValidationError,
@@ -57,7 +57,9 @@ from omnibase_core.models.ticket.model_contract_dod_item import (
     BINDS_AC_CHECK_TYPES,
     BINDS_AC_LABEL_RE,
     BINDS_AC_LABEL_RULE,
+    INTEGRATION_ITEM_RULE,
     ModelContractDodItem,
+    is_integration_check_type,
 )
 from omnibase_core.models.ticket.model_emergency_bypass import ModelEmergencyBypass
 from omnibase_core.models.ticket.model_evidence_requirement import (
@@ -75,6 +77,10 @@ from omnibase_core.models.ticket.model_requirement import ModelRequirement
 from omnibase_core.models.ticket.model_ticket_completion_predicate import (
     is_ticket_complete,
 )
+from omnibase_core.models.ticket.model_ticket_draft import ModelTicketDraft
+from omnibase_core.models.ticket.model_ticket_standard_form_fields import (
+    ModelTicketStandardFormFields,
+)
 from omnibase_core.models.ticket.model_verification_step import ModelVerificationStep
 from omnibase_core.utils.util_contract_schema_version import (
     validate_contract_schema_version,
@@ -86,12 +92,23 @@ _MAX_STRING_LENGTH = 10000
 _MAX_LIST_ITEMS = 1000
 _MAX_DOD_EVIDENCE_ITEMS = 10000
 
+# OMN-23758. Schema 1.1.0 is the one standard ticket form. A contract that
+# declares it is held to the standard-form rules below; 1.0.0 files validate
+# unchanged. Every rule names its code in the refusal.
+STANDARD_FORM_SCHEMA_VERSION = "1.1.0"
+STANDARD_FORM_FIELD_MISSING_RULE = "TICKET_STANDARD_FORM_FIELD_MISSING"
+STANDARD_FORM_TICKET_ID_RULE = "TICKET_STANDARD_FORM_TICKET_ID_PATTERN"
+STANDARD_FORM_DOD_MISSING_RULE = "TICKET_STANDARD_FORM_DOD_EVIDENCE_MISSING"
+STANDARD_FORM_FALSIFIER_RULE = "TICKET_STANDARD_FORM_CRITERION_FALSIFIER_MISSING"
+STANDARD_FORM_TITLE_RULE = "TICKET_STANDARD_FORM_TITLE_EMPTY"
+TICKET_ID_RE = re.compile(r"^OMN-\d+$")
+
 
 @allow_string_id(reason="External Linear ticket identifier (e.g., OMN-1807)")
 @allow_dict_str_any(
     reason="Context accumulates arbitrary research data during workflow"
 )
-class ModelTicketContract(BaseModel):
+class ModelTicketContract(ModelTicketStandardFormFields):
     """Contract model for ticket-driven development workflow.
 
     This model tracks the complete state of a ticket through its lifecycle,
@@ -391,6 +408,102 @@ class ModelTicketContract(BaseModel):
             raise ValueError("; ".join(violations))
         return self
 
+    @model_validator(mode="after")
+    def _validate_standard_form(self) -> ModelTicketContract:
+        """Hold a schema 1.1.0 contract to the one standard ticket form (OMN-23758).
+
+        Required at 1.1.0: business_brief, parent_ticket_id, parent_ac_label,
+        repository, a ``falsifier`` and an explicit ``integrated`` on every
+        criterion, a ticket id matching ``OMN-<digits>``, a non-empty title and
+        at least one dod_evidence item. A contract whose proof_class is not
+        ``code-only`` also needs an ``integrated`` criterion bound, through
+        ``binds_ac``, to a dod_evidence item with an integration check.
+        1.0.0 contracts are not judged by any of this.
+        """
+        if self._schema_version_tuple() < (1, 1, 0):
+            return self
+        violations: list[str] = []
+        for name in (
+            "business_brief",
+            "parent_ticket_id",
+            "parent_ac_label",
+            "repository",
+        ):
+            value = getattr(self, name)
+            if value is None or (isinstance(value, str) and not value.strip()):
+                violations.append(
+                    f"{STANDARD_FORM_FIELD_MISSING_RULE}: {name} is required "
+                    f"at schema {STANDARD_FORM_SCHEMA_VERSION}"
+                )
+        for name in ("ticket_id", "parent_ticket_id"):
+            value = getattr(self, name)
+            if value and not TICKET_ID_RE.match(value):
+                violations.append(
+                    f"{STANDARD_FORM_TICKET_ID_RULE}: {name} {value!r} must "
+                    "match OMN-<digits>"
+                )
+        if not self.title.strip():
+            violations.append(f"{STANDARD_FORM_TITLE_RULE}: title must be non-empty")
+        if not self.dod_evidence:
+            violations.append(
+                f"{STANDARD_FORM_DOD_MISSING_RULE}: dod_evidence needs at least "
+                "one item"
+            )
+        criteria = [
+            criterion
+            for requirement in self.requirements
+            for criterion in requirement.acceptance
+        ]
+        for criterion in criteria:
+            if not criterion.falsifier:
+                violations.append(
+                    f"{STANDARD_FORM_FALSIFIER_RULE}: criterion {criterion.id!r} "
+                    "has no falsifier"
+                )
+            if "integrated" not in criterion.model_fields_set:
+                violations.append(
+                    f"{STANDARD_FORM_FIELD_MISSING_RULE}: criterion "
+                    f"{criterion.id!r} must state integrated"
+                )
+        if self.proof_class is not EnumProofClass.CODE_ONLY and not (
+            self._has_bound_integrated_criterion(criteria)
+        ):
+            violations.append(
+                f"dod_evidence: {INTEGRATION_ITEM_RULE}: a contract that is not "
+                "code-only needs an integrated criterion bound through binds_ac "
+                "to a dod_evidence item with an integration check "
+                "(behavior_proven, endpoint, lab_receipt or runtime_sha_match); "
+                f"criteria: {', '.join(criterion.id for criterion in criteria) or 'none'}"
+            )
+        if violations:
+            raise ValueError("; ".join(violations))
+        return self
+
+    def _schema_version_tuple(self) -> tuple[int, int, int]:
+        major, minor, patch = (int(part) for part in self.schema_version.split("."))
+        return (major, minor, patch)
+
+    def _has_bound_integrated_criterion(self, criteria: list[Any]) -> bool:
+        """True when an integrated criterion is bound to an integration item."""
+        integrated = {
+            self._normalize_criterion_label(criterion.id)
+            for criterion in criteria
+            if criterion.integrated
+        }
+        return any(
+            any(is_integration_check_type(check.check_type) for check in item.checks)
+            and integrated & {self._normalize_criterion_label(b) for b in item.binds_ac}
+            for item in self.dod_evidence
+        )
+
+    @staticmethod
+    def _normalize_criterion_label(label: str) -> str:
+        """Fold ``ac-1``, ``AC 1`` and ``AC1`` to one form, as binds_ac labels do."""
+        match = BINDS_AC_LABEL_RE.match(label.strip())
+        if match is None:
+            return label.strip().lower()
+        return f"{match.group(1).lower()}{int(match.group(2))}"
+
     @field_validator("created_at", "updated_at", mode="before")
     @classmethod
     def _enforce_utc_timezone(cls, v: Any) -> Any:
@@ -663,21 +776,57 @@ class ModelTicketContract(BaseModel):
     def compute_fingerprint(self) -> str:
         """Compute a 16-character hex SHA256 fingerprint of the contract.
 
-        The fingerprint excludes the contract_fingerprint field itself.
+        A plain hash of the contract (D6 of the standard-tickets plan): sha256
+        of the canonical JSON, leaving out only ``contract_fingerprint`` and the
+        two timestamps. The timestamps move on every update and every load, so
+        hashing them made a written fingerprint never recompute equal. No
+        signature, no key: it shows that two copies hold the same contract and
+        that a copy was changed after its hash was written, never who wrote it.
 
         Collision resistance: 16 hex characters = 64 bits of entropy. By the
         birthday paradox, collisions become probable around 2^32 (~4 billion)
         contracts. This is acceptable for per-ticket change detection where
         the practical corpus is orders of magnitude smaller.
         """
-        data = self.model_dump(exclude={"contract_fingerprint"})
+        data = self.model_dump(
+            mode="json", exclude={"contract_fingerprint", "created_at", "updated_at"}
+        )
         canonical = json.dumps(data, sort_keys=True, default=str)
         return hashlib.sha256(canonical.encode()).hexdigest()[:16]
 
     def update_fingerprint(self) -> None:
-        """Update the contract fingerprint and updated_at timestamp."""
+        """Update the contract fingerprint and the updated_at timestamp.
+
+        The fingerprint does not cover ``updated_at``, so moving it after the
+        hash is taken leaves the stored fingerprint equal to a recompute.
+        """
         self.contract_fingerprint = self.compute_fingerprint()
         self.updated_at = datetime.now(tz=UTC)
+
+    @classmethod
+    def from_draft(cls, draft: ModelTicketDraft, ticket_id: str) -> ModelTicketContract:
+        """Build the schema 1.1.0 contract for a draft once the tracker has given it an id.
+
+        Every draft field is carried over by name, the standard-form rules judge
+        the result, and the fingerprint is set to the hash of the contract.
+
+        Raises:
+            pydantic.ValidationError: When the id or the draft's content breaks
+                a standard-form rule (an id outside ``OMN-<digits>``, a contract
+                that is not code-only with no integrated criterion bound to an
+                integration check).
+        """
+        contract = cls.model_validate(
+            {
+                "schema_version": STANDARD_FORM_SCHEMA_VERSION,
+                "ticket_id": ticket_id,
+                **{
+                    name: getattr(draft, name) for name in ModelTicketDraft.model_fields
+                },
+            }
+        )
+        contract.update_fingerprint()
+        return contract
 
     def __repr__(self) -> str:
         """Return concise representation for debugging."""
@@ -783,6 +932,13 @@ class ModelTicketContract(BaseModel):
 TicketContract = ModelTicketContract
 
 __all__ = [
+    "STANDARD_FORM_DOD_MISSING_RULE",
+    "STANDARD_FORM_FALSIFIER_RULE",
+    "STANDARD_FORM_FIELD_MISSING_RULE",
+    "STANDARD_FORM_SCHEMA_VERSION",
+    "STANDARD_FORM_TICKET_ID_RULE",
+    "STANDARD_FORM_TITLE_RULE",
+    "TICKET_ID_RE",
     "ModelTicketContract",
     "TicketContract",
 ]

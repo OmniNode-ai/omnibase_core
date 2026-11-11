@@ -853,9 +853,6 @@ entries:
   - path: src/omnibase_core/models/services/model_external_service_config.py
     rule: bare_model_dump
     text: sha256:f7ed145416274dde5b80caf270979c4d66bb02b30a4c09ebd6c7c0e1c571a2d9
-  - path: src/omnibase_core/models/ticket/model_ticket_contract.py
-    rule: bare_model_dump
-    text: sha256:ac435f3a785ef062d03bad771b70183adee50c7ea9d0d5b3f00d4abf8be81fb5
   - path: src/omnibase_core/models/utils/model_yaml_dump_options.py
     rule: bare_model_dump
     text: sha256:1d9341072357d7c725d23a0819c69b5cb097bdfd8aa9dba4473a60ba6844802c
