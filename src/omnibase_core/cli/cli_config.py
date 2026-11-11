@@ -5,12 +5,16 @@
 
 from __future__ import annotations
 
-import sys
+from importlib.metadata import entry_points
 from pathlib import Path
 
 import click
 import yaml
 
+from omnibase_core.cli.cli_commands import (
+    _LazyCoreCommandGroup,
+    register_lazy_cli_extensions,
+)
 from omnibase_core.cli.cli_user_config import (
     bootstrap_user_config,
     migrate_user_config_file,
@@ -30,7 +34,7 @@ _ONEX_HOME_OPTION = click.option(
 )
 
 
-@click.group("config")
+@click.group("config", cls=_LazyCoreCommandGroup)
 def config_group() -> None:  # stub-ok
     """Manage ONEX configuration."""
 
@@ -56,17 +60,16 @@ def config_init(force: bool, onex_home: Path | None) -> None:
 
     if config_file.exists():
         if not force:
-            click.echo(
-                f"Error: {config_file} already exists. Use --force to overwrite.",
-                err=True,
+            raise click.ClickException(
+                f"{config_file} already exists. Use --force to overwrite."
             )
-            sys.exit(1)
         try:
             migrated = migrate_user_config_file(config_file)
         except ModelOnexError as exc:
             # boundary-ok: CLI surface — report the unusable file, do not rewrite it.
-            click.echo(f"Error: {config_file} cannot be migrated: {exc}", err=True)
-            sys.exit(1)
+            raise click.ClickException(
+                f"{config_file} cannot be migrated: {exc}"
+            ) from exc
         if migrated:
             click.echo(f"Configuration migrated to the current schema at {config_file}")
         else:
@@ -88,33 +91,31 @@ def config_get(key: str, onex_home: Path | None) -> None:
     config_file = user_config_path(onex_home)
 
     if not config_file.exists():
-        click.echo(
-            f"Error: config file not found at {config_file}. "
-            "Run 'onex config init' first.",
-            err=True,
+        raise click.ClickException(
+            f"config file not found at {config_file}. Run 'onex config init' first."
         )
-        sys.exit(1)
 
     try:
         data = read_user_config(config_file)
     except ModelOnexError as exc:
         # boundary-ok: CLI surface — report an unreadable config, do not guess.
-        click.echo(f"Error: {config_file} is not readable: {exc}", err=True)
-        sys.exit(1)
+        raise click.ClickException(f"{config_file} is not readable: {exc}") from exc
 
     if data is None:
-        click.echo("Error: config file is empty", err=True)
-        sys.exit(1)
+        raise click.ClickException("config file is empty")
 
-    parts = key.split(".")
     value: SerializableValue = data
-    for part in parts:
+    for part in key.split("."):
         if not isinstance(value, dict) or part not in value:
-            click.echo(f"Error: key '{key}' not found in config", err=True)
-            sys.exit(1)
+            raise click.ClickException(f"key '{key}' not found in config")
         value = value[part]
 
     if isinstance(value, dict):
         click.echo(yaml.dump(value, default_flow_style=False).rstrip())
     else:
         click.echo(str(value))
+
+
+# Config remains owned by core. Installed capability packages contribute named
+# subcommands through the same lazy, collision-refusing registry as onex.cli.
+register_lazy_cli_extensions(config_group, entry_points(group="onex.config"))

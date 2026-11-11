@@ -824,7 +824,7 @@ def _load_extension_command(entry_point: EntryPoint) -> click.Command:
         # boundary-ok: entry points are provided by pip-installed packages.
     except Exception as exc:
         raise ModelOnexError(
-            f"the '{_CLI_EXTENSION_GROUP}' entry point "
+            f"the '{getattr(entry_point, 'group', _CLI_EXTENSION_GROUP)}' entry point "
             f"'{entry_point.name}' (from {origin}) points at "
             f"'{entry_point.value}', which failed to load: "
             f"{type(exc).__name__}: {exc}. The command it advertises does "
@@ -835,7 +835,7 @@ def _load_extension_command(entry_point: EntryPoint) -> click.Command:
 
     if not isinstance(command, (click.Command, click.Group)):
         raise ModelOnexError(
-            f"the '{_CLI_EXTENSION_GROUP}' entry point "
+            f"the '{getattr(entry_point, 'group', _CLI_EXTENSION_GROUP)}' entry point "
             f"'{entry_point.name}' (from {origin}) resolved to "
             f"{type(command).__name__}, not a click.Command or click.Group. "
             f"'{entry_point.value}' must name a click command object.",
@@ -846,7 +846,7 @@ def _load_extension_command(entry_point: EntryPoint) -> click.Command:
 
 def _collision_error(entry_point: EntryPoint) -> ModelOnexError:
     return ModelOnexError(
-        f"the '{_CLI_EXTENSION_GROUP}' entry point "
+        f"the '{getattr(entry_point, 'group', _CLI_EXTENSION_GROUP)}' entry point "
         f"'{entry_point.name}' (from {_origin_of(entry_point)}) collides with a "
         f"command that is already registered. Entry points have no defined "
         f"order across distributions, so allowing this would make which "
