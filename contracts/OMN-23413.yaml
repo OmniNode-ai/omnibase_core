@@ -19,6 +19,14 @@ requirements:
           through the lazy registry, refuses a duplicate name before loading anything, fails a broken
           target only when it is run, and keeps the built-in commands when no package adds any -- falsifier:
           uv run pytest tests/unit/cli/test_config_extensions.py, absent at the merge base"
+  - id: req-omn23413-ac16-bare-onex-tui
+    statement: "onex with no arguments opens the terminal UI only in a terminal."
+    acceptance:
+      - id: AC16
+        statement: "AC16: in a terminal, onex alone opens the command a package registers as tui; without
+          a terminal it prints the same help as onex --help; in a terminal with no tui registered it prints
+          help -- falsifier: uv run pytest tests/unit/cli/test_bare_onex_opens_tui.py, absent at the merge
+          base"
 evidence_requirements:
   - kind: tests
     description: The config extension tests pass.
@@ -39,4 +47,15 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: "uv run pytest tests/unit/cli/test_config_extensions.py -q --no-cov -o addopts=''
+          -n 0"
+  - id: dod-omn23413-ac16-bare-onex-tui
+    description: "onex alone opens a registered tui only when stdin and stdout are a terminal, and otherwise
+      prints exactly the onex --help text. The test file does not exist at the merge base."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC16
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_bare_onex_opens_tui.py -q --no-cov -o addopts=''
           -n 0"
