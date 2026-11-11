@@ -13,10 +13,46 @@ import tomllib
 from omnibase_core.models.validation.model_dev_tag_lineage_facts import (
     ModelDevTagLineageFacts,
 )
+from omnibase_core.models.validation.model_dev_tag_lineage_policy import (
+    ModelDevTagLineagePolicy,
+)
 from omnibase_core.models.validation.model_dev_tag_lineage_request import (
     ModelDevTagLineageRequest,
 )
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
+
+
+def _derives_version(
+    parsed: dict[str, object], policy: ModelDevTagLineagePolicy
+) -> bool:
+    """True when the pyproject leaves its version to the configured git-derived source."""
+    project = parsed.get("project", {})
+    dynamic = project.get("dynamic") if isinstance(project, dict) else None
+    if not isinstance(dynamic, list) or "version" not in dynamic:
+        return False
+    table: object = parsed
+    for part in policy.derived_version_table.split("."):
+        table = table.get(part) if isinstance(table, dict) else None
+    return (
+        isinstance(table, dict) and table.get("source") == policy.derived_version_source
+    )
+
+
+def _derived_version(described: str, policy: ModelDevTagLineagePolicy) -> str | None:
+    """The version the build derives from `git describe --long` at the tag commit.
+
+    At the release tag itself the release; after it the next patch's development
+    version with the commit id as its local part.
+    """
+    match = re.fullmatch(policy.describe_pattern, described)
+    if match is None:
+        return None
+    release, distance = match["release"], int(match["distance"])
+    if distance == 0:
+        return release
+    parts = release.split(".")
+    parts[-1] = str(int(parts[-1]) + 1)
+    return f"{'.'.join(parts)}.dev{distance}+g{match['node']}"
 
 
 class NodeDevTagLineageEffect:
@@ -28,6 +64,7 @@ class NodeDevTagLineageEffect:
         exists: bool | None = None
         commit: str | None = None
         version: str | None = None
+        version_derived = False
         on_branch: bool | None = None
         details: list[str] = []
 
@@ -36,6 +73,7 @@ class NodeDevTagLineageEffect:
                 tag_exists=exists,
                 commit=commit,
                 version=version,
+                version_derived=version_derived,
                 on_branch=on_branch,
                 detail="; ".join(details) or "ok",
             )
@@ -136,6 +174,20 @@ class NodeDevTagLineageEffect:
                     )
                     if isinstance(value, str) and value:
                         version = value
+                    elif _derives_version(parsed, policy):
+                        described = git(policy.describe_arguments)
+                        version = _derived_version(
+                            described.stdout.strip()
+                            if not described.returncode
+                            else "",
+                            policy,
+                        )
+                        if version is None:
+                            details.append(
+                                "describe: no release tag version derivable: "
+                                f"{described.stderr.strip()}"
+                            )
+                        version_derived = version is not None
                     else:
                         details.append("show: no project.version string")
         except (

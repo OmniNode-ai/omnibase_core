@@ -79,11 +79,16 @@ validation:
         init_arguments: [init, --quiet, --bare]
         remote_arguments: [ls-remote, --tags, '{url}', '{tag_ref}', '{peeled_ref}']
         fetch_arguments: [fetch, --quiet, '--filter=blob:none', --no-tags, '{url}', '{branch_ref}:{branch_ref}',
-          '{tag_ref}:{tag_ref}']
+          '{tag_ref}:{tag_ref}', 'refs/tags/v*:refs/tags/v*']
         peel_arguments: [rev-parse, --verify, '{tag_ref}^{{commit}}']
         shallow_arguments: [rev-parse, --is-shallow-repository]
         ancestor_arguments: [merge-base, --is-ancestor, '{commit}', '{branch_ref}']
         show_arguments: [show, '{commit}:{project_name}']
+        derived_version_table: tool.hatch.version
+        derived_version_source: vcs
+        describe_arguments: [describe, --tags, --long, --match, 'v[0-9]*', '{commit}']
+        describe_pattern: '^v(?P<release>[0-9]+(?:\.[0-9]+)*)-(?P<distance>[0-9]+)-g(?P<node>[0-9a-f]+)$'
+        derived_lock_pattern: '^(?P<public>[^+]+)\+g(?P<node>[0-9a-f]{7,40})$'
     - rule_id: first_party_not_dev_tag
       description: A first-party source or direct git requirement does not use a dev-merge tag.
       severity: error
