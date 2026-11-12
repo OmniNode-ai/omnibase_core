@@ -58,12 +58,14 @@ dod_evidence:
           -q -k "Seam or Refusals"
         cwd: .
   - id: dod-omn23981-ac3
-    description: The runtime read comes after a branch install; envelope tests still pass.
+    description: The library half of the runtime read, an envelope stamped with provenance carries it
+      across the wire. The read of an event from the running dev runtime and the emitter census are separate
+      changes and are not evidenced here.
     source: manual
     binds_ac:
       - AC3
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/models/events/test_model_event_envelope_producer.py tests/unit/models/events/test_model_event_envelope_parent_edge.py
-          -q
+        check_value: uv run pytest tests/unit/models/events/test_model_event_envelope_provenance.py -q
+          -k "round_trip or typed_dict"
         cwd: .
