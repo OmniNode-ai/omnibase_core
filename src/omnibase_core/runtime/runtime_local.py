@@ -40,6 +40,7 @@ from omnibase_core.enums.enum_terminal_outcome import EnumTerminalOutcome
 from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
+from omnibase_core.models.event_bus.model_bus_settle import ModelBusSettle
 from omnibase_core.models.runtime.model_contract_terminal_topic import (
     ModelContractTerminalTopic,
 )
@@ -155,7 +156,7 @@ def derive_runtime_local_group_id(node_name: str) -> str:
 # the default bootstrap server (otherwise read from ``KAFKA_BOOTSTRAP_SERVERS``
 # env var or the provider's config defaults).
 KNOWN_BACKEND_KEYS: frozenset[str] = frozenset(
-    {"event_bus", "state_store", "metrics", "tracing", "kafka_bootstrap"}
+    {"event_bus", "state_store", "metrics", "tracing", "kafka_bootstrap", "forwarder"}
 )
 
 # Entry-point group that backend providers (e.g. omnibase_infra) register under.
@@ -400,6 +401,7 @@ class RuntimeLocal:
         self._last_error: str | None = None
         self._handlers_wired: list[str] = []
         self._terminal_payload: RawWorkflowMap | None = None
+        self._bus_reading: RawWorkflowMap | None = None
         self._handler_result: object | None = None
         # OMN-17304 AC6: the correlation id that actually reached the wire, as
         # distinct from one this runtime minted and then failed to stamp onto a
@@ -2108,34 +2110,20 @@ class RuntimeLocal:
     # ------------------------------------------------------------------
 
     def _create_event_bus(self) -> ProtocolLocalRuntimeBus:
-        """Construct the event bus implementation requested by ``backend_overrides``.
+        """Construct the event bus requested by ``backend_overrides``.
 
-        Default behavior (no override or explicit ``event_bus=inmemory``)
-        returns ``EventBusInmemory(environment="local", group="runtime-local")``
-        — identical to the pre-OMN-9776 hardcoded path.
-
-        When ``backend_overrides['event_bus'] == 'kafka'``, the bus class is
-        discovered via the ``onex.backends`` entry-point group (omnibase_infra
-        registers ``event_bus_kafka`` there). This indirection is mandatory:
-        omnibase_core cannot import omnibase_infra directly (compat→core→spi→infra
-        layering, enforced by sdk-boundary-check CI).
-
-        The Kafka bus is instantiated through its provider factory. When
-        ``backend_overrides['kafka_bootstrap']`` is supplied, RuntimeLocal asks
-        the provider factory to construct from the bootstrap override and does
-        not mutate process environment.
-
-        Any other value (``"kafak"``, ``"redis"``, etc.) is rejected up-front:
-        silent fallback to in-memory hides typos and misconfigured stacks, and
-        running with the wrong backend is a far more dangerous failure mode
-        than a clear startup error.
+        No override or ``event_bus=inmemory`` builds ``EventBusInmemory``; its events die with the
+        process, so the run's declared binding (``ModelBusSettle``, OMN-24000) says where they go
+        and a run that declared none reads UNKNOWN and raises the degraded alarm. ``event_bus=kafka``
+        discovers the bus class through the ``onex.backends`` entry-point group (omnibase_core cannot
+        import omnibase_infra: compat→core→spi→infra layering, sdk-boundary-check CI), through
+        ``from_bootstrap`` when ``kafka_bootstrap`` is given and ``default()`` otherwise, with no
+        process-environment mutation. Any other value is rejected up front: silently running on the
+        wrong backend is far worse than a clear startup error.
 
         Raises:
-            ModelOnexError: If ``event_bus`` is set to a value not in
-                ``SUPPORTED_EVENT_BUS_VALUES``. Also raised if ``event_bus=kafka``
-                is requested but the ``onex.backends:event_bus_kafka`` entry
-                point is not installed or fails to load — fail-fast rather
-                than silently downgrading to in-memory.
+            ModelOnexError: ``event_bus`` outside ``SUPPORTED_EVENT_BUS_VALUES``, or ``kafka`` requested
+                with the ``onex.backends:event_bus_kafka`` entry point missing or failing to load.
         """
         bus_kind = self.backend_overrides.get("event_bus", "inmemory")
 
@@ -2333,6 +2321,8 @@ class RuntimeLocal:
             logger.exception("RuntimeLocal: unhandled exception during execution")
             self._result = EnumWorkflowResult.FAILED
         finally:
+            settled = await ModelBusSettle.settle(bus, self.backend_overrides)
+            self._bus_reading = settled.model_dump(mode="json")
             await bus.close()
             self._write_state()
 
@@ -2572,6 +2562,8 @@ class RuntimeLocal:
             data["wire_correlation_id"] = str(self._wire_correlation_id)
         if self._terminal_payload is not None:
             data["terminal_payload"] = self._terminal_payload
+        if self._bus_reading is not None:
+            data["bus_reading"] = self._bus_reading
         if self._handler_result is not None:
             try:
                 if hasattr(self._handler_result, "model_dump"):

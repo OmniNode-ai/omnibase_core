@@ -1,0 +1,97 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24000
+title: Command-line runs publish where their declared bus setting says
+summary: A runtime-local run carries a declared bus binding (hosted, in-memory with a forwarder, an in-memory
+  bus a test declared, or none). Every run writes a bus reading into its result file; an in-memory run
+  with no forwarder and no test declaration, and a run with no binding at all, raises the degraded alarm
+  (error log and a stderr line) and reads UNKNOWN. The recorded events of an in-memory run are carried
+  to the hosted bus by the one forwarder installed under the onex.runtime_bus_forwarders entry-point group.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn24000-bus-binding
+    statement: A runtime-local run publishes where its declared binding says, and says so when it cannot.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: every runtime-local run writes a bus reading into its result file, and a run
+          with no declared bus binding reads UNKNOWN, degraded, with a DEGRADED BUS line on stderr and
+          the error log -- falsifier: pytest tests/unit/runtime/test_runtime_local_bus_binding.py -k missing_binding
+          in omnibase_core fails on the runtime before this change'
+      - id: AC2
+        statement: 'AC2: a declared in-memory run hands every recorded event to the one installed forwarder,
+          and a forwarder that raises or counts failures degrades the reading without changing the run''s
+          result -- falsifier: pytest tests/unit/runtime/test_runtime_local_bus_binding.py -k forwarder
+          in omnibase_core'
+      - id: AC3
+        statement: 'AC3: the forwarder node publishes recorded events to the hosted bus its overlay declares
+          and refuses a topic outside the overlay''s allowed prefixes -- falsifier: pytest tests/unit/nodes/node_runtime_bus_forward_effect
+          in omnimarket'
+      - id: AC4
+        statement: 'AC4: integrated: one onex run-node on a lab host leaves its event readable on the
+          dev bus, read from the dev bus with the running revision named -- falsifier: the same run with
+          the forwarder uninstalled reads inmemory_unforwarded and the dev bus holds no event for its
+          correlation id'
+evidence_requirements:
+  - kind: tests
+    description: The bus binding tests and the run-node overlay tests pass.
+    command: uv run pytest tests/unit/runtime/test_runtime_local_bus_binding.py tests/unit/cli/test_cli_run_node_broker_overlay.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24000-ac1
+    description: The missing-binding reading.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/runtime/test_runtime_local_bus_binding.py -k missing_binding
+          -q
+        cwd: .
+  - id: dod-omn24000-ac2
+    description: The forwarder hand-off and its two failure chains.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/runtime/test_runtime_local_bus_binding.py -k forwarder -q
+        cwd: .
+  - id: dod-omn24000-ac3
+    description: The forwarder node is built and tested in omnimarket; the core side reads its reading
+      shape through the entry point.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: "uv run python -c \"from omnibase_core.models.event_bus.model_runtime_bus_forward_receipt
+          import ModelRuntimeBusForwardReceipt as R; assert R.model_validate({'forwarded': 1, 'failed':
+          0, 'detail': None}).forwarded == 1\" "
+        cwd: .
+  - id: dod-omn24000-ac4
+    description: The integrated reading is taken on a lab host and the dev bus after the change is installed
+      from its branch; the receipt is recorded in the pull request.
+    source: manual
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: command
+        check_value: "uv run python -c \"from omnibase_core.models.event_bus.model_bus_settle import ModelBusSettle;
+          assert callable(ModelBusSettle.settle)\" "
+        cwd: .
+  - id: dod-omn24000-deploy
+    description: Deploy-gate evidence, core library change.
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "echo 'deploy-gate: OMN-24000 changes the runtime-local library and the run-node
+          CLI in omnibase_core only; no Docker image, daemon, broker topic, runtime process, docker exec,
+          or service deploy is required before merge' "
+        cwd: .
