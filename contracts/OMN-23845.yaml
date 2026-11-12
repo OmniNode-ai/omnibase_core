@@ -1,0 +1,90 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23845
+title: 'omnibase_core release pilot, report only: after each release, check the Git tag, the package metadata
+  and the files PyPI serves all agree'
+summary: After a successful release a report-only step, last in the release job, reads back what PyPI
+  serves for the tag's version and reports, per file, whether its sha256 equals the built file's, and
+  whether the built wheel's METADATA Version and PyPI's version equal the tag. A mismatch or an unreadable
+  index becomes a warning; the step never fails or blocks a release.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23845-release-consistency-report
+    statement: After a successful release, the tag, the package metadata and the files PyPI serves are
+      reported as agreeing or not, without ever failing the release.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a test runs the new report step against recorded fixtures (a PyPI JSON response
+          and a SHA256SUMS.txt) and it reports MISMATCH for a served file whose sha256 differs, for a
+          wheel whose METADATA Version differs from the tag, and for a built file missing from PyPI, and
+          AGREE when all match -- falsifier: uv run pytest tests/unit/validation/test_release_consistency_report.py
+          -q passes with any of the three planted mismatches reported as AGREE'
+      - id: AC2
+        statement: 'AC2: the report job never fails the release in the pilot: a planted mismatch ends
+          the job green with a warning annotation, and the existing release workflow tests still pass
+          -- falsifier: uv run pytest tests/unit/validation/test_release_workflow_shape.py tests/unit/validation/test_release_consistency_report.py
+          -q passes while the report step exits non-zero on a mismatch'
+      - id: AC3
+        statement: 'AC3: on the first omnibase_core release after the change merges, the report job runs
+          and its summary names the tag, every published file, its sha256 result and the metadata version
+          -- falsifier: gh run view of that release run shows the job skipped or a published file absent
+          from its summary, read beside uv run pytest tests/unit/validation/test_release_consistency_report.py
+          -q'
+evidence_requirements:
+  - kind: tests
+    description: 'AC1: the release-consistency gather EFFECT and COMPUTE nodes and their runtime over
+      the recorded v0.47.72 SHA256SUMS.txt and PyPI JSON (AGREE, a changed sha256, a wheel built with
+      another version, PyPI reporting another version, a file missing from PyPI, PyPI unread or not JSON).
+      AC2: the committed step shell run under bash -e ends 0 on AGREE, MISMATCH and an unreadable index,
+      with a warning for the last two. AC3 is read from the first release run after merge.'
+    command: uv run pytest tests/unit/validation/test_release_consistency_report.py tests/unit/validation/test_release_workflow_shape.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23845-ac1-report-module
+    description: 'AC1: the report reads MISMATCH for a changed served sha256, a wheel METADATA Version
+      other than the tag, a PyPI version other than the tag and a built file missing from PyPI; UNKNOWN
+      when PyPI is unread; AGREE on the recorded v0.47.72 data. Each case failed with its comparison removed
+      from the COMPUTE node.'
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_release_consistency_report.py -q
+        cwd: .
+  - id: dod-omn23845-ac2-report-only-job
+    description: 'AC2: the Report release consistency step is the last step of the release job, has no
+      if (so it runs only after publish, the GitHub Release and the main sync succeed) and is continue-on-error,
+      and its committed shell ends 0 on AGREE, on MISMATCH with a warning, and on an index unreadable
+      after its retries with an UNKNOWN warning. With the shell made to exit 1 on a mismatch, the mismatch
+      and UNKNOWN cases fail.'
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_release_workflow_shape.py -q -k consistency
+        cwd: .
+  - id: dod-omn23845-ac3-release-summary
+    description: 'AC3: the step is wired to run after a successful release and its committed shell runs
+      the node from the built wheel, which writes a step summary naming the tag, every published file
+      with its sha256 result, and the wheel metadata version (the check AC3 reads beside the release run).
+      The live half, the first omnibase_core release run after merge showing that summary, is read with
+      gh run view and recorded on the ticket.'
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_release_consistency_report.py -q
+        cwd: .
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_release_workflow_shape.py -q -k "only_after_a_successful_release
+          or reports_agree"
+        cwd: .

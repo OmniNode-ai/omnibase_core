@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_release_consistency_check_compute
+node_id: node_release_consistency_check_compute
+node_type: compute
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Reports whether a release's tag, its built wheel's METADATA Version and the files PyPI serves for that
+  version agree, file by file and by sha256. Report only; no I/O.
+input_model: omnibase_core.models.nodes.release_consistency_check.model_release_consistency_check_input.ModelReleaseConsistencyCheckInput
+output_model: omnibase_core.models.nodes.release_consistency_check.model_release_consistency_report.ModelReleaseConsistencyReport
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeReleaseConsistencyCheckCompute
+descriptor:
+  node_archetype: compute
+  purity: pure
+  idempotent: true
+  timeout_ms: 30000
