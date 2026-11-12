@@ -22,7 +22,6 @@ import pytest
 from pydantic import BaseModel, ValidationError
 
 from omnibase_core.models.events.model_event_envelope import ModelEventEnvelope
-from omnibase_core.models.primitives.model_semver import ModelSemVer
 from omnibase_core.types.typed_dict_event_envelope import TypedDictEventEnvelopeDict
 
 
@@ -67,4 +66,9 @@ class TestEnvelopeCarriesProducerIdentity:
         assert "producer" in TypedDictEventEnvelopeDict.__annotations__
 
     def test_the_schema_version_signals_the_added_field(self) -> None:
-        assert _envelope().envelope_version == ModelSemVer(major=2, minor=3, patch=0)
+        # `>=`, not `==`: later additive fields move the minor again (2.4.0
+        # added `provenance`, OMN-19998); this test pins that producer's bump
+        # was not undone.
+        version = _envelope().envelope_version
+        assert version.major == 2
+        assert version.minor >= 3
