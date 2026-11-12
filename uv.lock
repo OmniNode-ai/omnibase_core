@@ -1089,7 +1089,6 @@ wheels = [
 
 [[package]]
 name = "omnibase-core"
-version = "0.47.76"
 source = { editable = "." }
 dependencies = [
     { name = "blake3" },
@@ -1207,7 +1206,7 @@ requires-dist = [
     { name = "tree-sitter", specifier = ">=0.25.2,<0.27" },
     { name = "tree-sitter-python", specifier = ">=0.25.0,<0.26" },
 ]
-provides-extras = ["cli", "kafka", "cache", "metrics", "sql-parser", "testing", "test-selection", "full"]
+provides-extras = ["cache", "cli", "full", "kafka", "metrics", "sql-parser", "test-selection", "testing"]
 
 [package.metadata.requires-dev]
 dev = [

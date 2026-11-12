@@ -61,13 +61,20 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Extract version from pyproject.toml
+      - name: Extract version from the release cut
         id: version
         run: |
           set -euo pipefail
-          VERSION=$(grep -m1 '^version' pyproject.toml | sed 's/.*"\(.*\)".*/\1/')
+          # OMN-23834: the version comes from git at build time, so
+          # pyproject.toml carries none. The release cut names its version in
+          # the newest `## v<version> (<date>)` heading of the root README; a
+          # tree that still declares a static version keeps reading it.
+          VERSION=$(grep -m1 '^version' pyproject.toml | sed 's/.*"\(.*\)".*/\1/' || true)
           if [ -z "$VERSION" ]; then
-            echo "::error::could not read a version from pyproject.toml"
+            VERSION=$(sed -n 's/^## v\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\) (.*$/\1/p' README.md | head -n 1)
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "::error::could not read a version from pyproject.toml or the README release heading"
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"

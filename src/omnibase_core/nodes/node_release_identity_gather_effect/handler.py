@@ -8,6 +8,7 @@ from __future__ import annotations
 import subprocess
 import tomllib
 from pathlib import Path
+from typing import Literal
 
 from omnibase_core.models.nodes.no_utcnow_check.model_source_file import ModelSourceFile
 from omnibase_core.models.nodes.release_identity_check.model_release_identity_check_input import (
@@ -91,12 +92,20 @@ class NodeReleaseIdentityGatherEffect:
             )
         raw: object = project.get("version")
         version_raw = str(raw) if raw else None
+        source, fallback = self._declared_version_source(document, project)
         facts = ModelReleaseIdentityCheckInput(
             pyproject_version_raw=version_raw,
             pyproject_version_repr=repr(raw),
             pyproject_path=path,
             files=files,
+            version_source=source,
+            required_version_source=request.required_version_source,
+            vcs_fallback_setting=fallback,
         )
+        if request.required_version_source == "vcs":
+            # OMN-23834: a git-derived version is judged on its declaration
+            # alone; no tag or diff fact enters that decision.
+            return facts
         if version_error(facts) is not None:
             return facts
         try:
@@ -122,6 +131,9 @@ class NodeReleaseIdentityGatherEffect:
                 files=files,
                 published_tags=published_tags,
                 changed_files=changed,
+                version_source=source,
+                required_version_source=request.required_version_source,
+                vcs_fallback_setting=fallback,
             )
         except OSError as exc:
             return ModelReleaseIdentityCheckInput(
@@ -131,6 +143,28 @@ class NodeReleaseIdentityGatherEffect:
                 runtime_errors=(f"ERROR: {exc}",),
                 runtime_exit_code=1,
             )
+
+    @staticmethod
+    def _declared_version_source(
+        document: dict[str, object], project: dict[str, object]
+    ) -> tuple[Literal["static", "vcs"], str | None]:
+        """Read where the tree declares its version and any fallback version."""
+        dynamic = project.get("dynamic")
+        tool = document.get("tool")
+        hatch = tool.get("hatch") if isinstance(tool, dict) else None
+        version = hatch.get("version") if isinstance(hatch, dict) else None
+        if not (
+            isinstance(dynamic, list)
+            and "version" in dynamic
+            and isinstance(version, dict)
+            and version.get("source") == "vcs"
+        ):
+            return "static", None
+        options = version.get("raw-options")
+        fallback: object = None
+        if isinstance(options, dict):
+            fallback = options.get("fallback_version", options.get("fallback-version"))
+        return "vcs", str(fallback) if fallback is not None else None
 
     @staticmethod
     def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:

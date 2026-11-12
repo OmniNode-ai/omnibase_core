@@ -1,0 +1,69 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23837
+title: omnibase_core takes its version from git at build time
+summary: Core's slice of the dynamic versioning program. The version is derived from git by the build,
+  so a change no longer edits a version line; the release-identity check demands that source and refuses
+  a declared static version or a fallback version. The legacy static-version rule is unchanged.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn23837-version-from-git
+    statement: Two code states never ship under one version string, and no change edits a version line.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: omnibase_core declares no static project.version and builds its version from
+          git, and the release-identity check refuses a change that declares one or configures a fallback
+          version -- falsifier: uv run pytest tests/unit/nodes/node_release_identity_check_compute/test_vcs_version_source.py
+          -q fails at the base commit and passes at the head'
+      - id: AC2
+        statement: 'AC2: the legacy release-identity tests still pass unchanged in their assertions --
+          falsifier: uv run pytest tests/unit/nodes/node_release_identity_check_compute -q reports a failure
+          or fewer cases than at the base'
+      - id: AC3
+        statement: 'AC3: integrated: two core changes merge back to back with no version-line commit between
+          them, and the core installed on the dev lane from the newer dev-merge tag reports a version
+          that equals no published tag, read from the running runtime -- falsifier: the second change
+          needed a version-line commit, or the dev lane reports a version equal to a published tag'
+evidence_requirements:
+  - kind: tests
+    description: The release-identity tests pass, the new file included.
+    command: uv run pytest tests/unit/nodes/node_release_identity_check_compute -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23837-ac1
+    description: The git-derived version rules and the repository's own declaration.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_release_identity_check_compute/test_vcs_version_source.py
+          -q
+        cwd: .
+  - id: dod-omn23837-ac2
+    description: The legacy release-identity tests.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_release_identity_check_compute -q
+        cwd: .
+  - id: dod-omn23837-ac3
+    description: The project declares no static version, it takes its version from git, and the built
+      version carries a commit id, so it equals no release tag.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: uv run python -c "import tomllib, importlib.metadata as m; p = tomllib.load(open('pyproject.toml',
+          'rb'))['project']; assert 'version' not in p and 'version' in p['dynamic'], 'static version
+          declared'; assert '+' in m.version('omnibase_core')"
+        cwd: .

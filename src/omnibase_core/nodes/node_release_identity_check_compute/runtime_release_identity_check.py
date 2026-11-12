@@ -60,6 +60,15 @@ def main(argv: list[str] | None = None) -> int:
         help="Explicit changed paths, equivalent to --changed-file.",
     )
     parser.add_argument(
+        "--require-version-source",
+        choices=("static", "vcs"),
+        default=None,
+        help=(
+            "Version source the repository demands (OMN-23834). vcs: the version "
+            "comes from git at build time and no change declares one."
+        ),
+    )
+    parser.add_argument(
         "--root",
         default=str(Path(__file__).resolve().parents[4]),
         help="Repository root containing pyproject.toml.",
@@ -80,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
             repo_root=args.root,
             base=args.base,
             explicit_paths=tuple(explicit),
+            required_version_source=args.require_version_source,
         )
     )
     code: int

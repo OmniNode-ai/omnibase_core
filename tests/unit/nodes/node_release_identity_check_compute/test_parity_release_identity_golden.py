@@ -26,7 +26,7 @@ from omnibase_core.nodes.node_release_identity_gather_effect.handler import (
     NodeReleaseIdentityGatherEffect,
 )
 
-from .conftest import CORPUS, REPO, argv, cases, checkout, report_rows
+from .conftest import CORPUS, argv, cases, checkout, git, report_rows
 
 pytestmark = pytest.mark.unit
 
@@ -80,8 +80,15 @@ def test_parity_repository_full_tree(base, published, tmp_path, capsys, monkeypa
     for its version, reachable tags and source diff. The equal-tag variant keeps
     that CI regression covered even in a checkout with older or missing tags.
     """
+    # OMN-23834: the live tree takes its version from git, so the legacy
+    # static-version rule is characterized on a fixture tree that declares one.
+    fixture = {"live": "ahead", "equal": "equal"}[published]
+    case = next(case for case in cases() if case["name"] == fixture)
+    tree = checkout(tmp_path / "tree", case)
+    if base:
+        git(tree, "branch", base, "base")
     version = Version(
-        tomllib.loads((REPO / "pyproject.toml").read_text())["project"]["version"]
+        tomllib.loads((tree / "pyproject.toml").read_text())["project"]["version"]
     )
     if published == "equal":
         original = NodeReleaseIdentityGatherEffect._stdout
@@ -96,7 +103,7 @@ def test_parity_repository_full_tree(base, published, tmp_path, capsys, monkeypa
         )
     destination = tmp_path / "report.json"
     facts = NodeReleaseIdentityGatherEffect().handle(
-        ModelReleaseIdentityGatherInput(repo_root=str(REPO), base=base)
+        ModelReleaseIdentityGatherInput(repo_root=str(tree), base=base)
     )
     assert len(facts.files) > 0
     assert not facts.runtime_errors
@@ -128,9 +135,9 @@ def test_parity_repository_full_tree(base, published, tmp_path, capsys, monkeypa
             }
         )
     report = NodeReleaseIdentityCheckCompute().handle(facts)
-    assert report_rows(report.model_dump_json(), REPO) == expected_rows
+    assert report_rows(report.model_dump_json(), tree) == expected_rows
     assert report.overall_status == ("FAIL" if violation else "PASS")
-    args = ["--root", str(REPO), "--report-json", str(destination)]
+    args = ["--root", str(tree), "--report-json", str(destination)]
     if base:
         args.extend(["--base", base])
     assert main(args) == int(violation)
@@ -142,4 +149,4 @@ def test_parity_repository_full_tree(base, published, tmp_path, capsys, monkeypa
     else:
         assert output.out.startswith("OK: ")
         assert output.err == ""
-    assert report_rows(destination.read_text(), REPO) == expected_rows
+    assert report_rows(destination.read_text(), tree) == expected_rows
