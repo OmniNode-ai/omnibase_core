@@ -423,6 +423,7 @@ jobs:
       # inheritance ratchet, hence a step here. The script holds no inline
       # expressions so tests can execute it verbatim.
       - name: Report release consistency
+        # advisory-ok: OMN-23845 report-only pilot; it must never fail or block a release (mismatch is a ::warning::)
         continue-on-error: true
         env:
           RELEASE_TAG: ${{ steps.tag.outputs.tag }}
