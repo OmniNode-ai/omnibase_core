@@ -193,13 +193,20 @@ def test_inmemory_overlay_hosts_the_node_in_process_and_dials_no_broker(
             return_value=(contract, _COMMAND_TOPIC, _TERMINAL_TOPIC, False),
         ),
         patch("omnibase_core.cli.cli_run_node.publish_and_poll") as dial,
+        patch(
+            "omnibase_core.models.event_bus.model_runtime_bus_binding.entry_points",
+            return_value=[],
+        ),
     ):
         result = CliRunner().invoke(
             run_node, [_NODE, "--input", json.dumps({"prompt": "hello"})]
         )
 
     assert result.exit_code == 0, result.output
-    assert json.loads(result.output) == {"status": "success", "echo": "hello"}
+    # stdout stays the node's answer; the in-memory run with no forwarder installed says
+    # on stderr that its events went nowhere (OMN-19998).
+    assert json.loads(result.stdout) == {"status": "success", "echo": "hello"}
+    assert "DEGRADED BUS (inmemory_unforwarded)" in result.stderr
     dial.assert_not_called()
 
 

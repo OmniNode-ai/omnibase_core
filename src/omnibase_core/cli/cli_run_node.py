@@ -98,6 +98,8 @@ def run_node_in_process(
     node_id: str, contract_path: Path, payload: dict[str, object], timeout: int
 ) -> dict[str, object]:
     """Host the node here on the in-memory bus (overlay ``type: inmemory``, OMN-22362)."""
+    # The overlay declared an in-memory runtime, so the run declares event_bus=inmemory: with one
+    # forwarder installed its recorded events reach the hosted bus, with none it says so (OMN-24000).
     from pydantic import BaseModel
 
     from omnibase_core.enums.enum_workflow_result import EnumWorkflowResult
@@ -111,6 +113,7 @@ def run_node_in_process(
             state_root=Path(scratch) / "state",
             input_path=input_path,
             timeout=timeout,
+            backend_overrides={"event_bus": "inmemory"},
         )
         result = runtime.run()
     if result is not EnumWorkflowResult.COMPLETED:
@@ -224,8 +227,7 @@ def publish_and_poll(
 ) -> dict[str, object] | None:
     """Publish a contract-routed command envelope and poll for its terminal event.
 
-    ``client_security`` carries the librdkafka security settings from
-    :func:`_resolve_client_security_config`; both clients use them.
+    ``client_security`` carries the librdkafka security settings; both clients use them.
 
     Returns the response dict, or None on timeout.
     """
