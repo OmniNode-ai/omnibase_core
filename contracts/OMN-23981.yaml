@@ -1,0 +1,71 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23981
+title: omnibase_core - events say where they came from, provenance fields on the event envelope
+summary: The event envelope gains an optional provenance stamp (lane, lane kind, host, install source,
+  revision). An event without the stamp reads lane unknown, never dev. The runtime stamping and the emitter
+  census are separate changes.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn23981-envelope-provenance
+    statement: The envelope carries optional provenance and an envelope without it reads lane unknown,
+      and each consumer model of the envelope wire keeps validating.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the event envelope carries optional provenance (lane, lane kind, host, install
+          source, revision) and an event without provenance reads lane unknown, never dev -- falsifier:
+          uv run pytest tests/unit/models/events/test_model_event_envelope_provenance.py -q fails against
+          the pre-change envelope file and passes on the branch'
+      - id: AC2
+        statement: 'AC2: a half-stamped provenance and a provenance-free envelope are each handled by
+          their consumer models without breaking the wire -- falsifier: the seam tests in tests/unit/models/events/test_model_event_envelope_provenance.py
+          fail when the model drops the host requirement or the optional default'
+      - id: AC3
+        statement: 'AC3: integrated: an event published by the running dev runtime after a branch install
+          carries the provenance fields, and a first census lists every emitter that is neither dev nor
+          stability -- falsifier: the event read back from the dev bus carries lane unknown or no provenance
+          key, or the census lists no emitter while a seeded stray emitter runs'
+evidence_requirements:
+  - kind: tests
+    description: The provenance model and envelope tests pass.
+    command: uv run pytest tests/unit/models/events/test_model_event_provenance.py tests/unit/models/events/test_model_event_envelope_provenance.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23981-ac1
+    description: The envelope provenance tests, with the unknown reader.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/test_model_event_envelope_provenance.py -q
+        cwd: .
+  - id: dod-omn23981-ac2
+    description: The seam tests and the model's own refusals.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/test_model_event_provenance.py tests/unit/models/events/test_model_event_envelope_provenance.py
+          -q -k "Seam or Refusals"
+        cwd: .
+  - id: dod-omn23981-ac3
+    description: The library half of the runtime read, an envelope stamped with provenance carries it
+      across the wire. The read of an event from the running dev runtime and the emitter census are separate
+      changes and are not evidenced here.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/events/test_model_event_envelope_provenance.py -q
+          -k "round_trip or typed_dict"
+        cwd: .

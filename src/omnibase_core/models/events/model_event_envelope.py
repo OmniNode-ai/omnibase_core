@@ -23,8 +23,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # Local imports (alphabetized)
 from omnibase_core.decorators import allow_dict_any
 from omnibase_core.enums.enum_execution_shape import EnumMessageCategory
+from omnibase_core.enums.enum_provenance_lane import EnumProvenanceLane
 from omnibase_core.mixins.mixin_lazy_evaluation import MixinLazyEvaluation
 from omnibase_core.models.core.model_envelope_metadata import ModelEnvelopeMetadata
+from omnibase_core.models.events.model_event_provenance import ModelEventProvenance
 from omnibase_core.models.primitives.model_semver import (
     ModelSemVer,
     default_model_version,
@@ -83,6 +85,10 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         # Producer identity
         producer: Identity of the node that produced this event, recorded
             at write time
+
+        # Provenance
+        provenance: Where the emitter ran (lane, host, install source,
+            revision), recorded at write time
 
         # ONEX Compliance
         onex_version: ONEX standard version
@@ -247,6 +253,32 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "time. Attribution only -- never proof of authority."
         ),
     )
+    # OMN-19998 (L1-08): the provenance stamp -- WHERE the emitter ran, recorded
+    # from the runtime's lane overlay at write time (lane, host, install
+    # source, revision).
+    #
+    # The same shape as the producer identity above: optional (a producer that
+    # cannot read its overlay omits it, and an envelope without one says so),
+    # ATTRIBUTION only (a claim the producer made, never proof of authority),
+    # and filled from the runtime lane overlay -- never a code default, because
+    # a defaulted stamp is an invention, and an invented attribution reads to a
+    # reader as a recorded one. A reader that finds no provenance reports
+    # UNKNOWN (see the `provenance_lane` property), never DEV.
+    #
+    # WIRE COMPATIBILITY: optional so no consumer breaks. `extra="forbid"` still
+    # applies to the keys INSIDE the stamp (ModelEventProvenance refuses
+    # unknown fields), and `envelope_version` moves to 2.4.0 because a reader
+    # pinned below this release rejects an envelope carrying the key at all;
+    # producers stamp it only after the fleet has re-pinned past the release
+    # that adds it.
+    provenance: ModelEventProvenance | None = Field(
+        default=None,
+        description=(
+            "Where the emitter ran (lane, host, install source, revision), "
+            "recorded at write time. Attribution only -- never proof of "
+            "authority."
+        ),
+    )
     onex_version: ModelSemVer = Field(
         default_factory=default_model_version,
         description="ONEX standard version",
@@ -289,7 +321,8 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         # model is `extra="forbid"`, so an older reader rejects the new key
         # instead of dropping it. The minor bump is the signal for that.
         # 2.2.0 -> 2.3.0 (OMN-18717): the schema gained `producer`.
-        default_factory=lambda: ModelSemVer(major=2, minor=3, patch=0),
+        # 2.3.0 -> 2.4.0 (OMN-19998): the schema gained `provenance`.
+        default_factory=lambda: ModelSemVer(major=2, minor=4, patch=0),
         description="Envelope schema version",
     )
 
@@ -578,6 +611,23 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
         """
         return self.infer_category()
 
+    @property
+    def provenance_lane(self) -> EnumProvenanceLane:
+        """
+        Get the provenance lane this envelope's emitter ran in.
+
+        An event without provenance reads UNKNOWN, never DEV: absence of a
+        stamp is not evidence of the dev lane, and reporting DEV for it would
+        invent the one fact the envelope deliberately does not carry.
+
+        Returns:
+            EnumProvenanceLane: The stamped lane, or UNKNOWN when the
+            envelope carries no provenance.
+        """
+        if self.provenance is None:
+            return EnumProvenanceLane.UNKNOWN
+        return self.provenance.lane
+
     def get_trace_context(self) -> dict[str, str] | None:
         """
         Get the complete trace context.
@@ -633,6 +683,9 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
             "event_type": self.event_type,
             "tenant_id": self.tenant_id,
             "producer": self.producer,
+            "provenance": (
+                self.provenance.model_dump(mode="json") if self.provenance else None
+            ),
             "payload_type": self.payload_type,
             "payload_schema_version": (
                 str(self.payload_schema_version)

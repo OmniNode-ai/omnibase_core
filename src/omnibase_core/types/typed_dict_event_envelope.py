@@ -17,10 +17,8 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
 
     Used for ModelEventEnvelope.to_dict_lazy() return type.
 
-    Note: This represents the lazy-evaluated form where envelope_id and
-    correlation_id are converted to strings, but request_id, trace_id, and
-    span_id remain as UUID objects. ModelSemVer fields become string
-    representations. Some fields are optional (None values are preserved).
+    Note: lazy form: ids become strings (except request_id, trace_id, span_id,
+    which stay UUID objects), ModelSemVer fields become strings, None is preserved.
 
     Attributes:
         envelope_id: Unique envelope identifier (converted to string)
@@ -33,6 +31,7 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
         event_type: Dot-path routing key (or None)
         tenant_id: Tenant attribution recorded by the producer (or None)
         producer: Producing node identity recorded by the producer (or None)
+        provenance: Provenance stamp of where the emitter ran (or None)
         payload_type: Pydantic model class name (or None)
         payload_schema_version: Schema version string (or None)
         priority: Request priority (1-10)
@@ -58,6 +57,7 @@ class TypedDictEventEnvelopeDict(TypedDict, total=False):
     # string-id-ok: tenant_id is a named tenant slug, not a UUID
     tenant_id: str | None
     producer: str | None
+    provenance: dict[str, object] | None
     payload_type: str | None
     payload_schema_version: str | None
     priority: int
