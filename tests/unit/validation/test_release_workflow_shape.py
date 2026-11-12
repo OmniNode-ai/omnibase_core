@@ -912,3 +912,235 @@ def test_release_evidence_still_requires_a_ticket(tmp_path: Path) -> None:
 
     assert run.returncode != 0
     assert "Evidence-Ticket" in run.stdout
+
+
+# --------------------------------------------------------------------------
+# OMN-23845 -- report-only release consistency, after a successful release
+# --------------------------------------------------------------------------
+# The report is the last step of the existing `release` job (a new job is
+# refused by the CI-inheritance ratchet). The step runs only when every step
+# before it succeeded, so only after a published release and a synced main, and
+# it is `continue-on-error` and always exits 0: the pilot never fails a release.
+_CONSISTENCY_STEP = "Report release consistency"
+_MAIN_SYNC_STEP = "Sync main to release tag"
+_CONSISTENCY_MODULE = (
+    "omnibase_core.nodes.node_release_consistency_check_compute."
+    "runtime_release_consistency_check"
+)
+
+# Recorded from the published omnibase-core 0.47.72 release (2026-11-12): its
+# SHA256SUMS.txt asset, whose two sha256 values PyPI's JSON for 0.47.72 served.
+_C_TAG = "v0.47.72"
+_C_WHEEL = "omnibase_core-0.47.72-py3-none-any.whl"
+_C_SDIST = "omnibase_core-0.47.72.tar.gz"
+_C_SUMS = (
+    Path(__file__).resolve().parents[2]
+    / "fixtures"
+    / "release_consistency"
+    / "v0_47_72"
+    / "SHA256SUMS.txt"
+).read_text(encoding="utf-8")
+_C_RECORDED = {
+    Path(path).name: digest
+    for digest, path in (line.split() for line in _C_SUMS.splitlines() if line)
+}
+_C_WHEEL_SHA = _C_RECORDED[_C_WHEEL]
+_C_SDIST_SHA = _C_RECORDED[_C_SDIST]
+
+# Writes the canned body to the file named by `-o`, so the committed shell's
+# own `curl ... -o pypi.json` is what is exercised.
+_STUB_CURL_TO_FILE = """#!/bin/bash
+printf '%s\\n' "$*" >> "$CURL_STUB_ARGV_LOG"
+if [ "$CURL_STUB_FAIL" = "1" ]; then
+  exit 22
+fi
+out=""
+while [ "$#" -gt 0 ]; do
+  if [ "$1" = "-o" ]; then
+    out="$2"
+    shift
+  fi
+  shift
+done
+cat "$CURL_STUB_BODY" > "$out"
+exit 0
+"""
+
+# Stands in for `uv run ... --with <built wheel> python -m <module> ...`: logs
+# its argv and runs the module after `python` with this test's interpreter,
+# which has the checkout's omnibase_core importable.
+_STUB_UV_RUN_MODULE = """#!{python}
+import os
+import sys
+
+argv = sys.argv[1:]
+with open(os.environ["UV_STUB_ARGV_LOG"], "a", encoding="utf-8") as log:
+    log.write(" ".join(argv) + "\\n")
+index = argv.index("python")
+os.execv({python!r}, [{python!r}, *argv[index + 1 :]])
+"""
+
+
+@dataclass(frozen=True)
+class _ConsistencyRun:
+    returncode: int
+    stdout: str
+    curl_invocations: list[str]
+    uv_invocations: list[str]
+    summary: str
+
+
+def _run_consistency_script(
+    tmp_path: Path, *, sdist_sha_on_pypi: str, curl_fails: bool = False
+) -> _ConsistencyRun:
+    """Execute the committed consistency shell with curl, sleep and uv stubbed."""
+    import json
+    import sys
+    import zipfile
+
+    step = _step(_CONSISTENCY_STEP)
+    script = str(step["run"])
+    assert "${{" not in script, (
+        "the consistency step must contain no ${{ }} expressions so that its "
+        "real shell can be executed under test"
+    )
+    step_env = _as_mapping(step["env"], f"{_CONSISTENCY_STEP} `env:`")
+    assert step_env["RELEASE_TAG"] == "${{ steps.tag.outputs.tag }}"
+
+    script_path = tmp_path / "consistency_step.sh"
+    script_path.write_text(script)
+
+    workdir = tmp_path / "work"
+    dist = workdir / "dist"
+    dist.mkdir(parents=True)
+    with zipfile.ZipFile(dist / _C_WHEEL, "w") as wheel:
+        wheel.writestr(
+            "omnibase_core-0.47.72.dist-info/METADATA",
+            "Metadata-Version: 2.4\nName: omnibase-core\nVersion: 0.47.72\n",
+        )
+    (dist / "SHA256SUMS.txt").write_text(_C_SUMS)
+
+    body = tmp_path / "pypi_body.json"
+    body.write_text(
+        json.dumps(
+            {
+                "info": {"version": "0.47.72"},
+                "urls": [
+                    {"filename": _C_WHEEL, "digests": {"sha256": _C_WHEEL_SHA}},
+                    {"filename": _C_SDIST, "digests": {"sha256": sdist_sha_on_pypi}},
+                ],
+            }
+        )
+    )
+
+    stub_bin = tmp_path / "stub_bin"
+    stub_bin.mkdir()
+    for name, text in (
+        ("curl", _STUB_CURL_TO_FILE),
+        ("sleep", _STUB_SLEEP),
+        ("uv", _STUB_UV_RUN_MODULE.format(python=sys.executable)),
+    ):
+        stub = stub_bin / name
+        stub.write_text(text)
+        stub.chmod(0o755)
+
+    curl_log = tmp_path / "curl_argv.log"
+    curl_log.write_text("")
+    uv_log = tmp_path / "uv_argv.log"
+    uv_log.write_text("")
+    summary = tmp_path / "summary.md"
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "PATH": f"{stub_bin}{os.pathsep}{env['PATH']}",
+            "CURL_STUB_ARGV_LOG": str(curl_log),
+            "CURL_STUB_BODY": str(body),
+            "CURL_STUB_FAIL": "1" if curl_fails else "0",
+            "SLEEP_STUB_LOG": str(tmp_path / "sleep.log"),
+            "UV_STUB_ARGV_LOG": str(uv_log),
+            "GITHUB_STEP_SUMMARY": str(summary),
+            "RELEASE_TAG": _C_TAG,
+            "PYPI_READ_ATTEMPTS": "2",
+        }
+    )
+    proc = subprocess.run(
+        ["bash", "-e", str(script_path)],
+        cwd=workdir,
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=180,
+        check=False,
+    )
+    return _ConsistencyRun(
+        returncode=proc.returncode,
+        stdout=proc.stdout + proc.stderr,
+        curl_invocations=[
+            line for line in curl_log.read_text().splitlines() if line.strip()
+        ],
+        uv_invocations=[
+            line for line in uv_log.read_text().splitlines() if line.strip()
+        ],
+        summary=summary.read_text() if summary.exists() else "",
+    )
+
+
+def test_release_consistency_runs_only_after_a_successful_release() -> None:
+    assert _CONSISTENCY_STEP not in {
+        str(step.get("name"))
+        for name in _jobs()
+        if name != _RELEASE_JOB
+        for step in _job_steps(_job(str(name)))
+    }, "the report is a step of the release job, not a job of its own"
+    index = _step_index(_CONSISTENCY_STEP)
+    assert index == len(_steps()) - 1, "the report is the release job's last step"
+    assert index > _step_index(_MAIN_SYNC_STEP)
+    assert index > _step_index(_PUBLISH_STEP)
+    step = _step(_CONSISTENCY_STEP)
+    # No `if:` means the default success(): it runs only when every earlier
+    # step (publish, GitHub Release, main sync) succeeded or was skipped.
+    assert "if" not in step, step.get("if")
+    assert step.get("continue-on-error") is True
+
+
+def test_release_consistency_reports_agree_and_ends_green(tmp_path: Path) -> None:
+    run = _run_consistency_script(tmp_path, sdist_sha_on_pypi=_C_SDIST_SHA)
+    assert run.returncode == 0, run.stdout
+    assert "::warning::" not in run.stdout, run.stdout
+    assert f"AGREE {_C_SDIST}" in run.stdout
+    assert any(
+        "https://pypi.org/pypi/omnibase-core/0.47.72/json" in call
+        for call in run.curl_invocations
+    ), run.curl_invocations
+    # The node runs from the wheel this release built, not the checkout.
+    assert len(run.uv_invocations) == 1, run.uv_invocations
+    assert f"--with dist/{_C_WHEEL}" in run.uv_invocations[0], run.uv_invocations
+    assert _CONSISTENCY_MODULE in run.uv_invocations[0], run.uv_invocations
+    # AC3's fields: the tag, every published file with its sha256 result, and
+    # the metadata version.
+    assert _C_TAG in run.summary, run.summary
+    for name, sha in ((_C_WHEEL, _C_WHEEL_SHA), (_C_SDIST, _C_SDIST_SHA)):
+        assert f"AGREE {name} sha256 {sha}" in run.summary, run.summary
+    assert "wheel metadata Version 0.47.72" in run.summary, run.summary
+
+
+def test_release_consistency_mismatch_warns_and_never_fails_the_release(
+    tmp_path: Path,
+) -> None:
+    run = _run_consistency_script(tmp_path, sdist_sha_on_pypi="0" * 64)
+    assert run.returncode == 0, run.stdout
+    assert f"MISMATCH {_C_SDIST}" in run.stdout
+    assert "::warning::Release consistency MISMATCH" in run.stdout
+
+
+def test_release_consistency_unreadable_pypi_reads_unknown_after_retries(
+    tmp_path: Path,
+) -> None:
+    run = _run_consistency_script(
+        tmp_path, sdist_sha_on_pypi=_C_SDIST_SHA, curl_fails=True
+    )
+    assert run.returncode == 0, run.stdout
+    assert len(run.curl_invocations) == 2, run.curl_invocations
+    assert "::warning::Release consistency UNKNOWN" in run.stdout
+    assert "MISMATCH" not in run.stdout

@@ -409,6 +409,59 @@ jobs:
           esac
           echo "main fast-forwarded to $TAG_SHA ($TAG)"
 
+      # OMN-23845: report only. release.yml refuses a tag that differs from the
+      # version the build derives before it builds; nothing read the published
+      # files back afterwards. This last step reads the PyPI JSON for the
+      # tagged version (with retries: PyPI's JSON can trail an upload) and runs
+      # the release-consistency node from the wheel this job just built. It
+      # reports, per file, whether PyPI serves the built sha256, and whether
+      # the wheel's METADATA Version and PyPI's version equal the tag. A
+      # MISMATCH or an unreadable index is a warning: the step exits 0 and is
+      # continue-on-error, so in the pilot it never fails or blocks a release.
+      # It has no `if:`, so it runs only when publish, the GitHub Release and
+      # the main sync all succeeded. A new job would be refused by the CI
+      # inheritance ratchet, hence a step here. The script holds no inline
+      # expressions so tests can execute it verbatim.
+      - name: Report release consistency
+        # advisory-ok: OMN-23845 report-only pilot; it must never fail or block a release (mismatch is a ::warning::)
+        continue-on-error: true
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
+        run: |
+          set -uo pipefail
+          version="${RELEASE_TAG#v}"
+          url="https://pypi.org/pypi/omnibase-core/${version}/json"
+          attempts="${PYPI_READ_ATTEMPTS:-6}"
+          backoff="${PYPI_READ_BACKOFF:-30}"
+          attempt=1
+          while [ "$attempt" -le "$attempts" ]; do
+            if curl -fsSL --max-time 30 -o pypi.json "$url"; then
+              break
+            fi
+            rm -f pypi.json
+            if [ "$attempt" -lt "$attempts" ]; then
+              echo "PyPI read ${attempt}/${attempts} failed; retrying in ${backoff}s"
+              sleep "$backoff"
+            fi
+            attempt=$((attempt + 1))
+          done
+          wheel=""
+          for candidate in dist/*.whl; do
+            wheel="$candidate"
+          done
+          rc=0
+          uv run --no-project --isolated --with "$wheel" python -m \
+            omnibase_core.nodes.node_release_consistency_check_compute.runtime_release_consistency_check \
+            --tag "$RELEASE_TAG" --dist dist --pypi-json pypi.json \
+            --summary-path "$GITHUB_STEP_SUMMARY" || rc=$?
+          case "$rc" in
+            0) echo "Release consistency AGREE for ${RELEASE_TAG}" ;;
+            1) echo "::warning::Release consistency MISMATCH for ${RELEASE_TAG}: see the run summary (report only; the release stands)" ;;
+            2) echo "::warning::Release consistency UNKNOWN for ${RELEASE_TAG}: PyPI or a built file could not be read (report only)" ;;
+            *) echo "::warning::Release consistency UNKNOWN for ${RELEASE_TAG}: the report did not run (exit ${rc})" ;;
+          esac
+          exit 0
+
   # ---------------------------------------------------------------------------
   # OMN-16289: sync-only main fast-forward, dispatchable for an EXISTING tag
   # ---------------------------------------------------------------------------

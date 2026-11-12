@@ -1,0 +1,2 @@
+9407d2a7b1d033b3ed9fee023708f29ad4b78a592914851b281323fc6d209952  dist/omnibase_core-0.47.72-py3-none-any.whl
+e573cbbbf33d312f31b41cf9856d7713da133d1f1ba6697d4d55602eff1f42c0  dist/omnibase_core-0.47.72.tar.gz
