@@ -1,0 +1,58 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-24318
+title: Retry every error on the PGDG key download in the evidence check
+summary: The receipt-gate dod-verify step that provides the PostgreSQL 16 server tools fetched the PGDG
+  signing key with curl --retry 3, which does not retry error 55 (SSL EOF) or error 56 (connection reset),
+  so one dropped connection failed dod-verify for a whole pull request in every caller. The fetch now
+  carries --retry-all-errors with a retry delay and a total time cap, the same shape ci.yml uses for its
+  release download.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn24318-pgdg-key-retry
+    statement: A dropped connection on the PGDG key fetch is retried instead of failing dod-verify.
+    acceptance:
+      - id: AC1
+        statement: The curl that fetches the PGDG key in the Provide the PostgreSQL 16 server tools step
+          carries --retry-all-errors, --retry-delay and --retry-max-time beside --retry, and a local server
+          that drops the first connection is survived by the step's own argv while the old --retry 3 flags
+          fail against it.
+      - id: AC2
+        statement: Every curl command in receipt-gate.yml carries --retry-all-errors.
+evidence_requirements:
+  - kind: tests
+    description: Hosted CI test that pins the key fetch's retry flags and runs its argv against a server
+      that drops the first connection.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_pgdg_key_retry_omn24318.py -q --no-cov
+  - kind: ci
+    description: Deploy check scoped to hosted CI configuration; fails when the receipt-gate workflow
+      loses the retry flags on its downloads. No runtime service changes are included.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_pgdg_key_retry_omn24318.py tests/ci/test_receipt_gate_caller_evidence_omn20070.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24318-key-fetch-retries
+    description: The key fetch carries the retry flags and its argv survives a dropped connection; the
+      tests fail at the merge base, whose curl has only --retry 3 and exits 56 against the same server.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_pgdg_key_retry_omn24318.py -q --no-cov
+          -k "pgdg_key_fetch"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24318-every-curl-retries
+    description: The scan over every curl in the workflow finds the retry flag on each; it fails at the
+      merge base on the key fetch line.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_pgdg_key_retry_omn24318.py -q --no-cov
+          -k "every_curl"
+        cwd: ${OMNI_HOME}/omnibase_core
