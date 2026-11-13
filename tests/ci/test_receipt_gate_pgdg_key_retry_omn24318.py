@@ -87,7 +87,7 @@ def drop_first_server() -> Iterator[tuple[int, list[int]]]:
             while True:
                 try:
                     conn, _ = server.accept()
-                except OSError:
+                except OSError:  # listening socket closed: stop serving
                     break
                 connections.append(len(connections))
                 if len(connections) == 1:
@@ -96,7 +96,7 @@ def drop_first_server() -> Iterator[tuple[int, list[int]]]:
                 try:
                     conn.recv(65536)
                     conn.sendall(b"HTTP/1.1 200 OK\r\nContent-Length: 3\r\n\r\nkey")
-                except OSError:
+                except OSError:  # client already gone; nothing to answer
                     pass
                 finally:
                     conn.close()
@@ -130,7 +130,7 @@ def test_pgdg_key_fetch_survives_a_dropped_connection(
             new_argv.append("1")
             skip_next = True
             continue
-        if token.startswith("https://www.postgresql.org"):
+        if token.startswith("https://") and token.endswith("ACCC4CF8.asc"):
             new_argv.append(f"http://127.0.0.1:{port}/")
             continue
         if token == "-o":
