@@ -221,6 +221,21 @@ class ModelInferenceIntent(BaseModel):
         )
     )
 
+    # OMN-24039: delegation task class (e.g. "reasoning", "code_generation") the
+    # call serves; the inference effect reads it to look up the call-time
+    # ceiling of that class in the deployment overlay. Absent means the producer
+    # predates the field.
+    task_type: str | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Delegation task class (for example reasoning or code_generation) "
+            "the call serves. The inference effect reads it to look up the "
+            "call-time ceiling of that class in the deployment overlay. "
+            "Absent means the producer predates this field."
+        ),
+    )
+
     @field_validator("response_format")
     @classmethod
     def _validate_response_format(

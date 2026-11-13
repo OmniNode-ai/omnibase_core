@@ -1,0 +1,43 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24039
+title: The delegation call time limit for each kind of task is a setting in the overlays repository
+summary: The inference intent that the delegation orchestrator sends to the inference effect gains one
+  optional field, task_type, the delegation task class the call serves. The inference effect in omnimarket
+  reads it to look up the call time ceiling of that class in the deployment overlay instead of a constant
+  in its contract. The field is additive, defaults to None and stays off the wire when absent, so an older
+  producer's intent still validates. The reader, the effect change and the overlay values are in omnimarket
+  and the overlays repository under the same ticket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn24039-intent-task-type
+    statement: The inference intent carries the delegation task class as an optional field that round-trips
+      on the wire and is absent from the wire when unset.
+    acceptance:
+      - id: AC2
+        statement: 'AC2: the inference intent carries the task class the effect reads to resolve its per-call
+          ceiling from the overlay -- falsifier: uv run pytest tests/unit/models/delegation/wire/test_omn24039_intent_task_type.py
+          -q -n 0 --no-cov fails without the field'
+evidence_requirements:
+  - kind: tests
+    description: The intent task_type tests pass at the pushed head.
+    command: uv run pytest tests/unit/models/delegation/wire/test_omn24039_intent_task_type.py -q -n 0
+      --no-cov -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24039-ac2
+    description: 'AC2 (the core half): the round trip test and the absent-field test pass; both fail at
+      the merge base because the field does not exist.'
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/models/delegation/wire/test_omn24039_intent_task_type.py
+          -q -n 0 --no-cov -p no:cacheprovider
+        cwd: .
