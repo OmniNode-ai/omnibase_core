@@ -1,0 +1,94 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21505
+title: One public FAIL > SKIP > PASS rule
+summary: The FAIL > SKIP > PASS aggregation of check statuses, private to the verify-replay handler since
+  OMN-15862, becomes the public pure function aggregate_overall_status beside EnumOverallStatus, and the
+  node calls it.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn21505-public-rule
+    statement: The precedence rule is one public function over EnumCheckStatus that the verify-replay
+      node calls.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: FAIL dominates, then SKIP, then PASS, exactly as the node decides today -- falsifier:
+          parametrized pytest cases over every combination of the three statuses'
+      - id: AC2
+        statement: 'AC2: The verify-replay node''s existing tests pass unchanged, and its handler no longer
+          carries the rule''s body -- falsifier: the node''s test file and a source test that the handler
+          calls the public function'
+      - id: AC3
+        statement: 'AC3: Configuration: a core library carries no deployment value -- falsifier: the test
+          reads no overlay and no environment variable'
+      - id: AC4
+        statement: 'AC4: Bindings: a core library has no binding -- falsifier: the same statuses give
+          the same verdict in a direct call and through the local in-process entry of the parity harness
+          (T-B2)'
+evidence_requirements:
+  - kind: tests
+    description: Every status combination, the handler seam, and direct-call versus node-handler parity.
+    command: uv run --frozen pytest tests/unit/enums/test_enum_overall_status_aggregate.py tests/unit/nodes/node_contract_verify_replay_compute
+      -q --no-cov -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21505-ac1-every-combination
+    description: aggregate_overall_status gives FAIL, then SKIP, then PASS for all 39 ordered combinations
+      of the three statuses, and PASS for no statuses.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/enums/test_enum_overall_status_aggregate.py -q
+          --no-cov -n 0 -k "every_combination or literal_verdicts or empty_input or exhaustive"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21505-ac2-node-seam
+    description: The verify-replay node's own test file passes unchanged, the handler holds no private
+      copy of the rule, and the handler calls aggregate_overall_status.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_contract_verify_replay_compute -q --no-cov
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21505-ac3-no-deployment-value
+    description: The module of the function imports no environment, file or overlay reader, and the verdicts
+      do not move when the environment changes.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/enums/test_enum_overall_status_aggregate.py -q
+          --no-cov -n 0 -k "no_overlay or independent_of_environment"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21505-ac4-direct-vs-node
+    description: The same statuses give the same verdict in a direct call and through the node's in-process
+      handler, for all 39 combinations.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes/node_contract_verify_replay_compute/test_aggregate_overall_status_seam.py
+          -q --no-cov -n 0 -k "direct_call_and_node_handler"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn21505-delegation-join
+    description: 'Delegation join to the head. The code in this head was drafted by Codex thread 01a1851b-dd69-7b50-bfc9-8028be3e5dbd
+      and the commit message by text run 0848268d-900d-410e-a22b-fe6e455259fe (glm-5.3-flash). The check
+      imports the function that the Codex draft added, so it fails on a head without that draft; the receipt
+      and delegation_events rows of the two ids are read by the lane''s delegation receipt check (DS-6
+      and DS-7).'
+    source: manual
+    checks:
+      - check_type: command
+        check_value: uv run --frozen python -c "from omnibase_core.enums.enum_overall_status import aggregate_overall_status
+          as f; from omnibase_core.enums.enum_check_status import EnumCheckStatus as C; assert f([C.PASS,
+          C.SKIP]).value == 'skip'"
+        cwd: ${OMNI_HOME}/omnibase_core
