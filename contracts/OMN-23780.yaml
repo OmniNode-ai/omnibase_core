@@ -1,0 +1,59 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23780
+title: "omnibase_core deletes the second ticket contract model and the validator, script and types only
+  it used"
+summary: "The second ticket contract model, its validator, its result type, its input type, its script
+  and their tests are deleted, and the inventory ratchet lists ModelTicketContract as the only ticket
+  contract model, with a case that fails when a second one is planted."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23780-delete-second-model
+    statement: "The core library holds one ticket contract model, and nothing names a deleted module."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the inventory lists ModelTicketContract as the only ticket contract model, and
+          a planted second one fails -- falsifier: uv run pytest tests/unit/test_ticket_model_inventory.py
+          -q -k only_one_ticket_contract_model"
+      - id: AC2
+        statement: "AC2: no file in the repository names a deleted module"
+      - id: AC3
+        statement: "AC3: integrated: done only when running and observed where it runs: core CI is green
+          and the S12 to S14 checks still pass on the dev lane after the deletion"
+evidence_requirements:
+  - kind: tests
+    description: "The inventory ratchet passes at the checkout."
+    command: "uv run --frozen pytest tests/unit/test_ticket_model_inventory.py -q --no-cov -o addopts=''
+      -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23780-ac1-only-one-ticket-contract-model
+    description: "The inventory lists ModelTicketContract as the only ticket contract model, and a planted
+      second one fails. Fails at the merge base, where the scan finds a second ticket contract model's
+      file under models/contracts/ticket/."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run --frozen pytest tests/unit/test_ticket_model_inventory.py -q --no-cov -o
+          addopts='' -n 0 -k only_one_ticket_contract_model"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23780-ac2-no-deleted-module-named
+    description: "No file in the repository names a deleted module. The first character of each name is
+      bracketed so that this contract, which has to hold the pattern, does not match it. Prints lines
+      at the merge base."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: command
+        check_value: "bash -c '! git grep -n -E \"[v]alidate_ticket_contract|[M]odelLinearTicketContract|[v]alidators.validation_result|[t]yped_dict_ticket_input|[v]alidate-pr-tickets\"'"
+        cwd: ${OMNI_HOME}/omnibase_core

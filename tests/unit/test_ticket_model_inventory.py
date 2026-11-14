@@ -43,10 +43,6 @@ INVENTORY_CLASSES: dict[tuple[str, str], str] = {
         "ModelTicketContract",
     ): "canonical ticket model",
     (
-        "models/contracts/ticket/model_linear_ticket_contract.py",
-        "ModelLinearTicketContract",
-    ): "PR-gate input for the flat Linear dict (validate_ticket_contract)",
-    (
         "models/ticket/model_ticket_workflow_state.py",
         "ModelTicketWorkflowState",
     ): "workflow FSM state, distinct from the contract",
@@ -156,6 +152,13 @@ def second_definitions(found: dict[tuple[str, str], int]) -> list[str]:
         f"{rel}:{name}"
         for (rel, name) in found
         if name == CANONICAL_TICKET_MODEL and rel != CANONICAL_TICKET_MODEL_PATH
+    )
+
+
+def ticket_contract_models(found: dict[tuple[str, str], int]) -> list[str]:
+    """List every class the scan finds whose name ends in ``TicketContract``."""
+    return sorted(
+        f"{rel}:{name}" for (rel, name) in found if name.endswith("TicketContract")
     )
 
 
@@ -282,6 +285,43 @@ def test_second_definition_fails(tmp_path: Path) -> None:
 
     assert second_definitions(found) == [
         "models/contracts/ticket/model_other_ticket_contract.py:ModelTicketContract"
+    ]
+
+
+@pytest.mark.unit
+def test_only_one_ticket_contract_model() -> None:
+    """The real tree and the inventory list ModelTicketContract as the only ticket contract model."""
+    assert ticket_contract_models(scan_classes(SRC_ROOT)) == [
+        f"{CANONICAL_TICKET_MODEL_PATH}:{CANONICAL_TICKET_MODEL}"
+    ]
+    assert [
+        (rel, name)
+        for (rel, name) in INVENTORY_CLASSES
+        if name.endswith("TicketContract")
+    ] == [(CANONICAL_TICKET_MODEL_PATH, CANONICAL_TICKET_MODEL)]
+
+
+@pytest.mark.unit
+def test_only_one_ticket_contract_model_planted_second_fails(tmp_path: Path) -> None:
+    """A second ticket contract model, under any name, is found by the same check."""
+    _write(
+        tmp_path,
+        CANONICAL_TICKET_MODEL_PATH,
+        "class ModelTicketContract:\n    pass\n",
+    )
+    assert ticket_contract_models(scan_classes(tmp_path)) == [
+        f"{CANONICAL_TICKET_MODEL_PATH}:{CANONICAL_TICKET_MODEL}"
+    ]
+
+    _write(
+        tmp_path,
+        "models/contracts/ticket/model_other_ticket_contract.py",
+        "class ModelOtherTicketContract:\n    pass\n",
+    )
+
+    assert ticket_contract_models(scan_classes(tmp_path)) == [
+        "models/contracts/ticket/model_other_ticket_contract.py:ModelOtherTicketContract",
+        f"{CANONICAL_TICKET_MODEL_PATH}:{CANONICAL_TICKET_MODEL}",
     ]
 
 
