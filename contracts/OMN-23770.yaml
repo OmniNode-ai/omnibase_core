@@ -1,0 +1,75 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23770
+title: A core route validator refuses any direct Linear create outside the ticket node's handler
+summary: Adds a generic-format validator to omnibase_core whose one rule row refuses a direct Linear create
+  (issueCreate) outside the ticket node's handler, published as the no-direct-ticket-create hook with
+  no baseline and no annotation. The token, the allowed path and the texts are rule data. This change
+  holds AC1 and AC2 and the zero-site run in this repository; the rollout to omnimarket, omnibase_infra,
+  omniclaude and omniclaude-internal waits on the removal of the existing sites there.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23770-ticket-create-route
+    statement: A direct Linear create outside the ticket node's handler is refused, and one inside it
+      is admitted.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a planted issueCreate outside the allowed path fails the validator -- falsifier:
+          uv run pytest tests/unit/validation/test_validator_ticket_create_route.py -q -k planted_site_fails"
+      - id: AC2
+        statement: "AC2: issueCreate inside the node's handler passes the validator -- falsifier: uv run
+          pytest tests/unit/validation/test_validator_ticket_create_route.py -q -k allowed_path_passes"
+      - id: AC3
+        statement: "AC3: integrated: done only when running and observed where it runs: the validator
+          from the merged revision runs green with zero sites in the CI of omnimarket, omnibase_infra,
+          omniclaude and omniclaude-internal -- falsifier: each repository's validator check run on its
+          next pull request, the output pasted in the pull request"
+evidence_requirements:
+  - kind: tests
+    description: The ticket_create_route checker and validator tests pass at the head.
+    command: uv run pytest tests/unit/validation/test_validator_ticket_create_route.py -q --no-cov -o
+      addopts='' -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23770-ac1-planted-site-fails
+    description: A planted issueCreate outside the ticket node's handler is refused by the checker and
+      by a validator run that exits 1.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_validator_ticket_create_route.py -q --no-cov
+          -o addopts='' -n 0 -k planted_site_fails"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23770-ac2-allowed-path-passes
+    description: The same text inside the ticket node's handler is admitted by the checker and by a validator
+      run that exits 0.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_validator_ticket_create_route.py -q --no-cov
+          -o addopts='' -n 0 -k allowed_path_passes"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23770-ac3-zero-sites-in-core
+    description: Partial, this repository only. The validator run over the tracked Python and shell files
+      of omnibase_core finds zero sites. The four consuming repositories are not covered and AC3 stays
+      open until each one's check run is pasted.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: "git ls-files -z -- '*.py' '*.sh' | xargs -0 env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_ticket_create_route:ValidatorTicketCreateRoute"
+        cwd: ${OMNI_HOME}/omnibase_core

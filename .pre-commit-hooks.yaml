@@ -1626,6 +1626,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-direct-ticket-create
+  name: No direct Linear create outside the ticket node's handler (OMN-23770)
+  description: >
+    A Linear create (issueCreate) issued from anywhere but the ticket node's handler skips the admission
+    policy, the typed draft and the receipt the node writes. The create token, the one allowed path and
+    the remediation text are the rule rows of ticket_create_route.validation.yaml. There is no baseline
+    and no annotation: a repository adopts the hook only when it holds no site.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_ticket_create_route:ValidatorTicketCreateRoute
+  files: \.(py|sh)$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-checker-rule-data
   name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
   description: >
