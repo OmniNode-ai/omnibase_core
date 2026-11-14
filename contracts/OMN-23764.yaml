@@ -1,0 +1,69 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23764
+title: The core ticket create gate gains route rows that refuse a raw create and a hand edit of the contract
+  block
+summary: The shared ticket create gate gains two rule rows. create_route refuses a create the caller states
+  was built by hand when the route switch is at refuse (the contract default is allow), naming onex ticket
+  create --draft. contract_block_edit refuses a description change that alters the fenced contract block,
+  judged against the current description the caller passes, naming onex ticket sync.
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn23764-route-rows
+    statement: With the switch at refuse a raw create is refused, and a description change that alters
+      the contract block is refused, each naming the command that replaces it.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: with the switch at refuse, a raw create payload yields the create_route finding
+          naming onex ticket create --draft -- falsifier: uv run pytest tests/unit/validation -q -k create_route_refused'
+      - id: AC2
+        statement: 'AC2: a description patch altering the contract block yields contract_block_edit naming
+          onex ticket sync -- falsifier: uv run pytest tests/unit/validation -q -k contract_block_edit'
+      - id: AC3
+        statement: 'AC3: integrated: done only when running and observed where it runs: the installed
+          core checker from the merged revision is run on one recorded raw payload on the dev lane and
+          yields create_route -- falsifier: the checker run on the recorded payload on the dev lane, the
+          output pasted in the pull request'
+evidence_requirements:
+  - kind: tests
+    description: The route row tests and the existing ticket-creation parity tests pass.
+    command: uv run pytest tests/unit/validation/test_ticket_creation_route_rows.py tests/unit/validation/test_ticket_creation_parity.py
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23764-ac1
+    description: A raw create with the switch at refuse yields create_route naming the node command; the
+      same payload with no route, or with the switch at allow, is admitted.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation -q -k create_route_refused
+        cwd: .
+  - id: dod-omn23764-ac2
+    description: A full description or a patch that changes the contract block yields contract_block_edit
+      naming onex ticket sync, whatever the switch; a patch outside the block does not.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation -q -k contract_block_edit
+        cwd: .
+  - id: dod-omn23764-ac3
+    description: The recorded raw payload read through the file validator yields create_route; the run
+      on the dev lane after the merge is pasted in the pull request.
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_ticket_creation_route_rows.py -q -k recorded
+        cwd: .

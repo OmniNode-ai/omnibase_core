@@ -91,6 +91,9 @@ class ValidatorTicketCreation(ValidatorBase):
             contract,
             lane=document.lane,
             ledger_line_exists=ledger_line_lookup(ledger),
+            route=document.route,
+            route_switch=document.route_switch,
+            current_description=document.current_description,
         )
         rows = rows_of(contract)
         return tuple(

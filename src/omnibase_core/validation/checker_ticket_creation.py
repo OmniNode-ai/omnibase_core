@@ -13,6 +13,12 @@ mistyped raises, so a broken contract refuses every payload instead of admitting
 An UPDATE that does not touch the description is admitted. An update that writes a
 description or a patch needs the current body to be judged (guard rule 9); this checker
 holds none, so it refuses that update rather than assuming it clean.
+
+Two route rows follow the policy of the standard-ticket plan (OMN-23764). ``create_route``
+refuses a create the caller states was built by hand (``route="raw"``) when the route switch
+is at ``refuse``; ``contract_block_edit`` refuses a description change that alters the fenced
+contract block, judged against the current description the caller passes. The checker cannot
+see who built a payload, so the caller states the route and reads the switch from its overlay.
 """
 
 from __future__ import annotations
@@ -522,6 +528,146 @@ def _lane_findings(
     return out
 
 
+# -- the route rows (create_route, contract_block_edit) --------------------------------
+
+
+def _route_input_findings(
+    rows: _Rows, route: str | None, route_switch: str | None
+) -> tuple[ModelTicketCreationFinding, ...]:
+    """A stated route or switch the contract does not know is refused, never read as clean."""
+    row = _row(rows, "create_route")
+    known_routes = {rule_string(row, "node_route"), rule_string(row, "raw_route")}
+    known_switches = {rule_string(row, "allow_value"), rule_string(row, "refuse_value")}
+    out: tuple[ModelTicketCreationFinding, ...] = ()
+    if route is not None and route not in known_routes:
+        out += _finding(rows, "unevaluable", "route", "route", value=repr(route))
+    if route_switch is not None and route_switch not in known_switches:
+        out += _finding(
+            rows,
+            "unevaluable",
+            "route_switch",
+            "route_switch",
+            value=repr(route_switch),
+        )
+    return out
+
+
+def _create_route_findings(
+    rows: _Rows, route: str | None, route_switch: str | None
+) -> tuple[ModelTicketCreationFinding, ...]:
+    row = _row(rows, "create_route")
+    switch = (
+        route_switch if route_switch is not None else rule_string(row, "switch_default")
+    )
+    if route != rule_string(row, "raw_route") or switch != rule_string(
+        row, "refuse_value"
+    ):
+        return ()
+    return _finding(
+        rows,
+        "create_route",
+        "route",
+        switch=switch,
+        command=rule_string(row, "node_command"),
+    )
+
+
+def _apply_description_patch(previous: str, operations: object) -> str | None:
+    """The description a ``save_issue`` ``patch`` writes over ``previous``, or ``None``.
+
+    Anchor semantics are the tool's own: every anchor matches exactly once and the
+    operations apply in order. A patch this cannot resolve to one definite result is ``None``.
+    """
+    if not isinstance(operations, list) or not operations:
+        return None
+    body = previous
+    for raw in operations:
+        if not isinstance(raw, dict):
+            return None
+        op = raw.get("op")
+        text = raw.get("text")
+        if op in {"prepend", "append"}:
+            if not isinstance(text, str):
+                return None
+            body = text + body if op == "prepend" else body + text
+        elif op in {"insert_before", "insert_after"}:
+            anchor = raw.get("anchor")
+            if not isinstance(anchor, str) or not isinstance(text, str):
+                return None
+            if body.count(anchor) != 1:
+                return None
+            at = body.index(anchor)
+            at = at if op == "insert_before" else at + len(anchor)
+            body = body[:at] + text + body[at:]
+        elif op == "replace":
+            old, new = raw.get("old_string"), raw.get("new_string")
+            if not isinstance(old, str) or not old or not isinstance(new, str):
+                return None
+            if raw.get("replace_all") is True:
+                if old not in body:
+                    return None
+                body = body.replace(old, new)
+            else:
+                if body.count(old) != 1:
+                    return None
+                body = body.replace(old, new, 1)
+        elif op == "replace_range":
+            start, end, new = raw.get("from"), raw.get("to"), raw.get("new_string")
+            if (
+                not isinstance(start, str)
+                or not start
+                or not isinstance(end, str)
+                or not end
+                or not isinstance(new, str)
+                or body.count(start) != 1
+            ):
+                return None
+            head = body.index(start)
+            tail = body.find(end, head + len(start))
+            if tail == -1 or body.count(end, head + len(start)) != 1:
+                return None
+            body = body[:head] + new + body[tail:]
+        else:
+            return None
+    return body
+
+
+def _contract_blocks(text: str, rows: _Rows) -> tuple[str, ...]:
+    pattern = _re(rule_string(_row(rows, "contract_block_edit"), "block_pattern"))
+    return tuple(m.group("body") for m in pattern.finditer(text.replace("\r\n", "\n")))
+
+
+def _block_edit_findings(
+    tool_input: Mapping[str, object],
+    current_description: str,
+    rows: _Rows,
+) -> tuple[ModelTicketCreationFinding, ...]:
+    """A finding when the update turns ``current_description`` into one with another block."""
+    fields = _row(rows, "payload_fields")
+    patch_field = rule_string(fields, "patch_field")
+    if patch_field in tool_input:
+        proposed = _apply_description_patch(
+            current_description, tool_input[patch_field]
+        )
+    else:
+        raw = tool_input.get(rule_string(fields, "description_field"))
+        proposed = raw if isinstance(raw, str) else None
+    if proposed is None:
+        return ()
+    before = _contract_blocks(current_description, rows)
+    after = _contract_blocks(proposed, rows)
+    if before == after:
+        return ()
+    return _finding(
+        rows,
+        "contract_block_edit",
+        rule_string(fields, "description_field"),
+        before=str(len(before)),
+        after=str(len(after)),
+        command=rule_string(_row(rows, "contract_block_edit"), "sync_command"),
+    )
+
+
 # -- the entry point ------------------------------------------------------------------
 
 
@@ -531,6 +677,9 @@ def check_ticket_creation(
     *,
     lane: str | None = None,
     ledger_line_exists: LedgerLineLookup | None = None,
+    route: str | None = None,
+    route_switch: str | None = None,
+    current_description: str | None = None,
 ) -> ModelTicketCreationCheckResult:
     """Every failing admission rule for one ``save_issue`` payload; no finding admits it.
 
@@ -538,9 +687,17 @@ def check_ticket_creation(
     rules do not run) and the filing lane's identity otherwise (``""`` is a lane context
     that declares none). ``ledger_line_exists`` resolves a ledger ``Diagnosis:`` citation;
     absent, such a citation resolves nothing.
+
+    ``route`` is how the caller says who built the payload: ``"node"`` (the ticket node),
+    ``"raw"`` (built by hand, as the Mac hook passes) or ``None`` (not stated, no route rule
+    runs). ``route_switch`` is the caller's reading of the overlay switch, ``"allow"`` or
+    ``"refuse"``; ``None`` takes the contract's default (``allow``). ``current_description`` is
+    the updated ticket's current body: given, an update from a non-node route that alters the
+    fenced contract block is refused ``contract_block_edit``, whatever the switch.
     """
     rows = rows_of(contract)
     fields = _row(rows, "payload_fields")
+    route_problems = _route_input_findings(rows, route, route_switch)
     if not isinstance(tool_input, Mapping):
         return ModelTicketCreationCheckResult(
             findings=_finding(rows, "unevaluable", "tool_input", "tool_input")
@@ -560,12 +717,19 @@ def check_ticket_creation(
             or tool_input.get(description_field) is not None
         )
         if not touches_body:
-            return ModelTicketCreationCheckResult()
+            return ModelTicketCreationCheckResult(findings=route_problems)
+        block_edit: tuple[ModelTicketCreationFinding, ...] = ()
+        if current_description is not None and route != rule_string(
+            _row(rows, "create_route"), "node_route"
+        ):
+            block_edit = _block_edit_findings(tool_input, current_description, rows)
         return ModelTicketCreationCheckResult(
-            findings=_finding(rows, "criterion_text_unreadable", description_field)
+            findings=route_problems
+            + block_edit
+            + _finding(rows, "criterion_text_unreadable", description_field)
         )
 
-    findings: tuple[ModelTicketCreationFinding, ...] = ()
+    findings: tuple[ModelTicketCreationFinding, ...] = route_problems
     title_field = rule_string(fields, "title_field")
     title = tool_input.get(title_field)
     if not _is_present(title):
@@ -646,4 +810,5 @@ def check_ticket_creation(
         )
     if lane is not None:
         findings += _lane_findings(tool_input, lane, rows)
+    findings += _create_route_findings(rows, route, route_switch)
     return ModelTicketCreationCheckResult(findings=findings)

@@ -220,6 +220,13 @@ validation:
         message_id: '''id'' is present but is {value}, which is neither a usable issue identifier nor
           an absent field, so the check cannot tell whether this creates a ticket'
         fix_id: omit 'id' entirely to create an issue, or pass the identifier of the issue being updated
+        message_route: the caller states the route {value}, which is neither of the routes this check
+          knows, so it cannot tell whether the payload came from the ticket node
+        fix_route: state the route as 'node' (built by the ticket node) or 'raw' (built by hand), or state
+          none
+        message_route_switch: the route switch is {value}, which is neither 'allow' nor 'refuse', so the
+          check cannot tell whether a raw create is refused
+        fix_route_switch: pass the switch as 'allow' or 'refuse', or pass none to take the contract default
     - rule_id: missing_parent
       description: A create names a parent, or declares itself an epic on a line of its own.
       severity: error
@@ -461,6 +468,34 @@ validation:
         message: the first line of a lane- or node-created item names the lane that opened it; this one
           opens '{first}'
         fix: make the description's first line exactly '{stamp}'
+    - rule_id: create_route
+      description: 'With the route switch at refuse, a create that did not come from the ticket node is
+        refused. The caller states the route (the node passes node, the Mac hook passes raw) and, where
+        it reads the overlay, the switch; the contract default is allow.'
+      severity: error
+      enabled: true
+      parameters:
+        node_route: node
+        raw_route: raw
+        allow_value: allow
+        refuse_value: refuse
+        switch_default: allow
+        node_command: onex ticket create --draft
+        message: 'this create was built by hand, not by the ticket node, and the route switch is at ''{switch}'''
+        fix: 'create the ticket through the ticket node: {command} <draft file>'
+    - rule_id: contract_block_edit
+      description: 'A description change that alters the fenced contract block of a ticket is refused
+        unless the ticket node makes it; the switch of create_route does not gate it. The caller passes
+        the ticket''s current description so the block before and after can be compared.'
+      severity: error
+      enabled: true
+      parameters:
+        block_pattern: (?ms)^[ \t]*(?P<fence>`{3,}|~{3,})[ \t]*yaml[ \t]+onex-ticket-contract[ \t]*\n(?P<body>.*?)^[
+          \t]*(?P=fence)[ \t]*$
+        sync_command: onex ticket sync
+        message: this update changes the contract block of the ticket by hand ({before} block(s) before,
+          {after} after)
+        fix: 'change the contract file and run {command}, which writes the ticket and the file together'
     - rule_id: criterion_text_unreadable
       description: 'An update that touches the description cannot be judged here (rule 9 is not ported):
         it is refused, never assumed clean.'
