@@ -22,3 +22,15 @@ class ModelTicketCreationDocument(BaseModel):
         default=None,
         description="Rolling ledger a Diagnosis citation resolves against; None resolves nothing",
     )
+    route: str | None = Field(
+        default=None,
+        description="Who built the payload: 'node' (the ticket node), 'raw' (by hand), or None when not stated",
+    )
+    route_switch: str | None = Field(
+        default=None,
+        description="The overlay's route switch, 'allow' or 'refuse'; None takes the contract default",
+    )
+    current_description: str | None = Field(
+        default=None,
+        description="The updated ticket's current description, so a contract block edit can be judged",
+    )
