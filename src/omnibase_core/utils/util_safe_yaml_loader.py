@@ -66,7 +66,7 @@ from omnibase_core.types.typed_dict_yaml_dump_options import TypedDictYamlDumpOp
 # Removed _load_yaml_content function - YAML loading now handled by Pydantic model from_yaml methods
 
 
-class _DuplicateKeyRejectingSafeLoader(yaml.SafeLoader):
+class UtilDuplicateKeyRejectingSafeLoader(yaml.SafeLoader):
     """SafeLoader variant that fails before duplicate mapping data is collapsed."""
 
     source: str = "<unknown YAML source>"
@@ -122,7 +122,7 @@ def load_yaml_mapping_no_duplicates(
     a local mapping value, raises ``DuplicateYamlMappingKeyError`` instead of
     selecting a value by YAML precedence rules.
     """
-    loader = _DuplicateKeyRejectingSafeLoader(content)
+    loader = UtilDuplicateKeyRejectingSafeLoader(content)
     loader.source = source
     try:
         loaded = loader.get_single_data()
