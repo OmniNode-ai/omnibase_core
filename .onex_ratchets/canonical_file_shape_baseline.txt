@@ -90,7 +90,6 @@ scripts/validate-clean-root.sh
 scripts/validate-no-model-primitive-unions.sh
 scripts/validate-no-spi-imports.sh
 scripts/validate-no-transport-imports.sh
-scripts/validate-pr-tickets.sh
 scripts/validate_class_naming.py
 scripts/validate_deterministic_skill_routing.py
 scripts/validate_no_transport_imports.py
@@ -775,7 +774,6 @@ src/omnibase_core/types/typed_dict_symbol_metadata.py
 src/omnibase_core/types/typed_dict_system_config.py
 src/omnibase_core/types/typed_dict_system_state.py
 src/omnibase_core/types/typed_dict_text_computation_summary.py
-src/omnibase_core/types/typed_dict_ticket_input.py
 src/omnibase_core/types/typed_dict_timestamp_data.py
 src/omnibase_core/types/typed_dict_timestamp_update_data.py
 src/omnibase_core/types/typed_dict_tool_breakdown.py

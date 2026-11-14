@@ -43,10 +43,6 @@ INVENTORY_CLASSES: dict[tuple[str, str], str] = {
         "ModelTicketContract",
     ): "canonical ticket model",
     (
-        "models/contracts/ticket/model_linear_ticket_contract.py",
-        "ModelLinearTicketContract",
-    ): "PR-gate input for the flat Linear dict (validate_ticket_contract)",
-    (
         "models/ticket/model_ticket_workflow_state.py",
         "ModelTicketWorkflowState",
     ): "workflow FSM state, distinct from the contract",
@@ -264,6 +260,49 @@ def test_no_second_definition_in_tree() -> None:
     found = scan_classes(SRC_ROOT)
     assert second_definitions(found) == []
     assert (CANONICAL_TICKET_MODEL_PATH, CANONICAL_TICKET_MODEL) in found
+
+
+@pytest.mark.unit
+def test_only_one_ticket_contract_model() -> None:
+    """ModelTicketContract is the only ticket contract model in the tree (OMN-23780).
+
+    The inventory lists no other ticket *contract* class, and the scan of the
+    real tree finds exactly the canonical one.
+    """
+    canonical = [f"{CANONICAL_TICKET_MODEL_PATH}:{CANONICAL_TICKET_MODEL}"]
+    listed = sorted(
+        f"{rel}:{name}"
+        for (rel, name) in INVENTORY_CLASSES
+        if name.endswith("TicketContract")
+    )
+    scanned = sorted(
+        f"{rel}:{name}"
+        for (rel, name) in scan_classes(SRC_ROOT)
+        if name.endswith("TicketContract")
+    )
+    assert listed == canonical
+    assert scanned == canonical
+
+
+@pytest.mark.unit
+def test_only_one_ticket_contract_model_rejects_a_planted_second(
+    tmp_path: Path,
+) -> None:
+    """A planted second ticket contract model is unlisted, so the inventory fails."""
+    _write(
+        tmp_path,
+        "models/contracts/ticket/model_other_ticket_contract.py",
+        "class ModelOtherTicketContract:\n    pass\n",
+    )
+
+    found = scan_classes(tmp_path)
+
+    assert set(found) - set(INVENTORY_CLASSES) - set(EXCLUDED_CLASSES) == {
+        (
+            "models/contracts/ticket/model_other_ticket_contract.py",
+            "ModelOtherTicketContract",
+        )
+    }
 
 
 @pytest.mark.unit
