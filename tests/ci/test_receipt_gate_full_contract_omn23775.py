@@ -66,6 +66,10 @@ def test_full_contract_path_not_the_scoped_copy() -> None:
 
 
 def test_no_linear_secret_in_receipt_gate() -> None:
+    # The header Secrets note records the OMN-23775 decision; the merge base lacks it.
+    header = WORKFLOW_PATH.read_text().split("\nname: receipt-gate", 1)[0]
+    assert "hosted CI holds no Linear" in " ".join(header.replace("#", " ").split())
+    assert "OMN-23775" in header
     workflow = _workflow()
     # PyYAML reads the bare `on:` key as the boolean True.
     trigger = workflow.get("on", workflow.get(True))
