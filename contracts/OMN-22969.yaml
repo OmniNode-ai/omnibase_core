@@ -60,6 +60,10 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
           -q --no-cov -k integration_item_required
         cwd: "."
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_ticket_contract_integration_item.py
+          -q --no-cov
+        cwd: "."
     binds_ac:
       - AC2
   - id: dod-omn22969-inventory-completion-scan
