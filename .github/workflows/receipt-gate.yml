@@ -61,7 +61,8 @@
 #                   need more than that.
 #
 # Secrets:
-#   (none — contracts are in the caller's repository)
+#   (none — contracts are in the caller's repository; hosted CI holds no Linear
+#   key, so the gate declares and passes none, OMN-23775)
 
 name: receipt-gate
 
@@ -1670,8 +1671,11 @@ jobs:
             fi
             result="$RUNNER_TEMP/dod/head-$ticket.json"
             rc=0
+            # OMN-23775: the unscoped head contract rides beside the scoped copy, so the
+            # standard-form checks read the whole contract the scoped copy trims.
             "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
-              --ticket-id "$ticket" --contract-path "$scoped" --execution-audience hosted \
+              --ticket-id "$ticket" --contract-path "$scoped" --full-contract-path "$contract" \
+              --execution-audience hosted \
               --output-path "$RUNNER_TEMP/dod/head-$ticket.receipt.json" > "$result" || rc=$?
             # --output-path adds this non-JSON line after the pretty JSON document.
             sed -i '/^Receipt written to: /d' "$result"

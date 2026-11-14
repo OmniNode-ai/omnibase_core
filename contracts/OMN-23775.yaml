@@ -1,0 +1,54 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-23775
+title: The core receipt-gate workflow passes dod-verify the full head contract and declares no Linear
+  secret
+summary: The receipt-gate head verification passed dod-verify only the contract scoped to what the pull
+  request adds or changes, which cannot pass the standard-form checks that read the whole contract. The
+  invocation now also carries --full-contract-path naming the unscoped head file, and the workflow keeps
+  declaring and passing no Linear secret because hosted CI holds no Linear key.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23775-full-head-contract
+    statement: The hosted dod-verify step receives the full head contract and no Linear secret.
+    acceptance:
+      - id: AC1
+        statement: The dod-verify invocation carries --full-contract-path naming the unscoped head file.
+      - id: AC2
+        statement: The workflow declares and passes no Linear secret.
+evidence_requirements:
+  - kind: tests
+    description: Hosted CI test that pins the head dod-verify invocation and scans the workflow for a
+      Linear secret.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_full_contract_omn23775.py -q --no-cov
+  - kind: ci
+    description: Deploy check scoped to hosted CI configuration; fails when the receipt-gate workflow
+      loses the full-contract argument or gains a Linear secret. No runtime service changes are included.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_full_contract_omn23775.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23775-full-contract-path-passed
+    description: The head dod-verify invocation carries --full-contract-path naming the unscoped head
+      contract file; the test fails at the merge base, where only the scoped copy is passed.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_full_contract_omn23775.py -q --no-cov
+          -k "full_contract_path_passed"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn23775-no-linear-secret
+    description: The workflow declares no secret and references no Linear secret or LINEAR_ variable;
+      the test fails when a Linear secret is planted in a step environment.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_full_contract_omn23775.py -q --no-cov
+          -k "no_linear_secret_in_receipt_gate"
+        cwd: ${OMNI_HOME}/omnibase_core
