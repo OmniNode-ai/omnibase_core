@@ -1,0 +1,76 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24480
+title: The ledger file census takes its own count file and repository name
+summary: omnibase_core runs the ledger file census as a pre-commit hook (the precommit-suite job runs
+  every hook) against its own checkout with its own shrink-only count file, config/ledger_file_census_ratchet.yaml,
+  row 14 as measured. The census node is omnimarket's, pinned to a commit that carries the options. Never
+  reads the ledger file.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn24480-core-census
+    statement: A change to omnibase_core that adds a reader or a writer of the ledger file is refused.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the counting step takes its own ratchet file and its own repository name from
+          the command line -- falsifier: uv run pytest tests/unit/validators/test_ledger_file_census.py
+          -k "ratchet_file_option or register_option" -q'
+      - id: AC2
+        statement: 'AC2: a seeded reader file turns the counting step red when the command line names
+          the repository and its own count file, and the same run without the option reads the overlay''s
+          count file -- falsifier: uv run pytest tests/unit/validators/test_ledger_file_census.py -k ratchet_file_option
+          -q'
+      - id: AC3
+        statement: 'AC3: integrated: the public repositories'' running checks print their counts (62,
+          25 and 14 files) -- falsifier: the CI log of each repository''s latest merged head shows a CENSUS
+          line with those counts or lower'
+evidence_requirements:
+  - kind: tests
+    description: The wiring test passes at the head.
+    command: uv run pytest tests/ci/test_ledger_file_census_hook_omn24480.py -q --no-cov -o addopts=''
+      -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24480-core-ac1
+    description: The hook names the registration, the ratchet file and a 40-hex omnimarket pin; the count
+      file parses.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ledger_file_census_hook_omn24480.py -q --no-cov -o addopts=''
+          -n 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24480-core-ac2
+    description: 'Failing control: at the merge base the hook and the count file are absent, so the wiring
+      and row tests fail there; a seeded reader file turns the hook red (count 15 against row 14, read
+      on h053).'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ledger_file_census_hook_omn24480.py -q --no-cov -o addopts=''
+          -n 0 -k "is_wired or ratchet_row"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24480-core-ac3
+    description: The hook as pre-commit runs it prints the CENSUS line for omnibase_core with its count
+      at or under the row.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: env ONEX_LEDGER_CENSUS_ROOT=. uv run --no-project --with "omnimarket @ git+https://github.com/OmniNode-ai/omnimarket@7199fa537f69b96f1172d66f0b12710541cec6a8"
+          python -I -m omnimarket.nodes.node_work_ledger_file_census_effect --packaged-overlay --register
+          omnibase_core --directory omnibase_core=. --ratchet-file config/ledger_file_census_ratchet.yaml
+        cwd: ${OMNI_HOME}/omnibase_core
