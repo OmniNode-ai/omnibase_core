@@ -5,9 +5,10 @@ title: One canonical ticket model, one definition-of-done model and one completi
   with the integration item required in every contract and every caller migrated
 summary: "This contract carries the omnibase_core part of the ticket: an inventory ratchet over the ticket
   and DoD item models, the second ModelTicketContract renamed out of the way, one completion predicate
-  the two ticket models call, and an integration-item rule in validate_ticket_contract behind a parameter
-  that defaults off. Making the rule the default, merging the duplicate DoD item models, and the caller
-  migrations in other repositories are tracked work that remains."
+  the two ticket models call, and an integration-item rule in the ticket validator behind a parameter
+  that defaults off (the validator was later deleted: OMN-23780). Making the rule the default, merging
+  the duplicate DoD item models, and the caller migrations in other repositories are tracked work that
+  remains."
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -30,8 +31,8 @@ requirements:
 evidence_requirements:
   - kind: tests
     description: The inventory scan and the integration-item rule.
-    command: uv run --frozen pytest tests/unit/test_ticket_model_inventory.py tests/unit/validation/test_ticket_contract_integration_item.py
-      -q
+    command: uv run --frozen pytest tests/unit/test_ticket_model_inventory.py tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+      -q -k 'inventory or integration_item'
 emergency_bypass:
   enabled: false
   justification: ''
@@ -50,13 +51,14 @@ dod_evidence:
       - AC1
       - AC3
   - id: dod-omn22969-integration-item
-    description: "validate_ticket_contract refuses a ticket with no integration check when asked to, and
-      accepts one that carries it; the default stays off until consumers comply."
+    description: "The ticket model refuses a ticket with no integration check and accepts one that carries
+      it (the validator this item first named was deleted by OMN-23780; ModelTicketContract carries the
+      rule)."
     source: manual
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/validation/test_ticket_contract_integration_item.py
-          -q --no-cov
+        check_value: uv run --frozen pytest tests/unit/models/ticket/test_model_ticket_contract_standard_form.py
+          -q --no-cov -k integration_item_required
         cwd: "."
     binds_ac:
       - AC2
