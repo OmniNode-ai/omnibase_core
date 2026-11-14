@@ -1264,6 +1264,18 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-23770: Rejects a direct Linear create (issueCreate) outside the ticket node's handler. Send the
+      # ticket as a typed draft to node_create_ticket instead. No baseline and no annotation.
+      - id: no-direct-ticket-create
+        name: No direct Linear create outside the ticket node's handler (OMN-23770)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_ticket_create_route:ValidatorTicketCreateRoute
+        language: system
+        files: \.(py|sh)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>
