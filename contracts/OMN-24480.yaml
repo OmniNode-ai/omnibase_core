@@ -49,8 +49,9 @@ dod_evidence:
           -n 0
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn24480-core-ac2
-    description: 'Failing control: the wiring check reports the hook missing from a config without it;
-      a seeded reader file in a branch turns the hook red (count 15 against row 14, read on h053).'
+    description: 'Failing control: at the merge base the hook and the count file are absent, so the wiring
+      and row tests fail there; a seeded reader file turns the hook red (count 15 against row 14, read
+      on h053).'
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
@@ -58,7 +59,7 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_ledger_file_census_hook_omn24480.py -q --no-cov -o addopts=''
-          -n 0 -k without_the_hook
+          -n 0 -k "is_wired or ratchet_row"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn24480-core-ac3
     description: The hook as pre-commit runs it prints the CENSUS line for omnibase_core with its count
