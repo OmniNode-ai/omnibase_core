@@ -100,12 +100,15 @@ def test_compare_false_missing_contract_refuses_without_probing(tmp_path: Path) 
 def test_present_contract_runs_the_pinned_verifier_without_probing(
     tmp_path: Path,
 ) -> None:
-    result, verifier_log, _, dod_dir = _run_head_verify(tmp_path, contract_present=True)
+    result, verifier_log, contract, dod_dir = _run_head_verify(
+        tmp_path, contract_present=True
+    )
     assert result.returncode == 0, result.stderr
     assert result.stdout.splitlines() == [f"{TICKET} head: verified"]
     assert verifier_log.read_text().splitlines() == [
         f"-m omnimarket.nodes.node_dod_verify --ticket-id {TICKET} "
-        f"--contract-path {dod_dir}/scope/head-{TICKET}.yaml --execution-audience hosted "
+        f"--contract-path {dod_dir}/scope/head-{TICKET}.yaml "
+        f"--full-contract-path {contract} --execution-audience hosted "
         f"--output-path {dod_dir}/head-{TICKET}.receipt.json"
     ]
 
@@ -121,7 +124,8 @@ def test_without_a_scoped_contract_the_full_contract_runs(tmp_path: Path) -> Non
     ]
     assert verifier_log.read_text().splitlines() == [
         f"-m omnimarket.nodes.node_dod_verify --ticket-id {TICKET} "
-        f"--contract-path {contract} --execution-audience hosted "
+        f"--contract-path {contract} --full-contract-path {contract} "
+        f"--execution-audience hosted "
         f"--output-path {dod_dir}/head-{TICKET}.receipt.json"
     ]
 
