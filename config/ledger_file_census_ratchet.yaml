@@ -1,0 +1,5 @@
+---
+# The shrink-only count of files in this repository that read or write the ledger file.
+# A repository whose count rises above its row fails the hook; a row is only ever lowered.
+ratchet:
+  omnibase_core: 14

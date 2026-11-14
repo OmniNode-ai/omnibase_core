@@ -2615,6 +2615,23 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+  # OMN-24480: the work ledger is leaving its shared file for the bus. This counts the files of this
+  # repository that read or write that file, with omnimarket's census node at a pinned commit and its
+  # packaged overlay, and fails when the count rises above its row in config/ledger_file_census_ratchet.yaml.
+  # The row may only be lowered. The precommit-suite job runs every hook, so this is also the CI step.
+  - repo: local
+    hooks:
+      - id: ledger-file-census-ratchet
+        name: Ledger file census ratchet (OMN-24480)
+        entry: env ONEX_LEDGER_CENSUS_ROOT=. uv run --no-project --with "omnimarket @ git+https://github.com/OmniNode-ai/omnimarket@7199fa537f69b96f1172d66f0b12710541cec6a8"
+          python -I -m omnimarket.nodes.node_work_ledger_file_census_effect --packaged-overlay --register
+          omnibase_core --directory omnibase_core=. --ratchet-file config/ledger_file_census_ratchet.yaml
+        language: system
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+        stages: [pre-commit]
+
   # Demo-path topic coherence gate (OMN-12777)
   # Scoped to demo-path contracts (metadata.demo_path: true).
   # Fails on: orphan producers/consumers, publish/subscribe byte-mismatch,
