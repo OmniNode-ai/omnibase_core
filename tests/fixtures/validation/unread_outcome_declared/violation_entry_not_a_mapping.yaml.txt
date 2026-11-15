@@ -1,0 +1,5 @@
+name: node_projection_day_reader
+io_operations:
+  - filesystem_read
+  - operation_type: filesystem_read
+    target: var/receipts/{receipt_id}.json

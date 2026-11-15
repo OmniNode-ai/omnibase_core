@@ -1,0 +1,5 @@
+def load_receipt(path):
+    try:
+        return path.read_text()
+    except OSError:
+        return None

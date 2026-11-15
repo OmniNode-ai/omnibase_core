@@ -1,0 +1,9 @@
+name: node_projection_day_reader
+node_type: COMPUTE
+descriptor:
+  responsibility: project one day of ledger events into the day rollup
+io_operations:
+  - operation_type: database_read
+    target: ledger_events
+  - operation_type: filesystem_read
+    target: var/ledger/days/2026-11-14.ndjson

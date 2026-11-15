@@ -1,0 +1,5 @@
+name: node_projection_day_reader
+io_operations:
+  - operation_type: database_read
+    target: ledger_events
+unread_outcome: {}

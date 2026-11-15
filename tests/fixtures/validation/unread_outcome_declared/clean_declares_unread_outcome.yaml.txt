@@ -1,0 +1,9 @@
+name: node_projection_day_reader
+descriptor:
+  responsibility: project one day of ledger events into the day rollup
+io_operations:
+  - operation_type: database_read
+    target: ledger_events
+unread_outcome:
+  returns: a typed refusal when the day cannot be read
+  test: tests/unit/test_projection_day_reader.py::test_projection_refuses_unreadable_day
