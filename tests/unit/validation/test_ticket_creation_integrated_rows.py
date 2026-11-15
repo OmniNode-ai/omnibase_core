@@ -47,11 +47,7 @@ INTEGRATED_UNREAD_CRITERION = (
     "- [ ] AC2: integrated: the refusal is reproduced"
     " -- falsifier: uv run pytest tests/unit/test_gate.py -q"
 )
-UNREAD_FIX = (
-    "name the host, lane or running node the falsifier reads, and the read-back it makes"
-    " ((?i)\\brunning\\b, (?i)\\bruntime\\b, (?i)\\blab host\\b, (?i)\\bdev lane\\b,"
-    " (?i)\\bdeployed\\b)"
-)
+UNREAD_FIX = "name the host, lane or running node the falsifier reads, and the read-back it makes"
 
 
 def _data() -> dict[str, object]:
