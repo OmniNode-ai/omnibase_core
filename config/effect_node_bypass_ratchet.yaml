@@ -1,0 +1,6 @@
+---
+# The shrink-only count of outside-world calls in this repository that skip their effect node (OMN-24432).
+# The run's count may not exceed it and may not sit below it; a removal lowers it in the same change, and
+# the file may not be raised against the base revision. The surfaces counted are the rule rows of
+# effect_node_bypass.validation.yaml.
+max_bypasses: 14
