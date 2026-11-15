@@ -47,6 +47,12 @@ class TestBrokerComesFromTheOverlayOnly:
                 "omnibase_core.cli.cli_run_node._resolve_node_topics",
                 return_value=("/tmp/c.yaml", "cmd.v1", "evt.v1", False),
             ),
+            # OMN-24561: the broker branch takes an admin read before publishing;
+            # keep it deterministic/offline here (the check has its own tests).
+            patch(
+                "omnibase_core.cli.cli_run_node.node_not_loaded_refusal",
+                return_value=None,
+            ),
             patch(
                 "omnibase_core.cli.cli_run_node.publish_and_poll",
                 return_value={"payload": {"ok": True}},

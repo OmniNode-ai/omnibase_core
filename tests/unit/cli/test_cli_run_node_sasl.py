@@ -28,6 +28,9 @@ pytestmark = pytest.mark.unit
 _PATCH_PRODUCER = "confluent_kafka.Producer"
 _PATCH_CONSUMER = "confluent_kafka.Consumer"
 _PATCH_TOPIC_PARTITION = "confluent_kafka.TopicPartition"
+# OMN-24561: the broker branch takes an admin read before publishing; keep it
+# deterministic/offline here (the check has its own tests).
+_PATCH_STATE = "omnibase_core.cli.cli_run_node.node_not_loaded_refusal"
 _CREDENTIAL_MARKER = "credential-marker-never-printed"
 
 
@@ -74,6 +77,7 @@ class TestBindingClientSecurity:
                 "omnibase_core.cli.cli_run_node.publish_and_poll",
                 return_value={"payload": {}},
             ) as dial,
+            patch(_PATCH_STATE, return_value=None),
         ):
             result = CliRunner().invoke(run_node, ["node_x", "--input", "{}"])
         assert result.exit_code == 0

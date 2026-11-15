@@ -166,6 +166,12 @@ def test_redpanda_overlay_selects_the_lane_broker_and_ignores_the_environment(
             "omnibase_core.cli.cli_run_node._resolve_node_topics",
             return_value=(Path("/tmp/c.yaml"), _COMMAND_TOPIC, _TERMINAL_TOPIC, False),
         ),
+        # OMN-24561: the broker branch takes an admin read before publishing;
+        # keep it deterministic/offline here (the check has its own tests).
+        patch(
+            "omnibase_core.cli.cli_run_node.node_not_loaded_refusal",
+            return_value=None,
+        ),
         patch(
             "omnibase_core.cli.cli_run_node.publish_and_poll",
             return_value={"payload": {"status": "success"}},

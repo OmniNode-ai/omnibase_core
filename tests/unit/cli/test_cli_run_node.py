@@ -21,6 +21,9 @@ pytestmark = pytest.mark.unit
 _PATCH_PRODUCER = "confluent_kafka.Producer"
 _PATCH_CONSUMER = "confluent_kafka.Consumer"
 _PATCH_TOPIC_PARTITION = "confluent_kafka.TopicPartition"
+# OMN-24561: the broker branch takes an admin read before publishing; keep it
+# deterministic/offline here (the check has its own tests).
+_PATCH_STATE = "omnibase_core.cli.cli_run_node.node_not_loaded_refusal"
 
 
 class _FakeTopicPartition:
@@ -463,6 +466,7 @@ class TestRunNodeCommand:
                     "payload": {"status": "complete", "count": 3},
                 },
             ),
+            patch(_PATCH_STATE, return_value=None),
         ):
             result = runner.invoke(run_node, ["test-node", "--input", '{"x": 1}'])
 
@@ -501,6 +505,7 @@ class TestRunNodeCommand:
             patch(_PATCH_TOPIC_PARTITION, side_effect=_FakeTopicPartition),
             patch(_PATCH_CONSUMER, return_value=mock_consumer),
             patch(_PATCH_PRODUCER, return_value=mock_producer),
+            patch(_PATCH_STATE, return_value=None),
         ):
             result = runner.invoke(
                 run_node, ["test-node", "--input", '{"x": 1}', "--timeout", "30"]

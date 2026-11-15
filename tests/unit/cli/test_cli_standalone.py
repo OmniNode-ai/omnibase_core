@@ -109,6 +109,12 @@ class TestRunNodeCommand:
                     False,
                 ),
             ),
+            # OMN-24561: the broker branch takes an admin read before publishing;
+            # keep it deterministic/offline here (the check has its own tests).
+            patch(
+                "omnibase_core.cli.cli_run_node.node_not_loaded_refusal",
+                return_value=None,
+            ),
             patch(
                 "omnibase_core.cli.cli_run_node.publish_and_poll",
                 return_value=mock_response,
@@ -134,6 +140,10 @@ class TestRunNodeCommand:
                     "onex.evt.test.node-completed.v1",
                     False,
                 ),
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.node_not_loaded_refusal",
+                return_value=None,
             ),
             patch(
                 "omnibase_core.cli.cli_run_node.publish_and_poll",
@@ -168,6 +178,10 @@ class TestRunNodeCommand:
                     "onex.evt.test.node-completed.v1",
                     False,
                 ),
+            ),
+            patch(
+                "omnibase_core.cli.cli_run_node.node_not_loaded_refusal",
+                return_value=None,
             ),
             patch(
                 "omnibase_core.cli.cli_run_node.publish_and_poll",

@@ -21,6 +21,10 @@ from omnibase_core.cli.cli_node import _resolve_packaged_contract
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.event_bus.util_consumer_group import derive_service_group_id
+from omnibase_core.handlers.handler_run_node_consumer_state import (
+    broker_unreachable_error,
+    node_not_loaded_refusal,
+)
 from omnibase_core.models.core.model_generic_yaml import ModelGenericYaml
 from omnibase_core.models.event_bus.model_consumer_group_scope import (
     ModelConsumerGroupScope,
@@ -296,22 +300,8 @@ def publish_and_poll(
             # OMN-17427: a SASL listener closes an unauthenticated connection
             # with the same _TRANSPORT error, so name the security env when
             # none is configured. Only the protocol is ever echoed.
-            protocol = security.get("security.protocol")
-            auth_hint = (
-                f" The client connected with security.protocol={protocol}."
-                if protocol
-                else " The lane declares no security protocol, so the client "
-                "connected in plaintext; a lane broker that requires SASL closes "
-                "an unauthenticated connection with this same error."
-            )
-            raise ModelOnexError(
-                error_code=EnumCoreErrorCode.RUNTIME_ERROR,
-                message=(
-                    f"Kafka broker unreachable at {bootstrap_servers!r}: {exc}. "
-                    "Verify the lane named in the node's contract overlay is "
-                    "reachable from this host, or run the node locally (bus-less) "
-                    f"with `onex run {node_id}`.{auth_hint}"
-                ),
+            raise broker_unreachable_error(
+                exc, bootstrap_servers, node_id, security
             ) from exc
         topic_metadata = metadata.topics.get(response_topic)
         if topic_metadata is None or getattr(topic_metadata, "error", None) is not None:
@@ -396,6 +386,8 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
     ``type: kafka`` publishes to the lane's runtime and polls the node's terminal_event;
     ``type: inmemory`` hosts the node in this process. No environment variable, flag or
     default selects the broker; a node with no overlay is refused naming the overlay path.
+    A kafka runtime with no consumer group for the node's command topic is refused
+    immediately with nothing sent (OMN-24561).
     Counterpart of `onex run`. Exits non-zero emitting a SkillRoutingError JSON envelope.
     """
     try:
@@ -413,6 +405,11 @@ def run_node(node_id: str, input_json: str, timeout: int) -> None:
             inject_payload_correlation_id,
         ) = _resolve_node_topics(node_id)
         if binding.bus_type.requires_broker:
+            # OMN-24561: only positive evidence that no runtime consumer serves the topic refuses.
+            if refusal := node_not_loaded_refusal(
+                node_id, binding, command_topic, float(timeout)
+            ):
+                _emit_error(node_id, **refusal)
             response = publish_and_poll(
                 node_id=node_id,
                 payload=payload,

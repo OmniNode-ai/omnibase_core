@@ -1,0 +1,42 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24561
+title: Review fixes for lab access to the idle platform work steps
+summary: 'onex run-node on a kafka bus reads, before publishing, one bounded admin view of the runtime
+  consumer groups; when the runtime groups are visible and none serves the node command topic, it refuses
+  at once with a typed node_not_loaded error and sends nothing. Every incomplete view proceeds as before.'
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn24561-not-loaded-refusal
+    statement: A caller of a node no runtime consumer serves gets an immediate typed refusal, not a timeout.
+    acceptance:
+      - id: AC4
+        statement: 'AC4: integrated: from a lab host with the deployed dispatch environment, onex run-node
+          for each of the first 40 called deferred nodes answers or refuses typed in under 5 s, read in
+          the running dev runtime -- falsifier: onex run-node <node> --input ''{}'' prints an answer or
+          a typed refusal after more than 5 s or a timeout'
+evidence_requirements:
+  - kind: tests
+    description: The run-node tests pass at the head.
+    command: uv run pytest tests/unit/cli -k run_node -q --no-cov -o addopts='' -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24561-ac4
+    description: 'Golden: a runtime group that holds the command topic proceeds. Error chain: visible
+      runtime groups with none for the topic refuse typed and publish nothing. Failing controls: an unreadable,
+      empty or partial admin view proceeds.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_run_node_not_loaded.py -q --no-cov -o addopts=''
+          -n 0
+        cwd: .
