@@ -30,11 +30,6 @@
 
 version: 1
 repos:
-  - name: omnibase_compat
-    owner: OmniNode-ai
-    pin_sites: []
-    notes: "OMN-9049 will add check-handshake.yml here; manifest pre-declared so the bot picks it up automatically."
-
   - name: omnibase_spi
     owner: OmniNode-ai
     pin_sites:

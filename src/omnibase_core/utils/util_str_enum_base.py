@@ -14,7 +14,6 @@ violation. Shim burn-down is tracked as follow-up scope, not this ticket.
 
 See Also:
     - omnibase_core.enums.enum_str_enum_base: canonical definition
-    - omnibase_compat.utils.util_str_enum_base: equivalent definition for compat consumers
 """
 
 from __future__ import annotations

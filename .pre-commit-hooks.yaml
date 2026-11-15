@@ -1173,7 +1173,7 @@
     that the full-suite invocation covers them and that the test selector knows them. Runs as a canonical
     COMPUTE node (node_test_root_collection_check_compute, OMN-20565) over typed facts the EFFECT boundary
     reads from the repository, replacing the validate_test_root_collection.py copy in omnibase_infra.
-    The node follows the infra copy; omnibase_compat's selector rules differ and are not carried.
+    The node follows the infra copy.
   language: python
   entry: python -m omnibase_core.nodes.node_test_root_collection_check_compute.runtime_test_root_collection_check
   types: [file]
