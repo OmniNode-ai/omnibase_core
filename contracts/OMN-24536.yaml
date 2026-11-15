@@ -1,0 +1,70 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24536
+title: "Ticket create check requires a runtime integration criterion on code tickets"
+summary: "The core ticket-creation gate gets one new rule row, missing_integrated_criterion: a create
+  whose criteria hold no criterion opening with integrated: and a falsifier that reads the running system
+  is refused with a fix line. Epics and a declared code-only proof class are exempt; the parent-criterion
+  binding form is not. The row is data in ticket_creation.validation.yaml and the checker reads every
+  word of it."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn24536-integrated-criterion
+    statement: "A code ticket create is refused unless one criterion is an integrated criterion whose
+      falsifier reads the running system."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a create whose criteria hold no integrated criterion is refused with the code
+          missing_integrated_criterion and one with a runtime-reading falsifier is admitted"
+      - id: AC2
+        statement: "AC2: the existing create-gate parity and route tests still pass with the rule added"
+      - id: AC3
+        statement: "AC3: integrated: one create call without the integrated criterion is refused by the
+          gate in the running ticket node, read back with the time"
+evidence_requirements:
+  - kind: tests
+    description: "The integrated-criterion, parity and route-row tests pass at the checkout."
+    command: "uv run pytest tests/unit/validation/test_ticket_creation_integrated_rows.py tests/unit/validation/test_ticket_creation_parity.py
+      tests/unit/validation/test_ticket_creation_route_rows.py -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24536-ac1-integrated-row
+    description: "a create with no integrated criterion is refused with missing_integrated_criterion and
+      one with a runtime-reading falsifier is admitted"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_ticket_creation_integrated_rows.py -q --no-cov
+          -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24536-ac2-parity-and-route
+    description: "the parity and route-row tests of the create gate still pass"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_ticket_creation_integrated_rows.py tests/unit/validation/test_ticket_creation_parity.py
+          tests/unit/validation/test_ticket_creation_route_rows.py -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24536-ac3-node-payload-refused
+    description: "a create built the way the running ticket node builds it, without the integrated criterion,
+      is refused with missing_integrated_criterion"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_ticket_creation_integrated_rows.py -q --no-cov
+          -o addopts='' -n 0 -k TheTicketNodePayloadShape"
+        cwd: ${OMNI_HOME}/omnibase_core

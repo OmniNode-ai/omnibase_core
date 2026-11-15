@@ -53,8 +53,18 @@ def _data() -> dict[str, object]:
     return loaded
 
 
+def _parity_data() -> dict[str, object]:
+    """The contract with the OMN-23411 row off: the old guard has no such rule to match."""
+    data = copy.deepcopy(_data())
+    rules = data["rules"]
+    assert isinstance(rules, list)
+    row = next(r for r in rules if r["rule_id"] == "missing_integrated_criterion")
+    row["enabled"] = False
+    return data
+
+
 def _contract(data: dict[str, object] | None = None) -> ModelValidatorSubcontract:
-    return ModelValidatorSubcontract.model_validate(data or _data())
+    return ModelValidatorSubcontract.model_validate(data or _parity_data())
 
 
 def _ledger(tmp_path: Path) -> Path:
@@ -141,7 +151,7 @@ class TestParityWithTheGuard:
     def test_the_file_validator_reads_the_same_verdict(self, tmp_path: Path) -> None:
         ledger = _ledger(tmp_path)
         validator = ValidatorTicketCreation()
-        contract = validator._load_contract()
+        contract = _contract()
         for case in CASES:
             doc = tmp_path / "payload.ticket-creation-payload.json"
             doc.write_text(
@@ -166,14 +176,14 @@ class TestFailingControl:
     """Each control drops one thing the guard enforces and shows the parity read going red."""
 
     def test_the_unmodified_contract_has_no_mismatch(self, tmp_path: Path) -> None:
-        assert _mismatches(_data(), _ledger(tmp_path)) == []
+        assert _mismatches(_parity_data(), _ledger(tmp_path)) == []
 
     @pytest.mark.parametrize(
         "code",
         sorted({code for case in CASES for code, _f in _guard(case)[1]}),
     )
     def test_dropping_a_rule_is_a_mismatch(self, code: str, tmp_path: Path) -> None:
-        data = copy.deepcopy(_data())
+        data = copy.deepcopy(_parity_data())
         _rule(data, code)["enabled"] = False
         broken = _mismatches(data, _ledger(tmp_path))
         assert broken, f"dropping {code} left every recorded verdict equal"
@@ -185,7 +195,7 @@ class TestFailingControl:
         assert expected <= set(broken)
 
     def test_dropping_a_vocabulary_entry_is_a_mismatch(self, tmp_path: Path) -> None:
-        data = copy.deepcopy(_data())
+        data = copy.deepcopy(_parity_data())
         row = _rule(data, "binding_grammar")
         params = _params(row)
         params["criterion_ids"] = [i for i in params["criterion_ids"] if i != "C7"]
