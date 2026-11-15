@@ -56,6 +56,7 @@ validation:
           - fixtures
           - archived
           - .onex_ratchets
+          - contracts
         catalog_file_node_threshold: 25
         # a name with dots or hyphens (contract.verify.replay, support-ticket-classifier) is one token of the
         # second form; the first form finds a name inside a module path

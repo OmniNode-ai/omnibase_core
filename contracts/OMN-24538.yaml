@@ -78,3 +78,19 @@ dod_evidence:
         check_value: "uv run pytest tests/unit/validation/test_checker_node_no_caller.py -q --no-cov -o
           addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24538-ac4
+    description: "The three validators as the pre-commit hooks run them accept this tree: the two with
+      no baseline file report no finding over the handlers and contracts, and node_no_caller holds its
+      one baselined contract to its ratchet row."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: command
+        check_value: "sh -c 'env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_node_no_caller:ValidatorNodeNoCaller --baseline .onex_ratchets/node_no_caller_ratchet.yaml
+          .onex_ratchets/node_no_caller_ratchet.yaml src/omnibase_core/nodes/node_invariant_analysis_check_compute/contract.yaml
+          && env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_unread_outcome_declared:ValidatorUnreadOutcomeDeclared src/omnibase_core/nodes/node_invariant_analysis_check_compute/contract.yaml'"
+        cwd: ${OMNI_HOME}/omnibase_core

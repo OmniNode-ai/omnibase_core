@@ -387,3 +387,11 @@ def test_node_no_caller_validator_the_ratchet_directory_is_not_scanned(
         {_NODE: _ORPHAN, ".onex_ratchets/node_no_caller_ratchet.yaml": f"{_NODE}: 1\n"},
     )
     assert not _validator(tmp_path, {}).validate([tmp_path / _NODE]).is_valid
+
+
+def test_node_no_caller_validator_a_ticket_contract_naming_the_node_is_not_a_caller(
+    tmp_path: Path,
+) -> None:
+    """A ticket's evidence file names the node it checks; that must not make the node called."""
+    _tree(tmp_path, {_NODE: _ORPHAN, "contracts/OMN-1.yaml": "check: node_orphan\n"})
+    assert not _validator(tmp_path, {}).validate([tmp_path / _NODE]).is_valid
