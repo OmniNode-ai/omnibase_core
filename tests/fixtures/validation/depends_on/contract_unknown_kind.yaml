@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_with_an_unknown_kind
+declared_dependencies:
+  - kind: moon_phase
+    name: full

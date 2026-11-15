@@ -1,0 +1,62 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24537
+title: A contract, ticket contract or unit declaration can declare what it depends on, and a generic core
+  check refuses it when a dependency is absent
+summary: One generic depends-on validator in omnibase_core. A document declares dependencies (an overlay
+  key, a sibling ticket, a service, the replacement of something it retires) under data-named key paths
+  (declared_dependencies, because depends_on already means something else in existing contracts); the
+  caller supplies the facts, by kind, in a file at a contract-named path; the document is refused when
+  a declared dependency is absent, when a kind has no facts, when a declaration is malformed and when
+  a kind is unknown. The first consumer is the omnimarket pull request of the same ticket; the lab fill
+  generator and the host installer are named, not built.
+is_seam_ticket: true
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn24537-depends-on
+    statement: A declared dependency absent from the supplied facts is refused by a generic omnibase_core
+      validator.
+    acceptance:
+      - id: AC1
+        statement: "AC1: a contract, ticket contract or unit declaration that declares a dependency absent
+          from the facts is refused with a finding naming it, and one whose dependencies are all present
+          passes -- falsifier: pytest tests/unit/validation/test_checker_depends_on.py -k \"absent or
+          present\" in omnibase_core fails when the checker accepts an absent dependency"
+      - id: AC4
+        statement: "AC4: integrated: on the development system the count of NodeOverlayNotFoundError lines
+          per day reads 0 after the change runs there -- falsifier: the same count read from the runtime
+          log on 2026-11-19 is above 0"
+evidence_requirements:
+  - kind: tests
+    description: Absent and present dependencies for the recorded scheduled node and ticket prerequisite,
+      malformed, unknown kind, unsupplied facts, fail-closed contracts, purity and the runtime entry.
+    command: uv run pytest tests/unit/validation/test_checker_depends_on.py -q -n 0 --no-cov -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24537-ac1-absent-refused-present-passes
+    description: The recorded scheduled node without its overlay row and the recorded ticket without its
+      prerequisite are refused; with the dependency present both pass.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_depends_on.py -q -n 0 --no-cov -p
+          no:cacheprovider -k "absent or present"
+        cwd: .
+    binds_ac:
+      - AC1
+  - id: dod-omn24537-ac4-integrated-hosted-proxy
+    description: Hosted proxy for the integrated criterion, whose reading is the dev runtime log read
+      on 2026-11-19 (omnimarket half); here the validator refuses the recorded scheduled node whose overlay
+      row is absent, the source of the per-day error lines.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_checker_depends_on.py -q -n 0 --no-cov -p
+          no:cacheprovider -k "recorded_scheduled_node"
+        cwd: .
+    binds_ac:
+      - AC4

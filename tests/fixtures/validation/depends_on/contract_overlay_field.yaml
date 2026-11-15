@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# A node contract that depends on one key inside an overlay row.
+name: node_floor_publish_example
+declared_dependencies:
+  - kind: overlay_key
+    name: node_factory_floor_publish_effect
+    field: limits

@@ -1816,6 +1816,20 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: check-depends-on
+  name: Depends-on (OMN-24537)
+  description: >
+    Refuse a contract, ticket contract or unit declaration whose declared dependency (an overlay key,
+    a sibling ticket, a broker or service, the replacement of something it retires) is absent from the
+    facts the caller supplies in the file named by the contract's environment variable. Kinds, declaration
+    locations and diagnostics are contract data.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_depends_on:ValidatorDependsOn
+  files: (^|/)contract\.yaml$|(^|/)contracts/[^/]+\.yaml$|\.unit\.yaml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-overlay-constraints
   name: Overlay constraints (OMN-22185)
   description: >

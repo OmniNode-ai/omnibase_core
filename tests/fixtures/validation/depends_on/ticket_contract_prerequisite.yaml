@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# A ticket contract (trimmed from the lab fill evidence of 2026-11-14): its ticket was sent while the
+# prerequisite ticket had no pull request. It now declares that prerequisite.
+schema_version: 1.0.0
+ticket_id: OMN-23773
+title: A ticket that needs its prerequisite first
+context:
+  declared_dependencies:
+    - kind: sibling_ticket
+      name: OMN-23760

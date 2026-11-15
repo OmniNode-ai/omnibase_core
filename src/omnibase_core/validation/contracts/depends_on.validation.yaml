@@ -1,0 +1,85 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# OMN-24537: every declaration key, kind, separator and diagnostic is rule data.
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: depends_on
+  validator_name: Depends-On Validator
+  validator_description: >-
+    A document that declares a dependency is refused unless the dependency exists in the world. The declaration
+    lives under the dotted key paths named below, searched in order, because the judged documents reject
+    unknown top-level keys and carry the declaration under their free-form metadata or context mapping;
+    every path present is read. Each path holds a list of mappings with a kind, a name and an optional
+    field. The kinds a declaration may use, the separator that joins a name and a field into the token
+    asked of the facts, and the facts of what exists, per kind, are data. A kind with no facts supplied
+    is refused, never read as present, because an absent fact source says nothing.
+  target_patterns:
+    - "**/contract.yaml"
+    - "**/contracts/*.yaml"
+    - "**/*.unit.yaml"
+  exclude_patterns:
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/tests/fixtures/**"
+
+  rules:
+    - rule_id: dependency_absent
+      description: A declared dependency of a known kind whose token the facts do not hold. This row also
+        holds the declaration syntax, meaning the dotted key paths searched in order (every one present
+        is read) and the separator that joins a name and a field into the token asked of the facts.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source} declares a dependency on {label}, which is absent"
+        source_pattern: '.'
+        field_separator: ":"
+        declaration_keys:
+          - "declared_dependencies"
+          - "metadata.declared_dependencies"
+          - "context.declared_dependencies"
+    - rule_id: dependency_malformed
+      description: A declaration path whose value is not a list of mappings with a non-empty kind and
+        name, and a string-or-absent field, is refused rather than skipped.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source} declares a malformed declared_dependencies entry {entry}: declared_dependencies
+          must be a list of mappings with a non-empty kind and name"
+        source_pattern: '.'
+    - rule_id: dependency_kind_unknown
+      description: A declaration of a kind outside the kinds this validator declares; this row lists them.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source} declares a dependency of unknown kind {kind}; the declared kinds are {kinds}"
+        source_pattern: '.'
+        kinds:
+          - overlay_key
+          - sibling_ticket
+          - service
+          - replacement
+    - rule_id: facts_unsupplied
+      description: A declaration of a known kind for which no facts were supplied. This row names the
+        facts file, relative to the working directory.
+      severity: error
+      enabled: true
+      parameters:
+        message: "{source} declares a dependency on {label} but no facts were supplied for kind {kind};
+          an absent fact source never reads as present"
+        source_pattern: '.'
+        facts_file_path: ".onex/depends_on_facts.yaml"
+
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: true

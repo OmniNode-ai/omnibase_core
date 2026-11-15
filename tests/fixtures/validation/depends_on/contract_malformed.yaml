@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_with_a_malformed_declaration
+declared_dependencies:
+  - kind: overlay_key

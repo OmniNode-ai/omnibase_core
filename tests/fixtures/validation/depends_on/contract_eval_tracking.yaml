@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# A scheduled node contract (trimmed from the weekly coding test trigger of the evidence of 2026-11-14): it
+# loads its overlay on the first runtime tick and raised NodeOverlayNotFoundError on every tick when the
+# overlay row was absent. It now declares the overlay row it depends on.
+name: node_eval_tracking_schedule_compute
+node_type: compute
+input_subscriptions:
+  - topic: "onex.intent.platform.runtime-tick.v1"
+    operation: "eval_tracking_schedule"
+metadata:
+  description: "Runtime-tick schedule of the weekly fixed coding test"
+  declared_dependencies:
+    - kind: overlay_key
+      name: node_eval_tracking_schedule_compute
