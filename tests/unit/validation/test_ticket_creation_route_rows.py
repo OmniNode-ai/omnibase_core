@@ -35,7 +35,9 @@ ADMITTED_CREATE: dict[str, object] = {
     "title": "Mint the floor ticket",
     "description": (
         "Gate: C7\n\n## Acceptance criteria\n"
-        "- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q"
+        "- [ ] AC1: the check works -- falsifier: uv run pytest tests/unit/test_x.py -q\n"
+        "- [ ] AC2: integrated: the gate refuses a bare create in the running ticket node"
+        " -- falsifier: onex ticket create on a lab host, refusal read back"
     ),
     "parentId": "OMN-22847",
     "state": "Backlog",

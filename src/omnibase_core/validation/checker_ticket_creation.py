@@ -19,6 +19,10 @@ refuses a create the caller states was built by hand (``route="raw"``) when the 
 is at ``refuse``; ``contract_block_edit`` refuses a description change that alters the fenced
 contract block, judged against the current description the caller passes. The checker cannot
 see who built a payload, so the caller states the route and reads the switch from its overlay.
+
+One further policy row of the same kind (OMN-23411) is ``missing_integrated_criterion``: a
+code ticket is admitted only with an ``integrated:`` acceptance criterion whose falsifier
+reads the running system.
 """
 
 from __future__ import annotations
@@ -397,6 +401,54 @@ def _labelled_findings(
         forms=forms,
         minimum=str(minimum),
         grammar=grammar,
+    )
+
+
+def _integrated_findings(
+    description: str, binding: str | None, rows: _Rows
+) -> tuple[ModelTicketCreationFinding, ...]:
+    """A code ticket names one ``integrated:`` criterion that reads the running system."""
+    row = _row(rows, "missing_integrated_criterion")
+    epic = rule_strings(_row(rows, "missing_parent"), "epic_markers")
+    if _declares_epic(description, epic):
+        return ()
+    if binding is not None and binding in rule_strings(
+        _row(rows, "missing_acceptance_criteria"), "exempt_binding_forms"
+    ):
+        return ()
+    exempt_classes = {c.lower() for c in rule_strings(row, "exempt_proof_classes")}
+    proof_class = _re(rule_string(row, "exempt_proof_class_pattern"))
+    if any(
+        m.group("value").lower() in exempt_classes
+        for m in proof_class.finditer(description)
+    ):
+        return ()
+    units = _units(description, rows)
+    if not units:
+        return ()
+    integrated = _re(rule_string(row, "integrated_criterion_pattern"))
+    matches = [unit for unit in units if integrated.search(unit[0])]
+    if not matches:
+        return _finding(
+            rows,
+            "missing_integrated_criterion",
+            "description",
+            grammar=rule_string(row, "grammar"),
+        )
+    markers = _res(rule_strings(row, "runtime_read_markers"))
+    if any(
+        falsifier is not None and any(m.search(falsifier) for m in markers)
+        for _text, _label, falsifier in matches
+    ):
+        return ()
+    return _finding(
+        rows,
+        "missing_integrated_criterion",
+        "description",
+        "unread",
+        item=_quote(
+            matches[0][0], rule_int(_row(rows, "criteria_parsing"), "max_quoted")
+        ),
     )
 
 
@@ -805,6 +857,7 @@ def check_ticket_creation(
             findings += _probe_findings(description, rows)
         findings += _criterion_findings(description, rows)
         findings += _labelled_findings(description, binding, rows)
+        findings += _integrated_findings(description, binding, rows)
         findings += _diagnosis_findings(
             tool_input, title, description, rows, ledger_line_exists
         )

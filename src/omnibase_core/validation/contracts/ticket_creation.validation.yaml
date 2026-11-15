@@ -396,6 +396,32 @@ validation:
         message: every one of the {total} acceptance criteria listed here parses, and none carries an
           ordinal label ({forms})
         fix: prefix at least {minimum} of them with an ordinal ({forms}), giving '{grammar}'
+    - rule_id: missing_integrated_criterion
+      description: A code ticket lists an integrated acceptance criterion whose falsifier reads the running
+        system.
+      severity: error
+      enabled: true
+      parameters:
+        integrated_criterion_pattern: '(?i)^(?:(?:AC|DOD)[-_ .]?\d+[a-zA-Z]?\s*[:.)-]\s*)?[*_]*integrated[*_]*\s*:'
+        runtime_read_markers:
+          - '(?i)\brunning\b'
+          - '(?i)\bruntime\b'
+          - '(?i)\blab host\b'
+          - '(?i)\bdev lane\b'
+          - '(?i)\bdeployed\b'
+          - '(?i)\bread[- ]?back\b'
+          - '(?i)\bonex (?:ticket|node|run|delegate|scm)\b'
+        exempt_proof_class_pattern: '(?im)^[ \t]*proof[ _-]class:[ \t]*(?P<value>[A-Za-z-]+)[ \t]*$'
+        exempt_proof_classes:
+          - code-only
+        message: 'no acceptance criterion is an integrated one: a code ticket is done only when it is
+          seen running, so one criterion must open with ''integrated:'' and name the running system'
+        fix: add '{grammar}' as the last criterion
+        message_unread: the integrated criterion '{item}' has a falsifier that does not read the running
+          system
+        fix_unread: name the host, lane or running node the falsifier reads, and the read-back it makes
+        grammar: '- [ ] AC<n>: integrated: <what is true in the running system> -- falsifier: <command
+          run on a lab host or the dev lane, and the result read back>'
     - rule_id: missing_diagnosis
       description: 'A defect-shaped create cites a Diagnosis: line that resolves to a durable artifact.'
       severity: error
