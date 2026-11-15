@@ -37,12 +37,9 @@ safe; the single source of truth lives here and both call sites import it.
 
 Layering note (OMN-12960)
 -------------------------
-By layering this wire-level concern belongs in ``omnibase_compat`` (lowest,
-zero upstream runtime deps). The compat pin is policy-frozen — bumping it is a
-symptom of models that should have graduated, not a fix — so per the P1.4 plan
-the predicate is sited in ``omnibase_core`` (already a runtime dependency of
-both ``omnibase_infra`` and ``omnimarket``) instead. When the compat pin
-un-freezes, this module moves to compat verbatim and the imports follow.
+This wire-level predicate is sited in ``omnibase_core``, which is already a
+runtime dependency of both ``omnibase_infra`` and ``omnimarket``; the retired
+``omnibase_compat`` package is not a dependency and does not host it.
 """
 
 from __future__ import annotations

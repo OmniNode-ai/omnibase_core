@@ -64,7 +64,7 @@ jobs:
     # branch that heavier build jobs use, because this gate is short and
     # dependency-free and must never depend on self-hosted fleet availability
     # (a saturated/absent fleet = queued-or-cancelled = false-green window). This
-    # matches the already-hosted omnibase_spi / omnibase_compat parity gates; the
+    # matches the already-hosted omnibase_spi parity gate; the
     # prior form routed only fork PRs to hosted and left trusted push/merge_group
     # on self-hosted.
     runs-on: ubuntu-latest

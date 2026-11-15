@@ -247,6 +247,16 @@ requirements:
           workflow fails; a seam variable holding a lab label fails; a route the base revision lacks fails;
           a route for a moved job warns; a private repository passes. -- falsifier: uv run pytest tests/unit/validation/test_validator_public_lab_selection.py
           -q -n0 --reruns 0"
+  - id: "req-omn19998-compat-removal-core"
+    statement: "RULING 2026-11-15T17:59:49Z: the compat repository is removed and nothing may use it.
+      The downstream manifest, the bypass-token blocklist repo list, the parity-gate and hook comments
+      and the shim and base-class modules no longer name it, while the retired-layer declaration keeps
+      refusing it."
+    acceptance:
+      - id: "AC30"
+        statement: "AC30: none of the eight files the removal edits names the retired compat package,
+          and repo_layers.yaml still names it as retired -- falsifier: uv run pytest tests/ci/test_omnibase_compat_refs_removed_omn19998.py
+          -q -n 0 -o addopts= fails at the merge base, where those files still name it"
 evidence_requirements:
   - kind: tests
     description: "Every channel fails upward and same-layer references; negative controls pass."
@@ -288,6 +298,10 @@ evidence_requirements:
     description: "The cascade resolves and pins the newest dev merge tag and writes no release pin."
     command: "uv run pytest tests/scripts/test_dependency_cascade_dev_tag_omn19998.py tests/scripts/test_dependency_cascade_matrix.py
       tests/scripts/test_dependency_cascade_uv_index_omn17427.py -q -n 0 -o addopts="
+  - kind: tests
+    description: "The edited files name no retired compat package; the retired-layer declaration still
+      does."
+    command: "uv run pytest tests/ci/test_omnibase_compat_refs_removed_omn19998.py -q -n 0 -o addopts="
 emergency_bypass:
   enabled: false
   justification: ''
@@ -705,3 +719,14 @@ dod_evidence:
           --reruns 0
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC29]
+  - id: dod-omn19998-compat-removal-core
+    description: "The eight edited files carry no reference to the retired compat package and the retired-layer
+      declaration still names it as a positive control. At the merge base the parametrized cases for the
+      files edited here fail. No network or lab services are needed."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_omnibase_compat_refs_removed_omn19998.py -q -n 0 -o addopts=
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac: [AC30]

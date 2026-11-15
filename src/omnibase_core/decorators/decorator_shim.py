@@ -53,7 +53,7 @@ def shim(
             ticket_id="OMN-9999",
             expires_on=datetime.date(2026, 6, 1),
             reason="Legacy wire DTO compatibility until OCC migration lands",
-            replacement="omnibase_compat.dtos.ModelFooDto",
+            replacement="omnibase_core.models.model_foo.ModelFoo",
         )
         def legacy_transform(data: dict) -> ModelFoo:
             ...
