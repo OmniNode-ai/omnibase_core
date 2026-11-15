@@ -205,3 +205,42 @@ class TestThroughTheFileValidator:
         )
         assert [i.code for i in issues] == ["missing_integrated_criterion"]
         assert fragment in issues[0].message
+
+
+class TestTheTicketNodePayloadShape:
+    """The seam with the ticket node: the payload its handler builds, with a lane context."""
+
+    def _node_payload(self, criteria: tuple[str, ...]) -> dict[str, object]:
+        description = (
+            "created-by-lane: lane-a\n\nGate: OMN-22478 AC-1\n\n## Acceptance criteria\n"
+            + "\n".join(criteria)
+        )
+        return {
+            "title": "Mint the floor ticket",
+            "description": description,
+            "parentId": "OMN-22847",
+            "state": "Backlog",
+            "labels": ["lane-created"],
+        }
+
+    def test_a_node_create_without_an_integrated_criterion_is_refused_alone(
+        self,
+    ) -> None:
+        result = check_ticket_creation(
+            self._node_payload((PLAIN_CRITERION,)),
+            _contract(),
+            lane="lane-a",
+            route="node",
+            route_switch="refuse",
+        )
+        assert result.codes == ("missing_integrated_criterion",)
+
+    def test_a_node_create_with_an_integrated_criterion_is_admitted(self) -> None:
+        result = check_ticket_creation(
+            self._node_payload((PLAIN_CRITERION, INTEGRATED_CRITERION)),
+            _contract(),
+            lane="lane-a",
+            route="node",
+            route_switch="refuse",
+        )
+        assert result.admitted
