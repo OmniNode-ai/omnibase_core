@@ -3,6 +3,30 @@
 omnibase_core provides the contracts, models, validation and execution primitives for the ONEX framework.
 Documentation: [knowledge_base](https://github.com/OmniNode-ai/knowledge_base).
 
+## v0.47.73 (2026-11-15)
+
+### Release
+- Cut omnibase-core from dev at 0.47.73 by the scheduled release train.
+- 15 release-relevant commit(s) merged since v0.47.72.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.72
+- : add generic depends-on validator for declared dependencies (#2326)
+- : Ticket create check requires a runtime integration criterion on code tickets (#2325)
+- : Add effect_node_bypass validator with count ratchet (#2324)
+- : Add ticket create route validator and hook (#2321)
+- : Remove ModelLinearTicketContract and related files (#2320)
+- feat: add route-aware validation rules and tests (#2319)
+- : add optional task_type to ModelInferenceIntent (#2316)
+- feat: report whether the release tag, package metadata and PyPI files agree (#2313)
+- : surface RuntimeLocal in-memory bus fate at run close (#2315)
+- : optional provenance field on the event envelope (#2314)
+- : omnibase_core takes its version from git at build time (#2310)
+- : dev-tag lineage check reads a git-derived version (#2311)
+- : the core ticket contract model becomes the one standard ticket form at schema 1.1.0, with a plain-hash fingerprint (#2308)
+- : add delegation routing order enums and frozen models (#2309)
+- feat: capability packages extend onex config through the lazy registry (#2307)
+
 ## v0.47.72 (2026-11-10)
 
 ### Release
