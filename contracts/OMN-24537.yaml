@@ -4,11 +4,12 @@ ticket_id: OMN-24537
 title: A contract, ticket contract or unit declaration can declare what it depends on, and a generic core
   check refuses it when a dependency is absent
 summary: One generic depends-on validator in omnibase_core. A document declares dependencies (an overlay
-  key, a sibling ticket, a service, the replacement of something it retires) under data-named key paths;
-  the caller supplies the facts, by kind, in a file at a contract-named path; the document is refused
-  when a declared dependency is absent, when a kind has no facts, when a declaration is malformed and
-  when a kind is unknown. The first consumer is the omnimarket pull request of the same ticket; the lab
-  fill generator and the host installer are named, not built.
+  key, a sibling ticket, a service, the replacement of something it retires) under data-named key paths
+  (declared_dependencies, because depends_on already means something else in existing contracts); the
+  caller supplies the facts, by kind, in a file at a contract-named path; the document is refused when
+  a declared dependency is absent, when a kind has no facts, when a declaration is malformed and when
+  a kind is unknown. The first consumer is the omnimarket pull request of the same ticket; the lab fill
+  generator and the host installer are named, not built.
 is_seam_ticket: true
 interface_change: false
 interfaces_touched: []

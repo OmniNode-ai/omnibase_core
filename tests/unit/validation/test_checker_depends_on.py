@@ -160,6 +160,13 @@ def test_dependency_under_metadata_is_read() -> None:
     assert check("ticket_contract_prerequisite.yaml", "facts_ticket_absent.yaml").issues
 
 
+def test_an_existing_depends_on_key_of_another_shape_is_not_read() -> None:
+    """Existing contracts use depends_on for node names; the declaration key is a different, unused one."""
+    result = check("contract_other_depends_on.yaml", None)
+    assert result.issues == ()
+    assert result.dependencies_checked == 0
+
+
 def test_malformed_entry_is_refused_not_skipped() -> None:
     result = check("contract_malformed.yaml", "facts_with_overlay.yaml")
     assert [issue.code for issue in result.issues] == ["dependency_malformed"]

@@ -11,6 +11,6 @@ input_subscriptions:
     operation: "eval_tracking_schedule"
 metadata:
   description: "Runtime-tick schedule of the weekly fixed coding test"
-  depends_on:
+  declared_dependencies:
     - kind: overlay_key
       name: node_eval_tracking_schedule_compute

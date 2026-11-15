@@ -2,5 +2,5 @@
 # SPDX-License-Identifier: MIT
 ---
 name: node_with_a_malformed_declaration
-depends_on:
+declared_dependencies:
   - kind: overlay_key

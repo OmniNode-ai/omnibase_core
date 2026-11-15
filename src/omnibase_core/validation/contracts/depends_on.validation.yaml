@@ -42,17 +42,17 @@ validation:
         source_pattern: '.'
         field_separator: ":"
         declaration_keys:
-          - "depends_on"
-          - "metadata.depends_on"
-          - "context.depends_on"
+          - "declared_dependencies"
+          - "metadata.declared_dependencies"
+          - "context.declared_dependencies"
     - rule_id: dependency_malformed
       description: A declaration path whose value is not a list of mappings with a non-empty kind and
         name, and a string-or-absent field, is refused rather than skipped.
       severity: error
       enabled: true
       parameters:
-        message: "{source} declares a malformed depends_on entry {entry}: depends_on must be a list of
-          mappings with a non-empty kind and name"
+        message: "{source} declares a malformed declared_dependencies entry {entry}: declared_dependencies
+          must be a list of mappings with a non-empty kind and name"
         source_pattern: '.'
     - rule_id: dependency_kind_unknown
       description: A declaration of a kind outside the kinds this validator declares; this row lists them.

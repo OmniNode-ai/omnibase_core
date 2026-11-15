@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+# An existing node contract whose own top-level depends_on key lists node names as plain strings (an orchestrator
+# naming the nodes it runs after). That key means something else, so the check must not read it as a declaration.
+name: node_orchestrator_with_its_own_depends_on
+node_type: orchestrator
+depends_on:
+  - node_first_step
+  - node_second_step

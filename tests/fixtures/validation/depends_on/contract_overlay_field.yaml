@@ -3,7 +3,7 @@
 ---
 # A node contract that depends on one key inside an overlay row.
 name: node_floor_publish_example
-depends_on:
+declared_dependencies:
   - kind: overlay_key
     name: node_factory_floor_publish_effect
     field: limits
