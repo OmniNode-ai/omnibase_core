@@ -138,11 +138,20 @@ class TestExemptDescriptions:
         )
         assert check_ticket_creation(_payload(description), _contract()).admitted
 
-    def test_the_parent_criterion_binding_form_is_exempt(self) -> None:
+    def test_the_parent_criterion_binding_form_is_not_exempt(self) -> None:
         description = (
-            "Gate: OMN-16729 AC-5\n\n## Acceptance criteria\n" + PLAIN_CRITERION
+            "Gate: OMN-22478 AC-1\n\n## Acceptance criteria\n" + PLAIN_CRITERION
         )
-        assert check_ticket_creation(_payload(description), _contract()).admitted
+        result = check_ticket_creation(_payload(description), _contract())
+        assert result.codes == ("missing_integrated_criterion",)
+
+    def test_a_parent_criterion_create_with_no_criteria_is_left_to_the_other_rules(
+        self,
+    ) -> None:
+        result = check_ticket_creation(
+            _payload("Gate: OMN-22478 AC-1\n\nNo list here."), _contract()
+        )
+        assert "missing_integrated_criterion" not in result.codes
 
 
 class TestTheRefusalComesFromTheRow:

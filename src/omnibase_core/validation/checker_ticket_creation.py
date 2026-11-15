@@ -405,16 +405,12 @@ def _labelled_findings(
 
 
 def _integrated_findings(
-    description: str, binding: str | None, rows: _Rows
+    description: str, rows: _Rows
 ) -> tuple[ModelTicketCreationFinding, ...]:
     """A code ticket names one ``integrated:`` criterion that reads the running system."""
     row = _row(rows, "missing_integrated_criterion")
     epic = rule_strings(_row(rows, "missing_parent"), "epic_markers")
     if _declares_epic(description, epic):
-        return ()
-    if binding is not None and binding in rule_strings(
-        _row(rows, "missing_acceptance_criteria"), "exempt_binding_forms"
-    ):
         return ()
     exempt_classes = {c.lower() for c in rule_strings(row, "exempt_proof_classes")}
     proof_class = _re(rule_string(row, "exempt_proof_class_pattern"))
@@ -857,7 +853,7 @@ def check_ticket_creation(
             findings += _probe_findings(description, rows)
         findings += _criterion_findings(description, rows)
         findings += _labelled_findings(description, binding, rows)
-        findings += _integrated_findings(description, binding, rows)
+        findings += _integrated_findings(description, rows)
         findings += _diagnosis_findings(
             tool_input, title, description, rows, ledger_line_exists
         )

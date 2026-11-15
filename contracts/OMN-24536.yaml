@@ -4,9 +4,9 @@ ticket_id: OMN-24536
 title: "Ticket create check requires a runtime integration criterion on code tickets"
 summary: "The core ticket-creation gate gets one new rule row, missing_integrated_criterion: a create
   whose criteria hold no criterion opening with integrated: and a falsifier that reads the running system
-  is refused with a fix line. Epics, the parent-criterion binding form and a declared code-only proof
-  class are exempt. The row is data in ticket_creation.validation.yaml and the checker reads every word
-  of it."
+  is refused with a fix line. Epics and a declared code-only proof class are exempt; the parent-criterion
+  binding form is not. The row is data in ticket_creation.validation.yaml and the checker reads every
+  word of it."
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
