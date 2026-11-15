@@ -1,0 +1,93 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: effect_node_bypass
+  validator_name: Effect node bypass validator
+  validator_description: Refuses a new outside-world call that skips its effect node. Each rule row below
+    names one outside surface (its command executables, its string substrings, its shell line patterns)
+    and the one place its call may stand, the effect node packages. The bypasses that sat in the tree
+    before the refusal are one shrink-only count in the repository's count file; the run's count never
+    rises above it and the file only goes down (OMN-24432, the operator ruling of 2026-11-14T11:59:02Z).
+    A new surface is a new row; the checker holds no list.
+  target_patterns:
+    - '**/*.py'
+    - '**/*.sh'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+    - '**/node_modules/**'
+    - '**/build/**'
+    - '**/dist/**'
+    - '**/.mypy_cache/**'
+    - '**/.ruff_cache/**'
+    - '**/.pytest_cache/**'
+  rules:
+    - rule_id: github_cli
+      description: The GitHub command line is run from anywhere but an effect node, so the call skips
+        the node's contract, overlay values, typed result and receipt.
+      severity: error
+      enabled: true
+      parameters:
+        command_executables: [gh]
+        string_substrings: []
+        text_line_patterns:
+          - '(^|[;&|(`]|\$\()\s*gh\s+(pr|api|run|issue|repo|workflow|release|auth|label|search)\b'
+        allowed_path_patterns:
+          - '**/node_*_effect/**'
+        comment_prefix: '#'
+        reason: a GitHub command line outside an effect node
+        remediation: >-
+          Send the write or read to the GitHub effect node over the bus (onex scm) and take its typed
+          result; the node's package is the only place the call may stand.
+    - rule_id: github_api
+      description: The GitHub API is addressed from anywhere but an effect node, so the call skips the
+        node's contract, overlay values, typed result and receipt.
+      severity: error
+      enabled: true
+      parameters:
+        command_executables: []
+        string_substrings:
+          - 'api.github.com'
+        text_line_patterns:
+          - 'api\.github\.com'
+        allowed_path_patterns:
+          - '**/node_*_effect/**'
+        comment_prefix: '#'
+        reason: a GitHub API address outside an effect node
+        remediation: >-
+          Send the write or read to the GitHub effect node over the bus (onex scm) and take its typed
+          result; the node's package is the only place the call may stand.
+    - rule_id: count_ratchet
+      description: The bypasses that sat in the tree before this refusal are one shrink-only count, held
+        in the repository's count file; the run's count may not exceed it, may not sit below it, and the
+        file may not be raised against the base revision.
+      severity: error
+      enabled: true
+      parameters:
+        count_key: max_bypasses
+        base_ref: 'HEAD'
+        grew_message: >-
+          {count} bypasses found, the count file {path} allows {ratchet}: a new outside call must go through
+          its effect node; the count never rises.
+        stale_message: >-
+          {count} bypasses found, the count file {path} holds {ratchet}: lower it to {count} in the same
+          change; the count only shrinks.
+        growth_message: >-
+          {path} holds {ratchet} and the base revision holds {base}: the count only shrinks; move the
+          calls onto their effect node instead of raising the file.
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

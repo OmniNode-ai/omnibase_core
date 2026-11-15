@@ -1276,6 +1276,22 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-24432: Counts the outside-world calls (the GitHub command line, the GitHub API) made from anywhere
+      # but an effect node package, over the whole tree, and refuses a count above, or below, the shrink-only
+      # config/effect_node_bypass_ratchet.yaml; the file may not be raised against HEAD. Surfaces are rule rows
+      # of effect_node_bypass.validation.yaml. A count only means something over the whole tree, so the hook
+      # takes the repository root and always runs.
+      - id: no-effect-node-bypass
+        name: No outside call that skips its effect node (OMN-24432)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_effect_node_bypass:ValidatorEffectNodeBypass
+        language: system
+        args: [--baseline, config/effect_node_bypass_ratchet.yaml, .]
+        pass_filenames: false
+        always_run: true
+        require_serial: true
+        stages: [pre-commit]
+
       # SPDX Header Requirement
       # Ensures all source files have the canonical SPDX MIT license header.
       # To skip SPDX check in rare cases, add: # spdx-skip: <reason>

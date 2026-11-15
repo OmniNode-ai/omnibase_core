@@ -1,0 +1,103 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24532
+title: Refuse new calls that skip their effect node, with a count that can only go down
+summary: 'omnibase_core gains the effect_node_bypass validator: each rule row of its validation contract
+  names one outside surface (the GitHub command line, the GitHub API) and the effect node packages as
+  the one place the call may stand; the whole-tree count of the bypasses that predate it is the shrink-only
+  count file config/effect_node_bypass_ratchet.yaml (14 calls in 5 files, measured), and the no-effect-node-bypass
+  pre-commit hook (run by the precommit-suite job) refuses a count above or below it and a raised file.
+  This slice removes none of the 14.'
+is_seam_ticket: true
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn24532-bypass-ratchet
+    statement: A change to omnibase_core that adds an outside-world call outside an effect node package
+      is refused, and the count of existing bypasses only goes down.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a validator in omnibase_core refuses a GitHub command line or GitHub API address
+          outside an effect node package, with every surface a rule row of its validation contract and
+          no list in the checker -- falsifier: uv run pytest tests/unit/validation/test_validator_effect_node_bypass.py
+          -k "planted or surface or new_surface" -q fails at the merge base, where the validator does
+          not exist'
+      - id: AC2
+        statement: 'AC2: a shrink-only per-file count baseline refuses a new bypass in a clean file, a
+          call added to a baselined file, and an entry that was not lowered after a removal -- falsifier:
+          uv run pytest tests/unit/validation/test_validator_effect_node_bypass.py -k "baselined or clean_file
+          or lower_the_entry or checked_in_baseline" -q fails when the baseline file is absent or does
+          not equal the findings of the tree'
+      - id: AC3
+        statement: 'AC3: golden and error chain events: a clean run puts one run event and no triggered
+          event on the bus, a planted call puts one run event and one triggered event -- falsifier: uv
+          run pytest tests/unit/validation/test_validator_effect_node_bypass.py -k bus -q fails when the
+          validator is not registered with the report writer'
+      - id: AC4
+        statement: 'AC4: integrated: the no-effect-node-bypass hook runs in the omnibase_core CI precommit-suite
+          on the pull request branch and fails the run on a planted GitHub command line outside an effect
+          node, read from the CI job log of that run -- falsifier: the CI job log of the branch head carrying
+          the planted call shows no no-effect-node-bypass failure line, or the same job on the head without
+          it shows one'
+evidence_requirements:
+  - kind: tests
+    description: The validator tests pass at the head.
+    command: uv run pytest tests/unit/validation/test_validator_effect_node_bypass.py -q --no-cov -o addopts=''
+      -n 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24532-ac1
+    description: The planted-call, effect-node-twin, surface-mutation and new-row tests. At the merge
+      base the validator module is absent, so they fail there.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_effect_node_bypass.py -q --no-cov
+          -o addopts='' -n 0 -k "planted or surface or new_surface"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24532-ac2
+    description: 'The count ratchet tests: a new bypass in a clean file above the count, a removed call
+      that must lower the entry, a file raised against the base revision, and the checked-in count equal
+      to the findings of the tree. At the merge base the checker and the count file are absent.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_effect_node_bypass.py -q --no-cov
+          -o addopts='' -n 0 -k "baselined or clean_file or lower_the_entry or checked_in_baseline"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24532-ac3
+    description: 'Golden and error chain events on the in-memory bus: a clean run puts one run event and
+      no triggered event, a planted call puts one run event and one triggered event.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_validator_effect_node_bypass.py -q --no-cov
+          -o addopts='' -n 0 -k bus
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24532-ac4
+    description: The hook as pre-commit runs it over the whole tree holds 14 bypasses against the count
+      file and exits 0. The read of the CI job log with a planted call is recorded in a pull request comment
+      naming the head.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: command
+        check_value: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_effect_node_bypass:ValidatorEffectNodeBypass --baseline config/effect_node_bypass_ratchet.yaml
+          .
+        cwd: ${OMNI_HOME}/omnibase_core

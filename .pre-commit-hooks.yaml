@@ -1640,6 +1640,21 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: no-effect-node-bypass
+  name: No outside call that skips its effect node (OMN-24432)
+  description: >
+    Counts the outside-world calls (the GitHub command line, the GitHub API) made from anywhere but an
+    effect node package, over the whole tree, and refuses a count above or below the repository's shrink-only
+    count file; the file may not be raised against HEAD. The surfaces and the remediation text are the
+    rule rows of effect_node_bypass.validation.yaml. A repository adopts the hook with its own count file:
+    args [--baseline, <count file>, .].
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_effect_node_bypass:ValidatorEffectNodeBypass
+  pass_filenames: false
+  always_run: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: check-checker-rule-data
   name: No rule table in a checker, no validator outside the generic format (OMN-21503, K10)
   description: >
