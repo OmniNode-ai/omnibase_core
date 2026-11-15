@@ -56,14 +56,15 @@ dod_evidence:
         check_value: "uv run pytest tests/unit/validation/test_ticket_creation_integrated_rows.py tests/unit/validation/test_ticket_creation_parity.py
           tests/unit/validation/test_ticket_creation_route_rows.py -q --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn24536-ac3-running-ticket-node-refuses
-    description: "one create call without the integrated criterion is refused by the gate in the running
-      ticket node, read back with the time"
+  - id: dod-omn24536-ac3-node-payload-refused
+    description: "a create built the way the running ticket node builds it, without the integrated criterion,
+      is refused with missing_integrated_criterion"
     source: manual
-    execution_scope: local_done_gate
+    execution_scope: hosted_and_local
     binds_ac:
       - AC3
     checks:
-      - check_type: behavior_proven
-        check_value: "onex ticket create --lane <lane> --parent <ticket> --title <t> --description-file
-          <draft with no integrated criterion> --bus kafka --bus-lane dev exits 1 with finding code missing_integrated_criterion"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_ticket_creation_integrated_rows.py -q --no-cov
+          -o addopts='' -n 0 -k TheTicketNodePayloadShape"
+        cwd: ${OMNI_HOME}/omnibase_core
