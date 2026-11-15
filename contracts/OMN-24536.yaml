@@ -53,8 +53,8 @@ dod_evidence:
       - AC2
     checks:
       - check_type: test_passes
-        check_value: "uv run pytest tests/unit/validation/test_ticket_creation_parity.py tests/unit/validation/test_ticket_creation_route_rows.py
-          -q --no-cov -o addopts='' -n 0"
+        check_value: "uv run pytest tests/unit/validation/test_ticket_creation_integrated_rows.py tests/unit/validation/test_ticket_creation_parity.py
+          tests/unit/validation/test_ticket_creation_route_rows.py -q --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn24536-ac3-running-ticket-node-refuses
     description: "one create call without the integrated criterion is refused by the gate in the running
