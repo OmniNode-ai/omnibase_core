@@ -21,6 +21,15 @@ requirements:
           fail against it.
       - id: AC2
         statement: Every curl command in receipt-gate.yml carries --retry-all-errors.
+      - id: AC3
+        statement: The PGDG key fetch bounds a single attempt with --connect-timeout and --max-time, and
+          one attempt may take at most a third of --retry-max-time, so a hanging connection cannot spend
+          the whole retry budget on two tries.
+      - id: AC4
+        statement: The key is fetched from apt.postgresql.org, the mirror the repository line below it
+          already uses, with www.postgresql.org kept only as an `||` fallback after it, and the fetched
+          file is checked for its PGP armor header so a 200 carrying an error page fails at the fetch
+          rather than later inside apt.
 evidence_requirements:
   - kind: tests
     description: Hosted CI test that pins the key fetch's retry flags and runs its argv against a server
@@ -55,4 +64,27 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/ci/test_receipt_gate_pgdg_key_retry_omn24318.py -q --no-cov
           -k "every_curl"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24318-ac3-attempt-is-bounded
+    description: One attempt is bounded at 30 s of a 120 s budget, so the budget buys four tries rather
+      than two. It fails at the merge base, which has no --connect-timeout and no --max-time; there each
+      attempt hung about 90 s, and omninode_infra#2062 produced exactly two curl 56 errors in 182 s.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_pgdg_key_retry_omn24318.py -q --no-cov
+          -k "bounds_each_attempt"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24318-ac4-mirror-first-and-armored
+    description: The mirror precedes the website on the fetch line and the armor header is checked. Both
+      hosts serve the byte-identical key, sha256 0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76,
+      read from each on 2026-11-16. Both tests fail at the merge base, which fetches from the website
+      alone and checks nothing.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_pgdg_key_retry_omn24318.py -q --no-cov
+          -k "mirror_first or pgp_armor"
         cwd: ${OMNI_HOME}/omnibase_core
