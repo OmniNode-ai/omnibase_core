@@ -78,9 +78,9 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn24318-ac4-mirror-first-and-armored
     description: The mirror precedes the website on the fetch line and the armor header is checked. Both
-      hosts serve the byte-identical key, sha256
-      0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76, read from each on 2026-11-16.
-      Both tests fail at the merge base, which fetches from the website alone and checks nothing.
+      hosts serve the byte-identical key, sha256 0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76,
+      read from each on 2026-11-16. Both tests fail at the merge base, which fetches from the website
+      alone and checks nothing.
     source: manual
     binds_ac: [AC4]
     checks:
