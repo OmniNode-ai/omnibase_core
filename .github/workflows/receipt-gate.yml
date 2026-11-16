@@ -1062,7 +1062,11 @@ jobs:
               find /etc/apt/sources.list.d -maxdepth 1 -type f \( -name '*.list' -o -name '*.sources' \) -exec cp {} "${apt_dir}/sources.list.d/" \; 2>/dev/null || true
               codename="$(. /etc/os-release && echo "${VERSION_CODENAME}")"
               if ! {
-                curl -fsSL --retry 3 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o "${apt_dir}/pgdg.asc" &&
+                # OMN-24318: plain --retry skips error 55 (SSL EOF) and 56
+                # (connection reset), so one dropped connection failed the
+                # whole dod-verify job; retry every error, as ci.yml does for
+                # its release download.
+                curl -fsSL --retry 8 --retry-all-errors --retry-delay 10 --retry-max-time 180 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o "${apt_dir}/pgdg.asc" &&
                 { { cat /etc/apt/sources.list 2>/dev/null || true; } &&
                   echo "deb [signed-by=${apt_dir}/pgdg.asc] https://apt.postgresql.org/pub/repos/apt ${codename}-pgdg main"
                 } > "${apt_dir}/sources.list" &&
