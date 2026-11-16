@@ -1067,7 +1067,23 @@ jobs:
                 # (connection reset), so one dropped connection failed the
                 # whole dod-verify job; retry every error, as ci.yml does for
                 # its release download.
-                curl -fsSL --retry 8 --retry-all-errors --retry-delay 10 --retry-max-time 180 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o "${apt_dir}/pgdg.asc" &&
+                #
+                # Retrying every error was not enough. The key came from
+                # www.postgresql.org, the website, while the packages below
+                # already come from apt.postgresql.org, the package mirror.
+                # Under concurrent CI load the website drops the TLS read and,
+                # with no bound on a single attempt, each try hung about 90
+                # seconds, so --retry-max-time 180 bought two attempts and no
+                # more: 182 seconds and exactly two curl 56 errors, measured on
+                # omninode_infra#2062 on 2026-11-16. Take the key from the
+                # mirror, bound every attempt so the budget buys many tries,
+                # and fall back to the website only when the mirror is
+                # unreachable. Both serve the same 4812-byte key, sha256
+                # 0144068502a1eddd2a0280ede10ef607d1ec592ce819940991203941564e8e76.
+                { curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --connect-timeout 10 --max-time 30 https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc -o "${apt_dir}/pgdg.asc" || curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 --retry-max-time 120 --connect-timeout 10 --max-time 30 https://www.postgresql.org/media/keys/ACCC4CF8.asc -o "${apt_dir}/pgdg.asc"; } &&
+                # A 200 carrying an error page would otherwise surface later as
+                # an apt unsigned-repository refusal.
+                grep -q 'BEGIN PGP PUBLIC KEY BLOCK' "${apt_dir}/pgdg.asc" &&
                 { { cat /etc/apt/sources.list 2>/dev/null || true; } &&
                   echo "deb [signed-by=${apt_dir}/pgdg.asc] https://apt.postgresql.org/pub/repos/apt ${codename}-pgdg main"
                 } > "${apt_dir}/sources.list" &&

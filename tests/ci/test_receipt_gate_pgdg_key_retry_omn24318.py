@@ -41,7 +41,10 @@ def _step(name: str) -> dict[str, Any]:
 
 def _pgdg_key_argv() -> list[str]:
     script = _step(PG_TOOLS_STEP)["run"]
-    match = re.search(r"curl\s+[^\n]*ACCC4CF8\.asc[^\n]*?-o\s+\"[^\"]*\"", script)
+    # Non-greedy before the URL as well: the fetch is now a mirror-first curl
+    # with the website as an `||` fallback on the same line, and this must
+    # match the first invocation alone, not run the two together.
+    match = re.search(r"curl\s+[^\n]*?ACCC4CF8\.asc[^\n]*?-o\s+\"[^\"]*\"", script)
     assert match is not None, "the PGDG key curl invocation is missing from the step"
     return shlex.split(match.group(0))
 
@@ -51,6 +54,64 @@ def test_pgdg_key_fetch_retries_every_error() -> None:
     assert "--retry-all-errors" in argv
     assert "--retry-delay" in argv
     assert "--retry-max-time" in argv
+
+
+def _pgdg_key_line() -> str:
+    script = _step(PG_TOOLS_STEP)["run"]
+    return next(
+        candidate.strip()
+        for candidate in script.splitlines()
+        if "ACCC4CF8.asc" in candidate and not candidate.strip().startswith("#")
+    )
+
+
+def test_pgdg_key_fetch_bounds_each_attempt() -> None:
+    """Without a per-attempt bound the retry budget buys only two tries.
+
+    Measured on omninode_infra#2062: each attempt hung about 90 seconds on a
+    dropped TLS read, so --retry-max-time 180 produced exactly two curl 56
+    errors in 182 seconds and then failed the job. --connect-timeout and
+    --max-time make the budget buy many short attempts instead.
+    """
+    argv = _pgdg_key_argv()
+    assert "--connect-timeout" in argv, (
+        "the PGDG key fetch must bound how long one attempt waits to connect"
+    )
+    assert "--max-time" in argv, (
+        "the PGDG key fetch must bound how long one attempt may run"
+    )
+    max_time = int(argv[argv.index("--max-time") + 1])
+    retry_max_time = int(argv[argv.index("--retry-max-time") + 1])
+    assert max_time * 3 <= retry_max_time, (
+        f"one attempt may take {max_time}s of a {retry_max_time}s budget, "
+        "which leaves room for fewer than three tries"
+    )
+
+
+def test_pgdg_key_comes_from_the_package_mirror_first() -> None:
+    """The key must come from the same host the packages do.
+
+    The repository line below the fetch points at apt.postgresql.org, and that
+    mirror serves the byte-identical key (sha256 01440685...4e8e76). The
+    website, www.postgresql.org, drops connections from the fleet under
+    concurrent CI load, so it is the fallback and never the first source.
+    """
+    line = _pgdg_key_line()
+    mirror = "https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc"
+    website = "https://www.postgresql.org/media/keys/ACCC4CF8.asc"
+    assert mirror in line, "the PGDG key must be fetched from apt.postgresql.org"
+    assert website in line, "the website must remain as the fallback source"
+    assert line.index(mirror) < line.index(website), (
+        "the package mirror must be tried before the website"
+    )
+
+
+def test_pgdg_key_is_checked_for_pgp_armor() -> None:
+    """A 200 carrying an error page must fail here, not later inside apt."""
+    script = _step(PG_TOOLS_STEP)["run"]
+    assert "BEGIN PGP PUBLIC KEY BLOCK" in script, (
+        "the fetched key must be checked for its PGP armor header"
+    )
 
 
 def test_every_curl_in_the_workflow_retries_every_error() -> None:
