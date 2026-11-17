@@ -456,13 +456,14 @@ def test_release_readme_states_the_behaviour_changes_of_the_release_branch() -> 
     assert "uv.lock" in readme.split("### Included Since v0.47.73")[0]
 
 
-def test_release_derived_version_real_history_names_the_tag_the_readme_cuts_from() -> (
+def test_release_derived_version_real_history_reads_a_tag_no_newer_than_the_readme_release() -> (
     None
 ):
     """The version command of pyproject.toml, run on this checkout's own history (no synthetic tags).
 
-    A full checkout reads ``v<tag>-<n>-g<sha>`` and that tag is the one the top README release cuts from
-    (or is the top release itself once tagged). A shallow checkout carries no tags and the command fails
+    A checkout with tags reads ``v<tag>-<n>-g<sha>``, and a reachable tag newer than the release at the
+    top of README would mean the notes lag the history. How many recent tags a clone holds varies, so the
+    check is an upper bound, not an equality. A shallow checkout carries no tags and the command fails
     there; that is asserted, so the test never skips.
     """
     options = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text("utf-8"))["tool"][
@@ -483,10 +484,12 @@ def test_release_derived_version_real_history_names_the_tag_the_readme_cuts_from
     assert match is not None, described.stdout
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     top = re.search(r"^## v(\d+\.\d+\.\d+) ", readme, re.MULTILINE)
-    since = re.search(r"^### Included Since v(\d+\.\d+\.\d+)$", readme, re.MULTILINE)
-    assert top is not None and since is not None
-    assert match.group("tag") in {top.group(1), since.group(1)}, (
+    assert top is not None
+
+    def _key(version: str) -> tuple[int, ...]:
+        return tuple(int(part) for part in version.split("."))
+
+    assert _key(match.group("tag")) <= _key(top.group(1)), (
         described.stdout,
         top.group(1),
-        since.group(1),
     )
