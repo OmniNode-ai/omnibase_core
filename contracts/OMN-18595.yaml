@@ -51,9 +51,6 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k changelog
         cwd: ${OMNI_HOME}/omnibase_core
-      - check_type: test_passes
-        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k changelog_restored
-        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: uv run --locked python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
           --root .
@@ -142,11 +139,6 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/nodes/node_canonical_file_shape_check_compute/test_typescript_and_shell_rules.py
           -q --no-cov -n 0
-        cwd: ${OMNI_HOME}/omnibase_core
-      # OMN-25394: the ratchet itself, over a planted growth and over this tree, and every baseline entry
-      # naming a tracked file.
-      - check_type: test_passes
-        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q --no-cov -k file_shape
         cwd: ${OMNI_HOME}/omnibase_core
       # Keep the full validator suite, including both eight-second mutation controls,
       # in separate commands so each fits the verifier's per-command budget.

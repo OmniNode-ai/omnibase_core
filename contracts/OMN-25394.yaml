@@ -114,6 +114,7 @@ dod_evidence:
       real ratchet, counts code lines as the ratchet does, and asserts that each baseline entry names
       an existing file. The bound test fails at head 77e2b996f23a, where the fix and its test are absent.'
     source: manual
+    execution_scope: local_done_gate
     binds_ac:
       - AC5
     checks:
@@ -126,6 +127,7 @@ dod_evidence:
       contracts/OMN-18595.yaml has a falsifier that can fail. The bound test fails at head 77e2b996f23a,
       where the fix and its test are absent.'
     source: manual
+    execution_scope: local_done_gate
     binds_ac:
       - AC6
     checks:
