@@ -25,7 +25,19 @@ from omnibase_core.models.nodes.readme_only_docs.model_readme_only_docs_input im
 from omnibase_core.nodes.node_git_file_listing_effect.handler_readme_only_docs import (
     HandlerReadmeOnlyDocs,
 )
+from omnibase_core.validation.checker_canonical_file_shape import (
+    _count_entries,
+    parse_baseline,
+)
 from omnibase_core.validators.no_unguarded_git_subprocess import scrub_git_location_env
+from tests.unit.nodes.node_canonical_file_shape_check_compute.support import (
+    BASELINE,
+    RULES,
+    init_repo,
+    issues,
+    stage,
+    write,
+)
 
 pytestmark = pytest.mark.unit
 
@@ -267,7 +279,11 @@ def test_release_changelog_retains_version_0_47_74_in_root_readme() -> None:
     readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
     assert "## v0.47.74 (2026-11-17)" in readme
     assert "### Included Since v0.47.73" in readme
-    assert "- : remove omnibase_compat uses from omnibase_core (#2329)" in readme
+    assert "- Remove omnibase_compat uses from omnibase_core (#2329)" in readme
+    section = readme.split("## v0.47.74 (2026-11-17)")[1].split("\n## v0.47.73")[0]
+    assert "\n- : " not in section, (
+        "a release note line is a bare separator; the notes name no ticket (the documentation scan refuses one)"
+    )
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
 
 
@@ -329,40 +345,148 @@ def test_release_derived_version_reads_exactly_0_47_74_once_tagged(
 
 
 _VALIDATOR_CODE_LINE_LIMIT = 731
+_VALIDATOR = "src/omnibase_core/validation/validator_canonical_file_shape.py"
+_RATCHET_RULES = {"baselined-file-growth", "baseline-stale", "baseline-growth"}
 
 
-def _code_lines(text: str) -> int:
-    """Lines that are neither blank nor comment-only, the count the file-shape ratchet holds."""
-    return sum(
-        1
-        for line in text.splitlines()
-        if line.strip() and not line.strip().startswith("#")
-    )
+def _baseline_entries(text: str) -> list[str]:
+    """The paths of a baseline file, as the ratchet parses them."""
+    return parse_baseline(text)
 
 
 def test_file_shape_baseline_validator_holds_at_most_731_code_lines() -> None:
-    validator = (
-        REPO_ROOT / "src/omnibase_core/validation/validator_canonical_file_shape.py"
-    )
+    """The count is the ratchet's own (``_count_entries`` with the contract's comment prefixes)."""
+    validator = (REPO_ROOT / _VALIDATOR).read_text(encoding="utf-8")
     assert (
-        _code_lines(validator.read_text(encoding="utf-8")) <= _VALIDATOR_CODE_LINE_LIMIT
+        _count_entries(validator, RULES.parameters.comment_prefixes)
+        <= _VALIDATOR_CODE_LINE_LIMIT
     )
 
 
-def test_file_shape_baseline_counter_refuses_a_validator_of_732_code_lines() -> None:
-    """Negative control: the counter that holds the limit reads 732 code lines as over it."""
-    planted = "".join(f"x{i} = {i}\n" for i in range(_VALIDATOR_CODE_LINE_LIMIT + 1))
-    assert _code_lines(planted) == _VALIDATOR_CODE_LINE_LIMIT + 1
-    assert _code_lines(planted) > _VALIDATOR_CODE_LINE_LIMIT
+def test_file_shape_baseline_ratchet_refuses_a_validator_of_732_code_lines(
+    tmp_path: Path,
+) -> None:
+    """Negative control, through the real ratchet: one more code line in a baselined file is refused."""
+    path = "scripts/legacy_tool.py"
+    body = "".join(f"x{i} = {i}\n" for i in range(_VALIDATOR_CODE_LINE_LIMIT))
+    write(tmp_path, path, body)
+    init_repo(tmp_path, baselined=[path])
+    write(tmp_path, path, body + "x_extra = 1\n")
+    stage(tmp_path)
+    found = issues(tmp_path)
+    assert [i.code for i in found] == ["baselined-file-growth"]
+    assert f"{_VALIDATOR_CODE_LINE_LIMIT} -> {_VALIDATOR_CODE_LINE_LIMIT + 1}" in (
+        found[0].message
+    )
+
+
+def test_file_shape_baseline_ratchet_counts_code_lines_not_comments_or_blanks(
+    tmp_path: Path,
+) -> None:
+    """Positive control: comment and blank lines added to a baselined file are not growth."""
+    path = "scripts/legacy_tool.py"
+    write(tmp_path, path, "a = 1\n")
+    init_repo(tmp_path, baselined=[path])
+    write(tmp_path, path, "# note\n\na = 1\n# another\n")
+    stage(tmp_path)
+    assert issues(tmp_path) == ()
+
+
+def test_file_shape_baseline_ratchet_refuses_an_entry_that_names_no_file(
+    tmp_path: Path,
+) -> None:
+    write(tmp_path, "README.md", "x\n")
+    init_repo(tmp_path, baselined=["scripts/gone.py"])
+    assert {i.code for i in issues(tmp_path)} == {"baseline-stale"}
+
+
+def test_file_shape_baseline_of_this_tree_passes_the_real_ratchet() -> None:
+    """The ratchet itself, over this checkout at HEAD against its merge base with the landing ref.
+
+    Where the landing ref is absent (a shallow checkout) the base is HEAD, so the baseline-shape rules
+    still read the whole tree; where it is present they read the growth of this release too.
+    """
+    refused = [i for i in issues(REPO_ROOT, head="HEAD") if i.code in _RATCHET_RULES]
+    assert refused == [], [f"{i.code}: {i.file_path}: {i.message}" for i in refused]
 
 
 def test_file_shape_baseline_names_no_file_this_release_adds() -> None:
-    """The baseline only shrinks: every line it holds names a file that exists."""
-    baseline = REPO_ROOT / ".onex_ratchets" / "canonical_file_shape_baseline.txt"
-    entries = [
-        line.strip()
-        for line in baseline.read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.startswith("#")
-    ]
+    """The baseline only shrinks: every entry names a file this tree tracks."""
+    baseline = REPO_ROOT / BASELINE
+    entries = _baseline_entries(baseline.read_text(encoding="utf-8"))
     assert entries, "the baseline holds the files that predate the rule"
     assert len(entries) == len(set(entries))
+    tracked = set(_git(REPO_ROOT, "ls-files").splitlines())
+    missing = [entry for entry in entries if entry not in tracked]
+    assert missing == [], f"baseline entries naming no tracked file: {missing}"
+
+
+def test_file_shape_baseline_entry_naming_a_missing_file_fails_this_check(
+    tmp_path: Path,
+) -> None:
+    """Negative control for the existence check above, on a repository whose entry names no file."""
+    write(tmp_path, "README.md", "x\n")
+    init_repo(tmp_path, baselined=["scripts/gone.py"])
+    tracked = set(_git(tmp_path, "ls-files").splitlines())
+    entries = _baseline_entries((tmp_path / BASELINE).read_text(encoding="utf-8"))
+    assert [e for e in entries if e not in tracked] == ["scripts/gone.py"]
+
+
+def test_release_changelog_restored_on_the_real_tree_is_refused(
+    tmp_path: Path,
+) -> None:
+    """AC1 falsifier: this release tree passes; the same tree with CHANGELOG.md restored fails the validator."""
+    clone = tmp_path / "tree"
+    _git(tmp_path, "clone", "-q", "--shared", str(REPO_ROOT), str(clone))
+    assert _scan(clone) == ("PASS", [])
+    (clone / "CHANGELOG.md").write_text("## v0.0.1 (2026-01-01)\n\n- release\n")
+    _git(clone, "add", "--", "CHANGELOG.md")
+    status, findings = _scan(clone)
+    assert status == "FAIL"
+    assert "CHANGELOG.md" in findings
+
+
+def test_release_readme_states_the_behaviour_changes_of_the_release_branch() -> None:
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    section = readme.split("### Behaviour changes on this release branch")[1].split(
+        "\n## "
+    )[0]
+    notes = [line for line in section.splitlines() if line.startswith("- ")]
+    assert len(notes) == 7, notes
+    assert "uv.lock" in readme.split("### Included Since v0.47.73")[0]
+
+
+def test_release_derived_version_real_history_names_the_tag_the_readme_cuts_from() -> (
+    None
+):
+    """The version command of pyproject.toml, run on this checkout's own history (no synthetic tags).
+
+    A full checkout reads ``v<tag>-<n>-g<sha>`` and that tag is the one the top README release cuts from
+    (or is the top release itself once tagged). A shallow checkout carries no tags and the command fails
+    there; that is asserted, so the test never skips.
+    """
+    options = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text("utf-8"))["tool"][
+        "hatch"
+    ]["version"]["raw-options"]
+    described = subprocess.run(
+        ["git", "-C", str(REPO_ROOT), *options["git_describe_command"][1:]],
+        env=scrub_git_location_env(),
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if described.returncode != 0:
+        shallow = _git(REPO_ROOT, "rev-parse", "--is-shallow-repository").strip()
+        assert shallow == "true", described.stderr
+        return
+    match = re.match(r"v(?P<tag>\d+\.\d+\.\d+)-\d+-g[0-9a-f]+", described.stdout)
+    assert match is not None, described.stdout
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    top = re.search(r"^## v(\d+\.\d+\.\d+) ", readme, re.MULTILINE)
+    since = re.search(r"^### Included Since v(\d+\.\d+\.\d+)$", readme, re.MULTILINE)
+    assert top is not None and since is not None
+    assert match.group("tag") in {top.group(1), since.group(1)}, (
+        described.stdout,
+        top.group(1),
+        since.group(1),
+    )

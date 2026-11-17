@@ -75,7 +75,10 @@ validation:
       enabled: true
       parameters:
         count_key: max_bypasses
-        base_ref: 'origin/dev'
+        # The base branch is the caller's (`--base-ref`, the hook's own args), never this contract's: a
+        # downstream repository ships this contract with no fixed base branch ref. With no caller ref the count file
+        # is compared with the checkout's own HEAD (the file may not be raised in the working tree).
+        base_ref_fallback: 'HEAD'
         grew_message: >-
           {count} bypasses found, the count file {path} allows {ratchet}: a new outside call must go through
           its effect node; the count never rises.
@@ -86,9 +89,9 @@ validation:
           {path} holds {ratchet} and the base revision holds {base}: the count only shrinks; move the
           calls onto their effect node instead of raising the file.
         base_unreadable_message: >-
-          cannot read {path} at the merge base of HEAD and {base_ref} ({why}): the count file may not
-          be raised against the base branch, so an unreadable base is a refusal, never a skipped check;
-          fetch {base_ref} (a full-depth checkout) and run again.
+          cannot read {path} at the merge base of HEAD and {base_ref} ({why}): the caller named this base
+          revision, so an unreadable base is a refusal, never a skipped check; fetch {base_ref} (a full-depth
+          checkout) or name another base with --base-ref, and run again.
   suppression_comments: []
   fail_on_error: true
   fail_on_warning: false

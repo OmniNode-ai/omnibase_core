@@ -68,7 +68,8 @@ class ValidatorEffectNodeBypass(ValidatorBase):
     def with_baseline_file(cls, path: Path, *, base_ref: str | None = None) -> Self:
         """The validator held to the count file ``path`` (the hook's ``--baseline``).
 
-        ``base_ref`` replaces the contract's base branch for the comparison with the base revision.
+        ``base_ref`` is the caller's base branch for the comparison with the base revision; with none, the
+        contract's ``base_ref_fallback`` (the checkout's own ``HEAD``) is used and an unreadable base skips it.
         """
         probe = cls()
         key = rule_string(probe._rules[RULE_COUNT_RATCHET], "count_key")
@@ -117,10 +118,12 @@ class ValidatorEffectNodeBypass(ValidatorBase):
         if self._ratchet is None:
             return result
         row = self._rules[RULE_COUNT_RATCHET]
-        base_ref = self._base_ref_override or rule_string(row, "base_ref")
+        base_ref = self._base_ref_override or rule_string(row, "base_ref_fallback")
         base_ratchet, unreadable = self._base_ratchet(base_ref)
         issues: tuple[ModelValidationIssue, ...]
-        if unreadable is not None:
+        # Only a base the caller named is refused when unreadable; the fallback (the checkout's own HEAD)
+        # being unreadable means there is no git history to compare with, which is no base to hold.
+        if unreadable is not None and self._base_ref_override is not None:
             issues = (
                 ModelValidationIssue(
                     severity=row.severity,
@@ -139,7 +142,7 @@ class ValidatorEffectNodeBypass(ValidatorBase):
             issues = check_count_ratchet(
                 len(result.issues),
                 self._ratchet,
-                base_ratchet,
+                None if unreadable is not None else base_ratchet,
                 self._ratchet_path,
                 self._rules,
             )

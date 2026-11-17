@@ -94,3 +94,46 @@ def test_aliasing_fallback_version_fires_for_the_direct_key(tmp_path: Path) -> N
     assert [finding.rule_id for finding in report.findings] == [
         "aliasing_fallback_version"
     ]
+
+
+# --- OMN-25394 (review finding 10): both places set -------------------------------------------------
+#
+# hatch-vcs names ``fallback-version`` directly under ``[tool.hatch.version]`` and takes the setuptools-scm
+# spelling ``fallback_version`` under ``raw-options``. hatch-vcs is not installed where this was written,
+# so which of the two it prefers when both are set was not read; the gather handler answers only "is a
+# fallback declared, and what string does the tree say", and the aliasing rule fires on any declared
+# fallback. These tests pin the handler's own order: the direct hyphenated key is reported first, either
+# place alone is reported, and a fallback in either place is never read as none.
+
+
+def test_hatch_vcs_precedence_direct_key_is_reported_when_both_places_are_set(
+    tmp_path: Path,
+) -> None:
+    pyproject = (
+        _HEAD
+        + 'fallback-version = "0.47.72"\n'
+        + '\n[tool.hatch.version.raw-options]\nfallback_version = "9.9.9"\n'
+    )
+    assert _gather_fallback(tmp_path, pyproject) == "0.47.72"
+
+
+def test_hatch_vcs_precedence_raw_options_alone_is_reported_in_either_spelling(
+    tmp_path: Path,
+) -> None:
+    for spelling in ("fallback_version", "fallback-version"):
+        pyproject = (
+            _HEAD + f'\n[tool.hatch.version.raw-options]\n{spelling} = "1.2.3"\n'
+        )
+        assert _gather_fallback(tmp_path, pyproject) == "1.2.3", spelling
+
+
+def test_hatch_vcs_precedence_a_fallback_in_either_place_is_never_read_as_none(
+    tmp_path: Path,
+) -> None:
+    """Both places declare one: the rule still has a fallback to refuse."""
+    pyproject = (
+        _HEAD
+        + 'fallback_version = "0.47.72"\n'
+        + '\n[tool.hatch.version.raw-options]\nfallback-version = "9.9.9"\n'
+    )
+    assert _gather_fallback(tmp_path, pyproject) is not None

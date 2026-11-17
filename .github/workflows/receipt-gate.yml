@@ -1693,10 +1693,16 @@ jobs:
             rc=0
             # OMN-23775: the unscoped head contract rides beside the scoped copy, so the
             # standard-form checks read the whole contract the scoped copy trims.
-            verifier_help="$("$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify --help 2>&1 || true)"
+            help_rc=0
+            verifier_help="$("$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify --help 2>&1)" || help_rc=$?
+            if [ "$help_rc" -ne 0 ]; then
+              echo "::warning::$ticket: the verifier's --help exited $help_rc; --full-contract-path is not passed"
+            fi
             full_contract_args=()
             if grep -q -e '--full-contract-path' <<< "$verifier_help"; then
               full_contract_args=(--full-contract-path "$contract")
+            else
+              echo "::notice::$ticket: the installed verifier does not list --full-contract-path; verifying without it"
             fi
             "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
               --ticket-id "$ticket" --contract-path "$scoped" ${full_contract_args[@]+"${full_contract_args[@]}"} \

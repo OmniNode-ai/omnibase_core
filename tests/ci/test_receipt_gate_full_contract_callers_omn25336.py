@@ -43,7 +43,7 @@ def _step() -> dict[str, Any]:
 
 
 def _run_head_verify(
-    tmp_path: Path, *, verifier_help: str
+    tmp_path: Path, *, verifier_help: str, help_rc: int = 0
 ) -> tuple[subprocess.CompletedProcess[str], list[str], Path]:
     """Run the real head_verify script against a stub verifier with the given usage text."""
     workspace = tmp_path / "workspace"
@@ -62,7 +62,7 @@ def _run_head_verify(
     verifier.write_text(
         "#!/bin/bash\n"
         'case " $* " in\n'
-        '  *" --help "*) printf "%s" "$VERIFIER_HELP"; exit 0;;\n'
+        '  *" --help "*) printf "%s" "$VERIFIER_HELP"; exit "${VERIFIER_HELP_RC:-0}";;\n'
         "esac\n"
         'case " $* " in\n'
         '  *" --full-contract-path "*) if ! printf "%s" "$VERIFIER_HELP" | '
@@ -84,6 +84,7 @@ def _run_head_verify(
             "REPO_SHORT": REPO_SHORT,
             "DOD_VERIFY_PY": str(verifier),
             "VERIFIER_HELP": verifier_help,
+            "VERIFIER_HELP_RC": str(help_rc),
             "VERIFIER_LOG": str(verifier_log),
         },
         capture_output=True,
@@ -100,7 +101,11 @@ def test_full_contract_path_callers_with_an_older_verifier_get_no_flag(
     """Failing control: a caller whose verifier predates the flag still verifies, exit 0."""
     result, invocations, _ = _run_head_verify(tmp_path, verifier_help=_OLDER_HELP)
     assert result.returncode == 0, result.stdout + result.stderr
-    assert result.stdout.splitlines() == [f"{TICKET} head: verified"]
+    assert result.stdout.splitlines() == [
+        f"::notice::{TICKET}: the installed verifier does not list --full-contract-path; "
+        "verifying without it",
+        f"{TICKET} head: verified",
+    ]
     assert len(invocations) == 1
     assert "--full-contract-path" not in invocations[0]
     assert f"--ticket-id {TICKET}" in invocations[0]
@@ -125,3 +130,15 @@ def test_full_contract_path_callers_probe_the_installed_verifier_not_a_version_s
     script = _step()["run"]
     assert "node_dod_verify --help" in script
     assert "--full-contract-path" in script
+
+
+def test_full_contract_path_callers_log_a_verifier_whose_help_fails(
+    tmp_path: Path,
+) -> None:
+    """OMN-25394: a failed ``--help`` drops the flag and says so, never silently."""
+    result, invocations, _ = _run_head_verify(
+        tmp_path, verifier_help=_ACCEPTING_HELP, help_rc=3
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"::warning::{TICKET}: the verifier's --help exited 3" in result.stdout
+    assert len(invocations) == 1

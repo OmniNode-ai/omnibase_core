@@ -7,11 +7,21 @@ Documentation: [knowledge_base](https://github.com/OmniNode-ai/knowledge_base).
 
 ### Release
 - Cut omnibase-core from dev at 0.47.74 by the scheduled release train.
-- 1 release-relevant commit(s) merged since v0.47.73.
+- 1 release-relevant commit(s) merged to dev since v0.47.73, plus the behaviour changes below that exist only on this release branch and reach dev when this release merges.
 - Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+- The release train's dependency refresh moved filelock, sqlglot and virtualenv in uv.lock; no other file changed with them.
 
 ### Included Since v0.47.73
-- : remove omnibase_compat uses from omnibase_core (#2329)
+- Remove omnibase_compat uses from omnibase_core (#2329)
+
+### Behaviour changes on this release branch
+- The runtime bus settle reads a receipt as degraded unless the forwarded count equals the recorded event count, and carries the recorded count when a settle step fails.
+- The runtime bus settle is total over `Exception`: a raising binding, announce or `bus.close()` still writes the run's state.
+- A model event envelope without provenance dumps no provenance key.
+- The release identity gather handler reads a `fallback-version` placed directly under the hatch version table as well as in raw-options.
+- The effect node bypass count ratchet is judged against the merge base with the base ref the caller names (`--base-ref`) and refuses a named base it cannot read.
+- The receipt gate hands a verifier `--full-contract-path` only when the installed verifier's usage text lists it, and logs when it does not.
+- The release workflow's tag mismatch message names the git-derived package version.
 
 ## v0.47.73 (2026-11-15)
 

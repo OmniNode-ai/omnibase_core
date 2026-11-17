@@ -51,10 +51,17 @@ def _commit(root: Path, ratchet: int, planted: dict[str, str], message: str) -> 
     _git(root, "commit", "-q", "-m", message)
 
 
-def _validator(root: Path, ratchet: int) -> ValidatorEffectNodeBypass:
+def _validator_on(
+    root: Path, ratchet: int, base_ref: str | None
+) -> ValidatorEffectNodeBypass:
     return ValidatorEffectNodeBypass(
-        root=root, ratchet=ratchet, ratchet_path=_COUNT_FILE
+        root=root, ratchet=ratchet, ratchet_path=_COUNT_FILE, base_ref=base_ref
     )
+
+
+def _validator(root: Path, ratchet: int) -> ValidatorEffectNodeBypass:
+    """The validator whose caller names ``origin/dev`` as the base, as the repository's hook does."""
+    return _validator_on(root, ratchet, "origin/dev")
 
 
 @pytest.mark.unit
@@ -126,3 +133,83 @@ def test_bypass_base_ref_outside_a_git_checkout_fails_closed(tmp_path: Path) -> 
 
     assert not result.is_valid
     assert "cannot read" in result.issues[0].message
+
+
+# --- OMN-25394 (review finding 2): the base ref comes from the caller, never from the contract ---
+
+_CONTRACT = Path(
+    "src/omnibase_core/validation/contracts/effect_node_bypass.validation.yaml"
+)
+_PRECOMMIT = Path(".pre-commit-config.yaml")
+
+
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[3]
+
+
+@pytest.mark.unit
+def test_bypass_base_ref_contract_does_not_hard_code_origin_dev() -> None:
+    """Failing control: the shipped contract named origin/dev, so a repo without that ref was refused."""
+    text = (_repo_root() / _CONTRACT).read_text(encoding="utf-8")
+    assert "origin/dev" not in text
+
+
+@pytest.mark.unit
+def test_bypass_base_ref_with_no_base_supplied_does_not_refuse_a_checkout_without_origin_dev(
+    tmp_path: Path,
+) -> None:
+    """A downstream repo (or a shallow checkout) with no origin/dev and no caller ref is not refused."""
+    _git(tmp_path, "init", "-q")
+    _commit(tmp_path, 1, {"one": _CLI}, "only commit, no origin/dev")
+
+    result = ValidatorEffectNodeBypass(
+        root=tmp_path, ratchet=1, ratchet_path=_COUNT_FILE
+    ).validate([tmp_path])
+
+    assert result.is_valid, [i.message for i in result.issues]
+
+
+@pytest.mark.unit
+def test_bypass_base_ref_a_caller_ref_that_cannot_be_read_fails_closed(
+    tmp_path: Path,
+) -> None:
+    """A ref the caller names and git cannot resolve is a refusal, never a skipped check."""
+    _git(tmp_path, "init", "-q")
+    _commit(tmp_path, 1, {"one": _CLI}, "only commit")
+
+    result = _validator_on(tmp_path, 1, "origin/does-not-exist").validate([tmp_path])
+
+    assert not result.is_valid
+    assert "cannot read" in result.issues[0].message
+    assert "origin/does-not-exist" in result.issues[0].message
+
+
+@pytest.mark.unit
+def test_bypass_base_ref_a_caller_ref_other_than_origin_dev_judges_the_raise(
+    tmp_path: Path,
+) -> None:
+    _git(tmp_path, "init", "-q")
+    _commit(tmp_path, 1, {"one": _CLI}, "base")
+    _git(tmp_path, "update-ref", "refs/remotes/origin/main", "HEAD")
+    _commit(tmp_path, 2, {"two": _API}, "raise the count file")
+
+    result = _validator_on(tmp_path, 2, "origin/main").validate([tmp_path])
+
+    assert not result.is_valid
+    assert "base revision holds 1" in result.issues[0].message
+
+
+@pytest.mark.unit
+def test_bypass_base_ref_the_hook_passes_the_caller_ref_and_the_runtime_takes_it() -> (
+    None
+):
+    """The repository's own hook is the caller: it names the base, and the runtime has the flag."""
+    config = (_repo_root() / _PRECOMMIT).read_text(encoding="utf-8")
+    hook = config[config.index("id: no-effect-node-bypass") :]
+    hook = hook[: hook.index("always_run")]
+    assert "--base-ref" in hook
+    runtime = (
+        _repo_root()
+        / "src/omnibase_core/nodes/node_validation_report_write_effect/runtime_validator_run.py"
+    ).read_text(encoding="utf-8")
+    assert '"--base-ref"' in runtime
