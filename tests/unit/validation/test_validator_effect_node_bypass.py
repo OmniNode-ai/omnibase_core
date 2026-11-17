@@ -232,7 +232,31 @@ def test_effect_node_bypass_a_pattern_that_does_not_compile_fails_the_load() -> 
         check_effect_node_bypass(_ELSEWHERE, "", rules)
 
 
+def _git_checkout_with_base_ref(root: Path) -> None:
+    """A checkout whose base branch ref exists: the count file is judged against its merge base."""
+    for args in (
+        ["init", "-q"],
+        [
+            "-c",
+            "user.name=t",
+            "-c",
+            "user.email=t@t",
+            "commit",
+            "-q",
+            "--allow-empty",
+            "-m",
+            "base",
+        ],
+        ["update-ref", "refs/remotes/origin/dev", "HEAD"],
+    ):
+        subprocess.run(
+            ["git", *args], cwd=root, env=scrub_git_location_env(), check=True
+        )
+
+
 def _validator(tmp_path: Path, ratchet: int | None) -> ValidatorEffectNodeBypass:
+    if ratchet is not None and not (tmp_path / ".git").exists():
+        _git_checkout_with_base_ref(tmp_path)
     return ValidatorEffectNodeBypass(
         root=tmp_path, ratchet=ratchet, ratchet_path=Path("config/ratchet.yaml")
     )
@@ -312,6 +336,7 @@ def test_effect_node_bypass_a_raised_count_file_is_refused_against_the_base_revi
         ["init", "-q"],
         ["add", "-A"],
         ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base"],
+        ["update-ref", "refs/remotes/origin/dev", "HEAD"],
     ):
         subprocess.run(
             ["git", *args],
@@ -359,7 +384,11 @@ def test_effect_node_bypass_the_checked_in_baseline_count_equals_the_findings_of
 ):
     held = parse_baseline(_RATCHET.read_text(encoding="utf-8"))["max_bypasses"]
     assert held > 0, "the count file holds the inventory of bypasses that predate it"
-    held_run = ValidatorEffectNodeBypass.with_baseline_file(_RATCHET).validate([_ROOT])
+    # base_ref HEAD: this test is about the count equalling the findings, not about a base branch a
+    # shallow checkout may not carry.
+    held_run = ValidatorEffectNodeBypass.with_baseline_file(
+        _RATCHET, base_ref="HEAD"
+    ).validate([_ROOT])
     assert held_run.is_valid
     assert f"{held} bypasses" in held_run.summary
 

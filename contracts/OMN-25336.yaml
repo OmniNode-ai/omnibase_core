@@ -1,0 +1,198 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-25336
+title: Review findings 1 to 10 on the 0.47.74 release pull request are fixed or argued, with a test red
+  then green for each
+summary: The review of the 0.47.74 release pull request found ten blocking findings. This contract binds
+  one hosted-runnable check to each of AC1 to AC9, and a local Done gate check to the checks that read
+  pull request state (AC1 required checks, AC10 registry search, AC11 Lab comment).
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25336-review-findings
+    statement: Each blocking review finding is fixed with a failing-then-passing test, or argued with
+      evidence.
+    acceptance:
+      - id: AC1
+        statement: "AC1: The required checks of the release pull request read success at its new head,
+          and the changelog test of the release-cut identity tests fails with CHANGELOG.md restored."
+      - id: AC2
+        statement: "AC2: AC2 of the release contract is restated for the git-derived version and a check
+          builds the package and reads 0.47.74."
+      - id: AC3
+        statement: "AC3: The canonical file shape validator holds at most 731 code lines and the baseline
+          diff is shown in the Lab comment."
+      - id: AC4
+        statement: "AC4: An exception outside the forward failures raised in settle is caught into a degraded
+          reading, and the bus is always closed and the state always written."
+      - id: AC5
+        statement: "AC5: A model event envelope without provenance dumps no provenance key."
+      - id: AC6
+        statement: "AC6: The release identity gather handler reads a fallback-version placed directly
+          under the hatch version table as well as in raw-options, so the aliasing fallback case fires."
+      - id: AC7
+        statement: "AC7: The effect node bypass validation compares against the merge base and fails closed
+          on a git error."
+      - id: AC8
+        statement: "AC8: The verifier each caller of the receipt gate installs is probed for --full-contract-path,
+          so a verifier that does not accept it is not handed the flag."
+      - id: AC9
+        statement: "AC9: A bus settle receipt is degraded unless forwarded equals the recorded event count."
+      - id: AC10
+        statement: "AC10: No downstream repository imports validate_ticket_contract, ModelLinearTicketContract
+          or TypedDictTicketInput, shown by a search of each registry repository in the pull request comment."
+      - id: AC11
+        statement: "AC11: The Lab comment starts Lab: head= with the new head and names findings 1 to
+          12, the lab command and exit 0."
+evidence_requirements:
+  - kind: tests
+    description: The focused tests of every fix, run on a lab host at the pushed head.
+    command: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py tests/ci/test_receipt_gate_full_contract_callers_omn25336.py
+      tests/unit/runtime/test_runtime_local_settle_guard_omn25336.py tests/unit/models/event_bus/test_model_bus_settle_degraded_omn25336.py
+      tests/unit/models/events/test_model_event_envelope_provenance_absent_omn25336.py tests/unit/nodes/node_release_identity_check_compute/test_vcs_fallback_direct_omn25336.py
+      tests/unit/validation/test_validator_effect_node_bypass_base_ref_omn25336.py -q --no-cov
+  - kind: ci
+    description: The hosted deploy readback of the receipt gate head verification.
+    command: uv run --frozen pytest tests/ci/test_receipt_gate_full_contract_callers_omn25336.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25336-ac1
+    description: "The required checks of the release pull request read success at its new head, and the
+      changelog test of the release-cut identity tests fails with CHANGELOG.md restored. The bound test
+      fails at the merge base, where the fix and its test are absent."
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py -k changelog
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac2
+    description: "AC2 of the release contract is restated for the git-derived version and a check builds
+      the package and reads 0.47.74. The bound test fails at the merge base, where the fix and its test
+      are absent."
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py -k derived_version
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac3
+    description: "The canonical file shape validator holds at most 731 code lines and the baseline diff
+      is shown in the Lab comment. The bound test fails at the merge base, where the fix and its test
+      are absent."
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py -k file_shape_baseline
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac4
+    description: "An exception outside the forward failures raised in settle is caught into a degraded
+      reading, and the bus is always closed and the state always written. The bound test fails at the
+      merge base, where the fix and its test are absent."
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/runtime -k settle_bare_exception -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac5
+    description: "A model event envelope without provenance dumps no provenance key. The bound test fails
+      at the merge base, where the fix and its test are absent."
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/events -k provenance_absent -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac6
+    description: "The release identity gather handler reads a fallback-version placed directly under the
+      hatch version table as well as in raw-options, so the aliasing fallback case fires. The bound test
+      fails at the merge base, where the fix and its test are absent."
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/nodes -k aliasing_fallback_version -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac7
+    description: "The effect node bypass validation compares against the merge base and fails closed on
+      a git error. The bound test fails at the merge base, where the fix and its test are absent."
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation -k bypass_base_ref -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac8
+    description: "The verifier each caller of the receipt gate installs is probed for --full-contract-path,
+      so a verifier that does not accept it is not handed the flag. The bound test fails at the merge
+      base, where the fix and its test are absent."
+    source: manual
+    binds_ac: [AC8]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci -k full_contract_path_callers -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac9
+    description: "A bus settle receipt is degraded unless forwarded equals the recorded event count. The
+      bound test fails at the merge base, where the fix and its test are absent."
+    source: manual
+    binds_ac: [AC9]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models -k bus_settle_degraded -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac1-required-checks-at-head
+    description: The required checks of the release pull request read from the pull request watcher; hosted
+      CI cannot read them for its own head.
+    source: manual
+    binds_ac: [AC1]
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: onex scm pr-checks OmniNode-ai/omnibase_core#2330
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac10-registry-search
+    description: No registry repository imports the three removed ticket names on its development branch;
+      the search reads the registry clones, which hosted CI does not have.
+    source: manual
+    binds_ac: [AC10]
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --locked python -c 'import os, subprocess, sys; home = os.environ["OMNI_HOME"]; repos
+          = sorted(d for d in os.listdir(home) if os.path.isdir(os.path.join(home, d, ".git")) or os.path.isfile(os.path.join(home,
+          d, ".git"))); hits = [(r, subprocess.run(["git", "-C", os.path.join(home, r), "grep", "-lE",
+          "validate_ticket_contract|ModelLinearTicketContract|TypedDictTicketInput", "origin/dev", "--",
+          "*.py"], capture_output=True, text=True).stdout) for r in repos]; bad = [(r, o) for r, o in
+          hits if o.strip()]; print(bad); sys.exit(1 if bad else 0)'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-ac11-lab-comment
+    description: The pull request watcher state reads the Lab comment at the new head; hosted CI cannot
+      read a pull request comment for a head it is judging.
+    source: manual
+    binds_ac: [AC11]
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: onex scm pr-view OmniNode-ai/omnibase_core#2330
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25336-deploy-hosted-readback
+    description: Hosted deployment probe for this change runs the real receipt gate head verification
+      script against a verifier whose usage text omits the flag; it needs no lab services or credentials.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_full_contract_callers_omn25336.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

@@ -160,10 +160,15 @@ class NodeReleaseIdentityGatherEffect:
             and version.get("source") == "vcs"
         ):
             return "static", None
+        # OMN-25336: hatch-vcs takes ``fallback-version`` straight under [tool.hatch.version] as
+        # well as under raw-options; both places name the string an unbuilt tree would ship under.
         options = version.get("raw-options")
+        sources = (version, options if isinstance(options, dict) else {})
         fallback: object = None
-        if isinstance(options, dict):
-            fallback = options.get("fallback_version", options.get("fallback-version"))
+        for source in sources:
+            for key in ("fallback-version", "fallback_version"):
+                if fallback is None:
+                    fallback = source.get(key)
         return "vcs", str(fallback) if fallback is not None else None
 
     @staticmethod

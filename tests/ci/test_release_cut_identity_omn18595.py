@@ -11,6 +11,8 @@ only tracked prose), and the project version must match the editable
 
 from __future__ import annotations
 
+import re
+import shutil
 import subprocess
 import tomllib
 from pathlib import Path
@@ -267,3 +269,100 @@ def test_release_changelog_retains_version_0_47_74_in_root_readme() -> None:
     assert "### Included Since v0.47.73" in readme
     assert "- : remove omnibase_compat uses from omnibase_core (#2329)" in readme
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
+
+
+def _release_segment_of_wheel_built_over(tmp_path: Path, tag_after: str | None) -> str:
+    """Build the package from a git history shaped like this one and read the wheel's version.
+
+    The repository's own pyproject.toml (its hatch-vcs configuration, so any change to the version
+    source is read here) is committed beside a stub package, tagged v0.47.73 and given one more commit;
+    ``tag_after`` then tags that commit. Nothing reads this checkout's tags, which a shallow clone lacks.
+    """
+    shutil.copy(REPO_ROOT / "pyproject.toml", tmp_path / "pyproject.toml")
+    (tmp_path / "README.md").write_text("stub\n", encoding="utf-8")
+    (tmp_path / "src" / "omnibase_core").mkdir(parents=True)
+    (tmp_path / "src" / "omnibase_core" / "__init__.py").write_text(
+        "", encoding="utf-8"
+    )
+    (tmp_path / "architecture-handshakes").mkdir()
+    (tmp_path / "architecture-handshakes" / "gitignore-baseline.yaml").write_text(
+        "stub: true\n", encoding="utf-8"
+    )
+    identity = ["-c", "user.name=t", "-c", "user.email=t@t"]
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, *identity, "commit", "-q", "-m", "tagged release")
+    _git(tmp_path, "tag", "v0.47.73")
+    (tmp_path / "README.md").write_text("stub, next\n", encoding="utf-8")
+    _git(tmp_path, *identity, "commit", "-q", "-am", "the release cut")
+    if tag_after is not None:
+        _git(tmp_path, "tag", tag_after)
+    subprocess.run(
+        ["uv", "build", "--wheel", "--out-dir", str(tmp_path / "dist")],
+        cwd=tmp_path,
+        env=scrub_git_location_env(),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    (wheel,) = (tmp_path / "dist").glob("omnibase_core-*.whl")
+    match = re.match(r"omnibase_core-(?P<version>[^-]+)-", wheel.name)
+    assert match is not None, wheel.name
+    return match.group("version")
+
+
+def test_release_derived_version_reads_0_47_74_over_the_v0_47_73_tag(
+    tmp_path: Path,
+) -> None:
+    """The version comes from git: the commit after v0.47.73 builds as the 0.47.74 development line."""
+    derived = _release_segment_of_wheel_built_over(tmp_path, tag_after=None)
+    assert re.fullmatch(r"0\.47\.74\.dev1\+g[0-9a-f]+", derived), derived
+
+
+def test_release_derived_version_reads_exactly_0_47_74_once_tagged(
+    tmp_path: Path,
+) -> None:
+    assert (
+        _release_segment_of_wheel_built_over(tmp_path, tag_after="v0.47.74")
+        == "0.47.74"
+    )
+
+
+_VALIDATOR_CODE_LINE_LIMIT = 731
+
+
+def _code_lines(text: str) -> int:
+    """Lines that are neither blank nor comment-only, the count the file-shape ratchet holds."""
+    return sum(
+        1
+        for line in text.splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    )
+
+
+def test_file_shape_baseline_validator_holds_at_most_731_code_lines() -> None:
+    validator = (
+        REPO_ROOT / "src/omnibase_core/validation/validator_canonical_file_shape.py"
+    )
+    assert (
+        _code_lines(validator.read_text(encoding="utf-8")) <= _VALIDATOR_CODE_LINE_LIMIT
+    )
+
+
+def test_file_shape_baseline_counter_refuses_a_validator_of_732_code_lines() -> None:
+    """Negative control: the counter that holds the limit reads 732 code lines as over it."""
+    planted = "".join(f"x{i} = {i}\n" for i in range(_VALIDATOR_CODE_LINE_LIMIT + 1))
+    assert _code_lines(planted) == _VALIDATOR_CODE_LINE_LIMIT + 1
+    assert _code_lines(planted) > _VALIDATOR_CODE_LINE_LIMIT
+
+
+def test_file_shape_baseline_names_no_file_this_release_adds() -> None:
+    """The baseline only shrinks: every line it holds names a file that exists."""
+    baseline = REPO_ROOT / ".onex_ratchets" / "canonical_file_shape_baseline.txt"
+    entries = [
+        line.strip()
+        for line in baseline.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    assert entries, "the baseline holds the files that predate the rule"
+    assert len(entries) == len(set(entries))

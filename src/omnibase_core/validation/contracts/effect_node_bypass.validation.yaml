@@ -75,7 +75,7 @@ validation:
       enabled: true
       parameters:
         count_key: max_bypasses
-        base_ref: 'HEAD'
+        base_ref: 'origin/dev'
         grew_message: >-
           {count} bypasses found, the count file {path} allows {ratchet}: a new outside call must go through
           its effect node; the count never rises.
@@ -85,6 +85,10 @@ validation:
         growth_message: >-
           {path} holds {ratchet} and the base revision holds {base}: the count only shrinks; move the
           calls onto their effect node instead of raising the file.
+        base_unreadable_message: >-
+          cannot read {path} at the merge base of HEAD and {base_ref} ({why}): the count file may not
+          be raised against the base branch, so an unreadable base is a refusal, never a skipped check;
+          fetch {base_ref} (a full-depth checkout) and run again.
   suppression_comments: []
   fail_on_error: true
   fail_on_warning: false

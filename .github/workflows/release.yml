@@ -111,7 +111,7 @@ jobs:
             exit 1
           fi
           if [ "$TAG" != "$PKG_VERSION" ]; then
-            echo "ERROR: tag v${TAG} does not match pyproject.toml version $PKG_VERSION"
+            echo "ERROR: tag v${TAG} does not match the git-derived package version $PKG_VERSION"
             exit 1
           fi
           echo "Version validated: $PKG_VERSION"

@@ -57,8 +57,11 @@ def _run_head_verify(
     gh.chmod(0o755)
     verifier_log = tmp_path / "verifier.log"
     verifier = bin_dir / "verifier"
+    # OMN-25336: the head step probes the verifier's usage text for --full-contract-path.
     verifier.write_text(
-        '#!/bin/bash\nprintf "%s\\n" "$*" >> "$VERIFIER_LOG"\n'
+        '#!/bin/bash\ncase " $* " in *" --help "*) '
+        'echo "usage: node_dod_verify [--full-contract-path P]"; exit 0;; esac\n'
+        'printf "%s\\n" "$*" >> "$VERIFIER_LOG"\n'
         'printf "%s\\n" "$VERDICT"\n'
     )
     verifier.chmod(0o755)
