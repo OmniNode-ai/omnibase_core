@@ -8,7 +8,8 @@ summary: >-
   and added the grouped mapping, JSON, schema, unknown-key and typed-container tests. The same PR carried
   the OMN-17714 caller repair that the strict ModelSecurityEvent needs. The ticket labels no acceptance
   criterion; AC1..AC6 below are derived one per bullet of its "Required bounded repair" section. This
-  contract only binds checks to the merged change and changes no source.
+  contract binds checks to the merged change and strengthens its regression tests without changing product
+  code.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -91,8 +92,8 @@ dod_evidence:
           -k test_selected_leaf_models_close_mapping_json_and_schema_boundaries -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn17711-ac4
-    description: The typed container composition test passes for the MCP security summary events and the
-      credentials analysis manager assessment.
+    description: The typed containers round-trip their nested models and reject unknown fields in the
+      MCP security summary events and credentials analysis manager assessment.
     source: manual
     binds_ac: [AC4]
     checks:
@@ -107,24 +108,24 @@ dod_evidence:
     source: manual
     binds_ac: [AC5]
     checks:
-      - check_type: command
-        check_value: >-
-          uv run --frozen python -c 'from omnibase_core.models.security.model_security_event import ModelSecurityEvent
-          as E; assert "key_id" in E.model_fields; assert "signature_key_id" not in E.model_fields; print("ac5-fields-ok")'
-        cwd: ${OMNI_HOME}/omnibase_core
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/unit/models/security/test_omn17714_secure_envelope_signature_events.py
           -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn17711-ac6
-    description: The merged change 52b978165d2bf19e080518dc8b24317855c2cc73 touches none of the nine OMN-17706
-      model files. The control is that the same diff does list model_security_event.py.
+    description: The checkout enforces the strict security event boundary from merged change 52b978165d2bf19e080518dc8b24317855c2cc73.
+      That change touches model_security_event.py and leaves all nine OMN-17706 model files untouched.
     source: manual
     binds_ac: [AC6]
     checks:
       - check_type: command
         check_value: >-
-          bash -c 'files=$(git diff --name-only 52b978165d2bf19e080518dc8b24317855c2cc73^ 52b978165d2bf19e080518dc8b24317855c2cc73)
-          && echo "$files" | grep -q "models/security/model_security_event.py" && ! echo "$files" | grep
-          -E "models/security/model_(audit_data|authorization_summary|compliance_summary|credential_strength_assessment|enforcement_action|evaluation_context|operation_details|security_event_summary|verification_details)[.]py"'
+          bash -ec ' fix=52b978165d2bf19e080518dc8b24317855c2cc73; security=src/omnibase_core/models/security;
+          changed=$(git diff --name-only "$fix^" "$fix" -- "$security/model_security_event.py"); test
+          "$changed" = "$security/model_security_event.py"; git diff --exit-code "$fix^" "$fix" -- "$security/model_audit_data.py"
+          "$security/model_authorization_summary.py" "$security/model_compliance_summary.py" "$security/model_credential_strength_assessment.py"
+          "$security/model_enforcement_action.py" "$security/model_evaluation_context.py" "$security/model_operation_details.py"
+          "$security/model_security_event_summary.py" "$security/model_verification_details.py"; uv run
+          --frozen pytest "tests/unit/models/security/test_omn17711_status_event_leaf_configs.py::test_selected_leaf_models_close_mapping_json_and_schema_boundaries[security-event]"
+          -q --no-cov'
         cwd: ${OMNI_HOME}/omnibase_core

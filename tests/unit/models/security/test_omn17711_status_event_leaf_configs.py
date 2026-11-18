@@ -135,3 +135,19 @@ def test_typed_containers_preserve_closed_event_and_assessment_boundaries() -> N
     )
     assert restored_summary.last_events == [event]
     assert restored_analysis.manager_assessment == analysis.manager_assessment
+
+    summary_payload = summary.model_dump(mode="json")
+    summary_payload["last_events"][0]["omn17711_unknown"] = True
+    with pytest.raises(ValidationError) as summary_error:
+        ModelMCPSecuritySummary.model_validate(summary_payload)
+    assert [
+        (error["loc"], error["type"]) for error in summary_error.value.errors()
+    ] == [(("last_events", 0, "omn17711_unknown"), "extra_forbidden")]
+
+    analysis_payload = analysis.model_dump(mode="json")
+    analysis_payload["manager_assessment"]["omn17711_unknown"] = True
+    with pytest.raises(ValidationError) as analysis_error:
+        ModelCredentialsAnalysis.model_validate(analysis_payload)
+    assert [
+        (error["loc"], error["type"]) for error in analysis_error.value.errors()
+    ] == [(("manager_assessment", "omn17711_unknown"), "extra_forbidden")]

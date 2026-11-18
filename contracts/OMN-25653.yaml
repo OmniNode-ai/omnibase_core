@@ -1,0 +1,86 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-25653
+title: Unblock the required checks on omnibase_core PR 2339
+summary: >-
+  Verify the continued pull request through the local watcher and its lab comment. If the cause is shared,
+  verify the evidence in the lane's status and the unchanged PR head.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25653-pr2339-required-checks
+    statement: Resolve the evidence failure for PR 2339 or record evidence of a shared cause.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: omnibase_core PR 2339 reads a clean merge state against its base and the required checks
+          CI Summary and repo-evidence / dod-verify read success at its new head, with the new head named
+          in a PR comment that starts `Lab: head=<full head sha>` -- falsifier: `onex scm pr-checks OmniNode-ai/omnibase_core#2339`
+          shows a required context not success at the head, or `onex scm pr-view OmniNode-ai/omnibase_core#2339`
+          shows a merge state other than clean, or no Lab comment names that head
+      - id: AC2
+        statement: >-
+          AC2: when the cause lies outside the PR, a STATUS row reads cause=<one line> shared=yes with
+          the evidence and the lane pushes nothing that widens or skips a check -- falsifier: `grep -F
+          'omnibase_core#2339' "$ONEX_LEDGER_PATH" | grep -F 'shared=yes'` finds no STATUS row while the
+          PR head is unchanged and still red or conflicting
+evidence_requirements:
+  - kind: tests
+    description: Run the evidence checks for PR 2339 against the strict security DTO repair.
+    command: uv run --frozen pytest tests/unit/models/security/test_omn17711_status_event_leaf_configs.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25653-ac1-pr-checks-and-lab-comment
+    description: The watcher shows a clean PR with both checks successful and the PR has a lab comment
+      for that head.
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac: [AC1]
+    checks:
+      - check_type: command
+        check_value: >-
+          bash -euc ' set -o pipefail; pr=OmniNode-ai/omnibase_core#2339; snapshot=$(python3 "${OMNI_PLUGIN_ROOT:?}/skills/merge-drain/scripts/pr_state_local.py"
+          --pr "$pr" --json); jq -e ".review.merge_state == \"CLEAN\"" <<< "$snapshot"; head=$(jq -er
+          ".facts.head_sha" <<< "$snapshot"); test "$head" != 18ada8d6edadf34ee05c2c499e9fe010c71a561a;
+          onex scm pr-checks "$pr" | jq -e --arg head "$head"
+            ".result | .head_sha == \$head and
+            any(.runs[]; .[0] == \"CI Summary\" and .[1:3] == [\"completed\", \"success\"]) and
+            any(.runs[]; .[0] == \"repo-evidence / dod-verify\" and .[1:3] == [\"completed\", \"success\"])";
+          onex scm pr-view --source bus "$pr" | jq -e --arg head "$head"
+            ".result | .head_sha == \$head and
+            any(.comments[]; (.body | startswith(\"Lab: head=\" + \$head + \" \") or . == (\"Lab: head=\"
+          + \$head)))" '
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25653-ac2-shared-status
+    description: The lane records a shared cause with evidence and the PR remains at its original head.
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac: [AC2]
+    checks:
+      - check_type: command
+        check_value: >-
+          bash -euc ' set -o pipefail; onex scm pr-checks OmniNode-ai/omnibase_core#2339 |
+            jq -e ".result.head_sha == \"18ada8d6edadf34ee05c2c499e9fe010c71a561a\"";
+          awk -F " [|] " '"'"'
+            $2 == "STATUS" {
+              lane = ticket = pr = shared = cause = 0
+              for (i = 3; i < NF; i++) {
+                if ($i == "lane=unblk2339-1811") lane = 1
+                if ($i == "ticket=OMN-25653") ticket = 1
+                if ($i == "pr=omnibase_core#2339") pr = 1
+                if ($i == "shared=yes") shared = 1
+                if ($i ~ /^cause=.+$/) cause = 1
+              }
+              if (lane && ticket && pr && shared && cause && length($NF)) {
+                print
+                found = 1
+              }
+            }
+            END { exit !found }
+          '"'"' "${ONEX_LEDGER_PATH:?}"'
+        cwd: ${OMNI_HOME}/omnibase_core

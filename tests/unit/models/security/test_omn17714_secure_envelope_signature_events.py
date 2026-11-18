@@ -57,6 +57,8 @@ def test_add_signature_emits_closed_event_with_canonical_key_id() -> None:
     assert len(envelope.security_events) == 1
     assert envelope.signature_chain.content_hash == envelope.content_hash
     event = envelope.security_events[0]
+    assert "key_id" in type(event).model_fields
+    assert "signature_key_id" not in type(event).model_fields
     assert event.key_id == signature.key_id
     assert event.node_id == signature.node_id
     assert event.algorithm == signature.signature_algorithm.value
