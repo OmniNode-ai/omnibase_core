@@ -76,25 +76,44 @@ jobs:
       - name: Compute changed files
         id: diff
         env:
+          GH_EVENT_NAME: ${{ github.event_name }}
           GH_BEFORE: ${{ github.event.before }}
           GH_SHA: ${{ github.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          # `pull_request` carries an exact merge-base; trust it.
+          # `pull_request`: the pull request's OWN files, the merge-base of the
+          # base sha and the PR head against that head. The runner checks out
+          # the merge commit of the PR into the CURRENT base tip, so diffing
+          # against HEAD would also list every file the base branch changed
+          # since `base.sha` was recorded; for a stale PR that list passes 128 KiB
+          # and the next step cannot even start ("Argument list too long",
+          # OMN-25726).
           # `push` carries `before` (last pushed sha) — diff push range.
           # Anything else (manual / schedule / merge_group with no event.before):
           # leave FILES empty so downstream logic forces docs_only=false. We
           # never fall back to HEAD~1 because that misses commits in a
           # multi-commit push and produces wrong-skip on nightly/manual runs.
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            base="${{ github.event.pull_request.base.sha }}"
-            git fetch --no-tags --depth=1 origin "$base" || true
-            FILES=$(git diff --name-only "$base"...HEAD | tr '\n' ',')
-          elif [ "${{ github.event_name }}" = "push" ] \
+          if [ "$GH_EVENT_NAME" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "$PR_BASE_SHA" || true
+            git cat-file -e "${PR_HEAD_SHA}^{commit}" 2>/dev/null \
+              || git fetch --no-tags origin "$PR_HEAD_SHA" || true
+            FILES=$(git diff --name-only "$PR_BASE_SHA"..."$PR_HEAD_SHA" | tr '\n' ',')
+          elif [ "$GH_EVENT_NAME" = "push" ] \
             && [ -n "$GH_BEFORE" ] \
             && [ "$GH_BEFORE" != "0000000000000000000000000000000000000000" ]; then
             git fetch --no-tags --depth=1 origin "$GH_BEFORE" || true
             FILES=$(git diff --name-only "$GH_BEFORE" "$GH_SHA" | tr '\n' ',')
           else
+            FILES=""
+          fi
+          # The list reaches the classifier step as ONE environment string, which
+          # the kernel caps at 128 KiB. A list past that cannot be classified:
+          # give no list, which the classifier step answers with the
+          # conservative verdict, docs_only=false (full matrix), instead of
+          # failing the required check.
+          if [ "${#FILES}" -gt 100000 ]; then
+            echo "Zone filter: changed-file list is ${#FILES} characters, too long to classify — full matrix will run." >> "$GITHUB_STEP_SUMMARY"
             FILES=""
           fi
           echo "changed_files=$FILES" >> "$GITHUB_OUTPUT"
