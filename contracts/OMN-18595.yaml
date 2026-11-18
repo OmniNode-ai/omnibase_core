@@ -141,6 +141,21 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/scripts/test_release_train_nightly.py -q -k never_falls_back_to_the_default_token
         cwd: ${OMNI_HOME}/omnibase_infra
+  - id: dod-omn18595-ac4-ac6-declared-hosted-readback
+    description: Hosted readback of this contract at the PR head; AC4, AC5 and AC6 are each declared under
+      requirements and each bound by a local_done_gate dod_evidence item. Fails at the merge base, where
+      the three are absent.
+    source: manual
+    binds_ac: [AC4, AC5, AC6]
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --locked python -c 'import yaml; c = yaml.safe_load(open("contracts/OMN-18595.yaml"));
+          declared = {a["id"] for r in c["requirements"] for a in r["acceptance"]}; bound = {x for e in
+          c["dod_evidence"] if e.get("execution_scope") == "local_done_gate" for x in e.get("binds_ac",
+          [])}; assert {"AC4", "AC5", "AC6"} <= declared and {"AC4", "AC5", "AC6"} <= bound'
+        cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-ac1-release-0-47-52-notes
     description: The release tree passes the documentation policy and retains this release's notes in
       root README.
