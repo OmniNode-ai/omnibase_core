@@ -16,8 +16,7 @@ Two changes, mirroring omnimarket#3398 and omnibase_infra#4775:
 2. CI Summary expects ``repo-evidence / dod-verify`` on every ``pull_request``
    run (L4 ``EXPECTED_EXTERNAL_CONTEXTS``), so an absent repo-owned evidence
    verdict fails CI Summary as a red one does. The producer is
-   ``call-repo-evidence-gate.yml`` on ``pull_request_target``: GitHub reads the
-   base-branch definition and reports the verdict on the pull request head.
+   ``call-repo-evidence-gate.yml`` on ``pull_request``.
 
 The nested context is still required by ``dev`` branch protection, so this
 change lands in the cut-over window together with that protection change.
@@ -131,19 +130,19 @@ def test_red_repo_evidence_verdict_fails_ci_summary() -> None:
         for name in EXPECTED_EXTERNAL_CONTEXTS
         if name != REPO_EVIDENCE
     ]
-    rows.append(_check_run(REPO_EVIDENCE, "failure", event="pull_request_target"))
+    rows.append(_check_run(REPO_EVIDENCE, "failure", event="pull_request"))
     failures, missing = evaluate_external(rows)
     assert failures == [REPO_EVIDENCE]
     assert missing == []
 
 
-def test_green_base_branch_trigger_row_satisfies_ci_summary() -> None:
+def test_green_repo_evidence_verdict_satisfies_ci_summary() -> None:
     rows = [
         _check_run(name, "success", event="pull_request")
         for name in EXPECTED_EXTERNAL_CONTEXTS
         if name != REPO_EVIDENCE
     ]
-    rows.append(_check_run(REPO_EVIDENCE, "success", event="pull_request_target"))
+    rows.append(_check_run(REPO_EVIDENCE, "success", event="pull_request"))
     assert evaluate_external(rows) == ([], [])
 
 
@@ -155,4 +154,4 @@ def test_evidence_caller_stops_comparing_with_occ_after_part_2() -> None:
     ]
     assert job["with"]["compare-with-occ"] == "false"
     triggers = yaml.safe_load(EVIDENCE_CALLER.read_text(encoding="utf-8"))[True]
-    assert set(triggers) == {"pull_request_target"}
+    assert set(triggers) == {"pull_request"}

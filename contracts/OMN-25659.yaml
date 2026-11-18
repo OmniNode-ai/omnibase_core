@@ -1,0 +1,59 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25659
+title: 'OMN-25659: repo evidence gate caller runs on pull_request'
+summary: The Repo Evidence Gate caller listens on pull_request and produces repo-evidence / dod-verify
+  for the existing PR activity types and target branches.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25659-repo-evidence-trigger
+    statement: The repository's evidence caller and its CI tests agree on the pull_request event.
+    acceptance:
+      - id: AC1
+        statement: "AC1: omnibase_core's call-repo-evidence-gate.yml on its default branch triggers on
+          pull_request with the same types and branches, keeps job id repo-evidence so the context name
+          repo-evidence / dod-verify is unchanged, and no longer names pull_request_target -- falsifier:
+          git grep -c pull_request_target origin/dev -- .github/workflows/call-repo-evidence-gate.yml
+          returns 0 in omnibase_core"
+      - id: AC2
+        statement: "AC2: the tests that pin the old trigger in omnibase_core are rewritten to pin the
+          new one with the same strictness, fail on the old workflow and pass on the new one -- falsifier:
+          the repository's caller-trigger test run with pytest (or vitest for omnidash) red on the base
+          workflow and green on the head, receipt in the PR body"
+evidence_requirements:
+  - kind: tests
+    description: The caller shape test covers the event, filters, job identity and read-only permissions.
+    command: uv run --frozen pytest tests/ci/test_repo_evidence_caller_omn20074.py -q -n 0 --reruns 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25659-ac1
+    description: The tracked evidence caller has zero occurrences of the old trigger.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: command
+        check_value: >-
+          git ls-files --error-unmatch -- .github/workflows/call-repo-evidence-gate.yml && test -f .github/workflows/call-repo-evidence-gate.yml
+          && { git grep -c pull_request_target -- .github/workflows/call-repo-evidence-gate.yml; test
+          "$?" -eq 1; }
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25659-ac2
+    description: The caller tests assert the new event and preserve the caller's job and CI Summary wiring.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/ci/test_repo_evidence_caller_omn20074.py tests/ci/test_s6_caller_occ_disabled_omn20969.py
+          tests/ci/test_s6_part1_cutover_omn20074.py tests/unit/scripts/ci/test_ci_summary_gate.py -q
+          -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core

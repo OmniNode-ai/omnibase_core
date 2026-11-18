@@ -99,6 +99,13 @@ DEV_MERGE_TAG_USES_TAIL = (
     "@dev-20261101005012-ac2f26e3e5bf # omnibase_core dev-merge tag (OMN-21859)."
 )
 
+# OMN-25659 changes the caller's event and the header that describes it.
+PULL_REQUEST_HEADER = """# This caller runs on pull_request. The pinned reusable refuses fork heads.
+# It checks out the pull request's code only as data for verification and runs
+# the cited contract's bound checks with read-only permissions and no caller
+# secrets.
+"""
+
 # OMN-21859: the caller installs its verifier from an omnimarket dev-merge tag
 # (verifier-tag) and passes no verifier-version; the header comments that
 # described verifier-version as the pin say so. Restore the merge base's lines
@@ -150,12 +157,17 @@ def _assert_preserved(text: str) -> None:
     text = text.replace(VERIFIER_TAG_LINE, BASE_VERIFIER_VERSION_LINE)
     for current, base_text in VERIFIER_PIN_COMMENT_RESTORES:
         text = text.replace(current, base_text)
-    base = yaml.safe_load(BASE_CALLER)
+    header_start = BASE_CALLER.index("# Why pull_request_target:")
+    header_end = BASE_CALLER.index("#\n# dev and main are the integration branches.")
+    expected = (
+        BASE_CALLER[:header_start] + PULL_REQUEST_HEADER + BASE_CALLER[header_end:]
+    ).replace("\n  pull_request_target:\n", "\n  pull_request:\n", 1)
+    base = yaml.safe_load(expected)
     actual = yaml.safe_load(text)
     base["jobs"]["repo-evidence"]["with"]["compare-with-occ"] = "false"
     assert actual == base
     restored = text.replace('compare-with-occ: "false"', 'compare-with-occ: "true"')
-    assert _without_s5_comment(restored) == _without_s5_comment(BASE_CALLER)
+    assert _without_s5_comment(restored) == _without_s5_comment(expected)
 
 
 def test_every_other_input_pin_and_line_matches_the_merge_base() -> None:
