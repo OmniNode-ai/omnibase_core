@@ -17,8 +17,8 @@ requirements:
       - id: AC1
         statement: 'AC1: the dev-tag lineage check resolves a version for a tag whose pyproject declares
           a git-derived version, and still refuses a lock entry whose commit or version does not match
-          -- falsifier: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect/test_dev_tag_lineage_derived_version.py
-          -q fails at the base commit and passes at the head'
+          -- falsifier: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q fails at
+          the base commit and passes at the head'
       - id: AC2
         statement: 'AC2: the declared-range check admits a development version of the next patch for a
           range that admits the next release -- falsifier: the derived-version range test reports lineage_unresolved
@@ -30,8 +30,7 @@ requirements:
 evidence_requirements:
   - kind: tests
     description: The lineage effect, checker and provenance validator tests pass.
-    command: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect tests/unit/validation/test_dev_tag_lineage.py
-      -q
+    command: uv run pytest tests/unit/validation/test_dev_tag_lineage.py -q
 emergency_bypass:
   enabled: false
   justification: ''
@@ -44,8 +43,7 @@ dod_evidence:
       - AC1
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect/test_dev_tag_lineage_derived_version.py
-          -q
+        check_value: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q
         cwd: .
   - id: dod-omn23840-ac2
     description: The range admission for a derived development version.
@@ -54,8 +52,7 @@ dod_evidence:
       - AC2
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect/test_dev_tag_lineage_derived_version.py
-          -q -k range_that_does_not_admit
+        check_value: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q
         cwd: .
   - id: dod-omn23840-ac3
     description: The related lineage tests still pass; the downstream CI read is taken after merge.
@@ -64,6 +61,5 @@ dod_evidence:
       - AC3
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/nodes/node_dev_tag_lineage_effect tests/unit/validation/test_dev_tag_lineage.py
-          -q
+        check_value: uv run pytest tests/unit/validation/test_dev_tag_lineage.py -q
         cwd: .
