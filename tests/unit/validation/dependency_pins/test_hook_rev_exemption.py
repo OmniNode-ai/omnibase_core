@@ -11,7 +11,7 @@ check, and the shipped policy lists exactly the ruled entry.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -63,17 +63,21 @@ RULING = "RULING 2026-01-02T03:04:05Z lane=fixture"
 EXPIRES = date(2026, 3, 10)
 
 # The one entry the shipped policy may hold, from the operator ruling
-# 2026-11-09T01:57:48Z. An entry for any other revision needs its own ruling line:
-# add it here with that ruling, and the entry's ruling cell must start with it.
+# 2026-11-09T01:57:48Z, extended once by the ruling 2026-11-18T01:29:21Z to the last
+# day 2026-11-24 (the operator's expiry is 2026-11-25T01:29Z and the date is the last
+# day the exemption applies). An entry for any other revision needs its own ruling
+# line: add it here with that ruling, and the entry's ruling cell must start with it.
 SHIPPED_RULED = {
     (
         "https://github.com/OmniNode-ai/omnibase_core",
         "1c9566e2c249",
-        date(2026, 11, 16),
+        date(2026, 11, 24),
         "RULING 2026-11-09T01:57:48Z",
         "OMN-22867",
     )
 }
+SHIPPED_EXTENSION_RULING = "RULING 2026-11-18T01:29:21Z lane=orchestrator-31d9-swarm"
+SHIPPED_LAST_DAY = date(2026, 11, 24)
 
 
 def _validator() -> ValidatorDependencyPins:
@@ -317,7 +321,7 @@ def _shipped_run(tmp_path: Path, rev: str, today: date) -> tuple[bool, list[str]
     return result.is_valid, sorted(str(i.code) for i in result.issues)
 
 
-def test_shipped_policy_exempts_the_ruled_rev_for_the_seven_days(
+def test_shipped_policy_exempts_the_ruled_rev_through_the_first_ruling_window(
     tmp_path: Path,
 ) -> None:
     ruled = RULED_FULL_REV
@@ -329,9 +333,40 @@ def test_shipped_policy_exempts_the_ruled_rev_for_the_seven_days(
 
 def test_shipped_policy_fails_the_ruled_rev_after_the_expiry(tmp_path: Path) -> None:
     ruled = RULED_FULL_REV
-    valid, codes = _shipped_run(tmp_path, ruled, date(2026, 11, 17))
+    valid, codes = _shipped_run(tmp_path, ruled, SHIPPED_LAST_DAY + timedelta(days=1))
     assert not valid
     assert "hook_rev_exemption_expired" in codes
+
+
+def test_shipped_exemption_cites_the_extension_ruling_and_keeps_the_origin() -> None:
+    (entry,) = load_dependency_pin_policy().hook_rev_exemptions
+    assert SHIPPED_EXTENSION_RULING in entry.ruling
+    assert entry.ruling.startswith("RULING 2026-11-09T01:57:48Z")
+
+
+@pytest.mark.parametrize(
+    ("today", "expected"),
+    [
+        (date(2026, 11, 17), (True, ["hook_rev_exempted"])),  # the day it read red
+        (date(2026, 11, 18), (True, ["hook_rev_exempted"])),  # the extension ruling day
+        (date(2026, 11, 23), (True, ["hook_rev_exempted"])),  # a day before the last
+        (SHIPPED_LAST_DAY, (True, ["hook_rev_exempted"])),  # the last day applies
+        (
+            SHIPPED_LAST_DAY + timedelta(days=1),
+            (False, ["hook_rev_exemption_expired"]),
+        ),  # the day after: refused
+    ],
+)
+def test_shipped_exemption_is_extended_one_week_and_then_refuses(
+    tmp_path: Path, today: date, expected: tuple[bool, list[str]]
+) -> None:
+    """The extension admits the ruled rev through 2026-11-24 and refuses from 2026-11-25.
+
+    The date is pinned through ``today``; the wall clock is never read.
+    """
+    valid, codes = _shipped_run(tmp_path, RULED_FULL_REV, today)
+    assert valid is expected[0]
+    assert [c for c in codes if c != "hook_rev_behind"] == expected[1]
 
 
 def test_shipped_policy_does_not_exempt_any_other_rev(tmp_path: Path) -> None:

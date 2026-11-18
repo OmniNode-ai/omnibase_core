@@ -1,0 +1,93 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25506
+title: "Shared red dependency-pins / Dependency Pins (omnibase_infra): the expired hook-rev exemption
+  is extended one week at its source"
+summary: "dependency_pin_policy.yaml holds one dated exemption, the omnibase_infra check-public-runner-placement
+  hook pin 1c9566e2c249, which expired after 2026-11-16 and turned dependency-pins red on omnibase_infra
+  pull requests. Under RULING 2026-11-18T01:29:21Z (extend the exemption for one week) the entry's last
+  day moves to 2026-11-24, the latest day whose end is no later than the operator's expiry 2026-11-25T01:29Z.
+  The entry keeps RULING 2026-11-09T01:57:48Z as its origin and the ticket OMN-22867. No second entry,
+  no baseline, no new field, no change to hook_rev_max_releases_behind."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25506-extend-exemption
+    statement: "The one hook-rev exemption admits its revision through 2026-11-24 and refuses it from
+      2026-11-25."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the shared cause is named from the failure text read on three omnibase_infra
+          pull requests (jobs 134268823747, 134345268620, 134226570726) and recorded in the ledger STATUS
+          rows of lanes cause4-2049 and pins-0015 -- falsifier: the ledger holds no STATUS row naming
+          the cause with job ids and quotes for three PRs"
+      - id: AC2
+        statement: "AC2: one pull request on the omnibase_core default branch extends the exemption at
+          its source with a test that fails on the unfixed policy and passes on the fix -- falsifier:
+          `uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py -q` passes at
+          the unfixed base commit"
+      - id: AC3
+        statement: "AC3: the change widens or bypasses no check, so the diff removes no assertion and
+          adds no skip, xfail, loosened threshold or changed required-check list -- falsifier: `git diff
+          origin/dev HEAD -- tests/ .github/` shows a removed assert, a new skip or xfail marker or a
+          changed required-check list"
+      - id: AC4
+        statement: "AC4: the PR body carries a Lab line and the lane TERMINAL names the head -- falsifier:
+          the PR body carries no line starting `Lab:`"
+evidence_requirements:
+  - kind: tests
+    description: The dependency-pins unit tests pass, including the extended exemption tests.
+    command: "uv run pytest tests/unit/validation/dependency_pins -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25506-ac2
+    description: "The shipped exemption is admitted through 2026-11-24 and refused on 2026-11-25."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py -q
+          --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25506-ac1
+    description: "The shipped exemption cites the extension ruling and keeps the origin ruling; the ledger
+      STATUS rows naming the shared cause are read on the ledger."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py::test_shipped_exemption_cites_the_extension_ruling_and_keeps_the_origin
+          -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25506-ac3
+    description: "The policy holds exactly the ruled entry: no second entry, no baseline, no new field,
+      so no check is widened."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py::test_shipped_policy_holds_exactly_the_ruled_entry
+          -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25506-ac4
+    description: "The shipped exemption is extended one week and then refuses; the PR body Lab line and
+      the lane TERMINAL are read on the PR and ledger."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py::test_shipped_exemption_is_extended_one_week_and_then_refuses
+          -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
