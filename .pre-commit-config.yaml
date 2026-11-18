@@ -1174,6 +1174,43 @@ repos:
         require_serial: true
         stages: [pre-commit]
 
+      # OMN-24538 (root 7, fail-open): A handler of a node whose contract declares an input required must not default that input or answer an unreadable input with a literal: a get with a default, a three-argument getattr, an or over a literal and an except that returns a literal are refused.
+      # No case sat in this tree before the refusal, so there is no baseline file: a new one is refused outright.
+      - id: required-input-fallback
+        name: A required input is never answered with a made-up default (OMN-24538)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_required_input_fallback:ValidatorRequiredInputFallback
+        language: system
+        files: ^(.*\.py)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
+      # OMN-24538 (root 7, fail-open): A node contract whose io_operations declare an external read must carry an unread_outcome mapping naming what a failed or absent read returns and a test that exercises it.
+      # No case sat in this tree before the refusal, so there is no baseline file: a new one is refused outright.
+      - id: unread-outcome-declared
+        name: An external read declares what an unread input yields (OMN-24538)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_unread_outcome_declared:ValidatorUnreadOutcomeDeclared
+        language: system
+        files: ^(.*/contract\.yaml|contract\.yaml)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
+      # OMN-24538 (root 7, fail-open): A node contract that no file outside its directory names, whose subscribed topics no other node publishes and that no command topic feeds is refused: built and never called.
+      # Cases that sat in the tree before the refusal are the shrink-only .onex_ratchets/node_no_caller_ratchet.yaml.
+      - id: node-no-caller
+        name: A node has a caller (OMN-24538)
+        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_node_no_caller:ValidatorNodeNoCaller
+        language: system
+        args: [--baseline, .onex_ratchets/node_no_caller_ratchet.yaml]
+        files: ^(.*/contract\.yaml|contract\.yaml|\.onex_ratchets/node_no_caller_ratchet\.yaml)$
+        pass_filenames: true
+        require_serial: true
+        stages: [pre-commit]
+
       # OMN-10818, enforced by OMN-22005 (plan task T2.4): Rejects if-bus-is-not-None guards wrapping publish/emit/send calls.
       # Annotation: add  # none-guard-ok: <reason>  on the if line.
       # The findings that sat in the tree before the refusal are the shrink-only

@@ -1,0 +1,3 @@
+name: node_projection_day_reader
+io_operations:
+  filesystem_read: var/ledger/days/2026-11-14.ndjson

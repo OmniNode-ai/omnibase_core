@@ -1,0 +1,9 @@
+name: node_receipt_lane_counter
+node_type: EFFECT
+descriptor:
+  responsibility: count the lanes a receipt closes
+io_operations:
+  - operation_type: filesystem_read
+    target: var/receipts/{receipt_id}.json
+unread_outcome:
+  returns: the receipt counts as no lane when it cannot be read

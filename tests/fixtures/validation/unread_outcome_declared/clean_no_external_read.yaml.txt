@@ -1,0 +1,6 @@
+name: node_receipt_writer
+io_operations:
+  - operation_type: filesystem_write
+    target: var/receipts/{receipt_id}.json
+  - operation_type: kafka_produce
+    target: receipt-closed

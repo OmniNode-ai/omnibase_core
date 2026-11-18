@@ -1,0 +1,7 @@
+name: node_receipt_lane_counter
+io_operations:
+  - operation_type: filesystem_read
+    target: var/receipts/{receipt_id}.json
+unread_outcome:
+  returns: the receipt counts as no lane when it cannot be read
+  test: tests/unit/test_receipt_lanes.py::test_unread_receipt_declares_no_lane
