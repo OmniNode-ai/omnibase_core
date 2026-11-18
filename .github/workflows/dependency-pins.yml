@@ -124,7 +124,7 @@ jobs:
             sleep "$sleep_seconds"
             attempt=$((attempt + 1))
           done
-          uv run --no-sync check-dependency-pins "$GITHUB_WORKSPACE/target" \
+          uv run --no-sync python -m omnibase_core.nodes.node_dependency_pins_check_effect.runtime_dependency_pins_check "$GITHUB_WORKSPACE/target" \
             --repo "$TARGET_REPO" \
             --hook-history "$GITHUB_WORKSPACE/omnibase_core" \
             --report-json "$GITHUB_WORKSPACE/dependency-pins-report.json"

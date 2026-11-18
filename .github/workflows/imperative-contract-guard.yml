@@ -216,4 +216,4 @@ jobs:
           else
             echo "::notice::no ratchet base ref (push event): allowlist ratchet skipped"
           fi
-          uv run --no-sync check-imperative-contracts "${args[@]}"
+          uv run --no-sync python -m omnibase_core.nodes.node_imperative_contract_guard_check_effect.runtime_imperative_contract_guard_check "${args[@]}"

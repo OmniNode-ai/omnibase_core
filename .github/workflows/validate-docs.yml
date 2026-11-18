@@ -31,7 +31,7 @@ on:
         default: false
         type: boolean
       standalone:
-        description: Install onex-validate-links as standalone tool (for repos without omnibase_core dep)
+        description: Run the link validator from a temporary environment holding omnibase_core (for repos without omnibase_core dep)
         required: false
         default: false
         type: boolean
@@ -51,10 +51,6 @@ jobs:
         if: ${{ !inputs.standalone }}
         run: uv sync
 
-      - name: Install standalone validator
-        if: ${{ inputs.standalone }}
-        run: uv tool install omnibase_core
-
       - name: Validate markdown links
         run: |
           ARGS="--verbose"
@@ -62,7 +58,8 @@ jobs:
             ARGS="$ARGS --check-external"
           fi
           if [ "$STANDALONE" = "true" ]; then
-            onex-validate-links $ARGS
+            # OMN-25070: no console script; omnibase_core may publish none but the customer launchers.
+            uv run --no-project --with omnibase_core python -m omnibase_core.nodes.node_markdown_links_check_compute.runtime_markdown_links_check $ARGS
           else
-            uv run onex-validate-links $ARGS
+            uv run python -m omnibase_core.nodes.node_markdown_links_check_compute.runtime_markdown_links_check $ARGS
           fi

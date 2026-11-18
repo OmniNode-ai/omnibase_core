@@ -53,7 +53,9 @@ def _checkouts(data: dict[str, Any]) -> list[dict[str, Any]]:
 
 def _guard_step(data: dict[str, Any]) -> dict[str, Any]:
     (step,) = [
-        s for s in _steps(data) if "check-imperative-contracts" in s.get("run", "")
+        s
+        for s in _steps(data)
+        if "runtime_imperative_contract_guard_check" in s.get("run", "")
     ]
     return step
 
@@ -148,7 +150,10 @@ def test_imperative_contract_guard_workflow_runs_the_validator_from_the_core_che
     assert pin["env"]["WORKFLOW_SHA"] == "${{ job.workflow_sha }}"
     step = _guard_step(data)
     assert step["working-directory"] == "omnibase_core"
-    assert "uv run --no-sync check-imperative-contracts" in step["run"]
+    assert (
+        "uv run --no-sync python -m omnibase_core.nodes.node_imperative_contract_guard_check_effect.runtime_imperative_contract_guard_check"
+        in step["run"]
+    )
 
 
 def test_imperative_contract_guard_workflow_keeps_the_job_name_and_least_privilege() -> (

@@ -2328,7 +2328,8 @@ repos:
       # Replaces both validate-doc-links and validate-markdown-links hooks
       - id: onex-validate-links
         name: Validate markdown links
-        entry: uv run onex-validate-links --verbose
+        entry: uv run python -m omnibase_core.nodes.node_markdown_links_check_compute.runtime_markdown_links_check
+          --verbose
         language: system
         types: [markdown]
         pass_filenames: false
@@ -2657,7 +2658,8 @@ repos:
     hooks:
       - id: demo-path-topic-coherence
         name: demo-path topic coherence gate (OMN-12777)
-        entry: uv run onex-demo-path-topic-gate src/
+        entry: uv run python -m omnibase_core.nodes.node_demo_path_topic_coherence_check_compute.runtime_demo_path_topic_coherence_check
+          src/
         language: system
         pass_filenames: false
         always_run: true

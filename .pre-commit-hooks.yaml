@@ -13,7 +13,7 @@
     Detect hardcoded __version__ string literals in __init__.py files and string version anti-patterns
     in Python and YAML files. In __init__.py, use importlib.metadata.version("package-name") instead.
   language: system
-  entry: validate-string-versions
+  entry: python -m omnibase_core.validation.scripts.validate_string_versions
   types_or: [python, yaml]
   pass_filenames: true
   require_serial: true
