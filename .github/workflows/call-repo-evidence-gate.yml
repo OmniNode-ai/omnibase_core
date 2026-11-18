@@ -6,12 +6,10 @@
 # repository's receipt-gate reusable with evidence-source: caller.
 # This is the path omnimarket proved as the canary (OMN-20070, OMN-20072).
 #
-# Why pull_request_target: GitHub reads the workflow definition from the BASE
-# branch, so a pull request that edits this file or the reusable's pin does not
-# change which definition runs on it. The reusable refuses fork heads before
-# any checkout. For a same-repository head it runs the cited contract's checks
-# (its bound tests) at the head and at the merge base on the trusted runner
-# fleet; the definition that runs them is still the base branch's.
+# This caller runs on pull_request. The pinned reusable refuses fork heads.
+# It checks out the pull request's code only as data for verification and runs
+# the cited contract's bound checks with read-only permissions and no caller
+# secrets.
 #
 # dev and main are the integration branches. The activity types cover new heads,
 # reopened and ready PRs, and edits to the ticket citation or base branch.
@@ -38,9 +36,9 @@
 # judges it.
 #
 # S5 shadow count (OMN-20074): ended. The comparison was turned off on dev
-# first (OMN-20969), because this caller runs from dev under
-# pull_request_target and the retiring PR cannot change the input used to judge
-# itself. At the S6 cut-over, repo-evidence / dod-verify is the evidence verdict
+# first (OMN-20969), when GitHub took this caller's definition from the base
+# branch and the retiring PR could not turn off its own comparison.
+# At the S6 cut-over, repo-evidence / dod-verify became the evidence verdict
 # CI Summary expects on pull_request runs and no OCC caller remains in this
 # repository, so compare-with-occ stays "false"; the difference step would
 # otherwise wait for an OCC verdict and fail closed without one.
@@ -60,7 +58,7 @@
 name: Repo Evidence Gate
 
 on:
-  pull_request_target:
+  pull_request:
     types: [opened, synchronize, reopened, edited, ready_for_review]
     branches: [dev, main]
 

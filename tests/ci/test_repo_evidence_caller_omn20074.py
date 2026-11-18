@@ -25,12 +25,13 @@ def test_caller_workflow_shape() -> None:
     # PyYAML 1.1 resolves the bare `on:` key to the boolean True.
     triggers = data.get("on", data.get(True))
     assert isinstance(triggers, dict), "caller must declare a mapping on: block"
-    assert "pull_request_target" in triggers, "caller must run from the base branch"
-    assert "pull_request" not in triggers, "caller must not use pull_request"
-    assert "workflow_run" not in triggers, "caller must not use workflow_run"
-    target = triggers["pull_request_target"]
-    assert target["branches"] == ["dev", "main"], "caller must target dev and main"
-    assert target["types"] == [
+    assert set(triggers) == {"pull_request"}, "caller must run only on pull_request"
+    trigger = triggers["pull_request"]
+    assert set(trigger) == {"branches", "types"}, (
+        "caller trigger must declare only branches and activity types"
+    )
+    assert trigger["branches"] == ["dev", "main"], "caller must target dev and main"
+    assert trigger["types"] == [
         "opened",
         "synchronize",
         "reopened",

@@ -3,9 +3,9 @@
 
 """OMN-20134: core's repo-evidence caller names a receipt-gate that has the fix-parent fallback.
 
-The caller runs as ``pull_request_target``, so the receipt gate it names is the one
-that judges every pull request. A pin older than the Binds-Merged-Fix fallback
-(OMN-21556, omnibase_core#2158) refuses a bound fix that is already on dev.
+The caller runs on ``pull_request`` and invokes the receipt gate it pins. A pin
+older than the Binds-Merged-Fix fallback (OMN-21556, omnibase_core#2158) refuses
+a bound fix that is already on dev.
 """
 
 from __future__ import annotations
