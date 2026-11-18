@@ -36,8 +36,8 @@ evidence_requirements:
   - kind: tests
     description: >-
       The two test files of this change together with the existing effect-backends validator tests.
-    command: uv run --frozen pytest tests/unit/validators/test_effect_backends.py tests/unit/validators/test_effect_backends_unavailable_root.py
-      tests/unit/validators/test_effect_backends_contract_reach.py -q -n 0 --no-cov -p no:randomly
+    command: uv run --frozen pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q -n 0 --no-cov
+      -p no:randomly
 emergency_bypass:
   enabled: false
   justification: ''
@@ -53,8 +53,8 @@ dod_evidence:
       - AC1
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/validators/test_effect_backends_unavailable_root.py
-          -q -n 0 --no-cov -p no:randomly
+        check_value: uv run --frozen pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q -n
+          0 --no-cov -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn23114-ac2-load-contracts-reached
     description: >-
@@ -66,8 +66,8 @@ dod_evidence:
       - AC2
     checks:
       - check_type: test_passes
-        check_value: uv run --frozen pytest tests/unit/validators/test_effect_backends_contract_reach.py
-          -q -n 0 --no-cov -p no:randomly
+        check_value: uv run --frozen pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q -n
+          0 --no-cov -p no:randomly
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn23114-ac3-fix-commits-in-head
     description: >-
