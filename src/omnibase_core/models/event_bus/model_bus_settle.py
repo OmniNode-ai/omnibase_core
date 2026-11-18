@@ -27,6 +27,7 @@ import logging
 import sys
 from collections.abc import Mapping
 
+from omnibase_core.decorators.decorator_error_handling import standard_error_handling
 from omnibase_core.enums.enum_runtime_bus_binding_kind import EnumRuntimeBusBindingKind
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.event_bus.model_runtime_bus_binding import (
@@ -113,14 +114,25 @@ class ModelBusSettle:
                 events_recorded=len(events),
                 events_failed=len(events),
             )
+        # OMN-25336: healthy only when the receipt accounts for every recorded event; a receipt of
+        # forwarded=0 failed=0 for N events carried nothing and says nothing went wrong.
+        unaccounted = len(events) - receipt.forwarded
+        degraded = receipt.failed > 0 or unaccounted != 0
+        reason = receipt.detail
+        if degraded and not reason:
+            reason = (
+                f"forwarder {binding.forwarder} receipt accounts for "
+                f"{receipt.forwarded} of {len(events)} recorded event(s), "
+                f"{receipt.failed} failed"
+            )
         return ModelRuntimeBusReading(
             kind=kind,
             forwarder=binding.forwarder,
-            degraded=receipt.failed > 0,
-            reason=receipt.detail,
+            degraded=degraded,
+            reason=reason,
             events_recorded=len(events),
             events_forwarded=receipt.forwarded,
-            events_failed=receipt.failed,
+            events_failed=max(receipt.failed, unaccounted),
         )
 
     @staticmethod
@@ -148,11 +160,17 @@ class ModelBusSettle:
         )
 
     @staticmethod
-    async def settle(
-        bus: object, backend_overrides: Mapping[str, str]
-    ) -> ModelRuntimeBusReading:
-        """Settle ``bus`` by the run's declared binding before it closes; announce and return the reading."""
-        binding = ModelBusSettle.binding_from_overrides(backend_overrides)
+    @standard_error_handling("RuntimeLocal bus settle")
+    def _binding(backend_overrides: Mapping[str, str]) -> ModelRuntimeBusBinding:
+        """The binding the overrides declare; any failure is a ModelOnexError."""
+        return ModelBusSettle.binding_from_overrides(backend_overrides)
+
+    @staticmethod
+    @standard_error_handling("RuntimeLocal bus settle")
+    async def _read_history(
+        bus: object, binding: ModelRuntimeBusBinding
+    ) -> tuple[ModelRuntimeBusEvent, ...]:
+        """Read what ``bus`` recorded; any failure is a ModelOnexError (the decorator wraps coroutines)."""
         get_history = getattr(bus, "get_event_history", None)
         history = (
             await get_history(limit=sys.maxsize)
@@ -160,10 +178,90 @@ class ModelBusSettle:
             and binding.kind is not EnumRuntimeBusBindingKind.HOSTED
             else ()
         )
-        events = tuple(ModelRuntimeBusEvent.from_message(m) for m in history)
-        reading = await asyncio.to_thread(ModelBusSettle.read, binding, events)
+        return tuple(ModelRuntimeBusEvent.from_message(m) for m in history)
+
+    @staticmethod
+    @standard_error_handling("RuntimeLocal bus settle")
+    async def _read_events(
+        binding: ModelRuntimeBusBinding, events: tuple[ModelRuntimeBusEvent, ...]
+    ) -> ModelRuntimeBusReading:
+        """What ``binding`` did with ``events``, off the loop; any failure is a ModelOnexError."""
+        return await asyncio.to_thread(ModelBusSettle.read, binding, events)
+
+    @staticmethod
+    @standard_error_handling("RuntimeLocal bus settle")
+    def _announce(reading: ModelRuntimeBusReading) -> None:
+        """Announce ``reading``; any failure is a ModelOnexError."""
         ModelBusSettle.announce(reading)
+
+    @staticmethod
+    @standard_error_handling("RuntimeLocal bus close")
+    async def _close(bus: object) -> None:
+        """Close ``bus``; any failure is a ModelOnexError."""
+        close = getattr(bus, "close", None)
+        if close is not None:
+            await close()
+
+    @staticmethod
+    async def settle(
+        bus: object, backend_overrides: Mapping[str, str]
+    ) -> ModelRuntimeBusReading:
+        """Settle ``bus`` by the run's declared binding before it closes; announce and return the reading.
+
+        Total over ``Exception`` (OMN-25336, OMN-25394): the caller runs this in a ``finally`` ahead of
+        closing the bus and writing the run's state, so a failure in any step (the binding, ``from_message``,
+        ``get_event_history``, a forwarder, ``announce``) is a degraded reading, never an exception that
+        skips the close and the write and replaces the run's result. Each step runs under
+        ``standard_error_handling``, which wraps coroutine and plain functions alike, turns any
+        ``Exception`` into a ``ModelOnexError`` and lets cancellation propagate. The reading carries the
+        count of events that were read before a step failed.
+        """
+        recorded = 0
+        try:
+            binding = ModelBusSettle._binding(backend_overrides)
+        except ModelOnexError as exc:
+            binding = ModelRuntimeBusBinding.unknown(
+                f"bus binding unreadable: {exc.message}"
+            )
+        try:
+            events = await ModelBusSettle._read_history(bus, binding)
+            recorded = len(events)
+            reading = await ModelBusSettle._read_events(binding, events)
+        except ModelOnexError as exc:
+            reading = ModelRuntimeBusReading(
+                kind=binding.kind,
+                forwarder=binding.forwarder,
+                degraded=True,
+                reason=f"bus settle failed: {exc.message}",
+                events_recorded=recorded,
+                events_failed=recorded,
+            )
+        try:
+            ModelBusSettle._announce(reading)
+        except ModelOnexError as exc:
+            logger.exception(
+                "RuntimeLocal: announcing the bus reading failed: %s", exc.message
+            )
         return reading
+
+    @staticmethod
+    async def run(
+        bus: object, backend_overrides: Mapping[str, str]
+    ) -> dict[str, object]:
+        """Settle ``bus``, close it, and return the reading as the JSON ``workflow_result.json`` carries.
+
+        A ``bus.close()`` that raises degrades the reading instead of raising, so the caller's
+        ``_write_state()`` always has a reading to write.
+        """
+        reading = await ModelBusSettle.settle(bus, backend_overrides)
+        try:
+            await ModelBusSettle._close(bus)
+        except ModelOnexError as exc:
+            logger.exception("RuntimeLocal: closing the bus failed: %s", exc.message)
+            reading = reading.model_copy(
+                update={"degraded": True, "reason": exc.message}
+            )
+        return reading.model_dump(mode="json")
 
 
 __all__ = ["ModelBusSettle"]

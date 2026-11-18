@@ -1671,6 +1671,10 @@ jobs:
           export OMNI_HOME="$GITHUB_WORKSPACE/.dod-verify/head_home"
           head_tree="$OMNI_HOME/$REPO_SHORT"
           cd "$head_tree"
+          # OMN-25336: callers pin this gate and the omnimarket verifier separately, and a verifier
+          # older than OMN-23771 exits 2 on --full-contract-path. The flag is passed only when the
+          # installed verifier lists it in its own usage text, probed per ticket below, whatever version a
+          # caller installs.
           while IFS= read -r ticket; do
             contract="$head_tree/contracts/$ticket.yaml"
             if [ ! -f "$contract" ]; then
@@ -1689,8 +1693,19 @@ jobs:
             rc=0
             # OMN-23775: the unscoped head contract rides beside the scoped copy, so the
             # standard-form checks read the whole contract the scoped copy trims.
+            help_rc=0
+            verifier_help="$("$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify --help 2>&1)" || help_rc=$?
+            if [ "$help_rc" -ne 0 ]; then
+              echo "::warning::$ticket: the verifier's --help exited $help_rc; --full-contract-path is not passed"
+            fi
+            full_contract_args=()
+            if grep -q -e '--full-contract-path' <<< "$verifier_help"; then
+              full_contract_args=(--full-contract-path "$contract")
+            else
+              echo "::notice::$ticket: the installed verifier does not list --full-contract-path; verifying without it"
+            fi
             "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
-              --ticket-id "$ticket" --contract-path "$scoped" --full-contract-path "$contract" \
+              --ticket-id "$ticket" --contract-path "$scoped" ${full_contract_args[@]+"${full_contract_args[@]}"} \
               --execution-audience hosted \
               --output-path "$RUNNER_TEMP/dod/head-$ticket.receipt.json" > "$result" || rc=$?
             # --output-path adds this non-JSON line after the pretty JSON document.

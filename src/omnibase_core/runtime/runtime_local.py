@@ -401,7 +401,7 @@ class RuntimeLocal:
         self._last_error: str | None = None
         self._handlers_wired: list[str] = []
         self._terminal_payload: RawWorkflowMap | None = None
-        self._bus_reading: RawWorkflowMap | None = None
+        self._bus_read: RawWorkflowMap | None = None
         self._handler_result: object | None = None
         # OMN-17304 AC6: the correlation id that actually reached the wire, as
         # distinct from one this runtime minted and then failed to stamp onto a
@@ -2321,10 +2321,10 @@ class RuntimeLocal:
             logger.exception("RuntimeLocal: unhandled exception during execution")
             self._result = EnumWorkflowResult.FAILED
         finally:
-            settled = await ModelBusSettle.settle(bus, self.backend_overrides)
-            self._bus_reading = settled.model_dump(mode="json")
-            await bus.close()
-            self._write_state()
+            try:
+                self._bus_read = await ModelBusSettle.run(bus, self.backend_overrides)
+            finally:
+                self._write_state()
 
         logger.info("RuntimeLocal: result=%s", self._result.value)
         return self._result
@@ -2562,8 +2562,8 @@ class RuntimeLocal:
             data["wire_correlation_id"] = str(self._wire_correlation_id)
         if self._terminal_payload is not None:
             data["terminal_payload"] = self._terminal_payload
-        if self._bus_reading is not None:
-            data["bus_reading"] = self._bus_reading
+        if self._bus_read is not None:
+            data["bus_reading"] = self._bus_read
         if self._handler_result is not None:
             try:
                 if hasattr(self._handler_result, "model_dump"):

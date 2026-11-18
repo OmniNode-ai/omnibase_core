@@ -55,14 +55,17 @@ def test_full_contract_path_passed_to_head_dod_verify() -> None:
     assert invocation is not None, "head dod-verify invocation not found"
     args = invocation.group("args")
     assert '--contract-path "$scoped"' in args
-    # The unscoped head file, not the scoped copy and not the merge base's.
-    assert '--full-contract-path "$contract"' in args
+    # OMN-25336: the flag rides in an array filled only for a verifier that lists it.
+    assert 'full_contract_args=(--full-contract-path "$contract")' in script
+    assert '${full_contract_args[@]+"${full_contract_args[@]}"}' in args
     assert 'contract="$head_tree/contracts/$ticket.yaml"' in script
 
 
 def test_full_contract_path_not_the_scoped_copy() -> None:
     script = _head_verify_script()
     assert '--full-contract-path "$scoped"' not in script
+    # The unscoped head file, not the scoped copy and not the merge base's.
+    assert 'contract="$head_tree/contracts/$ticket.yaml"' in script
 
 
 def test_no_linear_secret_in_receipt_gate() -> None:

@@ -17,8 +17,10 @@ requirements:
         statement: The canonical README-only documentation validator accepts the release tree; restoring
           the generated CHANGELOG.md makes the validator fail.
       - id: AC2
-        statement: The project and editable omnibase-core lock entry declare one version, bumped past
-          the released 0.47.55 whose notes root README retains.
+        statement: The project and editable omnibase-core lock entry declare no version (the version is
+          dynamic and comes from git at build time, OMN-23837), and a package built from the git history
+          reads the release segment 0.47.74 over the v0.47.73 tag and exactly 0.47.74 once v0.47.74 tags
+          the commit; root README retains that release's notes.
   - id: req-omn18595-main-range-file-shape
     statement: The canonical-file-shape ratchet passes over the whole range a main fast-forward pushes,
       so a release cut leaves CI Summary green on the main push run.
@@ -85,12 +87,16 @@ dod_evidence:
           --root .
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn18595-ac2-release-identity
-    description: Parse project and lock metadata and require the intended version in both.
+    description: Parse project and lock metadata and require that neither holds a version, and build the
+      package from a git history that tags v0.47.73 to read 0.47.74 (untagged) and exactly 0.47.74 (tagged).
     source: manual
     binds_ac: [AC2]
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k version
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k derived_version
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
         check_value: >-
@@ -412,4 +418,23 @@ dod_evidence:
           uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
           assert not Path("CHANGELOG.md").exists(); assert "## v0.47.73 (2026-11-15)" in notes; assert
           "### Included Since v0.47.72" in notes; assert "(#2326)" in notes and "(#2307)" in notes'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18595-ac1-release-0-47-74-notes
+    description: The release tree passes the documentation policy and retains this release's notes in
+      root README.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_release_cut_identity_omn18595.py -q -k changelog
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: uv run --locked python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
+          --root .
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: >-
+          uv run --locked python -c 'from pathlib import Path; notes = Path("README.md").read_text();
+          assert not Path("CHANGELOG.md").exists(); assert "## v0.47.74 (2026-11-17)" in notes; assert
+          "### Included Since v0.47.73" in notes; assert "(#2329)" in notes'
         cwd: ${OMNI_HOME}/omnibase_core

@@ -1278,7 +1278,8 @@ repos:
 
       # OMN-24432: Counts the outside-world calls (the GitHub command line, the GitHub API) made from anywhere
       # but an effect node package, over the whole tree, and refuses a count above, or below, the shrink-only
-      # config/effect_node_bypass_ratchet.yaml; the file may not be raised against HEAD. Surfaces are rule rows
+      # config/effect_node_bypass_ratchet.yaml; the file may not be raised against the base the hook names
+      # with --base-ref (this repository's caller: origin/dev; the contract names none, OMN-25394). Surfaces are rule rows
       # of effect_node_bypass.validation.yaml. A count only means something over the whole tree, so the hook
       # takes the repository root and always runs.
       - id: no-effect-node-bypass
@@ -1286,7 +1287,7 @@ repos:
         entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
           omnibase_core.validation.validator_effect_node_bypass:ValidatorEffectNodeBypass
         language: system
-        args: [--baseline, config/effect_node_bypass_ratchet.yaml, .]
+        args: [--baseline, config/effect_node_bypass_ratchet.yaml, --base-ref, origin/dev, .]
         pass_filenames: false
         always_run: true
         require_serial: true

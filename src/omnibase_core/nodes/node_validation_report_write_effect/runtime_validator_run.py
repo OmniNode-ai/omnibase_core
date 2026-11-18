@@ -224,10 +224,17 @@ def run_validator(
 
 
 def _validator(
-    validator_cls: type[ValidatorBase], baseline: Path | None
+    validator_cls: type[ValidatorBase],
+    baseline: Path | None,
+    base_ref: str | None = None,
 ) -> ValidatorBase:
-    """The validator, held to ``baseline`` when it names one and the validator takes one."""
+    """The validator, held to ``baseline`` (against the caller's ``base_ref``) when it names one."""
     if baseline is None:
+        if base_ref is not None:
+            raise ModelOnexError(
+                message="--base-ref needs --baseline",
+                error_code=EnumCoreErrorCode.INVALID_INPUT,
+            )
         return validator_cls()
     with_baseline = getattr(validator_cls, "with_baseline_file", None)
     if with_baseline is None:
@@ -235,7 +242,11 @@ def _validator(
             message=f"{validator_cls.validator_id} takes no baseline",
             error_code=EnumCoreErrorCode.INVALID_INPUT,
         )
-    held: ValidatorBase = with_baseline(baseline)
+    held: ValidatorBase = (
+        with_baseline(baseline)
+        if base_ref is None
+        else with_baseline(baseline, base_ref=base_ref)
+    )
     return held
 
 
@@ -272,6 +283,12 @@ def main(
         help="Per-file shrink-only baseline, for a validator that holds one",
     )
     parser.add_argument(
+        "--base-ref",
+        default=None,
+        metavar="REF",
+        help="Base revision a held baseline may not be raised against; the caller's, not the contract's",
+    )
+    parser.add_argument(
         "--repository",
         default=None,
         help="Repository named on triggered events; the node contract's default when omitted",
@@ -287,7 +304,7 @@ def main(
 
     handler = HandlerValidatorRuntimeOverlay()
     try:
-        validator = _validator(validator_cls, args.baseline)
+        validator = _validator(validator_cls, args.baseline, args.base_ref)
         settings = handler.settings()
         overlay = handler.load(args.overlay or handler.default_overlay_path())
         result = run_validator(

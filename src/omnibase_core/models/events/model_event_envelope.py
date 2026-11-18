@@ -273,6 +273,10 @@ class ModelEventEnvelope[T](BaseModel, MixinLazyEvaluation):
     # that adds it.
     provenance: ModelEventProvenance | None = Field(
         default=None,
+        # OMN-25336: omitted from every dump while unstamped. An unstamped envelope must stay
+        # byte-compatible with a reader pinned below this release, whose ``extra="forbid"``
+        # rejects the key even when its value is null.
+        exclude_if=lambda value: value is None,
         description=(
             "Where the emitter ran (lane, host, install source, revision), "
             "recorded at write time. Attribution only -- never proof of "

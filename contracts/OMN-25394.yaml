@@ -1,0 +1,203 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25394
+title: 'Review findings 1 to 7 on omnibase_core PR 2330 at the second review of head 77e2b996f23a are
+  fixed or argued: settle always writes its state, the bypass base ref comes from the caller, the import
+  search stops on a git error, the contract checks can go red and the Lab comment is at the new head'
+summary: Second fix round on the 0.47.74 release pull request. Each of AC1 to AC8 is bound to a hosted-runnable
+  test; AC9 (the Lab comment at the new head and the required checks read success) reads pull request
+  state and is bound to the local Done gate.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25394-review-findings
+    statement: Each blocking finding of the second review is fixed with a failing-then-passing test, or
+      argued with evidence in a pull request comment.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a raising binding_from_overrides, a raising announce and a raising bus.close()
+          in model_bus_settle.py each still write the settle state through a nested try/finally in runtime_local.py,
+          and standard_error_handling is shown to wrap coroutine functions or is not relied on'
+      - id: AC2
+        statement: 'AC2: the effect node bypass validation contract takes its base ref from the caller
+          or CI and no longer hard-codes origin/dev, the job running the --baseline hook is read at full
+          depth and green at the new head, and the effect of a missing ref on downstream users is stated'
+      - id: AC3
+        statement: 'AC3: the import search of contracts/OMN-25336.yaml fails on a non-zero git exit, fetches
+          before it searches, and the stored-fingerprint question is answered in the contract or a PR
+          comment'
+      - id: AC4
+        statement: 'AC4: the contracts of OMN-25336 assert the head and the Lab comment content, attach
+          the check status at the head and the registry search, and pr-checks exits non-zero on a non-success
+          check'
+      - id: AC5
+        statement: 'AC5: the ratchet reading in tests/ci/test_release_cut_identity_omn18595.py calls the
+          real ratchet, counts code lines as the ratchet does, and asserts that each baseline entry names
+          an existing file'
+      - id: AC6
+        statement: 'AC6: a test restores CHANGELOG.md and asserts that the validator refuses, so AC1 of
+          contracts/OMN-18595.yaml has a falsifier that can fail'
+      - id: AC7
+        statement: 'AC7: the README release notes state the seven src behaviour changes of the head instead
+          of one commit since v0.47.73, and the three unrelated bumps at uv.lock lines 624, 1880 and 2027
+          are reverted or justified in a PR comment, with the fixes shown to reach dev'
+      - id: AC8
+        statement: 'AC8: findings 8 to 12 are fixed or argued in the PR comment: the stray separator line
+          of README.md and its assertion, a derived-version check on the real history, the hatch-vcs precedence
+          of the direct key and raw-options, the logged drop of the flag in receipt-gate.yml, and the
+          carried events_recorded count'
+      - id: AC9
+        statement: 'AC9: the Lab comment starts `Lab: head=<new head>`, names findings 1 to 12, the lab
+          command and its parts, and exit 0, and the required checks of omnibase_core PR 2330 read success
+          at the new head'
+evidence_requirements:
+  - kind: tests
+    description: The focused tests of every fix, run on a lab host at the pushed head.
+    command: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py tests/ci/test_omn25336_contract_checks_omn25394.py
+      tests/ci/test_receipt_gate_full_contract_callers_omn25336.py tests/unit/runtime/test_runtime_local_settle_raising_omn25394.py
+      tests/unit/models/event_bus tests/unit/validation/test_validator_effect_node_bypass_base_ref_omn25336.py
+      tests/unit/nodes/node_release_identity_check_compute -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25394-ac1
+    description: 'AC1: a raising binding_from_overrides, a raising announce and a raising bus.close()
+      in model_bus_settle.py each still write the settle state through a nested try/finally in runtime_local.py,
+      and standard_error_handling is shown to wrap coroutine functions or is not relied on. The bound
+      test fails at head 77e2b996f23a, where the fix and its test are absent.'
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/runtime -k settle_raising -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac2
+    description: 'AC2: the effect node bypass validation contract takes its base ref from the caller or
+      CI and no longer hard-codes origin/dev, the job running the --baseline hook is read at full depth
+      and green at the new head, and the effect of a missing ref on downstream users is stated. The bound
+      test fails at head 77e2b996f23a, where the fix and its test are absent.'
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation -k bypass_base_ref -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac3
+    description: 'AC3: the import search of contracts/OMN-25336.yaml fails on a non-zero git exit, fetches
+      before it searches, and the stored-fingerprint question is answered in the contract or a PR comment.
+      The bound test fails at head 77e2b996f23a, where the fix and its test are absent.'
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci -k omn25336_import_search -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac4
+    description: 'AC4: the contracts of OMN-25336 assert the head and the Lab comment content, attach
+      the check status at the head and the registry search, and pr-checks exits non-zero on a non-success
+      check. The bound test fails at head 77e2b996f23a, where the fix and its test are absent.'
+    source: manual
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_omn25336_contract_checks_omn25394.py -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac5
+    description: 'AC5: the ratchet reading in tests/ci/test_release_cut_identity_omn18595.py calls the
+      real ratchet, counts code lines as the ratchet does, and asserts that each baseline entry names
+      an existing file. The bound test fails at head 77e2b996f23a, where the fix and its test are absent.'
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py -k file_shape
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac6
+    description: 'AC6: a test restores CHANGELOG.md and asserts that the validator refuses, so AC1 of
+      contracts/OMN-18595.yaml has a falsifier that can fail. The bound test fails at head 77e2b996f23a,
+      where the fix and its test are absent.'
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py -k changelog_restored
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac7
+    description: 'AC7: the README release notes state the seven src behaviour changes of the head instead
+      of one commit since v0.47.73, and the three unrelated bumps at uv.lock lines 624, 1880 and 2027
+      are reverted or justified in a PR comment, with the fixes shown to reach dev. The bound test fails
+      at head 77e2b996f23a, where the fix and its test are absent.'
+    source: manual
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py -k behaviour_changes
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac8
+    description: 'AC8: findings 8 to 12 are fixed or argued in the PR comment: the stray separator line
+      of README.md and its assertion, a derived-version check on the real history, the hatch-vcs precedence
+      of the direct key and raw-options, the logged drop of the flag in receipt-gate.yml, and the carried
+      events_recorded count. The bound test fails at head 77e2b996f23a, where the fix and its test are
+      absent.'
+    source: manual
+    binds_ac:
+      - AC8
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_release_cut_identity_omn18595.py tests/ci/test_receipt_gate_full_contract_callers_omn25336.py
+          tests/unit/models/event_bus tests/unit/nodes/node_release_identity_check_compute -k 'release_cut_identity
+          or bus_settle or hatch_vcs_precedence or full_contract_path_callers' -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-ac9-required-checks-at-head
+    description: The required checks of the release pull request read success at the head the watcher
+      holds, and that head is the head of the pull request's branch in the canonical clone. Read from
+      the pull request watcher; hosted CI cannot read them for its own head. onex scm pr-checks exits
+      0 whatever the checks read, so the check asserts the JSON it prints.
+    source: manual
+    binds_ac:
+      - AC9
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: |
+          uv run --locked python -c '
+          import json, os, subprocess, sys
+          def scm(verb):
+              run = subprocess.run(["onex", "scm", verb, "OmniNode-ai/omnibase_core#2330"], capture_output=True, text=True)
+              if run.returncode != 0:
+                  print(verb, "failed:", run.returncode, run.stderr.strip())
+                  sys.exit(1)
+              return json.loads(run.stdout)["result"]
+          view, checks = scm("pr-view"), scm("pr-checks")
+          clone = os.path.join(os.environ["OMNI_HOME"], "omnibase_core")
+          local = subprocess.run(["git", "-C", clone, "rev-parse", "origin/" + view["head_ref"]], capture_output=True, text=True)
+          print(view["state"], view["head_sha"], checks["head_sha"], local.stdout.strip(), checks["class"], checks["red"], checks["pending"], checks["read_at"])
+          ok = local.returncode == 0 and local.stdout.strip() == view["head_sha"] == checks["head_sha"] and checks["class"] == "green" and not checks["red"] and not checks["pending"]
+          sys.exit(0 if ok else 1)'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25394-deploy-hosted-readback
+    description: 'Hosted deployment probe for this change: the runtime settle writes its state when the
+      binding, the announce or the bus close raises, and the validator runtime takes the base ref from
+      the caller; it needs no lab services or credentials.'
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/runtime/test_runtime_local_settle_raising_omn25394.py
+          tests/unit/validation/test_validator_effect_node_bypass_base_ref_omn25336.py -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
