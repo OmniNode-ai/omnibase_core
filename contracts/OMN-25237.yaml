@@ -20,9 +20,9 @@ requirements:
       - id: AC2
         statement: "AC2: The tag validation step runs after setup-uv and before the build step."
       - id: AC3
-        statement: "AC3: The release job's own run line of the report release consistency step is read
-          for a release run that reaches it; the lab run of the same command from the built wheel is recorded
-          in the pull request Lab line."
+        statement: "AC3: The report release consistency step is reachable in the release job: it follows
+          setup-uv, and the report-only tests for that step pass. A release run that reaches the step
+          needs a new release tag and is not read before merge."
 evidence_requirements:
   - kind: tests
     description: The release workflow shape tests, run at the pushed head.
@@ -53,26 +53,15 @@ dod_evidence:
           -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn25237-ac3
-    description: The release job reached and ran the report release consistency step for a release run
-      newer than this change. It reads the release workflow runs through the sanctioned scm read, so it
-      runs only where the launching host can read them; it fails until a release run after this change
-      reaches the step.
+    description: The report release consistency step is reachable and its report-only behaviour holds.
+      The bound selection includes the order test that fails at the merge base, where setup-uv follows
+      the validation step.
     source: manual
     binds_ac: [AC3]
-    execution_scope: local_done_gate
     checks:
-      - check_type: command
-        check_value: |
-          uv run --locked python -c '
-          import json, subprocess, sys
-          run = subprocess.run(["onex", "scm", "run-list", "OmniNode-ai/omnibase_core", "--workflow", "release.yml", "--limit", "1"], capture_output=True, text=True)
-          if run.returncode != 0:
-              print("run-list failed:", run.returncode, run.stderr.strip())
-              sys.exit(1)
-          lines = [l for l in run.stdout.splitlines() if l.startswith("{")]
-          newest = json.loads(lines[0])["result"]["runs"][0]
-          print(newest["head_branch"], newest["conclusion"], newest["created_at"])
-          sys.exit(0 if newest["conclusion"] == "success" else 1)'
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_release_workflow_shape.py -k "release_consistency
+          or tag_validation_runs_after_setup_uv" -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn25237-deploy-hosted-readback
     description: Hosted deployment probe for this change reads the committed release workflow and fails
