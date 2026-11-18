@@ -202,10 +202,13 @@ def test_inmemory_overlay_hosts_the_node_in_process_and_dials_no_broker(
             run_node, [_NODE, "--input", json.dumps({"prompt": "hello"})]
         )
 
-    assert result.exit_code == 0, result.output
-    # stdout stays the node's answer; the in-memory run with no forwarder installed says
-    # on stderr that its events went nowhere (OMN-19998).
-    assert json.loads(result.stdout) == {"status": "success", "echo": "hello"}
+    # OMN-25564: an in-memory run whose events went nowhere is a failure, not a quiet exit 0: it
+    # names the bus kind and the reason (and still says so on stderr, OMN-19998).
+    assert result.exit_code == 1, result.output
+    envelope = json.loads(result.stdout)
+    assert envelope["error_type"] == "SkillRoutingError"
+    assert "not delivered" in envelope["message"]
+    assert "inmemory_unforwarded" in envelope["message"]
     assert "DEGRADED BUS (inmemory_unforwarded)" in result.stderr
     dial.assert_not_called()
 

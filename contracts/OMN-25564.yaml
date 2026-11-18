@@ -1,0 +1,75 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25564
+title: "onex run-node resolves its workspace roots from the runtime profile and names an unresolved forward
+  target"
+summary: "onex run-node hosted a node in process and handed its recorded events to the installed forwarder;
+  when the forwarder could not reach the hosted bus, RuntimeLocal wrote a degraded bus reading and one
+  stderr line and the command exited 0 with nothing delivered. run-node now reads that reading and ends
+  non-zero carrying the forwarder's reason, which names the missing value and where it looked. The resolution
+  of the two workspace roots from the host declaration (AC1) is the omnimarket forwarder's change in its
+  own pull request."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25564-run-node-roots
+    statement: "onex run-node refuses a hosted run whose recorded events were not delivered, carrying
+      the forwarder reason."
+    acceptance:
+      - id: AC2
+        statement: "AC2: when the forward target cannot be resolved the command exits non-zero and prints
+          the missing name and where it looked, instead of reporting not_delivered with exit 0 -- falsifier:
+          a pytest unit test that removes the declaration and asserts the exit code and the message, red
+          at the base commit and green at the head"
+      - id: AC3
+        statement: "AC3: integrated: on lab host h051 with both variables unset one onex run-node forwards
+          one event to the dev lane and h053 reads it back by message id -- falsifier: onex run-node on
+          h051 then a consumer read-back of the dev bus from h053 for that message id returns the event,
+          and the same run on the base commit reads not_delivered"
+evidence_requirements:
+  - kind: tests
+    description: The run-node unit tests pass, including the undelivered-run case.
+    command: "uv run pytest tests/unit/cli/test_cli_run_node_undelivered.py tests/unit/cli/test_cli_run_node_broker_overlay.py
+      -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25564-ac2
+    description: "An undelivered hosted run exits non-zero carrying the forwarder's reason."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_run_node_undelivered.py::test_ac2_undelivered_run_exits_non_zero_carrying_the_forwarders_reason
+          -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25564-integration-proof
+    description: "AC3 lab proxy: the change's focused tests run on a lab host at the pushed head; the
+      run of onex run-node on h051 with both variables unset and the read on h053 by message id are recorded
+      in the lane STATUS row and are not claimed by this local check."
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac: []
+    checks:
+      - check_type: command
+        check_value: "env PYTHONDONTWRITEBYTECODE=1 onex lab-work run --repo OmniNode-ai/omnibase_core
+          --sha \"$(git rev-parse HEAD)\" --lane dod-integration-proof-25564 --kind test -- env PYTHONDONTWRITEBYTECODE=1
+          uv run --frozen pytest tests/unit/cli/test_cli_run_node_undelivered.py -q --no-cov -p no:randomly"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25564-ac3-inmemory-undelivered
+    description: "An in-memory hosted run whose events went nowhere exits 1 with the SkillRoutingError
+      envelope naming the bus kind (red at the base, which exited 0)."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_run_node_broker_overlay.py::test_inmemory_overlay_hosts_the_node_in_process_and_dials_no_broker
+          -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
