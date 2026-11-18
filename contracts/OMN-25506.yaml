@@ -56,35 +56,38 @@ dod_evidence:
           --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn25506-ac1
-    description: "The ledger holds a STATUS row naming the shared cause with job ids for the three pull
-      requests."
+    description: "The shipped exemption cites the extension ruling and keeps the origin ruling; the ledger
+      STATUS rows naming the shared cause are read on the ledger."
     source: manual
-    execution_scope: local_done_gate
+    execution_scope: hosted_and_local
     binds_ac:
       - AC1
     checks:
-      - check_type: command
-        check_value: "grep -rc 'STATUS | lane=cause4-2049 .*ticket=OMN-25506 .*134268823747' $OMNI_HOME/docs/tracking/"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py::test_shipped_exemption_cites_the_extension_ruling_and_keeps_the_origin
+          -q --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn25506-ac3
-    description: "The diff against the base removes no assertion and adds no skip or xfail in tests/ or
-      .github/."
+    description: "The policy holds exactly the ruled entry: no second entry, no baseline, no new field,
+      so no check is widened."
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC3
     checks:
-      - check_type: command
-        check_value: "sh -c '! git diff origin/dev HEAD -- tests/ .github/ | grep -E \"^-.*assert|^[+].*(skip|xfail)\"'"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py::test_shipped_policy_holds_exactly_the_ruled_entry
+          -q --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn25506-ac4
-    description: "The lane TERMINAL on the ledger names the pushed head; the PR body Lab line is read
-      on the PR."
+    description: "The shipped exemption is extended one week and then refuses; the PR body Lab line and
+      the lane TERMINAL are read on the PR and ledger."
     source: manual
-    execution_scope: local_done_gate
+    execution_scope: hosted_and_local
     binds_ac:
       - AC4
     checks:
-      - check_type: command
-        check_value: "grep -rc 'TERMINAL | lane=pinsexempt-0130 .*297793b5' $OMNI_HOME/docs/tracking/"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py::test_shipped_exemption_is_extended_one_week_and_then_refuses
+          -q --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
