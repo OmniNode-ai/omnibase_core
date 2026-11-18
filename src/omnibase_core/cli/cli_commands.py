@@ -29,17 +29,19 @@ if TYPE_CHECKING:
 MAX_ERRORS_DISPLAYED = 5  # Maximum errors shown before truncation in validation output
 
 
-def get_version() -> str:
+def get_version(
+    distributions: tuple[str, ...] = ("omninode-onex", "omnibase_core"),
+) -> str:
     """The version `onex --version` prints; never raises, so --version always works.
 
-    Order: the customer package omninode-onex, then omnibase_core (a developer install),
-    then omnibase_core.__version__, then "unknown".
+    Order: the first installed of `distributions` (by default the customer package
+    omninode-onex, then omnibase_core), then omnibase_core.__version__, then "unknown".
     """
     try:
         from importlib.metadata import PackageNotFoundError, version
 
         # OMN-25070: a customer installs omninode-onex, so that is the version they see.
-        for distribution in ("omninode-onex", "omnibase_core"):
+        for distribution in distributions:
             try:
                 return version(distribution)
             except PackageNotFoundError:
@@ -426,7 +428,7 @@ def info(ctx: click.Context) -> None:
     """
     verbose = ctx.obj.get("verbose", False)
 
-    click.echo(f"omnibase_core version: {get_version()}")
+    click.echo(f"omnibase_core version: {get_version(('omnibase_core',))}")
     click.echo(f"Python version: {sys.version.split()[0]}")
 
     if verbose:

@@ -43,6 +43,15 @@ def test_developer_install_without_the_customer_package_reports_core() -> None:
         assert get_version() == "0.47.72"
 
 
+def test_onex_info_keeps_labelling_the_core_version_as_core() -> None:
+    # Independent review of #2343: `onex info` labels its line "omnibase_core version",
+    # so on a customer install it must still print omnibase_core's own version there.
+    with _installed({"omninode-onex": "0.0.1", "omnibase_core": "0.47.72"}):
+        result = CliRunner().invoke(cli, ["info"])
+    assert result.exit_code == 0, result.output
+    assert "omnibase_core version: 0.47.72" in result.output
+
+
 def test_onex_version_flag_prints_the_customer_package_version() -> None:
     with _installed({"omninode-onex": "0.0.1", "omnibase_core": "0.47.72"}):
         result = CliRunner().invoke(cli, ["--version"])
