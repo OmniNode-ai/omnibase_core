@@ -1,0 +1,102 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: 1.0.0
+ticket_id: OMN-25543
+title: "Shared ingest contract: one event_id derivation, one topic normalization and one client header
+  set for the HTTPS client, the door and the forwarder leg"
+summary: Define the original-record identity, tenant prefix normalization and client header budget shared
+  by the HTTPS ingest participants.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25543-shared-ingest-contract
+    statement: Compute and validate HTTPS ingest identity consistently at every caller.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: dedup identity: same topic and value with key b"a", b"b", absent and empty give four ids;
+          a declared identity header with two values, absent and empty gives four ids; a header outside
+          `IDENTITY_HEADERS` and header-name case leave the id unchanged; bytes moved between topic, key,
+          value and a header value never collide; a repeated identity header name is refused; pinned hex
+          vectors are equal in every process -- falsifier: `pytest <package unit dir> -k event_identity`
+          with the derivation hashing only topic and value turns the key and header cases red, and with
+          the length prefixes removed turns the boundary case red
+      - id: AC2
+        statement: >-
+          AC2: the contract names one derivation and no other: the module exports no second identity function
+          and an `identity` name in its overlay-facing models is refused -- falsifier: `pytest <package
+          unit dir> -k event_identity_single` with a second derivation function added turns the export-list
+          case red
+      - id: AC3
+        statement: >-
+          AC3: one topic normalization: `canonical_topic` returns the canonical topic for a canonical
+          input and for `tenant-<slug>.<canonical>`, removes exactly one prefix, raises `topic-malformed`
+          for a bad slug or a prefix with no dot, never trims, folds or decodes; `compute_event_id` over
+          the wire topic and the canonical topic returns one pinned id; no exported function hashes a
+          topic without calling `canonical_topic` first -- falsifier: `pytest <package unit dir> -k topic_normalization`
+          with `compute_event_id` hashing its topic as given turns the wire-versus-canonical case red,
+          and with `canonical_topic` removing every leading `tenant-<slug>.` turns the one-prefix case
+          red
+      - id: AC4
+        statement: >-
+          AC4: the module lives in a package that both omnimarket and omnibase_infra declare as a dependency,
+          and both import it -- falsifier: `grep -n "<package>" omnimarket/pyproject.toml omnibase_infra/pyproject.toml`
+          finds the dependency in both files
+evidence_requirements:
+  - kind: tests
+    description: The ingest contract passes the identity, normalization, overlay and header budget unit
+      tests.
+    command: uv run --frozen pytest tests/unit/contracts/test_event_identity.py -n 0 -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25543-ac1
+    description: The derivation distinguishes key, value and header framing and matches the pinned vectors.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/contracts/test_event_identity.py -n 0 -q -k "event_identity
+          and not event_identity_single"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25543-ac2
+    description: The contract exports one derivation and the shared overlay model rejects an identity
+      override.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/contracts/test_event_identity.py -n 0 -q -k event_identity_single
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25543-ac3
+    description: The canonicalizer strips exactly one prefix and the hash agrees across canonical and
+      wire inputs.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/contracts/test_event_identity.py -n 0 -q -k topic_normalization
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25543-ac4
+    description: >-
+      The SDK checkout installs and imports the new public contract in isolation. Both downstream dependency
+      declarations and their current floor results are recorded in the PR. P1 and P2b wire downstream
+      imports.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac: [AC4]
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --frozen python -I -c "from omnibase_core.models.contracts.model_ingest_contract import
+          canonical_topic, compute_event_id; assert len(compute_event_id(canonical_topic('tenant-a.evt'),
+          None, b'value', ())) == 64"
+        cwd: ${OMNI_HOME}/omnibase_core
