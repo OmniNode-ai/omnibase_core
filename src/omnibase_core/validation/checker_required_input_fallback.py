@@ -203,8 +203,8 @@ def check_required_input_fallback(
             ):
                 refuse(node.lineno, f'{func.id}(..., "{node.args[1].value}", ...)')
         elif isinstance(node, ast.BoolOp) and isinstance(node.op, ast.Or):
-            name = _required_name(node.values[0], names)
-            if name is None or not any(
+            or_name = _required_name(node.values[0], names)
+            if or_name is None or not any(
                 _default_literal(value) for value in node.values[1:]
             ):
                 continue
@@ -216,9 +216,9 @@ def check_required_input_fallback(
             )
             receiver = receiver or "<receiver>"
             if isinstance(access, ast.Attribute):
-                shown = f"{receiver}.{name}"
+                shown = f"{receiver}.{or_name}"
             else:
-                shown = f'{receiver}["{name}"]'
+                shown = f'{receiver}["{or_name}"]'
             refuse(node.lineno, f"{shown} or a literal default")
         elif isinstance(node, ast.ExceptHandler):
             body = [n for stmt in node.body for n in ast.walk(stmt)]
