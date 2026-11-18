@@ -54,11 +54,22 @@ dod_evidence:
       in the lane STATUS row and are not claimed by this local check."
     source: manual
     execution_scope: local_done_gate
-    binds_ac:
-      - AC3
+    binds_ac: []
     checks:
       - check_type: command
         check_value: "env PYTHONDONTWRITEBYTECODE=1 onex lab-work run --repo OmniNode-ai/omnibase_core
           --sha \"$(git rev-parse HEAD)\" --lane dod-integration-proof-25564 --kind test -- env PYTHONDONTWRITEBYTECODE=1
           uv run --frozen pytest tests/unit/cli/test_cli_run_node_undelivered.py -q --no-cov -p no:randomly"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25564-ac3-inmemory-undelivered
+    description: "An in-memory hosted run whose events went nowhere exits 1 with the SkillRoutingError
+      envelope naming the bus kind (red at the base, which exited 0)."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_run_node_broker_overlay.py::test_inmemory_overlay_hosts_the_node_in_process_and_dials_no_broker
+          -q --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
