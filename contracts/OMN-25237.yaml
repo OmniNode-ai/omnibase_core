@@ -1,0 +1,75 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-25237
+title: The release job installs uv before the tag validation calls uvx, so the release consistency report
+  can run
+summary: The release runs for v0.47.73 and v0.47.74 failed at the tag validation step with uvx not found
+  because setup-uv ran after it. Nothing was published and the report-only release consistency step (the
+  only caller of the release consistency nodes) was skipped. This change moves setup-uv ahead of the validation
+  and pins the order with a test.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25237-release-uv-order
+    statement: The release job installs uv before any step that calls uv or uvx, so the release consistency
+      report step is reachable.
+    acceptance:
+      - id: AC1
+        statement: "AC1: No step of the release job that runs before astral-sh/setup-uv calls uv or uvx."
+      - id: AC2
+        statement: "AC2: The tag validation step runs after setup-uv and before the build step."
+      - id: AC3
+        statement: "AC3: The report release consistency step is reachable in the release job: it follows
+          setup-uv, and the report-only tests for that step pass. A release run that reaches the step
+          needs a new release tag and is not read before merge."
+evidence_requirements:
+  - kind: tests
+    description: The release workflow shape tests, run at the pushed head.
+    command: uv run --frozen pytest tests/unit/validation/test_release_workflow_shape.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25237-ac1
+    description: No step of the release job that runs before setup-uv calls uv or uvx. The bound test
+      fails at the merge base, where the validation step precedes setup-uv.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_release_workflow_shape.py -k no_release_step_calls_uv_before_setup_uv
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25237-ac2
+    description: The tag validation step runs after setup-uv and before the build step. The bound test
+      fails at the merge base, where the validation step is index 3 and setup-uv is index 4.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_release_workflow_shape.py -k tag_validation_runs_after_setup_uv
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25237-ac3
+    description: The report release consistency step is reachable and its report-only behaviour holds.
+      The bound selection includes the order test that fails at the merge base, where setup-uv follows
+      the validation step.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_release_workflow_shape.py -k "release_consistency
+          or tag_validation_runs_after_setup_uv" -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25237-deploy-hosted-readback
+    description: Hosted deployment probe for this change reads the committed release workflow and fails
+      when a step that calls uv or uvx precedes setup-uv; it needs no lab services or credentials.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/test_release_workflow_shape.py -k setup_uv
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
