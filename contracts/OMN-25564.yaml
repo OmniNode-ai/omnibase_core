@@ -48,15 +48,17 @@ dod_evidence:
         check_value: "uv run pytest tests/unit/cli/test_cli_run_node_undelivered.py::test_ac2_undelivered_run_exits_non_zero_carrying_the_forwarders_reason
           -q --no-cov -o addopts='' -n 0"
         cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn25564-ac3
-    description: "Integrated on h051 with both variables unset, read back on h053 by message id; the evidence
-      is the lane's STATUS row."
+  - id: dod-omn25564-integration-proof
+    description: "AC3 lab proxy: the change's focused tests run on a lab host at the pushed head; the
+      run of onex run-node on h051 with both variables unset and the read on h053 by message id are recorded
+      in the lane STATUS row and are not claimed by this local check."
     source: manual
-    execution_scope: local_only
+    execution_scope: local_done_gate
     binds_ac:
       - AC3
     checks:
-      - check_type: test_passes
-        check_value: "uv run pytest tests/unit/cli/test_cli_run_node_undelivered.py -q --no-cov -o addopts=''
-          -n 0"
+      - check_type: command
+        check_value: "env PYTHONDONTWRITEBYTECODE=1 onex lab-work run --repo OmniNode-ai/omnibase_core
+          --sha \"$(git rev-parse HEAD)\" --lane dod-integration-proof-25564 --kind test -- env PYTHONDONTWRITEBYTECODE=1
+          uv run --frozen pytest tests/unit/cli/test_cli_run_node_undelivered.py -q --no-cov -p no:randomly"
         cwd: ${OMNI_HOME}/omnibase_core
