@@ -92,6 +92,14 @@ jobs:
           git diff --cached --exit-code
           test -z "$(git ls-files --others --exclude-standard)"
 
+      # OMN-25237: install uv BEFORE the tag validation. The hosted runner ships
+      # no `uv`/`uvx`; the validation below calls `uvx`, so with this step after
+      # it the release runs for v0.47.73 and v0.47.74 died at exit 127 and
+      # published nothing.
+      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
+        with:
+          python-version: '3.12'
+
       - name: Validate tag matches pyproject.toml version
         env:
           RELEASE_TAG: ${{ inputs.tag }}
@@ -115,10 +123,6 @@ jobs:
             exit 1
           fi
           echo "Version validated: $PKG_VERSION"
-
-      - uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
-        with:
-          python-version: '3.12'
 
       - name: Build wheel + sdist
         run: uv build

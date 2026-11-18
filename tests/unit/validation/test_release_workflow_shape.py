@@ -40,6 +40,7 @@ alarms on a failed or cancelled ``release``.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -1144,3 +1145,36 @@ def test_release_consistency_unreadable_pypi_reads_unknown_after_retries(
     assert len(run.curl_invocations) == 2, run.curl_invocations
     assert "::warning::Release consistency UNKNOWN" in run.stdout
     assert "MISMATCH" not in run.stdout
+
+
+_SETUP_UV_ACTION = "astral-sh/setup-uv@"
+_VALIDATE_TAG_STEP = "Validate tag matches pyproject.toml version"
+
+
+def _setup_uv_index() -> int:
+    for index, step in enumerate(_steps()):
+        if str(step.get("uses", "")).startswith(_SETUP_UV_ACTION):
+            return index
+    raise AssertionError("release job must install uv with astral-sh/setup-uv")
+
+
+def test_no_release_step_calls_uv_before_setup_uv_installs_it() -> None:
+    """OMN-25237: the GitHub-hosted runner ships no `uv`/`uvx`.
+
+    The tag validation step called `uvx` ahead of `astral-sh/setup-uv`, so the
+    release runs for v0.47.73 and v0.47.74 died at exit 127 ("uvx: command not
+    found"), published nothing, and skipped the report-only release consistency
+    step -- the only caller of the release consistency nodes.
+    """
+    setup_index = _setup_uv_index()
+    early = [
+        str(step.get("name"))
+        for step in _steps()[:setup_index]
+        if re.search(r"\buvx?\b", str(step.get("run", "")))
+    ]
+    assert early == [], f"steps call uv before setup-uv installs it: {early}"
+
+
+def test_tag_validation_runs_after_setup_uv_and_before_the_build() -> None:
+    assert _step_index(_VALIDATE_TAG_STEP) > _setup_uv_index()
+    assert _step_index(_VALIDATE_TAG_STEP) < _step_index("Build wheel + sdist")
