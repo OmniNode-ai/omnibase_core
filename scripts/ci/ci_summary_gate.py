@@ -244,10 +244,9 @@ EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
     # OMN-20074 (OCC retirement S6 part 1): the repo-owned evidence verdict,
     # from .github/workflows/call-repo-evidence-gate.yml through this
     # repository's receipt-gate reusable. Registered so ABSENCE fails like a
-    # red verdict. The producer runs on pull_request_target (GitHub reads the
-    # base-branch definition and reports the verdict on the pull request head),
-    # so it applies to pull_request CI Summary runs only. Merged dev heads
-    # #1919, #1921, #1922, #1925, #1926 and #1927 carry a green run.
+    # red verdict. The producer runs on pull_request, so it applies to
+    # pull_request CI Summary runs only. At the original cut-over, merged dev
+    # heads #1919, #1921, #1922, #1925, #1926 and #1927 carried green runs.
     "repo-evidence / dod-verify",
 )
 
@@ -258,10 +257,8 @@ EXPECTED_EXTERNAL_CONTEXTS: tuple[str, ...] = (
 #
 # `merge_group` and `schedule` deliberately have no external contexts: none of
 # the producer workflows fires on either event today. The repo-evidence
-# producer fires on pull_request_target only, which is a pull_request run's
-# head. This is an explicit,
-# tested applicability decision, not an absence that is read as a pass. An
-# unknown event is rejected by `external_contexts_for_event`.
+# producer fires only on pull_request. The applicability map is tested against
+# the producer workflows, and `external_contexts_for_event` rejects unknown events.
 _DB_OWNERSHIP_EXTERNAL_CONTEXTS: tuple[str, ...] = EXPECTED_EXTERNAL_CONTEXTS[:1]
 EXTERNAL_CONTEXTS_BY_EVENT: dict[str, tuple[str, ...]] = {
     "pull_request": EXPECTED_EXTERNAL_CONTEXTS,
