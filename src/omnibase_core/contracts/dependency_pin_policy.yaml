@@ -62,6 +62,7 @@ hook_rev_exemptions:
   # to hosted runners (OMN-22867); that lane then bumps the pin and deletes this entry.
   - url: https://github.com/OmniNode-ai/omnibase_core
     rev: 1c9566e2c249
-    expires: 2026-11-16
-    ruling: 'RULING 2026-11-09T01:57:48Z lane=orchestrator-31d9 (OMN-22867, amends 2026-11-09T00:07:37Z)'
+    expires: 2026-11-24
+    ruling: 'RULING 2026-11-09T01:57:48Z lane=orchestrator-31d9 (OMN-22867, amends 2026-11-09T00:07:37Z),
+      extended one week by RULING 2026-11-18T01:29:21Z lane=orchestrator-31d9-swarm'
     ticket: OMN-22867
