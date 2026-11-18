@@ -27,6 +27,37 @@ requirements:
         statement: "AC3: the baselined validator file holds no more code lines than it did at the previous
           main head (731), with the TypeScript and shell location rules in a handler -- falsifier: the
           ratchet run with --base 342000ec57020e5258dde41d571420e7c09ed05b refuses with baselined-file-growth"
+  - id: req-omn18595-release-train-decision-record
+    statement: The scheduled release train in omnibase_infra keeps a durable per-run decision record,
+      separates every way the lab-evidence premise can fail without cutting, and never substitutes the
+      default workflow token for a failed App-token mint. This repository's release cut cites the ticket,
+      so the contract carries every criterion the live ticket carries; each of the three below is settled
+      in omnibase_infra, not by this release.
+    acceptance:
+      - id: AC4
+        statement: "AC4: the decision is a durable artifact, one JSON document per run carrying every
+          repo's verdict, its inputs and its reason, uploaded under always() -- falsifier: force the workflow
+          to fail after the decision step and confirm the artifact still exists for that run; an artifact
+          that appears only on success fails this criterion. Evidence (omnibase_infra dev 75969ce9): .github/workflows/release-train-nightly.yml
+          lines 258-268 (the release-train-decision-<run_id> upload under if: always()), pinned by tests/scripts/test_release_train_nightly.py
+          line 892"
+      - id: AC5
+        statement: "AC5: every way the lab-evidence premise can fail to be established is a distinct named
+          outcome and none of them cuts -- falsifier: four simulated runs against one candidate sha (no
+          receipt artifact, a receipt carrying FAIL, a receipt whose payload sha disagrees with its artifact
+          name, an artifact query that errors) must give four different reasons and zero cuts; any pair
+          that collapses to one reason, and any cut, fails. Evidence (omnibase_infra dev 75969ce9): scripts/ci/release_train.py
+          lines 1440-1545 (_classify_lab_receipt_on_lane returns LAB_RECEIPT_ABSENT, LAB_RECEIPT_FAIL,
+          LAB_RECEIPT_NAME_PAYLOAD_DISAGREE and LAB_RECEIPT_UNREADABLE, with PENDING and INDETERMINATE
+          beside them), pinned by tests/scripts/test_release_train_nightly.py line 688"
+      - id: AC6
+        statement: "AC6: the train workflow pushes nothing with the default workflow token where an App
+          identity is required and carries no expression substituting the default token when the App-token
+          mint fails -- falsifier: grep the workflow for secrets.GITHUB_TOKEN or a '|| secrets.' fallback;
+          a match fails, and a failed mint must fail the job. Evidence (omnibase_infra dev 75969ce9):
+          .github/workflows/release-train-nightly.yml lines 47-52 (the stated rule), 137-149 (decide mints
+          onexbot) and 290-299 (cut mints onexbot-occ-writer, narrowed to one repository), pinned by tests/scripts/test_release_train_nightly.py
+          line 875"
 evidence_requirements:
   - kind: tests
     description: Release-cut identity tests, then the canonical documentation scan and package-identity
@@ -79,6 +110,37 @@ dod_evidence:
         check_value: uv run --locked python -m omnibase_core.nodes.node_git_file_listing_effect.runtime_readme_only_docs
           --root .
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn18595-ac4-decision-uploaded-under-always
+    description: The train workflow uploads its per-run decision JSON under always(). The evidence is
+      in omnibase_infra, a repository this release does not change, so only the local Done gate reads
+      it.
+    source: manual
+    binds_ac: [AC4]
+    execution_scope: local_done_gate
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_release_train_nightly.py -q -k uploads_its_decision_under_always
+        cwd: ${OMNI_HOME}/omnibase_infra
+  - id: dod-omn18595-ac5-lab-premise-outcomes-distinct
+    description: Each way the lab-evidence premise can fail is its own named reason and none cuts. The
+      evidence is in omnibase_infra, so only the local Done gate reads it.
+    source: manual
+    binds_ac: [AC5]
+    execution_scope: local_done_gate
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_release_train_nightly.py -q -k four_failure_modes_produce_four_distinct_reasons
+        cwd: ${OMNI_HOME}/omnibase_infra
+  - id: dod-omn18595-ac6-no-default-token-fallback
+    description: The train workflow carries no default-token fallback for a failed App-token mint. The
+      evidence is in omnibase_infra, so only the local Done gate reads it.
+    source: manual
+    binds_ac: [AC6]
+    execution_scope: local_done_gate
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/scripts/test_release_train_nightly.py -q -k never_falls_back_to_the_default_token
+        cwd: ${OMNI_HOME}/omnibase_infra
   - id: dod-omn18595-ac1-release-0-47-52-notes
     description: The release tree passes the documentation policy and retains this release's notes in
       root README.
