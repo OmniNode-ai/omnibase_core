@@ -77,6 +77,17 @@ class RefusingForwarder:
         raise RuntimeError(_REFUSAL)
 
 
+class PartialForwarder:
+    """A forwarder that carries the events and refuses the run's own command by name."""
+
+    def forward(self, events: Sequence[object]) -> dict[str, object]:
+        return {
+            "forwarded": 1,
+            "failed": 1,
+            "detail": "1 event(s) refused: command topic",
+        }
+
+
 class DeliveringForwarder:
     """A forwarder that carries every event."""
 
@@ -173,3 +184,14 @@ def test_delivered_run_still_answers_and_exits_zero(forwarder_name: str) -> None
 
     assert result.exit_code == 0, result.output
     assert json.loads(result.stdout) == {"status": "success", "echo": "hi"}
+
+
+@pytest.mark.parametrize("forwarder_name", ["PartialForwarder"], indirect=True)
+def test_partial_delivery_keeps_the_answer_and_says_so_on_stderr(
+    forwarder_name: str,
+) -> None:
+    result = _run()
+
+    assert result.exit_code == 0, result.output
+    assert json.loads(result.stdout) == {"status": "success", "echo": "hi"}
+    assert "1 not delivered" in result.stderr

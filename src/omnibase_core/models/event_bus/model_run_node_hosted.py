@@ -32,7 +32,12 @@ class ModelRunNodeHosted:
 
     @staticmethod
     def require_delivered(node_id: str, state_root: Path) -> None:
-        """Refuse a finished run whose bus reading says its recorded events were not delivered."""
+        """Refuse a finished run whose bus reading says none of its recorded events was delivered.
+
+        A reading that is degraded but forwarded at least one event is a partial delivery (the forwarder
+        refuses the run's own command by name while it carries the events); the settle step already says so
+        on stderr, and the run's answer stands.
+        """
         result_path = state_root / "workflow_result.json"
         try:
             recorded = json.loads(result_path.read_text(encoding="utf-8")).get(
@@ -47,7 +52,7 @@ class ModelRunNodeHosted:
         if recorded is None:
             return
         reading = ModelRuntimeBusReading.model_validate(recorded)
-        if reading.degraded:
+        if reading.degraded and reading.events_forwarded == 0:
             raise ModelOnexError(
                 error_code=EnumCoreErrorCode.RUNTIME_ERROR,
                 message=f"Node '{node_id}' ran but its recorded events were not delivered "
