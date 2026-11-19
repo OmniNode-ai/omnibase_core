@@ -130,12 +130,32 @@ def _hook_ids(root: Path) -> frozenset[str]:
     )
 
 
-@pytest.mark.parametrize("root", _registry_roots(), ids=lambda p: p.name)
-def test_no_ci_caller_runs_a_removable_console_script(root: Path) -> None:
-    scripts = _removable_scripts()
+def _own_scripts(root: Path) -> frozenset[str]:
+    """Console scripts the scanned repository declares itself.
+
+    A repository that declares a script of the same name runs its own program, which T1
+    does not remove (onex_change_control declares its own check-imperative-contracts).
+    """
+    if root == REPO_ROOT:
+        return frozenset()
+    path = root / "pyproject.toml"
+    if not path.is_file():
+        return frozenset()
+    project = tomllib.loads(path.read_text(encoding="utf-8")).get("project", {})
+    return frozenset(project.get("scripts", {}))
+
+
+def _offenders(root: Path) -> list[str]:
+    removable = _removable_scripts()
+    own = _own_scripts(root)
     hook_ids = _hook_ids(root)
     offenders = []
     for location, text in _shell_texts(root):
+        # A repository's own script of the same name is exempt only where the step does not
+        # fetch omnibase_core itself (`uvx --from omnibase_core`, `uv tool install omnibase_core`):
+        # there the name runs core's copy, which T1 removes.
+        fetches_core = bool(re.search(r"omnibase[_-]core", text))
+        scripts = removable if fetches_core else removable - own
         # A step that drives pre-commit (`pre-commit run "$hook"` over a list of names) names
         # hook ids, which run the hook's entry; the entries are checked on their own.
         runs_precommit = bool(re.search(r"pre-commit\S*\s+run\b", text))
@@ -144,6 +164,47 @@ def test_no_ci_caller_runs_a_removable_console_script(root: Path) -> None:
             for name in _invocations(text, scripts)
             if not (runs_precommit and name in hook_ids)
         ]
+    return offenders
+
+
+def test_a_repository_running_its_own_script_of_that_name_is_not_a_caller(
+    tmp_path: Path,
+) -> None:
+    core_script = sorted(_removable_scripts())[0]
+
+    def repository(name: str, declares_it: bool, run: str = "uv run") -> Path:
+        root = tmp_path / name
+        (root / ".github" / "workflows").mkdir(parents=True)
+        (root / ".github" / "workflows" / "ci.yml").write_text(
+            "jobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n"
+            f"      - run: {run} {core_script} --verbose\n",
+            encoding="utf-8",
+        )
+        scripts = f'[project.scripts]\n{core_script} = "own.module:main"\n'
+        (root / "pyproject.toml").write_text(
+            '[project]\nname = "x"\n' + (scripts if declares_it else ""),
+            encoding="utf-8",
+        )
+        return root
+
+    assert _offenders(repository("declares", declares_it=True)) == []
+    assert _offenders(repository("borrows", declares_it=False)) != []
+    # Declaring the name does not exempt a step that runs omnibase_core's own copy.
+    assert (
+        _offenders(
+            repository(
+                "declares_but_fetches_core",
+                declares_it=True,
+                run="uvx --from omnibase_core",
+            )
+        )
+        != []
+    )
+
+
+@pytest.mark.parametrize("root", _registry_roots(), ids=lambda p: p.name)
+def test_no_ci_caller_runs_a_removable_console_script(root: Path) -> None:
+    offenders = _offenders(root)
     assert offenders == [], (
         "these CI callers run an omnibase_core console script that OMN-25070 (T1) removes "
         "from the customer install; run `python -m <module>` instead:\n  "
