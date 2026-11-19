@@ -85,9 +85,14 @@ dod_evidence:
     binds_ac: [AC3]
     checks:
       - check_type: command
-        check_value: "! git diff origin/dev HEAD -- tests/ src/omnibase_core/validation/contracts/ | grep
-          -E '^\\+.*(pytest.mark.(skip|xfail)|pytest.skip|xfail)'"
-        cwd: ${OMNI_HOME}/omnibase_core
+        check_value: "grep -q hook_globs first_party_ref.validation.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core/src/omnibase_core/validation/contracts
+      - check_type: command
+        check_value: "grep -q ci_globs first_party_ref.validation.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core/src/omnibase_core/validation/contracts
+      - check_type: command
+        check_value: "grep -q 'max_files: 1' first_party_ref.validation.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core/src/omnibase_core/validation/contracts
   - id: dod-omn26065-ac4
     description: "The pull request carries a comment starting Lab: head=<head sha> and the lane writes
       one MSG to landing-controller naming it; required checks are read from the watcher at that head."
@@ -104,8 +109,9 @@ dod_evidence:
     source: manual
     binds_ac: [AC5]
     checks:
-      - check_type: command
-        check_value: "echo 'AC5: evidence is the lane TERMINAL row of pinrule-1545 on the rolling ledger'"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/first_party_ref/test_first_party_ref_paired_homes.py::test_a_core_tag_that_differs_between_hook_rev_and_ci_reads_one_finding
+          -q -p no:cacheprovider"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26065-ac6
     description: "The checker, run as python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
@@ -114,7 +120,7 @@ dod_evidence:
     source: manual
     binds_ac: [AC6]
     checks:
-      - check_type: command
-        check_value: "echo 'AC6: evidence is the lab-run receipt quoted in the Lab: head= comment of the
-          pull request'"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/first_party_ref/test_first_party_ref_paired_homes.py::test_hook_rev_and_ci_tag_naming_the_same_core_tag_read_no_finding
+          -q -p no:cacheprovider"
         cwd: ${OMNI_HOME}/omnibase_core
