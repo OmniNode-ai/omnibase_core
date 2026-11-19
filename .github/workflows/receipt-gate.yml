@@ -1799,8 +1799,9 @@ jobs:
                 fi
                 # A contract is evidence, not product: the fix's own contract
                 # change is never reverted, and a later amendment on the base
-                # would make it fail to revert (OMN-17427).
-                if [[ "$path" =~ $TEST_SIDE|^contracts/OMN-[0-9]+\.yaml$ ]]; then
+                # would make it fail to revert (OMN-17427). A duration record is
+                # test bookkeeping, not product, either (OMN-25969).
+                if [[ "$path" =~ $TEST_SIDE|$TEST_RECORDS|^contracts/OMN-[0-9]+\.yaml$ ]]; then
                   continue
                 fi
                 if version_bookkeeping_only "$fix" "$path"; then
@@ -1845,7 +1846,9 @@ jobs:
                   cited_contract=true
                 fi
               done < "$RUNNER_TEMP/dod/tickets.txt"
-              if [ "$test_side" = true ] || [ "$cited_contract" = true ]; then
+              # The pull request's duration records go with its tests, so a bound check
+              # that reads one runs against it; they never count as a test (OMN-25969).
+              if [ "$test_side" = true ] || [ "$cited_contract" = true ] || [[ "$path" =~ $TEST_RECORDS ]]; then
                 git -C "$control_tree" checkout "$HEAD_SHA" -- "$path"
                 printf 'Overlaid: %s\n' "$path"
                 if [ "$test_side" = true ]; then

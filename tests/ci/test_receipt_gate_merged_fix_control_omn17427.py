@@ -515,6 +515,55 @@ def test_merged_fix_with_only_test_and_contract_changes_is_refused(
     assert control is None
 
 
+DURATION_RECORD = "config/test_file_durations.d/tests__test_product.json"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_merged_fix_with_only_tests_and_a_duration_record_is_refused(
+    tmp_path: Path,
+) -> None:
+    """OMN-25969: a fix's own duration record is bookkeeping, so reverting it proves nothing."""
+    repo = _repository(tmp_path)
+    repo.write("tests/test_more.py", PRODUCT_TEST)
+    repo.write(DURATION_RECORD, '{"seconds": 0.1}\n')
+    named = repo.commit("test(OMN-1): more tests and their duration record")
+    repo.commits["merge_base"] = named
+    repo.env["BASE_SHA"] = named
+    _bind(repo, [f"OMN-1 {named}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::merged fix {named} changes no product path, so reverting it "
+        "cannot make a bound test fail"
+    ) in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_binding_duration_record_is_laid_over_the_control(tmp_path: Path) -> None:
+    """OMN-25969: the binding's own record reaches the control, so a check reading it is real."""
+    repo = _repository(tmp_path)
+    _bind(
+        repo,
+        [f"OMN-1 {repo.commits['fix']}"],
+        extra_files={DURATION_RECORD: '{"seconds": 0.1}\n'},
+    )
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert f"Overlaid: {DURATION_RECORD}" in prepare.stdout
+    control_tree = (
+        Path((repo.dod_dir / "control-home-OMN-1.txt").read_text().strip())
+        / repo.env["REPO_SHORT"]
+    )
+    assert (control_tree / DURATION_RECORD).read_text() == '{"seconds": 0.1}\n'
+    assert (control_tree / "src/product.py").read_text() == "BROKEN = True\n"
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+
+
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
 def test_binding_whose_check_passes_with_the_fix_reverted_is_refused(
     tmp_path: Path,
