@@ -572,6 +572,58 @@ def _sibling_issues(
                             )
 
 
+_PAIRED_HOME = "\0paired"
+
+
+def _pair_role(
+    path: str, repo: str, homes: ModelFirstPartyHomesParameters
+) -> str | None:
+    """The role a file plays in a paired repository's one home, from the contract's globs."""
+    if repo not in {name.lower() for name in homes.paired_repositories}:
+        return None
+    if matches(path, homes.hook_globs):
+        return "hook"
+    if matches(path, homes.ci_globs):
+        return "ci"
+    return None
+
+
+def _drift_issues(
+    paired: dict[tuple[str, str], list[tuple[ModelFirstPartyReference, str]]],
+    homes: ModelFirstPartyHomesParameters,
+    policies: dict[str, ModelFirstPartyPolicy],
+) -> Iterator[ModelValidationIssue]:
+    """A CI tag literal that differs from the hook rev of its repository is drift."""
+    tag_pattern = cast(
+        ModelFirstPartyRefParameters, policies["first_party_not_dev_tag"]
+    ).tag_pattern
+    for (repo, role), found in paired.items():
+        if role != "ci":
+            continue
+        hook_pins = {
+            pin
+            for ref, pin in paired.get((repo, "hook"), [])
+            if re.fullmatch(tag_pattern, pin)
+        }
+        reported: set[tuple[str, str]] = set()
+        for ref, pin in found:
+            if (
+                hook_pins
+                and pin not in hook_pins
+                and re.fullmatch(tag_pattern, pin)
+                and (ref.path, pin) not in reported
+            ):
+                reported.add((ref.path, pin))
+                yield _issue(
+                    "first_party_ref_two_homes",
+                    homes,
+                    ref.path,
+                    ref.line,
+                    f"{repo}@{pin} differs from the pre-commit hook rev "
+                    f"{', '.join(sorted(hook_pins))}",
+                )
+
+
 def check_first_party_refs(
     facts: ModelFirstPartyRefInput, contract: ModelValidatorSubcontract
 ) -> tuple[ModelValidationIssue, ...]:
@@ -580,6 +632,9 @@ def check_first_party_refs(
     homes = cast(ModelFirstPartyHomesParameters, policies["first_party_ref_two_homes"])
     issues: list[ModelValidationIssue] = []
     occurrences: dict[tuple[str, str], set[str]] = {}
+    homes_used: dict[tuple[str, str], set[str]] = {}
+    filled_roles: dict[tuple[str, str], set[str]] = {}
+    paired: dict[tuple[str, str], list[tuple[ModelFirstPartyReference, str]]] = {}
     for ref in _refs(facts, policies):
         rule = {
             "uses": "first_party_not_dev_tag",
@@ -631,9 +686,20 @@ def check_first_party_refs(
             and matches(ref.path, homes.file_globs)
         ):
             files = occurrences.setdefault((repo, pin), set())
+            role = _pair_role(ref.path, repo, homes)
+            if role is not None:
+                paired.setdefault((repo, role), []).append((ref, pin))
             if ref.path not in files:
                 files.add(ref.path)
-                if len(files) > homes.max_files:
+                taken = filled_roles.setdefault((repo, pin), set())
+                slot = ref.path
+                if role is not None and role not in taken:
+                    taken.add(role)
+                    slot = _PAIRED_HOME
+                used = homes_used.setdefault((repo, pin), set())
+                opened = slot not in used
+                used.add(slot)
+                if opened and len(used) > homes.max_files:
                     issues.append(
                         _issue(
                             "first_party_ref_two_homes",
@@ -643,6 +709,7 @@ def check_first_party_refs(
                             f"{repo}@{pin} also appears in {', '.join(sorted(files - {ref.path}))}",
                         )
                     )
+    issues.extend(_drift_issues(paired, homes, policies))
     third = cast(ModelThirdPartyRefParameters, policies["third_party_not_sha"])
     for file in facts.files:
         if matches(file.path, third.file_globs):

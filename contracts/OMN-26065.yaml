@@ -1,0 +1,126 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26065
+title: "omnibase_core first_party_ref accepts one omnibase_core tag named by a repository's pre-commit
+  hook rev and its CI workflow together"
+summary: "The first_party_ref_two_homes rule refused a repository whose pre-commit hook rev and CI workflow
+  tag literal name the same omnibase_core tag, so no repository could move its core pin. A paired repository
+  (omnibase_core, data in first_party_ref.validation.yaml) now has one home made of one hook file and
+  one CI workflow file; the same tag in any further file, or a CI tag that differs from the hook rev,
+  still reads a first_party_ref_two_homes finding. No rule is removed or disabled and max_files stays
+  1."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26065-paired-homes
+    statement: "A repository may name one omnibase_core tag in its hook rev and in its CI workflow tag
+      literal together; the same tag in a third file, or two literals that differ, still reads a finding."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a regression test built from the recorded failing input (a .pre-commit-config.yaml
+          and a workflow file that name the same omnibase_core dev-merge tag, fixture path under tests/fixtures)
+          fails on origin/dev with one first_party_ref_two_homes finding and passes on the fix -- falsifier:
+          `uv run pytest tests/unit/validation/first_party_ref -q -p no:cacheprovider` exits non-zero
+          at the new head, or the new test exits 0 at origin/dev"
+      - id: AC2
+        statement: "AC2: a repository whose hook rev and CI tag literal name the same omnibase_core tag
+          reads zero first_party_ref_two_homes findings, while the same literal in a third file, or a
+          literal that differs between the two files, still reads one finding -- falsifier: the new tests
+          for those two cases fail under `uv run pytest tests/unit/validation/first_party_ref -q -p no:cacheprovider`"
+      - id: AC3
+        statement: "AC3: no check is widened, so the diff removes no assertion, adds no skip or xfail
+          marker, does not delete the parity rule and does not raise any baseline or bound number -- falsifier:
+          `git diff origin/dev HEAD -- tests/ src/omnibase_core/validation/contracts/` shows a removed
+          assertion, a new skip or xfail marker, a deleted rule or a raised bound"
+      - id: AC4
+        statement: "AC4: the pull request is open and ready with a comment starting `Lab: head=<full head
+          sha>`, its required checks read success at that head and the lane hands it to the landing lane
+          by one ledger MSG -- falsifier: `onex scm commit-check-runs OmniNode-ai/omnibase_core --head-sha
+          <head>` lists a required check not success, or the ledger holds no MSG to landing-controller
+          naming the pull request"
+      - id: AC5
+        statement: "AC5: the lane report names the per-repository pin moves that follow (OMN-26029, OMN-26030
+          and OMN-26031) and states from a run of check-public-runner-placement at a tag after dev-20261029
+          whether its 36 errors come from this rule or from another cause -- falsifier: the lane TERMINAL
+          names none of the three tickets or carries no reading of check-public-runner-placement"
+      - id: AC6
+        statement: "AC6: integrated: the merged checker is read running on a lab host, where `python -m
+          omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref` run through
+          /omni:lab-run in a checkout of a repository whose hook rev and CI tag name the same omnibase_core
+          tag exits 0 and prints no first_party_ref_two_homes -- falsifier: that lab-run receipt shows
+          a non-zero exit or a first_party_ref_two_homes line, read back from the receipt"
+evidence_requirements:
+  - kind: tests
+    description: "The first_party_ref test directory, including the paired-home tests."
+    command: uv run pytest tests/unit/validation/first_party_ref -q -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26065-ac1
+    description: "The paired-home test file reads the recorded same-tag input as clean and fails at origin/dev,
+      where the same input reads one first_party_ref_two_homes finding."
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/first_party_ref -q -p no:cacheprovider"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26065-ac2
+    description: "Same tag in hook plus CI reads zero findings; a third file or a differing CI tag reads
+      one."
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/first_party_ref/test_first_party_ref_paired_homes.py
+          -q -p no:cacheprovider"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26065-ac3
+    description: "The contract diff only adds the paired_repositories, hook_globs and ci_globs parameters;
+      max_files stays 1, no rule is removed and the tests add no skip or xfail marker."
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: command
+        check_value: "grep -q hook_globs first_party_ref.validation.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core/src/omnibase_core/validation/contracts
+      - check_type: command
+        check_value: "grep -q ci_globs first_party_ref.validation.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core/src/omnibase_core/validation/contracts
+      - check_type: command
+        check_value: "grep -q 'max_files: 1' first_party_ref.validation.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core/src/omnibase_core/validation/contracts
+  - id: dod-omn26065-ac4
+    description: "The pull request carries a comment starting Lab: head=<head sha> and the lane writes
+      one MSG to landing-controller naming it; required checks are read from the watcher at that head."
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: command
+        check_value: "grep -q paired_repositories src/omnibase_core/validation/contracts/first_party_ref.validation.yaml
+          && grep -q 'max_files: 1' src/omnibase_core/validation/contracts/first_party_ref.validation.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26065-ac5
+    description: "The lane TERMINAL names OMN-26029, OMN-26030 and OMN-26031 and carries the reading of
+      check-public-runner-placement."
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/first_party_ref/test_first_party_ref_paired_homes.py::test_a_core_tag_that_differs_between_hook_rev_and_ci_reads_one_finding
+          -q -p no:cacheprovider"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26065-ac6
+    description: "The checker, run as python -m omnibase_core.nodes.node_first_party_tag_inventory_effect.runtime_first_party_ref
+      through lab-run in a same-tag repository, exits 0 with no first_party_ref_two_homes; the receipt
+      is in the Lab comment."
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/first_party_ref/test_first_party_ref_paired_homes.py::test_hook_rev_and_ci_tag_naming_the_same_core_tag_read_no_finding
+          -q -p no:cacheprovider"
+        cwd: ${OMNI_HOME}/omnibase_core
