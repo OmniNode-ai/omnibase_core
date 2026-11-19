@@ -769,7 +769,7 @@ jobs:
             git fetch --no-tags --depth=1 origin "$RATCHET_BASE_REF"
             args+=(--ratchet-base-ref "$RATCHET_BASE_REF")
           fi
-          uv run check-merge-queue-parity "${args[@]}"
+          uv run python -m omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check "${args[@]}"
           if [ -z "$RATCHET_BASE_REF" ]; then
             echo "::notice::no base ref (push event): version-floor check skipped"
             exit 0
@@ -965,7 +965,7 @@ jobs:
       - name: Validate documentation links
         id: validate-doc-links
         run: |
-          uv run onex-validate-links --verbose
+          uv run python -m omnibase_core.nodes.node_markdown_links_check_compute.runtime_markdown_links_check --verbose
 
       - name: Documentation validation summary
         if: always()
@@ -1479,7 +1479,8 @@ jobs:
           # Scans contracts with metadata.demo_path: true across the repo.
           # Fails on orphan topics, pub/sub mismatches, missing widget producers,
           # and hand-authored topic literals in source files.
-          .venv/bin/onex-demo-path-topic-gate src/
+          # OMN-25070: run the module, not the console script T1 removes.
+          .venv/bin/python -m omnibase_core.nodes.node_demo_path_topic_coherence_check_compute.runtime_demo_path_topic_coherence_check src/
 
       - name: Gate summary
         if: always()
