@@ -29,25 +29,24 @@ if TYPE_CHECKING:
 MAX_ERRORS_DISPLAYED = 5  # Maximum errors shown before truncation in validation output
 
 
-def get_version() -> str:
-    """Get the package version with graceful fallback chain.
+def get_version(
+    distributions: tuple[str, ...] = ("omninode-onex", "omnibase_core"),
+) -> str:
+    """The version `onex --version` prints; never raises, so --version always works.
 
-    Version Resolution Order:
-        1. importlib.metadata.version("omnibase_core") - Reads from installed package metadata
-        2. omnibase_core.__version__ - Falls back to module-level __version__ attribute
-        3. "unknown" - Final fallback if all methods fail (never raises)
-
-    Returns:
-        The version string, or "unknown" if version cannot be determined.
-
-    Note:
-        This function is designed to never raise exceptions, ensuring
-        CLI --version flag always works even in degraded environments.
+    Order: the first installed of `distributions` (by default the customer package
+    omninode-onex, then omnibase_core), then omnibase_core.__version__, then "unknown".
     """
     try:
         from importlib.metadata import PackageNotFoundError, version
 
-        return version("omnibase_core")
+        # OMN-25070: a customer installs omninode-onex, so that is the version they see.
+        for distribution in distributions:
+            try:
+                return version(distribution)
+            except PackageNotFoundError:
+                continue
+        raise PackageNotFoundError("omnibase_core")
     except (ImportError, PackageNotFoundError):
         # Fallback to __init__.py version
         try:  # fallback-ok: version getter must never crash
@@ -429,7 +428,7 @@ def info(ctx: click.Context) -> None:
     """
     verbose = ctx.obj.get("verbose", False)
 
-    click.echo(f"omnibase_core version: {get_version()}")
+    click.echo(f"omnibase_core version: {get_version(('omnibase_core',))}")
     click.echo(f"Python version: {sys.version.split()[0]}")
 
     if verbose:

@@ -1,0 +1,96 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24538
+title: "Silent fallbacks, unread-input defaults and nodes nothing calls are refused by the generic validators,
+  as ratchets"
+summary: "Three generic-format core validators start as shrink-only ratchets: a handler of a contract
+  with a required input that defaults it or answers an unreadable input with a made-up value, a contract
+  that declares an external read without declaring what a failed read returns and a test that exercises
+  it, and a node nothing calls and nothing feeds. The cases in the tree sit in per-file baselines; a new
+  one is refused."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn24538-failopen
+    statement: "A change that adds a silent default for a required input, an external read with no declared
+      unread outcome, or a node nothing calls fails the pre-commit suite; the cases that predate the refusal
+      sit in per-file shrink-only baselines."
+    acceptance:
+      - id: AC1
+        statement: "AC1: a handler for a contract with a required input that replaces a missing value
+          by a default, or answers a read failure with a made-up value, is refused -- falsifier: uv run
+          pytest tests/unit/validation/test_checker_required_input_fallback.py -q"
+      - id: AC2
+        statement: "AC2: a contract that declares an external read without declaring what a failed read
+          returns, and a test that exercises it, is refused -- falsifier: uv run pytest tests/unit/validation/test_checker_unread_outcome_declared.py
+          -q"
+      - id: AC3
+        statement: "AC3: a node nothing calls and nothing feeds is counted, and a new one is refused --
+          falsifier: uv run pytest tests/unit/validation/test_checker_node_no_caller.py -q"
+      - id: AC4
+        statement: "AC4: integrated: the precommit-suite job on the merged head of omnibase_core prints
+          each of the three checks passing on the baselined tree -- falsifier: the CI log of the latest
+          merged head shows a failing line for any of the three hooks"
+evidence_requirements:
+  - kind: tests
+    description: The three detector tests pass.
+    command: "uv run pytest tests/unit/validation/test_checker_required_input_fallback.py tests/unit/validation/test_checker_unread_outcome_declared.py
+      tests/unit/validation/test_checker_node_no_caller.py -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24538-ac1
+    description: "A fixture handler that defaults a required input and one that answers an unreadable
+      receipt with an empty list are refused; the corrected handlers are admitted."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_required_input_fallback.py -q --no-cov
+          -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24538-ac2
+    description: "A contract with an external read and no declared unread outcome, or one naming a test
+      that does not exist, is refused; the corrected contract is admitted."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_unread_outcome_declared.py -q --no-cov
+          -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24538-ac3
+    description: "A node nothing references, nothing publishes to and nothing external feeds is refused;
+      the same node with a publisher, a reference or a command topic is admitted."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_checker_node_no_caller.py -q --no-cov -o
+          addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24538-ac4
+    description: "The three validators as the pre-commit hooks run them accept this tree: the two with
+      no baseline file report no finding over the handlers and contracts, and node_no_caller holds its
+      one baselined contract to its ratchet row."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: command
+        check_value: "sh -c 'env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_node_no_caller:ValidatorNodeNoCaller --baseline .onex_ratchets/node_no_caller_ratchet.yaml
+          .onex_ratchets/node_no_caller_ratchet.yaml src/omnibase_core/nodes/node_invariant_analysis_check_compute/contract.yaml
+          && env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run
+          omnibase_core.validation.validator_unread_outcome_declared:ValidatorUnreadOutcomeDeclared src/omnibase_core/nodes/node_invariant_analysis_check_compute/contract.yaml'"
+        cwd: ${OMNI_HOME}/omnibase_core

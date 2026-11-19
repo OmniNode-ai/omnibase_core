@@ -1,0 +1,8 @@
+name: node_projection_day_reader
+node_type: COMPUTE
+io_operations:
+  - operation_type: database_read
+    target: ledger_events
+unread_outcome:
+  returns: ''
+  test: tests/unit/test_projection_day_reader.py::test_projection_refuses_unreadable_day

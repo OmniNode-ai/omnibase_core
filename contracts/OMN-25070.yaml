@@ -1,0 +1,70 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-25070
+title: CI runs omnibase_core's checks as modules, so it survives the console scripts T1 removes from the
+  customer install
+summary: T1 of the customer delivery plan takes the check tools out of the customer install, so the console
+  scripts omnibase_core declares (all but onex and omni-agent) can leave the published package. Eleven
+  CI callers in this repository ran one of them by name. Each now runs `python -m <module>`, the form
+  most of the repository's hooks already use, and the reusable validate-docs.yml standalone mode runs
+  the link validator from `uv run --no-project --with omnibase_core` instead of a uv tool install's script.
+  A new test fails on any workflow, composite action or hook entry that runs a removable script, and checks
+  that every `python -m` target runs as a module. This change removes no script; the move itself is a
+  later step of the ticket. The other registry repositories' five callers (onex_change_control, omnimemory,
+  omniclaude) get their own pull requests.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25070-ci-callers-survive-script-cleanup
+    statement: No workflow, reusable workflow or pre-commit hook in omnibase_core runs a console script
+      that T1 removes, so CI keeps working once the scripts leave the published package.
+    acceptance:
+      - id: AC6
+        statement: "AC6 (this repository's part): no workflow, composite action or hook entry in omnibase_core
+          runs a removable omnibase_core console script, validate-docs.yml's standalone mode needs no
+          installed script, and every python -m target runs as a module -- falsifier: uv run pytest tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py
+          fails at the merge base, where eleven callers run scripts by name and standalone mode runs `uv
+          tool install omnibase_core`"
+  - id: req-omn25070-onex-version-customer-package
+    statement: onex --version reports the version of the customer package omninode-onex when it is installed,
+      and omnibase_core's version only on a developer install without it.
+    acceptance:
+      - id: AC7
+        statement: "AC7: with omninode-onex installed, onex --version prints its version (onex version
+          0.0.1 for 0.0.1); without it, the omnibase_core version -- falsifier: uv run pytest tests/unit/cli/test_onex_version_customer_package_omn25070.py
+          fails at the merge base, where get_version() reads only omnibase_core's metadata"
+evidence_requirements:
+  - kind: tests
+    description: The caller test and the workflow tests whose step lookups follow the module form.
+    command: uv run --frozen pytest tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py tests/ci/test_imperative_contract_guard_workflow_omn20918.py
+      tests/ci/test_imperative_contract_guard_fetch_retry_omn23527.py -q --no-cov
+  - kind: tests
+    description: The version test and the existing CLI command tests.
+    command: uv run --frozen pytest tests/unit/cli/test_onex_version_customer_package_omn25070.py tests/unit/cli/test_commands.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25070-ac6-core-callers
+    description: No CI caller in omnibase_core runs a removable console script, and every python -m target
+      runs as a module. The bound test fails at the merge base, which has eleven such callers.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25070-ac7-onex-version
+    description: onex --version reports the customer package's version when it is installed. The bound
+      test fails at the merge base, where a customer install printed onex version 0.47.72.
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/cli/test_onex_version_customer_package_omn25070.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

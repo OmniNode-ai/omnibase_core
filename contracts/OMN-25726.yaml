@@ -1,0 +1,99 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25726
+title: "The reusable zone-filter lists only a pull request's own files and gives the full matrix to a
+  list too long to classify"
+summary: "The reusable zone-filter workflow diffed a pull request's recorded base sha against the merge
+  commit the runner checks out, so a pull request whose base had moved listed every file the base changed
+  in between. Past 128 KiB the classifier step could not start (Argument list too long) and the required
+  Zone Filter check read red until the pull request was rebased. The step now diffs the pull request's
+  own head and answers a list too long to classify with the full matrix."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25726-zone-filter-own-files
+    statement: "The Zone Filter check does not go red because the pull request's base branch moved after
+      the pull request was opened; a list of changed files too long to hand to the classifier yields docs_only=false,
+      never a failed job."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the shared cause is named from the failure text read on at least three of PRs
+          5923, 6014 and 6101, with job ids and quoted lines in the lane's STATUS row, or a per-PR table
+          of what each lacks is in a STATUS row -- falsifier: the ledger holds no STATUS row from the
+          lane naming the cause with job ids and quotes for three PRs"
+      - id: AC2
+        statement: "AC2: one pull request on the default branch of the repository that owns the cause
+          fixes it at the source, with a test that fails on the unfixed code and passes on the fix --
+          falsifier: `uv run pytest <the new test path> -q` run at the unfixed base commit passes, or
+          `onex scm pr-view` shows no such pull request"
+      - id: AC3
+        statement: "AC3: the fix widens or bypasses no check, so the diff removes no assertion and adds
+          no skip, xfail, loosened threshold or changed required-check list -- falsifier: `git diff <base>
+          <head> -- tests/ .github/` shows a removed assert, a new skip or xfail marker or a changed required-check
+          list"
+      - id: AC4
+        statement: "AC4: the pull request is open and ready (not draft) with a line starting `Lab:` in
+          its body, and the lane TERMINAL names its head -- falsifier: `onex scm pr-view` shows the pull
+          request as a draft, or the body carries no line starting `Lab:`"
+evidence_requirements:
+  - kind: tests
+    description: The zone-filter tests pass on the fix and the new ones fail on the unfixed workflow.
+    command: "uv run pytest tests/ci/test_zone_filter_oversized_diff_omn25726.py tests/ci/test_zone_filter_job_omn16619.py
+      -q --no-cov -o addopts='' -n 0"
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25726-ac1
+    description: "The cause is named at its source: the workflow step's own comment states that the diff
+      against the merge commit listed the base's drift and overflowed one environment string. The lane's
+      STATUS row on the ledger carries the job ids, the refused log reads and the stale-base measurements;
+      that row is the lane's TERMINAL evidence, not a hosted check."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: command
+        check_value: "sh -c 'grep -c \"Argument list too long\" .github/workflows/zone-filter.yml'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25726-ac2
+    description: "The new test builds a pull request whose base has moved, runs the workflow's real Compute
+      changed files step and requires only the pull request's own file; it fails on the unfixed step (174304
+      characters listed) and passes on the fix."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_zone_filter_oversized_diff_omn25726.py -q --no-cov -o
+          addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25726-ac3
+    description: "The diff against the base removes no assertion from tests/ and adds no skip or xfail
+      to tests/ or .github/."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: command
+        check_value: "sh -c 'grep -q PR_HEAD_SHA .github/workflows/zone-filter.yml && ! git diff origin/dev...HEAD
+          -- tests/ .github/ | grep -E \"^-[^-].*assert|^[+][^+].*(skip|xfail)\"'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25726-ac4
+    description: "The delivered change is present at the head: the regression test file exists and the
+      workflow carries the 100000-character cap. The pull request's ready state and Lab line are read
+      from the watcher by the lane TERMINAL, which a hosted runner cannot do."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: command
+        check_value: "sh -c 'test -f tests/ci/test_zone_filter_oversized_diff_omn25726.py && grep -c 100000
+          .github/workflows/zone-filter.yml'"
+        cwd: ${OMNI_HOME}/omnibase_core

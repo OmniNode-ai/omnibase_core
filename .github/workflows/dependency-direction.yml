@@ -144,4 +144,4 @@ jobs:
           else
             echo "::notice::no ratchet base ref (push event): baseline ratchet skipped"
           fi
-          uv run --no-sync check-dependency-direction "${args[@]}"
+          uv run --no-sync python -m omnibase_core.nodes.node_dependency_direction_check_effect.runtime_dependency_direction_check "${args[@]}"

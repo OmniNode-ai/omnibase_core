@@ -7,6 +7,7 @@ import json
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from typing import Any
 
 import pytest
 from pydantic import ValidationError
@@ -129,3 +130,21 @@ def test_concurrent_schema_and_validation_are_deterministic() -> None:
         results = list(executor.map(_validate_and_describe, range(32)))
 
     assert len(set(results)) == 1
+
+
+@pytest.mark.unit
+def test_direct_constructor_accepts_declared_fields_and_rejects_unknown() -> None:
+    """The keyword constructor enforces the same strict contract as model_validate."""
+    metadata = ModelNodeMetadataBlock.model_validate(_metadata_payload())
+
+    result = ModelExtractedBlock(metadata=metadata, body="body")
+
+    assert result.metadata == metadata
+    assert result.body == "body"
+    assert ModelExtractedBlock().metadata is None
+    assert ModelExtractedBlock().body is None
+    assert ModelExtractedBlock.model_validate_json(result.model_dump_json()) == result
+
+    unknown_field: dict[str, Any] = {"unexpected": True}
+    with pytest.raises(ValidationError, match="unexpected"):
+        ModelExtractedBlock(metadata=metadata, body="body", **unknown_field)

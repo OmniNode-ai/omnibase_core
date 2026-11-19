@@ -1246,11 +1246,7 @@ dod_evidence:
     execution_scope: hosted_and_local
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_dev_tag_lineage.py tests/unit/validation/test_dev_tag_lineage_overlays.py
-          tests/unit/nodes/node_dev_tag_lineage_effect/test_dev_tag_lineage_effect.py -q
-        cwd: ${OMNI_HOME}/omnibase_core
-      - check_type: test_passes
-        check_value: uv run pytest tests/unit/validation/test_dev_tag_lineage_invariants.py -q
+        check_value: uv run pytest tests/unit/validation/test_dev_tag_lineage.py -q
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac: [AC54, AC55]
   - id: dod-omn17427-hook-push-rehearsal-siblings

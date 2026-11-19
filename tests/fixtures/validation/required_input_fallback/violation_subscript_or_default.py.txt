@@ -1,0 +1,2 @@
+def resolve(cfg):
+    return cfg["lane"] or "dev"

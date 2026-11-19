@@ -1,0 +1,7 @@
+name: node_projection_day_reader
+io_operations:
+  - operation_type: filesystem_read
+    target: var/ledger/days/2026-11-14.ndjson
+unread_outcome:
+  returns: a typed refusal when the day cannot be read
+  test: tests/unit/test_projection_day_reader.py test_projection_refuses_unreadable_day

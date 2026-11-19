@@ -159,7 +159,7 @@ jobs:
           else
             echo "::notice::no base ref (push event): baseline ratchet skipped"
           fi
-          uv run --no-sync check-merge-queue-parity "${args[@]}"
+          uv run --no-sync python -m omnibase_core.nodes.node_merge_queue_parity_check_effect.runtime_merge_queue_parity_check "${args[@]}"
 
       - name: Public runner placement
         working-directory: omnibase_core

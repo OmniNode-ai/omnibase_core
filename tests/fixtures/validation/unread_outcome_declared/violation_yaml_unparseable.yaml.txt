@@ -1,0 +1,2 @@
+name: node_projection_day_reader
+io_operations: [valid

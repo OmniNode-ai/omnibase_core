@@ -1,0 +1,99 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: node_no_caller
+  validator_name: Node No Caller Validator
+  validator_description: >-
+    Refuses a node contract that nothing calls, meaning no file outside the node's directory names it,
+    no other node publishes a topic it subscribes to and no command topic feeds it. The name keys, the
+    topic keys, the externally fed topic pattern, the catalog threshold, the annotation marker and the
+    remediation text are the rule rows of this file (OMN-24538). The same defect class as node_no_caller
+    in omnimarket's seam graph defects node.
+  target_patterns:
+    - '**/contract.yaml'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/fixtures/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: node_no_caller
+      description: >-
+        A node nothing references, nothing publishes to and nothing external feeds is finished work no
+        one can reach.
+      severity: error
+      enabled: true
+      parameters:
+        contract_file: contract.yaml
+        name_keys:
+          - name
+          - node_name
+        events_key: event_bus
+        subscribe_key: subscribe_topics
+        publish_key: publish_topics
+        external_feed_pattern: '^onex\.cmd\.'
+        scanned_extensions:
+          - .py
+          - .yaml
+          - .yml
+          - .toml
+          - .md
+        excluded_dir_names:
+          - .git
+          - .venv
+          - venv
+          - node_modules
+          - __pycache__
+          - fixtures
+          - archived
+          - .onex_ratchets
+          - contracts
+        catalog_file_node_threshold: 25
+        # a name with dots or hyphens (contract.verify.replay, support-ticket-classifier) is one token of the
+        # second form; the first form finds a name inside a module path
+        name_token_patterns:
+          - '[A-Za-z0-9_]+'
+          - '[A-Za-z0-9_][A-Za-z0-9_.-]*'
+        name_token_strip: '.-'
+        comment_prefix: '# '
+        annotation_marker: 'failopen-ok'
+        reason: nothing calls this node
+        remediation: >-
+          Wire the node to its caller (publish the topic it subscribes to, or name it from the code that
+          dispatches it), delete it, or annotate the name line with a failopen-ok comment and a reason.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/node_no_caller_ratchet.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

@@ -13,7 +13,7 @@
     Detect hardcoded __version__ string literals in __init__.py files and string version anti-patterns
     in Python and YAML files. In __init__.py, use importlib.metadata.version("package-name") instead.
   language: system
-  entry: validate-string-versions
+  entry: python -m omnibase_core.validation.scripts.validate_string_versions
   types_or: [python, yaml]
   pass_filenames: true
   require_serial: true
@@ -1552,6 +1552,46 @@
   require_serial: true
   stages: [pre-commit]
 
+- id: required-input-fallback
+  name: A required input is never answered with a made-up default (OMN-24538)
+  description: >
+    A handler of a node whose contract declares an input required must not default that input or answer
+    an unreadable input with a literal: a get with a default, a three-argument getattr, an or over a literal
+    and an except that returns a literal are refused. --baseline FILE admits the findings a repository
+    held when it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_required_input_fallback:ValidatorRequiredInputFallback
+  files: \.py$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: unread-outcome-declared
+  name: An external read declares what an unread input yields (OMN-24538)
+  description: >
+    A node contract whose io_operations declare an external read must carry an unread_outcome mapping
+    naming what a failed or absent read returns and a test that exercises it. --baseline FILE admits the
+    findings a repository held when it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_unread_outcome_declared:ValidatorUnreadOutcomeDeclared
+  files: contract\.yaml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
+- id: node-no-caller
+  name: A node has a caller (OMN-24538)
+  description: >
+    A node contract that no file outside its directory names, whose subscribed topics no other node publishes
+    and that no command topic feeds is refused: built and never called. --baseline FILE admits the findings
+    a repository held when it adopted the hook, per file, and only shrinks.
+  language: python
+  entry: python -m omnibase_core.nodes.node_validation_report_write_effect.runtime_validator_run omnibase_core.validation.validator_node_no_caller:ValidatorNodeNoCaller
+  files: contract\.yaml$
+  pass_filenames: true
+  require_serial: true
+  stages: [pre-commit]
+
 - id: no-import-none-fallback
   name: No ImportError handler that assigns a symbol to None (OMN-10819)
   description: >
@@ -1891,7 +1931,9 @@
   description: Resolve dev-merge tags with git and verify suffix, branch ancestry, declared version and
     adjacent lock identity.
   language: python
-  entry: python -m omnibase_core.nodes.node_dev_tag_lineage_effect.runtime_dev_tag_lineage
+  # OMN-23932: the node lives in omnimarket; the floor moves to the release that carries it.
+  additional_dependencies: ['omnimarket>=0.4.322,<0.5.0']
+  entry: python -m omnimarket.nodes.node_dev_tag_lineage_effect.runtime_dev_tag_lineage
   files: '(^|/)(pyproject\.toml|uv\.lock)$'
   pass_filenames: true
   require_serial: true

@@ -119,7 +119,7 @@ AUDITED_GUARD_JOB_EXECUTION_CONTRACTS = {
         "02ad44a4f74a9a2313756d099e534c59934bdb5940d3cfd8d8f73167d6bbf8f0"  # pragma: allowlist secret
     ),
     "demo-path-topic-coherence": (
-        "2791482ec77849e3c8fdc5b1d534ae1ce5d8a05149071e4bdb6c7a4a987f21aa"  # pragma: allowlist secret
+        "25addc4ad03359f8996e5f90beb4236daae629e94eb800ddecc5d1176a888ace"  # pragma: allowlist secret
     ),
     "dispatch-surface-test-required": (
         "563a6fc095f128bb8ee8b8d59fa7a89e63d429cb1f4f46b9824e40049765dcb0"  # pragma: allowlist secret
@@ -164,7 +164,7 @@ NO_DEV_DIRECT_EXECUTABLES = {
     "enum-governance": ".venv/bin/python",
     "contract-config-compliance": ".venv/bin/python",
     "breaking-schema-change": ".venv/bin/python",
-    "demo-path-topic-coherence": ".venv/bin/onex-demo-path-topic-gate",
+    "demo-path-topic-coherence": ".venv/bin/python",
     "dispatch-surface-test-required": ".venv/bin/python",
     "aislop-patterns": ".venv/bin/python",
     "doc-content-scan": ".venv/bin/python",

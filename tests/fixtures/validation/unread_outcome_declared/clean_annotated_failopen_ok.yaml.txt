@@ -1,0 +1,4 @@
+name: node_projection_day_reader
+io_operations:  # failopen-ok: the caller supplies the day boundary; an unread day yields UNKNOWN
+  - operation_type: filesystem_read
+    target: var/ledger/days/2026-11-14.ndjson

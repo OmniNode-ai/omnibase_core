@@ -1,0 +1,70 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: required_input_fallback
+  validator_name: Required Input Fallback Validator
+  validator_description: Refuses a handler that answers a missing required input with a made-up value
+    instead of an error, inside a node whose contract declares the input required. The contract file name,
+    the get and getattr method names, the annotation marker and the remediation text are the rule rows
+    of this file (OMN-24538).
+  target_patterns:
+    - '**/handlers/**/*.py'
+    - '**/handler*.py'
+  exclude_patterns:
+    - '**/tests/**'
+    - '**/test/**'
+    - '**/__pycache__/**'
+    - '**/.git/**'
+    - '**/.venv/**'
+    - '**/venv/**'
+  rules:
+    - rule_id: required_input_fallback
+      description: A required input that is missing is answered with a made-up default, so the node carries
+        on as if the input had arrived.
+      severity: error
+      enabled: true
+      parameters:
+        contract_file: contract.yaml
+        get_methods:
+          - get
+        getattr_names:
+          - getattr
+        comment_prefix: '# '
+        annotation_marker: 'failopen-ok'
+        reason: the contract requires this input and the code answers its absence with a made-up default
+        remediation: >-
+          Raise a typed error when a required input is missing, or annotate the line with a failopen-ok
+          comment and a reason.
+    - rule_id: baseline_ratchet
+      description: The findings that sat in the tree before this refusal are burn-down entries and the
+        only ones admitted; the baseline holds exactly those, per file, and only shrinks. An entry follows
+        its code when git records a move and is dropped when its file is gone.
+      severity: error
+      enabled: true
+      parameters:
+        baseline_path: '.onex_ratchets/required_input_fallback_baseline.yaml'
+        base_ref: 'HEAD'
+        move_similarity_percent: 10
+        missing_message: >-
+          {path} is baselined at {count} but the file does not exist: delete the entry; the baseline follows
+          moved code and drops removed files.
+        grew_message: >-
+          {path} holds {count} findings, baselined at {baselined}: a baselined file never grows; fix the
+          new finding instead of raising the entry.
+        stale_message: >-
+          {path} holds {count} findings, baselined at {baselined}: lower the entry to {count} (delete
+          it at zero) in the same change; the baseline only shrinks.
+        growth_message: "{path} is baselined at {count} and the base revision has {baselined}: the baseline
+          only shrinks; fix the findings instead of adding or raising an entry."
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

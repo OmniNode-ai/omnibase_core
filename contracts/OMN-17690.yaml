@@ -1,0 +1,123 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17690
+title: "Pydantic schema: resolve ModelExtractedBlock NodeMetadataBlock at runtime"
+summary: ModelExtractedBlock imports its canonical metadata model at runtime, so its JSON schema, validation
+  and JSON round-trip work in a fresh process with no rebuild call. The ticket text labels no acceptance
+  criteria, so AC1 to AC7 here are derived one per bullet of its Required repair section.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17690-extracted-block-runtime-complete
+    statement: ModelExtractedBlock is fully defined at runtime and its schema and wire behaviour are covered
+      by tests, including an exact all-23 enumerator.
+    acceptance:
+      - id: AC1
+        statement: "AC1: ModelExtractedBlock resolves ModelNodeMetadataBlock through a runtime import,
+          with no local alias, shim, import-order dependency or caller-side model_rebuild()."
+      - id: AC2
+        statement: "AC2: ModelExtractedBlock keeps metadata: ModelNodeMetadataBlock | None, its JSON schema,
+          its JSON round-trip and extra=forbid."
+      - id: AC3
+        statement: "AC3: A fresh-process test calls ModelExtractedBlock.model_json_schema() before any
+          other model is constructed."
+      - id: AC4
+        statement: "AC4: Constructor, model_validate and JSON round-trip are tested, and unknown fields
+          are rejected on both the outer DTO and the nested metadata."
+      - id: AC5
+        statement: "AC5: An exact all-23 schema, round-trip and extra-forbid enumerator replaces the representative-only
+          inventory."
+      - id: AC6
+        statement: "AC6: Concurrent schema and validation calls give identical results without a rebuild."
+      - id: AC7
+        statement: "AC7: The model file holds no TYPE_CHECKING import and no model_rebuild guidance."
+evidence_requirements:
+  - kind: tests
+    description: The ModelExtractedBlock runtime-completeness tests and the all-23 enumerator, run at
+      the pushed head.
+    command: uv run --frozen pytest tests/unit/models/core/test_model_extracted_block.py tests/unit/models/core/test_omn17617_version_generation_configs.py
+      -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17690-ac1
+    description: The model file has no TYPE_CHECKING import, and the fresh-process test asserts the metadata
+      annotation holds no ForwardRef and the class has no model_rebuild entry.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/core/test_model_extracted_block.py -k fresh_process
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17690-ac2
+    description: Nested metadata validates as ModelNodeMetadataBlock, survives the JSON round-trip, and
+      the schema reports additionalProperties false.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/core/test_model_extracted_block.py -k "canonical_model
+          or fresh_process" -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17690-ac3
+    description: A clean interpreter calls model_json_schema() on ModelExtractedBlock after importing
+      only the model and its metadata model, with no rebuild call.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/core/test_model_extracted_block.py -k fresh_process_schema
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17690-ac4
+    description: The direct constructor, model_validate and JSON round-trip are exercised, and an unknown
+      key is rejected at the outer level and at the nested metadata level.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/core/test_model_extracted_block.py -k "canonical_model
+          or direct_constructor" -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17690-ac5
+    description: The inventory test pins the 23 model names, and the parametrised test rejects unknown
+      keys, round-trips JSON, checks extra=forbid and checks the schema for every one of them.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/core/test_omn17617_version_generation_configs.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17690-ac6
+    description: Eight threads validate, round-trip and describe the schema 32 times and all results are
+      identical.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/core/test_model_extracted_block.py -k concurrent
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17690-ac7
+    description: The model source contains neither TYPE_CHECKING nor model_rebuild.
+    source: manual
+    binds_ac: [AC7]
+    checks:
+      - check_type: command
+        check_value: "! grep -nE 'TYPE_CHECKING|model_rebuild' src/omnibase_core/models/core/model_extracted_block.py"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17690-deploy-hosted-readback
+    description: Hosted deployment probe for this change runs the fresh-process schema test; the change
+      is a model and test change with no lab service or credential.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/core/test_model_extracted_block.py -k fresh_process
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

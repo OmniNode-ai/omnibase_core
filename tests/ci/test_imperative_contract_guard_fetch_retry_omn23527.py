@@ -104,7 +104,9 @@ def _step_by_id(data: dict[str, Any], step_id: str) -> dict[str, Any]:
 
 def _guard_step(data: dict[str, Any]) -> dict[str, Any]:
     (step,) = [
-        s for s in _steps(data) if "check-imperative-contracts" in s.get("run", "")
+        s
+        for s in _steps(data)
+        if "runtime_imperative_contract_guard_check" in s.get("run", "")
     ]
     return step
 
@@ -325,7 +327,9 @@ def test_guard_step_fails_when_the_guard_reports_a_violation(tmp_path: Path) -> 
         cwd=tmp_path / "omnibase_core",
     )
     assert result.returncode == 1
-    assert "check-imperative-contracts" in (tmp_path / "uv.log").read_text()
+    assert (
+        "runtime_imperative_contract_guard_check" in (tmp_path / "uv.log").read_text()
+    )
 
 
 def test_guard_step_passes_when_the_guard_is_clean(tmp_path: Path) -> None:
