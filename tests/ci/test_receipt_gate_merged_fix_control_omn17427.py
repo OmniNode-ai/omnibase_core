@@ -565,6 +565,22 @@ def test_binding_duration_record_is_laid_over_the_control(tmp_path: Path) -> Non
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_duration_record_is_not_a_test_side_change(tmp_path: Path) -> None:
+    """OMN-25969: a record is laid over the control but never counts as a test path."""
+    repo = _repository(tmp_path)
+    _bind(repo, [], extra_files={DURATION_RECORD: '{"seconds": 0.1}\n'})
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert f"Overlaid: {DURATION_RECORD}" in prepare.stdout
+    assert (
+        "::error::no test-side change: the bound tests cannot be shown to fail at the merge base"
+        in prepare.stdout
+    )
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
 def test_binding_whose_check_passes_with_the_fix_reverted_is_refused(
     tmp_path: Path,
 ) -> None:
