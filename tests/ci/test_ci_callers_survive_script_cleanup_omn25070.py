@@ -175,20 +175,30 @@ def _offenders(root: Path) -> list[str]:
 # line or of a pipeline element, after exec/then/do/time/if/!/env, as the program of
 # `uv run [flags]` or `uvx [flags]`, or as a `.../bin/onex` or `$VAR/onex` path.
 _LAUNCHER_PREFIX = (
-    r"(?:^|[;&|(]\s*|\$\(\s*|\b(?:exec|then|do|time|if|!)\s+|\benv(?:\s+\w+=\S+)*\s+"
-    r"|\buv\s+run(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*\s+"
+    r"(?:^|[;&|(]\s*|\$\(\s*"
+    # wrappers that run their arguments as a command
+    r"|\b(?:exec(?:\s+-a\s+\S+)?|then|do|time|if|!|nohup|command|xargs(?:\s+-\S+)*"
+    r"|timeout(?:\s+-\S+)*\s+\S+|stdbuf(?:\s+-\S+)+|sudo(?:\s+-\w+(?:\s+(?!onex\b|omni-agent\b)[^\s-]\S*)?)*"
+    r"|(?:uv\s+tool|pipx|poetry|hatch)\s+run(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*(?:\s+--)?)\s+"
+    r"|\benv(?:\s+-\S+)*(?:\s+\w+=\S+)*\s+"
+    # leading VAR=value assignments
+    r"|^(?:\w+=[^\s(]*\s+)+"
+    # a wrapper script that runs its arguments, e.g. scripts/uv-run-worktree-safe.sh
+    r"|\S+\.sh\s+"
+    r"|\buv\s+run(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*(?:\s+--)?\s+"
     r"|\buvx(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*\s+)"
 )
 _LAUNCHER_CALL = re.compile(
     _LAUNCHER_PREFIX
-    + r"[\"']?(?:[\w$.{}~/-]*bin/|\$\{?\w+\}?/)?(onex|omni-agent)[\"']?(?=\s|$)"
+    + r"[\"']?(?:[\w$.{}~/-]*bin/|\$\{?\w+\}?/)?(onex|omni-agent)[\"']?(?=[\s;&|)>]|$)"
 )
 
 
 def _launcher_calls(text: str) -> list[str]:
     """Lines of ``text`` that run ``onex`` or ``omni-agent`` as a command."""
     found = []
-    for line in text.splitlines():
+    # A command continued with a trailing backslash is one logical line.
+    for line in re.sub(r"\\\n\s*", " ", text).splitlines():
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
@@ -288,10 +298,23 @@ def test_every_python_dash_m_target_runs_as_a_module() -> None:
         "out=$(onex --version)",
         "uvx --from omnibase-core onex --help",
         "env A=1 OMNIBASE_PATH=/app onex ledger query --stdin",
+        "bash scripts/uv-run-worktree-safe.sh onex spdx validate",
+        "timeout 60 onex node x",
+        "sudo -u runner onex node x",
+        "xargs onex node",
+        "nohup onex node x &",
+        "FOO=1 onex node x",
+        "uv tool run onex --help",
+        "pipx run onex --help",
+        "uv run -- onex --help",
+        "uv tool run --from omninode-onex onex --help",
+        "test -x x && onex;",
+        "out=$(onex)",
+        "uv run \\\n  onex node x",
     ],
 )
 def test_a_launcher_command_is_recognised(line: str) -> None:
-    assert _launcher_calls(line) == [line]
+    assert len(_launcher_calls(line)) == 1, line
 
 
 @pytest.mark.parametrize(
@@ -304,6 +327,9 @@ def test_a_launcher_command_is_recognised(line: str) -> None:
         "ONEX_STATE=.onex_state",
         'echo "- declares a node dispatch (`onex run-node` / `onex node` /"',
         "uv run python -m omnibase_core.cli.cli_commands compliance check",
+        "command -v onex >/dev/null",
+        "bash scripts/check.sh plugins/onex",
+        'PLUGIN_JSON=$(find "$TMPDIR/onex" -name plugin.json)',
     ],
 )
 def test_prose_and_the_module_form_are_not_launcher_calls(line: str) -> None:
