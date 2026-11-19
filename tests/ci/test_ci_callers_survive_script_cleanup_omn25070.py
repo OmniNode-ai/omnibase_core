@@ -167,6 +167,36 @@ def _offenders(root: Path) -> list[str]:
     return offenders
 
 
+# The customer launchers move out of omnibase_core (OMN-25070 AC3, the launcher move):
+# only omninode-onex will declare them. A CI step or hook that runs `onex` as a command
+# stops working then, so every caller runs the CLI module instead:
+# `python -m omnibase_core.cli.cli_commands <args>`. "onex" is also an ordinary word in
+# step names, messages and paths, so only a command position counts: the start of a
+# line or of a pipeline element, after exec/then/do/time/if/!/env, as the program of
+# `uv run [flags]` or `uvx [flags]`, or as a `.../bin/onex` or `$VAR/onex` path.
+_LAUNCHER_PREFIX = (
+    r"(?:^|[;&|(]\s*|\$\(\s*|\b(?:exec|then|do|time|if|!)\s+|\benv(?:\s+\w+=\S+)*\s+"
+    r"|\buv\s+run(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*\s+"
+    r"|\buvx(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*\s+)"
+)
+_LAUNCHER_CALL = re.compile(
+    _LAUNCHER_PREFIX
+    + r"[\"']?(?:[\w$.{}~/-]*bin/|\$\{?\w+\}?/)?(onex|omni-agent)[\"']?(?=\s|$)"
+)
+
+
+def _launcher_calls(text: str) -> list[str]:
+    """Lines of ``text`` that run ``onex`` or ``omni-agent`` as a command."""
+    found = []
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            continue
+        if _LAUNCHER_CALL.search(stripped):
+            found.append(stripped)
+    return found
+
+
 def test_a_repository_running_its_own_script_of_that_name_is_not_a_caller(
     tmp_path: Path,
 ) -> None:
@@ -245,3 +275,50 @@ def test_every_python_dash_m_target_runs_as_a_module() -> None:
                 continue
             broken.append(f"{module}: no `if __name__ == '__main__'` block")
     assert broken == [], "python -m targets that cannot run:\n  " + "\n  ".join(broken)
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "uv run onex node node_x",
+        "uv run --frozen onex spdx validate",
+        "if uv run onex compliance check --help >/dev/null 2>&1; then",
+        "onex node node_release_notes_apply_effect \\",
+        '"$bin_dir/onex" --version',
+        "out=$(onex --version)",
+        "uvx --from omnibase-core onex --help",
+        "env A=1 OMNIBASE_PATH=/app onex ledger query --stdin",
+    ],
+)
+def test_a_launcher_command_is_recognised(line: str) -> None:
+    assert _launcher_calls(line) == [line]
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "name: onex architecture",
+        'echo "no onex for the customer"',
+        "path plugins/onex/skills",
+        "plugins/onex \\",
+        "ONEX_STATE=.onex_state",
+        'echo "- declares a node dispatch (`onex run-node` / `onex node` /"',
+        "uv run python -m omnibase_core.cli.cli_commands compliance check",
+    ],
+)
+def test_prose_and_the_module_form_are_not_launcher_calls(line: str) -> None:
+    assert _launcher_calls(line) == []
+
+
+@pytest.mark.parametrize("root", _registry_roots(), ids=lambda p: p.name)
+def test_no_ci_caller_runs_the_onex_launcher(root: Path) -> None:
+    callers = [
+        f"{location}: {line}"
+        for location, text in _shell_texts(root)
+        for line in _launcher_calls(text)
+    ]
+    assert callers == [], (
+        "these CI callers run the onex launcher, which only omninode-onex will declare "
+        "(OMN-25070); run `python -m omnibase_core.cli.cli_commands <args>` instead:\n  "
+        + "\n  ".join(sorted(set(callers)))
+    )

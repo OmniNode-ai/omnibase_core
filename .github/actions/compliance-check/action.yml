@@ -24,7 +24,7 @@ runs:
       id: check-command
       shell: bash
       run: |
-        if uv run onex compliance check --help >/dev/null 2>&1; then
+        if uv run python -m omnibase_core.cli.cli_commands compliance check --help >/dev/null 2>&1; then
           echo "available=true" >> "$GITHUB_OUTPUT"
         else
           echo "::notice::onex compliance check command not available yet — skipping"
@@ -37,7 +37,7 @@ runs:
       shell: bash
       run: |
         mkdir -p .onex_state/compliance
-        if uv run onex compliance check --repo-root . --output .onex_state/compliance/report.yaml; then
+        if uv run python -m omnibase_core.cli.cli_commands compliance check --repo-root . --output .onex_state/compliance/report.yaml; then
           echo "result=pass" >> "$GITHUB_OUTPUT"
         else
           echo "result=fail" >> "$GITHUB_OUTPUT"
