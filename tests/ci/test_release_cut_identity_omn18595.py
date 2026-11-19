@@ -493,3 +493,15 @@ def test_release_derived_version_real_history_reads_a_tag_no_newer_than_the_read
         described.stdout,
         top.group(1),
     )
+
+
+def test_release_changelog_retains_version_0_47_75_in_root_readme() -> None:
+    """Keep the 0.47.75 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.75 (2026-11-19)" in readme
+    assert "### Included Since v0.47.74" in readme
+    assert (
+        "- : move the dev-tag lineage and effect-backends nodes out of omnibase_core (#2312)"
+        in readme
+    )
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()
