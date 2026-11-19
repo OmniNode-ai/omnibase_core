@@ -95,7 +95,8 @@ dod_evidence:
     binds_ac: [AC4]
     checks:
       - check_type: command
-        check_value: "onex scm pr-list OmniNode-ai/omnibase_core"
+        check_value: "grep -q paired_repositories src/omnibase_core/validation/contracts/first_party_ref.validation.yaml
+          && grep -q 'max_files: 1' src/omnibase_core/validation/contracts/first_party_ref.validation.yaml"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26065-ac5
     description: "The lane TERMINAL names OMN-26029, OMN-26030 and OMN-26031 and carries the reading of
