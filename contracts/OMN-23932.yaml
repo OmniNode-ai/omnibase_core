@@ -1,0 +1,77 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-23932
+title: omnibase_core - the dev-tag lineage and effect-backends nodes leave core for omnimarket
+summary: The nodes node_dev_tag_lineage_effect and node_effect_backends_check_compute, their six effect-backends
+  models and their tests move to omnimarket, where the runtime registers nodes; core keeps the dev-tag
+  lineage request, facts and policy models its own validator consumes, and its hooks run the node from
+  omnimarket.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn23932-nodes-leave-core
+    statement: Core holds no node the runtime must register, and no hook or entry point in core names
+      a module that moved.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: omnibase_core holds neither node directory, registers neither under onex.nodes
+          and no hook entry names a moved core module -- falsifier: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py
+          -q --no-cov fails at the base commit and passes at the head'
+      - id: AC2
+        statement: 'AC2: the dev-tag lineage hook runs the omnimarket module -- falsifier: uv run pytest
+          tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q --no-cov -k omnimarket_module fails
+          at the base commit'
+      - id: AC3
+        statement: 'AC3: integrated: this change merges only after the omnimarket change carrying both
+          nodes is on dev and the hook runs there -- falsifier: the check-dev-tag-lineage hook run on
+          a pyproject change reports a runtime error naming the missing omnimarket module'
+evidence_requirements:
+  - kind: tests
+    description: The absence and hook-entry tests pass at the head.
+    command: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn23932-ac1
+    description: The absence test passes at the head; at the base commit four of its seven cases fail.
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q --no-cov
+        cwd: .
+  - id: dod-omn23932-ac2
+    description: The hook-entry case passes at the head and fails at the base commit.
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q --no-cov -k
+          omnimarket_module
+        cwd: .
+  - id: dod-omn23932-ac3
+    description: 'hosted proxy for AC3: the hook-entry case stands in for the integrated read; the hook
+      run after the omnimarket merge is posted as a pull request comment naming the head.'
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q --no-cov -k
+          hook
+        cwd: .
+  - id: dod-omn23932-integration-proof
+    description: the absence test runs on a lab host at the pushed head; hosted CI cannot reach the lab,
+      so only the local Done gate runs this unbound check
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: env PYTHONDONTWRITEBYTECODE=1 onex lab-work run --repo OmniNode-ai/omnibase_core
+          --sha "$(git rev-parse HEAD)" --lane dod-integration-proof-23932 --kind test -- env PYTHONDONTWRITEBYTECODE=1
+          uv run --frozen pytest tests/unit/nodes/test_moved_nodes_absent_omn23932.py -q --no-cov

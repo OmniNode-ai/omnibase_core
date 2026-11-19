@@ -2208,7 +2208,9 @@ repos:
 
       - id: check-dev-tag-lineage
         name: Verify dev-merge tag lineage (OMN-17427)
-        entry: env -u PYTHONPATH uv run python -m omnibase_core.nodes.node_dev_tag_lineage_effect.runtime_dev_tag_lineage
+        # OMN-23932: the node lives in omnimarket; the pinned tag moves to the dev merge tag of the omnimarket change that carries it.
+        entry: env -u PYTHONPATH uv run --no-project --with "omnimarket @ git+https://github.com/OmniNode-ai/omnimarket.git@dev-20261118215158-8bb5b8be7316"
+          python -m omnimarket.nodes.node_dev_tag_lineage_effect.runtime_dev_tag_lineage
         language: system
         files: '(^|/)(pyproject\.toml|uv\.lock)$'
         pass_filenames: true
