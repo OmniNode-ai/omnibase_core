@@ -12,3 +12,7 @@ class ModelFirstPartyHomesParameters(ModelFirstPartyPolicy):
     github_org: str = Field(min_length=1)
     repository_pattern: str
     max_files: int = Field(ge=1, strict=True)
+    # A paired repository's hook rev and CI workflow tag literal share one home.
+    paired_repositories: list[str] = Field(min_length=1)
+    hook_globs: list[str] = Field(min_length=1)
+    ci_globs: list[str] = Field(min_length=1)
