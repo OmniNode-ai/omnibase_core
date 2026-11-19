@@ -196,8 +196,17 @@ validation:
           - '**/*brief*.yaml'
           - '**/*brief*.yml'
         max_files: 1
+        paired_repositories:
+          - omnibase_core
+        hook_globs:
+          - .pre-commit-config.yaml
+          - '**/.pre-commit-config.yaml'
+        ci_globs:
+          - .github/workflows/*.yml
+          - .github/workflows/*.yaml
         remediation: Keep each repository@ref literal in one file; derive other uses from that home or
-          choose a distinct dev-merge tag.
+          choose a distinct dev-merge tag. A paired repository (omnibase_core) names one tag in its pre-commit
+          hook rev and its CI workflow together, and the two must be the same tag.
     - rule_id: brief_names_release_version
       description: brief names release version
       severity: error

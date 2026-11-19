@@ -1,0 +1,13 @@
+{
+  "files": [
+    {
+      "path": ".pre-commit-config.yaml",
+      "source": "repos:\n  - repo: https://github.com/OmniNode-ai/omnibase_core\n    rev: dev-20261018024445-b6ee996befa1\n    hooks:\n      - id: check-action-pins\n"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "source": "jobs:\n  zone-filter:\n    uses: OmniNode-ai/omnibase_core/.github/workflows/zone-filter.yml@dev-20261023024445-aaaaaaaaaaaa\n"
+    }
+  ],
+  "dev_tags": []
+}
