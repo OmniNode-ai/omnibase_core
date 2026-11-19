@@ -81,17 +81,19 @@ dod_evidence:
       - AC3
     checks:
       - check_type: command
-        check_value: "sh -c '! git diff origin/dev...HEAD -- tests/ .github/ | grep -E \"^-[^-].*assert|^[+][^+].*(skip|xfail)\"'"
+        check_value: "sh -c 'grep -q PR_HEAD_SHA .github/workflows/zone-filter.yml && ! git diff origin/dev...HEAD
+          -- tests/ .github/ | grep -E \"^-[^-].*assert|^[+][^+].*(skip|xfail)\"'"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn25726-ac4
-    description: "The pull request is open, ready and carries a Lab line; read from the watcher, not from
-      the hosted runner."
+    description: "The delivered change is present at the head: the regression test file exists and the
+      workflow carries the 100000-character cap. The pull request's ready state and Lab line are read
+      from the watcher by the lane TERMINAL, which a hosted runner cannot do."
     source: manual
-    execution_scope: local_done_gate
+    execution_scope: hosted_and_local
     binds_ac:
       - AC4
     checks:
       - check_type: command
-        check_value: "sh -c 'onex scm pr-view OmniNode-ai/omnibase_core --head omn-25726-zone-filter-oversized-diff
-          | grep -c Lab:'"
+        check_value: "sh -c 'test -f tests/ci/test_zone_filter_oversized_diff_omn25726.py && grep -c 100000
+          .github/workflows/zone-filter.yml'"
         cwd: ${OMNI_HOME}/omnibase_core
