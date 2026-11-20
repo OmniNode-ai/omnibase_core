@@ -179,7 +179,8 @@ def _offenders(root: Path) -> list[str]:
 # line or of a pipeline element, after exec/then/do/time/if/!/env, as the program of
 # `uv run [flags]` or `uvx [flags]`, or as a `.../bin/onex` or `$VAR/onex` path.
 _LAUNCHER_PREFIX = (
-    r"(?:^|[;&|(]\s*|\$\(\s*"
+    # a command group's { needs whitespace after it; ${VAR} is not one
+    r"(?:^|[;&|(]\s*|\{\s+|\$\(\s*"
     # wrappers that run their arguments as a command
     r"|\b(?:exec(?:\s+-a\s+\S+)?|then|do|time|if|!|nohup|command|xargs(?:\s+-\S+)*"
     r"|timeout(?:\s+-\S+)*\s+\S+|stdbuf(?:\s+-\S+)+|sudo(?:\s+-\w+(?:\s+(?!onex\b|omni-agent\b)[^\s-]\S*)?)*"
@@ -200,25 +201,59 @@ _LAUNCHER_CALL = re.compile(
 )
 
 
-# A command string handed to a shell runs its contents.
-_SHELL_C = re.compile(r"\b(?:ba|z|da)?sh\s+(?:-\w+\s+)*-c\s+(['\"])(.*?)\1")
+# A command string handed to a shell runs its contents (-c alone or among combined
+# flags, as in -lc or -euxc).
+_SHELL_C = re.compile(r"\b(?:ba|z|da)?sh\s+(?:-\w+\s+)*-\w*c\s+(['\"])(.*?)\1")
+# A $( ) substitution runs its contents.
+_DOLLAR_PAREN = re.compile(r"\$\(([^()]*)\)")
 # A backtick substitution runs its contents; an escaped backtick is a literal character.
 _BACKTICK = re.compile(r"(?<!\\)`([^`]*?)(?<!\\)`")
-# A quoted echo or printf argument is a printed message, not a command.
-_PRINTED = re.compile(r"\b(echo|printf)((?:\s+-\w+)*)\s+(['\"])(.*?)\3")
-# A comment after a command.
-_TRAILING_COMMENT = re.compile(r"(?:^|\s)#.*$")
+# The arguments of echo or printf, each a quoted string or a bare word, up to the next
+# command separator; the quoted ones are a printed message, not a command.
+_PRINTED = re.compile(
+    r"\b(echo|printf)((?:\s+(?:'[^']*'|\"(?:\\.|[^\"\\])*\"|[^\s;&|)'\"]+))*)"
+)
+_QUOTED = re.compile(r"'[^']*'|\"(?:\\.|[^\"\\])*\"")
+_SINGLE_QUOTED = re.compile(r"'[^']*'")
 # Not counted: `docker run|exec <image> onex ...` runs the onex of a container image,
 # which is that image's own install, not a launcher this checkout's CI resolves.
 
 
+def _strip_comment(line: str) -> str:
+    """``line`` without a trailing comment; a ``#`` inside quotes is not one."""
+    in_single = False
+    in_double = False
+    for i, ch in enumerate(line):
+        if in_single:
+            if ch == "'":
+                in_single = False
+            continue
+        if in_double:
+            if ch == '"' and (i == 0 or line[i - 1] != "\\"):
+                in_double = False
+            continue
+        if ch in ("'", '"'):
+            if i == 0 or line[i - 1] != "\\":
+                if ch == "'":
+                    in_single = True
+                else:
+                    in_double = True
+            continue
+        if ch == "#" and (i == 0 or line[i - 1].isspace()):
+            return line[:i].rstrip()
+    return line
+
+
 def _command_texts(text: str) -> list[str]:
-    """``text`` and, recursively, every shell command string and backtick it runs."""
+    """``text`` and, recursively, every shell string and substitution it runs."""
     texts = [text]
     for match in _SHELL_C.finditer(text):
         texts.extend(_command_texts(match.group(2)))
-    for match in _BACKTICK.finditer(text):
-        texts.extend(_command_texts(match.group(1)))
+    # Inside single quotes a substitution is literal text, so it runs nothing.
+    unquoted = _SINGLE_QUOTED.sub("''", text)
+    for pattern in (_DOLLAR_PAREN, _BACKTICK):
+        for match in pattern.finditer(unquoted):
+            texts.extend(_command_texts(match.group(1)))
     return texts
 
 
@@ -230,11 +265,14 @@ def _launcher_calls(text: str) -> list[str]:
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
-        command = _TRAILING_COMMENT.sub("", stripped)
-        command = _PRINTED.sub(
-            lambda m: m.group(1) + m.group(2) + " " + m.group(3) * 2, command
+        command = _strip_comment(stripped)
+        # What the line runs inside strings and substitutions is read before the
+        # printed messages are blanked, so `echo "$(onex --version)"` still counts.
+        inner = _command_texts(command)[1:]
+        outer = _PRINTED.sub(
+            lambda m: m.group(1) + _QUOTED.sub("''", m.group(2)), command
         )
-        if any(_LAUNCHER_CALL.search(part) for part in _command_texts(command)):
+        if any(_LAUNCHER_CALL.search(part) for part in [outer, *inner]):
             found.append(stripped)
     return found
 
@@ -349,6 +387,15 @@ def test_every_python_dash_m_target_runs_as_a_module() -> None:
         "out=`onex --version`",
         "${UV} run onex x",
         "$UV run onex --help",
+        # a substitution inside a printed message still runs
+        'echo "v: $(uv run onex --version)"',
+        'echo "`onex v`"',
+        # a # inside quotes is not a comment; combined shell flags still take -c
+        'echo "step # 1" && onex x',
+        "bash -lc 'onex x'",
+        "bash -euxc 'onex x'",
+        # a command group or function body
+        "run() { onex node x; }",
     ],
 )
 def test_a_launcher_command_is_recognised(line: str) -> None:
@@ -363,7 +410,8 @@ def test_a_launcher_command_is_recognised(line: str) -> None:
         "path plugins/onex/skills",
         "plugins/onex \\",
         "ONEX_STATE=.onex_state",
-        'echo "- declares a node dispatch (`onex run-node` / `onex node` /"',
+        # .github/workflows/ci.yml: escaped backticks print literally
+        'echo "- declares a node dispatch (\\`onex run-node\\` / \\`onex node\\` /"',
         "uv run python -m omnibase_core.cli.cli_commands compliance check",
         "command -v onex >/dev/null",
         "bash scripts/check.sh plugins/onex",
@@ -381,6 +429,14 @@ def test_a_launcher_command_is_recognised(line: str) -> None:
         # an escaped backtick inside quotes is a literal character, not a substitution
         'say "  Until this is converged, an \\`onex delegate\\` through the plugin"',
         "${SCRIPT_NAME} — Trigger the ONEX build loop via \\`onex run\\`",
+        # every quoted argument of a printed message is prose, not only the first
+        'echo "a" "then onex b"',
+        "echo 'a' 'b; onex c'",
+        "printf '%s\\n' \"then onex\"",
+        # inside single quotes a substitution is literal text
+        "echo '$(onex)'",
+        # omniweb m3-customer-pass-chain.yml: a ${VAR} brace is not a command group
+        'bin="${RUNNER_TEMP}/onex-venv/bin/onex"',
     ],
 )
 def test_prose_and_the_module_form_are_not_launcher_calls(line: str) -> None:
