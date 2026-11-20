@@ -168,6 +168,10 @@ def mutation_case(rule, key):
         value = "$^"
     elif key == "max_files":
         value = 2
+    elif key == "paired_repositories":
+        value = ["another_repository"]
+    elif key in {"hook_globs", "ci_globs"}:
+        value = ["unmatched/**"]
     elif key == "repository_pattern":
         value = r"(?P<org>[^/]+)/(?P<repo>[^/]+)"
     elif key == "siblings":

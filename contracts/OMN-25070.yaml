@@ -68,3 +68,15 @@ dod_evidence:
         check_value: uv run --frozen pytest tests/unit/cli/test_onex_version_customer_package_omn25070.py
           -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25070-ac6-own-scripts-not-callers
+    description: A repository that declares a console script of the same name in its own pyproject runs
+      its own program, so the caller check does not count it as an omnibase_core caller. The bound test
+      builds one repository that declares the name and one that does not, and fails at the merge base,
+      where onex_change_control's own check-imperative-contracts was flagged.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_a_repository_running_its_own_script_of_that_name_is_not_a_caller"
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
