@@ -3,12 +3,11 @@ schema_version: 1.0.0
 ticket_id: OMN-25969
 title: The receipt gate reads per-test duration records as test bookkeeping, not product
 summary: The repo-evidence lint (OMN-23560) requires a duration record under config/test_file_durations.d
-  for every added test file, while the receipt gate's TEST_SIDE pattern did not count that record as
-  test-side. A pull request of tests, its cited contract and their duration records was therefore read
-  as a product change and asked for a failing control that cannot exist. Both TEST_SIDE patterns now
-  accept those records; a product change or any other config path still needs a failing control. AC3,
-  the omnimarket pin and the omnimarket#6429 readback, is proved after merge in omnimarket and is not
-  part of this contract.
+  for every added test file, while the receipt gate's TEST_SIDE pattern did not count that record as test-side.
+  A pull request of tests, its cited contract and their duration records was therefore read as a product
+  change and asked for a failing control that cannot exist. Both TEST_SIDE patterns now accept those records;
+  a product change or any other config path still needs a failing control. AC3, the omnimarket pin and
+  the omnimarket#6429 readback, is proved after merge in omnimarket and is not part of this contract.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
