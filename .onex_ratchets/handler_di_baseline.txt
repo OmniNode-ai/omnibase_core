@@ -26,7 +26,6 @@ src/omnibase_core/nodes/node_dependency_pin_bump_effect/runtime_dependency_pin_b
 src/omnibase_core/nodes/node_dict_any_check_compute/handler_dict_any.py 1
 src/omnibase_core/nodes/node_dict_any_check_compute/runtime_dict_any_check.py 1
 src/omnibase_core/nodes/node_direct_model_call_check_effect/runtime_direct_model_call.py 3
-src/omnibase_core/nodes/node_done_write_receipt_gate_compute/handler_done_write_receipt_gate.py 2
 src/omnibase_core/nodes/node_effect.py 3
 src/omnibase_core/nodes/node_git_file_listing_effect/handler_readme_only_docs.py 2
 src/omnibase_core/nodes/node_git_file_listing_effect/runtime_readme_only_docs.py 3

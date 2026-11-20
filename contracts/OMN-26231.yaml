@@ -1,0 +1,51 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-26231
+title: The done-write gate resolves the dod_verify receipt by its declared type
+summary: The receipt gate hard-coded the module path of the dod_verify success-arm model and refused any
+  other result_model, so once omnimarket moved ModelDodVerifyState every verified ticket was refused at
+  Done. The gate now resolves the arm by the model's own type name, the last segment of the declared result_model.
+  This contract covers the omnibase_core half (AC1 and the failed-check control of AC3). AC2 (the receipt
+  a Done write reads, selected by run id) and AC4 (the three tickets read Done on dev) are not part of
+  this contract; AC2 is reported on the ticket with the measured cause, and AC4 is proved after merge
+  by a readback through the ticket node.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26231-receipt-arm-by-declared-type
+    statement: The gate reads the receipt arm from the model type the receipt declares, so a moved model
+      needs no gate edit, and a receipt with a real failed or unread check is still refused.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the gate resolves the receipt result model through the contract''s declared type,
+          never a typed module path, so the OMN-17690 receipt is accepted -- falsifier: pytest on the
+          OMN-17690 real receipt fixture fails on the old gate and passes on the fix'
+      - id: AC3
+        statement: 'AC3: a regression test built from the three tickets'' recorded receipts fails on the
+          broken code and passes on the fix, and a receipt with a real failed check is still refused --
+          falsifier: tests/unit/handlers/test_handler_done_write_receipt_gate_omn26231.py on the unfixed
+          handler'
+evidence_requirements:
+  - kind: tests
+    description: The gate on the recorded receipts of OMN-17690, OMN-18892 and OMN-18960, with the failed-check,
+      skipped-check and undeclared-type controls.
+    command: uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate_omn26231.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26231-ac1-ac3-receipt-arm-by-declared-type
+    description: Reads the three recorded receipts through the gate. The moved-model receipts are refused
+      by the unfixed gate (11 of 19 cases fail on origin/dev) and accepted by the fix; a failed check,
+      a skipped check, an undeclared type and an absent receipt are refused on both.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/handlers/test_handler_done_write_receipt_gate_omn26231.py
+          tests/unit/handlers/test_handler_done_write_receipt_gate.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+      - AC3
