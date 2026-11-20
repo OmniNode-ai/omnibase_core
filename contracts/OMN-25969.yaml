@@ -1,0 +1,48 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25969
+title: The receipt gate reads per-test duration records as test bookkeeping, not product
+summary: The repo-evidence lint (OMN-23560) requires a duration record under config/test_file_durations.d
+  for every added test file, while the receipt gate's TEST_SIDE pattern did not count that record as test-side.
+  A pull request of tests, its cited contract and their duration records was therefore read as a product
+  change and asked for a failing control that cannot exist. Both TEST_SIDE patterns now accept those records;
+  a product change or any other config path still needs a failing control. AC3, the omnimarket pin and
+  the omnimarket#6429 readback, is proved after merge in omnimarket and is not part of this contract.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25969-duration-records-are-test-side
+    statement: A per-test duration record is test bookkeeping for the TEST_ONLY_DIFF waiver, and nothing
+      else changes in what needs a failing control.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: both TEST_SIDE patterns in receipt-gate.yml accept config/test_file_durations.d/*.json,
+          so a diff of test files, the cited contract and their duration records qualifies for TEST_ONLY_DIFF
+          -- falsifier: tests/ci/test_receipt_gate_test_side_durations.py fails on dev.'
+      - id: AC2
+        statement: 'AC2: a duration record still does not qualify a diff that also changes product code,
+          a record alone is not a test, and any other config path still requires a failing control --
+          falsifier: the product, other-config and record-alone cases of the same test.'
+evidence_requirements:
+  - kind: tests
+    description: The receipt gate's test-side classification for duration records, with the product and
+      other-config controls.
+    command: uv run pytest tests/ci/test_receipt_gate_test_side_durations.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25969-ac1-ac2-duration-records-test-side
+    description: Runs the receipt gate's classification over a tests-contract-and-record diff, a product
+      diff with a record, an other-config diff, a record alone and a merged-fix binding. The waiver cases
+      fail on dev, where the patterns do not accept the record, so the merge-base control fails.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_test_side_durations.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
+      - AC2

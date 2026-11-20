@@ -1743,6 +1743,9 @@ jobs:
           rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home" "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home"
           git -C "$head_tree" worktree prune
           TEST_SIDE='^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$'
+          # Per-test duration records (OMN-23560) are bookkeeping for the tests, not product (OMN-25969):
+          # they never make a diff need a failing control, and they never count as a test on their own.
+          TEST_RECORDS='^config/test_file_durations\.d/[^/]+\.json$'
           # A release bump is bookkeeping, not product (OMN-17427): a path whose every
           # line the fix changed only sets a quoted version or digest value is never
           # reverted, and a later release on the base would make it fail to revert.
@@ -1796,8 +1799,9 @@ jobs:
                 fi
                 # A contract is evidence, not product: the fix's own contract
                 # change is never reverted, and a later amendment on the base
-                # would make it fail to revert (OMN-17427).
-                if [[ "$path" =~ $TEST_SIDE|^contracts/OMN-[0-9]+\.yaml$ ]]; then
+                # would make it fail to revert (OMN-17427). A duration record is
+                # test bookkeeping, not product, either (OMN-25969).
+                if [[ "$path" =~ $TEST_SIDE|$TEST_RECORDS|^contracts/OMN-[0-9]+\.yaml$ ]]; then
                   continue
                 fi
                 if version_bookkeeping_only "$fix" "$path"; then
@@ -1842,7 +1846,9 @@ jobs:
                   cited_contract=true
                 fi
               done < "$RUNNER_TEMP/dod/tickets.txt"
-              if [ "$test_side" = true ] || [ "$cited_contract" = true ]; then
+              # The pull request's duration records go with its tests, so a bound check
+              # that reads one runs against it; they never count as a test (OMN-25969).
+              if [ "$test_side" = true ] || [ "$cited_contract" = true ] || [[ "$path" =~ $TEST_RECORDS ]]; then
                 git -C "$control_tree" checkout "$HEAD_SHA" -- "$path"
                 printf 'Overlaid: %s\n' "$path"
                 if [ "$test_side" = true ]; then
@@ -1906,7 +1912,7 @@ jobs:
             fi
             # A pull request that changes product code proves red at its own merge base.
             while IFS= read -r -d '' path; do
-              if [[ ! "$path" =~ $TEST_SIDE|^contracts/OMN-[0-9]+\.yaml$ ]]; then
+              if [[ ! "$path" =~ $TEST_SIDE|$TEST_RECORDS|^contracts/OMN-[0-9]+\.yaml$ ]]; then
                 echo "::error::$ticket names merged fix $fix, but this pull request changes $path, which is neither test-side nor a contract; a product change proves red at the merge base"
                 exit 1
               fi
@@ -1945,6 +1951,9 @@ jobs:
           # test-side paths and the cited contracts qualify; config, workflows,
           # uncited contracts and all other paths still require a failing control.
           TEST_SIDE='^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$'
+          # Per-test duration records (OMN-23560) are bookkeeping for the tests, not product (OMN-25969):
+          # they never make a diff need a failing control, and they never count as a test on their own.
+          TEST_RECORDS='^config/test_file_durations\.d/[^/]+\.json$'
           diff_paths="$RUNNER_TEMP/dod/control-diff-paths.txt"
           git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA" > "$diff_paths"
           test_only=true
@@ -1952,6 +1961,9 @@ jobs:
           while IFS= read -r -d '' path; do
             if [[ "$path" =~ $TEST_SIDE ]]; then
               has_tests=true
+              continue
+            fi
+            if [[ "$path" =~ $TEST_RECORDS ]]; then
               continue
             fi
             cited_contract=false
