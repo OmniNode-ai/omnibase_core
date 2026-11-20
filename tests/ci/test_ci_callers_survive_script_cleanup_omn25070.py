@@ -95,6 +95,10 @@ def _shell_texts(root: Path) -> list[tuple[str, str]]:
         for hook in hooks:
             if isinstance(hook.get("entry"), str):
                 texts.append((f"{config} hook {hook['id']!r}", hook["entry"]))
+    # Shell scripts are callers too: a step or a person runs them by path.
+    scripts = root / "scripts"
+    for path in sorted(scripts.rglob("*.sh")) if scripts.is_dir() else []:
+        texts.append((str(path.relative_to(root)), path.read_text(encoding="utf-8")))
     return texts
 
 
@@ -186,12 +190,36 @@ _LAUNCHER_PREFIX = (
     # a wrapper script that runs its arguments, e.g. scripts/uv-run-worktree-safe.sh
     r"|\S+\.sh\s+"
     r"|\buv\s+run(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*(?:\s+--)?\s+"
+    # a runner held in a variable, e.g. ${UV} run
+    r"|\$\{?\w+\}?\s+run(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*(?:\s+--)?\s+"
     r"|\buvx(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*\s+)"
 )
 _LAUNCHER_CALL = re.compile(
     _LAUNCHER_PREFIX
     + r"[\"']?(?:[\w$.{}~/-]*bin/|\$\{?\w+\}?/)?(onex|omni-agent)[\"']?(?=[\s;&|)>]|$)"
 )
+
+
+# A command string handed to a shell runs its contents.
+_SHELL_C = re.compile(r"\b(?:ba|z|da)?sh\s+(?:-\w+\s+)*-c\s+(['\"])(.*?)\1")
+# A backtick substitution runs its contents; an escaped backtick is a literal character.
+_BACKTICK = re.compile(r"(?<!\\)`([^`]*?)(?<!\\)`")
+# A quoted echo or printf argument is a printed message, not a command.
+_PRINTED = re.compile(r"\b(echo|printf)((?:\s+-\w+)*)\s+(['\"])(.*?)\3")
+# A comment after a command.
+_TRAILING_COMMENT = re.compile(r"(?:^|\s)#.*$")
+# Not counted: `docker run|exec <image> onex ...` runs the onex of a container image,
+# which is that image's own install, not a launcher this checkout's CI resolves.
+
+
+def _command_texts(text: str) -> list[str]:
+    """``text`` and, recursively, every shell command string and backtick it runs."""
+    texts = [text]
+    for match in _SHELL_C.finditer(text):
+        texts.extend(_command_texts(match.group(2)))
+    for match in _BACKTICK.finditer(text):
+        texts.extend(_command_texts(match.group(1)))
+    return texts
 
 
 def _launcher_calls(text: str) -> list[str]:
@@ -202,7 +230,11 @@ def _launcher_calls(text: str) -> list[str]:
         stripped = line.strip()
         if stripped.startswith("#"):
             continue
-        if _LAUNCHER_CALL.search(stripped):
+        command = _TRAILING_COMMENT.sub("", stripped)
+        command = _PRINTED.sub(
+            lambda m: m.group(1) + m.group(2) + " " + m.group(3) * 2, command
+        )
+        if any(_LAUNCHER_CALL.search(part) for part in _command_texts(command)):
             found.append(stripped)
     return found
 
@@ -311,6 +343,12 @@ def test_every_python_dash_m_target_runs_as_a_module() -> None:
         "test -x x && onex;",
         "out=$(onex)",
         "uv run \\\n  onex node x",
+        # a command string handed to a shell, a backtick substitution, a variable runner
+        "bash -c 'onex node x'",
+        'sh -c "onex --help"',
+        "out=`onex --version`",
+        "${UV} run onex x",
+        "$UV run onex --help",
     ],
 )
 def test_a_launcher_command_is_recognised(line: str) -> None:
@@ -330,10 +368,33 @@ def test_a_launcher_command_is_recognised(line: str) -> None:
         "command -v onex >/dev/null",
         "bash scripts/check.sh plugins/onex",
         'PLUGIN_JSON=$(find "$TMPDIR/onex" -name plugin.json)',
+        # words that start a command elsewhere, inside a printed message or a comment
+        'echo "if onex is missing, skip"',
+        'echo "then onex runs the node"',
+        'echo "ok; onex is installed"',
+        'echo "do onex node"',
+        'echo "time onex took 3s"',
+        'echo "(onex)"',
+        'echo "a | onex b"',
+        "x=1 # then onex x",
+        'printf "then onex %s\\n" x',
+        # an escaped backtick inside quotes is a literal character, not a substitution
+        'say "  Until this is converged, an \\`onex delegate\\` through the plugin"',
+        "${SCRIPT_NAME} — Trigger the ONEX build loop via \\`onex run\\`",
     ],
 )
 def test_prose_and_the_module_form_are_not_launcher_calls(line: str) -> None:
     assert _launcher_calls(line) == []
+
+
+def test_a_launcher_script_under_scripts_is_scanned(tmp_path: Path) -> None:
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    (scripts_dir / "roll.sh").write_text("uv run onex spdx fix src\n", encoding="utf-8")
+    assert any(
+        "scripts/roll.sh" in location and _launcher_calls(text)
+        for location, text in _shell_texts(tmp_path)
+    )
 
 
 @pytest.mark.parametrize("root", _registry_roots(), ids=lambda p: p.name)
