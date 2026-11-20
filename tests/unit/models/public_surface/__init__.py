@@ -1,9 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""Test package for hook-related model tests."""
+"""Test package for public-surface model tests."""
 
 from __future__ import annotations
 
-# Re-export subpackages for namespace clarity
-__all__ = ["claude_code"]
+__all__: list[str] = []

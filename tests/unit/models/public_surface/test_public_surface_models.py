@@ -35,7 +35,7 @@ pytestmark = pytest.mark.unit
 
 CONTRACT_PATH = (
     Path(__file__).resolve().parents[4]
-    / "src/omnibase_core/validation/contracts/public_surface.validation.yaml"
+    / "src/omnibase_core/contracts/public_surface.validation.yaml"
 )
 
 
