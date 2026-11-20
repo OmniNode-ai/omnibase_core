@@ -25,7 +25,7 @@ pre-commit --version > /dev/null || {
 
 # 1. Verify onex is available
 echo "[1] Checking onex availability..."
-uv run onex --version || {
+uv run python -m omnibase_core.cli.cli_commands --version || {
   echo "ERROR: onex not available. Add omnibase_core as a dev dep:"
   echo "  uv add --dev omnibase_core"
   exit 1
@@ -43,18 +43,18 @@ echo "[2] Eligible dirs: ${DIRS[*]}"
 # 3. Dry-run audit (|| true: non-zero expected when files need stamping — informational only)
 AUDIT_FILE="$(mktemp "/tmp/spdx-audit-$(basename "$WORKTREE").XXXXXX.txt")"
 echo "[3] Auditing files that need SPDX headers (output: $AUDIT_FILE)..."
-uv run onex spdx fix --dry-run "${DIRS[@]}" 2>&1 | tee "$AUDIT_FILE" || true
+uv run python -m omnibase_core.cli.cli_commands spdx fix --dry-run "${DIRS[@]}" 2>&1 | tee "$AUDIT_FILE" || true
 echo "Audit complete. Review $AUDIT_FILE before continuing."
 echo "Add '# spdx-skip: <reason>' to any generated/vendored files BEFORE continuing."
 read -r -p "Press Enter to proceed with stamping (Ctrl-C to abort)..."
 
 # 4. Stamp eligible files
 echo "[4] Stamping SPDX headers..."
-uv run onex spdx fix "${DIRS[@]}"
+uv run python -m omnibase_core.cli.cli_commands spdx fix "${DIRS[@]}"
 
 # 5. Validate stamp is clean
 echo "[5] Validating headers match hook scope..."
-uv run onex spdx fix --check "${DIRS[@]}"
+uv run python -m omnibase_core.cli.cli_commands spdx fix --check "${DIRS[@]}"
 echo "Validation passed."
 
 # 6. Install hooks (required for fresh worktrees) then run only the SPDX hook
