@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: public_surface
+  validator_name: Public surface extraction rules
+  validator_description: >-
+    Extraction rules for the removed-surface gate (OMN-26194): per public-surface kind, the sources and
+    parsers that read declarations and references. One rule per kind; the python kinds only.
+  target_patterns:
+    - "**/*"
+  exclude_patterns:
+    - "**/.git/**"
+    - "**/.venv/**"
+  rules:
+    - rule_id: python_symbol_surface
+      description: Python symbols declared in source, and where others reference them.
+      severity: error
+      enabled: true
+      parameters:
+        kind: python_symbol
+        sources:
+          - parser: python_ast
+            include: ["src/**/*.py"]
+            reference_forms: [import_from, attribute_access]
+          - parser: text_literal
+            include: ["**/*.yaml", "**/*.yml"]
+            reference_forms: [dotted_path]
+    - rule_id: python_module_surface
+      description: Python modules declared in source, and where others import or register them.
+      severity: error
+      enabled: true
+      parameters:
+        kind: python_module
+        sources:
+          - parser: python_ast
+            include: ["src/**/*.py"]
+            reference_forms: [import, import_from]
+          - parser: toml_key_path
+            include: ["pyproject.toml"]
+            key_paths: [project.scripts, project.entry-points]
+            reference_forms: [dotted_path]
+  suppression_comments: []
+  fail_on_error: true
+  fail_on_warning: false
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

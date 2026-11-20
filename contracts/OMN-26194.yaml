@@ -1,0 +1,69 @@
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-26194"
+title: "feat(OMN-26194): typed public-surface models and Python extraction rules"
+summary: >
+  Adds EnumPublicSurfaceKind, the public_surface models and public_surface.validation.yaml holding the
+  python_symbol and python_module extraction rules. Pure models, no runtime change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-public-surface-models
+    statement: Typed public-surface models and Python extraction rules exist and refuse invalid input.
+    acceptance:
+      - id: AC1
+        statement: "AC1: UNREAD without unread read, REFUSED without consumer, and a verdict without inputs
+          manifest raise at construction"
+      - id: AC2
+        statement: "AC2: YAML plus TOML sources load, unknown parser refused naming the row, duplicate
+          kind refused naming both rows"
+      - id: AC3
+        statement: "AC3: tests fail on import before the models exist and pass on the head"
+evidence_requirements:
+  - kind: "tests"
+    description: "Focused public-surface tests pass"
+    command: "uv run pytest tests/unit/models/public_surface -q"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-ac1"
+    description: "AC1: UNREAD without unread read, REFUSED without consumer, and a verdict without inputs
+      manifest raise at construction"
+    source: "manual"
+    checks:
+      - check_type: "test_passes"
+        cwd: "${OMNI_HOME}/omnibase_core"
+        check_value: "uv run pytest tests/unit/models/public_surface -q -k ac1"
+    binds_ac:
+      - AC1
+  - id: "dod-ac2"
+    description: "AC2: YAML plus TOML sources load, unknown parser refused naming the row, duplicate kind
+      refused naming both rows"
+    source: "manual"
+    checks:
+      - check_type: "test_passes"
+        cwd: "${OMNI_HOME}/omnibase_core"
+        check_value: "uv run pytest tests/unit/models/public_surface -q -k ac2"
+    binds_ac:
+      - AC2
+  - id: "dod-ac3"
+    description: "AC3: tests fail on import before the models exist and pass on the head"
+    source: "manual"
+    checks:
+      - check_type: "test_passes"
+        cwd: "${OMNI_HOME}/omnibase_core"
+        check_value: "uv run pytest tests/unit/models/public_surface -q"
+    binds_ac:
+      - AC3
+  - id: "dod-deploy"
+    description: "Deploy-gate evidence: pure models and a validation YAML; no Docker image, daemon, broker
+      topic, runtime process or service deploy is required before merge"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "echo 'deploy-gate: OMN-26194 adds models and a validation contract only; no Docker
+          image, daemon, broker topic, runtime process, docker exec, or service deploy is required before
+          merge'"
