@@ -26,6 +26,16 @@ requirements:
           installed script, and every python -m target runs as a module -- falsifier: uv run pytest tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py
           fails at the merge base, where eleven callers run scripts by name and standalone mode runs `uv
           tool install omnibase_core`"
+  - id: req-omn25070-no-launcher-callers
+    statement: No workflow, composite action or pre-commit hook in omnibase_core runs the onex or omni-agent
+      launcher, so CI keeps working once only omninode-onex declares them.
+    acceptance:
+      - id: AC3
+        statement: "AC3 (this repository's launcher-move part): no CI step, composite action or hook entry
+          in omnibase_core runs onex or omni-agent as a command; callers run python -m omnibase_core.cli.cli_commands
+          -- falsifier: the per-repository launcher check in tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py
+          fails at the merge base, where the compliance-check action runs uv run onex compliance check
+          twice"
   - id: req-omn25070-onex-version-customer-package
     statement: onex --version reports the version of the customer package omninode-onex when it is installed,
       and omnibase_core's version only on a developer install without it.
@@ -79,4 +89,16 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run --frozen pytest "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_a_repository_running_its_own_script_of_that_name_is_not_a_caller"
           -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25070-ac3-no-launcher-callers
+    description: No CI caller in omnibase_core runs the onex or omni-agent launcher. The bound check fails
+      at the merge base, where the compliance-check action ran uv run onex compliance check.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest -q --no-cov "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_a_launcher_command_is_recognised"
+          "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_prose_and_the_module_form_are_not_launcher_calls"
+          "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_a_launcher_script_under_scripts_is_scanned"
+          "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_no_ci_caller_runs_the_onex_launcher[omnibase_core]"
         cwd: ${OMNI_HOME}/omnibase_core
