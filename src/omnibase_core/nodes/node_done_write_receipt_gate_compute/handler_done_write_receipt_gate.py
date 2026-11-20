@@ -82,13 +82,16 @@ dod_verify_non_probative_key = "non_probative_count"
 # `result_model` is the receipt's own declared type tag, so reading it is
 # using the contract rather than sniffing the shape. Both arms are captured
 # verbatim at tests/fixtures/omn16961/ (OMN-16961).
-RECEIPT_SUMMARY_RESULT_MODEL = (
-    "omnibase_infra.cli.model_receipt_runtime_summary.ModelReceiptRuntimeSummary"
-)
+#
+# OMN-26231. The arm is resolved by the model's OWN type name, the last segment
+# of the dotted `result_model` the receipt declares, never by the module path
+# in front of it: omnimarket moved `ModelDodVerifyState` out of the node
+# package and a gate that spelled the old path refused every verified ticket.
+# omnibase_core cannot import either model (layering), so the registry of
+# declared arms lives here keyed by type name, and a move needs no gate edit.
+RECEIPT_ARM_SUMMARY = "ModelReceiptRuntimeSummary"
 
-DOD_VERIFY_STATE_RESULT_MODEL = (
-    "omnimarket.nodes.node_dod_verify.models.model_dod_verify_state.ModelDodVerifyState"
-)
+RECEIPT_ARM_STATE = "ModelDodVerifyState"
 
 dod_verify_verdict_key = "terminal_payload"
 
@@ -188,7 +191,7 @@ def extract_dod_verify_verdict(
     """Return the dod_verify verdict from either declared receipt arm.
 
     OMN-16961. `onex skill dod_verify` prints two structurally different
-    receipts (see `RECEIPT_SUMMARY_RESULT_MODEL` above for the branch that
+    receipts (see `RECEIPT_ARM_SUMMARY` above for the branch that
     picks between them). Both are legitimate, both are declared, and the
     receipt names which one it is in `result_model`. This reader dispatches
     on that tag and on nothing else.
@@ -216,25 +219,29 @@ def extract_dod_verify_verdict(
             "refusing to guess at an undeclared shape."
         )
 
-    if result_model == RECEIPT_SUMMARY_RESULT_MODEL:
+    module, _, arm_type = result_model.strip().rpartition(".")
+    if not module:
+        arm_type = ""
+
+    if arm_type == RECEIPT_ARM_SUMMARY:
         verdict = result.get(dod_verify_verdict_key)
         if not isinstance(verdict, dict):
             return None, (
-                f"the receipt is a `{RECEIPT_SUMMARY_RESULT_MODEL}` whose "
+                f"the receipt is a `{result_model}` whose "
                 f"`result.{dod_verify_verdict_key}` is absent — the runtime "
                 "emitted no terminal event, so the verifier genuinely reached "
                 "no verdict."
             )
         arm = f"result.{dod_verify_verdict_key}"
-    elif result_model == DOD_VERIFY_STATE_RESULT_MODEL:
+    elif arm_type == RECEIPT_ARM_STATE:
         # Success arm: `result` IS the verdict, flat. No nesting exists.
         verdict = result
         arm = "result"
     else:
         return None, (
             f"unrecognised dod_verify receipt `result_model` {result_model!r} "
-            f"— expected {DOD_VERIFY_STATE_RESULT_MODEL!r} (success arm) or "
-            f"{RECEIPT_SUMMARY_RESULT_MODEL!r} (runtime-summary arm). The "
+            f"— expected a dotted type ending in {RECEIPT_ARM_STATE!r} (success "
+            f"arm) or {RECEIPT_ARM_SUMMARY!r} (runtime-summary arm). The "
             "receipt contract drifted; refusing to infer a verdict from an "
             "unknown shape."
         )
