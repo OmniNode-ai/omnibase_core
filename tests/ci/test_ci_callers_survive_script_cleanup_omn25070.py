@@ -182,7 +182,9 @@ _LAUNCHER_PREFIX = (
     # a command group's { needs whitespace after it; ${VAR} is not one
     r"(?:^|[;&|(]\s*|\{\s+|\$\(\s*"
     # wrappers that run their arguments as a command
-    r"|\b(?:exec(?:\s+-a\s+\S+)?|then|do|time|if|!|nohup|command|xargs(?:\s+-\S+)*"
+    # a negating ! stands alone as a word (\b cannot sit before it)
+    r"|(?<!\S)!\s+"
+    r"|\b(?:exec(?:\s+-a\s+\S+)?|then|do|time|if|nohup|command|xargs(?:\s+-\S+)*"
     r"|timeout(?:\s+-\S+)*\s+\S+|stdbuf(?:\s+-\S+)+|sudo(?:\s+-\w+(?:\s+(?!onex\b|omni-agent\b)[^\s-]\S*)?)*"
     r"|(?:uv\s+tool|pipx|poetry|hatch)\s+run(?:\s+--?[\w-]+(?:[= ](?!onex\b|omni-agent\b)[^\s-]\S*)?)*(?:\s+--)?)\s+"
     r"|\benv(?:\s+-\S+)*(?:\s+\w+=\S+)*\s+"
@@ -396,6 +398,9 @@ def test_every_python_dash_m_target_runs_as_a_module() -> None:
         "bash -euxc 'onex x'",
         # a command group or function body
         "run() { onex node x; }",
+        # a negated command
+        "if ! onex node x; then",
+        "! onex x",
     ],
 )
 def test_a_launcher_command_is_recognised(line: str) -> None:
