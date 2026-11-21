@@ -102,3 +102,15 @@ dod_evidence:
           "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_a_launcher_script_under_scripts_is_scanned"
           "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_no_ci_caller_runs_the_onex_launcher[omnibase_core]"
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25070-ac3-core-declares-no-launcher
+    description: omnibase_core declares neither onex nor omni-agent, so the customer package omninode-onex
+      is their only owner (AC3's one-owner rule), and the same CLI still runs as python -m
+      omnibase_core.cli.cli_commands. The bound test fails at the merge base, where pyproject.toml declares
+      both.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_core_declares_no_customer_launchers_omn25070.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core

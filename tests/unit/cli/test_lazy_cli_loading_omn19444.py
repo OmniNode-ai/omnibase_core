@@ -130,7 +130,7 @@ def test_importing_the_cli_entry_point_is_well_under_a_second() -> None:
     there is no ``delegate`` command here at all. This measures the timed
     quantity that IS entirely this repo's responsibility: importing the
     ``onex`` console script's own target (``omnibase_core.cli.cli_commands:cli``,
-    per ``pyproject.toml``) in a cold subprocess. Before this fix that alone
+    as ``omninode-onex`` declares it) in a cold subprocess. Before this fix that alone
     measured ~7.4s (module-level ``emit_log_event_sync`` pulling in
     ``omnibase_core.models.core``'s whole tree, 20 built-in commands eagerly
     imported, and the package ``__init__`` eagerly importing ``cli_contract``

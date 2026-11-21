@@ -36,7 +36,7 @@ __all__ = ["cli", "contract", "demo", "runtime_host_dev_main"]
 # eagerly above. Python always runs a package's ``__init__.py`` before any of
 # its submodules, so that made importing ANY submodule of ``omnibase_core.cli``
 # -- including ``cli_commands``, which the ``onex`` console script
-# (``pyproject.toml``: ``onex = "omnibase_core.cli.cli_commands:cli"``) imports
+# (``omninode-onex`` declares ``onex = "omnibase_core.cli.cli_commands:cli"``) imports
 # directly -- pay for ``cli_contract``'s and ``cli_demo``'s own transitive
 # import trees first, whether or not either command was ever invoked.
 # Deferring them to first attribute access keeps
