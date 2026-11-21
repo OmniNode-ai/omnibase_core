@@ -47,6 +47,13 @@ from pathlib import Path
 def test_product():
     assert "BROKEN = False" in Path("src/product.py").read_text()
 """
+# A test the merged fix removed: the merge base no longer has it.
+STALE_TEST = """\
+def test_stale():
+    assert True
+"""
+# The product test as later work left it on the merge base, after the fix.
+EDITED_PRODUCT_TEST = PRODUCT_TEST + "# tightened after the fix\n"
 
 
 def _pyproject(version: str, dependency: str) -> str:
@@ -130,6 +137,25 @@ def _repository(
     dependency_change: bool = False,
     released_after_fix: bool = False,
     product_deleted_after_fix: bool = False,
+    stale_test_removed_by_fix: bool = False,
+    duration_record_with_fix: bool = False,
+    test_edited_after_fix: bool = False,
+    dotted_doc_after_fix: bool = False,
+    glob_named_fixture_removed_after_fix: bool = False,
+    dotted_test_fixture_after_fix: bool = False,
+    product_file_becomes_test_dir_after_fix: bool = False,
+    product_file_becomes_package_after_fix: bool = False,
+    undecodable_doc_and_new_test_after_fix: bool = False,
+    uncited_contract_becomes_test_dir_after_fix: bool = False,
+    test_file_becomes_test_dir_after_fix: bool = False,
+    symlinked_test_after_fix: bool = False,
+    relative_order_file_after_fix: bool = False,
+    ignore_stat: bool = False,
+    sparse_test_removed_after_fix: bool = False,
+    sparse_excludes_a_later_dir: bool = False,
+    encoded_fixture_after_fix: bool = False,
+    nested_attributes_after_fix: bool = False,
+    test_dir_becomes_submodule_after_fix: bool = False,
 ) -> _GitFixture:
     workspace = tmp_path / "ws"
     head_tree = workspace / ".dod-verify" / "head_home" / "omnimarket"
@@ -160,11 +186,35 @@ def _repository(
         repo.write("src/legacy.py", "BROKEN = True\n")
     repo.write("pyproject.toml", _pyproject("0.1.0", "dep>=1"))
     repo.write("contracts/runtime/protocol.lock.json", _lock("0.1.0", "aaa"))
+    if stale_test_removed_by_fix:
+        repo.write("tests/test_stale.py", STALE_TEST)
+    if glob_named_fixture_removed_after_fix:
+        # Two test fixtures whose names one glob pathspec would both match.
+        repo.write("tests/case1.json", "{}\n")
+        repo.write("tests/case[1].json", "{}\n")
+    if (
+        product_file_becomes_test_dir_after_fix
+        or product_file_becomes_package_after_fix
+    ):
+        # A product file the merge base later replaces with a directory.
+        repo.write("tools/runner", "#!/bin/sh\necho run\n")
+    if uncited_contract_becomes_test_dir_after_fix:
+        repo.write("contracts/OMN-10278.yaml", "ticket_id: OMN-10278\n")
+    if test_file_becomes_test_dir_after_fix:
+        repo.write("tests/agents", "fixture\n")
+    if sparse_test_removed_after_fix:
+        repo.write("tests/retired/test_old.py", "def test_old():\n    pass\n")
+    if test_dir_becomes_submodule_after_fix:
+        repo.write("tests/vendor/test_vendored.py", "def test_vendored():\n    pass\n")
     repo.commits["initial"] = repo.commit("chore: initial")
     repo.write("src/product.py", "BROKEN = False\n")
     if product_deleted_after_fix:
         repo.write("src/legacy.py", "BROKEN = False\n")
     repo.write("tests/test_product.py", PRODUCT_TEST)
+    if stale_test_removed_by_fix:
+        (repo.head_tree / "tests/test_stale.py").unlink()
+    if duration_record_with_fix:
+        repo.write(DURATION_RECORD, '{"tests/test_product.py": 0.01}\n')
     if version_bump:
         # A squash-merged fix carries the release bump beside the product change.
         repo.write(
@@ -179,6 +229,98 @@ def _repository(
     if product_deleted_after_fix:
         (repo.head_tree / "src/legacy.py").unlink()
         repo.commits["delete"] = repo.commit("chore: delete the legacy product file")
+    if test_edited_after_fix:
+        repo.write("tests/test_product.py", EDITED_PRODUCT_TEST)
+        repo.commits["test_edit"] = repo.commit("test: tighten the product test")
+    if dotted_doc_after_fix:
+        repo.write("docs/v1..v2.md", "Upgrade notes.\n")
+        repo.commits["doc"] = repo.commit("docs: upgrade notes")
+    if glob_named_fixture_removed_after_fix:
+        (repo.head_tree / "tests/case[1].json").unlink()
+        repo.commits["fixture"] = repo.commit("test: drop one fixture")
+    if dotted_test_fixture_after_fix:
+        repo.write("tests/fixtures/v1..v2.json", "{}\n")
+        repo.commits["dotted"] = repo.commit("test: add an upgrade fixture")
+    if product_file_becomes_test_dir_after_fix:
+        (repo.head_tree / "tools/runner").unlink()
+        repo.write("tools/runner/main.py", "print('run')\n")
+        repo.write("tools/runner/tests/test_smoke.py", "def test_smoke():\n    pass\n")
+        repo.commits["runner"] = repo.commit("refactor: runner becomes a package")
+    if product_file_becomes_package_after_fix:
+        (repo.head_tree / "tools/runner").unlink()
+        repo.write("tools/runner/main.py", "print('run')\n")
+        repo.commits["package"] = repo.commit("refactor: runner becomes a package")
+    if undecodable_doc_and_new_test_after_fix:
+        # A name ending in a byte that is not valid UTF-8, listed before a new test.
+        (repo.head_tree / "docs").mkdir(parents=True, exist_ok=True)
+        (repo.head_tree / os.fsdecode(b"docs/notes\xc3")).write_text("notes\n")
+        repo.write("tests/test_late.py", "def test_late():\n    pass\n")
+        repo.commits["late"] = repo.commit("test: add a late test beside raw notes")
+    if uncited_contract_becomes_test_dir_after_fix:
+        (repo.head_tree / "contracts/OMN-10278.yaml").unlink()
+        repo.write(
+            "contracts/OMN-10278.yaml/tests/test_parse.py",
+            "def test_parse():\n    pass\n",
+        )
+        repo.commits["contract_dir"] = repo.commit("test: contract becomes a folder")
+    if test_file_becomes_test_dir_after_fix:
+        (repo.head_tree / "tests/agents").unlink()
+        repo.write(
+            "tests/agents/test_trajectory.py", "def test_trajectory():\n    pass\n"
+        )
+        repo.commits["agents"] = repo.commit("test: agents fixture becomes a folder")
+        # A repository order file that lists the new test before the removed file.
+        order = repo.head_tree.parent / "diff-order.txt"
+        order.write_text("tests/agents/*\n*\n")
+        repo.git("config", "diff.orderFile", str(order))
+    if symlinked_test_after_fix:
+        # A test the merge base adds as a symlink to another test.
+        (repo.head_tree / "tests/test_link.py").symlink_to("test_product.py")
+        repo.commits["link"] = repo.commit("test: link a test")
+    if relative_order_file_after_fix:
+        # An order file the repository adds after the fix, named relative to the
+        # worktree, so it is absent from the parent's worktree.
+        repo.write("diff-order.txt", "*\n")
+        repo.commits["order"] = repo.commit("chore: add a diff order file")
+        repo.git("config", "diff.orderFile", "diff-order.txt")
+    if ignore_stat:
+        repo.git("config", "core.ignoreStat", "true")
+    if sparse_test_removed_after_fix:
+        # The merge base deletes a test that the repository's sparse checkout
+        # leaves out; a worktree at the parent inherits the patterns.
+        (repo.head_tree / "tests/retired/test_old.py").unlink()
+        repo.commits["retire"] = repo.commit("test: retire an old test")
+        repo.git("sparse-checkout", "set", "--no-cone", "/*", "!/tests/retired/")
+    if encoded_fixture_after_fix:
+        # A fixture and the encoding rule that governs it, added together; the
+        # fixture's name sorts before .gitattributes in the listing.
+        repo.write("tests/.gitattributes", "*.txt working-tree-encoding=UTF-16LE\n")
+        (repo.head_tree / "tests/-input.txt").write_bytes("hello".encode("utf-16-le"))
+        repo.commits["encoded"] = repo.commit("test: add a UTF-16 fixture")
+    if nested_attributes_after_fix:
+        # A nested .gitattributes fixture and the parent folder's rule for it,
+        # added together; the nested file sorts first in the listing.
+        repo.write("tests/.gitattributes", "-sample/.gitattributes text eol=crlf\n")
+        repo.write("tests/-sample/.gitattributes", "*.dat binary\n")
+        repo.commits["nested"] = repo.commit("test: add nested attributes")
+    if test_dir_becomes_submodule_after_fix:
+        # The merge base replaces a folder of tests with a submodule of that name.
+        repo.git("rm", "-r", "-q", "tests/vendor")
+        repo.git(
+            "update-index",
+            "--add",
+            "--cacheinfo",
+            f"160000,{repo.commits['initial']},tests/vendor",
+        )
+        # An unpopulated submodule is an empty folder; without it "git add ." drops it.
+        (repo.head_tree / "tests/vendor").mkdir()
+        repo.commits["submodule"] = repo.commit("test: vendor becomes a submodule")
+    if sparse_excludes_a_later_dir:
+        # A sparse rule that leaves out only a folder the merge base added, so the
+        # parent has no skip-worktree entry at all.
+        repo.write("tests/late/test_late.py", "def test_late():\n    pass\n")
+        repo.commits["late_dir"] = repo.commit("test: add a late folder")
+        repo.git("sparse-checkout", "set", "--no-cone", "/*", "!/tests/late/")
     if contract_amended_after_fix:
         repo.write("contracts/OMN-1.yaml", FIX_CONTRACT + "# amended on the base\n")
         repo.commits["amend"] = repo.commit("docs(OMN-1): amend the contract")
@@ -471,6 +613,431 @@ def test_merged_fix_with_deleted_product_file_uses_parent_control(
     assert control is not None
     _assert_success(control)
     assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_carries_the_merge_base_test_side(tmp_path: Path) -> None:
+    """OMN-25103: a parent control runs the merge base's tests, not the parent's.
+
+    The merged fix added tests/test_product.py, so its parent has no such file.
+    A contract-only binding changes no test path, so before this the parent
+    control ran with the bound test missing: every check failed because the
+    file was absent, which proved nothing about the fix. The control now
+    carries the merge base's test side, duration records included.
+    """
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, duration_record_with_fix=True
+    )
+    fix = repo.commits["fix"]
+    assert repo.git("cat-file", "-t", f"{fix}^1:src/product.py") == "blob"
+    with pytest.raises(subprocess.CalledProcessError):
+        repo.git("cat-file", "-e", f"{fix}^1:tests/test_product.py")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/test_product.py").read_text() == PRODUCT_TEST
+    assert (control_tree / DURATION_RECORD).read_text() == (
+        '{"tests/test_product.py": 0.01}\n'
+    )
+    assert "Carried from the merge base: tests/test_product.py" in prepare.stdout
+    assert f"Carried from the merge base: {DURATION_RECORD}" in prepare.stdout
+    assert (control_tree / "src/product.py").read_text() == "BROKEN = True\n"
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_drops_a_test_the_merge_base_no_longer_has(
+    tmp_path: Path,
+) -> None:
+    """A test file present at the fix's parent but gone at the merge base is removed."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, stale_test_removed_by_fix=True
+    )
+    fix = repo.commits["fix"]
+    assert repo.git("cat-file", "-t", f"{fix}^1:tests/test_stale.py") == "blob"
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert not (control_tree / "tests/test_stale.py").exists()
+    assert (
+        repo.git("-C", str(control_tree), "ls-files", "--", "tests/test_stale.py") == ""
+    )
+    assert "Removed, absent at the merge base: tests/test_stale.py" in prepare.stdout
+    assert (control_tree / "tests/test_product.py").read_text() == PRODUCT_TEST
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_carries_a_test_edited_after_the_fix(tmp_path: Path) -> None:
+    """The carry reads the merge base, not the fix: a later test edit arrives too."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, test_edited_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    assert repo.git("show", f"{fix}:tests/test_product.py") + "\n" == PRODUCT_TEST
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/test_product.py").read_text() == EDITED_PRODUCT_TEST
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_ignores_a_dotted_path_outside_the_test_side(
+    tmp_path: Path,
+) -> None:
+    """A non-test path holding '..' changed after the fix does not stop the carry."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, dotted_doc_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/test_product.py").read_text() == PRODUCT_TEST
+    assert not (control_tree / "docs/v1..v2.md").exists()
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_reads_carried_paths_literally(tmp_path: Path) -> None:
+    """Removing 'tests/case[1].json' leaves 'tests/case1.json', which a glob would match."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        glob_named_fixture_removed_after_fix=True,
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert "Removed, absent at the merge base: tests/case[1].json" in prepare.stdout
+    assert not (control_tree / "tests/case[1].json").exists()
+    assert (control_tree / "tests/case1.json").read_text() == "{}\n"
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_carries_a_test_fixture_with_dots_in_its_name(
+    tmp_path: Path,
+) -> None:
+    """Only a '..' path component is unsafe; 'v1..v2.json' is an ordinary file name."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, dotted_test_fixture_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/fixtures/v1..v2.json").read_text() == "{}\n"
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_refuses_an_overlay_that_would_change_a_product_path(
+    tmp_path: Path,
+) -> None:
+    """The pull request's own test that replaces a product file at the parent stops the job.
+
+    tools/runner is a file at the parent and a package at the merge base; the pull
+    request adds the package's first test, and its overlay at the parent would turn
+    the file into a directory holding only that test.
+    """
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        product_file_becomes_package_after_fix=True,
+    )
+    fix = repo.commits["fix"]
+    _bind(
+        repo,
+        [f"OMN-1 {fix}"],
+        extra_files={
+            "tools/runner/tests/test_smoke.py": "def test_smoke():\n    pass\n"
+        },
+    )
+    prepare, control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert prepare.returncode != 0, output
+    assert (
+        f"::error::the test-side carry onto the parent of merged fix {fix} would "
+        "change a product path: tools/runner"
+    ) in output
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_reads_the_listing_byte_for_byte_under_a_utf8_locale(
+    tmp_path: Path,
+) -> None:
+    """A name ending in an invalid UTF-8 byte does not swallow the next record."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        undecodable_doc_and_new_test_after_fix=True,
+    )
+    repo.env["LC_ALL"] = "C.UTF-8"
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert "Carried from the merge base: tests/test_late.py" in prepare.stdout
+    assert (control_tree / "tests/test_late.py").is_file()
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_refuses_a_carry_that_would_replace_an_uncited_contract(
+    tmp_path: Path,
+) -> None:
+    """Only the cited tickets' contracts may change; another contract is product."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        uncited_contract_becomes_test_dir_after_fix=True,
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert prepare.returncode != 0, output
+    assert (
+        f"::error::the test-side carry onto the parent of merged fix {fix} would "
+        "change a product path: contracts/OMN-10278.yaml"
+    ) in output
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_ignores_a_repository_diff_order_file(tmp_path: Path) -> None:
+    """A diff.orderFile listing a new test before its parent's removal does not stop the carry."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        test_file_becomes_test_dir_after_fix=True,
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/agents/test_trajectory.py").is_file()
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_refuses_to_carry_a_symlinked_test(tmp_path: Path) -> None:
+    """A carried symlink stops the job: it runs whatever it points at, not itself.
+
+    The overlay lists only added, copied, modified and renamed paths, so a pull
+    request that turns the symlink back into a file would not replace it.
+    """
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, symlinked_test_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert prepare.returncode != 0, output
+    assert (
+        f"::error::the test-side carry onto the parent of merged fix {fix} would "
+        "install a symlink: tests/test_link.py"
+    ) in output
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_ignores_an_order_file_absent_at_the_parent(
+    tmp_path: Path,
+) -> None:
+    """A relative diff.orderFile the parent's worktree lacks does not stop the guard."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, relative_order_file_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/test_product.py").is_file()
+    assert control is not None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_guard_sees_paths_marked_unchanged(tmp_path: Path) -> None:
+    """core.ignoreStat cannot hide a product file the carry replaced."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        product_file_becomes_test_dir_after_fix=True,
+        ignore_stat=True,
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert prepare.returncode != 0, output
+    assert (
+        f"::error::the test-side carry onto the parent of merged fix {fix} would "
+        "change a product path: tools/runner"
+    ) in output
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_refuses_a_sparse_checkout(tmp_path: Path) -> None:
+    """A parent control with skip-worktree entries stops the job.
+
+    In a sparse checkout, removing a test outside the patterns leaves it in the
+    index, and a skip-worktree entry hides its change from the guard's diff.
+    """
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, sparse_test_removed_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert prepare.returncode != 0, output
+    assert (
+        f"::error::the control at the parent of merged fix {fix} cannot run in a "
+        "sparse checkout"
+    ) in output
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_refuses_a_sparse_checkout_without_excluded_parent_paths(
+    tmp_path: Path,
+) -> None:
+    """A sparse checkout stops the job even when it leaves out no parent path."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, sparse_excludes_a_later_dir=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert prepare.returncode != 0, output
+    assert (
+        f"::error::the control at the parent of merged fix {fix} cannot run in a "
+        "sparse checkout"
+    ) in output
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_carries_a_fixture_under_its_new_encoding_rule(
+    tmp_path: Path,
+) -> None:
+    """A fixture is written under the .gitattributes rule the merge base carries with it."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, encoded_fixture_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/-input.txt").read_bytes() == "hello".encode(
+        "utf-16-le"
+    )
+    assert control is not None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_carries_a_nested_attributes_file_under_its_parent_rule(
+    tmp_path: Path,
+) -> None:
+    """A carried .gitattributes is written under the rule another carried one sets for it."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, nested_attributes_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert (control_tree / "tests/-sample/.gitattributes").read_bytes() == (
+        b"*.dat binary\r\n"
+    )
+    assert control is not None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_drops_tests_under_a_directory_that_became_a_submodule(
+    tmp_path: Path,
+) -> None:
+    """A folder of tests the merge base replaced with a submodule leaves no test behind."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        test_dir_becomes_submodule_after_fix=True,
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert not (control_tree / "tests/vendor/test_vendored.py").exists()
+    assert (
+        repo.git(
+            "-C", str(control_tree), "ls-files", "--", "tests/vendor/test_vendored.py"
+        )
+        == ""
+    )
+    assert control is not None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_refuses_a_carry_that_would_change_a_product_path(
+    tmp_path: Path,
+) -> None:
+    """A carried test that would replace a product file at the parent stops the job.
+
+    The parent has tools/runner as a file; the merge base turned it into a package
+    with a test under it. Carrying that test would delete the parent's product file
+    and leave no implementation, so a check could fail for that alone.
+    """
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        product_file_becomes_test_dir_after_fix=True,
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert prepare.returncode != 0, output
+    assert (
+        f"::error::the test-side carry onto the parent of merged fix {fix} would "
+        "change a product path: tools/runner"
+    ) in output
+    assert control is None
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
