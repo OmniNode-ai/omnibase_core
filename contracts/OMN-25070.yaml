@@ -104,9 +104,8 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn25070-ac3-core-declares-no-launcher
     description: omnibase_core declares neither onex nor omni-agent, so the customer package omninode-onex
-      is their only owner (AC3's one-owner rule), and the same CLI still runs as python -m
-      omnibase_core.cli.cli_commands. The bound test fails at the merge base, where pyproject.toml declares
-      both.
+      is their only owner (AC3's one-owner rule), and the same CLI still runs as python -m omnibase_core.cli.cli_commands.
+      The bound test fails at the merge base, where pyproject.toml declares both.
     source: manual
     binds_ac: [AC3]
     checks:

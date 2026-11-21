@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 """OMN-25070 AC3: only the customer package omninode-onex declares onex and omni-agent.
 
@@ -39,7 +39,7 @@ def test_core_declares_no_customer_launcher() -> None:
 @pytest.mark.unit
 def test_the_reader_sees_a_declared_launcher() -> None:
     text = (
-        '[project]\n'
+        "[project]\n"
         'name = "x"\n'
         "[project.scripts]\n"
         'onex = "omnibase_core.cli.cli_commands:cli"\n'

@@ -56,7 +56,7 @@ and must not change without a deprecation path:
 
 | Surface | Contract | Example |
 |---------|----------|---------|
-| `onex` CLI commands | Command names and flags are stable. The `onex` and `omni-agent` launchers come from the customer package `omninode-onex`, and `omnibase-core` does not declare them (OMN-25070). Developers run the same CLI as `python -m omnibase_core.cli.cli_commands`. | `onex init`, `onex new node`, `onex validate`, `onex discover` |
+| `onex` CLI commands | Command names and flags are stable. The `onex` and `omni-agent` launchers come from the customer package `omninode-onex`, and `omnibase-core` does not declare them. Developers run the same CLI as `python -m omnibase_core.cli.cli_commands`. | `onex init`, `onex new node`, `onex validate`, `onex discover` |
 | `onex.nodes` entry-point group | Group name is stable; external packages register nodes here | `[project.entry-points."onex.nodes"]` |
 | Generated scaffold layout | Directory structure from `onex init` / `onex new node` is stable | `src/<pkg>/nodes/<name>/contract.yaml` |
 | Contract validation | `onex validate` accepts any directory with valid contract.yaml files | No monorepo assumptions |
