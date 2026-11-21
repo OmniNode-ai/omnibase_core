@@ -1,0 +1,60 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25958
+title: The receipt gate accepts a changelog-free release cut from the release train
+summary: 'omnibase_infra#6132 made the release train write no CHANGELOG.md to a repository that removed
+  it, so that repository''s release pull request changes no file and carries its notes in the pull request
+  body. The writer-app release-cut exemption recognised only a release that inserts one CHANGELOG.md heading,
+  so the first such release, omnimarket 0.4.325, was refused ("release cut requires root CHANGELOG.md")
+  and judged as ticket work. The exemption now also accepts a writer-app release pull request whose merge
+  base has no root CHANGELOG.md, whose head tree is identical to the merge base tree (an empty release;
+  a dependency-pin change stays with the existing pin-only route), and whose title "chore: release <repo>
+  <version> (OMN-18595)" names this repository and the head project.version. This contract proves the
+  gate change only; the ticket''s AC1 and AC2 are proved on omnimarket dev and are not bound here, so
+  its criteria use DoD labels.'
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn25958-changelog-free-release-cut
+    statement: An empty writer-app release pull request for a repository with no root CHANGELOG.md is
+      a release cut, and each listed shape around it stays refused.
+    acceptance:
+      - id: DoD1
+        statement: 'DoD1: a writer-app release pull request whose head tree equals its unique merge base''s
+          tree, whose merge base has no root CHANGELOG.md, and whose title names this repository and the
+          head project.version is exempt as a release cut, and the probe that decides it runs only for
+          such an empty release, so a pin-only change in a repository whose root manifest entry cannot
+          be read stays exempt -- falsifier: test_writer_changelog_free_release_cut_exempts_an_empty_release
+          fails on dev, and test_writer_pin_only_change_is_not_held_up_by_an_unreadable_root_manifest
+          fails when the probe reads the manifest for every pull request, in tests/ci/test_receipt_gate_writer_release_cut_omn20074.py.'
+      - id: DoD2
+        statement: 'DoD2: the same shape stays refused for a non-release title, no title, a version written
+          with non-ASCII digits, another repository, a version that differs from head project.version,
+          a merge base that keeps CHANGELOG.md, any changed path, an absent, malformed, bare-carriage-return
+          or symlinked head pyproject.toml, a submodule pointer move hidden from the path list, and a
+          criss-cross history with more than one merge base -- falsifier: the fails-closed, tree-comparison,
+          regular-file and unique-merge-base cases of the same test, each turned red by removing the check
+          it guards.'
+evidence_requirements:
+  - kind: tests
+    description: The writer-app release-cut verdict run against real git objects, with the changelog-free
+      exempt case and its refusal controls.
+    command: uv run pytest tests/ci/test_receipt_gate_writer_release_cut_omn20074.py -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25958-dod1-dod2-changelog-free-release-cut
+    description: Runs the receipt gate's writer-app verdict step over real git commits. The empty release
+      fails on dev, where only a CHANGELOG.md heading makes a release cut; removing any one of the changelog-free
+      checks turns the control that guards it red.
+    source: manual
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_writer_release_cut_omn20074.py -q
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - DoD1
+      - DoD2
