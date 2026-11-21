@@ -170,7 +170,7 @@ event_bus_inmemory = "omnibase_core.event_bus.event_bus_inmemory:EventBusInmemor
 state_disk = "omnibase_core.services.state.service_state_disk:ServiceStateDisk"
 
 [project.entry-points."onex.cli"]
-# Core CLI commands are registered directly via [project.scripts]
+# Core CLI commands are registered on the cli group in omnibase_core.cli.cli_commands
 # This group is for extensions from other packages
 gate = "omnibase_core.cli.cli_gate:gate"
 

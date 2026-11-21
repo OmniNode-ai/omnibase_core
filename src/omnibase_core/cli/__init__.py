@@ -3,8 +3,9 @@
 
 """CLI module for omnibase_core.
 
-The command-line interface for omnibase_core,
-including the onex entry point and runtime-host-dev command.
+The command-line interface for omnibase_core, which the onex launcher runs
+(the customer package omninode-onex declares onex; developers run
+python -m omnibase_core.cli.cli_commands), and the runtime-host-dev command.
 
 Usage:
     onex --help
