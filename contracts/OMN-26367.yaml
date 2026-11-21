@@ -1,0 +1,85 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26367
+title: omnibase_core census baseline PR 2353 reads every required check green on its head
+summary: >-
+  The census baseline pull request for omnibase_core read red because its repo-evidence dod-verify check
+  found no test-side change to bind: the contract for the parent ticket binds a falsifiable check, and
+  the check refuses a branch whose bound tests cannot be shown to fail at the merge base. This fix adds
+  the red-then-green test for the per-file table, binds it in the parent contract, and loosens no ratchet
+  row, baseline or check definition.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26367-census-pr-green
+    statement: The census baseline pull request reads every required check green on its current head.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: the check runs of omnibase_core#2353 named CI Summary, Decommissioned Pattern Scanner,
+          Skip Count Ratchet and repo-evidence / dod-verify read conclusion success on the PR's current
+          head -- falsifier: python3 pr_state_local.py --pr OmniNode-ai/omnibase_core#2353 prints ci=GREEN
+          with red= empty
+      - id: AC2
+        statement: >-
+          AC2: no ratchet row, baseline file or check definition is loosened in the fix diff, and the
+          census node run on the branch prints state=ok -- falsifier: git diff origin/dev...HEAD over
+          config/ledger_file_census_ratchet.yaml shows no raised count, and the census node run on a lab
+          host exits 0
+evidence_requirements:
+  - kind: tests
+    description: The per-file table test passes at the head and fails at the merge base.
+    command: uv run pytest tests/ci/test_ledger_file_census_per_file_table_omn26318.py -q --no-cov -o
+      addopts='' -n 0
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn26367-ac1-watcher-green
+    description: >-
+      The pull request watcher reads the four named checks as success on the current head. This reads
+      the watcher state on the launching host, which a hosted runner cannot reach, so it is a local Done-gate
+      check.
+    source: manual
+    execution_scope: local_done_gate
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: command
+        check_value: >-
+          python3 "$OMNI_PLUGIN_ROOT"/skills/merge-drain/scripts/pr_state_local.py --pr OmniNode-ai/omnibase_core#2353
+          | grep -F 'ci=GREEN'
+        cwd: .
+  - id: dod-omn26367-ac2-no-loosening
+    description: >-
+      The ratchet row stays at its measured value and the per-file table is well formed. The new test
+      fails at the merge base, where the ratchet file has no per-file table, and passes at the head.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: command
+        check_value: >-
+          grep -Fxq '  omnibase_core: 14' config/ledger_file_census_ratchet.yaml
+        cwd: .
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ledger_file_census_per_file_table_omn26318.py -q --no-cov
+          -o addopts='' -n 0
+        cwd: .
+  - id: dod-omn26367-ac2-census-state-ok
+    description: >-
+      The census node run over this checkout against the committed ratchet file exits 0.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: command
+        check_value: >-
+          env ONEX_LEDGER_CENSUS_ROOT=. uv run --no-project --with "omnimarket @ git+https://github.com/OmniNode-ai/omnimarket@7199fa537f69b96f1172d66f0b12710541cec6a8"
+          python -I -m omnimarket.nodes.node_work_ledger_file_census_effect --packaged-overlay --register
+          omnibase_core --directory omnibase_core=. --ratchet-file config/ledger_file_census_ratchet.yaml
+        cwd: .

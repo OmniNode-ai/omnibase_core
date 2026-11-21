@@ -1,0 +1,46 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26318
+title: Every registry repository is counted by the ledger-file census, with a daily typed record of the
+  per-repository and runtime-code counts that fails when any row grows
+summary: >-
+  omnibase_core gets its ledger-file census ratchet row and per-file table, measured by running node_work_ledger_file_census_effect
+  over a clean checkout at its base. The row is the measured count, and the node's per-file run over the
+  committed file reports state ok.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26318-census-omnibase-core-row
+    statement: omnibase_core commits its ratchet row and per-file table for the ledger-file census.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: the census run over every registry repository the node supports commits one ratchet row
+          and one per-file table per repository, with runtime code (src/ and runtime contracts) counted
+          apart from tests, docs, data and plan contracts -- falsifier: uv run pytest tests/unit/nodes/node_work_ledger_file_census_effect
+          -k all_repositories_ratchet -q
+evidence_requirements:
+  - kind: manual
+    description: The repository's ratchet file holds the measured ratchet row, and the census node's per-file
+      run over it reports state ok.
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26318-ac1-omnibase-core-row
+    description: The ratchet file holds this repository's measured ratchet row and a per-file table at
+      the checked-out commit; the file has no per-file table at the merge base, so the check fails there.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: command
+        check_value: >-
+          test -f config/ledger_file_census_ratchet.yaml && grep -Fxq '  omnibase_core: 14' config/ledger_file_census_ratchet.yaml
+          && grep -Fxq 'files:' config/ledger_file_census_ratchet.yaml
+        cwd: .
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ledger_file_census_per_file_table_omn26318.py -q --no-cov
+          -o addopts='' -n 0
+        cwd: .
