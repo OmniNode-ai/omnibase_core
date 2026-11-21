@@ -40,3 +40,7 @@ dod_evidence:
           test -f config/ledger_file_census_ratchet.yaml && grep -Fxq '  omnibase_core: 14' config/ledger_file_census_ratchet.yaml
           && grep -Fxq 'files:' config/ledger_file_census_ratchet.yaml
         cwd: .
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_ledger_file_census_per_file_table_omn26318.py -q --no-cov
+          -o addopts='' -n 0
+        cwd: .
