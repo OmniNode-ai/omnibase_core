@@ -3,6 +3,17 @@
 omnibase_core provides the contracts, models, validation and execution primitives for the ONEX framework.
 Documentation: [knowledge_base](https://github.com/OmniNode-ai/knowledge_base).
 
+## v0.47.77 (2026-11-21)
+
+### Release
+- Cut omnibase-core from dev at 0.47.77 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.76.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.76
+- fix: resolve dod_verify receipt arm by type name instead of full module path (#2351)
+- feat: typed public-surface models and Python extraction rules (#2350)
+
 ## v0.47.76 (2026-11-20)
 
 ### Release
