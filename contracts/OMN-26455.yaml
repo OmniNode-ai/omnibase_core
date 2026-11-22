@@ -95,6 +95,7 @@ dod_evidence:
       - AC4
     checks:
       - check_type: command
-        check_value: "grep -q 'yaml-hook-merge-sequence' tests/fixtures/validator_parity/precommit_interpreter/golden.json
+        check_value: "grep -q '_resolve_merge_keys' src/omnibase_core/nodes/node_precommit_interpreter_check_compute/matcher_precommit_interpreter.py
+          && grep -q 'yaml-hook-merge-sequence' tests/fixtures/validator_parity/precommit_interpreter/golden.json
           && grep -q 'pyyaml>=6.0.2,<7.0.0' pyproject.toml"
         cwd: ${OMNI_HOME}/omnibase_core
