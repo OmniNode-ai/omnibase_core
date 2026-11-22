@@ -2475,3 +2475,21 @@ def test_literal_checkout_of_a_carried_attributes_file(tmp_path: Path) -> None:
         in prepare.stdout
     )
     assert (tree / "src/product.py").read_text() == "BROKEN = True\n"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_test_folder_through_a_link_bare_tests_at_the_root(tmp_path: Path) -> None:
+    """Reject a bare tests/ folder that is a symlink to qa."""
+    repo = _repository(tmp_path)
+    repo.git("rm", "-r", "-q", "tests")
+    shutil.rmtree(repo.head_tree / "tests", ignore_errors=True)
+    repo.write("qa/test_quality.py", "def test_quality():\n    pass\n")
+    _symlink(repo, "tests", "qa")
+    _bind(repo, [])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        "::error::the test side is reached through a link at the head: tests"
+    ) in prepare.stdout
+    assert control is None
