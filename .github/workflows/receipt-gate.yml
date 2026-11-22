@@ -686,6 +686,40 @@ jobs:
                 fi
               done
             fi
+            # OMN-25958: a repository that removed its root CHANGELOG.md gets
+            # release pull requests that change no file. Only such an empty
+            # candidate is probed, so nothing here can refuse another route.
+            if [ ! -s "$probe_dir/paths" ]; then
+              reason="could not read the merge base's root CHANGELOG.md entry"
+              git -C "$head_tree" ls-tree -z "$MB" -- CHANGELOG.md > "$probe_dir/changelog-at-base-tree" || return 1
+              # An empty path list is not proof of identical trees (a submodule
+              # with ignore = all drops out of git diff), so the trees are compared.
+              reason="could not compare the merge base and head trees"
+              mb_tree_id="$(git -C "$head_tree" rev-parse "$MB^{tree}")" || return 1
+              head_tree_id="$(git -C "$head_tree" rev-parse "$HEAD_SHA^{tree}")" || return 1
+              if [ -n "$mb_tree_id" ] && [ "$mb_tree_id" = "$head_tree_id" ]; then
+                echo true > "$probe_dir/trees-identical" || return 1
+              else
+                echo false > "$probe_dir/trees-identical" || return 1
+              fi
+              # In a criss-cross history git merge-base picks one of several best
+              # common ancestors, and a tree equal to that one can still delete what
+              # the others brought, so every merge base is listed.
+              reason="could not list the merge bases"
+              git -C "$head_tree" merge-base --all "$BASE_SHA" "$HEAD_SHA" > "$probe_dir/merge-bases" || return 1
+              reason="could not read the head's root pyproject.toml"
+              git -C "$head_tree" ls-tree -z "$HEAD_SHA" -- pyproject.toml > "$probe_dir/tree-free-project-head" || return 1
+              if [ -s "$probe_dir/tree-free-project-head" ]; then
+                # The mode is read first: a symlink's blob is its target path, and
+                # only a regular file's blob is read as the manifest.
+                cut -d ' ' -f 1 < "$probe_dir/tree-free-project-head" > "$probe_dir/free-project-head-mode" || return 1
+                case "$(cat "$probe_dir/free-project-head-mode")" in
+                  100644 | 100755)
+                    git -C "$head_tree" show "$HEAD_SHA:pyproject.toml" > "$probe_dir/free-project-head" || return 1
+                    ;;
+                esac
+              fi
+            fi
             reason="the pinned verifier Python is missing"
             [ -n "${DOD_VERIFY_PY:-}" ] && [ -x "$DOD_VERIFY_PY" ] || return 1
             reason="the pinned classifier failed"
@@ -693,6 +727,7 @@ jobs:
           import difflib
           import hashlib
           import json
+          import os
           import re
           import sys
           import tomllib
@@ -755,6 +790,46 @@ jobs:
               if any(line.startswith(f"## v{version} ") for line in base):
                   return False, "release cut version already has a heading at the merge base"
               return True, f"release cut adds changelog version {version} with optional dependency pins"
+
+          def classify_changelog_free_release_cut(paths, probe_dir):
+              # OMN-25958: the release train writes no CHANGELOG.md to a repository
+              # that removed it, so its release pull request changes no file and
+              # carries the notes in its body. Only that empty release is exempt
+              # here; a dependency-pin change is classify_dependency_pin_only's.
+              if paths:
+                  return False, "changelog-free release cut requires an empty diff"
+              if (probe_dir / "changelog-at-base-tree").stat().st_size:
+                  return False, "changelog-free release cut: the merge base has a root CHANGELOG.md"
+              if (probe_dir / "trees-identical").read_text(encoding="utf-8").strip() != "true":
+                  return False, "changelog-free release cut: the head tree differs from the merge base tree"
+              if len((probe_dir / "merge-bases").read_text(encoding="utf-8").split()) != 1:
+                  return False, "changelog-free release cut: the merge base is not unique"
+              title = re.fullmatch(
+                  r"chore: release (\S+) ([0-9]+\.[0-9]+\.[0-9]+) \(OMN-18595\)", os.environ.get("PR_TITLE", ""),
+              )
+              if title is None:
+                  return False, "changelog-free release cut title must be 'chore: release <repo> <X.Y.Z> (OMN-18595)'"
+              if title.group(1) != os.environ.get("REPO_SHORT", ""):
+                  return False, "changelog-free release cut title names another repository"
+              mode_file = probe_dir / "free-project-head-mode"
+              if not mode_file.exists():
+                  return False, "changelog-free release cut root pyproject.toml is unreadable at the head"
+              if mode_file.read_text(encoding="utf-8").strip() not in {"100644", "100755"}:
+                  return False, "changelog-free release cut root pyproject.toml is not a regular file at the head"
+              project_file = probe_dir / "free-project-head"
+              try:
+                  # Bytes as committed: text mode would turn a bare carriage return,
+                  # which TOML refuses, into a newline it accepts.
+                  project = project_file.read_bytes().decode("utf-8")
+                  version = tomllib.loads(project).get("project", {}).get("version")
+              except (UnicodeDecodeError, tomllib.TOMLDecodeError, AttributeError):
+                  return False, "changelog-free release cut root pyproject.toml does not parse at the head"
+              if version != title.group(2):
+                  return False, "changelog-free release cut title version does not match head project.version"
+              return True, (
+                  f"changelog-free release cut {version}: an empty release with no root CHANGELOG.md "
+                  "at the merge base, notes in the pull request body (OMN-25958)"
+              )
 
           def read_blobs(paths, blobs_dir):
               # Contents come from git objects, never the working tree.
@@ -991,6 +1066,12 @@ jobs:
               release_cut, reason = classify_release_cut(
                   paths, pyproject_head, pyproject_base, changelog_head, changelog_base, project_file,
               )
+              if not release_cut:
+                  free_cut, free_reason = classify_changelog_free_release_cut(paths, paths_file.parent)
+                  if free_cut:
+                      release_cut, reason = True, free_reason
+                  else:
+                      reason = f"{reason}; {free_reason}"
               return {"exempt": release_cut, "kind": "release_cut" if release_cut else "none",
                       "reason": reason if release_cut else f"{reason}; dependency-pin-only: {pin_reason}"}
 
