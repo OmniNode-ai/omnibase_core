@@ -198,10 +198,72 @@ def _children(node: Node | None) -> list[Node]:
     return list(node.value) if isinstance(node, SequenceNode) else []
 
 
+_MERGE_TAG = "tag:yaml.org,2002:merge"
+
+
+def _merged_entries(node: MappingNode, active: set[int]) -> list[tuple[Node, Node]]:
+    """Flatten merge keys with the first mapping of a merge sequence winning.
+
+    Later entries of the returned list override earlier ones when the mapping is
+    constructed, so a sequence contributes its mappings last-to-first and the
+    node's own keys come after everything merged. Malformed merge values stay in
+    place so the YAML constructor reports them as it always did.
+    """
+    if id(node) in active:
+        return list(node.value)
+    active.add(id(node))
+    merged: list[tuple[Node, Node]] = []
+    own: list[tuple[Node, Node]] = []
+    for key, value in node.value:
+        if key.tag != _MERGE_TAG:
+            own.append((key, value))
+        elif isinstance(value, MappingNode):
+            merged.extend(_merged_entries(value, active))
+        elif isinstance(value, SequenceNode) and all(
+            isinstance(source, MappingNode) for source in value.value
+        ):
+            for source in reversed(value.value):
+                merged.extend(_merged_entries(cast("MappingNode", source), active))
+        else:
+            own.append((key, value))
+    active.discard(id(node))
+    return merged + own
+
+
+def _resolve_merge_keys(node: Node, seen: set[int]) -> None:
+    """Resolve every merge key in the tree, independent of the PyYAML version.
+
+    PyYAML 6.0.3 lets the first mapping of ``<<: [*a, *b]`` win and 6.0.4 lets the
+    last one win, so the precedence is fixed here before any constructor runs.
+    """
+    if id(node) in seen:
+        return
+    seen.add(id(node))
+    if isinstance(node, MappingNode):
+        node.value = _merged_entries(node, set())
+        for key, value in node.value:
+            _resolve_merge_keys(key, seen)
+            _resolve_merge_keys(value, seen)
+    elif isinstance(node, SequenceNode):
+        for item in node.value:
+            _resolve_merge_keys(item, seen)
+
+
+def _resolved_source(source: str) -> str:
+    """Return the document text with merge keys already flattened."""
+    tree = yaml.compose(source, Loader=yaml.SafeLoader)
+    if tree is None:
+        return source
+    _resolve_merge_keys(tree, set())
+    return yaml.serialize(tree)
+
+
 def _load_document(source: str) -> dict[str, object]:
     """Read the ``repos`` key through a Pydantic model, keeping the script's errors."""
     try:
-        document = load_yaml_content_as_model(source, ModelPrecommitRawDocument)
+        document = load_yaml_content_as_model(
+            _resolved_source(source), ModelPrecommitRawDocument
+        )
     except ModelOnexError as exc:
         prefix = "YAML parsing error: "
         if exc.message.startswith(prefix):
