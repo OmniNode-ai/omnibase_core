@@ -186,7 +186,9 @@ def test_freezes_unpinned_revision_once_for_head_and_controls(tmp_path):
         "-m",
         "moved",
     )
-    loop = prepare.split("# OMN-21013: reuse", 1)[1].split("local path test_side", 1)[0]
+    loop = prepare.split("# OMN-21013: reuse", 1)[1].split(
+        "# OMN-21013: end of the sibling checkouts.", 1
+    )[0]
     loop = "# OMN-21013: reuse" + loop
     for name in ("base_home", "fix_reverted_home/OMN-1"):
         control_home = home.parent / name

@@ -1740,7 +1740,8 @@ jobs:
           MB=$(git -C "$head_tree" merge-base "$BASE_SHA" "$HEAD_SHA")
           printf '%s\n' "$MB" > "$RUNNER_TEMP/dod/merge-base.txt"
           # A self-hosted workspace outlives the job: clear a previous run's base trees.
-          rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home" "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home"
+          rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home" "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home" "$GITHUB_WORKSPACE/.dod-verify/fix_home"
+          rm -f "$RUNNER_TEMP"/dod/control-fix-home-*.txt "$RUNNER_TEMP"/dod/control-fix-*.txt
           git -C "$head_tree" worktree prune
           TEST_SIDE='^tests?/|/tests?/|(^|/)conftest\.py$|(^|/)test_[^/]*\.py$|_test\.py$'
           # Per-test duration records (OMN-23560) are bookkeeping for the tests, not product (OMN-25969):
@@ -1766,18 +1767,260 @@ jobs:
             done < <(git -C "$head_tree" diff --no-renames --unified=0 "$fix^1" "$fix" -- "$path")
             [ "$changed" -eq 1 ]
           }
-          # prepare_control HOME LABEL [FIX]: check the merge base out at HOME/$REPO_SHORT,
-          # revert FIX's product (non-test, non-contract, non-bookkeeping) changes there when
-          # one is named (falling back to FIX's parent if the revert conflicts), and lay
-          # over it every test-side path and cited contract this pull request changed.
-          # Set control_uses_fix_parent so the caller can label the chosen control.
-          prepare_control() {
-            local control_home="$1" label="$2" fix="${3:-}"
-            local control_tree="$control_home/$REPO_SHORT" overlay_paths
-            control_uses_fix_parent=false
+          # OMN-26434: only a '..' path component climbs out of the tree; 'v1..v2.json'
+          # is an ordinary name, in the revert, the carry and the overlay alike.
+          unsafe_path() {
+            [[ "/$1/" == */../* || "$1" == /* ]]
+          }
+          # OMN-26434: TEST_SIDE needs a slash after a tests folder's name, so a
+          # tests or test entry that is itself a symlink or a submodule hides the
+          # test side behind it. Any such entry in a tree the control reads stops
+          # the job: refused, never skipped.
+          refuse_linked_test_folder() {
+            local commit="$1" where="$2" entries entry mode path
+            local LC_ALL=C
+            entries="$(mktemp "$RUNNER_TEMP/dod/tree-entries.XXXXXX")"
+            if ! git -C "$head_tree" ls-tree -r -z --full-tree "$commit" > "$entries"; then
+              echo "::error::cannot list the tree at $where"
+              exit 1
+            fi
+            while IFS= read -r -d '' entry; do
+              mode="${entry%% *}"
+              path="${entry#*$'\t'}"
+              if [[ "$mode" == 120000 || "$mode" == 160000 ]] && [[ "$path" =~ (^|/)tests?$ ]]; then
+                echo "::error::the test side is reached through a link at $where: $path"
+                exit 1
+              fi
+            done < "$entries"
+          }
+          # OMN-26434: a .gitattributes change rewrites no file whose own entry is
+          # unchanged, so every regular file under each folder whose rules changed
+          # is written again from the index, under the rules now in place.
+          rewrite_under_attributes() {
+            local tree="$1" dirs="$2" dir files entry mode path
+            local LC_ALL=C
+            files="$(mktemp "$RUNNER_TEMP/dod/attribute-files.XXXXXX")"
+            while IFS= read -r -d '' dir; do
+              if ! git --literal-pathspecs -C "$tree" ls-files -s -z -- "$dir/" > "$files"; then
+                echo "::error::cannot list the files under $dir"
+                exit 1
+              fi
+              while IFS= read -r -d '' entry; do
+                mode="${entry%% *}"
+                path="${entry#*$'\t'}"
+                if [[ "$mode" != 100644 && "$mode" != 100755 ]]; then
+                  continue
+                fi
+                rm -f -- "$tree/$path"
+                git --literal-pathspecs -C "$tree" checkout -- "$path"
+              done < "$files"
+              printf '%sRewritten under the changed attributes rules: %s/\n' "$log_prefix" "$dir"
+            done < <(sort -zu "$dirs")
+          }
+          # OMN-25103: carry_test_side TREE FROM WHERE brings every test-side path and
+          # duration record that differs between FROM and the merge base into TREE
+          # from the merge base, removing any test the merge base no longer has.
+          # The listing is written to a file first so a failed diff stops the job
+          # instead of leaving the carry silently incomplete, and paths are read
+          # literally so a name holding glob characters names only itself.
+          carry_test_side() {
+            local tree="$1" from="$2" where="$3"
+            # A sparse checkout's skip-worktree entries survive a removal and hide
+            # a worktree change from diff, and its rules can leave out a carried
+            # path, so the control refuses a sparse checkout outright.
+            local index_tags sparse_checkout
+            sparse_checkout="$(git -C "$tree" config --type=bool --default=false --get core.sparseCheckout)"
+            index_tags="$(mktemp "$RUNNER_TEMP/dod/index-tags.XXXXXX")"
+            if ! git -C "$tree" ls-files -t -z > "$index_tags"; then
+              echo "::error::cannot read the index at $where"
+              exit 1
+            fi
+            if [ "$sparse_checkout" = true ] || grep -qz '^S ' "$index_tags"; then
+              echo "::error::the control at $where cannot run in a sparse checkout"
+              exit 1
+            fi
+            # Byte-exact reads: under a UTF-8 locale a NUL-delimited read can
+            # swallow the record after a name ending in an invalid byte.
+            local LC_ALL=C
+            local carry_paths attribute_dirs
+            carry_paths="$(mktemp "$RUNNER_TEMP/dod/carry-paths.XXXXXX")"
+            attribute_dirs="$(mktemp "$RUNNER_TEMP/dod/carry-attribute-dirs.XXXXXX")"
+            # Path order, whatever diff.orderFile the repository sets: a removed
+            # file must come before a test added under the same name.
+            if ! git -c diff.orderFile=/dev/null -C "$head_tree" diff --name-status --no-renames --ignore-submodules=none -z "$from" "$MB" > "$carry_paths"; then
+              echo "::error::cannot list the test side between $where and the merge base"
+              exit 1
+            fi
+            # Four passes over the listing: removals first, so a folder of tests
+            # the merge base replaced with a submodule is emptied before the
+            # submodule arrives; then .gitattributes files, twice, the second
+            # time rewriting each once every rule is in place, since one can set
+            # a rule for another; then everything else, so every carried fixture
+            # is written under the rules the merge base has for it.
+            local carry_pass change path
+            for carry_pass in removals attributes attributes_rewrite others; do
+            while IFS= read -r -d '' change && IFS= read -r -d '' path; do
+              if [[ ! "$path" =~ $TEST_SIDE|$TEST_RECORDS ]]; then
+                continue
+              fi
+              local attributes_file=false
+              if [[ "$path" == .gitattributes || "$path" == */.gitattributes ]]; then
+                attributes_file=true
+              fi
+              case "$carry_pass" in
+                removals) [ "$change" = "D" ] || continue ;;
+                attributes | attributes_rewrite) { [ "$change" != "D" ] && [ "$attributes_file" = true ]; } || continue ;;
+                others) { [ "$change" != "D" ] && [ "$attributes_file" = false ]; } || continue ;;
+              esac
+              if unsafe_path "$path"; then
+                echo "::error::unsafe test-side path refused"
+                exit 1
+              fi
+              if [ "$attributes_file" = true ] && [ "$carry_pass" != attributes_rewrite ]; then
+                printf '%s\0' "${path%/.gitattributes}" >> "$attribute_dirs"
+              fi
+              if [ "$change" = "D" ]; then
+                git --literal-pathspecs -C "$tree" rm -q --ignore-unmatch -- "$path"
+                printf '%sRemoved, absent at the merge base: %s\n' "$log_prefix" "$path"
+              else
+                # A symlink runs whatever it points at, so none is carried.
+                local carried_entry
+                carried_entry="$(git --literal-pathspecs -C "$head_tree" ls-tree "$MB" -- "$path")"
+                if [[ "$carried_entry" == 120000\ * ]]; then
+                  echo "::error::the test-side carry onto $where would install a symlink: $path"
+                  exit 1
+                fi
+                if [ "$carry_pass" = attributes_rewrite ]; then
+                  # Checkout leaves a file that already matches the index alone.
+                  rm -f -- "$tree/$path"
+                  git --literal-pathspecs -C "$tree" checkout "$MB" -- "$path"
+                  printf '%sRewritten under every carried attributes rule: %s\n' "$log_prefix" "$path"
+                  continue
+                fi
+                git --literal-pathspecs -C "$tree" checkout "$MB" -- "$path"
+                printf '%sCarried from the merge base: %s\n' "$log_prefix" "$path"
+              fi
+            done < "$carry_paths"
+            done
+            if [ -s "$attribute_dirs" ]; then
+              rewrite_under_attributes "$tree" "$attribute_dirs"
+            fi
+          }
+          # OMN-26434: overlay_pull_request TREE AT_PARENT WHERE lays every test-side
+          # path, duration record and cited contract the pull request changed over
+          # TREE as the head has it: deletions first, so a folder the pull request
+          # replaced with a file or a submodule is emptied before it arrives, then
+          # additions, modifications and type changes. Renames are a deletion and
+          # an addition, and a submodule pin is listed whatever .gitmodules ignores.
+          # Product paths are never applied. Sets overlay_test_paths.
+          overlay_pull_request() {
+            local tree="$1" at_parent="$2" where="$3" overlay_paths attribute_dirs
+            local LC_ALL=C
             overlay_paths="$(mktemp "$RUNNER_TEMP/dod/overlay-paths.XXXXXX")"
-            mkdir -p "$control_home"
-            git -C "$head_tree" worktree add --detach "$control_tree" "$MB"
+            attribute_dirs="$(mktemp "$RUNNER_TEMP/dod/overlay-attribute-dirs.XXXXXX")"
+            if ! git -c diff.orderFile=/dev/null -C "$head_tree" diff --name-status --no-renames --ignore-submodules=none -z "$MB" "$HEAD_SHA" > "$overlay_paths"; then
+              echo "::error::cannot list the pull request's changes"
+              exit 1
+            fi
+            overlay_test_paths=0
+            local overlay_pass change path test_side cited_contract ticket
+            for overlay_pass in removals others; do
+            while IFS= read -r -d '' change && IFS= read -r -d '' path; do
+              if unsafe_path "$path"; then
+                echo "::error::unsafe overlay path refused"
+                exit 1
+              fi
+              case "$overlay_pass" in
+                removals) [ "$change" = "D" ] || continue ;;
+                others) [ "$change" != "D" ] || continue ;;
+              esac
+              test_side=false
+              if [[ "$path" =~ $TEST_SIDE ]]; then
+                test_side=true
+              fi
+              cited_contract=false
+              while IFS= read -r ticket; do
+                if [ "$path" = "contracts/$ticket.yaml" ]; then
+                  cited_contract=true
+                fi
+              done < "$RUNNER_TEMP/dod/tickets.txt"
+              # The pull request's duration records go with its tests, so a bound check
+              # that reads one runs against it; they never count as a test (OMN-25969).
+              if [ "$test_side" != true ] && [ "$cited_contract" != true ] && [[ ! "$path" =~ $TEST_RECORDS ]]; then
+                continue
+              fi
+              if [[ "$path" == .gitattributes || "$path" == */.gitattributes ]]; then
+                printf '%s\0' "${path%/.gitattributes}" >> "$attribute_dirs"
+              fi
+              if [ "$change" = "D" ]; then
+                # Forced: the carry may already have staged the path from the merge base.
+                git --literal-pathspecs -C "$tree" rm -q -f --ignore-unmatch -- "$path"
+                printf '%sRemoved by the pull request: %s\n' "$log_prefix" "$path"
+                continue
+              fi
+              if [ "$at_parent" = true ] && [[ "$(git --literal-pathspecs -C "$head_tree" ls-tree "$HEAD_SHA" -- "$path")" == 120000\ * ]]; then
+                echo "::error::the pull request's overlay onto $where would install a symlink: $path"
+                exit 1
+              fi
+              git --literal-pathspecs -C "$tree" checkout "$HEAD_SHA" -- "$path"
+              printf '%sOverlaid: %s\n' "$log_prefix" "$path"
+              if [ "$test_side" = true ]; then
+                overlay_test_paths=$((overlay_test_paths + 1))
+              fi
+            done < "$overlay_paths"
+            done
+            if [ -s "$attribute_dirs" ]; then
+              rewrite_under_attributes "$tree" "$attribute_dirs"
+            fi
+          }
+          # OMN-25103: guard_carry TREE WHERE: at a fix's parent (or the fix), the
+          # carry and the overlay may touch test-side paths, duration records and
+          # the cited contract only. A test that replaces a product file, or a
+          # removal that rewrites .gitmodules, would change what the control runs
+          # against, so it stops the job. Both the index and the worktree are read:
+          # a checkout that turns a file into a directory stages only the new test
+          # and leaves the file's removal unstaged.
+          guard_carry() {
+            local tree="$1" where="$2" index_paths carried_paths path cited_contract ticket
+            local LC_ALL=C
+            # An assume-unchanged entry (core.ignoreStat) hides its worktree change
+            # from diff, so clear the marks first; skip-worktree entries were
+            # refused when the control was made.
+            # The order file is ignored: one the repository added after the fix
+            # is absent from the parent's worktree and would fail the diff.
+            index_paths="$(mktemp "$RUNNER_TEMP/dod/index-paths.XXXXXX")"
+            carried_paths="$(mktemp "$RUNNER_TEMP/dod/carried-paths.XXXXXX")"
+            if ! git -C "$tree" ls-files -z > "$index_paths" \
+              || ! git -c core.ignoreStat=false -C "$tree" update-index -z --no-assume-unchanged --stdin < "$index_paths"; then
+              echo "::error::cannot clear the unchanged marks at $where"
+              exit 1
+            fi
+            local guard_git=(git -c diff.orderFile=/dev/null -c core.ignoreStat=false -c core.fsmonitor=false -C "$tree")
+            if ! { "${guard_git[@]}" diff --cached --name-only --no-renames --ignore-submodules=none -z \
+              && "${guard_git[@]}" diff --name-only --no-renames --ignore-submodules=none -z; } > "$carried_paths"; then
+              echo "::error::cannot list what the carry changed at $where"
+              exit 1
+            fi
+            while IFS= read -r -d '' path; do
+              if [[ "$path" =~ $TEST_SIDE|$TEST_RECORDS ]]; then
+                continue
+              fi
+              # Only a cited ticket's contract may change; any other contract is
+              # product for this control, as it is for the overlay.
+              cited_contract=false
+              while IFS= read -r ticket; do
+                if [ "$path" = "contracts/$ticket.yaml" ]; then
+                  cited_contract=true
+                fi
+              done < "$RUNNER_TEMP/dod/tickets.txt"
+              if [ "$cited_contract" != true ]; then
+                echo "::error::the test-side carry onto $where would change a product path: $path"
+                exit 1
+              fi
+            done < "$carried_paths"
+          }
+          add_sibling_checkouts() {
+            local control_home="$1" sibling sibling_sha
             # OMN-21013: reuse the early resolved SHA, including unpinned siblings,
             # for every merge-base and reverted-fix registry. Never re-resolve here.
             if [ -f "$RUNNER_TEMP/dod/siblings.tsv" ]; then
@@ -1789,11 +2032,27 @@ jobs:
                 fi
               done < "$RUNNER_TEMP/dod/siblings.tsv"
             fi
-            local path test_side cited_contract ticket
+            # OMN-21013: end of the sibling checkouts.
+          }
+          # prepare_control HOME LABEL [FIX TICKET]: check the merge base out at
+          # HOME/$REPO_SHORT, revert FIX's product (non-test, non-contract,
+          # non-bookkeeping) changes there when one is named (falling back to FIX's
+          # parent if the revert conflicts), and lay over it every test-side path
+          # and cited contract this pull request changed. Set control_uses_fix_parent
+          # so the caller can label the chosen control.
+          prepare_control() {
+            local control_home="$1" label="$2" fix="${3:-}" ticket_id="${4:-}"
+            local control_tree="$control_home/$REPO_SHORT"
+            local log_prefix=""
+            control_uses_fix_parent=false
+            mkdir -p "$control_home"
+            git -C "$head_tree" worktree add --detach "$control_tree" "$MB"
+            add_sibling_checkouts "$control_home"
+            local path
             if [ -n "$fix" ]; then
               local -a product=()
               while IFS= read -r -d '' path; do
-                if [[ "$path" == *..* || "$path" == /* ]]; then
+                if unsafe_path "$path"; then
                   echo "::error::unsafe revert path refused"
                   exit 1
                 fi
@@ -1809,12 +2068,12 @@ jobs:
                   continue
                 fi
                 product+=("$path")
-              done < <(git -C "$head_tree" diff --name-only --no-renames -z "$fix^1" "$fix")
+              done < <(git -C "$head_tree" diff --name-only --no-renames --ignore-submodules=none -z "$fix^1" "$fix")
               if [ "${#product[@]}" -eq 0 ]; then
                 echo "::error::merged fix $fix changes no product path, so reverting it cannot make a bound test fail"
                 exit 1
               fi
-              if ! git -C "$head_tree" diff --binary --no-renames "$fix^1" "$fix" -- "${product[@]}" | git -C "$control_tree" apply -R; then
+              if ! git -C "$head_tree" diff --binary --no-renames --ignore-submodules=none "$fix^1" "$fix" -- "${product[@]}" | git -C "$control_tree" apply -R; then
                 git -C "$head_tree" worktree remove --force "$control_tree"
                 git -C "$head_tree" worktree prune
                 if ! git -C "$head_tree" worktree add --detach "$control_tree" "$fix^1"; then
@@ -1823,166 +2082,40 @@ jobs:
                 fi
                 control_uses_fix_parent=true
                 echo "::notice::the product changes of merged fix $fix did not apply in reverse at the merge base; the control runs at the fix's parent"
-                # A sparse checkout's skip-worktree entries survive a removal and hide
-                # a worktree change from diff, and its rules can leave out a carried
-                # path, so the parent control refuses a sparse checkout outright.
-                local index_tags sparse_checkout
-                sparse_checkout="$(git -C "$control_tree" config --type=bool --default=false --get core.sparseCheckout)"
-                index_tags="$(mktemp "$RUNNER_TEMP/dod/index-tags.XXXXXX")"
-                if ! git -C "$control_tree" ls-files -t -z > "$index_tags"; then
-                  echo "::error::cannot read the index at the parent of merged fix $fix"
-                  exit 1
-                fi
-                if [ "$sparse_checkout" = true ] || grep -qz '^S ' "$index_tags"; then
-                  echo "::error::the control at the parent of merged fix $fix cannot run in a sparse checkout"
-                  exit 1
-                fi
+                refuse_linked_test_folder "$fix^1" "the parent of merged fix $fix"
                 # OMN-25103: the parent predates every test the fix and later work
                 # added, so a bound test that is missing there fails for its absence,
                 # which proves nothing about the fix. Carry the merge base's test side
-                # (and duration records) onto the parent, removing any test the merge
-                # base no longer has; the pull request's own overlay below still wins.
-                # The listing is written to a file first so a failed diff stops the job
-                # instead of leaving the carry silently incomplete, and paths are read
-                # literally so a name holding glob characters names only itself.
-                # Byte-exact reads: under a UTF-8 locale a NUL-delimited read can
-                # swallow the record after a name ending in an invalid byte.
-                local LC_ALL=C
-                local carry_paths
-                carry_paths="$(mktemp "$RUNNER_TEMP/dod/carry-paths.XXXXXX")"
-                # Path order, whatever diff.orderFile the repository sets: a removed
-                # file must come before a test added under the same name.
-                if ! git -c diff.orderFile=/dev/null -C "$head_tree" diff --name-status --no-renames --ignore-submodules=none -z "$fix^1" "$MB" > "$carry_paths"; then
-                  echo "::error::cannot list the test side between the parent of merged fix $fix and the merge base"
-                  exit 1
-                fi
-                # Four passes over the listing: removals first, so a folder of tests
-                # the merge base replaced with a submodule is emptied before the
-                # submodule arrives; then .gitattributes files, twice, the second
-                # time rewriting each once every rule is in place, since one can set
-                # a rule for another; then everything else, so every carried fixture
-                # is written under the rules the merge base has for it.
-                local carry_pass
-                for carry_pass in removals attributes attributes_rewrite others; do
-                while IFS= read -r -d '' change && IFS= read -r -d '' path; do
-                  if [[ ! "$path" =~ $TEST_SIDE|$TEST_RECORDS ]]; then
-                    continue
-                  fi
-                  local attributes_file=false
-                  if [[ "$path" == .gitattributes || "$path" == */.gitattributes ]]; then
-                    attributes_file=true
-                  fi
-                  case "$carry_pass" in
-                    removals) [ "$change" = "D" ] || continue ;;
-                    attributes | attributes_rewrite) { [ "$change" != "D" ] && [ "$attributes_file" = true ]; } || continue ;;
-                    others) { [ "$change" != "D" ] && [ "$attributes_file" = false ]; } || continue ;;
-                  esac
-                  # Only a '..' path component climbs out; 'v1..v2.json' is a name.
-                  if [[ "/$path/" == */../* || "$path" == /* ]]; then
-                    echo "::error::unsafe test-side path refused"
-                    exit 1
-                  fi
-                  if [ "$change" = "D" ]; then
-                    git --literal-pathspecs -C "$control_tree" rm -q --ignore-unmatch -- "$path"
-                    printf 'Removed, absent at the merge base: %s\n' "$path"
-                  else
-                    # A symlink runs whatever it points at, and the overlay below
-                    # never lists a type change back to a file, so none is carried.
-                    local carried_entry
-                    carried_entry="$(git --literal-pathspecs -C "$head_tree" ls-tree "$MB" -- "$path")"
-                    if [[ "$carried_entry" == 120000\ * ]]; then
-                      echo "::error::the test-side carry onto the parent of merged fix $fix would install a symlink: $path"
-                      exit 1
-                    fi
-                    if [ "$carry_pass" = attributes_rewrite ]; then
-                      # Checkout leaves a file that already matches the index alone.
-                      rm -f -- "$control_tree/$path"
-                      git --literal-pathspecs -C "$control_tree" checkout "$MB" -- "$path"
-                      printf 'Rewritten under every carried attributes rule: %s\n' "$path"
-                      continue
-                    fi
-                    git --literal-pathspecs -C "$control_tree" checkout "$MB" -- "$path"
-                    printf 'Carried from the merge base: %s\n' "$path"
-                  fi
-                done < "$carry_paths"
-                done
+                # (and duration records) onto the parent; the pull request's own
+                # overlay below still wins.
+                carry_test_side "$control_tree" "$fix^1" "the parent of merged fix $fix"
               else
                 for path in "${product[@]}"; do
                   printf 'Reverted from %s: %s\n' "$fix" "$path"
                 done
               fi
             fi
-            git -C "$head_tree" diff --name-only --diff-filter=ACMR -z "$MB" "$HEAD_SHA" > "$overlay_paths"
-            local test_paths=0
-            while IFS= read -r -d '' path; do
-              if [[ "$path" == *..* || "$path" == /* ]]; then
-                echo "::error::unsafe overlay path refused"
-                exit 1
-              fi
-              test_side=false
-              if [[ "$path" =~ $TEST_SIDE ]]; then
-                test_side=true
-              fi
-              cited_contract=false
-              while IFS= read -r ticket; do
-                if [ "$path" = "contracts/$ticket.yaml" ]; then
-                  cited_contract=true
-                fi
-              done < "$RUNNER_TEMP/dod/tickets.txt"
-              # The pull request's duration records go with its tests, so a bound check
-              # that reads one runs against it; they never count as a test (OMN-25969).
-              if [ "$test_side" = true ] || [ "$cited_contract" = true ] || [[ "$path" =~ $TEST_RECORDS ]]; then
-                git -C "$control_tree" checkout "$HEAD_SHA" -- "$path"
-                printf 'Overlaid: %s\n' "$path"
-                if [ "$test_side" = true ]; then
-                  test_paths=$((test_paths + 1))
-                fi
-              fi
-            done < "$overlay_paths"
-            # OMN-25103: at the fix's parent, the carry and the overlay may touch
-            # test-side paths, duration records and the cited contract only. A test
-            # that replaces a product file of the parent, or a removal that rewrites
-            # .gitmodules, would change what the control runs against, so it stops
-            # the job. Both the index and the worktree are read: a checkout that
-            # turns a file into a directory stages only the new test and leaves the
-            # file's removal unstaged.
+            overlay_pull_request "$control_tree" "$control_uses_fix_parent" "the parent of merged fix $fix"
+            local test_paths="$overlay_test_paths"
             if [ "$control_uses_fix_parent" = true ]; then
-              # An assume-unchanged entry (core.ignoreStat) hides its worktree change
-              # from diff, so clear the marks first; skip-worktree entries were
-              # refused when the control was made.
-              # The order file is ignored: one the repository added after the fix
-              # is absent from the parent's worktree and would fail the diff.
-              local index_paths carried_paths
-              index_paths="$(mktemp "$RUNNER_TEMP/dod/index-paths.XXXXXX")"
-              carried_paths="$(mktemp "$RUNNER_TEMP/dod/carried-paths.XXXXXX")"
-              if ! git -C "$control_tree" ls-files -z > "$index_paths" \
-                || ! git -c core.ignoreStat=false -C "$control_tree" update-index -z --no-assume-unchanged --stdin < "$index_paths"; then
-                echo "::error::cannot clear the unchanged marks at the parent of merged fix $fix"
-                exit 1
-              fi
-              local guard_git=(git -c diff.orderFile=/dev/null -c core.ignoreStat=false -c core.fsmonitor=false -C "$control_tree")
-              if ! { "${guard_git[@]}" diff --cached --name-only --no-renames --ignore-submodules=none -z \
-                && "${guard_git[@]}" diff --name-only --no-renames --ignore-submodules=none -z; } > "$carried_paths"; then
-                echo "::error::cannot list what the carry changed at the parent of merged fix $fix"
-                exit 1
-              fi
-              while IFS= read -r -d '' path; do
-                if [[ "$path" =~ $TEST_SIDE|$TEST_RECORDS ]]; then
-                  continue
-                fi
-                # Only a cited ticket's contract may change; any other contract is
-                # product for this control, as it is for the overlay above.
-                cited_contract=false
-                while IFS= read -r ticket; do
-                  if [ "$path" = "contracts/$ticket.yaml" ]; then
-                    cited_contract=true
-                  fi
-                done < "$RUNNER_TEMP/dod/tickets.txt"
-                if [ "$cited_contract" != true ]; then
-                  echo "::error::the test-side carry onto the parent of merged fix $fix would change a product path: $path"
-                  exit 1
-                fi
-              done < "$carried_paths"
+              guard_carry "$control_tree" "the parent of merged fix $fix"
+              # OMN-26434: a check that fails at the parent may fail for a later
+              # product change rather than the fix. Build the same control at the
+              # fix itself (the merge base's test side carried, the same overlay,
+              # the same guard), so the control step can require every own bound
+              # check to pass there.
+              local fix_home="$GITHUB_WORKSPACE/.dod-verify/fix_home/$ticket_id"
+              local fix_tree="$fix_home/$REPO_SHORT"
+              log_prefix="At merged fix $fix: "
+              mkdir -p "$fix_home"
+              git -C "$head_tree" worktree add --detach "$fix_tree" "$fix"
+              add_sibling_checkouts "$fix_home"
+              carry_test_side "$fix_tree" "$fix" "merged fix $fix"
+              overlay_pull_request "$fix_tree" true "merged fix $fix"
+              guard_carry "$fix_tree" "merged fix $fix"
+              printf '%s\n' "$fix_home" > "$RUNNER_TEMP/dod/control-fix-home-$ticket_id.txt"
+              printf '%s\n' "$fix" > "$RUNNER_TEMP/dod/control-fix-$ticket_id.txt"
+              echo "$ticket_id: the bound checks also run at merged fix $fix with the same carry"
             fi
             # With a named fix, the bound tests must fail with it reverted or at its parent.
             if [ -z "$fix" ] && [ "$test_paths" -eq 0 ]; then
@@ -1999,6 +2132,8 @@ jobs:
           # read from git: it exists, is merged at the merge base, has one parent, and
           # its subject cites the ticket. The trailer only picks which merged commit;
           # the pull request body is never read.
+          refuse_linked_test_folder "$HEAD_SHA" "the head"
+          refuse_linked_test_folder "$MB" "the merge base"
           fixes="$RUNNER_TEMP/dod/merged-fixes.txt"
           git -C "$head_tree" log --format='%(trailers:key=Binds-Merged-Fix,valueonly)' "$MB..$HEAD_SHA" | sed '/^[[:space:]]*$/d' | sort -u > "$fixes"
           while IFS= read -r value; do
@@ -2044,9 +2179,9 @@ jobs:
                 echo "::error::$ticket names merged fix $fix, but this pull request changes $path, which is neither test-side nor a contract; a product change proves red at the merge base"
                 exit 1
               fi
-            done < <(git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA")
+            done < <(git -C "$head_tree" diff --name-only --no-renames --ignore-submodules=none -z "$MB" "$HEAD_SHA")
             label="the merge base with merged fix $fix reverted"
-            prepare_control "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home/$ticket" "$label" "$fix"
+            prepare_control "$GITHUB_WORKSPACE/.dod-verify/fix_reverted_home/$ticket" "$label" "$fix" "$ticket"
             if [ "$control_uses_fix_parent" = true ]; then
               label="the parent of merged fix $fix"
             fi
@@ -2083,7 +2218,7 @@ jobs:
           # they never make a diff need a failing control, and they never count as a test on their own.
           TEST_RECORDS='^config/test_file_durations\.d/[^/]+\.json$'
           diff_paths="$RUNNER_TEMP/dod/control-diff-paths.txt"
-          git -C "$head_tree" diff --name-only --no-renames -z "$MB" "$HEAD_SHA" > "$diff_paths"
+          git -C "$head_tree" diff --name-only --no-renames --ignore-submodules=none -z "$MB" "$HEAD_SHA" > "$diff_paths"
           test_only=true
           has_tests=false
           while IFS= read -r -d '' path; do
@@ -2238,6 +2373,59 @@ jobs:
               continue
             fi
             ids="$(jq -r '[.[].evidence_id // "<missing evidence_id>"] | join(", ")' "$bound")"
+            # OMN-26434: at a fix's parent, a later product change can make a check
+            # fail as well as the fix's absence. The same checks run at the fix with
+            # the same carry and overlay, and every own bound check must pass there,
+            # so the failure at the parent is the fix's.
+            fix_home_file="$RUNNER_TEMP/dod/control-fix-home-$ticket.txt"
+            if [ -f "$fix_home_file" ]; then
+              fix_home="$(cat "$fix_home_file")"
+              fixed="$(cat "$RUNNER_TEMP/dod/control-fix-$ticket.txt")"
+              fix_tree="$fix_home/$REPO_SHORT"
+              fix_result="$RUNNER_TEMP/dod/fix-$ticket.json"
+              fix_scoped="$RUNNER_TEMP/dod/scope/base-$ticket.yaml"
+              if [ ! -f "$fix_scoped" ]; then
+                fix_scoped="$fix_tree/contracts/$ticket.yaml"
+              fi
+              (
+                export OMNI_HOME="$fix_home"
+                cd "$fix_tree"
+                "$DOD_VERIFY_PY" -m omnimarket.nodes.node_dod_verify \
+                  --ticket-id "$ticket" --contract-path "$fix_scoped" --execution-audience hosted \
+                  --output-path "$RUNNER_TEMP/dod/fix-$ticket.receipt.json"
+              ) > "$fix_result" || true
+              sed -i '/^Receipt written to: /d' "$fix_result"
+              if ! jq -s -e 'length == 1 and (.[0] | type == "object" and (.checks | type == "array"))' "$fix_result" > /dev/null 2>&1; then
+                echo "::error::$ticket: the check at merged fix $fixed is not parseable as one JSON verdict with checks"
+                failed=1
+                continue
+              fi
+              fix_own="$RUNNER_TEMP/dod/fix-$ticket.own.json"
+              jq --slurpfile carried "$carried" '[.checks[] | select((.binds_ac | length) > 0) | select(.evidence_id as $id | $carried[0] | index($id) | not)]' "$fix_result" > "$fix_own"
+              if [ "$(jq 'length' "$fix_own")" -eq 0 ]; then
+                echo "::error::$ticket: no own bound check ran at merged fix $fixed"
+                failed=1
+                continue
+              fi
+              # Every check that failed at the parent is read at the fix; one the
+              # fix run does not report did not run there.
+              fix_states="$RUNNER_TEMP/dod/fix-$ticket.states.json"
+              jq --slurpfile own "$fix_own" '[.[] | .evidence_id as $id | {id: ($id // "<missing evidence_id>" | tostring), status: (first($own[0][] | select(.evidence_id == $id) | .status) // "absent")}]' "$bound" > "$fix_states"
+              fix_failed="$(jq -r '[.[] | select(.status == "failed") | .id] | join(", ")' "$fix_states")"
+              fix_other="$(jq -r '[.[] | select(.status != "failed" and .status != "verified") | .id] | join(", ")' "$fix_states")"
+              if [ -n "$fix_failed" ]; then
+                echo "::error::$ticket [$fix_failed]: bound check also fails at merged fix $fixed with the same carry, so its failure at the fix's parent is not the fix's"
+                failed=1
+              fi
+              if [ -n "$fix_other" ]; then
+                echo "::error::$ticket [$fix_other]: bound check did not run at merged fix $fixed; a check that did not run is not a pass"
+                failed=1
+              fi
+              if [ -n "$fix_failed" ] || [ -n "$fix_other" ]; then
+                continue
+              fi
+              echo "$ticket fix check: passed; every bound check passes at merged fix $fixed [$ids]"
+            fi
             printf '%s\n' 'passed: every bound check failed' > "$control"
             echo "$ticket base control: passed; every bound check failed [$ids]"
           done < "$RUNNER_TEMP/dod/tickets.txt"
