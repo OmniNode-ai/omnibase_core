@@ -2452,3 +2452,26 @@ def test_ignore_all_guard_sees_a_staged_product_pin(tmp_path: Path) -> None:
         "change a product path: vendor/lib"
     ) in prepare.stdout
     assert control is None
+
+
+ATTRIBUTES_MAGIC = ":(exclude)x/tests/.gitattributes"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_literal_checkout_of_a_carried_attributes_file(tmp_path: Path) -> None:
+    """Read as a pathspec, the name would check out every other merge-base path instead."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    repo.write(ATTRIBUTES_MAGIC, "*.json text eol=lf\n")
+    repo.write("x/tests/.gitattributes", "*.json -text\n")
+    _rebase_point(repo, "test: add a fixture with a pathspec-like name")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    tree = _assert_parent_control(repo, prepare, fix)
+    assert (tree / ATTRIBUTES_MAGIC).read_text() == "*.json text eol=lf\n"
+    assert (
+        f"Rewritten under every carried attributes rule: {ATTRIBUTES_MAGIC}"
+        in prepare.stdout
+    )
+    assert (tree / "src/product.py").read_text() == "BROKEN = True\n"

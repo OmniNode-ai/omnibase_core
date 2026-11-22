@@ -32,7 +32,7 @@ requirements:
         statement: 'AC3: a test-side name holding ''..'' inside one component, touched by the fix or the
           pull request, no longer stops the job, while a ''..'' path component still does -- falsifier:
           uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -n 0 -o addopts=''''
-          -p no:skipping -k ''dots_inside_a_name or dotdot_component'''
+          -p no:skipping -k ''dots_inside_a_name or dotdot_component or carries_a_test_fixture_with_dots'''
       - id: AC4
         statement: 'AC4: a test side reached through a symlinked folder (a bare tests symlink) is refused
           or resolved, never skipped -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
@@ -93,7 +93,7 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
-          -p no:skipping -k "dots_inside_a_name or dotdot_component"
+          -p no:skipping -k "dots_inside_a_name or dotdot_component or carries_a_test_fixture_with_dots"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26434-ac4-linked-test-folder
     description: A tests or test folder that is a symlink or a submodule stops the job.
