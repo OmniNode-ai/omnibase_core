@@ -2319,3 +2319,177 @@ def test_test_folder_through_a_link_at_the_fix_only(tmp_path: Path) -> None:
         f"::error::the test side is reached through a link at merged fix {fix}: pkg/tests"
     ) in prepare.stdout
     assert control is None
+
+
+# OMN-26434 carry-side cases: the carry listing and the guard repeat checks the
+# overlay and the revert already have, and each needs a case of its own.
+
+
+def _staging_wrapper(tmp_path: Path, repo: _GitFixture, where: str, entry: str) -> Path:
+    """Put a git on PATH that stages one index entry just before the guard reads.
+
+    No code path stages a product change in a control tree today, so a guard
+    whose listing went blind would pass every other case. The wrapper stands in
+    for such a defect: on the guard's first ``diff --cached --name-only`` in a
+    tree whose path holds ``where``, it stages ``entry`` there, logs that it
+    fired, and then runs the real git.
+    """
+    real = shutil.which("git")
+    assert real is not None
+    wrap = tmp_path / "stage-wrap"
+    wrap.mkdir()
+    log = tmp_path / "stage-wrap.log"
+    script = wrap / "git"
+    script.write_text(
+        "#!/bin/bash\n"
+        'args=" $* "\n'
+        'dir=""\n'
+        'prev=""\n'
+        'for arg in "$@"; do\n'
+        '  [ "$prev" = "-C" ] && dir="$arg"\n'
+        '  prev="$arg"\n'
+        "done\n"
+        f'if [ ! -e "{log}" ] && [[ "$args" == *" diff --cached --name-only "* ]]'
+        ' && [[ "$dir" == *"$STAGE_WHERE"* ]]; then\n'
+        f'  "{real}" -C "$dir" update-index --add --cacheinfo "$STAGE_ENTRY"\n'
+        f'  echo fired >> "{log}"\n'
+        "fi\n"
+        f'exec "{real}" "$@"\n'
+    )
+    script.chmod(0o755)
+    repo.env["PATH"] = f"{wrap}{os.pathsep}{repo.env['PATH']}"
+    repo.env["STAGE_WHERE"] = where
+    repo.env["STAGE_ENTRY"] = entry
+    return log
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_guard_at_the_fix_refuses_a_staged_product_change(tmp_path: Path) -> None:
+    """The fix control's own product-path guard runs, and names what changed."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    log = _staging_wrapper(
+        tmp_path, repo, "/fix_home/", f"160000,{NEW_PIN},src/injected"
+    )
+    prepare, control = _run_steps(repo)
+
+    assert log.exists(), "the guard at the fix never listed, so the case proves nothing"
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::the test-side carry onto merged fix {fix} would change a "
+        "product path: src/injected"
+    ) in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_dotdot_component_in_the_carry_is_refused(tmp_path: Path) -> None:
+    """A '..' component in the carry listing stops the job, as in the overlay."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    log = _git_wrapper(
+        tmp_path,
+        repo,
+        ["--name-status", f"{fix}^1", repo.commits["merge_base"]],
+        "A\\0tests/../escape\\0",
+    )
+    prepare, control = _run_steps(repo)
+
+    assert log.exists(), (
+        "the wrapper never saw the carry listing, so the case proves nothing"
+    )
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert "::error::unsafe test-side path refused" in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_ignore_all_merge_base_pin_is_carried(tmp_path: Path) -> None:
+    """A test-side pin the merge base moved reaches the parent control under ignore=all."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        setup_initial=lambda r: _ignored_submodule(r, "tests/vendor"),
+    )
+    fix = repo.commits["fix"]
+    _gitlink(repo, "tests/vendor", NEW_PIN)
+    _rebase_point(repo, "test: move the vendored pin")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    control_tree = _assert_parent_control(repo, prepare, fix)
+    assert repo.git("ls-tree", f"{fix}^1", "tests/vendor").startswith(
+        f"160000 commit {OLD_PIN}"
+    )
+    assert _index_entry(control_tree, repo, "tests/vendor").startswith(
+        f"160000 {NEW_PIN} "
+    )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_ignore_all_guard_sees_a_staged_product_pin(tmp_path: Path) -> None:
+    """The guard lists a product pin that .gitmodules hides with ignore=all."""
+    repo = _repository(
+        tmp_path,
+        product_deleted_after_fix=True,
+        setup_initial=lambda r: _ignored_submodule(r, "vendor/lib"),
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    log = _staging_wrapper(
+        tmp_path, repo, "/fix_reverted_home/", f"160000,{NEW_PIN},vendor/lib"
+    )
+    prepare, control = _run_steps(repo)
+
+    assert log.exists(), (
+        "the guard at the parent never listed, so the case proves nothing"
+    )
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::the test-side carry onto the parent of merged fix {fix} would "
+        "change a product path: vendor/lib"
+    ) in prepare.stdout
+    assert control is None
+
+
+ATTRIBUTES_MAGIC = ":(exclude)x/tests/.gitattributes"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_literal_checkout_of_a_carried_attributes_file(tmp_path: Path) -> None:
+    """Read as a pathspec, the name would check out every other merge-base path instead."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    repo.write(ATTRIBUTES_MAGIC, "*.json text eol=lf\n")
+    repo.write("x/tests/.gitattributes", "*.json -text\n")
+    _rebase_point(repo, "test: add a fixture with a pathspec-like name")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    tree = _assert_parent_control(repo, prepare, fix)
+    assert (tree / ATTRIBUTES_MAGIC).read_text() == "*.json text eol=lf\n"
+    assert (
+        f"Rewritten under every carried attributes rule: {ATTRIBUTES_MAGIC}"
+        in prepare.stdout
+    )
+    assert (tree / "src/product.py").read_text() == "BROKEN = True\n"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_test_folder_through_a_link_bare_tests_at_the_root(tmp_path: Path) -> None:
+    """Reject a bare tests/ folder that is a symlink to qa."""
+    repo = _repository(tmp_path)
+    repo.git("rm", "-r", "-q", "tests")
+    shutil.rmtree(repo.head_tree / "tests", ignore_errors=True)
+    repo.write("qa/test_quality.py", "def test_quality():\n    pass\n")
+    _symlink(repo, "tests", "qa")
+    _bind(repo, [])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        "::error::the test side is reached through a link at the head: tests"
+    ) in prepare.stdout
+    assert control is None
