@@ -1,0 +1,101 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26455
+title: "omnibase_core release PR 2352 reads green once the merge-key sequence parity test passes on pyyaml
+  6.0.3 and 6.0.4"
+summary: "The pre-commit interpreter check read a YAML merge-key sequence (<<: [*first, *second]) through
+  yaml.safe_load, so the winning mapping depended on the installed PyYAML: 6.0.3 lets the first mapping
+  win and 6.0.4 lets the last one win. The matcher now resolves every merge key on the composed node tree
+  before the document is constructed, with the first mapping winning, so the golden case yaml-hook-merge-sequence
+  passes on both versions. No check, test, golden value, ratchet or baseline is changed and the pyyaml
+  pin is untouched."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26455-merge-key-sequence-precedence
+    statement: "The handler resolves merge-key sequences itself, first mapping wins, so its findings do
+      not depend on the installed PyYAML version."
+    acceptance:
+      - id: AC1
+        statement: "AC1: On omnibase_core dev with pyyaml 6.0.4 installed, test_parity_precommit_interpreter_golden[yaml-hook-merge-sequence]
+          was first reproduced failing, and after the fix it passes on both pyyaml 6.0.3 and 6.0.4 --
+          falsifier: uv run pytest tests/unit/nodes/node_precommit_interpreter_check_compute/test_parity_precommit_interpreter_golden.py
+          run once per pyyaml version in a scratch venv; any failure on either version fails this criterion"
+      - id: AC2
+        statement: "AC2: A fix pull request against omnibase_core dev reads success on every required
+          check at its final head, and is handed to the landing controller by one ledger MSG -- falsifier:
+          onex scm pr-view OmniNode-ai/omnibase_core#<n> shows any required context not success, or onex
+          scm pr-view does not show the pull request merged after the handoff"
+      - id: AC3
+        statement: "AC3: The release pull request is re-cut on the new dev tip and reads green on CI Summary,
+          Tests Gate and every Tests split, including Split 14/40 -- falsifier: pr_state_local.py --pr
+          OmniNode-ai/omnibase_core#<re-cut n> prints ci=RED or any of those contexts in red="
+      - id: AC4
+        statement: "AC4: No check is widened or disabled and nothing is pushed to prod or omninode_infra
+          -- falsifier: git diff origin/dev...HEAD on the fix branch touches no workflow, ratchet baseline
+          or hook config file, and the test case's expected golden value is unchanged"
+evidence_requirements:
+  - kind: tests
+    description: "The precommit interpreter node tests, including the merge-key sequence precedence cases,
+      pass at the head."
+    command: uv run pytest tests/unit/nodes/node_precommit_interpreter_check_compute -n 0 -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26455-ac1
+    description: "The merge-key sequence precedence cases fail at the merge base when the constructor
+      lets the last mapping win and pass at the head under both precedences; the golden case yaml-hook-merge-sequence
+      passes."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_precommit_interpreter_check_compute/test_merge_key_sequence_precedence.py
+          -n 0 -p no:cacheprovider -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_precommit_interpreter_check_compute/test_parity_precommit_interpreter_golden.py
+          -n 0 -p no:cacheprovider -q -k yaml-hook-merge-sequence"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26455-ac2
+    description: "The fix is a handler-side resolution tested by the node test directory, which passes
+      at the head; the pull request is handed to the landing controller by one ledger MSG."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_precommit_interpreter_check_compute -n 0 -p
+          no:cacheprovider -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26455-ac3
+    description: "The dev tip carries the handler-side resolution, so a release re-cut that moves the
+      lock to pyyaml 6.0.4 reads the golden case as passing."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/nodes/node_precommit_interpreter_check_compute/test_merge_key_sequence_precedence.py
+          -n 0 -p no:cacheprovider -q -k last-wins"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26455-ac4
+    description: "The golden value of the merge-sequence case is still the first mapping's entry, and
+      the pyyaml pin is unchanged."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: command
+        check_value: "grep -q '_resolve_merge_keys' src/omnibase_core/nodes/node_precommit_interpreter_check_compute/matcher_precommit_interpreter.py
+          && grep -q 'yaml-hook-merge-sequence' tests/fixtures/validator_parity/precommit_interpreter/golden.json
+          && grep -q 'pyyaml>=6.0.2,<7.0.0' pyproject.toml"
+        cwd: ${OMNI_HOME}/omnibase_core
