@@ -1,0 +1,114 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-26415
+title: The receipt gate's parent-of-fix control carries the merge base's test files, so a merged-fix binding
+  cannot pass on missing tests
+summary: When a Binds-Merged-Fix control falls back to the fix's parent, prepare_control carries the merge
+  base's test side and duration records onto the parent, removes test paths the merge base deleted, and
+  stops the job if the carry would change any product path. Before this the parent ran without the tests
+  the fix and later work added, so a contract-only binding failed for missing files, which proved nothing
+  about the fix.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26415-parent-control-carries-tests
+    statement: A parent-of-fix control runs the merge base's tests against the parent's product code,
+      reads carried paths literally, and never changes a product path of the parent.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: when the control falls back to a fix''s parent, every test-side path and duration
+          record that differs between the parent and the merge base is checked out from the merge base
+          -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -n
+          0 -o addopts='''' -p no:skipping -k carries_the_merge_base_test_side'
+      - id: AC2
+        statement: 'AC2: a test path the merge base deleted is removed from the parent control, including
+          one under a folder the merge base turned into a submodule -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -n 0 -o addopts='''' -p no:skipping -k ''drops_a_test_the_merge_base_no_longer_has or became_a_submodule'''
+      - id: AC3
+        statement: 'AC3: the clean-revert path, the pull request''s overlay and every other refusal are
+          unchanged -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -n 0 -o addopts='''' -p no:skipping'
+      - id: AC4
+        statement: 'AC4: carried paths are read literally, a non-test path holding ''..'' does not stop
+          the fallback, a test edited after the fix arrives as the merge base has it, and the listing
+          is read byte for byte, whatever order file the repository sets, and a carried fixture, a nested
+          .gitattributes among them, is written under the .gitattributes rules the merge base carries
+          with it -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -n 0 -o addopts='''' -p no:skipping -k ''reads_carried_paths_literally or dotted_path or
+          edited_after_the_fix or byte_for_byte or diff_order_file or absent_at_the_parent or encoding_rule
+          or parent_rule'''
+      - id: AC5
+        statement: 'AC5: a carry or pull-request overlay that would change a product path of the parent
+          stops the job and names the path, including one marked unchanged in the index, a carried symlink
+          or a sparse checkout stops the job, and a test fixture whose name holds ''..'' inside one component
+          is carried -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -n 0 -o addopts='''' -p no:skipping -k ''would_change_a_product_path or would_replace_an_uncited_contract
+          or dots_in_its_name or marked_unchanged or symlinked_test or sparse_checkout'''
+evidence_requirements:
+  - kind: tests
+    description: The merged-fix control tests pass at the head
+    command: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+      -p no:skipping
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26415-ac1-carry
+    description: A parent control carries the merge base's test side and duration record.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "carries_the_merge_base_test_side"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26415-ac2-removal
+    description: A test the merge base deleted is removed from the parent control.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "drops_a_test_the_merge_base_no_longer_has or became_a_submodule"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26415-ac3-unchanged
+    description: The whole control suite passes, so the clean-revert path and every other refusal hold.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26415-ac4-literal-paths
+    description: Literal paths, a dotted non-test path, and a test edited after the fix.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "reads_carried_paths_literally or dotted_path or edited_after_the_fix or byte_for_byte
+          or diff_order_file or absent_at_the_parent or encoding_rule or parent_rule"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26415-ac5-product-path-guard
+    description: A carry that would change a product path stops the job; a dotted test fixture is carried.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "would_change_a_product_path or would_replace_an_uncited_contract or dots_in_its_name
+          or marked_unchanged or symlinked_test or sparse_checkout"
+        cwd: ${OMNI_HOME}/omnibase_core
