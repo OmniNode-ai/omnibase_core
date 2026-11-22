@@ -1958,9 +1958,14 @@ jobs:
                 printf '%sRemoved by the pull request: %s\n' "$log_prefix" "$path"
                 continue
               fi
-              if [ "$at_parent" = true ] && [[ "$(git --literal-pathspecs -C "$head_tree" ls-tree "$HEAD_SHA" -- "$path")" == 120000\ * ]]; then
-                echo "::error::the pull request's overlay onto $where would install a symlink: $path"
-                exit 1
+              if [ "$at_parent" = true ]; then
+                # Assigned first, so a failed read stops the job under set -e.
+                local head_entry
+                head_entry="$(git --literal-pathspecs -C "$head_tree" ls-tree "$HEAD_SHA" -- "$path")"
+                if [[ "$head_entry" == 120000\ * ]]; then
+                  echo "::error::the pull request's overlay onto $where would install a symlink: $path"
+                  exit 1
+                fi
               fi
               git --literal-pathspecs -C "$tree" checkout "$HEAD_SHA" -- "$path"
               printf '%sOverlaid: %s\n' "$log_prefix" "$path"
@@ -2110,6 +2115,7 @@ jobs:
               mkdir -p "$fix_home"
               git -C "$head_tree" worktree add --detach "$fix_tree" "$fix"
               add_sibling_checkouts "$fix_home"
+              refuse_linked_test_folder "$fix" "merged fix $fix"
               carry_test_side "$fix_tree" "$fix" "merged fix $fix"
               overlay_pull_request "$fix_tree" true "merged fix $fix"
               guard_carry "$fix_tree" "merged fix $fix"
@@ -2410,7 +2416,7 @@ jobs:
               # Every check that failed at the parent is read at the fix; one the
               # fix run does not report did not run there.
               fix_states="$RUNNER_TEMP/dod/fix-$ticket.states.json"
-              jq --slurpfile own "$fix_own" '[.[] | .evidence_id as $id | {id: ($id // "<missing evidence_id>" | tostring), status: (first($own[0][] | select(.evidence_id == $id) | .status) // "absent")}]' "$bound" > "$fix_states"
+              jq --slurpfile own "$fix_own" '[.[] | .evidence_id as $id | {id: ($id // "<missing evidence_id>" | tostring), status: ([$own[0][] | select(.evidence_id == $id) | .status] | if length == 0 then "absent" elif all(. == "verified") then "verified" elif any(. == "failed") then "failed" else map(select(. != "verified"))[0] end)}]' "$bound" > "$fix_states"
               fix_failed="$(jq -r '[.[] | select(.status == "failed") | .id] | join(", ")' "$fix_states")"
               fix_other="$(jq -r '[.[] | select(.status != "failed" and .status != "verified") | .id] | join(", ")' "$fix_states")"
               if [ -n "$fix_failed" ]; then

@@ -1596,18 +1596,43 @@ def _initial_link(repo: _GitFixture) -> None:
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
 @pytest.mark.parametrize("mode", MODES)
-def test_pull_request_deletes_a_test_fixture(tmp_path: Path, mode: str) -> None:
+@pytest.mark.parametrize(
+    "path",
+    ["tests/fixtures/old.json", "config/test_file_durations.d/tests__old.json"],
+    ids=["fixture", "duration-record"],
+)
+def test_pull_request_deletes_a_test_fixture(
+    tmp_path: Path, mode: str, path: str
+) -> None:
     repo = _scenario(tmp_path, mode)
-    repo.write("tests/fixtures/old.json", "{}\n")
+    repo.write(path, "{}\n")
     _rebase_point(repo, "test: add a fixture")
-    repo.git("rm", "-q", "tests/fixtures/old.json")
+    repo.git("rm", "-q", path)
     _bind_for(repo, mode)
     prepare, _ = _run_steps(repo)
 
     tree = _prepared(repo, mode, prepare)
-    assert not (tree / "tests/fixtures/old.json").exists()
-    assert _index_entry(tree, repo, "tests/fixtures/old.json") == ""
-    assert "Removed by the pull request: tests/fixtures/old.json" in prepare.stdout
+    assert not (tree / path).exists()
+    assert _index_entry(tree, repo, path) == ""
+    assert f"Removed by the pull request: {path}" in prepare.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_pull_request_deletion_only_is_not_a_test_side_change(tmp_path: Path) -> None:
+    """A deletion alone cannot show a bound test failing, so the refusal still holds."""
+    repo = _repository(tmp_path)
+    repo.write("tests/fixtures/old.json", "{}\n")
+    _rebase_point(repo, "test: add a fixture")
+    repo.git("rm", "-q", "tests/fixtures/old.json")
+    _bind(repo, [])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        "::error::no test-side change: the bound tests cannot be shown to fail at "
+        "the merge base"
+    ) in prepare.stdout
+    assert control is None
 
 
 @pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
@@ -1803,8 +1828,28 @@ def test_parent_control_refuses_a_check_that_also_fails_at_the_fix(
             ),
             "::error::OMN-1 [dod-omn-1-ac1]: bound check did not run at merged fix {fix}; a check that did not run is not a pass",
         ),
+        (
+            json.dumps(
+                {
+                    "status": "failed",
+                    "checks": [
+                        {
+                            "evidence_id": "dod-omn-1-ac1",
+                            "binds_ac": ["AC1"],
+                            "status": "verified",
+                        },
+                        {
+                            "evidence_id": "dod-omn-1-ac1",
+                            "binds_ac": ["AC1"],
+                            "status": "failed",
+                        },
+                    ],
+                }
+            ),
+            "::error::OMN-1 [dod-omn-1-ac1]: bound check also fails at merged fix {fix} with the same carry, so its failure at the fix's parent is not the fix's",
+        ),
     ],
-    ids=["unparseable", "zero-bound", "not-run"],
+    ids=["unparseable", "zero-bound", "not-run", "duplicate-id"],
 )
 def test_parent_control_refuses_a_fix_check_that_cannot_run(
     tmp_path: Path, fix_output: str, message: str
@@ -2227,3 +2272,50 @@ def test_fix_control_carries_the_merge_base_test_side(tmp_path: Path) -> None:
     ) in prepare.stdout
     assert control is not None
     _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_sibling_checkouts_at_the_fix_and_its_parent(tmp_path: Path) -> None:
+    """The real prepare step gives the parent and the fix controls the frozen sibling."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    sibling = Path(repo.env["GITHUB_WORKSPACE"]) / ".dod-verify/head_home/sibling"
+    sibling.mkdir(parents=True)
+    sibling_repo = _GitFixture(sibling, repo.dod_dir, repo.env, {})
+    sibling_repo.git("init", "-q")
+    sibling_repo.write("revision", "frozen\n")
+    frozen = sibling_repo.commit("frozen")
+    (repo.dod_dir / "siblings.tsv").write_text(f"sibling\t{frozen}\n")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    _assert_parent_control(repo, prepare, fix)
+    homes = [
+        Path((repo.dod_dir / "control-home-OMN-1.txt").read_text().strip()),
+        Path((repo.dod_dir / "control-fix-home-OMN-1.txt").read_text().strip()),
+    ]
+    for home in homes:
+        assert (home / "sibling/revision").read_text() == "frozen\n"
+        assert (
+            sibling_repo.git("-C", str(home / "sibling"), "rev-parse", "HEAD") == frozen
+        )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_test_folder_through_a_link_at_the_fix_only(tmp_path: Path) -> None:
+    def link(repo: _GitFixture) -> None:
+        repo.write("qa/test_quality.py", "def test_quality():\n    pass\n")
+        _symlink(repo, "pkg/tests", "../qa")
+
+    repo = _repository(tmp_path, product_deleted_after_fix=True, setup_fix=link)
+    fix = repo.commits["fix"]
+    (repo.head_tree / "pkg/tests").unlink()
+    _rebase_point(repo, "test: drop the linked folder")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::the test side is reached through a link at merged fix {fix}: pkg/tests"
+    ) in prepare.stdout
+    assert control is None
