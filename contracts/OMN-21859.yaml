@@ -7,6 +7,12 @@ summary: The repo-evidence caller in omnibase_core calls the receipt-gate reusab
   passes verifier-version. The tests that asserted verifier-version for the caller assert the verifier-tag
   shape instead. Operator ruling 2026-10-31T21:49:54Z extending OMN-21676, the definition-of-done check
   installs its verifier from the omnimarket dev-merge tag, not from a released package version.
+context:
+  ac_binding_provenance:
+    dod-omn21859-ac1-accepted-20261121t2345z:
+      - label: AC1
+        proposed_by: lane=dod-closeout-bind-2026-11-21T2345Z-c2
+        accepted_by: lane=dod-closeout-accept-2026-11-21T2345Z-c2
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -79,3 +85,18 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
     binds_ac:
       - AC3
+  - id: dod-omn21859-ac1-accepted-20261121t2345z
+    description: 'AC1: the receipt-gate job of call-repo-evidence-gate.yml uses the omnibase_core dev-merge
+      tag dev-20261101005012-ac2f26e3e5bf, passes verifier-tag dev-20261101000200-949993edf3b7 and carries
+      no verifier-version key. Fails at the parent of the implementing merge, where the job used dev-20261030152335-66d35d2283c3.'
+    source: manual
+    checks:
+      - check_type: command
+        check_value: "python3 -c \"import yaml; w=yaml.safe_load(open('.github/workflows/call-repo-evidence-gate.yml'));
+          js=[j for j in w['jobs'].values() if 'receipt-gate.yml' in str(j.get('uses',''))]; assert len(js)==1,
+          js; j=js[0]; i=j.get('with',{}); assert j['uses']=='OmniNode-ai/omnibase_core/.github/workflows/receipt-gate.yml@dev-20261101005012-ac2f26e3e5bf',
+          j['uses']; assert i.get('verifier-tag')=='dev-20261101000200-949993edf3b7', i; assert 'verifier-version'
+          not in i, i; print('OK', j['uses'], 'verifier-tag='+i['verifier-tag'], 'verifier-version absent')\""
+        cwd: ${OMNI_HOME}/omnibase_core
+    binds_ac:
+      - AC1
