@@ -9,6 +9,7 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from textwrap import dedent
@@ -156,6 +157,8 @@ def _repository(
     encoded_fixture_after_fix: bool = False,
     nested_attributes_after_fix: bool = False,
     test_dir_becomes_submodule_after_fix: bool = False,
+    setup_initial: Callable[[_GitFixture], None] | None = None,
+    setup_fix: Callable[[_GitFixture], None] | None = None,
 ) -> _GitFixture:
     workspace = tmp_path / "ws"
     head_tree = workspace / ".dod-verify" / "head_home" / "omnimarket"
@@ -206,6 +209,8 @@ def _repository(
         repo.write("tests/retired/test_old.py", "def test_old():\n    pass\n")
     if test_dir_becomes_submodule_after_fix:
         repo.write("tests/vendor/test_vendored.py", "def test_vendored():\n    pass\n")
+    if setup_initial is not None:
+        setup_initial(repo)
     repo.commits["initial"] = repo.commit("chore: initial")
     repo.write("src/product.py", "BROKEN = False\n")
     if product_deleted_after_fix:
@@ -225,6 +230,8 @@ def _repository(
     if fix_contract:
         # A squash-merged fix ships its own contract beside the product change.
         repo.write("contracts/OMN-1.yaml", FIX_CONTRACT)
+    if setup_fix is not None:
+        setup_fix(repo)
     repo.commits["fix"] = repo.commit(fix_subject)
     if product_deleted_after_fix:
         (repo.head_tree / "src/legacy.py").unlink()
@@ -365,7 +372,15 @@ def _run_steps(
     head_status: str | None = "verified",
     head_evidence_id: str = "dod-omn-1-ac1",
     head_binds_ac: bool = True,
+    requires: str | None = None,
+    fix_output: str | None = None,
 ) -> tuple[subprocess.CompletedProcess[str], subprocess.CompletedProcess[str] | None]:
+    """Run the prepare and control steps against a stub verifier.
+
+    The stub verifies when src/product.py says BROKEN = False and, if given,
+    the file named by ``requires`` exists. With ``fix_output`` it prints that
+    text instead when it runs inside the fix control's home (OMN-26434).
+    """
     prepare = subprocess.run(
         ["bash", "-c", _script(PREPARE_STEP)],
         env=repo.env,
@@ -397,6 +412,8 @@ def _run_steps(
     verifier = repo.dod_dir.parent / "verifier"
     verifier.write_text(
         f"#!{sys.executable}\n"
+        f"REQUIRES = {requires!r}\n"
+        f"FIX_OUTPUT = {fix_output!r}\n"
         + dedent("""\
             import json
             import os
@@ -404,8 +421,14 @@ def _run_steps(
             from pathlib import Path
 
             if len(sys.argv) > 1 and sys.argv[1] == "-m":
+                if FIX_OUTPUT is not None and "/fix_home/" in str(Path.cwd()):
+                    print(FIX_OUTPUT)
+                    sys.exit(0)
                 product = (Path.cwd() / "src/product.py").read_text()
-                status = "verified" if "BROKEN = False" in product else "failed"
+                ready = REQUIRES is None or (Path.cwd() / REQUIRES).exists()
+                status = (
+                    "verified" if "BROKEN = False" in product and ready else "failed"
+                )
                 print(json.dumps({
                     "status": status,
                     "checks": [{
@@ -1473,3 +1496,826 @@ def test_invalid_merged_fix_bindings_are_refused_before_control(
     )
     assert control is None
     assert not (repo.dod_dir / "base-OMN-1.control.txt").exists()
+
+
+# OMN-26434: the overlay applies deletions, renames, type changes and submodule
+# pins; the parent control is checked at the fix too; dotted, linked and
+# attribute-only test paths are handled. MODES runs a case at the merge-base
+# control (no trailer) and at the parent-of-fix control (a conflicting revert).
+MODES = ["merge-base", "parent"]
+OLD_PIN = "1" * 40
+NEW_PIN = "2" * 40
+
+
+def _control_tree(repo: _GitFixture) -> Path:
+    home = (repo.dod_dir / "control-home-OMN-1.txt").read_text().strip()
+    return Path(home) / repo.env["REPO_SHORT"]
+
+
+def _rebase_point(repo: _GitFixture, message: str) -> str:
+    repo.commits["merge_base"] = repo.commit(message)
+    repo.env["BASE_SHA"] = repo.commits["merge_base"]
+    return repo.commits["merge_base"]
+
+
+def _scenario(
+    tmp_path: Path,
+    mode: str,
+    setup_initial: Callable[[_GitFixture], None] | None = None,
+) -> _GitFixture:
+    return _repository(
+        tmp_path,
+        product_deleted_after_fix=mode == "parent",
+        setup_initial=setup_initial,
+    )
+
+
+def _bind_for(
+    repo: _GitFixture, mode: str, extra_files: dict[str, str] | None = None
+) -> None:
+    """Bind at the parent with a trailer, or at the merge base with a new test."""
+    if mode == "parent":
+        _bind(repo, [f"OMN-1 {repo.commits['fix']}"], extra_files=extra_files)
+    else:
+        files = {"tests/test_coverage.py": PRODUCT_TEST, **(extra_files or {})}
+        _bind(repo, [], extra_files=files)
+
+
+def _prepared(
+    repo: _GitFixture, mode: str, prepare: subprocess.CompletedProcess[str]
+) -> Path:
+    if mode == "parent":
+        return _assert_parent_control(repo, prepare, repo.commits["fix"])
+    _assert_success(prepare)
+    return _control_tree(repo)
+
+
+def _index_entry(tree: Path, repo: _GitFixture, path: str) -> str:
+    return repo.git("-C", str(tree), "ls-files", "-s", "--", path)
+
+
+def _checked_out_bytes(
+    repo: _GitFixture, tmp_path: Path, commit: str, path: str
+) -> bytes:
+    """The bytes git writes for path in a fresh checkout of commit."""
+    fresh = tmp_path / f"fresh-{commit[:12]}"
+    if not fresh.exists():
+        repo.git("worktree", "add", "--detach", str(fresh), commit)
+    return (fresh / path).read_bytes()
+
+
+def _symlink(repo: _GitFixture, path: str, target: str) -> None:
+    link = repo.head_tree / path
+    link.parent.mkdir(parents=True, exist_ok=True)
+    if link.is_symlink() or link.exists():
+        link.unlink()
+    link.symlink_to(target)
+
+
+def _gitlink(repo: _GitFixture, path: str, pin: str) -> None:
+    repo.git("update-index", "--add", "--cacheinfo", f"160000,{pin},{path}")
+    (repo.head_tree / path).mkdir(parents=True, exist_ok=True)
+
+
+def _ignored_submodule(repo: _GitFixture, path: str) -> None:
+    """A submodule at OLD_PIN whose .gitmodules entry sets ignore=all."""
+    _gitlink(repo, path, OLD_PIN)
+    repo.write(
+        ".gitmodules",
+        f'[submodule "vendored"]\n\tpath = {path}\n\turl = ./vendored.git\n\tignore = all\n',
+    )
+
+
+def _initial_link(repo: _GitFixture) -> None:
+    repo.write("tests/fixtures/other.json", '{"v": 2}\n')
+    _symlink(repo, "tests/fixtures/link.json", "other.json")
+
+
+# AC1
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("mode", MODES)
+@pytest.mark.parametrize(
+    "path",
+    ["tests/fixtures/old.json", "config/test_file_durations.d/tests__old.json"],
+    ids=["fixture", "duration-record"],
+)
+def test_pull_request_deletes_a_test_fixture(
+    tmp_path: Path, mode: str, path: str
+) -> None:
+    repo = _scenario(tmp_path, mode)
+    repo.write(path, "{}\n")
+    _rebase_point(repo, "test: add a fixture")
+    repo.git("rm", "-q", path)
+    _bind_for(repo, mode)
+    prepare, _ = _run_steps(repo)
+
+    tree = _prepared(repo, mode, prepare)
+    assert not (tree / path).exists()
+    assert _index_entry(tree, repo, path) == ""
+    assert f"Removed by the pull request: {path}" in prepare.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_pull_request_deletion_only_is_not_a_test_side_change(tmp_path: Path) -> None:
+    """A deletion alone cannot show a bound test failing, so the refusal still holds."""
+    repo = _repository(tmp_path)
+    repo.write("tests/fixtures/old.json", "{}\n")
+    _rebase_point(repo, "test: add a fixture")
+    repo.git("rm", "-q", "tests/fixtures/old.json")
+    _bind(repo, [])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        "::error::no test-side change: the bound tests cannot be shown to fail at "
+        "the merge base"
+    ) in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("mode", MODES)
+def test_pull_request_renames_a_test_file(tmp_path: Path, mode: str) -> None:
+    repo = _scenario(tmp_path, mode)
+    repo.write("tests/test_old_name.py", STALE_TEST)
+    _rebase_point(repo, "test: add a test")
+    repo.git("mv", "tests/test_old_name.py", "tests/test_new_name.py")
+    _bind_for(repo, mode)
+    prepare, _ = _run_steps(repo)
+
+    tree = _prepared(repo, mode, prepare)
+    assert not (tree / "tests/test_old_name.py").exists()
+    assert (tree / "tests/test_new_name.py").read_text() == STALE_TEST
+    assert "Removed by the pull request: tests/test_old_name.py" in prepare.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_pull_request_type_change_to_a_symlink_lands_at_the_merge_base(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path)
+    repo.write("tests/fixtures/data.json", '{"v": 1}\n')
+    repo.write("tests/fixtures/other.json", '{"v": 2}\n')
+    _rebase_point(repo, "test: add fixtures")
+    _symlink(repo, "tests/fixtures/data.json", "other.json")
+    _bind_for(repo, "merge-base")
+    prepare, _ = _run_steps(repo)
+
+    tree = _prepared(repo, "merge-base", prepare)
+    assert (tree / "tests/fixtures/data.json").is_symlink()
+    assert (tree / "tests/fixtures/data.json").readlink() == Path("other.json")
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_pull_request_type_change_to_a_symlink_is_refused_at_the_parent(
+    tmp_path: Path,
+) -> None:
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    repo.write("tests/fixtures/data.json", '{"v": 1}\n')
+    repo.write("tests/fixtures/other.json", '{"v": 2}\n')
+    _rebase_point(repo, "test: add fixtures")
+    _symlink(repo, "tests/fixtures/data.json", "other.json")
+    _bind_for(repo, "parent")
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::the pull request's overlay onto the parent of merged fix {fix} "
+        "would install a symlink: tests/fixtures/data.json"
+    ) in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("mode", MODES)
+def test_pull_request_type_change_to_a_file_lands(tmp_path: Path, mode: str) -> None:
+    repo = _scenario(tmp_path, mode, setup_initial=_initial_link)
+    link = repo.head_tree / "tests/fixtures/link.json"
+    link.unlink()
+    link.write_text('{"v": 3}\n')
+    _bind_for(repo, mode)
+    prepare, _ = _run_steps(repo)
+
+    tree = _prepared(repo, mode, prepare)
+    assert not (tree / "tests/fixtures/link.json").is_symlink()
+    assert (tree / "tests/fixtures/link.json").read_text() == '{"v": 3}\n'
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_pull_request_type_change_only_is_a_test_side_change(tmp_path: Path) -> None:
+    """A type change counts toward the "no test-side change" refusal, as a modification does."""
+    repo = _repository(tmp_path, setup_initial=_initial_link)
+    link = repo.head_tree / "tests/fixtures/link.json"
+    link.unlink()
+    link.write_text('{"v": 3}\n')
+    _bind(repo, [])
+    prepare, _ = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert "Overlaid: tests/fixtures/link.json" in prepare.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("mode", MODES)
+def test_pull_request_replaces_a_folder_with_a_file(tmp_path: Path, mode: str) -> None:
+    repo = _scenario(tmp_path, mode)
+    repo.write("tests/x/a.json", "{}\n")
+    _rebase_point(repo, "test: add a fixture folder")
+    repo.git("rm", "-q", "-r", "tests/x")
+    repo.write("tests/x", "fixture\n")
+    _bind_for(repo, mode)
+    prepare, _ = _run_steps(repo)
+
+    tree = _prepared(repo, mode, prepare)
+    assert (tree / "tests/x").is_file()
+    assert (tree / "tests/x").read_text() == "fixture\n"
+    assert _index_entry(tree, repo, "tests/x/a.json") == ""
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("mode", MODES)
+def test_pull_request_replaces_a_folder_with_a_submodule(
+    tmp_path: Path, mode: str
+) -> None:
+    repo = _scenario(tmp_path, mode)
+    repo.write("tests/vendor/test_vendored.py", "def test_vendored():\n    pass\n")
+    _rebase_point(repo, "test: add a vendored test")
+    repo.git("rm", "-q", "-r", "tests/vendor")
+    _gitlink(repo, "tests/vendor", NEW_PIN)
+    _bind_for(repo, mode)
+    prepare, _ = _run_steps(repo)
+
+    tree = _prepared(repo, mode, prepare)
+    assert _index_entry(tree, repo, "tests/vendor").startswith(f"160000 {NEW_PIN} ")
+    assert not (tree / "tests/vendor/test_vendored.py").exists()
+
+
+# AC2
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_passes_the_bound_checks_at_the_fix(tmp_path: Path) -> None:
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    _assert_parent_control(repo, prepare, fix)
+    fix_tree = (
+        Path((repo.dod_dir / "control-fix-home-OMN-1.txt").read_text().strip())
+        / repo.env["REPO_SHORT"]
+    )
+    assert repo.git("-C", str(fix_tree), "rev-parse", "HEAD") == fix
+    assert (fix_tree / "tests/test_product.py").read_text() == PRODUCT_TEST
+    assert (fix_tree / "contracts/OMN-1.yaml").read_text() == CONTRACT
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+    assert (
+        f"OMN-1 fix check: passed; every bound check passes at merged fix {fix} "
+        "[dod-omn-1-ac1]"
+    ) in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_refuses_a_check_that_also_fails_at_the_fix(
+    tmp_path: Path,
+) -> None:
+    """A later product change, not the fix, makes the check fail at the parent."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    repo.write("src/feature.py", "FEATURE = True\n")
+    _rebase_point(repo, "feat: a later feature")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo, requires="src/feature.py")
+
+    _assert_parent_control(repo, prepare, fix)
+    assert control is not None
+    assert control.returncode == 1, control.stdout + control.stderr
+    assert (
+        f"::error::OMN-1 [dod-omn-1-ac1]: bound check also fails at merged fix {fix} "
+        "with the same carry, so its failure at the fix's parent is not the fix's"
+    ) in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    ("fix_output", "message"),
+    [
+        (
+            "not JSON",
+            "::error::OMN-1: the check at merged fix {fix} is not parseable as one JSON verdict with checks",
+        ),
+        (
+            json.dumps({"status": "verified", "checks": []}),
+            "::error::OMN-1: no own bound check ran at merged fix {fix}",
+        ),
+        (
+            json.dumps(
+                {
+                    "status": "skipped",
+                    "checks": [
+                        {
+                            "evidence_id": "dod-omn-1-ac1",
+                            "binds_ac": ["AC1"],
+                            "status": "skipped",
+                        }
+                    ],
+                }
+            ),
+            "::error::OMN-1 [dod-omn-1-ac1]: bound check did not run at merged fix {fix}; a check that did not run is not a pass",
+        ),
+        (
+            json.dumps(
+                {
+                    "status": "failed",
+                    "checks": [
+                        {
+                            "evidence_id": "dod-omn-1-ac1",
+                            "binds_ac": ["AC1"],
+                            "status": "verified",
+                        },
+                        {
+                            "evidence_id": "dod-omn-1-ac1",
+                            "binds_ac": ["AC1"],
+                            "status": "failed",
+                        },
+                    ],
+                }
+            ),
+            "::error::OMN-1 [dod-omn-1-ac1]: bound check also fails at merged fix {fix} with the same carry, so its failure at the fix's parent is not the fix's",
+        ),
+    ],
+    ids=["unparseable", "zero-bound", "not-run", "duplicate-id"],
+)
+def test_parent_control_refuses_a_fix_check_that_cannot_run(
+    tmp_path: Path, fix_output: str, message: str
+) -> None:
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo, fix_output=fix_output)
+
+    _assert_parent_control(repo, prepare, fix)
+    assert control is not None
+    assert control.returncode == 1, control.stdout + control.stderr
+    assert message.format(fix=fix) in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_parent_control_fix_home_is_cleared_between_runs(tmp_path: Path) -> None:
+    """A self-hosted workspace outlives the job: a second run rebuilds the fix control."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    first, _ = _run_steps(repo)
+    _assert_parent_control(repo, first, fix)
+    second, control = _run_steps(repo)
+
+    _assert_parent_control(repo, second, fix)
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_clean_revert_control_builds_no_fix_control(tmp_path: Path) -> None:
+    repo = _repository(tmp_path)
+    _bind(repo, [f"OMN-1 {repo.commits['fix']}"])
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert not (repo.dod_dir / "control-fix-home-OMN-1.txt").exists()
+    assert control is not None
+    _assert_success(control)
+    assert "fix check" not in control.stdout
+
+
+# AC3
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("mode", MODES)
+def test_dots_inside_a_name_in_the_pull_request(tmp_path: Path, mode: str) -> None:
+    repo = _scenario(tmp_path, mode)
+    _bind_for(repo, mode, extra_files={"tests/fixtures/v1..v2.json": "{}\n"})
+    prepare, _ = _run_steps(repo)
+
+    tree = _prepared(repo, mode, prepare)
+    assert (tree / "tests/fixtures/v1..v2.json").read_text() == "{}\n"
+    assert "Overlaid: tests/fixtures/v1..v2.json" in prepare.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("path", ["tests/fixtures/v1..v2.json", "docs/v1..v2.md"])
+def test_dots_inside_a_name_in_the_fix(tmp_path: Path, path: str) -> None:
+    def touch(repo: _GitFixture) -> None:
+        repo.write(path, "fixed\n")
+
+    repo = _repository(tmp_path, setup_fix=touch)
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    if not path.startswith("tests/"):
+        assert f"Reverted from {fix}: {path}" in prepare.stdout
+    assert control is not None
+    _assert_success(control)
+    assert "passed; every bound check failed [dod-omn-1-ac1]" in control.stdout
+
+
+def _git_wrapper(
+    tmp_path: Path, repo: _GitFixture, tokens: list[str], record: str
+) -> Path:
+    """Put a git on PATH that appends a raw record to one listing.
+
+    Git refuses to store a '..' path component, so the refusal of one can only be
+    reached by a listing that carries it. The wrapper runs the real git, then,
+    when every token is an argument, prints the record and logs that it fired.
+    """
+    real = shutil.which("git")
+    assert real is not None
+    wrap = tmp_path / "wrap"
+    wrap.mkdir()
+    log = tmp_path / "wrap.log"
+    script = wrap / "git"
+    script.write_text(
+        "#!/bin/bash\n"
+        f'"{real}" "$@"\n'
+        "rc=$?\n"
+        'args=" $* "\n'
+        "fire=1\n"
+        "IFS='|' read -r -a want <<< \"$INJECT_TOKENS\"\n"
+        'for token in "${want[@]}"; do\n'
+        '  [[ "$args" == *" $token "* ]] || fire=0\n'
+        "done\n"
+        'if [ "$fire" -eq 1 ]; then\n'
+        "  printf '%b' \"$INJECT_RECORD\"\n"
+        f'  echo fired >> "{log}"\n'
+        "fi\n"
+        'exit "$rc"\n'
+    )
+    script.chmod(0o755)
+    repo.env["PATH"] = f"{wrap}{os.pathsep}{repo.env['PATH']}"
+    repo.env["INJECT_TOKENS"] = "|".join(tokens)
+    repo.env["INJECT_RECORD"] = record
+    return log
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("listing", ["revert", "overlay"])
+def test_dotdot_component_is_still_refused(tmp_path: Path, listing: str) -> None:
+    repo = _repository(tmp_path)
+    fix = repo.commits["fix"]
+    if listing == "revert":
+        _bind(repo, [f"OMN-1 {fix}"])
+        log = _git_wrapper(
+            tmp_path, repo, ["--name-only", "-z", f"{fix}^1", fix], "../escape\\0"
+        )
+        message = "::error::unsafe revert path refused"
+    else:
+        _bind_for(repo, "merge-base")
+        log = _git_wrapper(
+            tmp_path,
+            repo,
+            ["--name-status", repo.commits["merge_base"], repo.env["HEAD_SHA"]],
+            "A\\0../escape\\0",
+        )
+        message = "::error::unsafe overlay path refused"
+    prepare, control = _run_steps(repo)
+
+    assert log.exists(), "the wrapper never saw the listing, so the case proves nothing"
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert message in prepare.stdout
+    assert control is None
+
+
+# AC4
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize(
+    ("kind", "path"),
+    [("symlink", "test"), ("symlink", "pkg/tests"), ("submodule", "test")],
+    ids=["root-symlink", "nested-symlink", "root-submodule"],
+)
+def test_test_folder_through_a_link_in_the_head(
+    tmp_path: Path, kind: str, path: str
+) -> None:
+    repo = _repository(tmp_path)
+    repo.write("qa/test_quality.py", "def test_quality():\n    pass\n")
+    if kind == "symlink":
+        target = os.path.relpath(repo.head_tree / "qa", (repo.head_tree / path).parent)
+        _symlink(repo, path, target)
+    else:
+        _gitlink(repo, path, NEW_PIN)
+    _bind(repo, [])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::the test side is reached through a link at the head: {path}"
+    ) in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_test_folder_through_a_link_at_the_merge_base_only(tmp_path: Path) -> None:
+    repo = _repository(tmp_path)
+    repo.write("qa/test_quality.py", "def test_quality():\n    pass\n")
+    _symlink(repo, "pkg/tests", "../qa")
+    _rebase_point(repo, "test: link a test folder")
+    (repo.head_tree / "pkg/tests").unlink()
+    _bind_for(repo, "merge-base")
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        "::error::the test side is reached through a link at the merge base: pkg/tests"
+    ) in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_test_folder_through_a_link_at_the_fix_parent_only(tmp_path: Path) -> None:
+    def link(repo: _GitFixture) -> None:
+        repo.write("qa/test_quality.py", "def test_quality():\n    pass\n")
+        _symlink(repo, "pkg/tests", "../qa")
+
+    repo = _repository(tmp_path, product_deleted_after_fix=True, setup_initial=link)
+    fix = repo.commits["fix"]
+    (repo.head_tree / "pkg/tests").unlink()
+    _rebase_point(repo, "test: drop the linked folder")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        "::error::the test side is reached through a link at the parent of merged "
+        f"fix {fix}: pkg/tests"
+    ) in prepare.stdout
+    assert control is None
+
+
+# AC5
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_ignore_all_pull_request_pin_reaches_the_control(tmp_path: Path) -> None:
+    repo = _repository(tmp_path)
+    _ignored_submodule(repo, "tests/vendor")
+    _rebase_point(repo, "test: vendor a submodule")
+    _gitlink(repo, "tests/vendor", NEW_PIN)
+    _bind(repo, [])
+    prepare, _ = _run_steps(repo)
+
+    _assert_success(prepare)
+    tree = _control_tree(repo)
+    assert _index_entry(tree, repo, "tests/vendor").startswith(f"160000 {NEW_PIN} ")
+    assert "Overlaid: tests/vendor" in prepare.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_ignore_all_product_pin_is_not_a_test_only_diff(tmp_path: Path) -> None:
+    repo = _repository(tmp_path)
+    _ignored_submodule(repo, "vendor/lib")
+    _rebase_point(repo, "chore: vendor a library")
+    _gitlink(repo, "vendor/lib", NEW_PIN)
+    _bind(repo, [], extra_files={"tests/test_coverage.py": PRODUCT_TEST})
+    prepare, control = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert control is not None
+    assert control.returncode == 1, control.stdout + control.stderr
+    assert "IMPOSSIBLE" not in control.stdout
+    assert "the control did not fail (always-pass)" in control.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_ignore_all_product_pin_is_refused_beside_a_named_fix(tmp_path: Path) -> None:
+    repo = _repository(
+        tmp_path, setup_initial=lambda r: _ignored_submodule(r, "vendor/lib")
+    )
+    fix = repo.commits["fix"]
+    _gitlink(repo, "vendor/lib", NEW_PIN)
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::OMN-1 names merged fix {fix}, but this pull request changes "
+        "vendor/lib, which is neither test-side nor a contract; a product change "
+        "proves red at the merge base"
+    ) in prepare.stdout
+    assert control is None
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_ignore_all_fix_pin_is_reverted_as_product(tmp_path: Path) -> None:
+    repo = _repository(
+        tmp_path,
+        setup_initial=lambda r: _ignored_submodule(r, "vendor/lib"),
+        setup_fix=lambda r: _gitlink(r, "vendor/lib", NEW_PIN),
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert f"OMN-1: control at the merge base with merged fix {fix} reverted" in (
+        prepare.stdout
+    )
+    assert f"Reverted from {fix}: vendor/lib" in prepare.stdout
+
+
+# AC6
+
+
+CRLF_RULE = "*.txt eol=crlf\n"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("change", ["rule-added", "rule-removed"])
+def test_attribute_only_change_in_the_carry(tmp_path: Path, change: str) -> None:
+    def fixture(repo: _GitFixture) -> None:
+        repo.write("tests/data.txt", "a\nb\n")
+        if change == "rule-removed":
+            repo.write("tests/.gitattributes", CRLF_RULE)
+
+    repo = _repository(tmp_path, product_deleted_after_fix=True, setup_initial=fixture)
+    fix = repo.commits["fix"]
+    if change == "rule-added":
+        repo.write("tests/.gitattributes", CRLF_RULE)
+    else:
+        repo.git("rm", "-q", "tests/.gitattributes")
+    merge_base = _rebase_point(repo, "test: change the line-ending rule")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    tree = _assert_parent_control(repo, prepare, fix)
+    expected = _checked_out_bytes(repo, tmp_path, merge_base, "tests/data.txt")
+    assert expected == (b"a\r\nb\r\n" if change == "rule-added" else b"a\nb\n")
+    assert (tree / "tests/data.txt").read_bytes() == expected
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+@pytest.mark.parametrize("change", ["rule-added", "rule-removed"])
+def test_attribute_only_change_in_the_overlay(tmp_path: Path, change: str) -> None:
+    repo = _repository(tmp_path)
+    repo.write("tests/data.txt", "a\nb\n")
+    if change == "rule-removed":
+        repo.write("tests/.gitattributes", CRLF_RULE)
+    _rebase_point(repo, "test: add a text fixture")
+    if change == "rule-added":
+        _bind(repo, [], extra_files={"tests/.gitattributes": CRLF_RULE})
+    else:
+        repo.git("rm", "-q", "tests/.gitattributes")
+        _bind_for(repo, "merge-base")
+    prepare, _ = _run_steps(repo)
+
+    _assert_success(prepare)
+    tree = _control_tree(repo)
+    expected = _checked_out_bytes(
+        repo, tmp_path, repo.env["HEAD_SHA"], "tests/data.txt"
+    )
+    assert expected == (b"a\r\nb\r\n" if change == "rule-added" else b"a\nb\n")
+    assert (tree / "tests/data.txt").read_bytes() == expected
+
+
+# AC7
+
+
+MAGIC_NAME = ":(exclude)x/tests/a.json"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_literal_checkout_in_the_carry(tmp_path: Path) -> None:
+    """Read as a pathspec, the name would check out everything else at the merge base."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    repo.write(MAGIC_NAME, '{"carried": true}\n')
+    repo.write("x/tests/a.json", '{"decoy": true}\n')
+    _rebase_point(repo, "test: add a fixture with a pathspec-like name")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    tree = _assert_parent_control(repo, prepare, fix)
+    assert (tree / MAGIC_NAME).read_text() == '{"carried": true}\n'
+    assert f"Carried from the merge base: {MAGIC_NAME}" in prepare.stdout
+    assert (tree / "src/product.py").read_text() == "BROKEN = True\n"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_literal_checkout_in_the_overlay(tmp_path: Path) -> None:
+    """Read as a pathspec, the name would check out every other head path, product included."""
+    repo = _repository(tmp_path)
+    repo.write("x/tests/a.json", '{"decoy": true}\n')
+    repo.write("src/other.py", "OTHER = 1\n")
+    _rebase_point(repo, "test: add a decoy fixture and a product file")
+    _bind_for(
+        repo,
+        "merge-base",
+        extra_files={MAGIC_NAME: '{"overlaid": true}\n', "src/other.py": "OTHER = 2\n"},
+    )
+    prepare, _ = _run_steps(repo)
+
+    _assert_success(prepare)
+    tree = _control_tree(repo)
+    assert (tree / MAGIC_NAME).read_text() == '{"overlaid": true}\n'
+    assert f"Overlaid: {MAGIC_NAME}" in prepare.stdout
+    assert (tree / "src/other.py").read_text() == "OTHER = 1\n"
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_ignore_all_pin_only_fix_reverts_at_the_merge_base(tmp_path: Path) -> None:
+    """A fix whose only product change is a hidden pin reverts at the merge base.
+
+    With the pin left out of the revert patch, the patch is empty, does not
+    apply, and the control falls back to the fix's parent for no real conflict.
+    """
+    repo = _repository(
+        tmp_path, setup_initial=lambda r: _ignored_submodule(r, "vendor/lib")
+    )
+    _gitlink(repo, "vendor/lib", NEW_PIN)
+    pin_fix = _rebase_point(repo, "fix(OMN-1): pin the library (#8)")
+    _bind(repo, [f"OMN-1 {pin_fix}"])
+    prepare, _ = _run_steps(repo)
+
+    _assert_success(prepare)
+    assert f"Reverted from {pin_fix}: vendor/lib" in prepare.stdout
+    assert (
+        f"OMN-1: control at the merge base with merged fix {pin_fix} reverted"
+    ) in prepare.stdout
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_fix_control_carries_the_merge_base_test_side(tmp_path: Path) -> None:
+    """The control at the fix runs the merge base's tests, edited after the fix."""
+    repo = _repository(
+        tmp_path, product_deleted_after_fix=True, test_edited_after_fix=True
+    )
+    fix = repo.commits["fix"]
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    _assert_parent_control(repo, prepare, fix)
+    fix_tree = (
+        Path((repo.dod_dir / "control-fix-home-OMN-1.txt").read_text().strip())
+        / repo.env["REPO_SHORT"]
+    )
+    assert (fix_tree / "tests/test_product.py").read_text() == EDITED_PRODUCT_TEST
+    assert (
+        f"At merged fix {fix}: Carried from the merge base: tests/test_product.py"
+    ) in prepare.stdout
+    assert control is not None
+    _assert_success(control)
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_sibling_checkouts_at_the_fix_and_its_parent(tmp_path: Path) -> None:
+    """The real prepare step gives the parent and the fix controls the frozen sibling."""
+    repo = _repository(tmp_path, product_deleted_after_fix=True)
+    fix = repo.commits["fix"]
+    sibling = Path(repo.env["GITHUB_WORKSPACE"]) / ".dod-verify/head_home/sibling"
+    sibling.mkdir(parents=True)
+    sibling_repo = _GitFixture(sibling, repo.dod_dir, repo.env, {})
+    sibling_repo.git("init", "-q")
+    sibling_repo.write("revision", "frozen\n")
+    frozen = sibling_repo.commit("frozen")
+    (repo.dod_dir / "siblings.tsv").write_text(f"sibling\t{frozen}\n")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, _ = _run_steps(repo)
+
+    _assert_parent_control(repo, prepare, fix)
+    homes = [
+        Path((repo.dod_dir / "control-home-OMN-1.txt").read_text().strip()),
+        Path((repo.dod_dir / "control-fix-home-OMN-1.txt").read_text().strip()),
+    ]
+    for home in homes:
+        assert (home / "sibling/revision").read_text() == "frozen\n"
+        assert (
+            sibling_repo.git("-C", str(home / "sibling"), "rev-parse", "HEAD") == frozen
+        )
+
+
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_test_folder_through_a_link_at_the_fix_only(tmp_path: Path) -> None:
+    def link(repo: _GitFixture) -> None:
+        repo.write("qa/test_quality.py", "def test_quality():\n    pass\n")
+        _symlink(repo, "pkg/tests", "../qa")
+
+    repo = _repository(tmp_path, product_deleted_after_fix=True, setup_fix=link)
+    fix = repo.commits["fix"]
+    (repo.head_tree / "pkg/tests").unlink()
+    _rebase_point(repo, "test: drop the linked folder")
+    _bind(repo, [f"OMN-1 {fix}"])
+    prepare, control = _run_steps(repo)
+
+    assert prepare.returncode == 1, prepare.stdout + prepare.stderr
+    assert (
+        f"::error::the test side is reached through a link at merged fix {fix}: pkg/tests"
+    ) in prepare.stdout
+    assert control is None

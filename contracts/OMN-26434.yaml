@@ -1,0 +1,143 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-26434
+title: The receipt gate's parent-of-fix control applies a pull request's deletions, renames, type changes
+  and submodule pins, and handles dotted, symlinked and attribute-only test paths
+summary: The pull request overlay now applies deletions, rename sources, type changes and submodule pins
+  hidden by ignore=all; a parent-of-fix control is also checked at the fix itself with the same carry,
+  so a failure at the parent is the fix's; a '..' inside a name no longer stops the job; a tests or test
+  folder that is a symlink or a submodule stops it; files under a changed .gitattributes are rewritten;
+  and the carry's and the overlay's checkouts read paths literally.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26434-control-matches-the-head
+    statement: The control lays the pull request's whole test side over the merge base or the fix's parent
+      as the head has it, refuses what it cannot read, and attributes a parent failure to the fix only
+      when the same checks pass at the fix.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: a fixture the pull request deletes, the source of a file it renames, and a type
+          change it makes are in the control as they are at the pull request''s head -- falsifier: uv
+          run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -n 0 -o addopts=''''
+          -p no:skipping -k ''pull_request_deletes or pull_request_renames or pull_request_type_change
+          or pull_request_replaces_a_folder'''
+      - id: AC2
+        statement: 'AC2: the gate also runs the bound checks at the named fix with the same carry and
+          requires them to pass there, so a failure at the parent is the fix''s -- falsifier: uv run pytest
+          tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -n 0 -o addopts='''' -p no:skipping
+          -k ''at_the_fix or fix_check_that or fix_home_is or fix_control_carries or builds_no_fix_control'''
+      - id: AC3
+        statement: 'AC3: a test-side name holding ''..'' inside one component, touched by the fix or the
+          pull request, no longer stops the job, while a ''..'' path component still does -- falsifier:
+          uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -n 0 -o addopts=''''
+          -p no:skipping -k ''dots_inside_a_name or dotdot_component'''
+      - id: AC4
+        statement: 'AC4: a test side reached through a symlinked folder (a bare tests symlink) is refused
+          or resolved, never skipped -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -n 0 -o addopts='''' -p no:skipping -k test_folder_through_a_link'
+      - id: AC5
+        statement: 'AC5: a pull request''s submodule pin change reaches the control even when .gitmodules
+          sets ignore=all -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -n 0 -o addopts='''' -p no:skipping -k ignore_all'
+      - id: AC6
+        statement: 'AC6: a fixture whose .gitattributes rules change while its own tree entry stays the
+          same is written under the merge base''s rules -- falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q -n 0 -o addopts='''' -p no:skipping -k attribute_only'
+      - id: AC7
+        statement: 'AC7: dropping --literal-pathspecs from the carry''s checkout alone fails a case --
+          falsifier: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -n 0 -o
+          addopts='''' -p no:skipping -k literal_checkout'
+evidence_requirements:
+  - kind: tests
+    description: The merged-fix control tests pass at the head
+    command: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+      -p no:skipping
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26434-ac1-overlay-matches-the-head
+    description: Deletions, rename sources, type changes and folder replacements reach the control.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "pull_request_deletes or pull_request_renames or pull_request_type_change
+          or pull_request_replaces_a_folder"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26434-ac2-checked-at-the-fix
+    description: A parent control is also run at the fix with the same carry, and every own bound check
+      must pass there.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "at_the_fix or fix_check_that or fix_home_is or fix_control_carries or builds_no_fix_control"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26434-ac3-dotted-names
+    description: A '..' inside a name passes the revert and overlay checks; a '..' component is still
+      refused.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "dots_inside_a_name or dotdot_component"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26434-ac4-linked-test-folder
+    description: A tests or test folder that is a symlink or a submodule stops the job.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "test_folder_through_a_link"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26434-ac5-ignored-submodules
+    description: Submodule pins hidden by ignore=all reach the overlay, the revert and both product checks.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "ignore_all"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26434-ac6-attribute-only
+    description: Files under a changed .gitattributes are written under the new rules, in the carry and
+      the overlay.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "attribute_only"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26434-ac7-literal-checkout
+    description: A name git would read as pathspec magic is checked out literally, in the carry and the
+      overlay.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC7
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py -q -o addopts=''
+          -p no:skipping -k "literal_checkout"
+        cwd: ${OMNI_HOME}/omnibase_core

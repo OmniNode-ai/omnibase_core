@@ -210,9 +210,15 @@ def test_base_overlay_requires_changed_tests_and_cited_contracts() -> None:
         'prepare_control "$GITHUB_WORKSPACE/.dod-verify/base_home" "the merge base"'
         in script
     )
-    assert "--diff-filter=ACMR" in script
+    # OMN-26434: the overlay lists every change (deletions, renames, type changes,
+    # hidden submodule pins) and refuses only a '..' path component.
+    assert (
+        'diff --name-status --no-renames --ignore-submodules=none -z "$MB" "$HEAD_SHA" > "$overlay_paths"'
+        in script
+    )
+    assert "--diff-filter=ACMR" not in script
     assert "while IFS= read -r" in script
-    assert '"$path" == *..* || "$path" == /*' in script
+    assert '[[ "/$1/" == */../* || "$1" == /* ]]' in script
     assert 'rm -rf "$GITHUB_WORKSPACE/.dod-verify/base_home"' in script
     assert '"contracts/$ticket.yaml"' in script
     assert "no test-side change: the bound tests cannot be shown to fail" in script
