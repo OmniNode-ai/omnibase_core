@@ -30,7 +30,6 @@ class ModelErrorRulePolicy(BaseModel):
     pr_subject: str
     measurement_writer: str
     registry_env: str
-    sources_env: str
     measurements_env: str
     modes_env: str
     source_record_types: tuple[str, ...] = Field(min_length=1)

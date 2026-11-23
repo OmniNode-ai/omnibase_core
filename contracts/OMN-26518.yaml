@@ -1,0 +1,108 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26518
+title: "onex hides internal command groups from customers through a declared surface list"
+summary: "Each onex command group declares its surface (customer or internal) in one table in omnibase_core.
+  The default listing, shell completion and get_command show only customer groups; the ONEX_CLI_SHOW_ALL_COMMANDS
+  switch shows all. The audit reads customer_command_names(). The table is seeded from the operator proposal:
+  14 customer groups, 49 internal groups, 16 of which are internal only until the operator decides."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26518-command-surface
+    statement: "A declared surface decides which onex command groups a customer sees."
+    acceptance:
+      - id: AC1
+        statement: "AC1: each onex command group declares its surface (customer or internal) in its registration,
+          and a group with no declaration is refused by a test rather than defaulted silently -- falsifier:
+          uv run pytest tests -q -k command_surface_declared"
+      - id: AC2
+        statement: "AC2: the default view of `onex --help` and shell completion lists only customer groups,
+          and `get_command` for a hidden internal group still resolves only when the operator switch is
+          on -- falsifier: uv run pytest tests -q -k command_surface_default_customer"
+      - id: AC3
+        statement: "AC3: an explicit operator or developer switch (an environment variable or flag, read
+          the way omnibase_core already gates developer mode) lists all groups -- falsifier: uv run pytest
+          tests -q -k command_surface_operator_switch"
+      - id: AC4
+        statement: "AC4: the customer-surface verdict's parameter audit reads the same declaration, so
+          a group declared internal is not audited as customer -- falsifier: uv run pytest tests -q -k
+          command_surface_audit_reads_declaration"
+      - id: AC5
+        statement: "AC5: the declaration is seeded with the proposal's 14 customer groups and the 16 unclear
+          groups are internal, and a test fails when the customer set differs from the seeded 14 -- falsifier:
+          uv run pytest tests -q -k command_surface_seed"
+evidence_requirements:
+  - kind: tests
+    description: "The command surface tests pass at the head."
+    command: uv run pytest tests/unit/cli/test_cli_command_surface_omn26518.py -n 0 -p no:cacheprovider
+      -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26518-ac1
+    description: "Every group the repo registers (the built-in table, the decorated commands and the live
+      onex.cli entry points) has an entry in CLI_COMMAND_SURFACES; an undeclared name is reported by undeclared_command_names
+      and is hidden, not defaulted to customer, at runtime."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_command_surface_omn26518.py -n 0 -p no:cacheprovider
+          -q -k command_surface_declared"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26518-ac2
+    description: "list_commands, onex --help and shell completion list only the customer groups with the
+      switch off; get_command returns None for an internal group, and an invocation by name fails with
+      No such command."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_command_surface_omn26518.py -n 0 -p no:cacheprovider
+          -q -k command_surface_default_customer"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26518-ac3
+    description: "With ONEX_CLI_SHOW_ALL_COMMANDS set to 1, true, yes or on, every group is listed and
+      resolves and runs by name; off values keep the default view."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_command_surface_omn26518.py -n 0 -p no:cacheprovider
+          -q -k command_surface_operator_switch"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26518-ac4
+    description: "customer_command_names() is the one reader the parameter audit uses; it matches the
+      default listing, excludes internal groups, and does not move with the operator switch. The follow-up
+      change in omnibase_infra's audit test is named in the pull request body."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_command_surface_omn26518.py -n 0 -p no:cacheprovider
+          -q -k command_surface_audit_reads_declaration"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26518-ac5
+    description: "The customer set is exactly the proposal's 14, the 16 unclear groups are internal, and
+      all 63 groups of the clean install are declared."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_command_surface_omn26518.py -n 0 -p no:cacheprovider
+          -q -k command_surface_seed"
+        cwd: ${OMNI_HOME}/omnibase_core

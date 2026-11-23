@@ -168,6 +168,9 @@ def session_cleanup() -> Generator[None, None, None]:
     gc.collect()  # Clean up after all tests complete
 
 
+LEDGER_PATH_ENV = "ONEX_LEDGER_PATH"
+"""The variable the scratch-ledger fixture points at a file of the test's own."""
+
 _LEDGER_BUS_ENV_VARS = (
     "ONEX_LEDGER_WRITE_VIA",
     "ONEX_LEDGER_BUS_APPEND_COMMAND",
@@ -194,7 +197,7 @@ def ledger_test_write_isolation(
     for name in _LEDGER_BUS_ENV_VARS:
         monkeypatch.delenv(name, raising=False)
     monkeypatch.setenv(
-        "ONEX_LEDGER_PATH", str(tmp_path / "scratch_ROLLING_WORK_LEDGER.md")
+        LEDGER_PATH_ENV, str(tmp_path / "scratch_ROLLING_WORK_LEDGER.md")
     )
 
 

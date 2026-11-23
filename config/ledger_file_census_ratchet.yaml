@@ -2,7 +2,7 @@
 # The shrink-only count of files in this repository that read or write the ledger file.
 # A repository whose count rises above its row fails the hook; a row is only ever lowered.
 ratchet:
-  omnibase_core: 9
+  omnibase_core: 8
 # The `files` table holds the files that hold such a reader or writer, with their line counts (run the
 # census node with --per-file): a file with no row, or with more lines than its row, fails the census.
 # A row is only ever lowered, and a file is only ever dropped.
@@ -14,6 +14,5 @@ files:
     tests/unit/models/events/work/test_model_work_kinds_v2.py: 1
     tests/unit/models/events/work/test_model_work_question.py: 3
     tests/unit/models/events/work/test_work_ledger_line.py: 1
-    tests/unit/models/events/work/test_work_ledger_render.py: 3
     tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py: 1
     tests/unit/validation/test_ticket_creation_parity.py: 1

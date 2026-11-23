@@ -3,19 +3,20 @@ schema_version: "1.0.0"
 ticket_id: OMN-26514
 title: "The omnibase_core work-ledger render CLI and three validation policies read the ledger only through
   the bus and carry no ledger file name or path variable in runtime code"
-summary: "The render command of onex-work-ledger takes its events from the projection client (the bus-backed
-  read) by default and names the md view only through --md, with no environment default; the error rule
-  table policy names a rule-specific sources variable; the ticket creation citation pattern and the hardcoded
-  model config history globs match a work-ledger family spelling instead of the one file name. The census
-  row of omnibase_core is lowered from 14 to 9 files and from 4 to 0 runtime files. No check, rule or
-  ratchet is widened, and the ticket creation and history patterns still match every file they matched."
+summary: "After the retirement of the render command and the error rule table sources variable on dev
+  (OMN-26513), the two remaining census files in runtime position, the ticket creation citation pattern
+  and the hardcoded model config history globs, match a work-ledger family spelling instead of the one
+  file name. The census row of omnibase_core is lowered from 10 to 8 files and the runtime count reads
+  0. No check, rule or ratchet is widened beyond the family spelling, and the citation pattern and the
+  history globs still match every file they matched."
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
   - id: req-omn26514-render-through-the-bus
-    statement: "onex-work-ledger render reads its events through the projection client by default, never
-      falls back to a local file on a projection fault, and takes the md view only from --md."
+    statement: "No runtime file of omnibase_core carries the ledger file name or its path variable: the
+      render command and the error rule table sources variable are gone on dev, and the citation pattern
+      and the history globs name the work-ledger family spelling."
     acceptance:
       - id: AC1
         statement: "AC1: the four omnibase_core runtime files read and write the ledger only through the
@@ -37,47 +38,47 @@ requirements:
           the census node over omnibase_core, the printed counts read back"
 evidence_requirements:
   - kind: tests
-    description: "The render, write-guard, error rule table, ticket creation parity and hardcoded model
-      config tests pass at the head."
-    command: uv run pytest tests/unit/models/events/work/test_work_ledger_render.py tests/unit/handlers/test_handler_ledger_write_guard.py
-      tests/unit/validation/test_error_rule_table.py tests/unit/validation/test_ticket_creation_parity.py
-      tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py -n 0 -p no:cacheprovider
+    description: "The family-spelling, render, write-guard, error rule table, ticket creation parity and
+      hardcoded model config tests pass at the head."
+    command: uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py tests/unit/models/events/work/test_work_ledger_render.py
+      tests/unit/handlers/test_handler_ledger_write_guard.py tests/unit/validation/test_error_rule_table.py
+      tests/unit/validation/test_ticket_creation_parity.py tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+      -n 0 -p no:cacheprovider
 emergency_bypass:
   enabled: false
   justification: ''
   follow_up_ticket_id: ''
 dod_evidence:
   - id: dod-omn26514-ac1
-    description: "The four files carry neither the ledger file name nor its path variable, and the census
-      row of omnibase_core is lowered to the count the census reads."
+    description: "The ticket creation citation pattern and the history globs carry no ledger file name,
+      and the census row of omnibase_core is lowered to the count the census reads."
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC1
     checks:
-      - check_type: command
-        check_value: "grep -q 'sources_env: ONEX_ERROR_RULE_SOURCES' src/omnibase_core/validation/contracts/error_rule_table.validation.yaml
-          && grep -q '_WORK_LEDGER\\[A-Za-z0-9_.-\\]\\*' src/omnibase_core/validation/contracts/ticket_creation.validation.yaml
-          && grep -q '[*]_WORK_LEDGER' src/omnibase_core/validation/hardcoded_model_config/policy.yaml"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py
+          tests/unit/validation/test_no_ledger_file_path.py -n 0 -p no:cacheprovider -q"
         cwd: ${OMNI_HOME}/omnibase_core
       - check_type: command
-        check_value: "grep -q 'omnibase_core: 9' config/ledger_file_census_ratchet.yaml"
+        check_value: "grep -q 'omnibase_core: 8' config/ledger_file_census_ratchet.yaml"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26514-ac2
-    description: "The render tests pass at the head; the projection-client, no-md-variable, fault and
-      source-pin tests fail on the pre-change render command and runtime entry point."
+    description: "The family-spelling tests fail on the pre-change policy files and pass at the head;
+      the render tests pass at the head."
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC2
     checks:
       - check_type: test_passes
-        check_value: "uv run pytest tests/unit/models/events/work/test_work_ledger_render.py -n 0 -p no:cacheprovider
-          -q"
+        check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py
+          tests/unit/models/events/work/test_work_ledger_render.py -n 0 -p no:cacheprovider -q"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26514-ac3
     description: "The error rule table, ticket creation parity and hardcoded model config tests pass at
-      the head with the renamed sources variable and the family spellings."
+      the head with the family spellings."
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
@@ -89,13 +90,15 @@ dod_evidence:
           -q"
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26514-ac4
-    description: "The render entry point defaults to the projection source, which is the bus-backed read;
-      the dev-lane run and the census read-back are recorded in the pull request lab line."
+    description: "The render subcommand is retired, so the work-ledger runtime reads the ledger only through
+      the projection client; the census read-back on the lab host is recorded in the pull request lab
+      line."
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC4
     checks:
-      - check_type: command
-        check_value: "grep -q 'render_source = args.source or \"projection\"' src/omnibase_core/nodes/node_work_ledger_state_compute/runtime_work_ledger.py"
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_path.py -n 0 -p no:cacheprovider
+          -q -k render"
         cwd: ${OMNI_HOME}/omnibase_core

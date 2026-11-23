@@ -5,13 +5,19 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 from typing import ClassVar
 
 import yaml
 from pydantic import TypeAdapter
 
+from omnibase_core.cli.cli_work_ledger_projection import fetch_projection_snapshot
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
+from omnibase_core.errors.error_work_ledger_parse import WorkLedgerParseError
+from omnibase_core.errors.error_work_ledger_projection import (
+    WorkLedgerProjectionError,
+)
 from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_subcontract import (
@@ -29,6 +35,16 @@ from omnibase_core.models.error_rule_table.model_error_rule_check_input import (
 from omnibase_core.models.error_rule_table.model_error_rule_measurement import (
     ModelErrorRuleMeasurement,
 )
+from omnibase_core.models.events.work.model_work_ledger_line import (
+    parse_work_ledger_line,
+)
+from omnibase_core.models.events.work.model_work_ledger_render import (
+    ROW_TYPE_BY_KIND,
+    row_stamp,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_projection_snapshot import (
+    ModelWorkLedgerProjectionSnapshot,
+)
 from omnibase_core.overlays.contract_env_ref import (
     contract_env_reference,
     resolve_contract_env_binding,
@@ -41,11 +57,41 @@ from omnibase_core.validation.checker_error_rule_table import (
 from omnibase_core.validation.validator_base import ValidatorBase
 
 
+def resolve_ledger_sources(
+    snapshot: ModelWorkLedgerProjectionSnapshot, record_types: Iterable[str]
+) -> frozenset[str]:
+    """The ``ledger:<stamp>`` and ``ticket:<id>`` sources of ``snapshot``'s rows of ``record_types``.
+
+    A table cites a ruling or an operator consent as the source of a rule by the row's stamp or
+    its ticket. ``record_types`` are the row types of the ledger grammar (``RULING``,
+    ``OPERATOR-CONSENT``). A row that does not parse is a fault, never a row to skip: a partial
+    ledger must not be read as the whole one. Raises ``WorkLedgerProjectionError`` for it.
+    """
+    wanted = frozenset(record_types)
+    sources: set[str] = set()
+    for projected in snapshot.rows:
+        try:
+            event = parse_work_ledger_line(projected.record).event
+        except WorkLedgerParseError as exc:
+            raise WorkLedgerProjectionError(
+                "invalid",
+                f"projection row {projected.event_id} does not parse: {exc}",
+            ) from exc
+        if ROW_TYPE_BY_KIND[event.kind] not in wanted:
+            continue
+        sources.add(f"ledger:{row_stamp(event.emitted_at)}")
+        if event.ticket_id is not None:
+            sources.add(f"ticket:{event.ticket_id}")
+    return frozenset(sources)
+
+
 class ValidatorErrorRuleTable(ValidatorBase):
     """Load trusted registries separately from the row document, with injectable facts.
 
     The composition boundary supplies registries from protected artifacts, never from
     a table row. Unset paths resolve to empty registries, refusing rows that need them.
+    Ledger sources are read from the work ledger projection (the bus), never from a file;
+    an unset projection URL resolves no source, and any other fault is reported.
     An injected context replaces file lookup, reusing the runtime's overlay/DI wiring.
     """
 
@@ -84,21 +130,14 @@ class ValidatorErrorRuleTable(ValidatorBase):
                 )
             state_checks = frozenset(parsed.state_checks)
             retired_ids = parsed.retired_ids
-        sources: set[str] = set()
-        ledger_path = resolve_contract_env_binding(
-            contract_env_reference(policy.sources_env)
-        ).value
-        if ledger_path:
-            for line in Path(ledger_path).read_text(encoding="utf-8").splitlines():
-                cells = [cell.strip() for cell in line.split("|")]
-                if len(cells) < 3 or cells[1] not in policy.source_record_types:
-                    continue
-                sources.add(f"ledger:{cells[0]}")
-                sources.update(
-                    f"ticket:{cell.removeprefix('ticket=')}"
-                    for cell in cells[2:]
-                    if cell.startswith("ticket=")
-                )
+        sources: frozenset[str] = frozenset()
+        try:
+            sources = resolve_ledger_sources(
+                fetch_projection_snapshot(), policy.source_record_types
+            )
+        except WorkLedgerProjectionError as exc:
+            if exc.kind != "unconfigured":
+                raise
         measurements: dict[str, ModelErrorRuleMeasurement] = {}
         measured_path = resolve_contract_env_binding(
             contract_env_reference(policy.measurements_env)
@@ -123,7 +162,7 @@ class ValidatorErrorRuleTable(ValidatorBase):
             document={},
             contract=contract,
             action_contracts=contracts,
-            resolved_sources=frozenset(sources),
+            resolved_sources=sources,
             registered_state_checks=state_checks,
             measurements=measurements,
             authorized_modes=authorized_modes,
