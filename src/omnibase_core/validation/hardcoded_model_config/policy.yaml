@@ -33,8 +33,8 @@ path_classes:
       # The work ledger is append-only state history: it is never rewritten, so
       # a retired value a past row quotes stays (OMN-21147, operator ruling
       # 2026-10-15).
-      - "**/ROLLING_WORK_LEDGER.md"
-      - "**/ROLLING_WORK_LEDGER_*.md"
+      - "**/*_WORK_LEDGER.md"
+      - "**/*_WORK_LEDGER_*.md"
     families: []
 
   - name: GUARD

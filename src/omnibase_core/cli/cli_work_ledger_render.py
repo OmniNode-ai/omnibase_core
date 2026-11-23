@@ -3,9 +3,13 @@
 
 """``onex-work-ledger render --check | --repair`` (OMN-16182, plan T6).
 
-The first divergence check of the typed work ledger: the JSON-lines ledger
-(``ONEX_WORK_LEDGER_PATH``) is the truth, the md ledger (``--md`` or
-``ONEX_LEDGER_PATH``) is its rendered view, and the two are compared by event id.
+The first divergence check of the typed work ledger: the typed events are the
+truth, the md view named by ``--md`` is their rendering, and the two are compared
+by event id. The events come from the bus-backed projection client
+(``--source projection``, the default; the caller fetches the snapshot and hands
+this module its lines) or, with ``--source local``, from the JSON-lines buffer
+(``ONEX_WORK_LEDGER_PATH``). The md view has no environment default: it is a file
+the operator names, never the ledger of record (OMN-26514).
 
 - ``md-ahead``: the md holds a typed row (an ``event=<uuid>`` cell followed by
   ``src=typed``) whose event is not in the JSONL. The md is never allowed to be
@@ -43,9 +47,6 @@ from omnibase_core.errors.error_work_ledger_parse import WorkLedgerParseError
 from omnibase_core.errors.error_work_ledger_render import WorkLedgerRenderError
 from omnibase_core.errors.error_work_ledger_undecided import WorkLedgerUndecidedError
 from omnibase_core.handlers import handler_ledger_write_guard as write_guard
-from omnibase_core.models.bootstrap.model_environment_bootstrap import (
-    ModelEnvironmentBootstrap,
-)
 from omnibase_core.models.events.work.model_work_event_union import ModelWorkEvent
 from omnibase_core.models.events.work.model_work_ledger_epoch_opened import (
     ModelWorkLedgerEpochOpened,
@@ -68,7 +69,6 @@ __all__ = [
     "EXIT_FOUND",
     "EXIT_TEST_WRITE_REFUSED",
     "EXIT_UNDECIDED",
-    "MD_LEDGER_PATH_ENV",
     "md_lock_path_for",
     "run_render",
 ]
@@ -77,9 +77,6 @@ EXIT_CLEAR: Final = 0
 EXIT_FOUND: Final = 3
 EXIT_UNDECIDED: Final = 2
 EXIT_TEST_WRITE_REFUSED: Final = write_guard.EXIT_TEST_WRITE_REFUSED
-
-MD_LEDGER_PATH_ENV: Final = "ONEX_LEDGER_PATH"
-"""The variable naming the md ledger, as ``ledger_lock.py`` and the skills use it."""
 
 # The md lock file, spelled as omnibase_infra scripts/ledger_lock.py spells it
 # (OMN-19262 lock_path_for): <resolved parent>/.ledger_locks/<name>.<24-hex
@@ -100,6 +97,9 @@ _ROW_START_RE: Final = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z \|")
 _JsonlRead = tuple[str, str, int, tuple[ModelWorkEvent, ...], str]
 """The JSON-lines ledger as read: path, sha256, line count, events, newest epoch id."""
 
+_Projected = tuple[str, str | None, tuple[str, ...], str | None]
+"""The bus-backed client's read: label, sha256, ledger lines and any doubt about them."""
+
 _MdRead = tuple[str, str, int, str, tuple[str, ...]]
 """The md ledger as read: text, sha256, line count, header line, typed event ids."""
 
@@ -111,19 +111,29 @@ def md_lock_path_for(md: Path) -> Path:
     return resolved.parent / _LOCK_DIRNAME / f"{resolved.name}.{digest}{_LOCK_SUFFIX}"
 
 
-def run_render(mode: str, md_option: str | None) -> tuple[int, list[str]]:
+def run_render(
+    mode: str, md_option: str | None, projected: _Projected | None = None
+) -> tuple[int, list[str]]:
     """Run ``render --check`` (mode ``check``) or ``--repair`` (mode ``repair``).
+
+    ``projected`` is the bus-backed client's read: its label, its ledger lines and
+    any doubt about them (a doubt is undecided, never a fallback to the local file).
+    Not given, the events are read from the JSON-lines buffer.
 
     Returns the exit code and the output lines. Never raises for a doubt about
     either file; every doubt is one ``reason=`` line and exit 2.
     """
     headers: list[str] = []
     try:
-        path, sha256, line_count, read_events, epoch = _read_jsonl()
+        path, sha256, line_count, read_events, epoch = _read_jsonl(projected)
         headers.append(
             f"ledger={path} sha256={sha256} lines={line_count} epoch={epoch}"
         )
-        md_path = _md_path(md_option)
+        if md_option is None or not md_option.strip():
+            raise WorkLedgerUndecidedError(  # error-ok: carried to a reason= line
+                "--md is required and has no default"
+            )
+        md_path = Path(md_option)
         md = _read_md(md_path)
         headers.append(md[3])
         index = index_events(read_events)
@@ -217,7 +227,12 @@ def _repair(
 # -------------------------------------------------------------------- reads
 
 
-def _read_jsonl() -> _JsonlRead:
+def _read_jsonl(projected: _Projected | None) -> _JsonlRead:
+    if projected is not None:
+        label, digest, projected_lines, doubt = projected
+        if doubt is not None:
+            raise WorkLedgerUndecidedError(doubt)  # error-ok: carried to a reason= line
+        return _parse_events(label, digest or "none", projected_lines)
     try:
         path = events_path_from_env()
     except KeyError:
@@ -238,6 +253,10 @@ def _read_jsonl() -> _JsonlRead:
             f"ledger is not UTF-8: {exc}"
         ) from exc  # error-ok: carried to a reason= line
     lines = complete_ledger_lines(text)
+    return _parse_events(str(path), hashlib.sha256(raw).hexdigest(), lines)
+
+
+def _parse_events(path: str, sha256: str, lines: tuple[str, ...]) -> _JsonlRead:
     events: list[ModelWorkEvent] = []
     for number, line in enumerate(lines, start=1):
         try:
@@ -248,26 +267,7 @@ def _read_jsonl() -> _JsonlRead:
             ) from exc  # error-ok: carried to a reason= line
     epochs = [e for e in events if isinstance(e, ModelWorkLedgerEpochOpened)]
     epoch = str(max(epochs, key=lambda e: e.epoch_seq).event_id) if epochs else "none"
-    return str(path), hashlib.sha256(raw).hexdigest(), len(lines), tuple(events), epoch
-
-
-def _md_path(md_option: str | None) -> Path:
-    if md_option is not None:
-        if not md_option.strip():
-            raise WorkLedgerUndecidedError(
-                "--md is blank"
-            )  # error-ok: carried to a reason= line
-        return Path(md_option)
-    bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
-        declared_keys=(MD_LEDGER_PATH_ENV,)
-    )
-    raw = bootstrap.environment.optional(MD_LEDGER_PATH_ENV)
-    if raw is None or not raw.strip():
-        raise WorkLedgerUndecidedError(  # error-ok: carried to a reason= line
-            f"{MD_LEDGER_PATH_ENV} is not set and --md was not given; one names the md "
-            "ledger and there is no default"
-        )
-    return Path(raw)
+    return path, sha256, len(lines), tuple(events), epoch
 
 
 def _read_md(path: Path) -> _MdRead:

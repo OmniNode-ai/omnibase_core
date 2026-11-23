@@ -38,7 +38,7 @@ Usage::
     onex-work-ledger surface --surface <surface>
     onex-work-ledger questions [--status open|answered|withdrawn|any] [--ticket OMN-1]
     onex-work-ledger health
-    onex-work-ledger render --check|--repair [--md <md ledger>]
+    onex-work-ledger render --check|--repair --md <md view> [--source projection|local]
 
 Every output starts with one header line, so each call is a durable readback::
 
@@ -71,7 +71,6 @@ from omnibase_core.cli.cli_work_ledger_projection import (
 )
 from omnibase_core.cli.cli_work_ledger_render import (
     EXIT_TEST_WRITE_REFUSED,
-    MD_LEDGER_PATH_ENV,
     run_render,
 )
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
@@ -513,9 +512,11 @@ def _build_parser() -> argparse.ArgumentParser:
     render = sub.add_parser(
         "render",
         help=(
-            "Compare the md ledger with the JSON-lines ledger by event id "
-            "(--check), or append the md rows it is missing (--repair)."
+            "Compare the md view with the typed events by event id (--check), or "
+            "append the md rows it is missing (--repair). The events come from the "
+            "projection client unless --source local names the JSON-lines buffer."
         ),
+        parents=[query],
     )
     mode = render.add_mutually_exclusive_group(required=True)
     mode.add_argument("--check", action="store_true", help="Compare; write nothing.")
@@ -525,7 +526,7 @@ def _build_parser() -> argparse.ArgumentParser:
     render.add_argument(
         "--md",
         default=None,
-        help=f"The md ledger. Defaults to {MD_LEDGER_PATH_ENV}; there is no other default.",
+        help="The md view to compare or repair. There is no default.",
     )
     return parser
 
@@ -549,9 +550,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     if args.command == "render":
-        if args.source is not None:
-            parser.error("render: --source does not apply to render")
-        code, out = run_render("repair" if args.repair else "check", args.md)
+        render_source = args.source or "projection"
+        if render_source == "auto":
+            parser.error("render: --source is projection or local, not auto")
+        projected = None
+        if render_source == "projection":
+            read = _resolve_source("projection")
+            projected = (read.path, read.sha256, read.lines, read.doubt)
+        code, out = run_render("repair" if args.repair else "check", args.md, projected)
         stream = sys.stderr if code == EXIT_TEST_WRITE_REFUSED else sys.stdout
         stream.write("\n".join(out) + "\n")
         return code

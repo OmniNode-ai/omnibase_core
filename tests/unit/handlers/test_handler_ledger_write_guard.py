@@ -51,12 +51,11 @@ def _run_repair(
         "PATH": str(SCRIPT.parent),
         "TMPDIR": str(scratch),
         EVENTS_ENV: str(jsonl),
-        MD_ENV: str(md),
     }
     if test_context:
         env[guard.TEST_CONTEXT_ENV] = "1"
     return subprocess.run(
-        [str(SCRIPT), "render", "--repair"],
+        [str(SCRIPT), "render", "--source", "local", "--md", str(md), "--repair"],
         capture_output=True,
         text=True,
         env=env,

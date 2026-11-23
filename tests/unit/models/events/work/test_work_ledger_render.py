@@ -30,6 +30,8 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.cli import cli_work_ledger_render as render_cli
+from omnibase_core.cli.cli_work_ledger_projection import PROJECTION_TOPIC
 from omnibase_core.enums.enum_cost_basis import EnumCostBasis
 from omnibase_core.enums.enum_hold_block import EnumHoldBlock
 from omnibase_core.enums.enum_question_withdrawal_reason import (
@@ -38,6 +40,9 @@ from omnibase_core.enums.enum_question_withdrawal_reason import (
 from omnibase_core.enums.enum_surface_result import EnumSurfaceResult
 from omnibase_core.enums.enum_work_outcome import EnumWorkOutcome
 from omnibase_core.enums.governance.enum_pr_state import EnumPRState
+from omnibase_core.errors.error_work_ledger_projection import (
+    WorkLedgerProjectionError,
+)
 from omnibase_core.errors.error_work_ledger_render import WorkLedgerRenderError
 from omnibase_core.models.events.work import (
     WORK_LEDGER_SCHEMA,
@@ -75,7 +80,14 @@ from omnibase_core.models.events.work.model_work_ledger_render import (
     index_events,
     render_ledger_row,
 )
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_projection_row import (
+    ModelWorkLedgerProjectionRow,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_projection_snapshot import (
+    ModelWorkLedgerProjectionSnapshot,
+)
 from omnibase_core.models.primitives.model_semver import ModelSemVer
+from omnibase_core.nodes.node_work_ledger_state_compute import runtime_work_ledger
 from omnibase_core.nodes.node_work_ledger_state_compute.runtime_work_ledger import (
     main,
 )
@@ -878,10 +890,10 @@ LEGACY_MD = (
 def _write_pair(
     tmp_path: Path, events: list[ModelWorkEvent], md_events: list[ModelWorkEvent]
 ) -> tuple[Path, Path]:
-    jsonl = tmp_path / "ROLLING_WORK_LEDGER.jsonl"
+    jsonl = tmp_path / "work_events.jsonl"
     jsonl.write_text("".join(_jsonl_line(e) + "\n" for e in events), encoding="utf-8")
     index = index_events(events + md_events)
-    md = tmp_path / "ROLLING_WORK_LEDGER.md"
+    md = tmp_path / "md_view.md"
     md.write_text(
         LEGACY_MD + "".join(render_ledger_row(e, index) + "\n" for e in md_events),
         encoding="utf-8",
@@ -890,16 +902,23 @@ def _write_pair(
 
 
 def _run(
-    jsonl: Path | None, md: Path | None, *args: str
+    jsonl: Path | None,
+    md: Path | None,
+    *args: str,
+    extra_env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess[str]:
+    """Run ``onex-work-ledger render`` over the local JSON-lines buffer and the md view.
+
+    The md view is named with ``--md`` (it has no environment default, OMN-26514) and
+    the events are read with ``--source local``; the projection default is covered below.
+    """
     assert SCRIPT.exists(), f"console script missing: {SCRIPT}"
-    env = {"PATH": str(SCRIPT.parent)}
+    env = {"PATH": str(SCRIPT.parent), **(extra_env or {})}
     if jsonl is not None:
         env[EVENTS_ENV] = str(jsonl)
-    if md is not None:
-        env[MD_ENV] = str(md)
+    named = ["--md", str(md)] if md is not None and "--md" not in args else []
     return subprocess.run(
-        [str(SCRIPT), "render", *args],
+        [str(SCRIPT), "render", "--source", "local", *named, *args],
         capture_output=True,
         text=True,
         env=env,
@@ -966,10 +985,10 @@ def test_check_is_undecided_without_the_md_path(tmp_path: Path) -> None:
     jsonl, _ = _write_pair(tmp_path, _all_events(), _all_events())
     proc = _run(jsonl, None, "--check")
     assert proc.returncode == 2
-    assert MD_ENV in proc.stdout
+    assert "--md" in proc.stdout
 
 
-def test_md_option_overrides_the_md_variable(tmp_path: Path) -> None:
+def test_md_option_names_the_view(tmp_path: Path) -> None:
     events = _all_events()
     jsonl, md = _write_pair(tmp_path, events, events)
     proc = _run(jsonl, tmp_path / "absent.md", "--check", "--md", str(md))
@@ -1083,7 +1102,7 @@ def test_repair_takes_the_md_lock_file_beside_the_ledger(tmp_path: Path) -> None
     assert _run(jsonl, md, "--repair").returncode == 0
     locks = tmp_path / ".ledger_locks"
     digest = hashlib.sha256(str(md.resolve()).encode("utf-8")).hexdigest()[:24]
-    assert (locks / f"ROLLING_WORK_LEDGER.md.{digest}.flock").exists()
+    assert (locks / f"md_view.md.{digest}.flock").exists()
     assert (locks / ".gitignore").read_text(encoding="utf-8").endswith("*\n")
 
 
@@ -1094,7 +1113,7 @@ def test_repair_md_lock_file_is_owner_only(tmp_path: Path) -> None:
     jsonl, md = _write_pair(tmp_path, events, events[:1])
     assert _run(jsonl, md, "--repair").returncode == 0
     digest = hashlib.sha256(str(md.resolve()).encode("utf-8")).hexdigest()[:24]
-    lock = tmp_path / ".ledger_locks" / f"ROLLING_WORK_LEDGER.md.{digest}.flock"
+    lock = tmp_path / ".ledger_locks" / f"md_view.md.{digest}.flock"
     assert lock.stat().st_mode & 0o077 == 0
 
 
@@ -1104,6 +1123,98 @@ def test_render_in_process_matches_the_script(
     events = _all_events()
     jsonl, md = _write_pair(tmp_path, events, events)
     monkeypatch.setenv(EVENTS_ENV, str(jsonl))
-    monkeypatch.setenv(MD_ENV, str(md))
-    assert main(["render", "--check"]) == 0
+    assert main(["render", "--check", "--source", "local", "--md", str(md)]) == 0
     assert "verdict=clear query=render mode=check" in capsys.readouterr().out
+
+
+# ------------------------------------------- OMN-26514: the bus-backed client, no md variable
+
+
+def _projection_snapshot(
+    events: list[ModelWorkEvent],
+) -> ModelWorkLedgerProjectionSnapshot:
+    return ModelWorkLedgerProjectionSnapshot(
+        rows=tuple(
+            ModelWorkLedgerProjectionRow(event_id=e.event_id, record=_jsonl_line(e))
+            for e in events
+        ),
+        applied_offset=len(events),
+        end_offset=len(events),
+        lag_records=0,
+    )
+
+
+def test_md_variable_is_not_a_default_for_the_md_view(tmp_path: Path) -> None:
+    events = _all_events()
+    jsonl, md = _write_pair(tmp_path, events, events)
+    proc = _run(jsonl, None, "--check", extra_env={MD_ENV: str(md)})
+    assert proc.returncode == 2, proc.stdout + proc.stderr
+    assert "--md" in proc.stdout
+    assert "verdict=undecided query=render mode=check" in proc.stdout
+
+
+def test_render_reads_its_events_through_the_projection_client(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    events = _all_events()
+    _, md = _write_pair(tmp_path, events, events)
+    monkeypatch.delenv(EVENTS_ENV, raising=False)
+    monkeypatch.setattr(
+        runtime_work_ledger,
+        "fetch_projection_snapshot",
+        lambda: _projection_snapshot(events),
+    )
+    assert main(["render", "--check", "--md", str(md)]) == 0
+    out = capsys.readouterr().out
+    assert f"ledger=projection:{PROJECTION_TOPIC} " in out
+    assert f"events={len(events)} md_rows={len(events)} md_ahead=0 md_missing=0" in out
+
+
+def test_render_over_the_projection_finds_a_missing_md_row(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    events = _all_events()
+    _, md = _write_pair(tmp_path, events, events[:-1])
+    monkeypatch.delenv(EVENTS_ENV, raising=False)
+    monkeypatch.setattr(
+        runtime_work_ledger,
+        "fetch_projection_snapshot",
+        lambda: _projection_snapshot(events),
+    )
+    assert main(["render", "--check", "--md", str(md)]) == 3
+    assert (
+        f"divergence=md-missing event={events[-1].event_id}" in capsys.readouterr().out
+    )
+
+
+def test_render_projection_fault_is_undecided_and_never_reads_the_local_buffer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    events = _all_events()
+    jsonl, md = _write_pair(tmp_path, events, events)
+    monkeypatch.setenv(EVENTS_ENV, str(jsonl))
+
+    def _fault() -> ModelWorkLedgerProjectionSnapshot:
+        raise WorkLedgerProjectionError(kind="unreachable", reason="projection down")
+
+    monkeypatch.setattr(runtime_work_ledger, "fetch_projection_snapshot", _fault)
+    assert main(["render", "--check", "--md", str(md)]) == 2
+    out = capsys.readouterr().out
+    assert "verdict=undecided query=render mode=check" in out
+    assert "projection down" in out
+    assert str(jsonl) not in out
+
+
+def test_render_module_carries_neither_the_ledger_file_name_nor_its_path_variable() -> (
+    None
+):
+    source = Path(render_cli.__file__).read_text(encoding="utf-8")
+    assert "ROLLING_WORK_LEDGER" not in source
+    assert "ONEX_LEDGER_PATH" not in source
+    assert not hasattr(render_cli, "MD_LEDGER_PATH_ENV")

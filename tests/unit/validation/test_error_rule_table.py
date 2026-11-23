@@ -432,7 +432,7 @@ def test_error_rule_table_runtime_overlay_verdicts_match(
     ledger.write_text(
         '2026-11-04T17:10:13Z | RULING | ticket=OMN-19998 | "fixture source"\n'
     )
-    monkeypatch.setenv("ONEX_LEDGER_PATH", str(ledger))
+    monkeypatch.setenv("ONEX_ERROR_RULE_SOURCES", str(ledger))
     monkeypatch.delenv("ONEX_ERROR_RULE_ACTION_REGISTRY", raising=False)
     monkeypatch.delenv("ONEX_ERROR_RULE_MEASUREMENTS", raising=False)
     monkeypatch.delenv("ONEX_ERROR_RULE_AUTHORIZED_MODES", raising=False)
@@ -519,7 +519,7 @@ def test_error_rule_table_file_authorities_are_separate(
             }
         )
     )
-    monkeypatch.setenv("ONEX_LEDGER_PATH", str(ledger))
+    monkeypatch.setenv("ONEX_ERROR_RULE_SOURCES", str(ledger))
     monkeypatch.setenv("ONEX_ERROR_RULE_ACTION_REGISTRY", str(registry))
     monkeypatch.delenv("ONEX_ERROR_RULE_MEASUREMENTS", raising=False)
     monkeypatch.delenv("ONEX_ERROR_RULE_AUTHORIZED_MODES", raising=False)
