@@ -516,3 +516,15 @@ def test_release_changelog_retains_version_0_47_76_in_root_readme() -> None:
         "- fix: first_party_ref pairs hook rev and CI tag as one home (#2347)" in readme
     )
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
+
+
+def test_release_changelog_retains_version_0_47_77_in_root_readme() -> None:
+    """Keep the 0.47.77 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.77 (2026-11-23)" in readme
+    assert "### Included Since v0.47.76" in readme
+    assert (
+        "- fix: resolve YAML merge keys in the precommit interpreter matcher independent of pyyaml version (#2358)"
+        in readme
+    )
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()
