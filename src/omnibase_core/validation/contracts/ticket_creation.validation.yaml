@@ -449,7 +449,7 @@ validation:
           - pull_request
           - file_line
         citation_patterns:
-          - (?m)^(?P<path>[A-Za-z0-9_./-]*ROLLING_WORK_LEDGER[A-Za-z0-9_.-]*\.md):(?P<line>[1-9][0-9]*)$
+          - (?m)^(?P<path>[A-Za-z0-9_./-]*_WORK_LEDGER[A-Za-z0-9_.-]*\.md):(?P<line>[1-9][0-9]*)$
           - (?m)^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+#[1-9][0-9]*$
           - (?m)^[A-Za-z0-9_./-]+\.[A-Za-z0-9]+:[1-9][0-9]*$
         citation_examples:

@@ -1,0 +1,107 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26514
+title: "The omnibase_core work-ledger render CLI and three validation policies read the ledger only through
+  the bus and carry no ledger file name or path variable in runtime code"
+summary: "After the retirement of the render command and the error rule table sources variable on dev
+  (OMN-26513), the two remaining census files in runtime position, the ticket creation citation pattern
+  and the hardcoded model config history globs, match a work-ledger family spelling instead of the one
+  file name. The census row of omnibase_core is lowered from 10 to 8 files and the runtime count reads
+  0. No check, rule or ratchet is widened beyond the family spelling, and the citation pattern and the
+  history globs still match every file they matched."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26514-render-through-the-bus
+    statement: "No runtime file of omnibase_core carries the ledger file name or its path variable: the
+      render command and the error rule table sources variable are gone on dev, and the citation pattern
+      and the history globs name the work-ledger family spelling."
+    acceptance:
+      - id: AC1
+        statement: "AC1: the four omnibase_core runtime files read and write the ledger only through the
+          bus-backed ledger client and carry neither the ledger file name nor the path variable -- falsifier:
+          census node over omnibase_core with --verbose prints runtime=0 and lists none of the four paths"
+      - id: AC2
+        statement: "AC2: a test built red-first fails on the pre-change code and passes after, for the
+          changed reader in cli_work_ledger_render.py -- falsifier: uv run pytest tests/unit/models/events/work/test_work_ledger_render.py
+          -q"
+      - id: AC3
+        statement: "AC3: the validation contracts that named the ledger file still validate their rules
+          after the change -- falsifier: uv run pytest tests/unit/validation/test_error_rule_table.py
+          tests/unit/validation/test_ticket_creation_parity.py tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+          -q"
+      - id: AC4
+        statement: "AC4: integrated: on the dev lane the changed omnibase_core render command reads the
+          ledger through the bus-backed client and the census run on the lab host reads back omnibase_core
+          runtime=0 -- falsifier: onex run on a lab host of the render command against the dev lane and
+          the census node over omnibase_core, the printed counts read back"
+evidence_requirements:
+  - kind: tests
+    description: "The family-spelling, render, write-guard, error rule table, ticket creation parity and
+      hardcoded model config tests pass at the head."
+    command: uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py tests/unit/models/events/work/test_work_ledger_render.py
+      tests/unit/handlers/test_handler_ledger_write_guard.py tests/unit/validation/test_error_rule_table.py
+      tests/unit/validation/test_ticket_creation_parity.py tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py
+      -n 0 -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26514-ac1
+    description: "The ticket creation citation pattern and the history globs carry no ledger file name,
+      and the census row of omnibase_core is lowered to the count the census reads."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py
+          tests/unit/validation/test_no_ledger_file_path.py -n 0 -p no:cacheprovider -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: command
+        check_value: "grep -q 'omnibase_core: 8' config/ledger_file_census_ratchet.yaml"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26514-ac2
+    description: "The family-spelling tests fail on the pre-change policy files and pass at the head;
+      the render tests pass at the head."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py
+          tests/unit/models/events/work/test_work_ledger_render.py -n 0 -p no:cacheprovider -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26514-ac3
+    description: "The error rule table, ticket creation parity and hardcoded model config tests pass at
+      the head with the family spellings."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py
+          tests/unit/validation/test_error_rule_table.py tests/unit/validation/test_ticket_creation_parity.py
+          tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py -n 0 -p no:cacheprovider
+          -q"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26514-ac4
+    description: "The render subcommand is retired, so the work-ledger runtime reads the ledger only through
+      the projection client, and the two policy files carry the family spelling (these ledger_name tests
+      fail on the merge base's policy files); the census read-back on the lab host is recorded in the
+      pull request lab line."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py
+          tests/unit/validation/test_no_ledger_file_path.py -n 0 -p no:cacheprovider -q -k 'render or
+          ledger_name'"
+        cwd: ${OMNI_HOME}/omnibase_core

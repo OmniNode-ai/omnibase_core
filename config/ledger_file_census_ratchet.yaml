@@ -2,15 +2,13 @@
 # The shrink-only count of files in this repository that read or write the ledger file.
 # A repository whose count rises above its row fails the hook; a row is only ever lowered.
 ratchet:
-  omnibase_core: 10
+  omnibase_core: 8
 # The `files` table holds the files that hold such a reader or writer, with their line counts (run the
 # census node with --per-file): a file with no row, or with more lines than its row, fails the census.
 # A row is only ever lowered, and a file is only ever dropped.
 files:
   omnibase_core:
     contracts/OMN-21147.yaml: 1
-    src/omnibase_core/validation/contracts/ticket_creation.validation.yaml: 1
-    src/omnibase_core/validation/hardcoded_model_config/policy.yaml: 1
     tests/conftest.py: 1
     tests/fixtures/andon_replay/snapshots/job_fin_claude3019_0035.json: 1
     tests/unit/models/events/work/test_model_work_kinds_v2.py: 1
