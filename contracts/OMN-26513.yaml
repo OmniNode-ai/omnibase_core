@@ -1,0 +1,92 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-26513
+title: The omnibase_core work-ledger render CLI, error rule table, ticket creation and hardcoded model
+  config validations name no ledger file path variable or file name in runtime code
+summary: The error-rule table validator resolves its ledger and ticket sources from the work ledger projection
+  (the bus read behind onex-work-ledger --source) instead of the file its contract named through an environment
+  variable, and its contract and policy model drop the sources_env key. The onex-work-ledger render --check
+  and --repair divergence check, which compared the md ledger file with the JSON-lines file, is retired
+  with its subcommand, its error class and its tests. The ticket creation citation grammar and the hardcoded
+  model config exclusion glob stay, classed as guards, because each is the data of a consumer outside
+  this change.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26513-no-ledger-file-in-runtime-code
+    statement: No runtime file of omnibase_core reads or writes the ledger file, and each of the four
+      census hits is a moved reader, a retired checker or a classified guard.
+    acceptance:
+      - id: AC1
+        statement: 'AC1: the census node, run over the omnibase_core worktree, lists none of the 4 runtime
+          files as a hit, or each remaining one is classified guard or prose with the reason on the pull
+          request -- falsifier: ONEX_LEDGER_CENSUS_ROOT set and uv run python -m omnimarket.nodes.node_work_ledger_file_census_effect
+          --packaged-overlay --register omnibase_core --directory omnibase_core=<worktree> --verbose,
+          grep of the 4 paths, run first on origin/dev as the positive control'
+      - id: AC2
+        statement: 'AC2: a test run with the ledger path variable unset and no ledger file on disk shows
+          each moved reader or writer calling the bus-backed work-ledger client and never opening the
+          file -- falsifier: uv run pytest tests/unit -k ledger_bus -q, failing on the merge base'
+      - id: AC3
+        statement: 'AC3: no moved module or validation contract carries the ledger path variable or the
+          ledger file name as a path to read or write -- falsifier: uv run pytest tests/unit -k no_ledger_file_path
+          -q, failing on the merge base'
+evidence_requirements:
+  - kind: tests
+    description: The ledger bus and no-ledger-file-path tests pass at the head
+    command: uv run pytest tests/unit/validation/test_error_rule_table_ledger_bus.py tests/unit/validation/test_no_ledger_file_path.py
+      -q -o addopts=''
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26513-ac1-census-group-files
+    description: Two of the four census files are gone from runtime code (the render CLI is retired, the
+      error rule table contract no longer names the variable); the other two are guards classed on the
+      pull request. The tests pin that no runtime file names the path variable.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_no_ledger_file_path.py -q -o addopts=''
+          -k runtime_code_names_the_variable_nowhere
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26513-ac2-ledger-bus
+    description: With the ledger path variable unset and no ledger file on disk, the error rule table
+      validator resolves its sources through the projection client and never opens a ledger file.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_error_rule_table_ledger_bus.py -q -o addopts=''
+          -k ledger_bus
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26513-ac3-no-ledger-file-path
+    description: The error rule table contract and policy model carry no ledger path variable, and the
+      render CLI module and its subcommand are gone.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_no_ledger_file_path.py -q -o addopts=''
+          -k no_ledger_file_path
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26513-deploy-hosted-bus-read
+    description: Hosted deploy check for the library change. The validator reads ledger sources through
+      the projection client with no ledger file, and a projection fault is reported, never read as an
+      empty ledger.
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/validation/test_error_rule_table_ledger_bus.py -q -o addopts=''
+          -k ledger_bus_fault_is_reported_and_never_read_as_empty
+        cwd: ${OMNI_HOME}/omnibase_core

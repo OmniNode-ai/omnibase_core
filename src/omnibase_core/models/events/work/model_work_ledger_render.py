@@ -118,6 +118,7 @@ __all__ = [
     "TYPED_SOURCE_CELL",
     "index_events",
     "render_ledger_row",
+    "row_stamp",
 ]
 
 EPOCH_BANNER_ROW_TYPE: Final = "EPOCH"
@@ -631,6 +632,11 @@ def _canonical(event: ModelWorkEvent) -> str:
 
 def _stamp(moment: datetime) -> str:
     return moment.astimezone(UTC).strftime(_STAMP_FORMAT)
+
+
+def row_stamp(moment: datetime) -> str:
+    """The stamp cell a rendered row carries for ``moment``: UTC, to the second."""
+    return _stamp(moment)
 
 
 def _lane(actor: ModelActor) -> str:

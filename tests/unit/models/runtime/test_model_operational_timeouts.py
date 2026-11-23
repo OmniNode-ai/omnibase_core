@@ -62,7 +62,6 @@ _SOURCES_WITHOUT_TIMEOUT_LITERALS = [
     "models/discovery/model_tool_invocation_event.py",
     "models/health/model_health_check_config.py",
     "analysis/consumer_graph.py",
-    "cli/cli_work_ledger_render.py",
     "nodes/node_source_file_gather_effect/runtime_shared_token_policy.py",
     "validation/validator_contracts.py",
     "validation/validator_occ_merge_eligibility.py",

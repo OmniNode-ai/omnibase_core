@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import copy
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,19 @@ from omnibase_core.models.error_rule_table.model_error_rule_check_input import (
 from omnibase_core.models.error_rule_table.model_error_rule_measurement import (
     ModelErrorRuleMeasurement,
 )
+from omnibase_core.models.events.work import (
+    ModelSessionActor,
+    ModelWorkLedgerRecord,
+    ModelWorkRulingRecorded,
+    dump_work_ledger_line,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_projection_row import (
+    ModelWorkLedgerProjectionRow,
+)
+from omnibase_core.models.nodes.work_ledger_state.model_work_ledger_projection_snapshot import (
+    ModelWorkLedgerProjectionSnapshot,
+)
+from omnibase_core.validation import validator_error_rule_table
 from omnibase_core.validation.checker_error_rule_table import (
     action_contract_digest,
     check_error_rule_table,
@@ -29,6 +44,46 @@ from omnibase_core.validation.checker_error_rule_table import (
 from omnibase_core.validation.validator_error_rule_table import ValidatorErrorRuleTable
 
 pytestmark = pytest.mark.unit
+
+
+def project_events(*events: Any) -> ModelWorkLedgerProjectionSnapshot:
+    """A work ledger projection snapshot holding ``events``, as the bus read serves it."""
+    rows = tuple(
+        ModelWorkLedgerProjectionRow(
+            event_id=event.event_id,
+            record=dump_work_ledger_line(
+                ModelWorkLedgerRecord.model_validate(
+                    {"schema": "onex.work-ledger/1", "event": event}
+                )
+            ),
+        )
+        for event in events
+    )
+    return ModelWorkLedgerProjectionSnapshot(
+        rows=rows, applied_offset=1, end_offset=1, lag_records=0
+    )
+
+
+def ruling_event(ticket: str | None) -> ModelWorkRulingRecorded:
+    """The ruling the fixture source ``ledger:2026-11-04T17:10:13Z`` names."""
+    return ModelWorkRulingRecorded(
+        event_id=uuid.UUID("00000000-0000-4000-8000-000000000001"),
+        emitted_at=datetime(2026, 11, 4, 17, 10, 13, tzinfo=UTC),
+        actor=ModelSessionActor(session_handle="lane-a", agent_kind="build-lane"),
+        summary="a fixture ruling",
+        ticket_id=ticket,
+        operator_words="fixture source",
+        question="Which source does the fixture cite?",
+    )
+
+
+def stub_ledger_projection(
+    monkeypatch: pytest.MonkeyPatch, snapshot: ModelWorkLedgerProjectionSnapshot
+) -> None:
+    """Serve ``snapshot`` as the bus read the validator makes for its ledger sources."""
+    monkeypatch.setattr(
+        validator_error_rule_table, "fetch_projection_snapshot", lambda: snapshot
+    )
 
 
 def row() -> dict[str, Any]:
@@ -428,11 +483,7 @@ def test_error_rule_table_runtime_overlay_verdicts_match(
         main,
     )
 
-    ledger = tmp_path / "ledger.md"
-    ledger.write_text(
-        '2026-11-04T17:10:13Z | RULING | ticket=OMN-19998 | "fixture source"\n'
-    )
-    monkeypatch.setenv("ONEX_LEDGER_PATH", str(ledger))
+    stub_ledger_projection(monkeypatch, project_events(ruling_event("OMN-19998")))
     monkeypatch.delenv("ONEX_ERROR_RULE_ACTION_REGISTRY", raising=False)
     monkeypatch.delenv("ONEX_ERROR_RULE_MEASUREMENTS", raising=False)
     monkeypatch.delenv("ONEX_ERROR_RULE_AUTHORIZED_MODES", raising=False)
@@ -504,10 +555,6 @@ def test_error_rule_table_file_authorities_are_separate(
     value = executable(contracts)
     target = tmp_path / "error_rules.yaml"
     target.write_text(yaml.safe_dump({"error_rules": [value]}))
-    ledger = tmp_path / "ledger.md"
-    ledger.write_text(
-        '2026-11-04T17:10:13Z | RULING | ticket=OMN-19998 | "fixture source"\n'
-    )
     registry = tmp_path / "registry.yaml"
     registry.write_text(
         yaml.safe_dump(
@@ -519,7 +566,7 @@ def test_error_rule_table_file_authorities_are_separate(
             }
         )
     )
-    monkeypatch.setenv("ONEX_LEDGER_PATH", str(ledger))
+    stub_ledger_projection(monkeypatch, project_events(ruling_event("OMN-19998")))
     monkeypatch.setenv("ONEX_ERROR_RULE_ACTION_REGISTRY", str(registry))
     monkeypatch.delenv("ONEX_ERROR_RULE_MEASUREMENTS", raising=False)
     monkeypatch.delenv("ONEX_ERROR_RULE_AUTHORIZED_MODES", raising=False)
