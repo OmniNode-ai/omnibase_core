@@ -92,8 +92,9 @@ dod_evidence:
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26514-ac4
     description: "The render subcommand is retired, so the work-ledger runtime reads the ledger only through
-      the projection client; the census read-back on the lab host is recorded in the pull request lab
-      line."
+      the projection client, and the two policy files carry the family spelling (these ledger_name tests
+      fail on the merge base's policy files); the census read-back on the lab host is recorded in the
+      pull request lab line."
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
@@ -101,5 +102,6 @@ dod_evidence:
     checks:
       - check_type: test_passes
         check_value: "uv run pytest tests/unit/validation/test_no_ledger_file_name_in_policy_contracts.py
-          tests/unit/validation/test_no_ledger_file_path.py -n 0 -p no:cacheprovider -q -k render"
+          tests/unit/validation/test_no_ledger_file_path.py -n 0 -p no:cacheprovider -q -k 'render or
+          ledger_name'"
         cwd: ${OMNI_HOME}/omnibase_core
