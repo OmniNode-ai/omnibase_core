@@ -16,6 +16,7 @@ from typing import TYPE_CHECKING
 
 import click
 
+import omnibase_core.models.cli.model_cli_command_surface as _surface
 from omnibase_core.enums.enum_cli_exit_code import EnumCLIExitCode
 from omnibase_core.enums.enum_core_error_code import EnumCoreErrorCode
 from omnibase_core.enums.enum_log_level import EnumLogLevel
@@ -135,14 +136,7 @@ _LAZY_BUILTIN_COMMANDS: dict[str, tuple[str, str]] = {
 
 
 class _LazyCoreCommandGroup(click.Group):
-    """A :class:`click.Group` whose built-in core subcommands import lazily.
-
-    ``list_commands`` answers from names alone (no import). ``get_command``
-    imports the target module on first resolution of that specific name,
-    validates the resolved attribute is a real click command, caches it on
-    ``self.commands`` (so a second lookup is free, matching click's own
-    behaviour for eagerly-registered commands), and returns it.
-    """
+    """Lazy imports; lists and resolves customer groups only unless switched (OMN-26518)."""
 
     def __init__(
         self,
@@ -159,9 +153,14 @@ class _LazyCoreCommandGroup(click.Group):
         names = set(super().list_commands(ctx))
         names.update(self._lazy_commands)
         names.update(self._lazy_extensions)
-        return sorted(names)
+        return sorted(filter(_surface.command_is_visible, names))
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
+        if not _surface.command_is_visible(cmd_name, ctx.meta):
+            return None
+        return self._load(ctx, cmd_name)
+
+    def _load(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         command = super().get_command(ctx, cmd_name)
         if command is not None:
             return command
@@ -237,6 +236,7 @@ def cli(ctx: click.Context, verbose: bool) -> None:
 
     if ctx.invoked_subcommand is None:
         # OMN-23413: in a terminal, `onex` alone opens a package's `tui`; else help.
+        ctx.meta[_surface.bare_onex_meta_key] = True  # tui is the program's own pick
         tui = cli.get_command(ctx, "tui") if _interactive_terminal() else None
         ctx.invoke(tui) if tui is not None else click.echo(ctx.get_help())
 

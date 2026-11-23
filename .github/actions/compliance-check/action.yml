@@ -23,6 +23,8 @@ runs:
     - name: Check if onex compliance command exists
       id: check-command
       shell: bash
+      env:
+        ONEX_CLI_SHOW_ALL_COMMANDS: "1"  # OMN-26518: compliance is an internal group
       run: |
         if uv run python -m omnibase_core.cli.cli_commands compliance check --help >/dev/null 2>&1; then
           echo "available=true" >> "$GITHUB_OUTPUT"
@@ -35,6 +37,8 @@ runs:
       id: compliance
       if: steps.check-command.outputs.available == 'true'
       shell: bash
+      env:
+        ONEX_CLI_SHOW_ALL_COMMANDS: "1"  # OMN-26518: compliance is an internal group
       run: |
         mkdir -p .onex_state/compliance
         if uv run python -m omnibase_core.cli.cli_commands compliance check --repo-root . --output .onex_state/compliance/report.yaml; then

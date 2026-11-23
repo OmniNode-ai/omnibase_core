@@ -1,32 +1,25 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-"""The md renderer and ``onex-work-ledger render`` (OMN-16182, typed work ledger plan T6).
+"""The md renderer of the typed work ledger (OMN-16182, typed work ledger plan T6).
 
 - AC1: each kind renders the row type from the plan's section 5.1 mapping, with
   ``lane=``, an ``id=<emitted_at>-<lane>`` for the id-bearing types (HOLD, MSG,
   ACK), an ``event=<uuid>`` cell and a ``src=typed`` cell. Golden rows, one per
   kind, plus the claim-release RELEASE.
-- AC2: ``render --check`` exits 3 when the md holds an ``event=`` row whose id
-  is absent from the JSONL, and 0 on a consistent pair.
-- AC3: ``render --repair`` appends exactly the missing rendered rows, and a
-  second run changes nothing (sha256 compared before and after).
 - OMN-19620 AC6 (plan T17): a question renders as a MSG to the operator with a
   ``question=`` cell, a withdrawal as a STATUS with ``withdraws=`` and
   ``withdrawal=`` cells, and a ruling with ``answers`` adds an ``answers=`` cell.
 
-The subprocess tests run the installed console script the way a skill runs it.
+The ``onex-work-ledger render --check | --repair`` divergence check of the md file against
+the JSON-lines file is retired (OMN-26513): both are file ledgers, and the bus holds the truth.
 """
 
 from __future__ import annotations
 
-import hashlib
-import subprocess
-import sys
 import uuid
 from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
-from pathlib import Path
 
 import pytest
 
@@ -40,7 +33,6 @@ from omnibase_core.enums.enum_work_outcome import EnumWorkOutcome
 from omnibase_core.enums.governance.enum_pr_state import EnumPRState
 from omnibase_core.errors.error_work_ledger_render import WorkLedgerRenderError
 from omnibase_core.models.events.work import (
-    WORK_LEDGER_SCHEMA,
     ModelEvidenceRefs,
     ModelHoldScope,
     ModelLedgerRowRef,
@@ -58,7 +50,6 @@ from omnibase_core.models.events.work import (
     ModelWorkHoldPlaced,
     ModelWorkHoldReleased,
     ModelWorkLedgerEpochOpened,
-    ModelWorkLedgerRecord,
     ModelWorkMessageAcked,
     ModelWorkMessageSent,
     ModelWorkOperatorConsentRecorded,
@@ -67,7 +58,6 @@ from omnibase_core.models.events.work import (
     ModelWorkResultRecorded,
     ModelWorkRulingRecorded,
     ModelWorkStatusRecorded,
-    dump_work_ledger_line,
 )
 from omnibase_core.models.events.work.model_work_ledger_render import (
     EPOCH_BANNER_ROW_TYPE,
@@ -76,15 +66,9 @@ from omnibase_core.models.events.work.model_work_ledger_render import (
     render_ledger_row,
 )
 from omnibase_core.models.primitives.model_semver import ModelSemVer
-from omnibase_core.nodes.node_work_ledger_state_compute.runtime_work_ledger import (
-    main,
-)
 
 pytestmark = pytest.mark.unit
 
-SCRIPT = Path(sys.executable).with_name("onex-work-ledger")
-EVENTS_ENV = "ONEX_WORK_LEDGER_PATH"
-MD_ENV = "ONEX_LEDGER_PATH"
 
 T0 = datetime(2026, 9, 24, 12, 0, 0, tzinfo=UTC)
 
@@ -855,255 +839,3 @@ def test_conflicting_duplicate_in_index_is_refused() -> None:
 
 def test_identical_duplicate_in_index_counts_once() -> None:
     assert len(index_events([_msg(), _msg()])) == 1
-
-
-# ------------------------------------------------------------- AC2 and AC3 CLI
-
-
-def _jsonl_line(event: ModelWorkEvent) -> str:
-    return dump_work_ledger_line(
-        ModelWorkLedgerRecord.model_validate(
-            {"schema": WORK_LEDGER_SCHEMA, "event": event}
-        )
-    )
-
-
-LEGACY_MD = (
-    "# Rolling work ledger\n"
-    "\n"
-    "2026-09-23T14:27:35Z | STATUS | lane=omn17427-foreground | a legacy prose row\n"
-)
-
-
-def _write_pair(
-    tmp_path: Path, events: list[ModelWorkEvent], md_events: list[ModelWorkEvent]
-) -> tuple[Path, Path]:
-    jsonl = tmp_path / "ROLLING_WORK_LEDGER.jsonl"
-    jsonl.write_text("".join(_jsonl_line(e) + "\n" for e in events), encoding="utf-8")
-    index = index_events(events + md_events)
-    md = tmp_path / "ROLLING_WORK_LEDGER.md"
-    md.write_text(
-        LEGACY_MD + "".join(render_ledger_row(e, index) + "\n" for e in md_events),
-        encoding="utf-8",
-    )
-    return jsonl, md
-
-
-def _run(
-    jsonl: Path | None, md: Path | None, *args: str
-) -> subprocess.CompletedProcess[str]:
-    assert SCRIPT.exists(), f"console script missing: {SCRIPT}"
-    env = {"PATH": str(SCRIPT.parent)}
-    if jsonl is not None:
-        env[EVENTS_ENV] = str(jsonl)
-    if md is not None:
-        env[MD_ENV] = str(md)
-    return subprocess.run(
-        [str(SCRIPT), "render", *args],
-        capture_output=True,
-        text=True,
-        env=env,
-        check=False,
-        timeout=120,
-    )
-
-
-def _sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def test_check_is_clear_on_a_consistent_pair(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    proc = _run(jsonl, md, "--check")
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-    assert "verdict=clear query=render mode=check" in proc.stdout
-    assert (
-        f"events={len(events)} md_rows={len(events)} md_ahead=0 md_missing=0"
-        in proc.stdout
-    )
-
-
-def test_check_finds_an_md_row_absent_from_the_jsonl(tmp_path: Path) -> None:
-    events = _all_events()
-    ahead = _msg().model_copy(update={"event_id": _id(800), "emitted_at": _at(40)})
-    jsonl, md = _write_pair(tmp_path, events, [*events, ahead])
-    proc = _run(jsonl, md, "--check")
-    assert proc.returncode == 3, proc.stdout + proc.stderr
-    assert "verdict=found query=render mode=check" in proc.stdout
-    assert f"divergence=md-ahead event={_id(800)}" in proc.stdout
-    assert "md_ahead=1 md_missing=0" in proc.stdout
-
-
-def test_check_finds_a_jsonl_event_missing_from_the_md(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events[:-1])
-    proc = _run(jsonl, md, "--check")
-    assert proc.returncode == 3, proc.stdout + proc.stderr
-    assert f"divergence=md-missing event={events[-1].event_id}" in proc.stdout
-    assert "md_ahead=0 md_missing=1" in proc.stdout
-
-
-def test_check_prints_both_headers(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    lines = _run(jsonl, md, "--check").stdout.splitlines()
-    assert lines[0] == (
-        f"ledger={jsonl} sha256={_sha(jsonl)} lines={len(events)} epoch={EPOCH_ID}"
-    )
-    md_lines = len(md.read_text(encoding="utf-8").splitlines())
-    assert lines[1] == f"md={md} sha256={_sha(md)} lines={md_lines}"
-
-
-def test_check_is_undecided_without_the_events_variable(tmp_path: Path) -> None:
-    _, md = _write_pair(tmp_path, _all_events(), _all_events())
-    proc = _run(None, md, "--check")
-    assert proc.returncode == 2
-    assert EVENTS_ENV in proc.stdout
-
-
-def test_check_is_undecided_without_the_md_path(tmp_path: Path) -> None:
-    jsonl, _ = _write_pair(tmp_path, _all_events(), _all_events())
-    proc = _run(jsonl, None, "--check")
-    assert proc.returncode == 2
-    assert MD_ENV in proc.stdout
-
-
-def test_md_option_overrides_the_md_variable(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    proc = _run(jsonl, tmp_path / "absent.md", "--check", "--md", str(md))
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-
-
-def test_check_is_undecided_on_an_unparseable_jsonl_line(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    with jsonl.open("a", encoding="utf-8") as handle:
-        handle.write('{"schema":"onex.work-ledger/1"}\n')
-    proc = _run(jsonl, md, "--check")
-    assert proc.returncode == 2
-    assert "reason=" in proc.stdout
-
-
-def test_check_ignores_an_unterminated_jsonl_tail(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    with jsonl.open("a", encoding="utf-8") as handle:
-        handle.write('{"schema":"onex.wo')
-    proc = _run(jsonl, md, "--check")
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-
-
-def test_check_is_undecided_on_a_conflicting_duplicate_event(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    with jsonl.open("a", encoding="utf-8") as handle:
-        handle.write(_jsonl_line(_msg().model_copy(update={"summary": "other"})) + "\n")
-    proc = _run(jsonl, md, "--check")
-    assert proc.returncode == 2
-    assert "conflicting" in proc.stdout
-
-
-def test_check_and_repair_are_mutually_exclusive_and_one_is_required(
-    tmp_path: Path,
-) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    assert _run(jsonl, md).returncode == 2
-    assert _run(jsonl, md, "--check", "--repair").returncode == 2
-
-
-def test_repair_appends_exactly_the_missing_rows_then_changes_nothing(
-    tmp_path: Path,
-) -> None:
-    events = _all_events()
-    kept = [events[0], events[2], events[4]]
-    jsonl, md = _write_pair(tmp_path, events, kept)
-    before = md.read_text(encoding="utf-8")
-    index = index_events(events)
-    missing = [e for e in events if e not in kept]
-
-    first = _run(jsonl, md, "--repair")
-    assert first.returncode == 0, first.stdout + first.stderr
-    assert f"repaired={len(missing)}" in first.stdout
-    after = md.read_text(encoding="utf-8")
-    assert after == before + "".join(
-        render_ledger_row(e, index) + "\n" for e in missing
-    )
-
-    sha_before = _sha(md)
-    second = _run(jsonl, md, "--repair")
-    assert second.returncode == 0, second.stdout + second.stderr
-    assert "repaired=0" in second.stdout
-    assert _sha(md) == sha_before
-
-    check = _run(jsonl, md, "--check")
-    assert check.returncode == 0, check.stdout + check.stderr
-
-
-def test_repair_adds_a_newline_before_appending_to_an_unterminated_md(
-    tmp_path: Path,
-) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events[:-1])
-    md.write_text(md.read_text(encoding="utf-8").removesuffix("\n"), encoding="utf-8")
-    proc = _run(jsonl, md, "--repair")
-    assert proc.returncode == 0, proc.stdout + proc.stderr
-    tail = md.read_text(encoding="utf-8").splitlines()[-1]
-    assert tail == render_ledger_row(events[-1], index_events(events))
-
-
-def test_repair_still_reports_md_ahead_and_writes_nothing_for_it(
-    tmp_path: Path,
-) -> None:
-    events = _all_events()
-    ahead = _msg().model_copy(update={"event_id": _id(801), "emitted_at": _at(41)})
-    jsonl, md = _write_pair(tmp_path, events, [*events, ahead])
-    sha_before = _sha(md)
-    proc = _run(jsonl, md, "--repair")
-    assert proc.returncode == 3
-    assert f"divergence=md-ahead event={_id(801)}" in proc.stdout
-    assert _sha(md) == sha_before
-
-
-def test_repair_writes_nothing_when_a_missing_row_cannot_render(tmp_path: Path) -> None:
-    events = [_epoch(), _ack()]  # the ack's message is not in the ledger
-    jsonl, md = _write_pair(tmp_path, events, [_epoch()])
-    sha_before = _sha(md)
-    proc = _run(jsonl, md, "--repair")
-    assert proc.returncode == 2
-    assert "reason=" in proc.stdout
-    assert _sha(md) == sha_before
-
-
-def test_repair_takes_the_md_lock_file_beside_the_ledger(tmp_path: Path) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events[:1])
-    assert _run(jsonl, md, "--repair").returncode == 0
-    locks = tmp_path / ".ledger_locks"
-    digest = hashlib.sha256(str(md.resolve()).encode("utf-8")).hexdigest()[:24]
-    assert (locks / f"ROLLING_WORK_LEDGER.md.{digest}.flock").exists()
-    assert (locks / ".gitignore").read_text(encoding="utf-8").endswith("*\n")
-
-
-def test_repair_md_lock_file_is_owner_only(tmp_path: Path) -> None:
-    # CodeQL py/overly-permissive-file: the lock file is created without group
-    # or world permission bits, whatever the caller's umask.
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events[:1])
-    assert _run(jsonl, md, "--repair").returncode == 0
-    digest = hashlib.sha256(str(md.resolve()).encode("utf-8")).hexdigest()[:24]
-    lock = tmp_path / ".ledger_locks" / f"ROLLING_WORK_LEDGER.md.{digest}.flock"
-    assert lock.stat().st_mode & 0o077 == 0
-
-
-def test_render_in_process_matches_the_script(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-) -> None:
-    events = _all_events()
-    jsonl, md = _write_pair(tmp_path, events, events)
-    monkeypatch.setenv(EVENTS_ENV, str(jsonl))
-    monkeypatch.setenv(MD_ENV, str(md))
-    assert main(["render", "--check"]) == 0
-    assert "verdict=clear query=render mode=check" in capsys.readouterr().out

@@ -37,7 +37,6 @@ validation:
         pr_subject: pr
         measurement_writer: node_error_rule_measurement_compute
         registry_env: ONEX_ERROR_RULE_ACTION_REGISTRY
-        sources_env: ONEX_LEDGER_PATH
         measurements_env: ONEX_ERROR_RULE_MEASUREMENTS
         modes_env: ONEX_ERROR_RULE_AUTHORIZED_MODES
         source_record_types: [RULING, OPERATOR-CONSENT]
