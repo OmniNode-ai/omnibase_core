@@ -516,3 +516,22 @@ def test_ac1_the_overlay_index_names_the_overlay_file_the_ci_passes() -> None:
     relative = index["overlays"]["node_consumer_install_check_effect"]
     assert (REPO_ROOT / "config/onex" / relative) == OVERLAY and OVERLAY.is_file()
     assert relative in REUSABLE.read_text(encoding="utf-8")
+
+
+def test_ac2_a_smoke_line_without_a_location_still_names_all_three(
+    tmp_path: Path,
+) -> None:
+    """The smoke script of omnimarket at 2026-11-23 printed no at= field."""
+    smoke_output = (
+        "LATEST-CORE-SMOKE FAIL node=node_create_ticket "
+        "module=omnimarket.nodes.node_create_ticket.handlers.core_ticket_guard "
+        f"symbol={REMOVED_MODULE} error=ModuleNotFoundError: No module named '{REMOVED_MODULE}'\n"
+        "LATEST-CORE-SMOKE packages=1460 modules_tried=11357 failed=1\n"
+    )
+    result, _ = _check(
+        _request(tmp_path, _overlay(tmp_path)), smoke_output=smoke_output
+    )
+    (line,) = result.failure_lines
+    assert "consumer=alpha" in line and f"missing={REMOVED_MODULE}" in line
+    assert "core_ticket_guard" in line
+    assert result.outcomes[0].smoke_summary.endswith("failed=1")

@@ -69,7 +69,7 @@ _IMPORT_LINE = re.compile(
 _ERROR_LINE = re.compile(r"^E\s+(?P<type>\w+): (?P<msg>.*)$", re.MULTILINE)
 _MISSING_MODULE = re.compile(r"No module named '(?P<mod>[^']+)'")
 _SMOKE_FAIL = re.compile(
-    r"^LATEST-CORE-SMOKE FAIL node=(?P<node>\S+) module=(?P<module>\S+) symbol=(?P<symbol>.+?) at=(?P<at>\S+) error=(?P<error>.*)$",
+    r"^LATEST-CORE-SMOKE FAIL node=(?P<node>\S+) module=(?P<module>\S+) symbol=(?P<symbol>.+?)(?: at=(?P<at>\S+))? error=(?P<error>.*)$",
     re.MULTILINE,
 )
 _CANNOT_IMPORT = re.compile(
@@ -169,7 +169,7 @@ def parse_smoke_output(
         ModelConsumerFinding(
             consumer=consumer,
             stage="smoke",
-            import_statement=f"import {m['module']} ({m['at']})",
+            import_statement=f"import {m['module']} ({m['at'] or 'location not reported'})",
             missing_name=m["symbol"],
             detail=f"node {m['node']}: {m['error'][:200]}",
             attributed_to_candidate=_touches(roots, m["symbol"], m["error"]),
@@ -242,6 +242,12 @@ class HandlerConsumerInstallCheck:
             ModelCommandRequest(argv=tuple(argv), cwd=cwd, timeout_seconds=timeout)
         )
         return done.returncode, done.output, done.timed_out
+
+    def _timed(
+        self, argv: Sequence[str], cwd: Path | None, timeout: float
+    ) -> tuple[tuple[int, str, bool], float]:
+        started = time.monotonic()
+        return self._run(argv, cwd, timeout), time.monotonic() - started
 
     def _check_one(
         self,
@@ -330,9 +336,37 @@ class HandlerConsumerInstallCheck:
         ]
         for group in spec.entry_point_groups:
             probe_cmd += ["--group", group]
-        step_started = time.monotonic()
-        _, probe_output, _ = self._run(probe_cmd, root, timeout)
-        stages["entry-point-import"] = time.monotonic() - step_started
+        collect_cmd = [
+            python,
+            "-m",
+            "pytest",
+            "--collect-only",
+            "-q",
+            "-p",
+            "no:cacheprovider",
+            "-o",
+            "addopts=",
+            *spec.collect_args,
+        ]
+        # The three read-only stages are independent processes: run them together.
+        with ThreadPoolExecutor(max_workers=3) as stage_pool:
+            probe_future = stage_pool.submit(self._timed, probe_cmd, root, timeout)
+            smoke_future = (
+                stage_pool.submit(
+                    self._timed,
+                    [python, "-P", str(root / spec.smoke_script)],
+                    root,
+                    timeout,
+                )
+                if spec.smoke_script
+                else None
+            )
+            collect_future = stage_pool.submit(self._timed, collect_cmd, root, timeout)
+            (_, probe_output, _), stages["entry-point-import"] = probe_future.result()
+            smoke_result = smoke_future.result() if smoke_future else None
+            (_, collect_output, collect_timed_out), stages["collection"] = (
+                collect_future.result()
+            )
         try:
             probed = json.loads(probe_out.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -355,18 +389,14 @@ class HandlerConsumerInstallCheck:
         ]
 
         smoke_summary = ""
-        if spec.smoke_script:
-            step_started = time.monotonic()
-            smoke_code, smoke_output, smoke_timed_out = self._run(
-                [python, "-P", str(root / spec.smoke_script)], root, timeout
-            )
+        if smoke_result is not None:
+            (smoke_code, smoke_output, smoke_timed_out), stages["smoke"] = smoke_result
             smoke_findings = parse_smoke_output(
                 spec.name, smoke_output, candidate.import_roots
             )
             if smoke_timed_out or (smoke_code not in (0, 1) and not smoke_findings):
                 return failed("smoke script", smoke_output)
             findings.extend(smoke_findings)
-            stages["smoke"] = time.monotonic() - step_started
             smoke_summary = next(
                 (
                     line
@@ -376,24 +406,6 @@ class HandlerConsumerInstallCheck:
                 "",
             )
 
-        step_started = time.monotonic()
-        _, collect_output, collect_timed_out = self._run(
-            [
-                python,
-                "-m",
-                "pytest",
-                "--collect-only",
-                "-q",
-                "-p",
-                "no:cacheprovider",
-                "-o",
-                "addopts=",
-                *spec.collect_args,
-            ],
-            root,
-            timeout,
-        )
-        stages["collection"] = time.monotonic() - step_started
         if collect_timed_out:
             return failed("collection (timed out)", collect_output)
         collected, collection_findings = parse_collection_output(
