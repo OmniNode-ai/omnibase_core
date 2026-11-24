@@ -1,0 +1,26 @@
+schema_version: "1.0.0"
+ticket_id: "OMN-26616"
+title: "feat(OMN-26616): customer-aware onex doctor and plain-words onex health"
+summary: >
+  On a customer install (OMNI_HOME unset or not a directory) onex doctor skips the Docker, Linear and
+  repository-sync checks, including when a package advertises them through the onex.doctor entry point.
+  onex health reports an unset KAFKA_BOOTSTRAP_SERVERS as a skipped check with a Fix line instead of a
+  raw KeyError.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: "tests"
+    description: "AC1 and AC3 tests fail on dev and pass on the branch"
+    command: "uv run pytest tests/unit/doctor/test_omn26616_ac1_customer_install.py tests/unit/cli/test_omn26616_ac3_health_kafka_unset.py -v"
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: "dod-omn26616-tests"
+    description: "AC1 and AC3 tests pass"
+    source: "manual"
+    checks:
+      - check_type: "command"
+        check_value: "uv run pytest tests/unit/doctor/test_omn26616_ac1_customer_install.py tests/unit/cli/test_omn26616_ac3_health_kafka_unset.py -v"

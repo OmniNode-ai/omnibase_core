@@ -30,10 +30,12 @@ class DoctorRegistry:
                 raise ValueError(msg)  # error-ok: registry duplicate guard
             self._checks[cid] = check_class
 
-    def discover(self) -> None:
+    def discover(self, exclude: frozenset[type[DoctorCheckBase]] = frozenset()) -> None:
         for ep in entry_points(group=ENTRY_POINT_GROUP):
             loaded = ep.load()
             if isinstance(loaded, type) and issubclass(loaded, DoctorCheckBase):
+                if loaded in exclude:
+                    continue
                 try:
                     self.register(loaded)
                 except ValueError:

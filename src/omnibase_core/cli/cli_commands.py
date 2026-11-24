@@ -572,13 +572,15 @@ def health(ctx: click.Context, component: str | None, as_json: bool) -> None:
         try:
             is_healthy, message = check_func()
             if not as_json:
-                status = (
-                    click.style("OK", fg="green")
-                    if is_healthy
-                    else click.style("FAIL", fg="red")
-                )
+                skipped = is_healthy and message.startswith(_KAFKA_SKIPPED_PREFIX)
+                if skipped:
+                    status = click.style("SKIP", fg="yellow")
+                elif is_healthy:
+                    status = click.style("OK", fg="green")
+                else:
+                    status = click.style("FAIL", fg="red")
                 click.echo(f"  [{status}] {check_name}")
-                if verbose or not is_healthy:
+                if verbose or skipped or not is_healthy:
                     click.echo(f"       {message}")
             results.append(
                 {"name": check_name, "healthy": is_healthy, "message": message}
@@ -727,6 +729,9 @@ def _check_error_handling() -> tuple[bool, str]:
         return False, f"Error: {e}"
 
 
+_KAFKA_SKIPPED_PREFIX = "Kafka check skipped"
+
+
 def _check_kafka_reachable() -> tuple[bool, str]:
     """Check Kafka/Redpanda TCP reachability.
 
@@ -736,7 +741,7 @@ def _check_kafka_reachable() -> tuple[bool, str]:
     raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
     if not raw or not str(raw).strip():
         return True, (
-            "KAFKA_BOOTSTRAP_SERVERS is not configured; Kafka check skipped. "
+            f"{_KAFKA_SKIPPED_PREFIX} because no Kafka address is set. "
             "Fix: export KAFKA_BOOTSTRAP_SERVERS=<host>:<port>"
         )
 
