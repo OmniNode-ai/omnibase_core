@@ -59,6 +59,8 @@ LONG_HELP = (
     "it found. A second sentence that only the wide terminals can show."
 )
 PLAIN_HELP = "A command whose package declares no help entry."
+HIDDEN = "omn26615-hidden"
+DEPRECATED = "omn26615-old"
 
 SLEEP_FILE = "omn26615_sleep.txt"
 
@@ -84,6 +86,16 @@ import click
 @click.command(name="{WITHOUT_HELP}", help={PLAIN_HELP!r})
 def plain_cmd() -> None:
     click.echo("ran-plain")
+
+
+@click.command(name="{HIDDEN}", help="A hidden command.", hidden=True)
+def hidden_cmd() -> None:
+    click.echo("ran-hidden")
+
+
+@click.command(name="{DEPRECATED}", help="An old command.", deprecated=True)
+def old_cmd() -> None:
+    click.echo("ran-old")
 """
 
 
@@ -99,6 +111,8 @@ def _make_dist(root: Path, *, declare_help: bool, extra_help: str = "") -> None:
         f"[{_CLI_EXTENSION_GROUP}]",
         f"{WITH_HELP} = {MODULE}:cmd",
         f"{WITHOUT_HELP} = {MODULE}_plain:plain_cmd",
+        f"{HIDDEN} = {MODULE}_plain:hidden_cmd",
+        f"{DEPRECATED} = {MODULE}_plain:old_cmd",
     ]
     if declare_help:
         lines += [f"[{HELP_GROUP}]", f"{WITH_HELP} = {LONG_HELP}"]
@@ -161,6 +175,19 @@ def test_a_command_with_no_help_entry_still_loads_and_prints(ext: Path) -> None:
     page = _render()
     assert WITHOUT_HELP in page
     assert PLAIN_HELP.split(".")[0] in page
+
+
+def test_hidden_and_deprecated_commands_keep_their_flags_beside_a_declared_one(
+    ext: Path,
+) -> None:
+    """A package declares no entry for a hidden or deprecated command (its own
+    drift test enforces that), so the page still hides one and labels the other,
+    while the declared neighbour is served from metadata."""
+    page = _render()
+    assert HIDDEN not in page
+    assert DEPRECATED in page
+    assert "DEPRECATED" in page
+    assert MODULE not in sys.modules
 
 
 def test_the_real_command_still_runs_after_the_page(ext: Path) -> None:

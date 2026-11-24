@@ -9,7 +9,7 @@ summary: "The command list of onex --help reads each extension's one-line help f
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
-  - "entry-point group onex.cli.help (entry name = command name, value = its one-line help)"
+  - public_api
 requirements:
   - id: req-omn26615-fast-help
     statement: "onex --help run without a terminal prints the same page in under 1 second (median of five
