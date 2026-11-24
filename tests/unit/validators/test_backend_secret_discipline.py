@@ -140,7 +140,7 @@ def test_cloud_backend_with_credential_ref_passes() -> None:
 
 
 def test_local_backend_no_ref_passes() -> None:
-    data = {"backends": [{"backend_id": "local-qwen", "tier": "local"}]}
+    data = {"backends": [{"backend_id": "local-backend", "tier": "local"}]}
     assert mod.scan_backends("fake.yaml", data) == []
 
 
@@ -177,7 +177,7 @@ def test_build_report_clean_bifrost_config_passes(tmp_path: Path) -> None:
         "  - backend_id: cloud-gemini-flash\n"
         "    tier: cheap_cloud\n"
         "    secret_ref: llm.gemini.api_key\n"
-        "  - backend_id: local-qwen\n"
+        "  - backend_id: local-backend\n"
         "    tier: local\n",
     )
     report = mod.build_report([cfg], cwd=tmp_path)
@@ -231,7 +231,7 @@ def test_non_config_file_ignored(tmp_path: Path) -> None:
 def test_main_exit_codes(tmp_path: Path) -> None:
     clean = _write(
         tmp_path / "clean.yaml",
-        "backends:\n  - backend_id: local-qwen\n    tier: local\n",
+        "backends:\n  - backend_id: local-backend\n    tier: local\n",
     )
     dirty = _write(
         tmp_path / "dirty.yaml",
