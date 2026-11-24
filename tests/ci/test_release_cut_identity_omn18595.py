@@ -528,3 +528,15 @@ def test_release_changelog_retains_version_0_47_77_in_root_readme() -> None:
         in readme
     )
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
+
+
+def test_release_changelog_retains_version_0_47_78_in_root_readme() -> None:
+    """Keep the 0.47.78 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.78 (2026-11-24)" in readme
+    assert "### Included Since v0.47.77" in readme
+    assert (
+        "- : the ledger render reads through the bus-backed ledger client (#2360)"
+        in readme
+    )
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()
