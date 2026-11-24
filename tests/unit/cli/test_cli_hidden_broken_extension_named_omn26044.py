@@ -185,3 +185,19 @@ def test_customer_mode_resolving_a_broken_hidden_name_does_not_unhide_it(
         root.get_command(click.Context(root), "broken-import")
 
     assert root.list_commands(click.Context(root)) == []
+
+
+def test_operator_switch_keeps_full_error_beside_the_named_customer_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    stub = _broken_import()
+    monkeypatch.delenv(SWITCH, raising=False)
+    customer = CliRunner().invoke(_root(stub), [stub.name])
+    assert "failed to load" in customer.output
+    assert _DIST_NAME not in customer.output
+
+    monkeypatch.setenv(SWITCH, "1")
+    root = _root(stub)
+    with pytest.raises(ModelOnexError) as excinfo:
+        root.get_command(click.Context(root), stub.name)
+    assert _DIST_NAME in str(excinfo.value)
