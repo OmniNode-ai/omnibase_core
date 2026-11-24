@@ -29,3 +29,11 @@ class ModelConsumerOutcome(BaseModel):
         default="",
         description="Set when checkout, venv or install failed before any import",
     )
+    stage_seconds: dict[str, float] = Field(
+        default_factory=dict,
+        description="Seconds per stage, for the added-time measurement",
+    )
+    smoke_summary: str = Field(
+        default="",
+        description="The consumer's own smoke script summary line, when it ran",
+    )

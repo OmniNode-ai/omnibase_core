@@ -106,7 +106,9 @@ def main(
         sys.stdout.write(
             f"consumer={outcome.consumer} ref={outcome.ref} sha={outcome.resolved_sha} "
             f"entry_points_imported={outcome.entry_points_imported} "
-            f"tests_collected={outcome.tests_collected} elapsed={outcome.elapsed_seconds:.1f}s\n"
+            f"tests_collected={outcome.tests_collected} elapsed={outcome.elapsed_seconds:.1f}s "
+            f"stages={ {k: round(v, 1) for k, v in outcome.stage_seconds.items()} } "
+            f"smoke={outcome.smoke_summary or 'none'}\n"
         )
     sys.stdout.write(
         f"candidate={result.candidate_distribution} passed={str(result.passed).lower()} "

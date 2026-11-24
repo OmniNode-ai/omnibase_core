@@ -305,8 +305,11 @@ class HandlerConsumerInstallCheck:
                 root,
             ),
         )
+        stages: dict[str, float] = {}
         for step, argv, cwd in setup:
+            step_started = time.monotonic()
             code, output, timed_out = self._run(argv, cwd, timeout)
+            stages[step] = stages.get(step, 0.0) + time.monotonic() - step_started
             if code != 0:
                 reason = "timed out" if timed_out else f"exit {code}"
                 return failed(f"{step} ({reason})", output)
@@ -327,7 +330,9 @@ class HandlerConsumerInstallCheck:
         ]
         for group in spec.entry_point_groups:
             probe_cmd += ["--group", group]
+        step_started = time.monotonic()
         _, probe_output, _ = self._run(probe_cmd, root, timeout)
+        stages["entry-point-import"] = time.monotonic() - step_started
         try:
             probed = json.loads(probe_out.read_text(encoding="utf-8"))
         except (OSError, ValueError):
@@ -349,7 +354,9 @@ class HandlerConsumerInstallCheck:
             for item in probed["failures"]
         ]
 
+        smoke_summary = ""
         if spec.smoke_script:
+            step_started = time.monotonic()
             smoke_code, smoke_output, smoke_timed_out = self._run(
                 [python, "-P", str(root / spec.smoke_script)], root, timeout
             )
@@ -359,7 +366,17 @@ class HandlerConsumerInstallCheck:
             if smoke_timed_out or (smoke_code not in (0, 1) and not smoke_findings):
                 return failed("smoke script", smoke_output)
             findings.extend(smoke_findings)
+            stages["smoke"] = time.monotonic() - step_started
+            smoke_summary = next(
+                (
+                    line
+                    for line in reversed(smoke_output.splitlines())
+                    if line.startswith("LATEST-CORE-SMOKE packages=")
+                ),
+                "",
+            )
 
+        step_started = time.monotonic()
         _, collect_output, collect_timed_out = self._run(
             [
                 python,
@@ -376,6 +393,7 @@ class HandlerConsumerInstallCheck:
             root,
             timeout,
         )
+        stages["collection"] = time.monotonic() - step_started
         if collect_timed_out:
             return failed("collection (timed out)", collect_output)
         collected, collection_findings = parse_collection_output(
@@ -390,6 +408,8 @@ class HandlerConsumerInstallCheck:
             tests_collected=collected,
             elapsed_seconds=time.monotonic() - started,
             findings=tuple(findings),
+            stage_seconds=stages,
+            smoke_summary=smoke_summary,
         )
 
 
