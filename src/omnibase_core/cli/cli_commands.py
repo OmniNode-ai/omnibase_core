@@ -156,9 +156,9 @@ class _LazyCoreCommandGroup(click.Group):
         return sorted(filter(_surface.command_is_visible, names))
 
     def get_command(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
-        if not _surface.command_is_visible(cmd_name, ctx.meta):
-            return None
-        return self._load(ctx, cmd_name)
+        if _surface.command_is_visible(cmd_name, ctx.meta):
+            return self._load(ctx, cmd_name)
+        return _surface.reply_to_hidden_command(self, ctx, cmd_name)
 
     def _load(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         command = super().get_command(ctx, cmd_name)
