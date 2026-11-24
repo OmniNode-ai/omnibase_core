@@ -733,7 +733,14 @@ def _check_kafka_reachable() -> tuple[bool, str]:
     Returns:
         Tuple of (is_healthy, message).
     """
-    raw = os.environ["KAFKA_BOOTSTRAP_SERVERS"]
+    raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
+    if not raw or not str(raw).strip():
+        return True, (
+            "KAFKA_BOOTSTRAP_SERVERS is not configured; Kafka check skipped. "
+            "Fix: export KAFKA_BOOTSTRAP_SERVERS=<host>:<port>"
+        )
+
+    raw = str(raw).strip()
     first = raw.split(",")[0].strip()
     host, sep, port_str = first.rpartition(":")
     if not sep:
