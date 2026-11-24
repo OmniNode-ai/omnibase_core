@@ -3948,6 +3948,26 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
+  # OMN-26670: a core change is installed into its consumers before it can merge.
+  # On 2026-11-23 omnibase_core 0.47.77 removed omnibase_core.cli.cli_work_ledger_render,
+  # which omnimarket's core_ticket_guard imported; nothing saw it until after the release.
+  # The logic is node_consumer_install_check_effect (contract, handler) and its overlay
+  # config/onex/overlays/node_consumer_install_check_effect.overlay.yaml; the
+  # reusable workflow below builds the head's wheel and calls the node. The job always
+  # runs, so the context is always produced; a docs-only diff skips every step in it.
+  # Required context to add (an operator or repo-admin action, never made by a PR), as
+  # GitHub names a called job: "consumer-install-check / Consumer Install Check (OMN-26670)"
+  # ---------------------------------------------------------------------------
+  consumer-install-check:
+    needs: [zone-filter]
+    uses: ./.github/workflows/consumer-install-check.yml
+    with:
+      candidate-distribution: omnibase-core
+      docs-only: ${{ needs.zone-filter.outputs.docs_only }}
+    permissions:
+      contents: read
+
+  # ---------------------------------------------------------------------------
   # Phase 1.6 - Detect Changes (shadow mode)
   # ---------------------------------------------------------------------------
   # Runs detect_test_paths and emits 5 outputs for shadow-mode comparison.

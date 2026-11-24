@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Overlay of node_consumer_install_check_effect (OMN-26670): the consumers, their refs, what is
+# imported and collected, and every bound. The handler holds none of these values.
+---
+schema_version: 1
+python_version: "3.12"
+# One command may run this long; a timeout fails the consumer by name.
+step_timeout_seconds: 600
+# OMN-26670 AC4: a run adds under five minutes; an overrun is reported as a warning on the run.
+total_budget_seconds: 300
+max_parallel: 2
+# A failure that does not touch the candidate is the consumer's own dev breakage: reported, not failed.
+fail_on_unattributed: false
+consumers:
+  - name: omnimarket
+    distribution: omnimarket
+    repo_url: https://github.com/OmniNode-ai/omnimarket.git
+    ref: dev
+    install_args: ["-e", ".", "--group", "dev"]
+    smoke_script: tests/ci/latest_core_smoke.py
+    collect_args: ["tests/nodes", "--ignore=tests/integration"]
+  - name: omnibase_infra
+    distribution: omnibase_infra
+    repo_url: https://github.com/OmniNode-ai/omnibase_infra.git
+    ref: dev
+    install_args: ["-e", ".", "--group", "dev"]
+    collect_args: ["tests/unit", "--ignore=tests/integration"]
+candidates:
+  - distribution: omnibase-core
+    import_roots: ["omnibase_core"]
+    consumers: ["omnimarket", "omnibase_infra"]
+  - distribution: omnibase-spi
+    import_roots: ["omnibase_spi"]
+    consumers: ["omnimarket", "omnibase_infra"]

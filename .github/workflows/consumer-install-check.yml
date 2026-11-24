@@ -1,0 +1,132 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# Reusable consumer install check (OMN-26670).
+#
+# Builds the caller's head as a wheel, installs it into the consumers named by the
+# overlay (config/onex/overlays/node_consumer_install_check_effect.overlay.yaml, read
+# from the pinned omnibase_core checkout) at their dev heads, imports every entry
+# point of each, collects its unit tests, and fails naming consumer, import and
+# missing name. The logic is node_consumer_install_check_effect; this file only
+# builds the wheel and calls the node.
+#
+# Usage in omnibase_core (ci.yml) and in omnibase_spi:
+#
+#   jobs:
+#     consumer-install-check:
+#       uses: OmniNode-ai/omnibase_core/.github/workflows/consumer-install-check.yml@<dev-merge-tag>
+#       with:
+#         candidate-distribution: omnibase-spi
+#         docs-only: ${{ needs.zone-filter.outputs.docs_only }}
+#
+# The node version is the caller's pin: omnibase-core-ref defaults to
+# github.job_workflow_sha, the sha of this file as the caller pinned it.
+
+name: Consumer Install Check
+
+on:
+  workflow_call:
+    inputs:
+      candidate-distribution:
+        description: Distribution under test, as named by a candidate row of the overlay.
+        required: true
+        type: string
+      docs-only:
+        description: "'true' skips every step: a docs-only diff does not run the check."
+        required: false
+        type: string
+        default: "false"
+      python-version:
+        description: Python version for the node runtime.
+        required: false
+        type: string
+        default: "3.12"
+      uv-version:
+        description: uv version for the node runtime.
+        required: false
+        type: string
+        default: "0.8.3"
+      target-ref:
+        description: Caller repository ref to build; empty means the caller's head.
+        required: false
+        type: string
+        default: ""
+      omnibase-core-ref:
+        description: omnibase_core ref containing the node and overlay. Empty means the sha this file was called at.
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  consumer-install-check:
+    name: Consumer Install Check (OMN-26670)
+    runs-on: ${{ github.event.repository.private && ( (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository) && fromJSON(vars.OMNI_PUBLIC_PR_RUNS_ON_JSON || '["ubuntu-latest"]') || fromJSON(vars.OMNI_TRUSTED_CI_RUNS_ON_JSON || (github.event.repository.private && '["self-hosted","omnibase-ci"]' || '["ubuntu-latest"]')) ) || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - name: Docs-only diff, nothing to check
+        if: inputs.docs-only == 'true'
+        run: echo "docs-only change; the consumer install check does not run"
+
+      - name: Checkout candidate repository
+        if: inputs.docs-only != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: target
+          ref: ${{ inputs['target-ref'] || github.ref }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Checkout omnibase_core node and overlay
+        if: inputs.docs-only != 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: OmniNode-ai/omnibase_core
+          ref: ${{ inputs['omnibase-core-ref'] || github.job_workflow_sha }}
+          path: omnibase_core
+          persist-credentials: false
+
+      - name: Set up Python
+        if: inputs.docs-only != 'true'
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: ${{ inputs['python-version'] }}
+
+      - name: Install uv
+        if: inputs.docs-only != 'true'
+        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884
+        with:
+          version: ${{ inputs['uv-version'] }}
+
+      - name: Install the node
+        if: inputs.docs-only != 'true'
+        working-directory: omnibase_core
+        run: uv sync --no-dev
+
+      - name: Build the candidate wheel
+        if: inputs.docs-only != 'true'
+        working-directory: target
+        run: uv build --wheel --out-dir "$RUNNER_TEMP/consumer-check-dist"
+
+      - name: Install the candidate into every consumer and import them
+        if: inputs.docs-only != 'true'
+        working-directory: omnibase_core
+        env:
+          CANDIDATE: ${{ inputs['candidate-distribution'] }}
+        run: |
+          set -euo pipefail
+          uv run --no-sync python -m omnibase_core.nodes.node_consumer_install_check_effect.runtime_consumer_install_check \
+            --candidate-distribution "$CANDIDATE" \
+            --candidate-spec "$(ls "$RUNNER_TEMP"/consumer-check-dist/*.whl)" \
+            --overlay config/onex/overlays/node_consumer_install_check_effect.overlay.yaml \
+            --work-dir "$RUNNER_TEMP/consumer-check" \
+            --report "$RUNNER_TEMP/consumer-check-report.json"
+
+      - name: Summarise the run
+        if: always() && inputs.docs-only != 'true'
+        run: |
+          if [ -f "$RUNNER_TEMP/consumer-check-report.json" ]; then
+            python3 -c "import json,sys; r=json.load(open(sys.argv[1])); print('passed=%s elapsed=%.0fs budget=%.0fs' % (r['passed'], r['elapsed_seconds'], r['budget_seconds'])); [print(l) for l in r['failure_lines']]" "$RUNNER_TEMP/consumer-check-report.json" >> "$GITHUB_STEP_SUMMARY"
+          fi
