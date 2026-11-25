@@ -22,5 +22,17 @@
     "ticket": "OMN-17427",
     "added": "2026-10-19",
     "expires": "2026-12-20"
+  },
+  "Consumer Check / Consumer Check (omnimarket)": {
+    "reason": "Report-only consumer check of the core head in omnimarket; requiring it is the operator's choice, so a red run does not turn CI Summary red.",
+    "ticket": "OMN-21592",
+    "added": "2026-11-25",
+    "expires": "2026-12-20"
+  },
+  "Consumer Check / Consumer Check (omnibase_infra)": {
+    "reason": "Report-only consumer check of the core head in omnibase_infra; requiring it is the operator's choice, so a red run does not turn CI Summary red.",
+    "ticket": "OMN-21592",
+    "added": "2026-11-25",
+    "expires": "2026-12-20"
   }
 }
