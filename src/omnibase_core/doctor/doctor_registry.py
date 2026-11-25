@@ -33,7 +33,7 @@ class DoctorRegistry:
 
     def discover(self) -> None:
         module = importlib.import_module(
-            "omnibase_core.nodes.node_doctor_registry.handler"
+            "omnibase_core.nodes.node_doctor_registry_effect.handler"
         )
         module.discover(self, entry_points(group=ENTRY_POINT_GROUP))
 

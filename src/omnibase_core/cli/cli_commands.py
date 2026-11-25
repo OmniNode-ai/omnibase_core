@@ -571,7 +571,9 @@ def health(ctx: click.Context, component: str | None, as_json: bool) -> None:
         try:
             is_healthy, message = check_func()
             if not as_json:
-                status = click.style("OK" if is_healthy else "FAIL", fg="green" if is_healthy else "red")
+                status = click.style(
+                    "OK" if is_healthy else "FAIL", fg="green" if is_healthy else "red"
+                )
                 click.echo(f"  [{status}] {check_name}")
                 if verbose or not is_healthy or _KAFKA_SKIPPED_PREFIX in message:
                     click.echo(f"       {message}")
@@ -723,14 +725,14 @@ def _check_error_handling() -> tuple[bool, str]:
 
 
 _KAFKA_SKIPPED_PREFIX = importlib.import_module(
-    "omnibase_core.nodes.node_cli_commands.handler"
+    "omnibase_core.nodes.node_cli_commands_effect.handler"
 ).KAFKA_SKIPPED_PREFIX
 
 
 def _check_kafka_reachable() -> tuple[bool, str]:
     """Delegate the health check to its contract-bound EFFECT handler."""
     module = importlib.import_module(
-        "omnibase_core.nodes.node_cli_commands.handler"
+        "omnibase_core.nodes.node_cli_commands_effect.handler"
     )
     return module.check_kafka_reachable()
 

@@ -9,7 +9,7 @@ import socket
 
 __all__ = ["KAFKA_SKIPPED_PREFIX", "NodeCliCommandsEffect", "check_kafka_reachable"]
 
-KAFKA_SKIPPED_PREFIX = "Kafka check skipped"
+KAFKA_SKIPPED_PREFIX = "Kafka check skipped"  # env-var-ok: constant definition
 
 
 class NodeCliCommandsEffect:

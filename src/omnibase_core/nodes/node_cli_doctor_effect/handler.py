@@ -15,7 +15,12 @@ if TYPE_CHECKING:
     from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 
 
-__all__ = ["DEVELOPER_ONLY", "NodeCliDoctorEffect", "builtin_checks", "developer_install"]
+__all__ = [
+    "DEVELOPER_ONLY",
+    "NodeCliDoctorEffect",
+    "builtin_checks",
+    "developer_install",
+]
 
 
 def _check_classes() -> tuple[type[DoctorCheckBase], ...]:

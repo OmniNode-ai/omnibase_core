@@ -51,6 +51,8 @@ _READER_PATHS: Final[frozenset[str]] = frozenset(
         "scripts/zone_diff_filter.py",
         "src/omnibase_core/artifacts/artifact_store.py",
         "src/omnibase_core/cli/cli_commands.py",
+        "src/omnibase_core/nodes/node_cli_commands_effect/handler.py",
+        "src/omnibase_core/nodes/node_cli_doctor_effect/handler.py",
         "src/omnibase_core/cli/cli_hooks.py",
         "src/omnibase_core/cli/cli_runtime_host.py",
         "src/omnibase_core/constants/constants_effect.py",

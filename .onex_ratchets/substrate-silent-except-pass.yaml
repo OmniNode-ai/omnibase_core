@@ -49,9 +49,6 @@ entries:
   - path: src/omnibase_core/decorators/decorator_error_handling.py
     rule: substrate-silent-except-pass
     text: sha256:8ce355eaa37c1c0037eb1c9de79246da33609607bc2a36f4dfd9067e47ee1541
-  - path: src/omnibase_core/doctor/doctor_registry.py
-    rule: substrate-silent-except-pass
-    text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510
   - path: src/omnibase_core/event_bus/event_bus_inmemory.py
     rule: substrate-silent-except-pass
     text: sha256:60dc67ee5ba90aeea4dfed84ab602b78197c81513cb81fec0de672a80ec35510

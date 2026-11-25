@@ -1,8 +1,8 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 ---
-name: node_cli_commands
-node_id: node_cli_commands
+name: node_cli_commands_effect
+node_id: node_cli_commands_effect
 node_type: effect
 node_version: {major: 1, minor: 0, patch: 0}
 contract_version: {major: 1, minor: 0, patch: 0}
