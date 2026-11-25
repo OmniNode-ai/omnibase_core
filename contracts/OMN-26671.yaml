@@ -1,0 +1,73 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-26671
+title: 'OMN-26671: a contract-only change is not docs-only, so the contract-shape tests run'
+summary: The zone classifier counted top-level contracts/ as documentation, so a pull request whose only
+  change was contracts/<ticket>.yaml (omnimarket#6815, file list contracts/OMN-22577.yaml) was classified
+  docs-only and every test split was skipped. contracts/ now classifies as config, the docs-only verdict
+  is withheld, and the selector picks tests/ci/ and tests/unit/. Docs-only diffs still skip.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26671-contract-only-runs-tests
+    statement: A diff that changes only contracts/*.yaml selects the contract-shape tests, and a docs-only
+      diff still skips.
+    acceptance:
+      - id: AC1
+        statement: "AC1: the recorded file list of omnimarket#6815 (contracts/OMN-22577.yaml) is not docs-only
+          and selects the contract-shape tests -- falsifier: uv run pytest on the new filter test is red
+          on the base and green on the head"
+      - id: AC2
+        statement: "AC2: a known bad contract entry is refused by the selected tests and the corrected
+          entry passes -- falsifier: the test passes when the entry is corrected"
+      - id: AC3
+        statement: "AC3: a change to docs only still skips -- falsifier: the docs-only fixture selects
+          any test"
+evidence_requirements:
+  - kind: tests
+    description: The filter test over the recorded file list, the classifier and the zone-diff script.
+    command: uv run --frozen pytest tests/scripts/test_zone_contract_files_are_code_omn26671.py tests/scripts/test_zone_diff_filter.py
+      tests/validation/test_zone_classifier.py -q -n 0 --reruns 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26671-pr6815-selects-tests
+    description: 'AC1: the file list of omnimarket#6815 is not docs-only and selects tests/ci/.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/scripts/test_zone_contract_files_are_code_omn26671.py -q -n 0 --reruns
+          0 -k pr_6815
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26671-bad-entry-refused
+    description: 'AC2: a bad contract entry is refused by the contract-shape model; the corrected one
+      passes.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/scripts/test_zone_contract_files_are_code_omn26671.py -q -n 0 --reruns
+          0 -k bad_contract_entry
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26671-docs-only-still-skips
+    description: 'AC3: a docs-only diff still exits 0 from the filter and selects no test.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/scripts/test_zone_contract_files_are_code_omn26671.py tests/scripts/test_zone_diff_filter.py
+          -q -n 0 --reruns 0 -k "docs_only or empty_diff"
+        cwd: ${OMNI_HOME}/omnibase_core

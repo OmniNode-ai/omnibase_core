@@ -2,7 +2,8 @@ name: Zone Filter (Reusable)
 
 # Classifies the caller PR's diff using omnibase_core's zone_classifier.
 # Emits docs_only=true when every changed file is in the DOCS zone, including
-# top-level contracts/, drift/dod_receipts/, and .evidence/. Caller workflows
+# drift/dod_receipts/ and .evidence/. Top-level contracts/ is code for
+# the test selection (OMN-26671): the contract-shape tests read it. Caller workflows
 # can skip heavy CI matrix jobs on documentation/declarative-evidence PRs.
 # Allowlists are policy inputs and must run the full matrix.
 #
