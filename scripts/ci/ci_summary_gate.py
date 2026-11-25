@@ -553,7 +553,12 @@ def _job_states(
         states.append(
             JobState(
                 name=name,
-                status=_row_status(raw),
+                # OMN-24562: an in-run job row whose conclusion is set is done,
+                # whatever status it still reads (omnibase_infra runs
+                # 45566676848 and 45561122045 held ``in_progress`` beside
+                # ``success`` for 30-80 minutes with no completed_at). A row
+                # with no conclusion keeps its status and still waits.
+                status="completed" if conclusion is not None else _row_status(raw),
                 conclusion=None if conclusion is None else str(conclusion),
                 run_attempt=attempt,
             )
