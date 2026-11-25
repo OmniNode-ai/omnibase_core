@@ -7,10 +7,8 @@ from __future__ import annotations
 import importlib
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
-
 
 __all__ = [
     "DEVELOPER_ONLY",

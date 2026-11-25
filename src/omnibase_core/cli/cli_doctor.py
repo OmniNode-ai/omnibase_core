@@ -1,11 +1,14 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
-import os
+from pathlib import Path
 
 import click
 
 from omnibase_core.doctor.doctor_registry import DoctorRegistry
+from omnibase_core.models.bootstrap.model_environment_bootstrap import (
+    ModelEnvironmentBootstrap,
+)
 from omnibase_core.models.doctor.model_doctor_report import ModelDoctorReport
 from omnibase_core.nodes.node_cli_doctor_effect import handler as _doctor_node
 
@@ -19,7 +22,12 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
     """Run diagnostic checks on your ONEX environment."""
     registry = DoctorRegistry()
 
-    developer = _doctor_node.developer_install(os.environ.get("OMNI_HOME"))
+    _bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
+        declared_keys=("OMNI_HOME",)
+    )
+    _raw_omni_home = _bootstrap.environment.optional("OMNI_HOME")
+    developer = bool(_raw_omni_home and Path(_raw_omni_home).is_dir())
+
     for check_cls in _doctor_node.builtin_checks(_BUILTIN_CHECKS, developer=developer):
         # Why: Registry stores protocol contracts rather than instantiating them directly.
         registry.register(check_cls)
