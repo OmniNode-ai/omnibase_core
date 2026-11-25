@@ -34,7 +34,7 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CUSTOMER_LAUNCHERS = frozenset({"onex", "omni-agent"})
+CUSTOMER_LAUNCHERS = frozenset({"onex"})
 
 
 def _removable_scripts() -> frozenset[str]:
