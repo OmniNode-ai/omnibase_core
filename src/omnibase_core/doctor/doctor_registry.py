@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib
 import threading
 import time
 from importlib.metadata import entry_points
@@ -30,16 +31,11 @@ class DoctorRegistry:
                 raise ValueError(msg)  # error-ok: registry duplicate guard
             self._checks[cid] = check_class
 
-    def discover(self, exclude: frozenset[type[DoctorCheckBase]] = frozenset()) -> None:
-        for ep in entry_points(group=ENTRY_POINT_GROUP):
-            loaded = ep.load()
-            if isinstance(loaded, type) and issubclass(loaded, DoctorCheckBase):
-                if loaded in exclude:
-                    continue
-                try:
-                    self.register(loaded)
-                except ValueError:
-                    pass  # already registered
+    def discover(self) -> None:
+        module = importlib.import_module(
+            "omnibase_core.nodes.node_doctor_registry.handler"
+        )
+        module.discover(self, entry_points(group=ENTRY_POINT_GROUP))
 
     def list_all(self) -> list[DoctorCheckBase]:
         with self._lock:

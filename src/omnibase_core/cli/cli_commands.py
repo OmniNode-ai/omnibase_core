@@ -8,7 +8,6 @@ from __future__ import annotations
 import importlib
 import json as _json
 import os
-import socket
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -572,15 +571,9 @@ def health(ctx: click.Context, component: str | None, as_json: bool) -> None:
         try:
             is_healthy, message = check_func()
             if not as_json:
-                skipped = is_healthy and message.startswith(_KAFKA_SKIPPED_PREFIX)
-                if skipped:
-                    status = click.style("SKIP", fg="yellow")
-                elif is_healthy:
-                    status = click.style("OK", fg="green")
-                else:
-                    status = click.style("FAIL", fg="red")
+                status = click.style("OK" if is_healthy else "FAIL", fg="green" if is_healthy else "red")
                 click.echo(f"  [{status}] {check_name}")
-                if verbose or skipped or not is_healthy:
+                if verbose or not is_healthy or _KAFKA_SKIPPED_PREFIX in message:
                     click.echo(f"       {message}")
             results.append(
                 {"name": check_name, "healthy": is_healthy, "message": message}
@@ -729,39 +722,17 @@ def _check_error_handling() -> tuple[bool, str]:
         return False, f"Error: {e}"
 
 
-_KAFKA_SKIPPED_PREFIX = "Kafka check skipped"
+_KAFKA_SKIPPED_PREFIX = importlib.import_module(
+    "omnibase_core.nodes.node_cli_commands.handler"
+).KAFKA_SKIPPED_PREFIX
 
 
 def _check_kafka_reachable() -> tuple[bool, str]:
-    """Check Kafka/Redpanda TCP reachability.
-
-    Returns:
-        Tuple of (is_healthy, message).
-    """
-    raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
-    if not raw or not str(raw).strip():
-        return True, (
-            f"{_KAFKA_SKIPPED_PREFIX} because no Kafka address is set. "
-            "Fix: export KAFKA_BOOTSTRAP_SERVERS=<host>:<port>"
-        )
-
-    raw = str(raw).strip()
-    first = raw.split(",")[0].strip()
-    host, sep, port_str = first.rpartition(":")
-    if not sep:
-        host, port = first, 19092
-    else:
-        try:
-            port = int(port_str)
-        except ValueError:
-            return False, f"Invalid port in KAFKA_BOOTSTRAP_SERVERS: {port_str!r}"
-
-    try:
-        conn = socket.create_connection((host, port), timeout=3)
-        conn.close()
-        return True, f"Kafka reachable at {host}:{port}"
-    except (TimeoutError, OSError):
-        return False, f"Kafka not reachable at {host}:{port}"
+    """Delegate the health check to its contract-bound EFFECT handler."""
+    module = importlib.import_module(
+        "omnibase_core.nodes.node_cli_commands.handler"
+    )
+    return module.check_kafka_reachable()
 
 
 # Every built-in core command above (compliance, composition-report,

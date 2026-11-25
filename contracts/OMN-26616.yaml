@@ -2,10 +2,8 @@ schema_version: "1.0.0"
 ticket_id: "OMN-26616"
 title: "feat(OMN-26616): customer-aware onex doctor and plain-words onex health"
 summary: >
-  On a customer install (OMNI_HOME unset or not a directory) onex doctor skips the Docker, Linear and
-  repository-sync checks, including when a package advertises them through the onex.doctor entry point.
-  onex health reports an unset KAFKA_BOOTSTRAP_SERVERS as a skipped check with a Fix line instead of a
-  raw KeyError.
+  On a customer install (OMNI_HOME unset or not a directory) onex doctor skips the Docker, Linear and repository-sync checks, including when a package advertises them through the onex.doctor entry point. onex health reports an unset KAFKA_BOOTSTRAP_SERVERS as a skipped check with a Fix line instead of a raw KeyError.
+
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
