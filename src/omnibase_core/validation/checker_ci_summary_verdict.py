@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any
 
 from omnibase_core.enums.enum_severity import EnumSeverity
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.common.model_validation_issue import ModelValidationIssue
 from omnibase_core.models.contracts.subcontracts.model_validator_rule import (
     ModelValidatorRule,
@@ -58,6 +59,24 @@ def _issue(
     )
 
 
+def _order(raw: Mapping[str, Any]) -> tuple[int, str, int, str]:
+    """Newest-wins key: run attempt, start time, row id, then completion time."""
+    try:
+        attempt = int(str(raw.get("run_attempt") or 0))
+    except ValueError:
+        attempt = 0
+    try:
+        row_id = int(str(raw.get("id") or 0))
+    except ValueError:
+        row_id = 0
+    return (
+        attempt,
+        str(raw.get("started_at") or ""),
+        row_id,
+        str(raw.get("completed_at") or ""),
+    )
+
+
 def _latest(rows: object) -> dict[str, Mapping[str, Any]]:
     """The newest row per name: a rerun's row replaces the attempt it superseded."""
     latest: dict[str, Mapping[str, Any]] = {}
@@ -68,11 +87,7 @@ def _latest(rows: object) -> dict[str, Mapping[str, Any]]:
             continue
         name = raw["name"]
         held = latest.get(name)
-        key = (str(raw.get("completed_at") or ""), str(raw.get("started_at") or ""))
-        if held is None or key >= (
-            str(held.get("completed_at") or ""),
-            str(held.get("started_at") or ""),
-        ):
+        if held is None or _order(raw) >= _order(held):
             latest[name] = raw
     return latest
 
@@ -102,6 +117,7 @@ def check_jobs(
     good = set(rule_strings(row, "good_conclusions"))
     soft = set(rule_strings(row, "soft_allowlist"))
     strict = rule_strings(row, "strict_success_jobs")
+    required = rule_strings(row, "required_jobs")
     expired = _past_deadline(facts)
     latest = _latest(facts.get("jobs"))
     issues: list[ModelValidationIssue] = []
@@ -127,6 +143,30 @@ def check_jobs(
                     path,
                     rule_string(row, "red_message").format(
                         name=name, conclusion=conclusion
+                    ),
+                    pending=False,
+                )
+            )
+    for name in required:
+        held = latest.get(name)
+        if held is None or held.get("status") != "completed":
+            template = "deadline_message" if expired else "missing_message"
+            status = "absent" if held is None else str(held.get("status"))
+            issues.append(
+                _issue(
+                    row,
+                    path,
+                    rule_string(row, template).format(name=name, status=status),
+                    pending=not expired,
+                )
+            )
+        elif held.get("conclusion") not in good:
+            issues.append(
+                _issue(
+                    row,
+                    path,
+                    rule_string(row, "red_message").format(
+                        name=name, conclusion=held.get("conclusion")
                     ),
                     pending=False,
                 )
@@ -163,7 +203,18 @@ def check_external(
     row = rules.get(RULE_EXTERNAL)
     if row is None or not row.enabled:
         return ()
-    expected = rule_strings(row, "expected_contexts")
+    event = str(facts.get("event_name"))
+    try:
+        expected = rule_strings(row, f"expected_contexts_{event}")
+    except ModelOnexError:
+        return (
+            _issue(
+                row,
+                path,
+                rule_string(row, "unsupported_event_message").format(event=event),
+                pending=False,
+            ),
+        )
     supersedable = set(rule_strings(row, "supersedable_conclusions"))
     grace = rule_int(row, "supersession_grace_s")
     observed = _stamp(facts.get("observed_at"))
@@ -220,7 +271,52 @@ def check_external(
                     pending=False,
                 )
             )
+    issues.extend(_sweep_other_contexts(row, path, latest, expected, facts, expired))
     return tuple(issues)
+
+
+def _sweep_other_contexts(
+    row: ModelValidatorRule,
+    path: Path,
+    latest: Mapping[str, Mapping[str, Any]],
+    expected: tuple[str, ...],
+    facts: Mapping[str, Any],
+    expired: bool,
+) -> list[ModelValidationIssue]:
+    """Default-deny: any other check-run of the head that is not a success is not green."""
+    good = set(rule_strings(row, "sweep_good_conclusions"))
+    accounted = set(expected) | {rule_string(row, "self_name")}
+    accounted |= {
+        str(j["name"])
+        for j in facts.get("jobs") or []
+        if isinstance(j, Mapping) and isinstance(j.get("name"), str)
+    }
+    issues: list[ModelValidationIssue] = []
+    for name in sorted(set(latest) - accounted):
+        state = latest[name]
+        status, conclusion = str(state.get("status")), str(state.get("conclusion"))
+        if status != "completed":
+            template = "deadline_message" if expired else "pending_message"
+            issues.append(
+                _issue(
+                    row,
+                    path,
+                    rule_string(row, template).format(name=name, status=status),
+                    pending=not expired,
+                )
+            )
+        elif conclusion not in good:
+            issues.append(
+                _issue(
+                    row,
+                    path,
+                    rule_string(row, "red_message").format(
+                        name=name, conclusion=conclusion
+                    ),
+                    pending=False,
+                )
+            )
+    return issues
 
 
 def check_parity(
