@@ -1,0 +1,76 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26044
+title: "onex names a broken onex.cli entry point to a customer even while the command is hidden"
+summary: "In customer mode a hidden onex.cli extension that fails to load answered No such command, so
+  the customer-surface check broken_command_named_error could not see which command was broken. The root
+  group now loads a hidden extension only when its name is typed, and a failed load answers an error that
+  names the command with no distribution, target or exception detail. A hidden extension that loads, and
+  an unknown name, stay No such command. The operator switch keeps the full packaging-defect error."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26044-broken-extension-named
+    statement: "A customer is told which onex command failed to load, with no internal detail."
+    acceptance:
+      - id: AC1
+        statement: "AC1: in customer mode, invoking a hidden onex.cli extension whose entry point fails
+          to load or is not a click command exits non-zero with an error that names the command and not
+          No such command -- falsifier: uv run pytest tests/unit/cli/test_cli_hidden_broken_extension_named_omn26044.py
+          -n 0 -p no:cacheprovider -q -k names_a_hidden_broken_extension"
+      - id: AC2
+        statement: "AC2: that error carries no distribution name, target path or exception text, and a
+          hidden extension that loads or an unregistered name still answers No such command -- falsifier:
+          uv run pytest tests/unit/cli/test_cli_hidden_broken_extension_named_omn26044.py -n 0 -p no:cacheprovider
+          -q -k 'no_internal_detail or stays_no_such_command or does_not_list or does_not_unhide'"
+      - id: AC3
+        statement: "AC3: with ONEX_CLI_SHOW_ALL_COMMANDS on, the full packaging-defect error is unchanged
+          -- falsifier: uv run pytest tests/unit/cli/test_cli_hidden_broken_extension_named_omn26044.py
+          -n 0 -p no:cacheprovider -q -k operator_switch_keeps"
+evidence_requirements:
+  - kind: tests
+    description: "The broken-extension tests and the command surface tests pass at the head."
+    command: uv run pytest tests/unit/cli/test_cli_hidden_broken_extension_named_omn26044.py tests/unit/cli/test_cli_command_surface_omn26518.py
+      -n 0 -p no:cacheprovider -q
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26044-ac1
+    description: "A hidden broken extension, by import failure or by wrong type, exits non-zero in customer
+      mode with an error that names the command."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_hidden_broken_extension_named_omn26044.py
+          -n 0 -p no:cacheprovider -q -k names_a_hidden_broken_extension"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26044-ac2
+    description: "The customer error leaks no distribution, target or exception text; healthy hidden and
+      unknown names stay No such command; the broken name is never listed."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_hidden_broken_extension_named_omn26044.py
+          -n 0 -p no:cacheprovider -q -k 'no_internal_detail or stays_no_such_command or does_not_list
+          or does_not_unhide'"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26044-ac3
+    description: "With the operator switch on, get_command raises the full ModelOnexError naming the distribution."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/unit/cli/test_cli_hidden_broken_extension_named_omn26044.py
+          -n 0 -p no:cacheprovider -q -k operator_switch_keeps"
+        cwd: ${OMNI_HOME}/omnibase_core

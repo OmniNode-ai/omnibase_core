@@ -114,7 +114,9 @@ def _probe_group_with_undeclared_extension() -> _LazyCoreCommandGroup:
         [
             EntryPoint(
                 name="brand-new-extension",
-                value="nowhere.cli:group",
+                # A loadable target: a hidden extension that fails to load is named
+                # to the caller (OMN-26044), a healthy one stays hidden.
+                value="omnibase_core.cli.cli_registry:registry",
                 group=_CLI_EXTENSION_GROUP,
             )
         ],
