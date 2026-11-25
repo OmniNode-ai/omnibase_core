@@ -77,6 +77,17 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run pytest tests/unit/cli -q -n 4 --no-cov -p no:cacheprovider
         cwd: .
+  - id: dod-omn26615-ac3-mechanism
+    description: "AC3 mechanism: in a fresh interpreter the help page leaves a declared extension out
+      of sys.modules, and the same probe with the help entry removed finds it imported."
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_a_fresh_interpreter_help_page_leaves_the_declared_extension_unimported
+          -q -n 0 --no-cov -p no:cacheprovider
+        cwd: .
   - id: dod-omn26615-ac3
     description: "AC3: the profile artifact exists with its before and after importtime outputs and the
       repeatable profile script; the evidence lives in the workflow checkout, so only the local Done gate

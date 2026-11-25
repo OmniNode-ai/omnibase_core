@@ -248,3 +248,56 @@ def test_the_harness_measures_the_import_cost(
     """Positive control: with no help entry the 1.5 s import shows in the timing."""
     _make_dist(ext, declare_help=False)
     assert _timed_help(ext, monkeypatch) >= 1.5
+
+
+_PROBE = f"""\
+import importlib.metadata as md
+import sys
+
+from click.testing import CliRunner
+
+from omnibase_core.cli.cli_commands import (
+    _CLI_EXTENSION_GROUP,
+    _LazyCoreCommandGroup,
+    register_lazy_cli_extensions,
+)
+
+group = _LazyCoreCommandGroup(name="onex", help="root")
+eps = [
+    e
+    for e in md.entry_points(group=_CLI_EXTENSION_GROUP)
+    if e.name.startswith("omn26615")
+]
+register_lazy_cli_extensions(group, eps)
+result = CliRunner().invoke(group, ["--help"], terminal_width=80)
+assert result.exit_code == 0, result.output
+assert "{WITH_HELP}" in result.output
+print("IMPORTED" if "{MODULE}" in sys.modules else "NOT_IMPORTED")
+"""
+
+
+def _extension_imported_by_help(site: Path, monkeypatch: pytest.MonkeyPatch) -> bool:
+    """Render the help page in a fresh interpreter; was the extension imported?"""
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(site), *sys.path]))
+    done = subprocess.run(
+        [sys.executable, "-c", _PROBE],
+        stdin=subprocess.DEVNULL,
+        capture_output=True,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr.decode()
+    verdict = done.stdout.decode().strip().splitlines()[-1]
+    assert verdict in {"IMPORTED", "NOT_IMPORTED"}, done.stdout.decode()
+    return verdict == "IMPORTED"
+
+
+def test_a_fresh_interpreter_help_page_leaves_the_declared_extension_unimported(
+    ext: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """AC3 mechanism: with a help entry the extension is not in ``sys.modules``
+    after the help page is rendered; with the entry removed the same probe finds
+    it imported, so the probe can fail.
+    """
+    assert _extension_imported_by_help(ext, monkeypatch) is False
+    _make_dist(ext, declare_help=False)
+    assert _extension_imported_by_help(ext, monkeypatch) is True
