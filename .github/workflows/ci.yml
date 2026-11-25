@@ -4857,6 +4857,10 @@ jobs:
     steps:
       - name: Checkout (gate script)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Install uv (generic verdict validator, OMN-17864)
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+      - name: Install the generic verdict validator (OMN-17864)
+        run: uv sync --frozen
       - name: Poll run jobs and compute fail-closed CI Summary verdict
         working-directory: ${{ github.workspace }}
         env:
@@ -4962,6 +4966,29 @@ jobs:
             fi
             python3 scripts/ci/ci_summary_gate.py --jobs-file jobs.json --run-attempt "${RUN_ATTEMPT}" --external-check-runs-file external_check_runs.json --workflow-runs-file workflow_runs.json --event-name "${EVENT_NAME}"
             rc=$?
+            # OMN-17864 (cutover, shadow leg): write the rows this poll observed and run
+            # the generic ci_summary_verdict validator over them. The old gate's rc above
+            # stays the verdict; the two are compared and a disagreement is a ::warning::
+            # until a live run of this pull request shows they agree.
+            # ROWS_JQ_BEGIN
+            rows_jq='def row: {id, name, run_attempt, started_at, completed_at, conclusion,
+                status: (if (.status != "completed" and (.conclusion // "") != "" and (.completed_at // "") != "") then "completed" else .status end)};
+            {
+              observed_at: $observed, deadline_at: $deadline, event_name: $event,
+              jobs: ($jobs[0] | map(row)),
+              check_runs: ($checks[0] | map(row))
+            }'
+            # ROWS_JQ_END
+            jq -n --argjson jobs "$(jq -c '[.]' jobs.json)" --argjson checks "$(jq -c '[.]' external_check_runs.json)" \
+              --arg observed "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+              --arg deadline "$(date -u -d "@${deadline}" +%Y-%m-%dT%H:%M:%SZ)" \
+              --arg event "${EVENT_NAME}" "${rows_jq}" > ci_summary_rows.json
+            uv run --frozen python -m omnibase_core.validation.validator_ci_summary_verdict ci_summary_rows.json
+            generic_rc=$?
+            echo "CI Summary parity: old gate rc=${rc} generic validator rc=${generic_rc}"
+            if [ "${generic_rc}" -ne "${rc}" ]; then
+              echo "::warning::CI Summary parity: old gate rc=${rc} and generic validator rc=${generic_rc} disagree (OMN-17864 cutover shadow)"
+            fi
             case "${rc}" in
               0) echo "::notice::CI Summary = SUCCESS (all gating jobs provably passed)"; exit 0 ;;
               1) echo "::error::CI Summary = FAILURE (fail-closed: a gating job failed/cancelled)"; exit 1 ;;

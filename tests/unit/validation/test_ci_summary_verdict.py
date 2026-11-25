@@ -54,14 +54,50 @@ def _ctx(
     }
 
 
+_STRICT = [
+    "Runner Route (OMN-18031) / route",
+    "Skip Count Ratchet (OMN-18776)",
+    'Pydantic extra="forbid" Baseline One-way (OMN-19677) / anti-growth-baseline',
+    "Wheel Content Parity (OMN-18865)",
+    "Propagate Config Dry-run (OMN-20074)",
+    "Code Quality",
+    "Mypy Validation Scripts",
+    "Core-Infra Boundary",
+    "Enum Governance Check",
+    "Naming Conventions",
+    "Pydantic Patterns",
+    "AI Slop Patterns",
+    "Doc-Content Scan",
+    "Typed Bootstrap Environment Boundary (OMN-17744)",
+    "SPDX Headers",
+    "Duplicate Registry Ids",
+    "Hardcoded Topic Validator",
+    "Runtime Identity Validator",
+    "Canonical File Shape (OMN-20304)",
+    "Shape-Gate Independence (OMN-20298)",
+]
+
+
 def _rows(**over: object) -> dict:
     base: dict = {
+        "event_name": "pull_request",
         "observed_at": _NOW,
         "deadline_at": _DEADLINE,
-        "jobs": [_job("Quality Gate"), _job("Tests Gate"), _job("lint")],
+        "jobs": [
+            _job("Quality Gate"),
+            _job("Tests Gate"),
+            _job("Cross-repo boundary validation"),
+            *[_job(n) for n in _STRICT],
+            _job("lint"),
+        ],
         "check_runs": [
-            _ctx("OCC Companion Merged Gate", "success", "2026-09-04T07:50:00Z"),
-            _ctx("DB Ownership Gate", "success", "2026-09-04T07:50:00Z"),
+            _ctx(
+                "advisory-job-gate / advisory-job-gate",
+                "success",
+                "2026-09-04T07:50:00Z",
+            ),
+            _ctx("DB ownership CI twin (B1)", "success", "2026-09-04T07:50:00Z"),
+            _ctx("repo-evidence / dod-verify", "success", "2026-09-04T07:50:00Z"),
         ],
     }
     base.update(over)
@@ -110,15 +146,20 @@ def test_running_job_is_pending(tmp_path: Path) -> None:
 
 
 def test_strict_job_skipped_is_red(tmp_path: Path) -> None:
-    jobs = [_job("Quality Gate", conclusion="skipped"), _job("Tests Gate")]
+    jobs = [
+        dict(j, conclusion="skipped") if j["name"] == "Code Quality" else j
+        for j in _rows()["jobs"]
+    ]
     assert _verdict(tmp_path, _rows(jobs=jobs))[0] == 1
 
 
 def test_transient_preflight_red_is_pending_not_latched(tmp_path: Path) -> None:
     """The ticket sequence: DB ownership red 40 s ago is re-polled, not a verdict."""
     runs = [
-        _ctx("OCC Companion Merged Gate", "success", "2026-09-04T07:50:00Z"),
-        _ctx("DB Ownership Gate", "failure", "2026-09-04T07:58:20Z"),
+        _ctx(
+            "advisory-job-gate / advisory-job-gate", "success", "2026-09-04T07:50:00Z"
+        ),
+        _ctx("DB ownership CI twin (B1)", "failure", "2026-09-04T07:58:20Z"),
     ]
     code, msgs = _verdict(tmp_path, _rows(check_runs=runs))
     assert code == 2 and "rerun window" in msgs[0]
@@ -126,38 +167,49 @@ def test_transient_preflight_red_is_pending_not_latched(tmp_path: Path) -> None:
 
 def test_stable_external_red_past_window_is_red(tmp_path: Path) -> None:
     runs = [
-        _ctx("OCC Companion Merged Gate", "success", "2026-09-04T07:50:00Z"),
-        _ctx("DB Ownership Gate", "failure", "2026-09-04T06:00:00Z"),
+        _ctx(
+            "advisory-job-gate / advisory-job-gate", "success", "2026-09-04T07:50:00Z"
+        ),
+        _ctx("DB ownership CI twin (B1)", "failure", "2026-09-04T06:00:00Z"),
     ]
     assert _verdict(tmp_path, _rows(check_runs=runs))[0] == 1
 
 
 def test_transient_red_at_deadline_is_red(tmp_path: Path) -> None:
     runs = [
-        _ctx("OCC Companion Merged Gate", "success", "2026-09-04T07:50:00Z"),
-        _ctx("DB Ownership Gate", "failure", "2026-09-04T10:07:30Z"),
+        _ctx(
+            "advisory-job-gate / advisory-job-gate", "success", "2026-09-04T07:50:00Z"
+        ),
+        _ctx("DB ownership CI twin (B1)", "failure", "2026-09-04T10:07:30Z"),
     ]
     assert _verdict(tmp_path, _rows(check_runs=runs, observed_at=_DEADLINE))[0] == 1
 
 
 def test_repaired_rerun_supersedes_the_red(tmp_path: Path) -> None:
     runs = [
-        _ctx("OCC Companion Merged Gate", "success", "2026-09-04T07:50:00Z"),
-        _ctx("DB Ownership Gate", "failure", "2026-09-04T07:58:20Z"),
-        _ctx("DB Ownership Gate", "success", "2026-09-04T07:58:50Z"),
+        _ctx(
+            "advisory-job-gate / advisory-job-gate", "success", "2026-09-04T07:50:00Z"
+        ),
+        _ctx("DB ownership CI twin (B1)", "failure", "2026-09-04T07:58:20Z"),
+        _ctx("DB ownership CI twin (B1)", "success", "2026-09-04T07:58:50Z"),
+        _ctx("repo-evidence / dod-verify", "success", "2026-09-04T07:50:00Z"),
     ]
     assert _verdict(tmp_path, _rows(check_runs=runs)) == (0, [])
 
 
 def test_missing_external_is_pending(tmp_path: Path) -> None:
-    runs = [_ctx("OCC Companion Merged Gate", "success", "2026-09-04T07:50:00Z")]
+    runs = [
+        _ctx("advisory-job-gate / advisory-job-gate", "success", "2026-09-04T07:50:00Z")
+    ]
     assert _verdict(tmp_path, _rows(check_runs=runs))[0] == 2
 
 
 def test_non_supersedable_external_conclusion_is_red(tmp_path: Path) -> None:
     runs = [
-        _ctx("OCC Companion Merged Gate", "success", "2026-09-04T07:50:00Z"),
-        _ctx("DB Ownership Gate", "skipped", "2026-09-04T07:58:20Z"),
+        _ctx(
+            "advisory-job-gate / advisory-job-gate", "success", "2026-09-04T07:50:00Z"
+        ),
+        _ctx("DB ownership CI twin (B1)", "skipped", "2026-09-04T07:58:20Z"),
     ]
     assert _verdict(tmp_path, _rows(check_runs=runs))[0] == 1
 
@@ -180,3 +232,37 @@ def test_parity_refuses_a_copy_of_the_gate(tmp_path: Path) -> None:
 def test_parity_passes_a_repo_without_a_copy(tmp_path: Path) -> None:
     (tmp_path / "ok.py").write_text("x = 1\n", encoding="utf-8")
     assert ValidatorCiSummaryVerdict(_contract()).validate(tmp_path).is_valid
+
+
+def test_unknown_event_fails_closed(tmp_path: Path) -> None:
+    assert _verdict(tmp_path, _rows(event_name="issue_comment"))[0] == 1
+
+
+def test_push_event_needs_only_the_db_ownership_context(tmp_path: Path) -> None:
+    runs = [_ctx("DB ownership CI twin (B1)", "success", "2026-09-04T07:50:00Z")]
+    assert _verdict(tmp_path, _rows(event_name="push", check_runs=runs)) == (0, [])
+
+
+def test_required_job_skipped_is_red_but_good_conclusion_passes(tmp_path: Path) -> None:
+    jobs = _rows()["jobs"]
+    ok = [
+        dict(j, conclusion="skipped") if j["name"] == "Quality Gate" else j
+        for j in jobs
+    ]
+    assert _verdict(tmp_path, _rows(jobs=ok))[0] == 0
+    bad = [
+        dict(j, conclusion="failure") if j["name"] == "Quality Gate" else j
+        for j in jobs
+    ]
+    assert _verdict(tmp_path, _rows(jobs=bad))[0] == 1
+
+
+def test_unrelated_red_check_run_is_swept(tmp_path: Path) -> None:
+    runs = _rows()["check_runs"] + [
+        _ctx("some other producer", "failure", "2026-09-04T06:00:00Z")
+    ]
+    assert _verdict(tmp_path, _rows(check_runs=runs))[0] == 1
+    running = _rows()["check_runs"] + [
+        _ctx("some other producer", "failure", "2026-09-04T06:00:00Z", "in_progress")
+    ]
+    assert _verdict(tmp_path, _rows(check_runs=running))[0] == 2

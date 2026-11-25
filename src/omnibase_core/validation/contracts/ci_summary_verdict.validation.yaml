@@ -51,10 +51,35 @@ validation:
           - success
           - skipped
           - neutral
-        soft_allowlist: []
+        soft_allowlist:
+          - "Contract Compliance"
+          - "Shadow Selection Compare"
+
+        required_jobs:
+          - "Quality Gate"
+          - "Tests Gate"
+          - "Cross-repo boundary validation"
         strict_success_jobs:
-          - Quality Gate
-          - Tests Gate
+          - "AI Slop Patterns"
+          - "Canonical File Shape (OMN-20304)"
+          - "Code Quality"
+          - "Core-Infra Boundary"
+          - "Doc-Content Scan"
+          - "Duplicate Registry Ids"
+          - "Enum Governance Check"
+          - "Hardcoded Topic Validator"
+          - "Mypy Validation Scripts"
+          - "Naming Conventions"
+          - "Propagate Config Dry-run (OMN-20074)"
+          - "Pydantic Patterns"
+          - "Pydantic extra=\"forbid\" Baseline One-way (OMN-19677) / anti-growth-baseline"
+          - "Runner Route (OMN-18031) / route"
+          - "Runtime Identity Validator"
+          - "SPDX Headers"
+          - "Shape-Gate Independence (OMN-20298)"
+          - "Skip Count Ratchet (OMN-18776)"
+          - "Typed Bootstrap Environment Boundary (OMN-17744)"
+          - "Wheel Content Parity (OMN-18865)"
         red_message: 'job {name} concluded {conclusion}: fix it at its cause, never allowlist it'
         pending_message: 'job {name} is {status}: poll again until the deadline'
         missing_message: >-
@@ -71,15 +96,29 @@ validation:
       enabled: true
       parameters:
         pending_severity: warning
-        expected_contexts:
-          - OCC Companion Merged Gate
-          - DB Ownership Gate
+        expected_contexts_pull_request:
+          - "DB ownership CI twin (B1)"
+          - "advisory-job-gate / advisory-job-gate"
+          - "repo-evidence / dod-verify"
+        expected_contexts_push:
+          - "DB ownership CI twin (B1)"
+        expected_contexts_merge_group: []
+        expected_contexts_workflow_dispatch:
+          - "DB ownership CI twin (B1)"
+        expected_contexts_schedule: []
         supersedable_conclusions:
           - failure
           - cancelled
           - timed_out
           - action_required
         supersession_grace_s: 900
+        self_name: 'CI Summary'
+        sweep_good_conclusions:
+          - success
+          - skipped
+          - neutral
+        unsupported_event_message: >-
+          unsupported CI event {event}: fail closed, no external context set is known for it
         red_message: 'external context {name} concluded {conclusion}: fix it at its cause'
         provisional_message: >-
           external context {name} concluded {conclusion} {age_s}s ago, inside the {grace_s}s rerun window:
@@ -87,7 +126,7 @@ validation:
         pending_message: 'external context {name} is {status}: poll again until the deadline'
         deadline_message: >-
           the poll deadline passed with external context {name} still pending: a pending context at the
-          deadline is red #magic___^_^___line
+          deadline is red
     - rule_id: ci_summary_gate_parity
       description: >-
         Run the generic validator; a file that carries the gate's verdict line or its context tables is
