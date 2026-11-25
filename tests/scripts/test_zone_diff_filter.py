@@ -63,7 +63,8 @@ def test_mixed_zone_exits_1() -> None:
         ("examples/contracts/x.yaml", 1),
         ("docs/x.md,examples/contracts/x.yaml", 1),
         ("docs/x.md,README.md", 0),
-        ("contracts/x.yaml,drift/dod_receipts/x.yaml,.evidence/x.yaml", 0),
+        ("contracts/x.yaml", 1),
+        ("drift/dod_receipts/x.yaml,.evidence/x.yaml", 0),
     ],
 )
 def test_docs_only_policy_and_prefix_boundaries(diff: str, expected: int) -> None:
@@ -171,7 +172,8 @@ def test_staged_standalone_package_still_rejects_production(tmp_path: Path) -> N
         ("allowlists/x.yaml", 1),
         ("docs/x.md,allowlists/x.yaml", 1),
         ("examples/contracts/x.yaml", 1),
-        ("docs/x.md,README.md,contracts/x.yaml,.evidence/x.yaml", 0),
+        ("docs/x.md,README.md,contracts/x.yaml", 1),
+        ("docs/x.md,README.md,.evidence/x.yaml", 0),
     ],
 )
 def test_staged_policy_and_prefix_boundaries(
