@@ -726,7 +726,7 @@ def _check_error_handling() -> tuple[bool, str]:
 
 _KAFKA_SKIPPED_PREFIX = importlib.import_module(
     "omnibase_core.nodes.node_cli_commands_effect.handler"
-).KAFKA_SKIPPED_PREFIX
+).kafka_skipped_prefix
 
 
 def _check_kafka_reachable() -> tuple[bool, str]:
@@ -734,7 +734,7 @@ def _check_kafka_reachable() -> tuple[bool, str]:
     module = importlib.import_module(
         "omnibase_core.nodes.node_cli_commands_effect.handler"
     )
-    return module.check_kafka_reachable()
+    return module.check_kafka_reachable(os.environ.get("KAFKA_BOOTSTRAP_SERVERS"))
 
 
 # Every built-in core command above (compliance, composition-report,

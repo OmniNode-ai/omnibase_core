@@ -31,11 +31,13 @@ class DoctorRegistry:
                 raise ValueError(msg)  # error-ok: registry duplicate guard
             self._checks[cid] = check_class
 
-    def discover(self) -> None:
+    def discover(self, developer: bool = False) -> None:
         module = importlib.import_module(
             "omnibase_core.nodes.node_doctor_registry_effect.handler"
         )
-        module.discover(self, entry_points(group=ENTRY_POINT_GROUP))
+        module.discover(
+            self, entry_points(group=ENTRY_POINT_GROUP), developer=developer
+        )
 
     def list_all(self) -> list[DoctorCheckBase]:
         with self._lock:

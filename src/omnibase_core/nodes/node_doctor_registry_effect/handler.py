@@ -10,7 +10,6 @@ from typing import Any
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 
-
 __all__ = ["NodeDoctorRegistryEffect", "discover"]
 
 
@@ -25,13 +24,6 @@ class NodeDoctorRegistryEffect:
         )
 
     @staticmethod
-    def _developer_install() -> bool:
-        module = importlib.import_module(
-            "omnibase_core.nodes.node_cli_doctor_effect.handler"
-        )
-        return module.developer_install()
-
-    @staticmethod
     def _base_class() -> type[DoctorCheckBase]:
         module = importlib.import_module("omnibase_core.doctor.doctor_check_base")
         return module.DoctorCheckBase
@@ -40,10 +32,15 @@ class NodeDoctorRegistryEffect:
         """Runtime adapter entry point; registry uses the static seam."""
         return request
 
-    def discover_checks(self, registry: Any, entry_points: Iterable[object]) -> None:
+    def discover_checks(
+        self,
+        registry: Any,
+        entry_points: Iterable[object],
+        developer: bool = False,
+    ) -> None:
         """Load onex.doctor classes and keep customer installs customer-only."""
         base = self._base_class()
-        exclude = frozenset() if self._developer_install() else self._developer_only()
+        exclude = frozenset() if developer else self._developer_only()
         registered = getattr(registry, "_checks", {})
         for entry_point in entry_points:
             loaded = entry_point.load()
@@ -56,6 +53,10 @@ class NodeDoctorRegistryEffect:
                 registry.register(loaded)
 
 
-def discover(registry: Any, entry_points: Iterable[object]) -> None:
+def discover(
+    registry: Any, entry_points: Iterable[object], developer: bool = False
+) -> None:
     """Keep the baselined registry wrapper thin."""
-    NodeDoctorRegistryEffect().discover_checks(registry, entry_points)
+    NodeDoctorRegistryEffect().discover_checks(
+        registry, entry_points, developer=developer
+    )

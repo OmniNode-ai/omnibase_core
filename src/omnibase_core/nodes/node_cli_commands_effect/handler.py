@@ -4,12 +4,11 @@
 
 from __future__ import annotations
 
-import os
 import socket
 
-__all__ = ["KAFKA_SKIPPED_PREFIX", "NodeCliCommandsEffect", "check_kafka_reachable"]
+__all__ = ["kafka_skipped_prefix", "NodeCliCommandsEffect", "check_kafka_reachable"]
 
-KAFKA_SKIPPED_PREFIX = "Kafka check skipped"  # env-var-ok: constant definition
+kafka_skipped_prefix = "Kafka check skipped"
 
 
 class NodeCliCommandsEffect:
@@ -20,12 +19,11 @@ class NodeCliCommandsEffect:
         return check_kafka_reachable()
 
     @staticmethod
-    def check_kafka_reachable() -> tuple[bool, str]:
+    def check_kafka_reachable(raw: str | None = None) -> tuple[bool, str]:
         """Return a plain-words result for unset, invalid or unreachable Kafka."""
-        raw = os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
         if not raw or not str(raw).strip():
             return True, (
-                f"{KAFKA_SKIPPED_PREFIX} because no Kafka address is set. "
+                f"{kafka_skipped_prefix} because no Kafka address is set. "
                 "Fix: export KAFKA_BOOTSTRAP_SERVERS=<host>:<port>"
             )
 
@@ -47,6 +45,6 @@ class NodeCliCommandsEffect:
             return False, f"Kafka not reachable at {host}:{port}"
 
 
-def check_kafka_reachable() -> tuple[bool, str]:
+def check_kafka_reachable(raw: str | None = None) -> tuple[bool, str]:
     """Keep the baselined CLI wrapper thin."""
-    return NodeCliCommandsEffect.check_kafka_reachable()
+    return NodeCliCommandsEffect.check_kafka_reachable(raw)
