@@ -687,7 +687,7 @@ def _check_validation_system() -> tuple[bool, str]:
 
         suite = ServiceValidationSuite()
         validator_count = len(suite.validators)
-        return True, f"Validation suite loaded with {validator_count} validators"
+        return True, "Validation system ready"
     except ImportError as e:
         return False, f"Import error: {e}"
     except PYDANTIC_MODEL_ERRORS as e:

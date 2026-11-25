@@ -421,14 +421,14 @@ class TestHealthCheckHelpers:
         """Test _check_validation_system returns success when validation works."""
         is_healthy, message = _check_validation_system()
         assert is_healthy is True
-        assert "validators" in message.lower()
+        assert "ready" in message.lower()
 
-    def test_check_validation_system_reports_validator_count(self) -> None:
-        """Test _check_validation_system reports the number of validators."""
+    def test_check_validation_system_hides_the_validator_count(self) -> None:
+        """OMN-26616 EXTRA5: a customer is not shown how many validators loaded."""
         is_healthy, message = _check_validation_system()
         assert is_healthy is True
-        # Should report number of validators
-        assert "validator" in message.lower()
+        assert "validator" not in message.lower()
+        assert not any(ch.isdigit() for ch in message)
 
     def test_check_error_handling_success(self) -> None:
         """Test _check_error_handling returns success when error handling works."""
