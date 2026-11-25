@@ -1,0 +1,49 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26651
+title: The hardcoded model configuration guard refuses a bare local-model alias
+summary: |-
+  A bare "local-qwen" alias, with no digit or dash after the family name, was a model choice the family M pattern did not match. The policy gains one alternative in model_id_pattern and the acceptance corpus gains a fixture and a manifest row for it. Other families and the baseline ratchet are unchanged.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26651-bare-local-alias
+    statement: |-
+      The guard reports a bare local-model alias as family M in source, like any other model id.
+    acceptance:
+      - id: AC1
+        statement: |-
+          AC1: a source file holding the bare alias yields exactly one family M finding -- falsifier: uv run --frozen pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py -q -n 0 --no-cov -k violation_m_local_alias fails at the merge base because the pattern does not match
+      - id: AC2
+        statement: |-
+          AC2: the rest of the acceptance corpus and the baseline tests are unchanged -- falsifier: uv run --frozen pytest tests/unit/validation/hardcoded_model_config -q -n 0 --no-cov
+evidence_requirements:
+  - kind: tests
+    description: |-
+      The corpus fixture yields its family and the whole guard test directory stays green.
+    command: uv run --frozen pytest tests/unit/validation/hardcoded_model_config -q -n 0 --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26651-ac1-local-alias
+    description: The bare alias fixture yields exactly one family M finding.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: test_passes
+        check_value: |-
+          uv run --frozen pytest tests/unit/validation/hardcoded_model_config/test_hardcoded_model_config.py -q -n 0 --no-cov -k violation_m_local_alias
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26651-ac2-corpus
+    description: The whole guard test directory passes with the new pattern alternative.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/validation/hardcoded_model_config -q -n 0 --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
