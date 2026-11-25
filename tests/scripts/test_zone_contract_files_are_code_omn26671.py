@@ -83,7 +83,12 @@ def test_contract_mixed_with_docs_is_not_docs_only() -> None:
 
 
 def test_a_bad_contract_entry_is_refused_by_the_contract_shape_model() -> None:
-    """Known bad: a sole file_exists item is refused; the corrected one passes."""
+    """Known bad: a sole file_exists item is refused; the corrected one passes.
+
+    The refusal only guards a contract-only diff when the filter sends that
+    diff to the tests, so the test also pins that reachability (red on base).
+    """
+    assert _docs_only_exit("contracts/OMN-20074.yaml") == 1
     good = yaml.safe_load(
         (REPO_ROOT / "contracts" / "OMN-20074.yaml").read_text(encoding="utf-8")
     )
