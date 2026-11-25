@@ -41,3 +41,14 @@ dod_evidence:
           uv run --frozen pytest tests/ci/test_ci_summary_running_conclusion_omn24562.py tests/unit/scripts/ci/test_ci_summary_gate.py
           -q -n 0 --reruns 0
         cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24562-core-summary-poll-own-workflow-rows
+    description: 'AC2: CI Summary never holds a row of its own workflow on its own run.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/ci/test_ci_summary_self_producer_omn24562.py -q -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core

@@ -1405,15 +1405,17 @@ def evaluate(
     _active_exclusions, expired_exclusions = active_sweep_exclusions(
         sweep_exclusions, now=now
     )
-    own_run_ids: set[int] = set()
-    for raw in jobs:
-        try:
-            run_id = int(str(raw.get("run_id") or 0))
-        except (TypeError, ValueError):
-            run_id = 0
-        run_id = run_id or check_run_workflow_run_id(raw) or 0
-        if run_id:
-            own_run_ids.add(run_id)
+    # OMN-24562 (run 45589797953): rows of the polling run's own workflow, from
+    # any run, are judged from this run's own jobs (layers 1-3) and never held on
+    # it: skipped rows of a cancelled draft-era run waited on this very run.
+    # Unknown provenance exempts nothing.
+    own_run_ids = {
+        int(str(r.get("run_id") or 0)) or check_run_workflow_run_id(r) or 0
+        for r in jobs
+    } - {0}
+    runs = workflow_runs or []
+    own_wf = {w.get("workflow_id") for w in runs if w.get("id") in own_run_ids} - {None}
+    own_run_ids |= {int(str(w["id"])) for w in runs if w.get("workflow_id") in own_wf}
     (
         ext_sweep_failures,
         ext_sweep_running,
