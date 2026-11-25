@@ -89,13 +89,12 @@ dod_evidence:
           -q -n 0 --no-cov -p no:cacheprovider
         cwd: .
   - id: dod-omn26615-ac3
-    description: "AC3: the profile artifact exists with its before and after importtime outputs and the
-      repeatable profile script; the evidence lives in the workflow checkout, so only the local Done gate
-      runs this check."
+    description: "The saved profile artifact exists with its before and after importtime outputs and the
+      repeatable profile script. The evidence lives in the workflow checkout under records/evidence/OMN-26615,
+      so only the local Done gate runs this item. It binds no criterion; AC3 is bound to the hosted mechanism
+      test dod-omn26615-ac3-mechanism."
     source: manual
     execution_scope: local_done_gate
-    binds_ac:
-      - AC3
     checks:
       - check_type: command
         check_value: test -s ../../../records/evidence/OMN-26615/before/importtime.txt -a -s ../../../records/evidence/OMN-26615/after3/importtime_overlay.txt
