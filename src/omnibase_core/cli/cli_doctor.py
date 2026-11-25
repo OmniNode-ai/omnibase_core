@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import importlib
 from pathlib import Path
 
 import click
@@ -10,9 +11,12 @@ from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
 from omnibase_core.models.doctor.model_doctor_report import ModelDoctorReport
-from omnibase_core.nodes.node_cli_doctor_effect import handler as _doctor_node
 
-_BUILTIN_CHECKS = list(_doctor_node.default_builtin_checks())
+_BUILTIN_CHECKS = list(
+    importlib.import_module(
+        "omnibase_core.nodes.node_cli_doctor_effect.handler"
+    ).default_builtin_checks()
+)
 
 
 @click.command("doctor")
@@ -28,7 +32,10 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
     _raw_omni_home = _bootstrap.environment.optional("OMNI_HOME")
     developer = bool(_raw_omni_home and Path(_raw_omni_home).is_dir())
 
-    for check_cls in _doctor_node.builtin_checks(_BUILTIN_CHECKS, developer=developer):
+    _handler = importlib.import_module(
+        "omnibase_core.nodes.node_cli_doctor_effect.handler"
+    )
+    for check_cls in _handler.builtin_checks(_BUILTIN_CHECKS, developer=developer):
         # Why: Registry stores protocol contracts rather than instantiating them directly.
         registry.register(check_cls)
 
