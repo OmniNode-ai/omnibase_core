@@ -4,14 +4,14 @@ ticket_id: OMN-25070
 title: CI runs omnibase_core's checks as modules, so it survives the console scripts T1 removes from the
   customer install
 summary: T1 of the customer delivery plan takes the check tools out of the customer install, so the console
-  scripts omnibase_core declares (all but onex and omni-agent) can leave the published package. Eleven
-  CI callers in this repository ran one of them by name. Each now runs `python -m <module>`, the form
-  most of the repository's hooks already use, and the reusable validate-docs.yml standalone mode runs
-  the link validator from `uv run --no-project --with omnibase_core` instead of a uv tool install's script.
-  A new test fails on any workflow, composite action or hook entry that runs a removable script, and checks
-  that every `python -m` target runs as a module. This change removes no script; the move itself is a
-  later step of the ticket. The other registry repositories' five callers (onex_change_control, omnimemory,
-  omniclaude) get their own pull requests.
+  scripts omnibase_core declares (all but onex; omni-agent is not a customer command, operator ruling
+  2026-11-25) can leave the published package. Eleven CI callers in this repository ran one of them by
+  name. Each now runs `python -m <module>`, the form most of the repository's hooks already use, and the
+  reusable validate-docs.yml standalone mode runs the link validator from `uv run --no-project --with
+  omnibase_core` instead of a uv tool install's script. A new test fails on any workflow, composite action
+  or hook entry that runs a removable script, and checks that every `python -m` target runs as a module.
+  This change removes no script; the move itself is a later step of the ticket. The other registry repositories'
+  five callers (onex_change_control, omnimemory, omniclaude) get their own pull requests.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
@@ -35,7 +35,9 @@ requirements:
           in omnibase_core runs onex or omni-agent as a command; callers run python -m omnibase_core.cli.cli_commands
           -- falsifier: the per-repository launcher check in tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py
           fails at the merge base, where the compliance-check action runs uv run onex compliance check
-          twice"
+          twice. The guard exempts only onex as a customer launcher, so a caller of omni-agent is reported
+          too (test_omni_agent_is_not_a_customer_launcher_so_its_callers_are_flagged, which fails at the
+          merge base, where omni-agent is exempt)"
   - id: req-omn25070-onex-version-customer-package
     statement: onex --version reports the version of the customer package omninode-onex when it is installed,
       and omnibase_core's version only on a developer install without it.
@@ -101,4 +103,14 @@ dod_evidence:
           "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_prose_and_the_module_form_are_not_launcher_calls"
           "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_a_launcher_script_under_scripts_is_scanned"
           "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_no_ci_caller_runs_the_onex_launcher[omnibase_core]"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25070-ac3-omni-agent-not-customer-launcher
+    description: The caller guard exempts only onex as a customer launcher, so a step that runs omni-agent
+      is reported as a caller of a removable script. The bound test fails at the merge base, where the
+      guard exempts omni-agent as well.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest -q --no-cov "tests/ci/test_ci_callers_survive_script_cleanup_omn25070.py::test_omni_agent_is_not_a_customer_launcher_so_its_callers_are_flagged"
         cwd: ${OMNI_HOME}/omnibase_core
