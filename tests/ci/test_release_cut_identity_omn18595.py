@@ -540,3 +540,14 @@ def test_release_changelog_retains_version_0_47_78_in_root_readme() -> None:
         in readme
     )
     assert not (REPO_ROOT / "CHANGELOG.md").exists()
+
+
+def test_release_changelog_retains_version_0_47_79_in_root_readme() -> None:
+    """Keep the 0.47.79 cut's public notes in root README, not a changelog."""
+    readme = (REPO_ROOT / "README.md").read_text(encoding="utf-8")
+    assert "## v0.47.79 (2026-11-25)" in readme
+    assert "### Included Since v0.47.78" in readme
+    assert (
+        "- : extend hook-rev exemption for 1c9566e2c249 to 2026-12-04 (#2367)" in readme
+    )
+    assert not (REPO_ROOT / "CHANGELOG.md").exists()
