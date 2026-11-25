@@ -35,6 +35,10 @@ requirements:
       - id: AC4
         statement: "AC4: the PR body carries a Lab line and the lane TERMINAL names the head -- falsifier:
           the PR body carries no line starting `Lab:`"
+      - id: AC5
+        statement: "AC5: the one exemption is admitted through 2026-12-04 and refused from 2026-12-05,
+          and its shipped entry cites RULING 2026-11-25T02:33:04Z -- falsifier: the shipped entry's last
+          day is not 2026-12-04 or its ruling cell does not cite RULING 2026-11-25T02:33:04Z"
 evidence_requirements:
   - kind: tests
     description: The dependency-pins unit tests pass, including the extended exemption tests.
@@ -90,4 +94,17 @@ dod_evidence:
       - check_type: test_passes
         check_value: "uv run pytest tests/unit/validation/dependency_pins/test_hook_rev_exemption.py::test_shipped_exemption_is_extended_one_week_and_then_refuses
           -q --no-cov -o addopts='' -n 0"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn25506-ac5-second-extension
+    description: "The shipped exemption's last day is 2026-12-04 and its ruling cell cites RULING 2026-11-25T02:33:04Z;
+      the policy at the merge base holds neither."
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: command
+        check_value: "uv run python -c \"from omnibase_core.validation.validator_dependency_pins import
+          load_dependency_pin_policy as load; (e,) = load().hook_rev_exemptions; assert e.expires.isoformat()
+          == '2026-12-04' and 'RULING 2026-11-25T02:33:04Z' in e.ruling\""
         cwd: ${OMNI_HOME}/omnibase_core
