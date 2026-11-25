@@ -27,8 +27,8 @@ or ``on`` lists and resolves every group.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
-from typing import Protocol
+from collections.abc import Iterable, Mapping, MutableMapping
+from typing import Any, Protocol
 
 import click
 
@@ -197,7 +197,10 @@ class _ExtensionHost(Protocol):
     """The lazy root group: advertised ``onex.cli`` extensions, and a resolver."""
 
     @property
-    def _lazy_extensions(self) -> Mapping[str, object]: ...
+    def _lazy_extensions(self) -> MutableMapping[str, Any]: ...
+
+    @property
+    def commands(self) -> MutableMapping[str, click.Command]: ...
 
     def _load(self, ctx: click.Context, cmd_name: str) -> click.Command | None: ...
 
@@ -219,6 +222,7 @@ def reply_to_hidden_command(
     """
     if cmd_name not in group._lazy_extensions:
         return None
+    advertised = group._lazy_extensions[cmd_name]
     try:
         group._load(ctx, cmd_name)
     except ModelOnexError as exc:
@@ -226,6 +230,10 @@ def reply_to_hidden_command(
             f"the '{cmd_name}' command failed to load and is unavailable. "
             "Reinstall or update the package that provides it."
         ) from exc
+    # A healthy hidden extension goes back to advertised-not-loaded: left in
+    # ``commands`` click would offer the typed name back as "Did you mean".
+    group.commands.pop(cmd_name, None)
+    group._lazy_extensions[cmd_name] = advertised
     return None
 
 

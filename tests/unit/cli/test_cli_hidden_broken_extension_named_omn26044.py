@@ -155,6 +155,25 @@ def test_customer_mode_hidden_healthy_extension_stays_no_such_command(
     assert "No such command 'healthy-hidden'" in result.output
 
 
+def test_customer_mode_hidden_healthy_extension_is_not_suggested_back(
+    customer_mode: None,
+) -> None:
+    """Resolving a hidden healthy name must not leave it in the suggestion pool.
+
+    click offers ``Did you mean`` from the group's registered commands; loading
+    the extension to learn it is healthy must not register it there, or the
+    typed hidden name is echoed back as a suggestion (an existence oracle).
+    """
+    root = _root(_StubEntryPoint("healthy-hidden", "pkg:cmd", loaded=_healthy))
+
+    first = CliRunner().invoke(root, ["healthy-hidden"])
+    second = CliRunner().invoke(root, ["healthy-hidden"])
+
+    assert "Did you mean" not in first.output
+    assert "Did you mean" not in second.output
+    assert "healthy-hidden" not in root.commands
+
+
 def test_customer_mode_unregistered_name_stays_no_such_command(
     customer_mode: None,
 ) -> None:
