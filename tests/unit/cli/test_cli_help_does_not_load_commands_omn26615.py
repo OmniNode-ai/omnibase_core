@@ -232,12 +232,15 @@ def test_without_a_terminal_help_is_under_one_second(
     measured back to back on the same machine. A fixed 1.0 s bound failed on a
     two-core CI runner under ``-n 4`` (median 1.07 s, and 1.64 s with the
     process pinned to two cores) because interpreter start-up alone then costs
-    more than that; the 1.5 s the extension adds does not depend on the load.
+    more than that; the 1.5 s the extension adds does not depend on the load. A defect
+    gives a gap of about 0 and the fix about 1.5, so the bound sits at the
+    midpoint, 0.75 s; a 1.0 s bound failed twice in twelve runs pinned to two
+    cores (gaps of 0.94 s).
     """
     with_entry = statistics.median(_timed_help(ext, monkeypatch) for _ in range(5))
     _make_dist(ext, declare_help=False)
     without_entry = statistics.median(_timed_help(ext, monkeypatch) for _ in range(3))
-    assert with_entry < without_entry - 1.0, (
+    assert with_entry < without_entry - 0.75, (
         f"with a help entry {with_entry:.2f}s, without {without_entry:.2f}s"
     )
 
