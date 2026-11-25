@@ -68,14 +68,17 @@ dod_evidence:
           -q -n 0 --no-cov -p no:cacheprovider
         cwd: .
   - id: dod-omn26615-ac2-existing
-    description: "AC2: the existing extension-loader tests still pass (fail-loud loading, lazy loading,
-      kafka extension)."
+    description: "AC2: the existing extension-loader tests still pass: fail-loud loading, lazy loading
+      of the built-in and extension commands, and the kafka extension. Only these four files run, because
+      the whole tests/unit/cli directory does not fit the hosted verifier's 30 s per-check budget."
     source: manual
     binds_ac:
       - AC2
     checks:
       - check_type: test_passes
-        check_value: uv run pytest tests/unit/cli -q -n 4 --no-cov -p no:cacheprovider
+        check_value: uv run pytest tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py tests/unit/cli/test_lazy_cli_extensions_omn19444.py
+          tests/unit/cli/test_lazy_cli_loading_omn19444.py tests/unit/cli/test_cli_kafka.py -q -n 0 --no-cov
+          -p no:cacheprovider
         cwd: .
   - id: dod-omn26615-ac3-mechanism
     description: "AC3 mechanism: in a fresh interpreter the help page leaves a declared extension out
