@@ -226,9 +226,19 @@ def _timed_help(site: Path, monkeypatch: pytest.MonkeyPatch) -> float:
 def test_without_a_terminal_help_is_under_one_second(
     ext: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    runs = [_timed_help(ext, monkeypatch) for _ in range(5)]
-    assert statistics.median(runs) < 1.0, (
-        f"median {statistics.median(runs):.2f}s, runs {runs}"
+    """The extension's 1.5 s import is not paid on the help page.
+
+    The page time is compared with the same command run with no help entry,
+    measured back to back on the same machine. A fixed 1.0 s bound failed on a
+    two-core CI runner under ``-n 4`` (median 1.07 s, and 1.64 s with the
+    process pinned to two cores) because interpreter start-up alone then costs
+    more than that; the 1.5 s the extension adds does not depend on the load.
+    """
+    with_entry = statistics.median(_timed_help(ext, monkeypatch) for _ in range(5))
+    _make_dist(ext, declare_help=False)
+    without_entry = statistics.median(_timed_help(ext, monkeypatch) for _ in range(3))
+    assert with_entry < without_entry - 1.0, (
+        f"with a help entry {with_entry:.2f}s, without {without_entry:.2f}s"
     )
 
 
