@@ -121,7 +121,7 @@ def test_transient_preflight_red_is_pending_not_latched(tmp_path: Path) -> None:
         _ctx("DB Ownership Gate", "failure", "2026-09-04T07:58:20Z"),
     ]
     code, msgs = _verdict(tmp_path, _rows(check_runs=runs))
-    assert code == 2 and "re-run window" in msgs[0]
+    assert code == 2 and "rerun window" in msgs[0]
 
 
 def test_stable_external_red_past_window_is_red(tmp_path: Path) -> None:

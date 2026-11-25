@@ -40,7 +40,7 @@ dod_evidence:
       - AC1
   - id: dod-omn-17864-generic-verdict
     description: The CI Summary verdict runs as the generic ci_summary_verdict validator; known good rows
-      exit 0, a transient preflight red inside its re-run window exits 2 (pending), a stable red and a
+      exit 0, a transient preflight red inside its rerun window exits 2 (pending), a stable red and a
       copy of the gate in a repository exit 1.
     source: manual
     checks:

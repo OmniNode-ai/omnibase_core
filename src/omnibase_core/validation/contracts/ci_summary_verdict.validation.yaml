@@ -16,8 +16,8 @@ validation:
     warning is a pending verdict (exit 2), no issue is green (exit 0).
 
     A completed non-success external context whose conclusion the rule names as supersedable stays
-    pending while it sits inside its re-run window, so a transient preflight red (a PR body edit that
-    re-runs the producer) is re-polled until the deadline instead of latched; past the window, or past
+    pending while it sits inside its rerun window, so a transient preflight red (a PR body edit that
+    reruns the producer) is re-polled until the deadline instead of latched; past the window, or past
     the deadline, it is red.
 
     ci_summary_gate_parity: a repository other than this one runs this validator and holds no copy of
@@ -66,7 +66,7 @@ validation:
     - rule_id: ci_summary_external
       description: >-
         Each expected external context must be present and completed with success. A completed non-success
-        row is pending while it is inside its re-run window (OMN-17864), red after.
+        row is pending while it is inside its rerun window (OMN-17864), red after.
       severity: error
       enabled: true
       parameters:
@@ -82,7 +82,7 @@ validation:
         supersession_grace_s: 900
         red_message: 'external context {name} concluded {conclusion}: fix it at its cause'
         provisional_message: >-
-          external context {name} concluded {conclusion} {age_s}s ago, inside the {grace_s}s re- run window:
+          external context {name} concluded {conclusion} {age_s}s ago, inside the {grace_s}s rerun window:
           re-poll the latest producer state
         pending_message: 'external context {name} is {status}: poll again until the deadline'
         deadline_message: >-
