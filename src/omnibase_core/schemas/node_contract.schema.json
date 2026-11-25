@@ -342,18 +342,82 @@
     },
     "ModelContractMcpConfig": {
       "additionalProperties": false,
-      "description": "MCP tool exposure declared in a contract YAML ``mcp:`` block.\n\nEvery field is required: a contract that opts into MCP exposure must\nsay what the tool is called, what it does, and how long it may run.",
+      "description": "MCP tool exposure declared in a contract YAML ``mcp:`` block.",
+      "if": {
+        "properties": {
+          "expose": {
+            "const": true
+          }
+        },
+        "required": [
+          "expose"
+        ]
+      },
       "properties": {
+        "expose": {
+          "description": "Whether the MCP adapter exposes this node as tools.",
+          "title": "Expose",
+          "type": "boolean"
+        },
+        "tools": {
+          "description": "One entry per exposed operation; tool names are unique.",
+          "items": {
+            "$ref": "#/$defs/ModelContractMcpTool"
+          },
+          "title": "Tools",
+          "type": "array"
+        }
+      },
+      "required": [
+        "expose"
+      ],
+      "then": {
+        "properties": {
+          "tools": {
+            "minItems": 1
+          }
+        },
+        "required": [
+          "tools"
+        ]
+      },
+      "title": "ModelContractMcpConfig",
+      "type": "object"
+    },
+    "ModelContractMcpTool": {
+      "additionalProperties": false,
+      "description": "One operation exposed as an MCP tool; every field is required.",
+      "properties": {
+        "command_topic": {
+          "description": "Canonical topic suffix the tool command is published on.",
+          "title": "Command Topic",
+          "type": "string"
+        },
+        "completed_topic": {
+          "description": "Canonical topic suffix of the completed reply.",
+          "title": "Completed Topic",
+          "type": "string"
+        },
         "description": {
           "description": "Tool description presented to the MCP client.",
           "minLength": 1,
           "title": "Description",
           "type": "string"
         },
-        "expose": {
-          "description": "Whether the MCP adapter exposes this node as a tool.",
-          "title": "Expose",
-          "type": "boolean"
+        "failed_topic": {
+          "description": "Canonical topic suffix of the failed reply; must differ from the completed one.",
+          "title": "Failed Topic",
+          "type": "string"
+        },
+        "input_model": {
+          "description": "Dotted path (module path, then class) of the tool input model.",
+          "title": "Input Model",
+          "type": "string"
+        },
+        "output_model": {
+          "description": "Dotted path (module path, then class) of the tool output model.",
+          "title": "Output Model",
+          "type": "string"
         },
         "timeout_seconds": {
           "description": "Maximum wall-clock seconds a single tool invocation may take.",
@@ -363,19 +427,22 @@
         },
         "tool_name": {
           "description": "Snake-case MCP tool identifier presented to callers.",
-          "minLength": 1,
           "pattern": "^[a-z][a-z0-9_]*$",
           "title": "Tool Name",
           "type": "string"
         }
       },
       "required": [
-        "expose",
         "tool_name",
         "description",
-        "timeout_seconds"
+        "timeout_seconds",
+        "input_model",
+        "output_model",
+        "command_topic",
+        "completed_topic",
+        "failed_topic"
       ],
-      "title": "ModelContractMcpConfig",
+      "title": "ModelContractMcpTool",
       "type": "object"
     },
     "ModelContractPlacement": {

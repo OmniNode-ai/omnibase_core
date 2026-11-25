@@ -1,57 +1,44 @@
 ---
 schema_version: 1.0.0
 ticket_id: OMN-15920
-title: 'OMN-15920: typed list of MCP tool entries with parser and schema (one-MCP-server plan, PR 1)'
-summary: Core types for the one-MCP-server plan. A contract mcp block is a typed list of tool entries,
-  one per operation, each with tool name, description, timeout, input and output models, a command route
-  and completed and failed reply routes. A parser refuses the legacy single-tool block, a duplicate name,
-  an exposed block with no entries and routes that are not distinct. The JSON schema is committed and
-  checked against the model. This is pull request 1 of 8 and does not finish the ticket.
+title: 'OMN-15920: contract mcp block carries a list of tool entries (one-MCP-server plan, PR 1)'
+summary: Core slice of the one-MCP-server plan. The contract mcp block keeps expose and holds a list named
+  tools, one entry per operation, each with tool name, description, timeout, input and output model as
+  dotted paths, and canonical command, completed and failed topic suffixes (completed and failed differ).
+  The old block-level single-tool keys are removed with no shim. The committed node contract schema is
+  regenerated and carries the exposure rule as an if/then. This is pull request 1 of the plan and does
+  not finish the ticket.
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
-  - id: req-omn15920-typed-tool-entries
-    statement: The typed tool entry list, its parser and its schema exist in omnibase_core.
+  - id: req-omn15920-mcp-tools-list
+    statement: The contract mcp block is a list of typed tool entries and the committed schema carries
+      it.
     acceptance:
       - id: AC1
-        statement: "AC1: each known-bad entry (duplicate name, missing field, legacy block, equal routes,
-          empty exposed list) is refused by name -- falsifier: the known-bad test is green on the head
-          and the module is absent on the base"
-      - id: AC2
-        statement: "AC2: the committed JSON schema equals the model's generated schema -- falsifier: a
-          model change without a regenerated schema fails the schema test"
+        statement: "AC1: a fixture with two entries on one contract parses through the model and validates
+          against the committed schema -- falsifier: at the merge base the model refuses the tools key
+          as unknown, so the test fails there"
 evidence_requirements:
   - kind: tests
-    description: Focused tests of the typed MCP exposure list.
+    description: Fixture-backed test of the two-entry mcp block against the model and the committed schema.
     command: >-
-      uv run --frozen pytest tests/unit/models/mcp/test_model_mcp_exposure.py -q -n 0 --reruns 0
+      uv run --locked pytest tests/unit/models/contracts/test_contract_mcp_tools.py -q -n 0 --reruns 0
 emergency_bypass:
   enabled: false
   justification: ''
   follow_up_ticket_id: ''
 dod_evidence:
-  - id: dod-omn15920-pr1-known-bad-refused
-    description: 'AC1: every known-bad tool entry is refused by name and a valid two-operation block parses.'
+  - id: dod-omn15920-pr1-two-entry-fixture-validates
+    description: 'AC1: the two-entry fixture loads and validates against the model and the committed schema.'
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC1
     checks:
-      - check_type: test_passes
+      - check_type: command
         check_value: >-
-          uv run --frozen pytest tests/unit/models/mcp/test_model_mcp_exposure.py -q -n 0 --reruns 0 -k
-          "KnownBad or TestParse"
-        cwd: ${OMNI_HOME}/omnibase_core
-  - id: dod-omn15920-pr1-schema-matches
-    description: 'AC2: the committed schema equals the generated schema.'
-    source: manual
-    execution_scope: hosted_and_local
-    binds_ac:
-      - AC2
-    checks:
-      - check_type: test_passes
-        check_value: >-
-          uv run --frozen pytest tests/unit/models/mcp/test_model_mcp_exposure.py -q -n 0 --reruns 0 -k
-          TestSchema
+          uv run --locked pytest tests/unit/models/contracts/test_contract_mcp_tools.py::test_two_entry_fixture_validates_against_model_and_committed_schema
+          -q -n 0 --reruns 0
         cwd: ${OMNI_HOME}/omnibase_core

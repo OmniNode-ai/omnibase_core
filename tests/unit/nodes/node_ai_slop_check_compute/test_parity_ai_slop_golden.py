@@ -8,6 +8,13 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
+    ModelSourceFileGatherInput,
+)
+from omnibase_core.nodes.node_source_file_gather_effect.handler import (
+    NodeSourceFileGatherEffect,
+)
+
 from .parity_helpers import (
     CORPUS,
     FIXTURES,
@@ -59,6 +66,23 @@ def test_parity_ai_slop_source_tree_golden(strict: bool, tmp_path: Path) -> None
         row["filename"] = str(Path(str(row["filename"])).relative_to(ROOT))
     assert code == expected["exit_code"]
     assert normalized_parity(rows) == normalized_parity(expected["findings"])
+
+
+def test_parity_ai_slop_ci_scope_paths_all_exist_and_are_gathered() -> None:
+    """The scanner drops a missing path silently, so assert none is missing."""
+    scope: list[str] = json.loads((FIXTURES / "ci_scope.json").read_text())
+    assert len(scope) == len(set(scope))
+    missing = [p for p in scope if not (ROOT / p).is_file()]
+    assert missing == []
+    gathered = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=".",
+            explicit_paths=[str(ROOT / p) for p in scope],
+            include_patterns=["**/*.py", "**/*.md"],
+        )
+    )
+    assert gathered.skipped == []
+    assert len(gathered.files) == len(scope)
 
 
 def test_parity_ai_slop_ci_tree_golden(tmp_path: Path) -> None:
