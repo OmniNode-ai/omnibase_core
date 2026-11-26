@@ -2146,7 +2146,11 @@ jobs:
                 # change is never reverted, and a later amendment on the base
                 # would make it fail to revert (OMN-17427). A duration record is
                 # test bookkeeping, not product, either (OMN-25969).
-                if [[ "$path" =~ $TEST_SIDE|$TEST_RECORDS|^contracts/OMN-[0-9]+\.yaml$ ]]; then
+                # Only the bound ticket's own contract is evidence. A fix that amends
+                # another ticket's contract (OMN-22617 corrected the DoD command of
+                # contracts/OMN-21700.yaml) changes behaviour a bound test reads, so
+                # that contract is reverted with the product paths (OMN-20413).
+                if [[ "$path" =~ $TEST_SIDE|$TEST_RECORDS ]] || [ "$path" = "contracts/$ticket_id.yaml" ]; then
                   continue
                 fi
                 if version_bookkeeping_only "$fix" "$path"; then

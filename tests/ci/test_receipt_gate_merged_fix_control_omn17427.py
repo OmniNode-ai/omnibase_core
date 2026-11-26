@@ -1105,6 +1105,25 @@ def test_merged_fix_with_only_test_and_contract_changes_is_refused(
     assert control is None
 
 
+@pytest.mark.skipif(_CONTROL_TOOLS_MISSING, reason="bash, git and jq are required")
+def test_merged_fix_amending_another_tickets_contract_is_not_refused_as_no_product(
+    tmp_path: Path,
+) -> None:
+    """OMN-20413: another ticket's contract is behaviour a test reads, so it is reverted."""
+    repo = _repository(tmp_path)
+    repo.write("tests/test_more.py", PRODUCT_TEST)
+    repo.write("contracts/OMN-2.yaml", CONTRACT + "# corrected by the fix\n")
+    named = repo.commit("fix(OMN-1): correct the contract of OMN-2 and test it")
+    repo.commits["merge_base"] = named
+    repo.env["BASE_SHA"] = named
+    _bind(repo, [f"OMN-1 {named}"])
+    prepare, _control = _run_steps(repo)
+
+    output = prepare.stdout + prepare.stderr
+    assert "changes no product path" not in output, output
+    assert f"Reverted from {named}: contracts/OMN-2.yaml" in output, output
+
+
 DURATION_RECORD = "config/test_file_durations.d/tests__test_product.json"
 
 

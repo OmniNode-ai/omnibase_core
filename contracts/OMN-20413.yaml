@@ -21,6 +21,10 @@ requirements:
         statement: On an Ubuntu 24.04 runner whose archive is listed only in deb822 source parts, the
           rootless path copies the host's source parts into its private apt state instead of turning source
           parts off, so postgresql-16's Ubuntu dependencies (libjson-perl) resolve.
+      - id: AC3
+        statement: A Binds-Merged-Fix whose merged fix changes tests and another ticket's contract is
+          not refused as changing no product path; that contract is reverted in the control, while the
+          bound ticket's own contract still is not.
 evidence_requirements:
   - kind: tests
     description: Hosted CI test that pins the step's sudo path, rootless extraction path and named refusal.
@@ -55,4 +59,15 @@ dod_evidence:
       - check_type: test_passes
         check_value: uv run --frozen pytest tests/ci/test_receipt_gate_caller_evidence_omn20070.py -q
           --no-cov -k "deb822_sources"
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn20413-other-ticket-contract-fix
+    description: A merged fix that amends another ticket's contract is reverted in the control instead
+      of being refused as having no product path; the test fails at the merge base, whose prepare_control
+      exempts every contract.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/ci/test_receipt_gate_merged_fix_control_omn17427.py
+          -q --no-cov -n 0 --reruns 0 -k "another_tickets_contract or only_test_and_contract_changes_is_refused"
         cwd: ${OMNI_HOME}/omnibase_core
