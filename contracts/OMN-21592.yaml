@@ -1,0 +1,32 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-21592
+title: "An omnibase_core pull request head is tried in omnimarket dev and omnibase_infra dev (first slice
+  of the cross-repository check)"
+summary: "consumer-check-reusable.yml installs the pull request head into each consumer's locked environment
+  and runs the consumer's import smoke and contract or CLI-surface tests; a consumer that cannot be read
+  fails. A reusable workflow and a report-only ci.yml job run it. This slice does not finish the ticket's
+  acceptance criteria (the lazy-start ingress work); it binds one evidence item of its own."
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+evidence_requirements:
+  - kind: tests
+    description: "The consumer-check tests pass at the head."
+    command: uv run pytest tests/ci/test_consumer_check_omn21592.py -n 0 -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn21592-consumer-check
+    description: "The consumer check reads pass, break and unread as specified: install outside the consumer
+      project with no config, a failing smoke or test is a break, an unreadable step or a head that is
+      not the installed one is unread, only an all-pass run exits zero, and the ci.yml job is report-only."
+    source: manual
+    execution_scope: hosted_and_local
+    checks:
+      - check_type: test_passes
+        check_value: "uv run pytest tests/ci/test_consumer_check_omn21592.py -n 0 -p no:cacheprovider
+          -q"
+        cwd: ${OMNI_HOME}/omnibase_core

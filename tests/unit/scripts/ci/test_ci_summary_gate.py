@@ -1889,6 +1889,8 @@ class TestExternalSweepExclusions:
             "Enable Auto-Merge",
             PROPAGATE_PLACEHOLDER,
             "Harvest shadow records",
+            "Consumer Check / Consumer Check (omnimarket)",
+            "Consumer Check / Consumer Check (omnibase_infra)",
         }
         assert gate.validate_sweep_exclusions(gate.EXTERNAL_SWEEP_EXCLUSIONS) == []
         active, expired = gate.active_sweep_exclusions(
@@ -1899,8 +1901,13 @@ class TestExternalSweepExclusions:
         assert not active.intersection(EXPECTED_EXTERNAL_CONTEXTS)
         for name, entry in gate.EXTERNAL_SWEEP_EXCLUSIONS.items():
             assert entry.reason.strip()
-            assert entry.ticket == "OMN-17427"
-            assert entry.added in {"2026-10-17", "2026-10-18", "2026-10-19"}
+            if name.startswith("Consumer Check / "):
+                # OMN-21592: report-only consumer check, an operator choice to require
+                assert entry.ticket == "OMN-21592"
+                assert entry.added == "2026-11-25"
+            else:
+                assert entry.ticket == "OMN-17427"
+                assert entry.added in {"2026-10-17", "2026-10-18", "2026-10-19"}
             assert entry.expires == "2026-12-20"
         with pytest.raises(FrozenInstanceError):
             self.ENTRY.reason = "changed"
