@@ -5,6 +5,8 @@
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from omnibase_core.enums.enum_migration_ledger_shape import EnumMigrationLedgerShape
+
 __all__ = ["ModelDeploymentTopologyDatabaseMigrationLedger"]
 
 _SQL_IDENTIFIER_PATTERN = r"^[a-z_][a-z0-9_]*$"
@@ -30,17 +32,24 @@ class ModelDeploymentTopologyDatabaseMigrationLedger(BaseModel):
         max_length=63,
         pattern=_SQL_IDENTIFIER_PATTERN,
     )
+    shape: EnumMigrationLedgerShape = Field(
+        default=EnumMigrationLedgerShape.STREAM_DOMAIN_VERSION_CHECKSUM,
+        description=(
+            "Ledger column shape: the four-column stream/domain/version/checksum "
+            "form (default) or the version/checksum form."
+        ),
+    )
     relation: str = Field(
         ..., min_length=1, max_length=63, pattern=_SQL_IDENTIFIER_PATTERN
     )
-    stream_column: str = Field(
-        ...,
+    stream_column: str | None = Field(
+        default=None,
         min_length=1,
         max_length=63,
         pattern=_SQL_IDENTIFIER_PATTERN,
     )
-    domain_column: str = Field(
-        ...,
+    domain_column: str | None = Field(
+        default=None,
         min_length=1,
         max_length=63,
         pattern=_SQL_IDENTIFIER_PATTERN,
@@ -60,17 +69,32 @@ class ModelDeploymentTopologyDatabaseMigrationLedger(BaseModel):
     )
 
     @model_validator(mode="after")
-    def ledger_columns_are_distinct(
+    def ledger_columns_match_shape(
         self,
     ) -> "ModelDeploymentTopologyDatabaseMigrationLedger":
-        """Each required migration identity dimension needs its own column."""
-        columns = {
-            self.stream_column,
-            self.domain_column,
-            self.version_column,
-            self.checksum_column,
-        }
-        if len(columns) != 4:
+        """Require exactly the columns the declared shape names, all distinct."""
+        problem = ""
+        if self.shape is EnumMigrationLedgerShape.STREAM_DOMAIN_VERSION_CHECKSUM:
+            columns = [
+                self.stream_column,
+                self.domain_column,
+                self.version_column,
+                self.checksum_column,
+            ]
+            if self.stream_column is None or self.domain_column is None:
+                problem = (
+                    "shape stream_domain_version_checksum requires stream_column "
+                    "and domain_column"
+                )
+        else:
+            columns = [self.version_column, self.checksum_column]
+            if self.stream_column is not None or self.domain_column is not None:
+                problem = (
+                    "shape version_checksum forbids stream_column and domain_column"
+                )
+        if not problem and len(set(columns)) != len(columns):
+            problem = "Migration ledger columns must be distinct"
+        if problem:
             # error-ok: Pydantic validators require ValueError to produce ValidationError.
-            raise ValueError("Migration ledger columns must be distinct")
+            raise ValueError(problem)
         return self
