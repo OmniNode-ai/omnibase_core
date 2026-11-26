@@ -1,0 +1,130 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-17711
+title: "Pydantic security configs: forbid extras on seven status/event leaf DTOs"
+summary: >-
+  omnibase_core#1775 (merge commit 52b978165d2bf19e080518dc8b24317855c2cc73) put an explicit ConfigDict(extra="forbid")
+  on the seven status/event security leaf DTOs, removed their seven entries from the extra-forbid baseline,
+  and added the grouped mapping, JSON, schema, unknown-key and typed-container tests. The same PR carried
+  the OMN-17714 caller repair that the strict ModelSecurityEvent needs. The ticket labels no acceptance
+  criterion; AC1..AC6 below are derived one per bullet of its "Required bounded repair" section. This
+  contract only binds checks to the merged change and changes no source.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn17711-seven-leaf-dtos-forbid-extras
+    statement: >-
+      The seven status/event security leaf DTOs reject unknown fields with an explicit ConfigDict(extra="forbid"),
+      and no shim, fallback, baseline padding or behavior change comes with it.
+    acceptance:
+      - id: AC1
+        statement: "AC1: Each of ModelComplianceStatus, ModelConfigValidationResult, ModelEncryptionAlgorithm,
+          ModelManagerAssessment, ModelMCPSecuritySummary, ModelSecurityEvent and ModelSignatureChainSummary
+          sets extra=\"forbid\" in its model_config."
+      - id: AC2
+        statement: "AC2: None of the seven fully qualified names remains in the Pydantic extra-forbid
+          baseline."
+      - id: AC3
+        statement: "AC3: The grouped mapping, JSON round-trip, schema and unknown-key tests for the seven
+          models pass."
+      - id: AC4
+        statement: "AC4: The typed container composition tests (ModelMCPSecuritySummary.last_events and
+          ModelCredentialsAnalysis.manager_assessment) pass."
+      - id: AC5
+        statement: "AC5: No compatibility shim or fallback: ModelSecurityEvent declares no signature_key_id
+          field, and the production secure-envelope signature audit path passes the declared key_id and
+          fails closed on an unknown event kwarg."
+      - id: AC6
+        statement: "AC6: OMN-17706 is preserved unchanged: the merged change touches none of the nine
+          OMN-17706 model files."
+evidence_requirements:
+  - kind: tests
+    description: The grouped OMN-17711 and OMN-17714 security tests, run at the pushed head.
+    command: uv run --frozen pytest tests/unit/models/security/test_omn17711_status_event_leaf_configs.py
+      tests/unit/models/security/test_omn17714_secure_envelope_signature_events.py -q --no-cov
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn17711-ac1
+    description: Each of the seven classes reads extra=forbid in its model_config. The control is that
+      a plain pydantic BaseModel does not.
+    source: manual
+    binds_ac: [AC1]
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --frozen python -c 'import importlib; from pydantic import BaseModel; assert BaseModel.model_config.get("extra")
+          != "forbid"; names = ["model_compliance_status:ModelComplianceStatus", "model_config_validation_result:ModelConfigValidationResult",
+          "model_encryption_algorithm:ModelEncryptionAlgorithm", "model_manager_assessment:ModelManagerAssessment",
+          "model_mcp_security_summary:ModelMCPSecuritySummary", "model_security_event:ModelSecurityEvent",
+          "model_signature_chain_summary:ModelSignatureChainSummary"]; models = [getattr(importlib.import_module("omnibase_core.models.security."
+          + n.split(":")[0]), n.split(":")[1]) for n in names]; assert len(models) == 7 and all(m.model_config.get("extra")
+          == "forbid" for m in models); print("ac1-ok", len(models))'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17711-ac2
+    description: The extra-forbid baseline lists none of the seven fully qualified names. The control
+      is that the baseline still lists more than one hundred other entries, so an empty read cannot pass.
+    source: manual
+    binds_ac: [AC2]
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --frozen python -c 'import yaml; from pathlib import Path; entries = set(yaml.safe_load(Path("src/omnibase_core/validators/extra_forbid_baseline.yaml").read_text())["violations"]);
+          assert len(entries) > 100; names = ["model_compliance_status:ModelComplianceStatus", "model_config_validation_result:ModelConfigValidationResult",
+          "model_encryption_algorithm:ModelEncryptionAlgorithm", "model_manager_assessment:ModelManagerAssessment",
+          "model_mcp_security_summary:ModelMCPSecuritySummary", "model_security_event:ModelSecurityEvent",
+          "model_signature_chain_summary:ModelSignatureChainSummary"]; present = [n for n in names if
+          "omnibase_core.models.security." + n in entries]; assert not present, present; print("ac2-ok",
+          len(entries))'
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17711-ac3
+    description: The grouped mapping, JSON round-trip, schema and unknown-key test passes for all seven
+      models.
+    source: manual
+    binds_ac: [AC3]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/security/test_omn17711_status_event_leaf_configs.py
+          -k test_selected_leaf_models_close_mapping_json_and_schema_boundaries -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17711-ac4
+    description: The typed container composition test passes for the MCP security summary events and the
+      credentials analysis manager assessment.
+    source: manual
+    binds_ac: [AC4]
+    checks:
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/security/test_omn17711_status_event_leaf_configs.py
+          -k test_typed_containers_preserve_closed_event_and_assessment_boundaries -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17711-ac5
+    description: ModelSecurityEvent declares no signature_key_id field (the control is that it declares
+      key_id), and the production secure-envelope signature audit tests pass, including the unknown-kwarg
+      negative control.
+    source: manual
+    binds_ac: [AC5]
+    checks:
+      - check_type: command
+        check_value: >-
+          uv run --frozen python -c 'from omnibase_core.models.security.model_security_event import ModelSecurityEvent
+          as E; assert "key_id" in E.model_fields; assert "signature_key_id" not in E.model_fields; print("ac5-fields-ok")'
+        cwd: ${OMNI_HOME}/omnibase_core
+      - check_type: test_passes
+        check_value: uv run --frozen pytest tests/unit/models/security/test_omn17714_secure_envelope_signature_events.py
+          -q --no-cov
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn17711-ac6
+    description: The merged change 52b978165d2bf19e080518dc8b24317855c2cc73 touches none of the nine OMN-17706
+      model files. The control is that the same diff does list model_security_event.py.
+    source: manual
+    binds_ac: [AC6]
+    checks:
+      - check_type: command
+        check_value: >-
+          bash -c 'files=$(git diff --name-only 52b978165d2bf19e080518dc8b24317855c2cc73^ 52b978165d2bf19e080518dc8b24317855c2cc73)
+          && echo "$files" | grep -q "models/security/model_security_event.py" && ! echo "$files" | grep
+          -E "models/security/model_(audit_data|authorization_summary|compliance_summary|credential_strength_assessment|enforcement_action|evaluation_context|operation_details|security_event_summary|verification_details)[.]py"'
+        cwd: ${OMNI_HOME}/omnibase_core
