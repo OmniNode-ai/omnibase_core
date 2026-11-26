@@ -9,7 +9,7 @@ summary: ModelDeploymentTopologyDatabaseMigrationLedger required four distinct c
 is_seam_ticket: false
 interface_change: true
 interfaces_touched:
-  - omnibase_core.models.core.ModelDeploymentTopologyDatabaseMigrationLedger
+  - public_api
 requirements:
   - id: req-omn26471-ledger-shape
     statement: A database declares its migration ledger as the four-column form or the version/checksum
@@ -40,4 +40,16 @@ dod_evidence:
         check_value: >-
           uv run --frozen pytest tests/unit/models/core/test_model_deployment_topology_database_ledger_shape.py
           -q -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26471-contract-validates
+    description: 'AC6: this ticket contract validates against ModelTicketContract, the check the contract-validation
+      gate runs.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/ci/test_contract_omn26471_validates.py -q -n 0 --reruns 0
         cwd: ${OMNI_HOME}/omnibase_core
