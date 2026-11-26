@@ -5,10 +5,10 @@
 
 from __future__ import annotations
 
-from typing import Self
+from typing import Annotated, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
 from omnibase_core.enums.enum_credential_source import EnumCredentialSource
 from omnibase_core.enums.enum_delegation_content_verdict import (
@@ -42,6 +42,12 @@ from omnibase_core.models.delegation.wire.model_quality_gate import (
     EnumQualityRuleEnforcement,
     ModelQualityRuleEvaluation,
 )
+
+# OMN-25856: an opaque provider-assigned response id (not a UUID); a blank id
+# would read as "answered, id unknown", so it is refused rather than carried.
+ProviderGenerationId = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=1)
+]
 
 
 class ModelDelegationResult(BaseModel):
@@ -89,6 +95,16 @@ class ModelDelegationResult(BaseModel):
         description=(
             "Credential class that served this terminal, as resolved at the "
             "effect boundary. Absent is explicit legacy provenance."
+        ),
+    )
+    # OMN-25856: the provider's own response id, so a receipt can be checked
+    # against the provider that answered. Optional: older producers omit it.
+    provider_generation_id: ProviderGenerationId | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description=(
+            "Response id the provider assigned to the call that produced this "
+            "terminal. Absent is explicit legacy or no-provider-response."
         ),
     )
     provenance: ModelDelegationProvenance | None = Field(
