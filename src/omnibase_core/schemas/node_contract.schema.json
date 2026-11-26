@@ -411,11 +411,13 @@
         },
         "input_model": {
           "description": "Dotted path (module path, then class) of the tool input model.",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
           "title": "Input Model",
           "type": "string"
         },
         "output_model": {
           "description": "Dotted path (module path, then class) of the tool output model.",
+          "pattern": "^[A-Za-z_][A-Za-z0-9_]*(\\.[A-Za-z_][A-Za-z0-9_]*)+$",
           "title": "Output Model",
           "type": "string"
         },

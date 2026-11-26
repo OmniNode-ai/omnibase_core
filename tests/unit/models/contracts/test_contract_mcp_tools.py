@@ -94,7 +94,10 @@ def test_expose_false_with_no_entries_is_accepted() -> None:
     assert McpContract.model_validate(_with_tools(expose=False)).mcp is not None
 
 
-@pytest.mark.parametrize("bad", ["SendInput", "a..B", "pkg.", ".Cls", "pkg.Cls name"])
+@pytest.mark.parametrize(
+    "bad",
+    ["SendInput", "a..B", "pkg.", ".Cls", "pkg.Cls name", "", "pkg.Cls\n"],
+)
 def test_model_path_must_be_dotted(bad: str) -> None:
     data = _fixture()
     data["mcp"]["tools"][0]["input_model"] = bad
@@ -182,3 +185,42 @@ def test_schema_refuses_expose_true_without_entries() -> None:
     data = copy.deepcopy(_fixture())
     data["mcp"] = {"expose": False}
     validator.validate(data)
+
+
+def _schema_validator() -> Draft202012Validator:
+    return Draft202012Validator(json.loads(SCHEMA_PATH.read_text()))
+
+
+@pytest.mark.parametrize("field", ["input_model", "output_model"])
+@pytest.mark.parametrize(
+    "bad", ["SendInput", "a..B", "pkg.", ".Cls", "pkg.Cls name", ""]
+)
+def test_schema_refuses_model_path_that_is_not_dotted(field: str, bad: str) -> None:
+    data = _fixture()
+    data["mcp"]["tools"][0][field] = bad
+    with pytest.raises(SchemaValidationError):
+        _schema_validator().validate(data)
+
+
+def test_schema_refuses_timeout_of_zero() -> None:
+    data = _fixture()
+    data["mcp"]["tools"][0]["timeout_seconds"] = 0
+    with pytest.raises(SchemaValidationError):
+        _schema_validator().validate(data)
+
+
+@pytest.mark.parametrize("bad", ["SendInput", "1send", "send-input", ""])
+def test_schema_refuses_tool_name_of_the_wrong_shape(bad: str) -> None:
+    data = _fixture()
+    data["mcp"]["tools"][0]["tool_name"] = bad
+    with pytest.raises(SchemaValidationError):
+        _schema_validator().validate(data)
+
+
+@pytest.mark.parametrize("seed", ["block", "entry"])
+def test_schema_refuses_unknown_keys(seed: str) -> None:
+    data = _fixture()
+    target = data["mcp"] if seed == "block" else data["mcp"]["tools"][0]
+    target["retries"] = 3
+    with pytest.raises(SchemaValidationError):
+        _schema_validator().validate(data)

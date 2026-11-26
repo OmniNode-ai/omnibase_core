@@ -68,26 +68,24 @@ def test_parity_ai_slop_source_tree_golden(strict: bool, tmp_path: Path) -> None
     assert normalized_parity(rows) == normalized_parity(expected["findings"])
 
 
-def test_parity_ai_slop_ci_scope_paths_all_exist_and_are_gathered() -> None:
-    """The scanner drops a missing path silently, so assert none is missing."""
+def test_parity_ai_slop_ci_tree_golden(tmp_path: Path) -> None:
     scope: list[str] = json.loads((FIXTURES / "ci_scope.json").read_text())
+    paths = [ROOT / p for p in scope]
+    expected = json.loads((FIXTURES / "ci_golden.json").read_text())
+    # The scanner drops a missing path silently, so a golden taken over a scope
+    # with a missing path would still match. Assert the scope first.
     assert len(scope) == len(set(scope))
     missing = [p for p in scope if not (ROOT / p).is_file()]
     assert missing == []
     gathered = NodeSourceFileGatherEffect().handle(
         ModelSourceFileGatherInput(
             root=".",
-            explicit_paths=[str(ROOT / p) for p in scope],
+            explicit_paths=[str(p) for p in paths],
             include_patterns=["**/*.py", "**/*.md"],
         )
     )
     assert gathered.skipped == []
     assert len(gathered.files) == len(scope)
-
-
-def test_parity_ai_slop_ci_tree_golden(tmp_path: Path) -> None:
-    paths = [ROOT / p for p in json.loads((FIXTURES / "ci_scope.json").read_text())]
-    expected = json.loads((FIXTURES / "ci_golden.json").read_text())
     assert len(paths) == expected["files_scanned"] > 0
     code, result = runtime_parity(paths, True, False, tmp_path / "report.json")
     rows = rows_parity(result)

@@ -11,11 +11,19 @@ transport uses: the command, and the completed and failed replies.
 from __future__ import annotations
 
 import re
-from typing import Self
+from typing import TYPE_CHECKING, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-_DOTTED_PATH = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$")
+if TYPE_CHECKING:
+    from pydantic.config import JsonDict
+
+_DOTTED_PATH_PATTERN = r"^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)+$"
+_DOTTED_PATH = re.compile(_DOTTED_PATH_PATTERN)
+# The model check runs after pydantic's own validation so its message names the
+# dotted-path rule; the pattern rides in the JSON schema so the committed schema
+# refuses the same values.
+_DOTTED_PATH_SCHEMA: JsonDict = {"pattern": _DOTTED_PATH_PATTERN}
 
 
 class ModelContractMcpTool(BaseModel):
@@ -39,10 +47,12 @@ class ModelContractMcpTool(BaseModel):
     input_model: str = Field(
         ...,
         description="Dotted path (module path, then class) of the tool input model.",
+        json_schema_extra=_DOTTED_PATH_SCHEMA,
     )
     output_model: str = Field(
         ...,
         description="Dotted path (module path, then class) of the tool output model.",
+        json_schema_extra=_DOTTED_PATH_SCHEMA,
     )
     command_topic: str = Field(
         ..., description="Canonical topic suffix the tool command is published on."
@@ -59,7 +69,7 @@ class ModelContractMcpTool(BaseModel):
     @field_validator("input_model", "output_model", mode="after")
     @classmethod
     def _validate_model_path(cls, value: str) -> str:
-        if not _DOTTED_PATH.match(value):
+        if not _DOTTED_PATH.fullmatch(value):
             raise ValueError(
                 f"'{value}' must be a dotted path of identifiers with at least one "
                 "dot (module path, then class)"
