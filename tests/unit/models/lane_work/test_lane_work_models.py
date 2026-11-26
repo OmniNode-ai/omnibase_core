@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import re
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -17,6 +18,7 @@ from omnibase_core.enums.enum_lane_work_blocked_reason import (
 from omnibase_core.enums.enum_lane_work_event import EnumLaneWorkEvent
 from omnibase_core.enums.enum_lane_work_state import EnumLaneWorkState
 from omnibase_core.errors.model_onex_error import ModelOnexError
+from omnibase_core.models import lane_work as pkg
 from omnibase_core.models.lane_work import (
     ModelLaneHelpAnswer,
     ModelLaneHelpRequest,
@@ -364,3 +366,12 @@ def test_help_request_keeps_at_most_three_receipts() -> None:
     ModelLaneHelpRequest(**fields, last_receipts=(receipt,) * 3)
     with pytest.raises(ValidationError):
         ModelLaneHelpRequest(**fields, last_receipts=(receipt,) * 4)
+
+
+def test_lane_work_models_have_no_io_imports_or_topic_names() -> None:
+    root = Path(str(pkg.__file__)).parent
+    files = sorted(root.glob("*.py"))
+    assert files, "lane_work package has no source files"
+    pattern = re.compile(r"import (requests|httpx|subprocess)|onex\.(cmd|evt|intent)\.")
+    offenders = [f.name for f in files if pattern.search(f.read_text())]
+    assert offenders == []

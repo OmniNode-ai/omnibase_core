@@ -88,13 +88,14 @@ dod_evidence:
           0 -k frozen_and_forbid_extra
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn26699-no-io-or-topics
-    description: "AC5: no handler, I/O import or topic name in the lane_work models"
+    description: "AC5: bound by tests/unit/models/lane_work/test_lane_work_models.py -k no_io_imports_or_topic_names"
     source: manual
     execution_scope: hosted_and_local
     binds_ac:
       - AC5
     checks:
-      - check_type: command
+      - check_type: test_passes
         check_value: >-
-          ! grep -rnE 'import (requests|httpx|subprocess)|onex\.(cmd|evt|intent)\.' src/omnibase_core/models/lane_work
+          uv run --frozen pytest tests/unit/models/lane_work/test_lane_work_models.py -q -n 0 --reruns
+          0 -k no_io_imports_or_topic_names
         cwd: ${OMNI_HOME}/omnibase_core
