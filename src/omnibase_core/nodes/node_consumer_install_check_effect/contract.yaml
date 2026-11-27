@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_consumer_install_check_effect
+node_id: node_consumer_install_check_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_node]
+description: >
+  Install a candidate omnibase-core or omnibase-spi build into checkouts of the consumers the overlay
+  names, import every entry point of each, collect its unit tests, and name consumer, import and missing
+  name in every failure (OMN-26670).
+input_model: omnibase_core.models.nodes.consumer_install_check.model_consumer_install_request.ModelConsumerInstallRequest
+output_model: omnibase_core.models.nodes.consumer_install_check.model_consumer_install_result.ModelConsumerInstallResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  routing_strategy: payload_type_match
+  handlers:
+    - operation: check_consumers
+      handler:
+        name: HandlerConsumerInstallCheck
+        module: omnibase_core.nodes.node_consumer_install_check_effect.handler_consumer_install_check
+      event_model:
+        name: ModelConsumerInstallRequest
+        module: omnibase_core.models.nodes.consumer_install_check.model_consumer_install_request
+    - operation: execute_command
+      handler:
+        name: HandlerSubprocessExec
+        module: omnibase_core.nodes.node_consumer_install_check_effect.exec_subprocess
+      event_model:
+        name: ModelCommandRequest
+        module: omnibase_core.models.nodes.consumer_install_check.model_command_request
+  default_handler: handler_consumer_install_check:HandlerConsumerInstallCheck
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 600000

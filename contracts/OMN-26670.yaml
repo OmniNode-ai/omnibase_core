@@ -1,0 +1,111 @@
+---
+schema_version: "1.0.0"
+ticket_id: OMN-26670
+title: A core or spi pull request is installed into omnimarket and omnibase_infra and their imports run
+  before it can merge
+summary: >-
+  omnibase_core 0.47.77 removed omnibase_core.cli.cli_work_ledger_render, which omnimarket's core_ticket_guard
+  imported, and nothing saw it until after the release. This change adds node_consumer_install_check_effect
+  (contract, handler, overlay) and a CI job that builds the head, installs it into omnimarket and omnibase_infra
+  at their dev heads, imports every entry point, collects the unit tests, and names consumer, import and
+  missing name in a failure. It skips docs-only diffs.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26670-consumer-install
+    statement: A core pull request is installed into its consumers and their imports run before it can
+      merge.
+    acceptance:
+      - id: AC1
+        statement: >-
+          AC1: a core or spi pull request runs a job that installs that head into an omnimarket and an
+          omnibase_infra checkout of their dev heads and runs the import of every entry point and their
+          unit collection, and it is a required context -- falsifier: a core pull request that removes
+          a name omnimarket imports goes green
+      - id: AC2
+        statement: >-
+          AC2: the job names the consumer, the import and the missing name in its failure -- falsifier:
+          a failure without all three
+      - id: AC3
+        statement: >-
+          AC3: a replay of the 0.47.77 change against the 2026-11-23 consumers fails the job -- falsifier:
+          it passes
+      - id: AC4
+        statement: >-
+          AC4: median added time on a core pull request is under 5 minutes and it does not run for a docs-only
+          change -- falsifier: two runs over the bound
+evidence_requirements:
+  - kind: tests
+    description: The consumer install check tests for AC1 to AC4 pass at the head and fail at the merge
+      base, where the node does not exist.
+    command: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -q --no-cov -o addopts=''
+      -n 0
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn26670-ac1-install-import-collect
+    description: >-
+      The handler checks out, installs, imports every entry point and collects for each overlay consumer,
+      and ci.yml runs the node and calls omnimarket's reusable smoke with the head's build.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k ac1 -q --no-cov
+          -o addopts='' -n 0
+        cwd: .
+  - id: dod-omn26670-metadata-group-not-imported
+    description: >-
+      An entry point group the overlay declares as metadata (onex.cli.help, help text) is not loaded by
+      the probe, and a broken onex.nodes entry still fails.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k metadata_group
+          -q --no-cov -o addopts='' -n 0
+        cwd: .
+  - id: dod-omn26670-ac2-names-all-three
+    description: A failure line carries consumer, import statement and missing name, for entry points
+      and for collection.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k ac2 -q --no-cov
+          -o addopts='' -n 0
+        cwd: .
+  - id: dod-omn26670-ac3-replay
+    description: >-
+      The 0.47.77 replay (a build without omnibase_core.cli.cli_work_ledger_render against the consumer
+      that imports it) fails naming consumer, import and missing name; the fixed build passes.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k ac3 -q --no-cov
+          -o addopts='' -n 0
+        cwd: .
+  - id: dod-omn26670-ac4-bound-and-docs-only
+    description: The bound is read from the overlay, and both CI jobs are skipped when zone-filter reports
+      a docs-only diff.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k ac4 -q --no-cov
+          -o addopts='' -n 0
+        cwd: .

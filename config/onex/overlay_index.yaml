@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+# Index of the contract overlays of this repository: node name -> overlay file under overlays/.
+---
+overlays:
+  node_consumer_install_check_effect: overlays/node_consumer_install_check_effect.overlay.yaml
