@@ -10,6 +10,8 @@ from importlib.metadata import EntryPoint
 from typing import Any
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
+from omnibase_core.models.doctor.model_cli_doctor_request import ModelCliDoctorRequest
+from omnibase_core.models.doctor.model_cli_doctor_result import ModelCliDoctorResult
 
 __all__ = ["NodeDoctorRegistryEffect", "discover"]
 
@@ -19,19 +21,22 @@ class NodeDoctorRegistryEffect:
 
     @staticmethod
     def _developer_only() -> frozenset[type[DoctorCheckBase]]:
-        module = importlib.import_module("omnibase_core.doctor.checks")
-        return frozenset(
-            {module.CheckDocker, module.CheckLinear, module.CheckReposSynced}
+        module = importlib.import_module(
+            "omnibase_core.nodes.node_cli_doctor_effect.handler"
         )
+        developer_only: frozenset[type[DoctorCheckBase]] = module.DEVELOPER_ONLY
+        return developer_only
 
     @staticmethod
     def _base_class() -> type[DoctorCheckBase]:
-        module = importlib.import_module("omnibase_core.doctor.doctor_check_base")
-        return module.DoctorCheckBase
+        return DoctorCheckBase
 
-    def handle(self, request: object) -> object:
-        """Runtime adapter entry point; registry uses the static seam."""
-        return request
+    def handle(self, request: ModelCliDoctorRequest) -> ModelCliDoctorResult:
+        """Name the developer-only checks this install leaves out."""
+        excluded = frozenset() if request.developer else self._developer_only()
+        return ModelCliDoctorResult(
+            check_names=tuple(sorted(check.check_name for check in excluded))
+        )
 
     def discover_checks(
         self,

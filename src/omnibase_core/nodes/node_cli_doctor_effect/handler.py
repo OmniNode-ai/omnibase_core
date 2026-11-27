@@ -9,6 +9,8 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
+from omnibase_core.models.doctor.model_cli_doctor_request import ModelCliDoctorRequest
+from omnibase_core.models.doctor.model_cli_doctor_result import ModelCliDoctorResult
 
 __all__ = [
     "DEVELOPER_ONLY",
@@ -20,8 +22,17 @@ __all__ = [
 
 
 def _check_classes() -> tuple[type[DoctorCheckBase], ...]:
+    # A customer install checks what delegation, the dashboard and Claude Code
+    # need. Docker, Linear, repository and worktree checks, and the check of the
+    # Linear key in the user configuration, belong to a developer install.
     module = importlib.import_module("omnibase_core.doctor.checks")
-    return (module.CheckDocker, module.CheckLinear, module.CheckReposSynced)
+    return (
+        module.CheckDocker,
+        module.CheckEnvVars,
+        module.CheckLinear,
+        module.CheckReposSynced,
+        module.CheckStaleWorktrees,
+    )
 
 
 DEVELOPER_ONLY = frozenset(_check_classes())
@@ -62,9 +73,14 @@ class NodeCliDoctorEffect:
             selected = [check for check in selected if check not in DEVELOPER_ONLY]
         return selected
 
-    def handle(self, request: object) -> object:
-        """Runtime adapter entry point; CLI command uses the static seams."""
-        return request
+    def handle(self, request: ModelCliDoctorRequest) -> ModelCliDoctorResult:
+        """Name the checks this install runs."""
+        selected = self.builtin_checks(
+            default_builtin_checks(), developer=request.developer
+        )
+        return ModelCliDoctorResult(
+            check_names=tuple(check.check_name for check in selected)
+        )
 
 
 def builtin_checks(

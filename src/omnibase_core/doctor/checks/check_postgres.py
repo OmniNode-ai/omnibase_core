@@ -34,7 +34,7 @@ class CheckPostgres(DoctorCheckBase):
                 name=self.check_name,
                 category=self.category,
                 status=EnumHealthStatusValue.UNKNOWN,
-                message="Skipped: POSTGRES_HOST/POSTGRES_PORT not configured",
+                message="Skipped: no PostgreSQL address is set",
                 duration_ms=int((time.monotonic() - start) * 1000),
             )
         host = probe.host

@@ -718,7 +718,8 @@ class TestCliEdgeCases:
             result = runner.invoke(cli, ["health"])
             # Should still complete but show failure
             assert "FAIL" in result.output
-            assert "Test error" in result.output
+            assert "Test error" not in result.output
+            assert "Fix:" in result.output
 
     def test_multiple_directories_validate(self, tmp_path: Path) -> None:
         """Test validate with multiple directories."""

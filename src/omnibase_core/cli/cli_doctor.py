@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: MIT
 
 import importlib
-from pathlib import Path
 
 import click
 
@@ -29,12 +28,10 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
     _bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
         declared_keys=("OMNI_HOME",)
     )
-    _raw_omni_home = _bootstrap.environment.optional("OMNI_HOME")
-    developer = bool(_raw_omni_home and Path(_raw_omni_home).is_dir())
-
     _handler = importlib.import_module(
         "omnibase_core.nodes.node_cli_doctor_effect.handler"
     )
+    developer = _handler.developer_install(_bootstrap.environment.optional("OMNI_HOME"))
     for check_cls in _handler.builtin_checks(_BUILTIN_CHECKS, developer=developer):
         # Why: Registry stores protocol contracts rather than instantiating them directly.
         registry.register(check_cls)

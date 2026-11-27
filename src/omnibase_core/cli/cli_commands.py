@@ -582,11 +582,12 @@ def health(ctx: click.Context, component: str | None, as_json: bool) -> None:
             )
             if not is_healthy:
                 all_healthy = False
-        except Exception as e:  # noqa: BLE001  # catch-all-ok: health checks must not crash CLI
+        except Exception:  # noqa: BLE001  # catch-all-ok: health checks must not crash CLI
+            message = _plain_failure(check_name)
             if not as_json:
                 click.echo(f"  [{click.style('FAIL', fg='red')}] {check_name}")
-                click.echo(f"       Error: {e}")
-            results.append({"name": check_name, "healthy": False, "message": str(e)})
+                click.echo(f"       {message}")
+            results.append({"name": check_name, "healthy": False, "message": message})
             all_healthy = False
 
     if as_json:
@@ -672,8 +673,8 @@ def _check_core_imports() -> tuple[bool, str]:
         _ = ModelOnexError
 
         return True, "Core imports successful"
-    except ImportError as e:
-        return False, f"Import error: {e}"
+    except ImportError:
+        return False, _plain_failure("Core imports")
 
 
 def _check_validation_system() -> tuple[bool, str]:
@@ -688,13 +689,13 @@ def _check_validation_system() -> tuple[bool, str]:
         suite = ServiceValidationSuite()
         validator_count = len(suite.validators)
         return True, "Validation system ready"
-    except ImportError as e:
-        return False, f"Import error: {e}"
-    except PYDANTIC_MODEL_ERRORS as e:
+    except ImportError:
+        return False, _plain_failure("Validation system")
+    except PYDANTIC_MODEL_ERRORS:
         # AttributeError: suite missing .validators attribute
         # TypeError: validators not iterable
         # ValueError: validation configuration error
-        return False, f"Error: {e}"
+        return False, _plain_failure("Validation system")
 
 
 def _check_error_handling() -> tuple[bool, str]:
@@ -717,24 +718,30 @@ def _check_error_handling() -> tuple[bool, str]:
             pass
 
         return True, "Error handling system operational"
-    except (AttributeError, ImportError, TypeError) as e:
+    except (AttributeError, ImportError, TypeError):
         # ImportError: module not available
         # AttributeError: missing expected enum value or class attribute
         # TypeError: error class instantiation failure
-        return False, f"Error: {e}"
+        return False, _plain_failure("Error handling")
 
 
-_KAFKA_SKIPPED_PREFIX = importlib.import_module(
+_HEALTH_EFFECT = importlib.import_module(
     "omnibase_core.nodes.node_cli_commands_effect.handler"
-).kafka_skipped_prefix
+)
+_KAFKA_SKIPPED_PREFIX = _HEALTH_EFFECT.kafka_skipped_prefix
+
+
+def _plain_failure(check_name: str) -> str:
+    """Fixed plain words and a Fix line; never the exception text."""
+    return str(_HEALTH_EFFECT.plain_failure(check_name))
 
 
 def _check_kafka_reachable() -> tuple[bool, str]:
     """Delegate the health check to its contract-bound EFFECT handler."""
-    module = importlib.import_module(
-        "omnibase_core.nodes.node_cli_commands_effect.handler"
+    healthy, message = _HEALTH_EFFECT.check_kafka_reachable(
+        os.environ.get("KAFKA_BOOTSTRAP_SERVERS")
     )
-    return module.check_kafka_reachable(os.environ.get("KAFKA_BOOTSTRAP_SERVERS"))
+    return bool(healthy), str(message)
 
 
 # Every built-in core command above (compliance, composition-report,

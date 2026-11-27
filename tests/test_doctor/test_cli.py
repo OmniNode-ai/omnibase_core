@@ -74,6 +74,7 @@ def test_doctor_exits_nonzero_on_failure():
 
 import json
 import logging
+import os
 from pathlib import Path
 
 from omnibase_core.doctor.checks.check_env_vars import CheckEnvVars
@@ -102,6 +103,9 @@ def _config_at(tmp_path: Path, text: str, *, raw: bytes | None = None) -> Path:
 def _run_doctor(config_path: Path, args: list[str]):
     runner = CliRunner()
     with (
+        # The Linear-key check is developer-only (OMN-26616): a registry directory
+        # named by OMNI_HOME makes this a developer install.
+        patch.dict(os.environ, {"OMNI_HOME": str(config_path.parent)}),
         patch("omnibase_core.cli.cli_doctor._BUILTIN_CHECKS", [CheckEnvVars]),
         patch(
             "omnibase_core.doctor.doctor_registry.DoctorRegistry.discover",

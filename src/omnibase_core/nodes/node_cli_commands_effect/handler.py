@@ -1,23 +1,50 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
-"""Kafka health effect for the onex CLI."""
+"""Kafka health effect and plain-words failure text for the onex CLI."""
 
 from __future__ import annotations
 
 import socket
 
-__all__ = ["kafka_skipped_prefix", "NodeCliCommandsEffect", "check_kafka_reachable"]
+from omnibase_core.models.cli.model_health_request import ModelHealthRequest
+from omnibase_core.models.cli.model_health_result import ModelHealthResult
+
+__all__ = [
+    "kafka_skipped_prefix",
+    "NodeCliCommandsEffect",
+    "check_kafka_reachable",
+    "plain_failure",
+]
 
 kafka_skipped_prefix = "Kafka check skipped"
 _CONNECT_WAIT = 3.0
+_REINSTALL = "Fix: Run `uv tool install --reinstall omninode-onex`."
+_PLAIN_FAILURES = {
+    "Core imports": f"Part of ONEX could not be loaded. {_REINSTALL}",
+    "Validation system": f"The validation part of ONEX could not start. {_REINSTALL}",
+    "Error handling": f"ONEX's own problem reporting is not working. {_REINSTALL}",
+}
+_UNEXPECTED = (
+    f"An unexpected problem occurred while running a health check. {_REINSTALL}"
+)
+_BAD_PORT = (
+    "The configured message-bus address has a port that is not a number. "
+    "Fix: Set the address again with a numeric port, for example host:19092."
+)
+
+
+def plain_failure(check_name: str) -> str:
+    """Fixed words and a Fix line for a failed health check; never exception text."""
+    return _PLAIN_FAILURES.get(check_name, _UNEXPECTED)
 
 
 class NodeCliCommandsEffect:
     """Own the Kafka reachability effect behind the CLI wrapper."""
 
-    def handle(self, request: object) -> tuple[bool, str]:
-        """Runtime adapter entry point; CLI uses the static seam."""
-        return check_kafka_reachable()
+    def handle(self, request: ModelHealthRequest) -> ModelHealthResult:
+        """Judge the message-bus address in the request."""
+        healthy, message = self.check_kafka_reachable(request.kafka_bootstrap_servers)
+        return ModelHealthResult(healthy=healthy, message=message)
 
     @staticmethod
     def check_kafka_reachable(raw: str | None = None) -> tuple[bool, str]:
@@ -36,7 +63,7 @@ class NodeCliCommandsEffect:
             try:
                 port = int(port_str)
             except ValueError:
-                return False, f"Invalid port in KAFKA_BOOTSTRAP_SERVERS: {port_str!r}"
+                return False, _BAD_PORT
 
         try:
             conn = socket.create_connection((host, port), timeout=_CONNECT_WAIT)

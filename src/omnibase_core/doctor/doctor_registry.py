@@ -49,12 +49,15 @@ class DoctorRegistry:
             start = time.monotonic()
             try:
                 result = check.run()
-            except (OSError, TypeError, ValueError) as e:
+            except (OSError, TypeError, ValueError):
                 result = ModelDoctorCheckResult(
                     name=check.check_name,
                     category=check.category,
                     status=EnumHealthStatusValue.UNHEALTHY,
-                    message=f"Check crashed: {e}",
+                    message=(
+                        "This check could not finish. "
+                        "Fix: Run `uv tool install --reinstall omninode-onex`."
+                    ),
                 )
             elapsed_ms = int((time.monotonic() - start) * 1000)
             # Attach timing if not already set
