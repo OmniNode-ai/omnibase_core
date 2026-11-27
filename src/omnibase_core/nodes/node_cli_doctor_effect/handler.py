@@ -30,27 +30,10 @@ _NODE_NO_ANSWER = f"Node.js did not answer within five seconds. {_NODE_HOW_TO_CH
 _NODE_NOT_WORKING = f"Node.js is installed but running it failed. {_NODE_HOW_TO_CHECK}"
 
 
-def node_runtime_verdict(
-    version: str | None, error: type[BaseException] | None
-) -> tuple[EnumHealthStatusValue, str]:
-    """Judge the Node.js probe in plain words, never an operating-system message.
-
-    A missing Node.js is reported but skipped, not failed: a customer install
-    does not need it to delegate or to use the dashboard.
-    """
-    if error is None:
-        if version:
-            return EnumHealthStatusValue.HEALTHY, version
-        return EnumHealthStatusValue.UNHEALTHY, _NODE_NOT_WORKING
-    if error is FileNotFoundError:
-        return EnumHealthStatusValue.UNKNOWN, _NODE_NOT_INSTALLED
-    return EnumHealthStatusValue.UNHEALTHY, _NODE_NO_ANSWER
-
-
 def _check_classes() -> tuple[type[DoctorCheckBase], ...]:
-    # A customer install checks what delegation, the dashboard and Claude Code
-    # need. Docker, Linear, repository and worktree checks, and the check of the
-    # Linear key in the user configuration, belong to a developer install.
+    # A customer install checks what delegation, the dashboard and Claude Code need.
+    # Docker, Linear, repository and worktree checks, and the check of the Linear
+    # key in the user configuration, belong to a developer install.
     module = importlib.import_module("omnibase_core.doctor.checks")
     return (
         module.CheckDocker,
@@ -80,6 +63,24 @@ def default_builtin_checks() -> list[type[DoctorCheckBase]]:
     ]
 
 
+def node_runtime_verdict(
+    version: str | None,
+    error: type[BaseException] | None,
+) -> tuple[EnumHealthStatusValue, str]:
+    """Judge the Node.js probe in plain words, never an operating-system message.
+
+    A missing Node.js is reported but skipped, not failed: a customer install does
+    not need it to delegate or to use the dashboard.
+    """
+    if error is None:
+        if version is not None and version:
+            return (EnumHealthStatusValue.HEALTHY, version)
+        return (EnumHealthStatusValue.UNHEALTHY, _NODE_NOT_WORKING)
+    if error is FileNotFoundError:
+        return (EnumHealthStatusValue.UNKNOWN, _NODE_NOT_INSTALLED)
+    return (EnumHealthStatusValue.UNHEALTHY, _NODE_NO_ANSWER)
+
+
 class NodeCliDoctorEffect:
     """Select the built-in checks and expose the install mode."""
 
@@ -102,7 +103,8 @@ class NodeCliDoctorEffect:
     def handle(self, request: ModelCliDoctorRequest) -> ModelCliDoctorResult:
         """Name the checks this install runs."""
         selected = self.builtin_checks(
-            default_builtin_checks(), developer=request.developer
+            default_builtin_checks(),
+            developer=request.developer,
         )
         return ModelCliDoctorResult(
             check_names=tuple(check.check_name for check in selected)

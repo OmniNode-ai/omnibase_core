@@ -28,6 +28,7 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
     _bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
         declared_keys=("OMNI_HOME",)
     )
+
     _handler = importlib.import_module(
         "omnibase_core.nodes.node_cli_doctor_effect.handler"
     )

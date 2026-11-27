@@ -8,7 +8,9 @@ import threading
 import time
 from importlib.metadata import entry_points
 
-from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
+from omnibase_core.models.doctor.model_doctor_check_result import (
+    ModelDoctorCheckResult,
+)
 
 from .doctor_check_base import DoctorCheckBase
 

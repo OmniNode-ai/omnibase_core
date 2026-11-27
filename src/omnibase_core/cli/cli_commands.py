@@ -728,6 +728,7 @@ def _check_error_handling() -> tuple[bool, str]:
 _HEALTH_EFFECT = importlib.import_module(
     "omnibase_core.nodes.node_cli_commands_effect.handler"
 )
+
 _KAFKA_SKIPPED_PREFIX = _HEALTH_EFFECT.kafka_skipped_prefix
 
 

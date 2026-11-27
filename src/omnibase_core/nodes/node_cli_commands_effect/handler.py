@@ -18,6 +18,7 @@ __all__ = [
 
 kafka_skipped_prefix = "Kafka check skipped"
 _CONNECT_WAIT = 3.0
+
 _REINSTALL = "Fix: Run `uv tool install --reinstall omninode-onex`."
 _PLAIN_FAILURES = {
     "Core imports": f"Part of ONEX could not be loaded. {_REINSTALL}",
