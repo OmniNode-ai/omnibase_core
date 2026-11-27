@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import importlib
 from collections.abc import Iterable
+from importlib.metadata import EntryPoint
 from typing import Any
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
@@ -35,7 +36,7 @@ class NodeDoctorRegistryEffect:
     def discover_checks(
         self,
         registry: Any,
-        entry_points: Iterable[object],
+        entry_points: Iterable[EntryPoint],
         developer: bool = False,
     ) -> None:
         """Load onex.doctor classes and keep customer installs customer-only."""
@@ -54,7 +55,7 @@ class NodeDoctorRegistryEffect:
 
 
 def discover(
-    registry: Any, entry_points: Iterable[object], developer: bool = False
+    registry: Any, entry_points: Iterable[EntryPoint], developer: bool = False
 ) -> None:
     """Keep the baselined registry wrapper thin."""
     NodeDoctorRegistryEffect().discover_checks(

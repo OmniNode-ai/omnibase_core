@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
 """OMN-26616 EXTRA5: what a customer reads from doctor never names an environment variable.
 
 Each test runs the real check with its setting unset (or malformed) and reads the message.

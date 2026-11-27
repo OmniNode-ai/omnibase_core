@@ -4,13 +4,13 @@
 schema_version: "1.0.0"
 ticket_id: "OMN-26616"
 title: "onex doctor and onex health judge only what a customer needs and never show a raw error"
-summary: "On a customer install (OMNI_HOME unset or not a directory) onex doctor skips the Docker, Linear and repository-sync checks, including when a package advertises them through the onex.doctor entry point; onex health reports an unset KAFKA_BOOTSTRAP_SERVERS as a skipped check with a plain sentence and a Fix line instead of a raw KeyError; success and skip messages do not name environment variables or internal details. The identity agreement (AC2) is implemented and tested in a different repository (omnibase_infra), so in this repository AC2 is not claimed."
+summary: "On a customer install onex doctor skips Docker, Linear and repository-sync checks; onex health reports an unset KAFKA_BOOTSTRAP_SERVERS as a skipped check with a plain sentence and a Fix line instead of a raw KeyError; success and skip messages do not name environment variables or internal details."
 is_seam_ticket: false
 interface_change: false
 interfaces_touched: []
 requirements:
 - id: "req-omn26616-customer-doctor-health"
-  statement: "onex doctor and onex health must judge only what a customer needs and never show a raw error on a customer install."
+  statement: "onex doctor and onex health must judge only what a customer needs and never show a raw error."
   acceptance:
   - id: "AC1"
     statement: "AC1: on a customer install onex doctor runs no Docker, Linear or repository check; Falsifier: tests/unit/doctor/test_omn26616_ac1_customer_install.py::test_customer_install_skips_developer_only_checks"
@@ -20,7 +20,7 @@ requirements:
     statement: "AC4: on a working customer install both commands exit 0; Falsifier: the dod-omn26616-integration-proof item below."
 evidence_requirements:
 - kind: "tests"
-  description: "Unit tests covering customer install doctor skips, health Kafka unset handling, and customer wording."
+  description: "Unit tests for customer install doctor checks, health kafka unset handling, and customer wording."
   command: "uv run pytest tests/unit/doctor/test_omn26616_ac1_customer_install.py tests/unit/cli/test_omn26616_ac3_health_kafka_unset.py tests/unit/doctor/test_omn26616_extra5_customer_wording.py -q -n 0 --no-cov -p no:cacheprovider"
 emergency_bypass:
   enabled: false
@@ -49,6 +49,8 @@ dod_evidence:
   description: "The headless run of the OMN-26616 doctor and health tests on a lab host at the pushed head; hosted CI cannot reach the lab runner so only the local Done gate runs it"
   source: "manual"
   execution_scope: "local_done_gate"
+  binds_ac:
+  - "AC4"
   checks:
   - check_type: "command"
     check_value: "env PYTHONDONTWRITEBYTECODE=1 onex lab-work run --repo OmniNode-ai/omnibase_core --sha \"$(git rev-parse HEAD)\" --lane dod-integration-proof-26616 --kind test -- env PYTHONDONTWRITEBYTECODE=1 uv run --frozen pytest tests/unit/doctor/test_omn26616_ac1_customer_install.py tests/unit/cli/test_omn26616_ac3_health_kafka_unset.py tests/unit/doctor/test_omn26616_extra5_customer_wording.py -q -n 0 --no-cov -p no:cacheprovider"
