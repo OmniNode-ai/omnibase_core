@@ -16,7 +16,6 @@ import pytest
 from click.testing import CliRunner
 
 import omnibase_core.cli.cli_commands as cli_commands
-from omnibase_core.cli.cli_commands import cli
 
 _RAW = "RAWSECRET /private/path/leak.py"
 
@@ -86,7 +85,9 @@ def test_failure_branch_prints_plain_words_and_a_fix(
     component = force(monkeypatch)
     runner = CliRunner()
     for flags in ([], ["--json"]):
-        result = runner.invoke(cli, ["health", "--component", component, *flags])
+        result = runner.invoke(
+            cli_commands.cli, ["health", "--component", component, *flags]
+        )
         assert result.exit_code != 0, result.output
         output = result.output
         for forbidden in (
