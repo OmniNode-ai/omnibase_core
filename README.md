@@ -3,6 +3,40 @@
 omnibase_core provides the contracts, models, validation and execution primitives for the ONEX framework.
 Documentation: [knowledge_base](https://github.com/OmniNode-ai/knowledge_base).
 
+## v0.47.81 (2026-11-26)
+
+### Release
+- Cut omnibase-core from dev at 0.47.81 by the scheduled release train.
+- 3 release-relevant commit(s) merged since v0.47.80.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.80
+- : delegation terminal carries provider_generation_id (#2379)
+- : a topology database declares its migration ledger shape (#2378)
+- : a contract-only change is not docs-only, so the contract-shape tests run (#2374)
+
+## v0.47.80 (2026-11-25)
+
+### Release
+- Cut omnibase-core from dev at 0.47.80 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.79.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.79
+- : CI Summary poll counts a concluded job as done, pages 30 then 10, stall bound (#2371)
+- : Name hidden extension load failures in get_command (#2365)
+
+## v0.47.79 (2026-11-25)
+
+### Release
+- Cut omnibase-core from dev at 0.47.79 by the scheduled release train.
+- 2 release-relevant commit(s) merged since v0.47.78.
+- Opened by the release train, which cuts only when the repo's declared lab-evidence premise holds for the exact candidate commit.
+
+### Included Since v0.47.78
+- : extend hook-rev exemption for 1c9566e2c249 to 2026-12-04 (#2367)
+- : Match bare local-qwen alias in hardcoded model config guard (#2364)
+
 ## v0.47.78 (2026-11-24)
 
 ### Release

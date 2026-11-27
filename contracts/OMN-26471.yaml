@@ -1,0 +1,55 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-26471
+title: 'OMN-26471: a deployment database declares its migration-ledger shape (core side of AC6)'
+summary: ModelDeploymentTopologyDatabaseMigrationLedger required four distinct columns (stream, domain,
+  version, checksum), so the cloud database ledger public.schema_migrations (version, checksum) could
+  not be declared. The ledger now carries a typed shape, stream_domain_version_checksum (default, every
+  existing entry unchanged) or version_checksum; a malformed shape is refused by name.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn26471-ledger-shape
+    statement: A database declares its migration ledger as the four-column form or the version/checksum
+      form, typed and validated.
+    acceptance:
+      - id: AC6
+        statement: "AC6: the version_checksum ledger shape is accepted and malformed shapes are refused
+          by name -- falsifier: the shape test file fails on the head or passes on the base"
+evidence_requirements:
+  - kind: tests
+    description: The ledger shape tests and the existing topology database tests.
+    command: uv run --frozen pytest tests/unit/models/core/test_model_deployment_topology_database_ledger_shape.py
+      tests/unit/models/core/test_model_deployment_topology_database.py -q -n 0 --reruns 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26471-core-ledger-shape
+    description: 'AC6: the cloud version_checksum shape is accepted, the four-column default stays valid,
+      and a malformed shape is refused by name.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/models/core/test_model_deployment_topology_database_ledger_shape.py
+          -q -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26471-contract-validates
+    description: 'AC6: this ticket contract validates against ModelTicketContract, the check the contract-validation
+      gate runs.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC6
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/ci/test_contract_omn26471_validates.py -q -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core

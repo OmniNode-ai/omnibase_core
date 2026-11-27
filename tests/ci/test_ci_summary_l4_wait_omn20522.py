@@ -547,7 +547,11 @@ class TestPollerStepShape:
         assert "reached with gating jobs still pending — failing closed" in script
         deadline_branch = script.split('-ge "${deadline}"')[1].split("fi\n")[0]
         assert "exit 1" in deadline_branch
-        assert "2) : ;;" in script
+        # OMN-24562: PENDING still falls through to the sleep (keep polling);
+        # the one early exit it gained is the named stall bound.
+        pending_branch = script
+        assert "# PENDING — keep polling" in pending_branch
+        assert "outlived STALL_MINUTES" in script
         assert 'sleep "${sleep_seconds}"' in script
 
     def test_omn_l4_wait_the_deadline_still_converts_sustained_pending(self) -> None:
