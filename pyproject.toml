@@ -77,9 +77,6 @@ Documentation = "https://github.com/OmniNode-ai/knowledge_base"
 [project.scripts]
 # OMN-21565: global invariant accounting through the container-bound runtime.
 check-invariant-analysis = "omnibase_core.nodes.node_validation_report_write_effect.runtime_invariant_analysis:main"
-onex = "omnibase_core.cli.cli_commands:cli"
-# Backward-compatibility alias (renamed from 'omni-agent' to 'onex' in v0.3.0)
-omni-agent = "omnibase_core.cli.cli_commands:cli"
 # Dev/test runtime host CLI (Phase 1 MVP - LocalHandler only)
 # WARNING: For development and testing ONLY, not for production use
 omninode-runtime-host-dev = "omnibase_core.cli.cli_runtime_host:main"
@@ -173,7 +170,7 @@ event_bus_inmemory = "omnibase_core.event_bus.event_bus_inmemory:EventBusInmemor
 state_disk = "omnibase_core.services.state.service_state_disk:ServiceStateDisk"
 
 [project.entry-points."onex.cli"]
-# Core CLI commands are registered directly via [project.scripts]
+# Core CLI commands are registered on the cli group in omnibase_core.cli.cli_commands
 # This group is for extensions from other packages
 gate = "omnibase_core.cli.cli_gate:gate"
 

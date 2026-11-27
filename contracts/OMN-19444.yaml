@@ -56,7 +56,7 @@ dod_evidence:
           -q --no-cov
         cwd: ${OMNI_HOME}/omnibase_core
   - id: dod-omn19444-deploy-cli-extension-help
-    description: Hosted-runner CLI smoke probe using the installed onex entry point and real temporary
+    description: Hosted-runner CLI smoke probe running the CLI module from the project venv and real temporary
       extension metadata. Delegate help must resolve only its extension; requesting an unloadable sibling
       must report its import error. This checks CLI loading, not co-installed infra latency.
     source: manual
@@ -93,9 +93,9 @@ dod_evidence:
           )
           PY
           export PYTHONPATH="$probe_dir${PYTHONPATH:+:$PYTHONPATH}"
-          help_output="$(onex delegate --help)"
+          help_output="$("$probe_env/bin/python" -m omnibase_core.cli.cli_commands delegate --help)"
           printf '%s\n' "$help_output" | grep -Fq 'Lazy extension deploy probe'
-          if onex omn19444-broken --help >"$probe_dir/broken.log" 2>&1; then
+          if "$probe_env/bin/python" -m omnibase_core.cli.cli_commands omn19444-broken --help >"$probe_dir/broken.log" 2>&1; then
             printf '%s\n' 'Resolving the broken extension unexpectedly succeeded' >&2
             exit 1
           fi
