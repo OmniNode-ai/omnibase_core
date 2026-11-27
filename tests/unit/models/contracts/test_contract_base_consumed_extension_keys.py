@@ -82,13 +82,22 @@ class TestContractBaseConsumedExtensionKeys:
         contract = _create_minimal_compute(
             mcp={
                 "expose": True,
-                "tool_name": "register_node",
-                "description": "Register a node.",
-                "timeout_seconds": 30,
+                "tools": [
+                    {
+                        "tool_name": "register_node",
+                        "description": "Register a node.",
+                        "timeout_seconds": 30,
+                        "input_model": "probe_pkg.models.ModelRegisterInput",
+                        "output_model": "probe_pkg.models.ModelRegisterOutput",
+                        "command_topic": "onex.cmd.probe-pkg.register-node.v1",
+                        "completed_topic": "onex.evt.probe-pkg.register-node-completed.v1",
+                        "failed_topic": "onex.evt.probe-pkg.register-node-failed.v1",
+                    }
+                ],
             }
         )
         assert isinstance(contract.mcp, ModelContractMcpConfig)
-        assert contract.mcp.tool_name == "register_node"
+        assert contract.mcp.tools[0].tool_name == "register_node"
 
     def test_intent_consumption_parses_as_typed_config(self) -> None:
         contract = _create_minimal_compute(

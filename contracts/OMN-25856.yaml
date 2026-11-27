@@ -1,0 +1,40 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-25856
+title: 'OMN-25856: the delegation terminal carries the provider generation id (goal item 2 slice)'
+summary: ModelDelegationResult had no field for the provider's own response id, so a receipt could not
+  be checked against the provider. It now carries optional provider_generation_id (default None, omitted
+  from the wire when absent), so an older payload still validates.
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn25856-generation-id
+    statement: The terminal delegation result carries the provider response id, optional and backward
+      compatible.
+    acceptance:
+      - id: AC5
+        statement: "AC5: the terminal carries provider_generation_id and an old payload still validates
+          -- falsifier: the field test file fails on the head or passes on the base"
+evidence_requirements:
+  - kind: tests
+    description: The provider generation id tests and the existing delegation model tests.
+    command: uv run --frozen pytest tests/unit/models/delegation -q -n 0 --reruns 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn25856-generation-id-field
+    description: 'provider_generation_id round-trips on the wire and a payload without it validates.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/models/delegation/wire/test_omn25856_provider_generation_id.py
+          -q -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core

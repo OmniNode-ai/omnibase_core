@@ -146,11 +146,20 @@ class TestGhostRunningRowWithConclusionOmn19998:
         assert code == EXIT_FAILURE, report
         assert "default-deny sweep failures: Doc-Content Scan" in report
 
-    def test_success_without_completed_at_stays_pending(self) -> None:
+    def test_job_success_without_completed_at_is_done_omn24562(self) -> None:
+        # OMN-24562: a job whose conclusion is set is done even with no
+        # completed_at; only a job with no conclusion waits.
         jobs = _all_good() + [_job("Doc-Content Scan", "success", status="in_progress")]
         code, report = evaluate(jobs, external_check_runs=_ALL_EXTERNAL_GREEN)
+        assert code == EXIT_SUCCESS, report
+
+    def test_check_run_success_without_completed_at_stays_pending(self) -> None:
+        name = EXPECTED_EXTERNAL_CONTEXTS[0]
+        checks = [row for row in _ALL_EXTERNAL_GREEN if row["name"] != name] + [
+            _check_run(name, "success", status="in_progress")
+        ]
+        code, report = evaluate(_all_good(), external_check_runs=checks)
         assert code == EXIT_PENDING, report
-        assert "default-deny sweep rows still running" in report
 
     def test_completed_at_without_conclusion_stays_pending(self) -> None:
         jobs = _all_good() + [

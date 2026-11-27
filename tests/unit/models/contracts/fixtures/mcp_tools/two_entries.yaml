@@ -1,0 +1,28 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: mcp_ledger_probe_effect
+contract_version: {major: 1, minor: 0, patch: 0}
+description: OMN-15920 two-operation MCP fixture
+node_type: EFFECT_GENERIC
+input_model: omnibase_core.models.ModelInput
+output_model: omnibase_core.models.ModelOutput
+mcp:
+  expose: true
+  tools:
+    - tool_name: probe_note_send
+      description: Send a note to a probe mailbox.
+      timeout_seconds: 30
+      input_model: probe_pkg.models.ModelProbeNoteSendInput
+      output_model: probe_pkg.models.ModelProbeNoteSendOutput
+      command_topic: onex.cmd.probe-pkg.probe-note-send.v1
+      completed_topic: onex.evt.probe-pkg.probe-note-send-completed.v1
+      failed_topic: onex.evt.probe-pkg.probe-note-send-failed.v1
+    - tool_name: probe_note_read
+      description: Read notes from a probe mailbox.
+      timeout_seconds: 15
+      input_model: probe_pkg.models.ModelProbeNoteReadInput
+      output_model: probe_pkg.models.ModelProbeNoteReadOutput
+      command_topic: onex.cmd.probe-pkg.probe-note-read.v1
+      completed_topic: onex.evt.probe-pkg.probe-note-read-completed.v1
+      failed_topic: onex.evt.probe-pkg.probe-note-read-failed.v1
