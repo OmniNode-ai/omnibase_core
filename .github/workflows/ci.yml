@@ -3847,6 +3847,20 @@ jobs:
       pull-requests: read
     uses: ./.github/workflows/full-suite-reuse.yml
 
+  # OMN-21592: try this head in omnimarket dev and omnibase_infra dev (import smoke, contract and CLI-surface
+  # tests). Report-only for now: the two jobs are on SOFT_ALLOWLIST in scripts/ci/ci_summary_gate.py, so a red
+  # one does not turn CI Summary red; requiring it is the operator's choice. A consumer that cannot be read fails.
+  consumer-check:
+    name: Consumer Check
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    permissions:
+      contents: read
+    uses: ./.github/workflows/consumer-check-reusable.yml
+    with:
+      core_sha: ${{ github.event.pull_request.head.sha }}
+    secrets:
+      consumer_token: ${{ secrets.CONSUMER_READ_TOKEN }}
+
   # OMN-16625: detached from `needs: [quality-gate]`. This job used to run
   # AFTER quality-gate's ~26 leaf validators finished -- too late to gate
   # those leaves themselves on docs_only, only useful for the Phase 2 test

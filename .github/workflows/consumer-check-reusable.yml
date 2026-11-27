@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+#
+# OMN-21592: try this omnibase_core head in the repositories that install it.
+# For each consumer the "Try the head in the consumer" step clones its dev branch, runs `uv sync --frozen`,
+# installs the head into that locked environment with --no-deps --reinstall-package and --no-config from a
+# directory OUTSIDE the consumer's project (inside omnimarket its override-dependencies silently keeps the old
+# core), confirms the installed core is the head, then runs the consumer's import smoke and test files. Every
+# step runs under `set -e`: a consumer that cannot be cloned, synced or installed fails the job, so unread is
+# never a pass. The import smoke is the one omnimarket's latest-core-smoke-reusable.yml runs; this workflow adds
+# the test files and the second consumer that one cannot run. No `uses:` steps: the action-pin golden is keyed
+# per workflow file.
+name: Consumer Check (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      core_sha:
+        description: "omnibase_core commit to try in each consumer"
+        type: string
+        required: true
+    secrets:
+      consumer_token:
+        description: "read token for a private consumer repository"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  consumer:
+    name: Consumer Check (${{ matrix.consumer }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - consumer: omnimarket
+            smoke: tests/ci/latest_core_smoke.py
+            tests: >-
+              tests/ci/test_contract_handler_routing_nested_schema.py
+              tests/ci/test_cross_repo_contract_deps.py
+              tests/ci/test_entry_points_sorted_merge.py
+          - consumer: omnibase_infra
+            smoke: ""
+            tests: >-
+              tests/integration/cli/test_onex_command_group_without_occ_omn20074.py
+              tests/unit/test_smoke.py
+    steps:
+      - name: Fetch the core head
+        env:
+          CORE_SHA: ${{ inputs.core_sha }}
+          GH_READ_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git init --quiet "$RUNNER_TEMP/core"
+          git -C "$RUNNER_TEMP/core" remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          auth="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GH_READ_TOKEN" | base64 -w0)"
+          git -C "$RUNNER_TEMP/core" -c "http.extraheader=$auth" fetch --quiet --depth 1 origin "$CORE_SHA"
+          git -C "$RUNNER_TEMP/core" checkout --quiet --detach FETCH_HEAD
+          test "$(git -C "$RUNNER_TEMP/core" rev-parse HEAD)" = "$CORE_SHA"
+      - name: Install uv
+        run: |
+          python3 -m pip install --user uv
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Try the head in the consumer
+        env:
+          CORE_SHA: ${{ inputs.core_sha }}
+          CORE_REPO: ${{ runner.temp }}/core
+          CONSUMER: ${{ matrix.consumer }}
+          SMOKE: ${{ matrix.smoke }}
+          TESTS: ${{ matrix.tests }}
+          CONSUMER_TOKEN: ${{ secrets.consumer_token }}
+          WORK_DIR: ${{ runner.temp }}/consumer-work
+        run: |
+          set -euo pipefail
+          mkdir -p "$WORK_DIR"
+          url="${CONSUMER_URL:-${GITHUB_SERVER_URL}/OmniNode-ai/${CONSUMER}.git}"
+          auth=()
+          if [ -n "${CONSUMER_TOKEN:-}" ]; then
+            auth=(-c "http.extraheader=AUTHORIZATION: basic $(printf 'x-access-token:%s' "$CONSUMER_TOKEN" | base64 -w0)")
+          fi
+          checkout="$WORK_DIR/$CONSUMER"
+          if [ -n "${CONSUMER_REF:-}" ]; then
+            git "${auth[@]}" clone --quiet --no-checkout "$url" "$checkout"
+            git -C "$checkout" checkout --quiet --detach "$CONSUMER_REF"
+          else
+            git "${auth[@]}" clone --quiet --depth 1 --branch dev "$url" "$checkout"
+          fi
+          (cd "$checkout" && env -u VIRTUAL_ENV uv sync --frozen)
+          py="$checkout/.venv/bin/python"
+          core_clone="$WORK_DIR/core-$CONSUMER"
+          git clone --quiet --shared --no-checkout "$CORE_REPO" "$core_clone"
+          git -C "$core_clone" checkout --quiet --detach "$CORE_SHA"
+          # From outside the consumer's project, with no config: its override-dependencies would otherwise keep the old core.
+          (cd "$WORK_DIR" && env -u VIRTUAL_ENV uv pip install --no-config --python "$py" --no-deps \
+            --reinstall-package omnibase-core "omnibase-core @ git+file://${core_clone}@${CORE_SHA}")
+          installed="$("$py" -I -c "import importlib.metadata as m, json; t = m.distribution('omnibase-core').read_text('direct_url.json'); print(json.loads(t).get('vcs_info', {}).get('commit_id', '') if t else '')")"
+          if [ "$installed" != "$CORE_SHA" ]; then
+            echo "CONSUMER-CHECK consumer=$CONSUMER verdict=unread reason=head-not-installed installed=${installed:-a release} head=$CORE_SHA"
+            exit 1
+          fi
+          cd "$checkout"
+          if [ -n "$SMOKE" ]; then
+            out="$(OMNI_HOME="$checkout" "$py" "$SMOKE")" || { echo "$out"; echo "CONSUMER-CHECK consumer=$CONSUMER verdict=break step=smoke"; exit 1; }
+            echo "$out"
+            if ! printf '%s\n' "$out" | grep -q '^LATEST-CORE-SMOKE packages=.* failed=0$'; then
+              echo "CONSUMER-CHECK consumer=$CONSUMER verdict=unread reason=smoke-imported-nothing"
+              exit 1
+            fi
+          fi
+          read -ra files <<< "$TESTS"
+          "$py" -m pytest -q -p no:cacheprovider "${files[@]}" || { echo "CONSUMER-CHECK consumer=$CONSUMER verdict=break step=tests"; exit 1; }
+          echo "CONSUMER-CHECK consumer=$CONSUMER verdict=pass head=$CORE_SHA"
