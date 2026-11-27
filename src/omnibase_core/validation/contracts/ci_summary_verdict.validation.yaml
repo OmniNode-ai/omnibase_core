@@ -1,0 +1,115 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+contract_kind: validation_subcontract
+validation:
+  version:
+    major: 1
+    minor: 0
+    patch: 0
+  validator_id: ci_summary_verdict
+  validator_name: CI Summary verdict (OMN-17864)
+  validator_description: |
+    The CI Summary verdict as a generic validator rule set. The CI Summary job writes the rows it
+    observed (jobs and external check-runs, the observation time and the poll deadline) to a
+    ci_summary_rows.json file and runs this validator over it: an error is a red verdict (exit 1), a
+    warning is a pending verdict (exit 2), no issue is green (exit 0).
+
+    A completed non-success external context whose conclusion the rule names as supersedable stays
+    pending while it sits inside its rerun window, so a transient preflight red (a PR body edit that
+    reruns the producer) is re-polled until the deadline instead of latched; past the window, or past
+    the deadline, it is red.
+
+    ci_summary_gate_parity: a repository other than this one runs this validator and holds no copy of
+    the gate of its own.
+
+  target_patterns:
+    - "**/ci_summary_rows*.json"
+    - "**/*.py"
+    - "**/*.yml"
+    - "**/*.yaml"
+
+  exclude_patterns:
+    - "**/tests/**"
+    - "**/__pycache__/**"
+    - "**/.git/**"
+    - "**/.venv/**"
+    - "**/node_modules/**"
+
+  rules:
+    - rule_id: ci_summary_jobs
+      description: >-
+        Default-deny sweep over the observed jobs: a completed job with a conclusion outside the good
+        set is red unless allowlisted; a strict job must be present and completed with success.
+      severity: error
+      enabled: true
+      parameters:
+        rows_file_pattern: '(^|/)ci_summary_rows[^/]*\.json$'
+        pending_severity: warning
+        self_name: 'CI Summary'
+        good_conclusions:
+          - success
+          - skipped
+          - neutral
+        soft_allowlist: []
+        strict_success_jobs:
+          - Quality Gate
+          - Tests Gate
+        red_message: 'job {name} concluded {conclusion}: fix it at its cause, never allowlist it'
+        pending_message: 'job {name} is {status}: poll again until the deadline'
+        missing_message: >-
+          required job {name} is absent from the observed rows: poll again until the deadline
+        deadline_message: >-
+          the poll deadline passed with {name} still pending: a pending context at the deadline is red
+        strict_message: 'strict job {name} is {conclusion}: it must be completed with success'
+
+    - rule_id: ci_summary_external
+      description: >-
+        Each expected external context must be present and completed with success. A completed non-success
+        row is pending while it is inside its rerun window (OMN-17864), red after.
+      severity: error
+      enabled: true
+      parameters:
+        pending_severity: warning
+        expected_contexts:
+          - OCC Companion Merged Gate
+          - DB Ownership Gate
+        supersedable_conclusions:
+          - failure
+          - cancelled
+          - timed_out
+          - action_required
+        supersession_grace_s: 900
+        red_message: 'external context {name} concluded {conclusion}: fix it at its cause'
+        provisional_message: >-
+          external context {name} concluded {conclusion} {age_s}s ago, inside the {grace_s}s rerun window:
+          re-poll the latest producer state
+        pending_message: 'external context {name} is {status}: poll again until the deadline'
+        deadline_message: >-
+          the poll deadline passed with external context {name} still pending: a pending context at the
+          deadline is red #magic___^_^___line
+    - rule_id: ci_summary_gate_parity
+      description: >-
+        Run the generic validator; a file that carries the gate's verdict line or its context tables is
+        a copy of the gate and is refused.
+      severity: error
+      enabled: true
+      parameters:
+        copy_markers:
+          - 'CI Summary verdict:'
+          - 'EXPECTED_EXTERNAL_CONTEXTS\s*[:=]'
+          - 'SUPERSEDABLE_CONCLUSIONS\s*[:=]'
+        owner_path_patterns:
+          - '(^|/)omnibase_core/validation/(checker|validator)_ci_summary_verdict\.py$'
+          - '(^|/)contracts/ci_summary_verdict\.validation\.yaml$'
+        message: >-
+          this file holds its own copy of the CI Summary gate ({marker}): delete it and run python -m
+          omnibase_core.validation.validator_ci_summary_verdict over the rows file the workflow writes
+
+  suppression_comments: []
+
+  fail_on_error: true
+  fail_on_warning: true
+  max_violations: 0
+  severity_default: error
+  parallel_execution: false

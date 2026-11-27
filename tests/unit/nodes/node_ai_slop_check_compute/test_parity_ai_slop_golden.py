@@ -8,6 +8,13 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.models.nodes.source_file_gather.model_source_file_gather_input import (
+    ModelSourceFileGatherInput,
+)
+from omnibase_core.nodes.node_source_file_gather_effect.handler import (
+    NodeSourceFileGatherEffect,
+)
+
 from .parity_helpers import (
     CORPUS,
     FIXTURES,
@@ -62,8 +69,23 @@ def test_parity_ai_slop_source_tree_golden(strict: bool, tmp_path: Path) -> None
 
 
 def test_parity_ai_slop_ci_tree_golden(tmp_path: Path) -> None:
-    paths = [ROOT / p for p in json.loads((FIXTURES / "ci_scope.json").read_text())]
+    scope: list[str] = json.loads((FIXTURES / "ci_scope.json").read_text())
+    paths = [ROOT / p for p in scope]
     expected = json.loads((FIXTURES / "ci_golden.json").read_text())
+    # The scanner drops a missing path silently, so a golden taken over a scope
+    # with a missing path would still match. Assert the scope first.
+    assert len(scope) == len(set(scope))
+    missing = [p for p in scope if not (ROOT / p).is_file()]
+    assert missing == []
+    gathered = NodeSourceFileGatherEffect().handle(
+        ModelSourceFileGatherInput(
+            root=".",
+            explicit_paths=[str(p) for p in paths],
+            include_patterns=["**/*.py", "**/*.md"],
+        )
+    )
+    assert gathered.skipped == []
+    assert len(gathered.files) == len(scope)
     assert len(paths) == expected["files_scanned"] > 0
     code, result = runtime_parity(paths, True, False, tmp_path / "report.json")
     rows = rows_parity(result)

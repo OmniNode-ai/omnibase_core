@@ -27,9 +27,13 @@ or ``on`` lists and resolves every group.
 
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, MutableMapping
+from typing import Any, Protocol
+
+import click
 
 from omnibase_core.enums.enum_cli_command_surface import EnumCliCommandSurface
+from omnibase_core.errors.model_onex_error import ModelOnexError
 from omnibase_core.models.bootstrap.model_environment_bootstrap import (
     ModelEnvironmentBootstrap,
 )
@@ -189,6 +193,50 @@ def command_is_visible(
     return declared_surface(command_name) is _C or operator_switch_on()
 
 
+class _ExtensionHost(Protocol):
+    """The lazy root group: advertised ``onex.cli`` extensions, and a resolver."""
+
+    @property
+    def _lazy_extensions(self) -> MutableMapping[str, Any]: ...
+
+    @property
+    def commands(self) -> MutableMapping[str, click.Command]: ...
+
+    def _load(self, ctx: click.Context, cmd_name: str) -> click.Command | None: ...
+
+
+def reply_to_hidden_command(
+    group: _ExtensionHost, ctx: click.Context, cmd_name: str
+) -> click.Command | None:
+    """Answer a name the default view hides: ``None``, or an error when it is broken (OMN-26044).
+
+    A hidden name answers ``None`` ("No such command"), which would also swallow
+    the OMN-16967 fail-loud contract: an ``onex.cli`` extension that fails to
+    load would read as absent. A name the caller typed that is an advertised
+    extension is resolved; a failed load raises an error that names the command
+    and nothing of the distribution, target or exception (the operator view has
+    those). An extension that loads, or an unknown name, stays hidden.
+
+    Raises:
+        click.ClickException: If the hidden name is an extension that fails to load.
+    """
+    if cmd_name not in group._lazy_extensions:
+        return None
+    advertised = group._lazy_extensions[cmd_name]
+    try:
+        group._load(ctx, cmd_name)
+    except ModelOnexError as exc:
+        raise click.ClickException(
+            f"the '{cmd_name}' command failed to load and is unavailable. "
+            "Reinstall or update the package that provides it."
+        ) from exc
+    # A healthy hidden extension goes back to advertised-not-loaded: left in
+    # ``commands`` click would offer the typed name back as "Did you mean".
+    group.commands.pop(cmd_name, None)
+    group._lazy_extensions[cmd_name] = advertised
+    return None
+
+
 __all__ = [
     "bare_onex_meta_key",
     "CLI_COMMAND_SURFACES",
@@ -200,5 +248,6 @@ __all__ = [
     "declared_surface",
     "internal_command_names",
     "operator_switch_on",
+    "reply_to_hidden_command",
     "undeclared_command_names",
 ]
