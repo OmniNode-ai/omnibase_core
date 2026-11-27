@@ -27,6 +27,7 @@ consumers:
     repo_url: https://github.com/OmniNode-ai/omnibase_infra.git
     ref: dev
     install_args: ["-e", ".", "--group", "dev"]
+    metadata_entry_point_groups: ["onex.cli.help"]
     collect_args: ["tests/unit", "--ignore=tests/integration"]
 candidates:
   - distribution: omnibase-core

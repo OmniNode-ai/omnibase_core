@@ -572,3 +572,13 @@ def test_ac1_a_declared_metadata_group_is_not_imported_and_an_importable_group_s
         skip_groups=("onex.cli.help",),
     )
     assert len(broken["failures"]) == 1
+
+
+def test_ac1_the_shipped_overlay_declares_the_help_group_metadata_for_every_consumer() -> (
+    None
+):
+    document = yaml.safe_load(OVERLAY.read_text(encoding="utf-8"))
+    for consumer in document["consumers"]:
+        assert "onex.cli.help" in consumer["metadata_entry_point_groups"], consumer[
+            "name"
+        ]
