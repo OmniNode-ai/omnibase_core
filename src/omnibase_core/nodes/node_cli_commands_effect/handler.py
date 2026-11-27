@@ -27,7 +27,7 @@ _PLAIN_FAILURES = {
 _UNEXPECTED = (
     f"An unexpected problem occurred while running a health check. {_REINSTALL}"
 )
-_BAD_PORT = (
+_BAD_ADDRESS = (
     "The configured message-bus address has a port that is not a number. "
     "Fix: Set the address again with a number after the colon."
 )
@@ -63,7 +63,7 @@ class NodeCliCommandsEffect:
             try:
                 port = int(port_str)
             except ValueError:
-                return False, _BAD_PORT
+                return False, _BAD_ADDRESS
 
         try:
             conn = socket.create_connection((host, port), timeout=_CONNECT_WAIT)
