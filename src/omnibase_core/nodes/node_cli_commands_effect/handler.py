@@ -9,6 +9,7 @@ import socket
 __all__ = ["kafka_skipped_prefix", "NodeCliCommandsEffect", "check_kafka_reachable"]
 
 kafka_skipped_prefix = "Kafka check skipped"
+_CONNECT_WAIT = 3.0
 
 
 class NodeCliCommandsEffect:
@@ -38,7 +39,7 @@ class NodeCliCommandsEffect:
                 return False, f"Invalid port in KAFKA_BOOTSTRAP_SERVERS: {port_str!r}"
 
         try:
-            conn = socket.create_connection((host, port), timeout=3)
+            conn = socket.create_connection((host, port), timeout=_CONNECT_WAIT)
             conn.close()
             return True, f"Kafka reachable at {host}:{port}"
         except (TimeoutError, OSError):
