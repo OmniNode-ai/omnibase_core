@@ -59,7 +59,7 @@ dod_evidence:
         check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k ac1 -q --no-cov
           -o addopts='' -n 0
         cwd: .
-  - id: dod-omn26670-metadata-entry-point-group-not-imported
+  - id: dod-omn26670-metadata-group-not-imported
     description: >-
       An entry point group the overlay declares as metadata (onex.cli.help, help text) is not loaded by
       the probe, and a broken onex.nodes entry still fails.
