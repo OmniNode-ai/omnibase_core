@@ -34,7 +34,7 @@ import pytest
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-CUSTOMER_LAUNCHERS = frozenset({"onex", "omni-agent"})
+CUSTOMER_LAUNCHERS = frozenset({"onex"})
 
 
 def _removable_scripts() -> frozenset[str]:
@@ -446,6 +446,20 @@ def test_a_launcher_command_is_recognised(line: str) -> None:
 )
 def test_prose_and_the_module_form_are_not_launcher_calls(line: str) -> None:
     assert _launcher_calls(line) == []
+
+
+def test_omni_agent_is_not_a_customer_launcher_so_its_callers_are_flagged() -> None:
+    """The customer install exposes only onex (OMN-25070 ruling 2026-11-25).
+
+    omni-agent is therefore one of the scripts that may leave the published package,
+    so a step that runs it must be reported as a caller; exempting it as a customer
+    launcher would let that step break silently once core stops declaring it.
+    """
+    step = "      - run: uv run omni-agent status\n"
+    removable = frozenset({"onex", "omni-agent"}) - CUSTOMER_LAUNCHERS
+    assert _invocations(step, removable) == ["omni-agent"]
+    # A script the customer does keep is not reported.
+    assert _invocations("      - run: uv run onex --version\n", removable) == []
 
 
 def test_a_launcher_script_under_scripts_is_scanned(tmp_path: Path) -> None:
