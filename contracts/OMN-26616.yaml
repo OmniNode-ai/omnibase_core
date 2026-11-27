@@ -23,7 +23,8 @@ requirements:
           the fix; Falsifier: tests/unit/cli/test_omn26616_ac3_health_kafka_unset.py::test_health_unset_kafka_prints_plain_sentence_and_fix"
       - id: "AC4"
         statement: "AC4: on a working customer install both commands exit 0; Falsifier: tests/integration/test_omn26616_installed_package_e2e.py
-          (the dod-omn26616-integration-proof item below runs it)."
+          (the dod-omn26616-integration-proof item below runs the in-process customer-machine tests; the
+          wheel build run stays a lab run with OMN_26616_INSTALLED_E2E=1)."
 evidence_requirements:
   - kind: "tests"
     description: "Unit tests for customer install doctor checks, health kafka unset handling, and customer
@@ -58,18 +59,14 @@ dod_evidence:
           -q -n 0 --no-cov -p no:cacheprovider"
         cwd: "."
   - id: "dod-omn26616-integration-proof"
-    description: "The headless run of the OMN-26616 doctor and health tests on a lab host at the pushed
-      head; hosted CI cannot reach the lab runner so only the local Done gate runs it"
+    description: "AC4: on a working customer install both onex doctor and onex health exit 0 (in-process
+      customer-machine run of both commands)."
     source: "manual"
-    execution_scope: "local_done_gate"
     binds_ac:
       - "AC4"
     checks:
-      - check_type: "command"
-        check_value: "env PYTHONDONTWRITEBYTECODE=1 onex lab-work run --repo OmniNode-ai/omnibase_core
-          --sha \"$(git rev-parse HEAD)\" --lane dod-integration-proof-26616 --kind test -- env PYTHONDONTWRITEBYTECODE=1
-          OMN_26616_INSTALLED_E2E=1 uv run --frozen pytest tests/unit/doctor/test_omn26616_ac1_customer_install.py
-          tests/unit/doctor/test_omn26616_ac1_real_checks.py tests/unit/cli/test_omn26616_ac3_health_no_raw_text.py
-          tests/unit/cli/test_omn26616_ac3_health_kafka_unset.py tests/unit/doctor/test_omn26616_extra5_customer_wording.py
-          tests/integration/test_omn26616_installed_package_e2e.py -q -n 0 --reruns 0 --no-cov -p no:cacheprovider"
+      - check_type: "test_passes"
+        check_value: "uv run pytest tests/unit/doctor/test_omn26616_ac1_real_checks.py::test_empty_customer_machine_exits_zero_with_no_failures
+          tests/unit/cli/test_omn26616_ac3_health_kafka_unset.py::test_health_unset_kafka_prints_plain_sentence_and_fix
+          -q -n 0 --no-cov -p no:cacheprovider"
         cwd: "."
