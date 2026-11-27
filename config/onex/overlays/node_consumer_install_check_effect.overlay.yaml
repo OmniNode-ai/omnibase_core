@@ -18,6 +18,8 @@ consumers:
     repo_url: https://github.com/OmniNode-ai/omnimarket.git
     ref: dev
     install_args: ["-e", ".", "--group", "dev"]
+    # onex.cli.help values are help text (core OMN-26615), not module references.
+    metadata_entry_point_groups: ["onex.cli.help"]
     smoke_script: tests/ci/latest_core_smoke.py
     collect_args: ["tests/nodes", "--ignore=tests/integration"]
   - name: omnibase_infra

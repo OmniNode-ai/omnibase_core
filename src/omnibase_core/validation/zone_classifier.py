@@ -10,14 +10,16 @@ from omnibase_core.enums.enum_file_zone import EnumFileZone
 
 _GENERATED_MARKERS = ("__pycache__", "dist/", ".generated.", "node_modules/")
 _TEST_PREFIXES = ("tests/", "test/")
-# Top-level documentation and declarative-evidence trees: contract YAML,
-# DoD receipts, and legacy .evidence/. Allowlists are policy inputs and must
-# run the quality matrix. Production contract.yaml inside src/ is unaffected
-# because the PRODUCTION check runs first.
+# Top-level documentation and declarative-evidence trees: DoD receipts and
+# legacy .evidence/. Allowlists are policy inputs and must run the quality
+# matrix. Top-level contracts/ is NOT here (OMN-26671): ticket contracts are
+# read by the contract-shape tests that refuse a bad dod_evidence entry, so a
+# contract-only diff must select tests (it classifies as CONFIG, a yaml
+# outside src/). Production contract.yaml inside src/ is unaffected because
+# the PRODUCTION check runs first.
 _DOCS_PREFIXES = (
     "docs/",
     "standards/",
-    "contracts/",
     "drift/dod_receipts/",
     ".evidence/",
 )

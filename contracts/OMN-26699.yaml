@@ -1,0 +1,101 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-26699
+title: 'OMN-26699: the lane work types: models and enums for events, state, actions, receipts, step replies,
+  terminals and help requests'
+summary: Frozen pydantic models and enums for the lane work orchestrator (plan sections 3.1, 3.3, 3.5,
+  3.7), with extra forbidden, one event model checked by kind, plain action ids and terminals that owe
+  their kind fields.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn26699-lane-work-types
+    statement: The shared lane work types exist, are immutable, and refuse malformed events, terminals,
+      receipts and action ids.
+    acceptance:
+      - id: AC1
+        statement: "AC1: EnumLaneWorkEvent holds exactly the 28 kinds of plan section 3.3 plus status_requested
+          -- falsifier: a test compares the enum values with a list literal of those 29 names"
+      - id: AC2
+        statement: "AC2: a handed_off terminal without proven_head, handoff_request_id or proof_receipt_id,
+          and a blocked terminal without reason, are refused -- falsifier: uv run pytest -k terminal_kind_fields
+          asserts ValidationError for each"
+      - id: AC3
+        statement: "AC3: action ids are plain -- falsifier: a test builds the longest workflow id the
+          model allows and asserts its action ids match ^[a-z0-9-]{8,64}$"
+      - id: AC4
+        statement: "AC4: every model is frozen and forbids extra fields -- falsifier: a parametrised test
+          sets an attribute and passes an unknown field on each model"
+      - id: AC5
+        statement: "AC5: no handler, I/O or topic name in these files -- falsifier: the grep over src/omnibase_core/models/lane_work
+          prints nothing"
+evidence_requirements:
+  - kind: tests
+    description: The lane work model tests.
+    command: uv run --frozen pytest tests/unit/models/lane_work -q -n 0 --reruns 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn26699-event-enum-29
+    description: "AC1: bound by tests/unit/models/lane_work/test_lane_work_models.py -k test_event_enum_holds_the_29_kinds"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/models/lane_work/test_lane_work_models.py -q -n 0 --reruns
+          0 -k test_event_enum_holds_the_29_kinds
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26699-terminal-kind-fields
+    description: "AC2: bound by tests/unit/models/lane_work/test_lane_work_models.py -k terminal_kind_fields"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/models/lane_work/test_lane_work_models.py -q -n 0 --reruns
+          0 -k terminal_kind_fields
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26699-action-ids-plain
+    description: "AC3: bound by tests/unit/models/lane_work/test_lane_work_models.py -k longest_workflow_id"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/models/lane_work/test_lane_work_models.py -q -n 0 --reruns
+          0 -k longest_workflow_id
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26699-frozen-forbid
+    description: "AC4: bound by tests/unit/models/lane_work/test_lane_work_models.py -k frozen_and_forbid_extra"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC4
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/models/lane_work/test_lane_work_models.py -q -n 0 --reruns
+          0 -k frozen_and_forbid_extra
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn26699-no-io-or-topics
+    description: "AC5: bound by tests/unit/models/lane_work/test_lane_work_models.py -k no_io_imports_or_topic_names"
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC5
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/unit/models/lane_work/test_lane_work_models.py -q -n 0 --reruns
+          0 -k no_io_imports_or_topic_names
+        cwd: ${OMNI_HOME}/omnibase_core

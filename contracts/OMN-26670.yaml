@@ -59,6 +59,19 @@ dod_evidence:
         check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k ac1 -q --no-cov
           -o addopts='' -n 0
         cwd: .
+  - id: dod-omn26670-metadata-entry-point-group-not-imported
+    description: >-
+      An entry point group the overlay declares as metadata (onex.cli.help, help text) is not loaded by
+      the probe, and a broken onex.nodes entry still fails.
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/nodes/node_consumer_install_check_effect -k metadata_group
+          -q --no-cov -o addopts='' -n 0
+        cwd: .
   - id: dod-omn26670-ac2-names-all-three
     description: A failure line carries consumer, import statement and missing name, for entry points
       and for collection.

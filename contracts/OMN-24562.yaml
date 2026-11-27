@@ -1,0 +1,54 @@
+---
+schema_version: 1.0.0
+ticket_id: OMN-24562
+title: 'OMN-24562: CI Summary poll treats a concluded job as done and bounds a job with no conclusion'
+summary: The CI Summary poll in ci.yml and scripts/ci/ci_summary_gate.py counts an in-run job whose conclusion
+  is set as completed, reads the jobs listing in pages of 30 then 10, and fails closed, naming the job,
+  when a job has no conclusion 45 minutes after the last other job completed. Port of omnibase_infra#6278.
+is_seam_ticket: false
+interface_change: false
+interfaces_touched: []
+requirements:
+  - id: req-omn24562-summary-poll
+    statement: The CI Summary poll does not wait on a job that already has a conclusion.
+    acceptance:
+      - id: AC2
+        statement: "AC2: in omnibase_core the CI Summary gate reads an in-run job with status in_progress
+          and a conclusion as done (success green, failure red) and one with no conclusion as pending,
+          and the poll step reads jobs in pages of 30 then 10 with a declared stall bound -- falsifier:
+          tests/ci/test_ci_summary_running_conclusion_omn24562.py red on the base files and green on the
+          head"
+evidence_requirements:
+  - kind: tests
+    description: The recorded job shapes through the real evaluate() and the workflow's own jq.
+    command: uv run --frozen pytest tests/ci/test_ci_summary_running_conclusion_omn24562.py tests/unit/scripts/ci/test_ci_summary_gate.py
+      -q -n 0 --reruns 0
+emergency_bypass:
+  enabled: false
+  justification: ''
+  follow_up_ticket_id: ''
+dod_evidence:
+  - id: dod-omn24562-core-summary-poll-running-conclusion
+    description: 'AC2: the CI Summary gate treats an in-run job with a set conclusion as completed and
+      bounds a job with none.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/ci/test_ci_summary_running_conclusion_omn24562.py tests/unit/scripts/ci/test_ci_summary_gate.py
+          -q -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core
+  - id: dod-omn24562-core-summary-poll-own-workflow-rows
+    description: 'AC2: CI Summary never holds a row of its own workflow on its own run.'
+    source: manual
+    execution_scope: hosted_and_local
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: >-
+          uv run --frozen pytest tests/ci/test_ci_summary_self_producer_omn24562.py -q -n 0 --reruns 0
+        cwd: ${OMNI_HOME}/omnibase_core

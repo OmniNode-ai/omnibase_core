@@ -336,6 +336,8 @@ class HandlerConsumerInstallCheck:
         ]
         for group in spec.entry_point_groups:
             probe_cmd += ["--group", group]
+        for group in spec.metadata_entry_point_groups:
+            probe_cmd += ["--skip-group", group]
         collect_cmd = [
             python,
             "-m",

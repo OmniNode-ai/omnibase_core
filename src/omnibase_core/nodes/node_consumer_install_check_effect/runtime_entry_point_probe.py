@@ -80,12 +80,17 @@ def _import_statement(error: BaseException, fallback: str) -> tuple[str, list[st
     )
 
 
-def probe(distribution: str, groups: tuple[str, ...]) -> dict[str, object]:
-    """Load every entry point of the distribution and describe each failure."""
+def probe(
+    distribution: str, groups: tuple[str, ...], skip_groups: tuple[str, ...] = ()
+) -> dict[str, object]:
+    """Load every entry point of the distribution and describe each failure.
+
+    A group in skip_groups holds metadata (help text), not importable references, so it is not loaded.
+    """
     entry_points = [
         ep
         for ep in importlib.metadata.distribution(distribution).entry_points
-        if not groups or ep.group in groups
+        if (not groups or ep.group in groups) and ep.group not in skip_groups
     ]
     failures: list[dict[str, object]] = []
     imported = 0
@@ -123,9 +128,10 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--distribution", required=True)
     parser.add_argument("--group", action="append", default=[])
+    parser.add_argument("--skip-group", action="append", default=[])
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args(argv)
-    result = probe(args.distribution, tuple(args.group))
+    result = probe(args.distribution, tuple(args.group), tuple(args.skip_group))
     args.out.write_text(json.dumps(result), encoding="utf-8")
     return 0
 

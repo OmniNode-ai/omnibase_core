@@ -327,7 +327,9 @@ def _fake_dist(site: Path, name: str, entry_points: dict[str, str]) -> None:
     (info / "entry_points.txt").write_text(body, encoding="utf-8")
 
 
-def _run_probe(site: Path, dist: str, out: Path) -> dict[str, object]:
+def _run_probe(
+    site: Path, dist: str, out: Path, skip_groups: tuple[str, ...] = ()
+) -> dict[str, object]:
     env = {"PYTHONPATH": str(site)}
     done = subprocess.run(
         [
@@ -338,6 +340,7 @@ def _run_probe(site: Path, dist: str, out: Path) -> dict[str, object]:
             dist,
             "--out",
             str(out),
+            *[a for g in skip_groups for a in ("--skip-group", g)],
         ],
         env=env,
         cwd=site,
@@ -535,3 +538,37 @@ def test_ac2_a_smoke_line_without_a_location_still_names_all_three(
     assert "consumer=alpha" in line and f"missing={REMOVED_MODULE}" in line
     assert "core_ticket_guard" in line
     assert result.outcomes[0].smoke_summary.endswith("failed=1")
+
+
+def _help_metadata_site(tmp_path: Path) -> Path:
+    """A consumer whose onex.cli.help group holds help text (OMN-26615), not module paths."""
+    site = _replay_site(tmp_path, candidate_has_module=True)
+    entry_points = site / "market_dist-1.0.dist-info" / "entry_points.txt"
+    entry_points.write_text(
+        entry_points.read_text(encoding="utf-8")
+        + "\n[onex.cli.help]\nagent-message = Send a message to an agent\n",
+        encoding="utf-8",
+    )
+    return site
+
+
+def test_ac1_a_declared_metadata_group_is_not_imported_and_an_importable_group_still_is(
+    tmp_path: Path,
+) -> None:
+    site = _help_metadata_site(tmp_path)
+    # Known bad: the group is not declared metadata, so its help text is loaded and fails.
+    bad = _run_probe(site, "market-dist", tmp_path / "bad.json")
+    assert [f["group"] for f in bad["failures"]] == ["onex.cli.help"]
+    # Known good: the overlay declares it metadata; nothing else is skipped.
+    good = _run_probe(
+        site, "market-dist", tmp_path / "good.json", skip_groups=("onex.cli.help",)
+    )
+    assert good["failures"] == [] and good["imported"] == 1
+    # The skip names a group, never a distribution: a broken onex.nodes entry still fails.
+    broken = _run_probe(
+        _replay_site(tmp_path / "b", candidate_has_module=False),
+        "market-dist",
+        tmp_path / "broken.json",
+        skip_groups=("onex.cli.help",),
+    )
+    assert len(broken["failures"]) == 1

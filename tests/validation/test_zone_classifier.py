@@ -46,10 +46,10 @@ def test_classify_readme() -> None:
     assert classify_path(Path("README.md")) == EnumFileZone.DOCS
 
 
-def test_classify_contracts_yaml_is_docs() -> None:
-    # Top-level contracts/ holds OCC ticket contracts — declarative evidence,
-    # no runtime impact, must skip the heavy matrix.
-    assert classify_path(Path("contracts/OMN-10411.yaml")) == EnumFileZone.DOCS
+def test_classify_contracts_yaml_is_config_not_docs() -> None:
+    # OMN-26671: ticket contracts are read by the contract-shape tests, so a
+    # contract-only diff must not skip the matrix.
+    assert classify_path(Path("contracts/OMN-10411.yaml")) == EnumFileZone.CONFIG
 
 
 def test_classify_dod_receipts_yaml_is_docs() -> None:
@@ -65,7 +65,7 @@ def test_classify_allowlists_yaml_is_config() -> None:
 
 @pytest.mark.parametrize(
     "prefix",
-    ["docs", "standards", "contracts", "drift/dod_receipts", ".evidence"],
+    ["docs", "standards", "drift/dod_receipts", ".evidence"],
 )
 def test_docs_prefixes_are_root_anchored(prefix: str) -> None:
     assert classify_path(Path(prefix) / "x.yaml") == EnumFileZone.DOCS
@@ -83,7 +83,7 @@ def test_test_prefixes_are_root_anchored(prefix: str) -> None:
     [
         ("docs/x.yaml", EnumFileZone.DOCS),
         ("standards/x.yaml", EnumFileZone.DOCS),
-        ("contracts/x.yaml", EnumFileZone.DOCS),
+        ("contracts/x.yaml", EnumFileZone.CONFIG),
         ("drift/dod_receipts/x.yaml", EnumFileZone.DOCS),
         (".evidence/x.yaml", EnumFileZone.DOCS),
         ("allowlists/x.yaml", EnumFileZone.CONFIG),
@@ -169,19 +169,20 @@ def test_classify_build() -> None:
     assert classify_path(Path("examples/scripts/deploy.sh")) == EnumFileZone.PRODUCTION
 
 
-def test_existing_contracts_file_classifies_as_docs(
+def test_existing_contracts_file_classifies_as_config_not_docs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     # Regression for CodeRabbit finding on PR #1023: when the changed file
     # actually exists on disk, classify_path() previously resolved it to an
     # absolute path (e.g. /tmp/.../contracts/X.yaml) and the bare
-    # `s.startswith("contracts/")` check missed it, dropping the file into
-    # CONFIG and defeating the docs-only short-circuit in CI.
+    # `s.startswith(...)` check missed it. Since OMN-26671 contracts/ is not
+    # a docs prefix: an existing contract file must still land in CONFIG, not
+    # DOCS, and not PRODUCTION.
     monkeypatch.chdir(tmp_path)
     target = tmp_path / "contracts" / "OMN-1234.yaml"
     target.parent.mkdir(parents=True)
     target.write_text("---\n")
-    assert classify_path(target) == EnumFileZone.DOCS
+    assert classify_path(target) == EnumFileZone.CONFIG
 
 
 def test_existing_dod_receipts_file_classifies_as_docs(

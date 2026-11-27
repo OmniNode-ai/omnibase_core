@@ -32,6 +32,10 @@ class ModelConsumerSpec(BaseModel):
         default=(),
         description="Entry point groups imported; empty means every group of the distribution",
     )
+    metadata_entry_point_groups: tuple[str, ...] = Field(
+        default=(),
+        description="Entry point groups whose values are metadata such as help text, not importable references; they are not loaded",
+    )
     smoke_script: str = Field(
         default="",
         description="Consumer-owned stdlib smoke script, relative to its checkout, run by path after the entry-point import",
