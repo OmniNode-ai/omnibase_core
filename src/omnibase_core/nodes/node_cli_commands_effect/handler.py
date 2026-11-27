@@ -29,7 +29,7 @@ _UNEXPECTED = (
 )
 _BAD_PORT = (
     "The configured message-bus address has a port that is not a number. "
-    "Fix: Set the address again with a numeric port, for example host:19092."
+    "Fix: Set the address again with a number after the colon."
 )
 
 

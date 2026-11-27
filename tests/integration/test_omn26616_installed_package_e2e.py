@@ -21,7 +21,6 @@ artifact, ``omn26616_installed_e2e.txt``, into the evidence directory.
 
 from __future__ import annotations
 
-import os
 import re
 import shutil
 import subprocess
@@ -29,9 +28,20 @@ from pathlib import Path
 
 import pytest
 
+from omnibase_core.models.bootstrap.model_environment_bootstrap import (
+    ModelEnvironmentBootstrap,
+)
+
 pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
-_ENABLED = os.environ.get("OMN_26616_INSTALLED_E2E") == "1"
+_SETTINGS = ModelEnvironmentBootstrap.capture_process_environment(
+    declared_keys=(
+        "OMN_26616_INSTALLED_E2E",
+        "OMN_26616_E2E_SOURCE",
+        "OMN_26616_E2E_EVIDENCE_DIR",
+    )
+).environment
+_ENABLED = _SETTINGS.optional("OMN_26616_INSTALLED_E2E") == "1"
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _ALL_CAPS_NAME = re.compile(r"\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b")
 _FIX_EXPORT = re.compile(r"Fix: export [A-Z0-9_]+=")
@@ -39,7 +49,7 @@ _RAW_MARKERS = ("Error: '", "[Errno", "Traceback", "Import error")
 
 
 def _run(
-    argv: list[str], *, env: dict[str, str], cwd: Path, timeout: int
+    argv: list[str], *, env: dict[str, str] | None, cwd: Path, timeout: int
 ) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
         argv,
@@ -59,16 +69,15 @@ def test_installed_onex_doctor_and_health_exit_zero_on_a_customer_machine(
 ) -> None:
     uv = shutil.which("uv")
     assert uv is not None, "uv is required to build and install the wheel"
-    source = Path(os.environ.get("OMN_26616_E2E_SOURCE", str(_REPO_ROOT)))
+    source = Path(_SETTINGS.optional("OMN_26616_E2E_SOURCE") or _REPO_ROOT)
     dist = tmp_path / "dist"
     venv = tmp_path / "venv"
     home = tmp_path / "home"
     home.mkdir()
-    build_env = {**os.environ, "HOME": str(os.environ.get("HOME", home))}
 
     built = _run(
         [uv, "build", "--wheel", "--out-dir", str(dist), str(source)],
-        env=build_env,
+        env=None,
         cwd=tmp_path,
         timeout=900,
     )
@@ -76,14 +85,14 @@ def test_installed_onex_doctor_and_health_exit_zero_on_a_customer_machine(
     wheel = next(dist.glob("omnibase_core-*.whl"))
     made = _run(
         [uv, "venv", "--python", "3.12", str(venv)],
-        env=build_env,
+        env=None,
         cwd=tmp_path,
         timeout=300,
     )
     assert made.returncode == 0, made.stderr
     installed = _run(
         [uv, "pip", "install", "--python", str(venv / "bin" / "python"), str(wheel)],
-        env=build_env,
+        env=None,
         cwd=tmp_path,
         timeout=900,
     )
@@ -105,7 +114,7 @@ def test_installed_onex_doctor_and_health_exit_zero_on_a_customer_machine(
         if _ALL_CAPS_NAME.search(_FIX_EXPORT.sub("Fix: export ", text)):
             failures.append(f"onex {command[0]} named an environment variable")
 
-    evidence_dir = Path(os.environ.get("OMN_26616_E2E_EVIDENCE_DIR", str(tmp_path)))
+    evidence_dir = Path(_SETTINGS.optional("OMN_26616_E2E_EVIDENCE_DIR") or tmp_path)
     evidence_dir.mkdir(parents=True, exist_ok=True)
     (evidence_dir / "omn26616_installed_e2e.txt").write_text("\n".join(lines) + "\n")
     assert not failures, "\n".join(failures) + "\n" + "\n".join(lines)
