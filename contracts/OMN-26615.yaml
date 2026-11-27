@@ -1,0 +1,107 @@
+# SPDX-FileCopyrightText: 2026 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+schema_version: "1.0.0"
+ticket_id: "OMN-26615"
+title: "onex --help answers in under 1 second when run without a terminal"
+summary: "The command list of onex --help reads each extension's one-line help from package entry-point
+  metadata (group onex.cli.help) instead of importing the extension; the page text is unchanged."
+is_seam_ticket: false
+interface_change: true
+interfaces_touched:
+  - public_api
+requirements:
+  - id: req-omn26615-fast-help
+    statement: "onex --help run without a terminal prints the same page in under 1 second (median of five
+      runs) for every extension that declares its help line, and the profile before and after is saved."
+    acceptance:
+      - id: AC1
+        statement: "AC1: onex --help without a terminal prints its help in under 1 second, median of five
+          runs; Falsifier: tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_without_a_terminal_help_is_under_one_second,
+          red on origin/dev a141890b"
+      - id: AC2
+        statement: "AC2: the help page still lists every command it lists today with the same names and
+          one-line help; Falsifier: tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_page_text_is_identical_to_the_loading_path"
+      - id: AC3
+        statement: "AC3: a profile of onex --help names what took the time before and after, saved as
+          a repeatable artifact; Falsifier: records/evidence/OMN-26615/README.md and the before and after
+          importtime.txt files"
+evidence_requirements:
+  - kind: tests
+    description: The help page reads a declared help line from metadata without importing the extension,
+      is identical to the loading path at every width, the real command still runs, and the page is under
+      1 second.
+    command: uv run pytest tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py -q -n 0 --no-cov
+      -p no:cacheprovider
+emergency_bypass:
+  enabled: false
+  justification: ""
+  follow_up_ticket_id: ""
+dod_evidence:
+  - id: dod-omn26615-ac1
+    description: "AC1: onex --help without a terminal prints its help in under 1 second (median of five
+      runs) while an extension import costs 1.5 s, and the harness measures that import when no help entry
+      is declared."
+    source: manual
+    binds_ac:
+      - AC1
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_without_a_terminal_help_is_under_one_second
+          tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_the_harness_measures_the_import_cost
+          -q -n 0 --no-cov -p no:cacheprovider
+        cwd: .
+  - id: dod-omn26615-ac2
+    description: "AC2: the page text is identical to the loading path at widths 40, 60, 80 and 120; --help
+      does not import a declared extension; a command with no help entry still loads and prints; the real
+      command still runs; a help entry naming no extension is ignored."
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_page_text_is_identical_to_the_loading_path
+          tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_help_page_does_not_import_a_declared_extension
+          tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_a_command_with_no_help_entry_still_loads_and_prints
+          tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_the_real_command_still_runs_after_the_page
+          tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_a_help_entry_for_an_unregistered_command_is_ignored
+          -q -n 0 --no-cov -p no:cacheprovider
+        cwd: .
+  - id: dod-omn26615-ac2-existing
+    description: "AC2: the existing extension-loader tests still pass (fail-loud loading, lazy loading
+      of the built-in and extension commands, the kafka extension) and the help page reads a declared
+      help line from the onex.cli.help group without importing the extension. The last test fails on origin/dev,
+      which does not know that group, so the item can fail at the merge base. Only these files run because
+      the whole tests/unit/cli directory does not fit the hosted verifier's 30 s per-check budget."
+    source: manual
+    binds_ac:
+      - AC2
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_extension_loader_fail_loud_omn16967.py tests/unit/cli/test_lazy_cli_extensions_omn19444.py
+          tests/unit/cli/test_lazy_cli_loading_omn19444.py tests/unit/cli/test_cli_kafka.py tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_help_page_does_not_import_a_declared_extension
+          -q -n 0 --no-cov -p no:cacheprovider
+        cwd: .
+  - id: dod-omn26615-ac3-mechanism
+    description: "AC3 mechanism: in a fresh interpreter the help page leaves a declared extension out
+      of sys.modules, and the same probe with the help entry removed finds it imported."
+    source: manual
+    binds_ac:
+      - AC3
+    checks:
+      - check_type: test_passes
+        check_value: uv run pytest tests/unit/cli/test_cli_help_does_not_load_commands_omn26615.py::test_a_fresh_interpreter_help_page_leaves_the_declared_extension_unimported
+          -q -n 0 --no-cov -p no:cacheprovider
+        cwd: .
+  - id: dod-omn26615-ac3
+    description: "The saved profile artifact exists with its before and after importtime outputs and the
+      repeatable profile script. The evidence lives in the workflow checkout under records/evidence/OMN-26615,
+      so only the local Done gate runs this item. It binds no criterion; AC3 is bound to the hosted mechanism
+      test dod-omn26615-ac3-mechanism."
+    source: manual
+    execution_scope: local_done_gate
+    checks:
+      - check_type: command
+        check_value: test -s ../../../records/evidence/OMN-26615/before/importtime.txt -a -s ../../../records/evidence/OMN-26615/after3/importtime_overlay.txt
+          -a -s ../../../records/evidence/OMN-26615/profile.sh -a -s ../../../records/evidence/OMN-26615/README.md
+        cwd: .

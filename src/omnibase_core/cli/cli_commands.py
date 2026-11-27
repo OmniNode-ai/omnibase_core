@@ -159,6 +159,22 @@ class _LazyCoreCommandGroup(click.Group):
             return self._load(ctx, cmd_name)
         return _surface.reply_to_hidden_command(self, ctx, cmd_name)
 
+    def format_commands(
+        self, ctx: click.Context, formatter: click.HelpFormatter
+    ) -> None:
+        """List commands; a declared help line replaces importing the extension (OMN-26615)."""
+        helps = {
+            e.name: click.Command(e.name, help=e.value)
+            for e in _entry_points(group=_HELP_GROUP)
+            if e.name in self._lazy_extensions and hasattr(e, "value")
+        }
+        self.commands.update(helps)
+        try:
+            super().format_commands(ctx, formatter)
+        finally:
+            for name in helps:
+                del self.commands[name]
+
     def _load(self, ctx: click.Context, cmd_name: str) -> click.Command | None:
         command = super().get_command(ctx, cmd_name)
         if command is not None:
@@ -796,14 +812,19 @@ from importlib.metadata import EntryPoint
 from importlib.metadata import entry_points as _entry_points
 
 _CLI_EXTENSION_GROUP = "onex.cli"
+# A package declares its command's one-line help here (entry name = command name,
+# value = the help text) so ``--help`` reads metadata instead of importing it.
+_HELP_GROUP = "onex.cli.help"
 
 
 def _origin_of(entry_point: EntryPoint) -> str:
-    return (
-        entry_point.dist.name
-        if entry_point.dist is not None
-        else "an unknown distribution"
-    )
+    dist = entry_point.dist
+    return dist.name if dist is not None else "an unknown distribution"
+
+
+def _label(entry_point: EntryPoint) -> str:
+    group = getattr(entry_point, "group", _CLI_EXTENSION_GROUP)
+    return f"the '{group}' entry point '{entry_point.name}' (from {_origin_of(entry_point)})"
 
 
 def _load_extension_command(entry_point: EntryPoint) -> click.Command:
@@ -812,25 +833,21 @@ def _load_extension_command(entry_point: EntryPoint) -> click.Command:
     Raises:
         ModelOnexError: If the target fails to load or is not a click command.
     """
-    origin = _origin_of(entry_point)
     try:
         command = entry_point.load()
         # boundary-ok: entry points are provided by pip-installed packages.
     except Exception as exc:
         raise ModelOnexError(
-            f"the '{getattr(entry_point, 'group', _CLI_EXTENSION_GROUP)}' entry point "
-            f"'{entry_point.name}' (from {origin}) points at "
+            f"{_label(entry_point)} points at "
             f"'{entry_point.value}', which failed to load: "
             f"{type(exc).__name__}: {exc}. The command it advertises does "
-            f"not exist, so this is a packaging defect in {origin}, not a "
+            f"not exist, so this is a packaging defect in {_origin_of(entry_point)}, not a "
             f"CLI fault.",
             error_code=EnumCoreErrorCode.IMPORT_ERROR,
         ) from exc
-
     if not isinstance(command, (click.Command, click.Group)):
         raise ModelOnexError(
-            f"the '{getattr(entry_point, 'group', _CLI_EXTENSION_GROUP)}' entry point "
-            f"'{entry_point.name}' (from {origin}) resolved to "
+            f"{_label(entry_point)} resolved to "
             f"{type(command).__name__}, not a click.Command or click.Group. "
             f"'{entry_point.value}' must name a click command object.",
             error_code=EnumCoreErrorCode.REGISTRY_VALIDATION_FAILED,
@@ -840,8 +857,7 @@ def _load_extension_command(entry_point: EntryPoint) -> click.Command:
 
 def _collision_error(entry_point: EntryPoint) -> ModelOnexError:
     return ModelOnexError(
-        f"the '{getattr(entry_point, 'group', _CLI_EXTENSION_GROUP)}' entry point "
-        f"'{entry_point.name}' (from {_origin_of(entry_point)}) collides with a "
+        f"{_label(entry_point)} collides with a "
         f"command that is already registered. Entry points have no defined "
         f"order across distributions, so allowing this would make which "
         f"'onex {entry_point.name}' runs depend on the machine. Rename "
@@ -850,27 +866,18 @@ def _collision_error(entry_point: EntryPoint) -> ModelOnexError:
     )
 
 
+# load_cli_extensions: ``group`` is the root CLI the extensions attach to;
+# ``extension_points`` are normally the live ``onex.cli`` group, injected so the
+# failure modes are testable without installing a broken distribution. Returns
+# the names attached, in the order processed. Raises ModelOnexError if any entry
+# point fails to load, resolves to something that is not a click command, or
+# claims a name that is already registered. Never partial-and-silent: a command
+# that was advertised and did not arrive is reported, not skipped.
 def load_cli_extensions(
     group: click.Group,
     extension_points: Iterable[EntryPoint],
 ) -> list[str]:
-    """Attach every advertised ``onex.cli`` extension to ``group``, or raise.
-
-    Args:
-        group: The root CLI the extensions are attached to.
-        extension_points: The entry points to load, normally the live
-            ``onex.cli`` group. Injected so the failure modes are testable
-            without installing a broken distribution.
-
-    Returns:
-        The names attached, in the order they were processed.
-
-    Raises:
-        ModelOnexError: If any entry point fails to load, resolves to something
-            that is not a click command, or claims a name that is already
-            registered. Never partial-and-silent: a command that was advertised
-            and did not arrive is reported, not skipped.
-    """
+    """Attach every advertised ``onex.cli`` extension to ``group``, or raise."""
     attached: list[str] = []
     for entry_point in extension_points:
         command = _load_extension_command(entry_point)
@@ -902,11 +909,7 @@ def register_lazy_cli_extensions(
     attached: list[str] = []
     for entry_point in extension_points:
         name = entry_point.name
-        if (
-            name in group.commands
-            or name in group._lazy_commands
-            or name in group._lazy_extensions
-        ):
+        if name in {*group.commands, *group._lazy_commands, *group._lazy_extensions}:
             raise _collision_error(entry_point)
         group._lazy_extensions[name] = entry_point
         attached.append(name)
