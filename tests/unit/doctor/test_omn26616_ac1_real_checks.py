@@ -12,8 +12,9 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 import pytest
 from click.testing import CliRunner
@@ -22,6 +23,7 @@ from omnibase_core.cli import cli_doctor
 from omnibase_core.doctor.checks import (
     CheckDocker,
     CheckEnvVars,
+    CheckJsRuntime,
     CheckLinear,
     CheckReposSynced,
     CheckStaleWorktrees,
@@ -29,6 +31,7 @@ from omnibase_core.doctor.checks import (
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.doctor.doctor_registry import DoctorRegistry
 from omnibase_core.enums.enum_doctor_category import EnumDoctorCategory
+from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import (
     ModelDoctorCheckResult,
 )
@@ -125,6 +128,38 @@ def test_missing_nodejs_is_plain_and_does_not_fail_a_customer(
     assert "Node.js is not installed." in node[0]["message"]
     assert "Fix:" in node[0]["message"]
     assert exit_code == 0
+
+
+def test_nodejs_that_exits_with_an_error_is_plain_and_fails(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    fake = tmp_path / "bin" / "node"
+    fake.parent.mkdir()
+    fake.write_text("#!/bin/sh\necho RAWSECRET >&2\nexit 3\n")
+    fake.chmod(0o755)
+    monkeypatch.setenv("PATH", str(fake.parent))
+
+    result = CheckJsRuntime().run()
+
+    assert result.status is EnumHealthStatusValue.UNHEALTHY
+    assert "RAWSECRET" not in result.message
+    assert "Fix:" in result.message
+
+
+def test_nodejs_that_does_not_answer_is_plain_and_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def hang(*_args: object, **_kwargs: object) -> NoReturn:
+        raise subprocess.TimeoutExpired(cmd="node --version", timeout=5)
+
+    monkeypatch.setattr(subprocess, "run", hang)
+
+    result = CheckJsRuntime().run()
+
+    assert result.status is EnumHealthStatusValue.UNHEALTHY
+    assert "node --version" in result.message
+    assert "timed out" not in result.message
+    assert "Fix:" in result.message
 
 
 def test_a_crashed_check_is_reported_in_plain_words_not_exception_text() -> None:

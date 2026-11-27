@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
+from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_cli_doctor_request import ModelCliDoctorRequest
 from omnibase_core.models.doctor.model_cli_doctor_result import ModelCliDoctorResult
 
@@ -18,7 +19,32 @@ __all__ = [
     "builtin_checks",
     "default_builtin_checks",
     "developer_install",
+    "node_runtime_verdict",
 ]
+
+_NODE_HOW_TO_CHECK = (
+    "Fix: Run `node --version` in a terminal and reinstall Node.js if that hangs."
+)
+_NODE_NOT_INSTALLED = "Node.js is not installed. Fix: Install Node.js."
+_NODE_NO_ANSWER = f"Node.js did not answer within five seconds. {_NODE_HOW_TO_CHECK}"
+_NODE_NOT_WORKING = f"Node.js is installed but running it failed. {_NODE_HOW_TO_CHECK}"
+
+
+def node_runtime_verdict(
+    version: str | None, error: type[BaseException] | None
+) -> tuple[EnumHealthStatusValue, str]:
+    """Judge the Node.js probe in plain words, never an operating-system message.
+
+    A missing Node.js is reported but skipped, not failed: a customer install
+    does not need it to delegate or to use the dashboard.
+    """
+    if error is None:
+        if version:
+            return EnumHealthStatusValue.HEALTHY, version
+        return EnumHealthStatusValue.UNHEALTHY, _NODE_NOT_WORKING
+    if error is FileNotFoundError:
+        return EnumHealthStatusValue.UNKNOWN, _NODE_NOT_INSTALLED
+    return EnumHealthStatusValue.UNHEALTHY, _NODE_NO_ANSWER
 
 
 def _check_classes() -> tuple[type[DoctorCheckBase], ...]:

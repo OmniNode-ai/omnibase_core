@@ -8,7 +8,6 @@ import threading
 import time
 from importlib.metadata import entry_points
 
-from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
 from .doctor_check_base import DoctorCheckBase
@@ -50,15 +49,10 @@ class DoctorRegistry:
             try:
                 result = check.run()
             except (OSError, TypeError, ValueError):
-                result = ModelDoctorCheckResult(
-                    name=check.check_name,
-                    category=check.category,
-                    status=EnumHealthStatusValue.UNHEALTHY,
-                    message=(
-                        "This check could not finish. "
-                        "Fix: Run `uv tool install --reinstall omninode-onex`."
-                    ),
+                module = importlib.import_module(
+                    "omnibase_core.nodes.node_doctor_registry_effect.handler"
                 )
+                result = module.crashed_result(check)
             elapsed_ms = int((time.monotonic() - start) * 1000)
             # Attach timing if not already set
             if result.duration_ms == 0:

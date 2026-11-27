@@ -10,10 +10,26 @@ from importlib.metadata import EntryPoint
 from typing import Any
 
 from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
+from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
 from omnibase_core.models.doctor.model_cli_doctor_request import ModelCliDoctorRequest
 from omnibase_core.models.doctor.model_cli_doctor_result import ModelCliDoctorResult
+from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
 
-__all__ = ["NodeDoctorRegistryEffect", "discover"]
+__all__ = ["NodeDoctorRegistryEffect", "crashed_result", "discover"]
+
+_CRASHED = (
+    "This check could not finish. Fix: Run `uv tool install --reinstall omninode-onex`."
+)
+
+
+def crashed_result(check: DoctorCheckBase) -> ModelDoctorCheckResult:
+    """Report a check that crashed in fixed plain words, never the exception text."""
+    return ModelDoctorCheckResult(
+        name=check.check_name,
+        category=check.category,
+        status=EnumHealthStatusValue.UNHEALTHY,
+        message=_CRASHED,
+    )
 
 
 class NodeDoctorRegistryEffect:
