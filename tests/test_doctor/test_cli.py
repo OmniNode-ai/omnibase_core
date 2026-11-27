@@ -102,10 +102,16 @@ def _config_at(tmp_path: Path, text: str, *, raw: bytes | None = None) -> Path:
 def _run_doctor(config_path: Path, args: list[str]):
     runner = CliRunner()
     with (
+        # The Linear-key check is developer-only (OMN-26616), so run it as a
+        # developer install.
+        patch(
+            "omnibase_core.nodes.node_cli_doctor_effect.handler.developer_install",
+            lambda omni_home=None: True,
+        ),
         patch("omnibase_core.cli.cli_doctor._BUILTIN_CHECKS", [CheckEnvVars]),
         patch(
             "omnibase_core.doctor.doctor_registry.DoctorRegistry.discover",
-            lambda self: None,
+            lambda self, developer=False: None,
         ),
         patch(
             "omnibase_core.doctor.checks.check_env_vars.default_user_config_path",
@@ -139,8 +145,8 @@ def _assert_absent(result, caplog, *sentinels: str) -> None:
 @pytest.mark.parametrize(
     ("body", "raw", "code", "message"),
     [
-        (None, None, EnumDoctorConfigLoadCode.MISSING, "Missing: LINEAR_API_KEY"),
-        ("\n", None, EnumDoctorConfigLoadCode.EMPTY, "Missing: LINEAR_API_KEY"),
+        (None, None, EnumDoctorConfigLoadCode.MISSING, "Missing: Linear API key"),
+        ("\n", None, EnumDoctorConfigLoadCode.EMPTY, "Missing: Linear API key"),
         (
             f"credentials: [{_PARSER_SENTINEL}\n",
             None,
@@ -233,7 +239,7 @@ def test_doctor_ambient_env_cannot_bind(tmp_path, caplog):
     ):
         result = _run_doctor(config_path, ["--json"])
     assert result.exit_code == 1
-    assert _sole_check(result)["message"] == "Missing: LINEAR_API_KEY"
+    assert _sole_check(result)["message"] == "Missing: Linear API key"
 
 
 def test_doctor_never_calls_a_preprojection_normalizer(tmp_path):

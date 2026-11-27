@@ -1,36 +1,21 @@
 # SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
 # SPDX-License-Identifier: MIT
 
+import importlib
+
 import click
 
-from omnibase_core.doctor.checks import (
-    CheckDocker,
-    CheckEnvVars,
-    CheckJsRuntime,
-    CheckKafka,
-    CheckLinear,
-    CheckPostgres,
-    CheckPythonVersion,
-    CheckReposSynced,
-    CheckStaleWorktrees,
-)
-from omnibase_core.doctor.doctor_check_base import DoctorCheckBase
 from omnibase_core.doctor.doctor_registry import DoctorRegistry
+from omnibase_core.models.bootstrap.model_environment_bootstrap import (
+    ModelEnvironmentBootstrap,
+)
 from omnibase_core.models.doctor.model_doctor_report import ModelDoctorReport
 
-# Built-in checks registered at import time. Annotated explicitly: without it
-# the inferred element type is the metaclass, not type[DoctorCheckBase].
-_BUILTIN_CHECKS: list[type[DoctorCheckBase]] = [
-    CheckDocker,
-    CheckKafka,
-    CheckPostgres,
-    CheckLinear,
-    CheckReposSynced,
-    CheckStaleWorktrees,
-    CheckEnvVars,
-    CheckPythonVersion,
-    CheckJsRuntime,
-]
+_BUILTIN_CHECKS = list(
+    importlib.import_module(
+        "omnibase_core.nodes.node_cli_doctor_effect.handler"
+    ).default_builtin_checks()
+)
 
 
 @click.command("doctor")
@@ -40,13 +25,20 @@ def doctor(ctx: click.Context, use_json: bool) -> None:
     """Run diagnostic checks on your ONEX environment."""
     registry = DoctorRegistry()
 
-    # Register built-ins
-    for check_cls in _BUILTIN_CHECKS:
+    _bootstrap = ModelEnvironmentBootstrap.capture_process_environment(
+        declared_keys=("OMNI_HOME",)
+    )
+
+    _handler = importlib.import_module(
+        "omnibase_core.nodes.node_cli_doctor_effect.handler"
+    )
+    developer = _handler.developer_install(_bootstrap.environment.optional("OMNI_HOME"))
+    for check_cls in _handler.builtin_checks(_BUILTIN_CHECKS, developer=developer):
         # Why: Registry stores protocol contracts rather than instantiating them directly.
         registry.register(check_cls)
 
     # Discover entry-point checks from other packages
-    registry.discover()
+    registry.discover(developer=developer)
 
     results = registry.run_all()
     report = ModelDoctorReport.from_results(results)

@@ -26,7 +26,8 @@ def test_check_kafka_reports_not_configured_when_unset(
     monkeypatch.delenv("KAFKA_BOOTSTRAP_SERVERS", raising=False)
     result = CheckKafka().run()
     assert result.status == EnumHealthStatusValue.UNKNOWN
-    assert "KAFKA_BOOTSTRAP_SERVERS" in result.message
+    assert "KAFKA_BOOTSTRAP_SERVERS" not in result.message
+    assert "Kafka" in result.message
 
 
 @pytest.mark.parametrize("check_cls", _BUILTIN_CHECKS, ids=lambda c: c.check_id)

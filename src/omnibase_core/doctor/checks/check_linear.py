@@ -27,7 +27,7 @@ class CheckLinear(DoctorCheckBase):
                 name=self.check_name,
                 category=self.category,
                 status=EnumHealthStatusValue.UNKNOWN,
-                message="Skipped: LINEAR_API_KEY not set",
+                message="Skipped: Linear API key not set",
                 duration_ms=0,
             )
         try:

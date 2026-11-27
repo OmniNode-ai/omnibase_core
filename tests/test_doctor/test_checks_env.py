@@ -244,13 +244,13 @@ def test_valid_but_empty_binding_is_a_missing_binding(tmp_path: Path) -> None:
     assert check.outcome_code is EnumDoctorConfigLoadCode.VALID
     result = check.run()
     assert result.status is EnumHealthStatusValue.UNHEALTHY
-    assert result.message == "Missing: LINEAR_API_KEY"
+    assert result.message == "Missing: Linear API key"
 
 
 @pytest.mark.parametrize(
     ("source", "expected_message"),
     [
-        ("", "Missing: LINEAR_API_KEY"),
+        ("", "Missing: Linear API key"),
         ("- a\n", "User configuration contains invalid YAML."),
         ("credentials: [unclosed\n", "User configuration contains invalid YAML."),
         (

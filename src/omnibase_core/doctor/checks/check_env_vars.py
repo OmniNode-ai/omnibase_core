@@ -52,7 +52,7 @@ from omnibase_core.types.type_serializable_value import (
 
 # The public result vocabulary. Fixed strings, chosen so that no code path can
 # interpolate a value, a path, or an exception into user-visible output.
-_MESSAGE_MISSING_BINDING = "Missing: LINEAR_API_KEY"
+_MESSAGE_MISSING_BINDING = "Missing: Linear API key"
 _MESSAGE_HEALTHY = "All required configuration bindings present"
 
 _FIXED_ERROR_MESSAGES: dict[EnumDoctorConfigLoadCode, str] = {

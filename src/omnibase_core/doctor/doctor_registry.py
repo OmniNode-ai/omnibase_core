@@ -3,12 +3,14 @@
 
 from __future__ import annotations
 
+import importlib
 import threading
 import time
 from importlib.metadata import entry_points
 
-from omnibase_core.enums.enum_health_status_value import EnumHealthStatusValue
-from omnibase_core.models.doctor.model_doctor_check_result import ModelDoctorCheckResult
+from omnibase_core.models.doctor.model_doctor_check_result import (
+    ModelDoctorCheckResult,
+)
 
 from .doctor_check_base import DoctorCheckBase
 
@@ -30,14 +32,13 @@ class DoctorRegistry:
                 raise ValueError(msg)  # error-ok: registry duplicate guard
             self._checks[cid] = check_class
 
-    def discover(self) -> None:
-        for ep in entry_points(group=ENTRY_POINT_GROUP):
-            loaded = ep.load()
-            if isinstance(loaded, type) and issubclass(loaded, DoctorCheckBase):
-                try:
-                    self.register(loaded)
-                except ValueError:
-                    pass  # already registered
+    def discover(self, developer: bool = False) -> None:
+        module = importlib.import_module(
+            "omnibase_core.nodes.node_doctor_registry_effect.handler"
+        )
+        module.discover(
+            self, entry_points(group=ENTRY_POINT_GROUP), developer=developer
+        )
 
     def list_all(self) -> list[DoctorCheckBase]:
         with self._lock:
@@ -49,13 +50,11 @@ class DoctorRegistry:
             start = time.monotonic()
             try:
                 result = check.run()
-            except (OSError, TypeError, ValueError) as e:
-                result = ModelDoctorCheckResult(
-                    name=check.check_name,
-                    category=check.category,
-                    status=EnumHealthStatusValue.UNHEALTHY,
-                    message=f"Check crashed: {e}",
+            except (OSError, TypeError, ValueError):
+                module = importlib.import_module(
+                    "omnibase_core.nodes.node_doctor_registry_effect.handler"
                 )
+                result = module.crashed_result(check)
             elapsed_ms = int((time.monotonic() - start) * 1000)
             # Attach timing if not already set
             if result.duration_ms == 0:

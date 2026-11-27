@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_doctor_registry_effect
+node_id: node_doctor_registry_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_support_node]
+description: >
+  Registers onex.doctor entry-point classes under the current install's selection. Customer installs do
+  not add developer-only Docker, Linear or repository-sync checks from advertised packages (OMN-26616).
+input_model: omnibase_core.models.doctor.model_cli_doctor_request.ModelCliDoctorRequest
+output_model: omnibase_core.models.doctor.model_cli_doctor_result.ModelCliDoctorResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeDoctorRegistryEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000

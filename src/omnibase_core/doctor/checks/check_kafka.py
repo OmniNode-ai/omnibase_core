@@ -27,7 +27,7 @@ def _parse_kafka_bootstrap() -> tuple[str, int] | None:
     except ValueError:
         # error-ok: re-raising with better message at system boundary
         raise ValueError(
-            f"KAFKA_BOOTSTRAP_SERVERS contains non-numeric port: {port_str!r}"
+            f"Bootstrap server address contains a non-numeric port: {port_str!r}"
         )
 
 
@@ -53,7 +53,7 @@ class CheckKafka(DoctorCheckBase):
                 name=self.check_name,
                 category=self.category,
                 status=EnumHealthStatusValue.UNKNOWN,
-                message="Skipped: KAFKA_BOOTSTRAP_SERVERS not set",
+                message="Skipped: no Kafka address set",
                 duration_ms=int((time.monotonic() - start) * 1000),
             )
         host, port = parsed

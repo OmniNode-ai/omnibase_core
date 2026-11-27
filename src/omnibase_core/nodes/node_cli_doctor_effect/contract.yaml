@@ -1,0 +1,23 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_cli_doctor_effect
+node_id: node_cli_doctor_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_support_node]
+description: >
+  Selects the doctor checks a customer or developer install needs and discovers advertised checks under
+  that selection. OMNI_HOME names a developer registry; customer installs skip Docker, Linear and repository-sync
+  checks (OMN-26616).
+input_model: omnibase_core.models.doctor.model_cli_doctor_request.ModelCliDoctorRequest
+output_model: omnibase_core.models.doctor.model_cli_doctor_result.ModelCliDoctorResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeCliDoctorEffect
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000

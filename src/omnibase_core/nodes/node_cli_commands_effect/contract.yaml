@@ -1,0 +1,24 @@
+# SPDX-FileCopyrightText: 2025 OmniNode.ai Inc.
+# SPDX-License-Identifier: MIT
+---
+name: node_cli_commands_effect
+node_id: node_cli_commands_effect
+node_type: effect
+node_version: {major: 1, minor: 0, patch: 0}
+contract_version: {major: 1, minor: 0, patch: 0}
+tags: [validator_support_node]
+description: >
+  Performs the Kafka reachability effect for onex health. An absent KAFKA_BOOTSTRAP_SERVERS is a non-fatal
+  skip with a plain Fix command, never a raw exception (OMN-26616).
+input_model: omnibase_core.models.cli.model_health_request.ModelHealthRequest
+output_model: omnibase_core.models.cli.model_health_result.ModelHealthResult
+handler_routing:
+  version: {major: 1, minor: 0, patch: 0}
+  default_handler: handler:NodeCliCommandsEffect
+config:
+  KAFKA_BOOTSTRAP_SERVERS: "optional Kafka bootstrap address for the health check"
+descriptor:
+  node_archetype: effect
+  purity: side_effecting
+  idempotent: true
+  timeout_ms: 30000
