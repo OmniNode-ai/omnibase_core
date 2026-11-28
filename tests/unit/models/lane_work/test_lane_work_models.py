@@ -105,7 +105,7 @@ EXPECTED_EVENT_KINDS = [
     "proof_passed", "proof_failed", "proof_posted", "proof_post_failed",
     "handoff_written", "handoff_failed", "deadline_passed", "help_cause_found",
     "help_retry", "help_stop", "help_failed", "unclassified",
-    "repeat_bound_reached", "status_requested",
+    "repeat_bound_reached", "overlay_pr_needed", "status_requested",
 ]  # fmt: skip
 
 # One valid payload per kind: the fields the kind owes, nothing else.
@@ -183,8 +183,8 @@ ALL_MODELS: list[tuple[type[BaseModel], dict[str, Any]]] = [
 ]
 
 
-def test_event_enum_holds_the_29_kinds() -> None:
-    assert len(EXPECTED_EVENT_KINDS) == 29
+def test_event_enum_holds_the_30_kinds() -> None:
+    assert len(EXPECTED_EVENT_KINDS) == 30
     assert [e.value for e in EnumLaneWorkEvent] == EXPECTED_EVENT_KINDS
 
 
